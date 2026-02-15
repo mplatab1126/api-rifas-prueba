@@ -1,0 +1,9 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/boleta/:numero",
+      "destination": "/boleta.html?numero=:numero"
+    }
+  ]
+}
