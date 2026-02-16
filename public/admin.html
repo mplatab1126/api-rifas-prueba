@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <title>Admin Los Plata</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* TODO TU CSS ORIGINAL SE MANTIENE INTACTO */
+    :root{
+      --ink:#244a3e; --ink-2:#3c6b5d; --muted:#7ea094; --bg:#f6fbf9; --card:#ffffff;
+      --ring:#dfe9e5; --ring-strong:#cfe3dc; --pill:#edf7f2; --accent:#3cb579; --accent-2:#1e8f5c;
+      --danger:#e74c3c; --danger-bg:#fbe9e8; --shadow:0 10px 30px rgba(0,0,0,.06);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; background:radial-gradient(1100px 700px at 8% -10%,rgba(60,181,121,.10),transparent 40%), var(--bg);
+      font-family:Poppins,system-ui,-apple-system,sans-serif; color:var(--ink); padding-bottom: 80px;}
+    
+    .shell { max-width: 550px; margin: 20px auto; padding: 0 18px; display: none; opacity: 0; transition: opacity 0.5s ease; }
+    .shell.visible { display: block; opacity: 1; }
+    
+    .top-search-bar { position: sticky; top: 0; z-index: 100; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--ring); padding: 12px 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); margin-bottom: 20px; transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1); transform: translateY(0); }
+    .top-search-bar.hero-mode { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 600px; background: transparent; border-bottom: none; box-shadow: none; padding: 0; z-index: 1000; }
+    .search-container { max-width: 550px; margin: 0 auto; display: flex; gap: 10px; transition: all 0.3s ease; }
+    .main-input { width: 100%; border: 2px solid var(--ring); border-radius: 14px; padding: 12px 20px; font-size: 1rem; outline: none; transition: all 0.3s ease; background: #fff; color: var(--ink); font-weight: 600; }
+    .main-input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(60,181,121,0.1); }
+    .hero-mode .main-input { padding: 22px 30px; font-size: 1.1rem; border-radius: 50px; box-shadow: 0 20px 40px rgba(60,181,121,0.15); border-color: transparent; text-align: center; }
+    .search-btn { background: var(--ink); color: #fff; border: none; border-radius: 14px; padding: 0 20px; font-weight: 700; cursor: pointer; font-size: 1.2rem; transition: all 0.3s ease; }
+    .hero-mode .search-btn { display: none; }
+    .hero-welcome-text { text-align: center; margin-bottom: 30px; opacity: 0; visibility: hidden; transform: translateY(20px); transition: all 0.4s ease; position: absolute; top: -150px; left: 0; right: 0; }
+    .hero-mode .hero-welcome-text { opacity: 1; visibility: visible; transform: translateY(0); position: relative; top: auto; }
+    .user-info-bar { text-align: center; margin-top: 8px; font-size: 0.85rem; transition: all 0.5s ease; }
+    .hero-mode .user-info-bar { position: fixed; top: 20px; right: 20px; margin: 0; background: rgba(255,255,255,0.8); padding: 5px 15px; border-radius: 20px; }
+    .section-card { background: #fff; border: 1px solid var(--ring); border-radius: 24px; box-shadow: var(--shadow); padding: 28px 32px; margin-bottom: 24px; }
+    .section-title { font-size: 1.1rem; font-weight: 800; color: var(--ink); text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 20px 0; padding-bottom: 12px; border-bottom: 2px solid var(--ring); display: flex; align-items: center; justify-content: space-between; }
+    .vertical-form { display: flex; flex-direction: column; gap: 16px; }
+    label { display: block; font-weight: 700; color: var(--ink-2); margin: 0 0 8px; font-size: 0.9rem; }
+    .field { display: flex; align-items: center; gap: 10px; background: #fcfdfd; border: 1px solid var(--ring); border-radius: 12px; padding: 12px 14px; transition: border-color .2s; }
+    .field:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(60,181,121,0.1); }
+    .pill { flex: 1; border: 0; outline: 0; font-size: 16px; background: transparent; color: var(--ink); width: 100%; }
+    .num-wrap { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .num-pill { background: var(--pill); border: 1px solid var(--ring-strong); border-radius: 14px; padding: 8px 12px; display: flex; gap: 10px; align-items: center; width: fit-content; }
+    .num-pill input { width: 60px; border: 0; outline: 0; background: transparent; font-size: 18px; font-weight: 700; color: var(--accent-2); text-align: center; }
+    .chip-del { border: none; background: var(--danger-bg); color: #d64536; font-weight: 700; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; }
+    .btn-add { border: 2px dashed var(--accent); background: rgba(60,181,121,0.05); color: var(--accent-2); border-radius: 12px; padding: 8px 16px; font-weight: 700; cursor: pointer; transition: all .2s; }
+    .cta { display: block; width: 100%; border: none; border-radius: 12px; padding: 14px; font-weight: 700; font-size: 1rem; background: linear-gradient(180deg, var(--accent), var(--accent-2)); color: #fff; box-shadow: 0 10px 20px rgba(60,181,121,.25); cursor: pointer; text-align: center; margin-top: 10px; }
+    .cta:active { transform: scale(0.98); }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(36, 74, 62, 0.4); backdrop-filter: blur(3px); z-index: 2000; display: none; align-items: center; justify-content: center; }
+    .modal-card { background: #fff; width: 90%; max-width: 400px; border-radius: 26px; padding: 32px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+    #loginOverlay { background: #f6fbf9; z-index: 10000; display: flex; } 
+    .hint { margin-top: 12px; text-align: center; font-weight: 600; color: #3c6b5d; font-size: 0.95rem; }
+    .hint.err { color: #e74c3c; }
+    .mode-switch { display: flex; background: #fff; border-radius: 16px; padding: 6px; margin-bottom: 24px; border: 1px solid var(--ring); box-shadow: var(--shadow); }
+    .mode-btn { flex: 1; border: none; background: transparent; padding: 12px; border-radius: 12px; font-weight: 700; color: var(--muted); cursor: pointer; transition: all 0.2s; font-size: 0.95rem; }
+    .mode-btn.active { background: var(--pill); color: var(--accent-2); box-shadow: 0 2px 8px rgba(60,181,121,0.1); border: 1px solid var(--ring-strong); }
+    .view-section { display: none; animation: fadeIn 0.3s ease; }
+    .view-section.active { display: block; }
+    @keyframes fadeIn{from{opacity:0} to{opacity:1}}
+  </style>
+</head>
+<body>
+
+  <div id="loginOverlay" class="modal-overlay">
+    <div class="modal-card">
+      <h1>🔐 Acceso</h1>
+      <p style="color:#7ea094;">Ingresa tu clave de asesor</p>
+      <div class="field" style="margin-bottom:20px;">
+        <input id="loginPwd" type="password" class="pill" placeholder="Contraseña..." style="text-align:center">
+      </div>
+      <button id="btnLogin" class="cta">Ingresar</button>
+      <div id="loginMsg" class="hint"></div>
+    </div>
+  </div>
+
+  <div class="top-search-bar hero-mode" id="topBar" style="display:none">
+    <div class="hero-welcome-text">
+        <div style="font-size: 4rem; margin-bottom: 10px;">👋</div>
+        <h1 style="color:var(--ink); margin:0; font-size: 2rem;">Panel Admin</h1>
+        <p style="color:var(--muted); margin: 8px 0 0 0;">Busca boleta o teléfono</p>
+    </div>
+    <div class="search-container">
+      <input type="text" id="smartInput" class="main-input" placeholder="Escribe para buscar..." autocomplete="off">
+      <button id="btnSearch" class="search-btn">🔍</button>
+    </div>
+    <div class="user-info-bar">
+      <span id="asesorDisplay" style="font-weight:700; color:var(--accent-2); margin-right:10px;">Hola, Asesor</span>
+      <u id="btnLogout" style="cursor:pointer; color:#7ea094;">Salir</u>
+    </div>
+    <div id="searchFeedback" class="hint" style="margin: 5px 0 0 0; font-size:0.8rem; min-height: 20px;"></div>
+  </div>
+
+  <div class="shell" id="appShell">
+
+    <div id="view-venta" class="view-section">
+      <div class="section-card">
+        <div class="section-title"><span>🎟️ Boletas</span><button id="btnAddNum" class="btn-add">+ Agregar</button></div>
+        <div id="numList" class="num-wrap"></div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-title">👤 Datos del Cliente</div>
+        <div class="vertical-form">
+          <div><label>Nombre</label><div class="field"><input id="v_nombre" class="pill" type="text"></div></div>
+          <div><label>Apellido</label><div class="field"><input id="v_apellido" class="pill" type="text"></div></div>
+          <div><label>Teléfono</label><div class="field"><input id="v_telefono" class="pill" type="tel"></div></div>
+          <div><label>Ciudad</label><div class="field"><input id="v_ciudad" class="pill" type="text"></div></div>
+        </div>
+      </div>
+
+      <div class="mode-switch">
+        <button id="btnModeAbono" class="mode-btn" onclick="setMode('abono')">💰 Con Abono</button>
+        <button id="btnModeSeparar" class="mode-btn active" onclick="setMode('separar')">🎟️ Solo Separar ($0)</button>
+      </div>
+
+      <div id="paymentSections" style="display: none;">
+        <div class="section-card">
+          <div class="section-title">💰 Detalle del Pago</div>
+          <div class="vertical-form">
+            <div><label>Valor a Abonar</label><div class="field"><input id="v_primerAbono" class="pill" type="number" min="0" value="0"></div></div>
+            <div>
+              <label>Método de Pago</label>
+              <div class="field">
+                <input id="v_metodoPago" list="l_metodos" class="pill" type="text" placeholder="Ej: Nequi, Bancolombia, Efectivo">
+                <datalist id="l_metodos"><option value="Nequi"></option><option value="Bancolombia"></option><option value="Efectivo"></option></datalist>
+              </div>
+            </div>
+            <div>
+              <label>Referencia</label>
+              <div style="display:flex; gap:10px;">
+                <div class="field" style="flex:1"><input id="v_referenciaAbono" class="pill" type="text"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card" style="border-color:var(--accent);">
+          <button id="btnRegistrarVenta" class="cta" style="margin-top:25px; height:50px; font-size:1.1rem; background: #7ea094;">CONFIRMAR SEPARADO ($0)</button>
+          <input id="v_contrasena" type="hidden">
+      </div>
+    </div>
+
+    <div id="view-cliente" class="view-section">
+      <div class="section-card" style="border-top: 5px solid var(--ink); padding: 20px;">
+        <div class="section-title" style="margin-bottom: 12px;">👤 Cliente Encontrado</div>
+        <div id="cliente-info-render"></div>
+      </div>
+
+      <div class="section-card">
+          <div class="section-title">💰 Nuevo Abono</div>
+          <div class="vertical-form">
+             <div>
+               <label>✅ Selecciona boletas a abonar:</label>
+               <div id="boletas-checkbox-container" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 5px;"></div>
+             </div>
+             <div><label>Valor Total a Repartir</label><div class="field"><input type="number" id="a_monto" class="pill" placeholder="0"></div></div>
+             <div><label>Método de Pago</label><div class="field"><input id="a_metodo" list="l_metodos" class="pill" type="text"></div></div>
+             <div>
+               <label>Referencia</label>
+               <div style="display:flex; gap:10px;">
+                 <div class="field" style="flex:1"><input type="text" id="a_ref" class="pill"></div>
+               </div>
+             </div>
+          </div>
+          <button id="btnRegistrarAbono" class="cta" onclick="registrarAbono()" style="margin-top:20px;">REGISTRAR ABONO</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="modalResult" class="modal-overlay">
+    <div class="modal-card">
+      <span id="mIcon" style="font-size: 3.5rem; display: block; margin-bottom: 10px;">🎉</span>
+      <h3 id="mTitle" style="color:var(--ink); margin:0 0 10px 0;">Título</h3>
+      <p id="mMsg" style="color:#5a7a70; margin-bottom:20px;">Mensaje</p>
+      <button id="mBtn" class="cta" style="width: auto; padding: 10px 30px; margin: 0 auto; border-radius: 50px;">Aceptar</button>
+    </div>
+  </div>
+
+  <script>
+    // --- LÓGICA CORE VERCEL + SUPABASE ---
+    const $ = id => document.getElementById(id);
+    const feedback = $('searchFeedback');
+    const topBar = $('topBar');
+    const appShell = $('appShell');
+
+    function activateAppMode() { topBar.classList.remove('hero-mode'); appShell.classList.add('visible'); }
+    function activateHeroMode() { topBar.classList.add('hero-mode'); appShell.classList.remove('visible'); $('smartInput').value = ''; $('smartInput').focus(); setMode('separar'); }
+
+    let modoVenta = 'separar'; 
+    function setMode(mode) {
+      modoVenta = mode;
+      const btnAbono = $('btnModeAbono'); const btnSeparar = $('btnModeSeparar');
+      const paySection = $('paymentSections'); const btnReg = $('btnRegistrarVenta');
+      if (mode === 'separar') {
+        btnSeparar.classList.add('active'); btnAbono.classList.remove('active');
+        paySection.style.display = 'none';
+        btnReg.textContent = 'CONFIRMAR SEPARADO ($0)'; btnReg.style.background = '#7ea094'; 
+      } else {
+        btnAbono.classList.add('active'); btnSeparar.classList.remove('active');
+        paySection.style.display = 'block'; 
+        btnReg.textContent = 'REGISTRAR VENTA'; btnReg.style.background = ''; 
+      }
+    }
+
+    const numList = $('numList');
+    function makeNumPill(value=''){
+      const wrap = document.createElement('div'); wrap.className='num-pill';
+      const inp = document.createElement('input'); inp.type='text'; inp.maxLength=4; inp.value=value;
+      const del = document.createElement('button'); del.className='chip-del'; del.textContent='✕';
+      del.onclick = ()=>{ wrap.remove(); if(!numList.children.length) addDefaultPill(); };
+      wrap.append(inp, del); return wrap;
+    }
+    function addDefaultPill(){ numList.appendChild(makeNumPill()); }
+    $('btnAddNum').onclick = ()=> numList.appendChild(makeNumPill());
+
+    const STORAGE_KEY = 'asesor_pwd';
+    function initLogin(){ const s=localStorage.getItem(STORAGE_KEY); if(s) verifyLogin(s,true); }
+    $('btnLogin').onclick = ()=> verifyLogin($('loginPwd').value);
+    $('btnLogout').onclick = ()=> { localStorage.removeItem(STORAGE_KEY); location.reload(); };
+    
+    // LOGIN (Simulado en frontend por ahora, la BD rechaza contraseñas malas al guardar)
+    function verifyLogin(pwd, auto=false){
+      if(!pwd) { if(!auto) alert("Por favor ingresa la contraseña."); return; }
+      localStorage.setItem(STORAGE_KEY, pwd); 
+      $('loginOverlay').style.display='none';
+      topBar.style.display='block'; 
+      $('asesorDisplay').textContent = "Conectado"; 
+      $('v_contrasena').value = pwd; 
+      $('smartInput').focus();
+    }
+
+    const smartInput = $('smartInput');
+    smartInput.onkeydown = (e)=>{ if(e.key==='Enter') runSearch(); };
+    $('btnSearch').onclick = runSearch;
+
+    function switchView(id){ document.querySelectorAll('.view-section').forEach(el=>el.classList.remove('active')); $(id).classList.add('active'); }
+
+    // ==========================================
+    // 1. MOTOR DE BÚSQUEDA (CONECTADO A VERCEL)
+    // ==========================================
+    async function runSearch(){
+      const q = smartInput.value.trim();
+      if(!q) return;
+      feedback.textContent = "Buscando en Supabase...";
+      
+      try {
+        const response = await fetch('/api/admin/buscar?q=' + encodeURIComponent(q));
+        const res = await response.json();
+        feedback.textContent = "";
+
+        if(res.tipo === 'ERROR_SERVIDOR'){
+            showModal('Error del Servidor', res.mensaje); return;
+        }
+        
+        if(res.tipo !== 'NO_EXISTE') activateAppMode();
+        
+        if(res.tipo==='BOLETA_DISPONIBLE'){
+            switchView('view-venta'); numList.innerHTML=''; numList.appendChild(makeNumPill(res.data.numero)); $('v_nombre').focus();
+        } else if(res.tipo==='BOLETA_OCUPADA'){
+            switchView('view-cliente'); renderClienteInfo([res.data.infoVenta]);
+        } else if(res.tipo==='CLIENTE_ENCONTRADO'){
+            switchView('view-cliente'); renderClienteInfo(res.lista);
+        } else { 
+            $('mTitle').textContent = 'No encontrado'; $('mMsg').textContent = res.mensaje || 'Intenta de nuevo'; $('modalResult').style.display='flex';
+        }
+      } catch (err) {
+        feedback.textContent = "";
+        showModal('Error Crítico', 'El servidor no respondió. Causa: ' + err.message);
+      }
+    }
+
+    // ==========================================
+    // 2. MOTOR DE VENTAS (CONECTADO A VERCEL)
+    // ==========================================
+    $('btnRegistrarVenta').onclick = async ()=>{
+       const nums = Array.from(numList.querySelectorAll('input')).map(i=>i.value).filter(v=>v.length===4);
+       if(!nums.length) return alert('Falta boleta válida');
+       $('btnRegistrarVenta').textContent='Procesando...'; $('btnRegistrarVenta').disabled=true;
+       
+       let totalMoney=0, ref='', metodo='';
+       if (modoVenta === 'separar') { totalMoney=0; ref='0'; metodo='Separado'; } 
+       else { totalMoney=Number($('v_primerAbono').value)||0; ref=$('v_referenciaAbono').value; metodo=$('v_metodoPago').value; }
+
+       const perNum = Math.floor(totalMoney/nums.length);
+       const baseData = {
+           nombre:$('v_nombre').value, apellido:$('v_apellido').value, ciudad:$('v_ciudad').value, 
+           telefono:$('v_telefono').value, primerAbono:perNum, 
+           referenciaAbono: ref, metodoPago: metodo, 
+           contrasena:localStorage.getItem(STORAGE_KEY)
+       };
+       
+       let ok=0, fails=0;
+       
+       // Loop para guardar múltiples boletas
+       for (let i=0; i < nums.length; i++) {
+           const payload = {...baseData, numeroBoleta: nums[i]};
+           try {
+               const req = await fetch('/api/admin/venta', {
+                   method: 'POST', headers: {'Content-Type': 'application/json'},
+                   body: JSON.stringify(payload)
+               });
+               const res = await req.json();
+               if(res.status === 'ok') ok++; else fails++;
+           } catch(e) { fails++; }
+       }
+
+       $('btnRegistrarVenta').textContent='REGISTRAR VENTA'; $('btnRegistrarVenta').disabled=false;
+       showModal('Resumen', `Registradas: ${ok} / Errores: ${fails}`);
+       
+       if(fails===0){ 
+           $('v_nombre').value=''; $('v_apellido').value=''; $('v_telefono').value=''; $('v_ciudad').value=''; 
+           $('v_primerAbono').value=0; $('v_referenciaAbono').value=''; $('v_metodoPago').value='';
+           numList.innerHTML=''; addDefaultPill(); activateHeroMode();
+       }
+    };
+
+    // ==========================================
+    // 3. MOTOR DE ABONOS (CONECTADO A VERCEL)
+    // ==========================================
+    async function registrarAbono() {
+        const btn = document.getElementById('btnRegistrarAbono');
+        const checkboxes = document.querySelectorAll('.boleta-pay-checkbox:checked');
+        const boletasTarget = Array.from(checkboxes).map(c => c.value);
+        
+        if(boletasTarget.length === 0) return alert("Selecciona al menos una boleta.");
+        
+        const montoTotal = Number($('a_monto').value);
+        const ref = $('a_ref').value;
+        const metodo = $('a_metodo').value;
+        
+        if(montoTotal <= 0) return alert("El monto debe ser mayor a 0.");
+        
+        const montoPorBoleta = Math.floor(montoTotal / boletasTarget.length);
+
+        const textoOriginal = btn.textContent;
+        btn.textContent = 'Procesando...'; btn.disabled = true;
+
+        const basePayload = {
+            metodoPago: metodo, referencia: ref || 'efectivo',
+            contrasena: localStorage.getItem(STORAGE_KEY)
+        };
+
+        let ok = 0; let fails = 0;
+
+        for (let i=0; i < boletasTarget.length; i++) {
+            const payload = { ...basePayload, numeroBoleta: boletasTarget[i], valorAbono: montoPorBoleta };
+            try {
+               const req = await fetch('/api/admin/abono', {
+                   method: 'POST', headers: {'Content-Type': 'application/json'},
+                   body: JSON.stringify(payload)
+               });
+               const res = await req.json();
+               if(res.status === 'ok') ok++; else fails++;
+            } catch(e) { fails++; }
+        }
+
+        btn.textContent = textoOriginal; btn.disabled = false;
+        
+        if (fails === 0) {
+            showModal('Éxito', `Abono registrado correctamente.`);
+            $('a_monto').value = ''; $('a_ref').value = ''; $('a_metodo').value = '';
+            runSearch(); // Recargar cliente
+        } else {
+            showModal('Aviso', `Se registraron ${ok}, fallaron ${fails}.`);
+        }
+    }
+
+    // RENDERIZAR VISTA DEL CLIENTE
+    function renderClienteInfo(lista){
+       var c = lista[0];
+       var totalAbonadoGlobal = 0; var totalRestanteGlobal = 0; var boletasStr = [];
+       var checkboxContainer = document.getElementById('boletas-checkbox-container');
+       if(checkboxContainer) checkboxContainer.innerHTML = '';
+       var fmt = function(n) { return new Intl.NumberFormat('es-CO').format(n); };
+
+       for(var i=0; i<lista.length; i++){
+           var b = lista[i];
+           var restante = Number(b.restante) || 0;
+           totalAbonadoGlobal += (Number(b.totalAbonos) || 0); totalRestanteGlobal += restante;
+           boletasStr.push(b.numero);
+           
+           if(checkboxContainer) {
+               var label = document.createElement('label');
+               label.style.cssText = "display:flex; align-items:center; gap:8px; background:var(--pill); padding:8px 14px; border-radius:12px; border:1px solid var(--ring-strong); cursor:pointer; font-size:0.9rem;";
+               var chk = document.createElement('input'); chk.type = 'checkbox'; chk.value = b.numero; chk.className = 'boleta-pay-checkbox'; chk.checked = true;
+               var span = document.createElement('span'); span.innerHTML = '<b>' + b.numero + '</b> (Resta $' + fmt(restante) + ')'; span.style.color = "var(--ink-2)";
+               label.appendChild(chk); label.appendChild(span); checkboxContainer.appendChild(label);
+           }
+       }
+
+       var html = '<div style="background:#f8fbf9; border:1px solid #cfe3dc; border-radius:12px; padding:12px;">';
+       html += '<div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:8px; padding-bottom:8px; border-bottom:1px dashed #cfe3dc;">';
+       html += '  <div><div style="font-size:0.65rem; color:#7ea094; font-weight:700;">BOLETAS</div><div style="font-weight:800; color:var(--ink); font-size:0.95rem;">' + boletasStr.join(', ') + '</div></div>';
+       html += '  <div style="text-align:right;"><div style="font-size:0.65rem; color:#7ea094; font-weight:700;">TELÉFONO</div><div style="font-weight:800; color:#1e8f5c; font-size:0.95rem;">' + c.telefono + '</div></div>';
+       html += '</div>';
+       html += '<div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:6px;">';
+       html += '  <input id="c_nombre" type="text" style="background:#fff; border:1px solid #dfe9e5; padding:6px 8px; border-radius:8px; width:100%; font-size:0.85rem;" value="' + c.nombre + '" disabled>';
+       html += '  <input id="c_apellido" type="text" style="background:#fff; border:1px solid #dfe9e5; padding:6px 8px; border-radius:8px; width:100%; font-size:0.85rem;" value="' + c.apellido + '" disabled>';
+       html += '</div>';
+       html += '<div style="display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid #cfe3dc; border-radius:8px; padding:6px 8px;">';
+       html += '  <div style="display:flex; gap:10px; align-items:center;">';
+       html += '    <div><span style="font-size:0.6rem; color:#7ea094; display:block;">ABONADO</span><span style="font-size:0.9rem; font-weight:800; color:var(--ink);">$' + fmt(totalAbonadoGlobal) + '</span></div>';
+       html += '    <div style="height:20px; width:1px; background:#dfe9e5;"></div>'; 
+       html += '    <div><span style="font-size:0.6rem; color:#e74c3c; display:block;">RESTA</span><span style="font-size:0.9rem; font-weight:800; color:#e74c3c;">$' + fmt(totalRestanteGlobal) + '</span></div>';
+       html += '  </div>';
+       html += '  <button id="btnCopiar" style="background:transparent; border:1px solid #3cb579; color:#3cb579; padding:4px 8px; border-radius:6px; font-weight:700; cursor:pointer; font-size:0.75rem;">📋 Link</button>';
+       html += '</div></div>';
+       
+       document.getElementById('cliente-info-render').innerHTML = html;
+
+       document.getElementById('btnCopiar').addEventListener('click', async function() {
+           var links = lista.map(b => window.location.origin + '/boleta/' + b.numero).join('\n');
+           try { await navigator.clipboard.writeText(links); alert('Links copiados al portapapeles'); } catch(e){ alert('Error copiando'); }
+       });
+    }
+
+    // Funciones UI Generales
+    function showModal(title,msg){ $('mTitle').textContent=title; $('mMsg').textContent=msg; $('modalResult').style.display='flex'; }
+    $('mBtn').onclick = function(){ $('modalResult').style.display='none'; };
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        initLogin();
+        if(typeof addDefaultPill === 'function') addDefaultPill();
+        
+        // Listener para que el botón Enter del login funcione
+        $('loginPwd').addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') verifyLogin(this.value);
+        });
+    });
+  </script>
+</body>
+</html>
