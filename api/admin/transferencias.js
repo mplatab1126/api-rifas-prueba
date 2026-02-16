@@ -1,24 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req, res) {
-  // 1. Permisos (CORS)
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'OPTIONS,POST');
 
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
+  if (req.method === 'OPTIONS') { res.status(200).end(); return; }
+  if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
-  }
+  // 🌟 NUEVO: Ahora sí recibimos la "hora" desde el frontend
+  const { fecha, hora, monto, referencia } = req.body;
 
-  // 2. Recibimos los filtros que mandó el asesor desde el panel
-  const { fecha, monto, referencia } = req.body;
-
-  if (!fecha && !monto && !referencia) {
+  if (!fecha && !monto && !referencia && !hora) {
     return res.status(400).json({ status: 'error', mensaje: 'Debes enviar al menos un dato para buscar' });
   }
 
@@ -27,38 +20,41 @@ export default async function handler(req, res) {
   try {
     let query = supabase.from('transferencias').select('*');
 
-    // 3. Aplicamos los filtros
-    if (referencia) {
-      query = query.ilike('referencia', `%${referencia}%`); 
-    }
-    
-    if (monto) {
-      query = query.eq('monto', Number(monto));
-    }
+    if (referencia) query = query.ilike('referencia', `%${referencia}%`); 
+    if (monto) query = query.eq('monto', Number(monto));
 
-    if (fecha) {
-      // El panel HTML viejo enviaba la fecha como DD/MM/YYYY, la convertimos a YYYY-MM-DD
+    // 🌟 NUEVO: Lógica de búsqueda Fecha + Hora
+    if (fecha && hora) {
       let f = fecha;
       if (fecha.includes('/')) {
          const partes = fecha.split('/'); 
          f = `${partes[2]}-${partes[1]}-${partes[0]}`;
       }
-      // Filtramos desde las 00:00 hasta las 23:59 de ese día en específico
-      query = query.gte('fecha_pago', `${f}T00:00:00.000Z`)
-                   .lte('fecha_pago', `${f}T23:59:59.999Z`);
+      // Busca exactamente en el minuto que puso el asesor (Zona Colombia -05:00)
+      const exactStart = `${f}T${hora}:00-05:00`;
+      const exactEnd = `${f}T${hora}:59-05:00`;
+      query = query.gte('fecha_pago', exactStart).lte('fecha_pago', exactEnd);
+      
+    } else if (fecha) {
+      // Si solo puso fecha, busca todo el día
+      let f = fecha;
+      if (fecha.includes('/')) {
+         const partes = fecha.split('/'); 
+         f = `${partes[2]}-${partes[1]}-${partes[0]}`;
+      }
+      query = query.gte('fecha_pago', `${f}T00:00:00-05:00`).lte('fecha_pago', `${f}T23:59:59-05:00`);
     }
 
-    // Ordenamos para ver las más recientes primero
     query = query.order('fecha_pago', { ascending: false }).limit(10);
-
     const { data: transferencias, error } = await query;
 
     if (error) throw error;
 
-    // 4. Transformamos los datos al formato exacto que espera tu panel HTML
     const listaFormateada = transferencias.map(t => {
-      // Formatear la fecha para que el asesor la lea fácil
-      const fechaLimpia = new Date(t.fecha_pago).toLocaleDateString('es-CO');
+      // 🌟 NUEVO: toLocaleString() mostrará Fecha y HORA en el panel web
+      const fechaLimpia = new Date(t.fecha_pago).toLocaleString('es-CO', { 
+         day: 'numeric', month: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true 
+      });
       
       return {
         monto: t.monto,
