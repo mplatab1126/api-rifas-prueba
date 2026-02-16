@@ -94,14 +94,29 @@
       <button id="btnSearch" class="search-btn">🔍</button>
     </div>
     <div class="user-info-bar">
-      <span id="asesorDisplay" style="font-weight:700; color:var(--accent-2); margin-right:10px;">Hola, Asesor</span>
+      <span id="asesorDisplay" style="font-weight:700; color:var(--accent-2); margin-right:10px;">Hola</span>
+      <u style="cursor:pointer; color:var(--ink); margin-right:10px; font-weight:bold;" onclick="switchView('view-bancos')">🏦 Subir Bancos</u>
       <u id="btnLogout" style="cursor:pointer; color:#7ea094;">Salir</u>
-    </div>
+      </div>
     <div id="searchFeedback" class="hint" style="margin: 5px 0 0 0; font-size:0.8rem; min-height: 20px;"></div>
   </div>
 
   <div class="shell" id="appShell">
 
+    <div id="view-bancos" class="view-section">
+  <div class="section-card" style="border-top: 5px solid #1e8f5c;">
+    <div class="section-title">🏦 Cargar Extracto Bancolombia</div>
+    <p style="font-size: 0.85rem; color: #7ea094;">Sube el archivo .CSV descargado de la Sucursal Virtual. El sistema extraerá automáticamente el monto, la fecha y la cuenta de origen del cliente.</p>
+    
+    <div class="vertical-form">
+      <div class="field" style="background:#f2faf5; border: 2px dashed #3cb579; padding: 20px; justify-content: center;">
+        <input type="file" id="fileBancos" accept=".csv" style="font-size: 1rem;">
+      </div>
+      <button id="btnProcesarBancos" class="cta" onclick="procesarCSVBancos()" style="margin-top:15px;">PROCESAR Y SUBIR ARCHIVO</button>
+    </div>
+  </div>
+</div>
+    
     <div id="view-venta" class="view-section">
       <div class="section-card">
         <div class="section-title"><span>🎟️ Boletas</span><button id="btnAddNum" class="btn-add">+ Agregar</button></div>
@@ -547,6 +562,102 @@
     function showModal(title,msg){ $('mTitle').textContent=title; $('mMsg').textContent=msg; $('modalResult').style.display='flex'; }
     $('mBtn').onclick = function(){ $('modalResult').style.display='none'; };
     document.addEventListener('DOMContentLoaded', function() { initLogin(); if(typeof addDefaultPill === 'function') addDefaultPill(); $('loginPwd').addEventListener('keyup', function(e) { if (e.key === 'Enter') verifyLogin(this.value); }); });
+  
+    // ==========================================
+// LECTOR AUTOMÁTICO DE EXTRACTOS BANCOLOMBIA
+// ==========================================
+async function procesarCSVBancos() {
+    const fileInput = document.getElementById('fileBancos');
+    if (!fileInput.files.length) return alert("Por favor, selecciona un archivo CSV primero.");
+    
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    
+    const btn = document.getElementById('btnProcesarBancos');
+    const txtOriginal = btn.textContent;
+    btn.textContent = 'Leyendo y procesando... ⏳';
+    btn.disabled = true;
+
+    reader.onload = async function(e) {
+        const text = e.target.result;
+        const rows = text.split('\n');
+        const transferenciasNuevas = [];
+
+        for(let i = 0; i < rows.length; i++) {
+            const row = rows[i].trim();
+            if(!row) continue;
+            
+            // Separamos por comas usando una expresión regular sencilla
+            const cols = row.split(',');
+            if(cols.length < 12) continue; // Si no tiene al menos 12 columnas, no es una fila válida
+
+            // 1. EXTRAER EL VALOR
+            // NOTA: Tienes puesto el índice 9 (Columna J). Si notas que los valores
+            // están saliendo mal y en realidad estaban en la columna A, cambia ese 9 por un 0.
+            let montoRaw = cols[9]; 
+            let monto = parseFloat(montoRaw) || 0;
+
+            // 2. EXTRAER LA FECHA (Columna B / Índice 1) Ej: "15022026"
+            let fechaRaw = cols[1]; 
+            let fechaFormateada = new Date().toISOString(); // Por defecto hoy
+            if(fechaRaw && fechaRaw.length === 8) {
+                // Lo convertimos de DDMMAAAA a AAAA-MM-DD
+                fechaFormateada = `${fechaRaw.slice(4,8)}-${fechaRaw.slice(2,4)}-${fechaRaw.slice(0,2)}T00:00:00.000Z`;
+            }
+
+            // 3. EXTRAER PLATAFORMA (Columna E / Índice 4)
+            let descripcion = cols[4] || "";
+            let plataforma = descripcion.includes("NEQUI") ? "Nequi" : "Bancolombia";
+
+            // 4. EXTRAER REFERENCIA / CELULAR DE ORIGEN (Columna L / Índice 11)
+            let referenciaRaw = cols[11] || "";
+            let referencia = referenciaRaw.replace(/"/g, ''); // Quitamos comillas si las tiene
+
+            transferenciasNuevas.push({
+                monto: monto,
+                fecha_pago: fechaFormateada,
+                plataforma: plataforma,
+                referencia: referencia,
+                estado: 'LIBRE'
+            });
+        }
+
+        if(transferenciasNuevas.length === 0) {
+            btn.textContent = txtOriginal; btn.disabled = false;
+            return alert("No se encontraron transferencias válidas en el archivo.");
+        }
+
+        // Enviamos al backend
+        try {
+            const req = await fetch('/api/admin/subir-bancos', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    transferencias: transferenciasNuevas,
+                    contrasena: localStorage.getItem(STORAGE_KEY)
+                })
+            });
+            const res = await req.json();
+
+            btn.textContent = txtOriginal; btn.disabled = false;
+
+            if(res.status === 'ok') {
+                showModal('¡Archivo Procesado!', res.mensaje);
+                fileInput.value = ""; // Limpiamos el archivo
+            } else {
+                showModal('Error al subir', res.mensaje);
+            }
+
+        } catch(error) {
+            btn.textContent = txtOriginal; btn.disabled = false;
+            showModal('Error Crítico', 'No se pudo conectar con el servidor.');
+        }
+    };
+    
+    // Leemos el archivo como texto
+    reader.readAsText(file);
+}
+  
   </script>
 </body>
 </html>
