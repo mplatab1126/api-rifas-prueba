@@ -518,15 +518,35 @@
        const baseData = { nombre:$('v_nombre').value, apellido:$('v_apellido').value, ciudad:$('v_ciudad').value, telefono:$('v_telefono').value, primerAbono:perNum, referenciaAbono: ref, metodoPago: metodo, esPendiente:esVentaPendiente, contrasena:localStorage.getItem(STORAGE_KEY) };
        
        let ok=0, fails=0;
+       let detalleErrores = []; // 🌟 NUEVO: Array para atrapar el texto de los errores
+
        for (let i=0; i < nums.length; i++) {
            try {
                const req = await fetch('/api/admin/venta', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({...baseData, numeroBoleta: nums[i]}) });
                const res = await req.json();
-               if(res.status === 'ok') ok++; else fails++;
-           } catch(e) { fails++; }
+               if(res.status === 'ok') {
+                   ok++; 
+               } else {
+                   fails++;
+                   detalleErrores.push(`❌ Boleta ${nums[i]}: ${res.mensaje}`); // Guardamos la explicación
+               }
+           } catch(e) { 
+               fails++; 
+               detalleErrores.push(`❌ Boleta ${nums[i]}: Error de conexión`);
+           }
        }
        $('btnRegistrarVenta').textContent='REGISTRAR VENTA'; $('btnRegistrarVenta').disabled=false;
-       showModal('Resumen', `Registradas: ${ok} / Errores: ${fails}`);
+       
+       // 🌟 NUEVO: Construimos el mensaje final con las explicaciones
+       let mensajeFinal = `Registradas: ${ok} / Errores: ${fails}`;
+       if (fails > 0) {
+           mensajeFinal += `\n\nMotivos:\n` + detalleErrores.join('\n');
+       }
+       
+       // Le decimos al modal que respete los saltos de línea
+       $('mMsg').style.whiteSpace = 'pre-line'; 
+       showModal('Resumen de Venta', mensajeFinal);
+       
        if(fails===0){ 
            $('v_nombre').value=''; $('v_apellido').value=''; $('v_telefono').value=''; $('v_ciudad').value=''; $('v_primerAbono').value=0; $('v_referenciaAbono').value=''; $('v_metodoPago').value='';
            desbloquearCampos('v_referenciaAbono', 'v_primerAbono', 'v_metodoPago', 'feedbackTransfer');
