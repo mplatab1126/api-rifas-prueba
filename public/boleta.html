@@ -698,7 +698,7 @@
 
         try {
           // LLAMADA A TU CEREBRO EN VERCEL
-          const response = await fetch("https://api-rifas-prueba.vercel.app/api/verificar-boleta", {
+          const response = await fetch("/api/verificar-boleta", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ numero_boleta: boletaParam, telefono: inputPhone })
