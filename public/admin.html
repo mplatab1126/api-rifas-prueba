@@ -391,7 +391,34 @@
     }
     function extractRefFromText(txt){ return (txt.toUpperCase().match(/[A-Z0-9]{6,24}/g) || [])[0] || ''; }
 
-    async function handleOCR(e, statusId, inputId) {
+    // NUEVA FUNCIÓN: Busca automáticamente en la base de datos
+    async function autoBuscarPorReferencia(refVal, refId, montoId, metodoId, feedbackId, statusId) {
+        try {
+            const req = await fetch('/api/admin/transferencias', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ referencia: refVal })
+            });
+            const res = await req.json();
+            
+            if(res.status === 'ok' && res.lista.length > 0) {
+                const t = res.lista[0];
+                if(t.status === 'LIBRE') {
+                    // Si la encuentra y está libre, la auto-selecciona y bloquea los campos
+                    seleccionarTransferencia(refId, montoId, metodoId, feedbackId, t.referencia, t.monto, t.plataforma);
+                    document.getElementById(statusId).textContent = "¡Datos encontrados y cargados! ✅";
+                } else {
+                    document.getElementById(statusId).textContent = "⚠️ La transferencia " + refVal + " ya está " + t.status;
+                }
+            } else {
+                document.getElementById(statusId).textContent = "Ref: " + refVal + " (No encontrada en Base de Datos)";
+            }
+        } catch (e) {
+            document.getElementById(statusId).textContent = "Ref: " + refVal + " (Error buscando en BD)";
+        }
+    }
+
+    // OCR ACTUALIZADO
+    async function handleOCR(e, statusId, inputId, montoId, metodoId, feedbackId) {
         var items = (e.clipboardData && e.clipboardData.items) ? e.clipboardData.items : [];
         for(var i=0; i<items.length; i++){ 
             var it = items[i];
@@ -401,9 +428,13 @@
                 var pre = await preprocessBlobToCanvas(f);
                 var res = await Tesseract.recognize(pre || f, 'spa+eng');
                 var ref = extractRefFromText(res.data.text);
+                
                 if(ref) { 
-                    document.getElementById(statusId).textContent = "Ref extraída: " + ref; 
                     document.getElementById(inputId).value = ref; 
+                    document.getElementById(statusId).textContent = "Ref extraída: " + ref + " (Buscando... ⏳)";
+                    
+                    // Llama a la búsqueda automática instantáneamente
+                    await autoBuscarPorReferencia(ref, inputId, montoId, metodoId, feedbackId, statusId);
                 } else { 
                     document.getElementById(statusId).textContent = 'No se detectó referencia clara.'; 
                 }
@@ -411,8 +442,9 @@
         }
     }
 
-    if ($('ocrDrop')) $('ocrDrop').addEventListener('paste', async (e)=>{ handleOCR(e, 'ocrStatus', 'v_referenciaAbono'); });
-    if ($('ocrDropAbono')) $('ocrDropAbono').addEventListener('paste', async (e)=>{ handleOCR(e, 'ocrStatusAbono', 'a_ref'); });
+    // LE PASAMOS LAS CAJAS DE TEXTO EXTRA AL OCR PARA QUE SEPA DÓNDE PEGAR EL DINERO
+    if ($('ocrDrop')) $('ocrDrop').addEventListener('paste', async (e)=>{ handleOCR(e, 'ocrStatus', 'v_referenciaAbono', 'v_primerAbono', 'v_metodoPago', 'feedbackTransfer'); });
+    if ($('ocrDropAbono')) $('ocrDropAbono').addEventListener('paste', async (e)=>{ handleOCR(e, 'ocrStatusAbono', 'a_ref', 'a_monto', 'a_metodo', 'feedbackTransferAbono'); });
 
 
     // ==========================================
