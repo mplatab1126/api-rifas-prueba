@@ -4,6 +4,10 @@
     {
       "source": "/boleta/:numero",
       "destination": "/boleta"
+    },
+    {
+      "source": "/diarias",
+      "destination": "/diarias.html"
     }
   ]
 }
