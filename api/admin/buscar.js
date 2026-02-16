@@ -20,7 +20,12 @@ export default async function handler(req, res) {
   }
 
   // 3. TRUCO: Limpiamos el texto y dejamos solo los números.
-  const queryLimpio = String(q).replace(/\D/g, '');
+  let queryLimpio = String(q).replace(/\D/g, '');
+
+  // NUEVO: Si el número tiene 12 dígitos y empieza por "57", le quitamos el "57"
+  if (queryLimpio.length === 12 && queryLimpio.startsWith('57')) {
+    queryLimpio = queryLimpio.slice(2); // Esto recorta los 2 primeros números
+  }
 
   // 4. Conectamos con tu base de datos Supabase
   const supabase = createClient(
