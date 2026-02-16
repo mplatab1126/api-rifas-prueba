@@ -23,9 +23,11 @@ export default async function handler(req, res) {
     contrasena, esPendiente
   } = req.body;
 
-  // 4. SEGURIDAD: Validar la contraseña (Puedes cambiar 'LosPlata2026' por la que quieras)
-  const claveMaestra = process.env.ADMIN_PASSWORD || '1234';
-  if (contrasena !== claveMaestra) {
+  // 4. SEGURIDAD: Validar la contraseña y el Asesor
+  const asesores = { 'sal32':'Saldarriaga', 'ar94':'Arias', 'car61':'Carlos', 'an45':'Anyeli', 'm8a3':'Mateo', 'lu34':'Luisa', 'li05':'Liliana', 'ne26':'Nena', '1234':'Admin' };
+  const nombreAsesor = asesores[contrasena];
+  
+  if (!nombreAsesor) {
     return res.status(401).json({ status: 'error', mensaje: 'Contraseña de asesor incorrecta' });
   }
 
@@ -76,8 +78,8 @@ export default async function handler(req, res) {
           monto: abonoNum,
           fecha_pago: new Date().toISOString(),
           referencia_transferencia: referenciaAbono || 'Sin Ref',
-          // Guardamos el método, si está pendiente y de dónde vino la venta
-          nota: `Origen: ${metodoPago || 'Efectivo'}${esPendiente ? ' | PENDIENTE' : ''} | Venta: ${referencia || 'Directa'}`
+          nota: `Origen: ${metodoPago || 'Efectivo'}${esPendiente ? ' | PENDIENTE' : ''} | Venta: ${referencia || 'Directa'}`,
+          asesor: nombreAsesor // 🌟 NUEVA COLUMNA
         });
 
       if (referenciaAbono && referenciaAbono !== 'Sin Ref' && referenciaAbono !== 'efectivo') {
@@ -101,7 +103,8 @@ export default async function handler(req, res) {
         telefono_cliente: telefonoLimpio,
         estado: estadoNuevo,
         total_abonado: abonoNum,
-        saldo_restante: saldoRestante
+        saldo_restante: saldoRestante,
+        asesor: nombreAsesor // 🌟 NUEVA COLUMNA
       })
       .eq('numero', numeroLimpio);
 
