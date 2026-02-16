@@ -6,7 +6,7 @@
   <title>Admin Los Plata</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    /* TODO TU CSS ORIGINAL SE MANTIENE INTACTO */
+    /* ESTILOS EXACTOS DE TU VERSIÓN ORIGINAL */
     :root{
       --ink:#244a3e; --ink-2:#3c6b5d; --muted:#7ea094; --bg:#f6fbf9; --card:#ffffff;
       --ring:#dfe9e5; --ring-strong:#cfe3dc; --pill:#edf7f2; --accent:#3cb579; --accent-2:#1e8f5c;
@@ -32,28 +32,38 @@
     .hero-mode .hero-welcome-text { opacity: 1; visibility: visible; transform: translateY(0); position: relative; top: auto; }
     .user-info-bar { text-align: center; margin-top: 8px; font-size: 0.85rem; transition: all 0.5s ease; }
     .hero-mode .user-info-bar { position: fixed; top: 20px; right: 20px; margin: 0; background: rgba(255,255,255,0.8); padding: 5px 15px; border-radius: 20px; }
+    
     .section-card { background: #fff; border: 1px solid var(--ring); border-radius: 24px; box-shadow: var(--shadow); padding: 28px 32px; margin-bottom: 24px; }
     .section-title { font-size: 1.1rem; font-weight: 800; color: var(--ink); text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 20px 0; padding-bottom: 12px; border-bottom: 2px solid var(--ring); display: flex; align-items: center; justify-content: space-between; }
+    
     .vertical-form { display: flex; flex-direction: column; gap: 16px; }
     label { display: block; font-weight: 700; color: var(--ink-2); margin: 0 0 8px; font-size: 0.9rem; }
     .field { display: flex; align-items: center; gap: 10px; background: #fcfdfd; border: 1px solid var(--ring); border-radius: 12px; padding: 12px 14px; transition: border-color .2s; }
     .field:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(60,181,121,0.1); }
     .pill { flex: 1; border: 0; outline: 0; font-size: 16px; background: transparent; color: var(--ink); width: 100%; }
+    
     .num-wrap { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
     .num-pill { background: var(--pill); border: 1px solid var(--ring-strong); border-radius: 14px; padding: 8px 12px; display: flex; gap: 10px; align-items: center; width: fit-content; }
     .num-pill input { width: 60px; border: 0; outline: 0; background: transparent; font-size: 18px; font-weight: 700; color: var(--accent-2); text-align: center; }
-    .chip-del { border: none; background: var(--danger-bg); color: #d64536; font-weight: 700; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; }
+    .chip-del { border: none; background: var(--danger-bg); color: #d64536; font-weight: 700; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .btn-add { border: 2px dashed var(--accent); background: rgba(60,181,121,0.05); color: var(--accent-2); border-radius: 12px; padding: 8px 16px; font-weight: 700; cursor: pointer; transition: all .2s; }
+
     .cta { display: block; width: 100%; border: none; border-radius: 12px; padding: 14px; font-weight: 700; font-size: 1rem; background: linear-gradient(180deg, var(--accent), var(--accent-2)); color: #fff; box-shadow: 0 10px 20px rgba(60,181,121,.25); cursor: pointer; text-align: center; margin-top: 10px; }
     .cta:active { transform: scale(0.98); }
+
     .modal-overlay { position: fixed; inset: 0; background: rgba(36, 74, 62, 0.4); backdrop-filter: blur(3px); z-index: 2000; display: none; align-items: center; justify-content: center; }
     .modal-card { background: #fff; width: 90%; max-width: 400px; border-radius: 26px; padding: 32px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
     #loginOverlay { background: #f6fbf9; z-index: 10000; display: flex; } 
     .hint { margin-top: 12px; text-align: center; font-weight: 600; color: #3c6b5d; font-size: 0.95rem; }
     .hint.err { color: #e74c3c; }
+    
     .mode-switch { display: flex; background: #fff; border-radius: 16px; padding: 6px; margin-bottom: 24px; border: 1px solid var(--ring); box-shadow: var(--shadow); }
     .mode-btn { flex: 1; border: none; background: transparent; padding: 12px; border-radius: 12px; font-weight: 700; color: var(--muted); cursor: pointer; transition: all 0.2s; font-size: 0.95rem; }
     .mode-btn.active { background: var(--pill); color: var(--accent-2); box-shadow: 0 2px 8px rgba(60,181,121,0.1); border: 1px solid var(--ring-strong); }
+    
+    .ocr-drop { border:2px dashed #cfe3dc; background:#fbfdfc; border-radius:16px; padding:15px; text-align:center; font-weight:700; color:var(--ink-2); cursor:pointer; margin-bottom: 10px; font-size: 0.85rem;}
+    .ocr-drop:hover { border-color:var(--accent); background:#f2faf5; }
+
     .view-section { display: none; animation: fadeIn 0.3s ease; }
     .view-section.active { display: block; }
     @keyframes fadeIn{from{opacity:0} to{opacity:1}}
@@ -64,7 +74,7 @@
   <div id="loginOverlay" class="modal-overlay">
     <div class="modal-card">
       <h1>🔐 Acceso</h1>
-      <p style="color:#7ea094;">Ingresa tu clave de asesor</p>
+      <p style="color:#7ea094;">Ingresa tu clave de administrador</p>
       <div class="field" style="margin-bottom:20px;">
         <input id="loginPwd" type="password" class="pill" placeholder="Contraseña..." style="text-align:center">
       </div>
@@ -76,11 +86,11 @@
   <div class="top-search-bar hero-mode" id="topBar" style="display:none">
     <div class="hero-welcome-text">
         <div style="font-size: 4rem; margin-bottom: 10px;">👋</div>
-        <h1 style="color:var(--ink); margin:0; font-size: 2rem;">Panel Admin</h1>
-        <p style="color:var(--muted); margin: 8px 0 0 0;">Busca boleta o teléfono</p>
+        <h1 style="color:var(--ink); margin:0; font-size: 2rem;">Sistema Unificado</h1>
+        <p style="color:var(--muted); margin: 8px 0 0 0;">Busca boleta, teléfono o pega datos</p>
     </div>
     <div class="search-container">
-      <input type="text" id="smartInput" class="main-input" placeholder="Escribe para buscar..." autocomplete="off">
+      <input type="text" id="smartInput" class="main-input" placeholder="Escribe para buscar o pegar..." autocomplete="off">
       <button id="btnSearch" class="search-btn">🔍</button>
     </div>
     <div class="user-info-bar">
@@ -115,20 +125,49 @@
 
       <div id="paymentSections" style="display: none;">
         <div class="section-card">
+          <div class="section-title">🔍 Buscar Pago Inteligente</div>
+          <div class="vertical-form">
+            <p style="font-size: 0.8rem; color: #7ea094; margin-top: -10px;">Llena al menos uno de estos datos (Entre más llenes, más exacta será la búsqueda):</p>
+            <div style="display: flex; gap: 10px;">
+              <div style="flex: 1;">
+                <label>📱 Celular (WhatsApp)</label>
+                <div class="field"><input id="t_ref" class="pill" type="tel" placeholder="Ej: 311..."></div>
+              </div>
+              <div style="flex: 1;">
+                <label>💰 Valor</label>
+                <div class="field"><input id="t_monto" class="pill" type="number" placeholder="Ej: 5000"></div>
+              </div>
+            </div>
+            <div>
+              <label>📅 Fecha de la transferencia</label>
+              <div class="field"><input id="t_fecha" class="pill" type="date"></div>
+            </div>
+            <button id="btnBuscarInteligente" type="button" class="cta" style="margin-top:10px;" onclick="buscarTransferenciasUI('btnBuscarInteligente', 't_fecha', 't_monto', 't_ref', 'feedbackTransfer', 'v_referenciaAbono', 'v_primerAbono', 'v_metodoPago')">🔍 Buscar Transferencia</button>
+          </div>
+          <div id="feedbackTransfer" class="hint"></div>
+        </div>
+
+        <div class="section-card">
           <div class="section-title">💰 Detalle del Pago</div>
+          <div id="ocrDrop" class="ocr-drop">
+             📸 Pega la imagen del comprobante aquí (Ctrl+V) para extraer Referencia<br>
+             <span id="ocrStatus" style="color:var(--accent); font-weight:normal;"></span>
+          </div>
+
           <div class="vertical-form">
             <div><label>Valor a Abonar</label><div class="field"><input id="v_primerAbono" class="pill" type="number" min="0" value="0"></div></div>
             <div>
-              <label>Método de Pago</label>
+              <label>Método de Pago / Plataforma</label>
               <div class="field">
-                <input id="v_metodoPago" list="l_metodos" class="pill" type="text" placeholder="Ej: Nequi, Bancolombia, Efectivo">
+                <input id="v_metodoPago" list="l_metodos" class="pill" type="text" placeholder="Ej: Nequi, Bancolombia">
                 <datalist id="l_metodos"><option value="Nequi"></option><option value="Bancolombia"></option><option value="Efectivo"></option></datalist>
               </div>
             </div>
             <div>
-              <label>Referencia</label>
+              <label>Referencia / Cuenta Origen</label>
               <div style="display:flex; gap:10px;">
                 <div class="field" style="flex:1"><input id="v_referenciaAbono" class="pill" type="text"></div>
+                <button id="btnForzarPendiente" type="button" class="cta" style="margin:0; width:auto; padding:0 15px; background:linear-gradient(135deg, #e67e22, #d35400);">⏳</button>
               </div>
             </div>
           </div>
@@ -136,7 +175,7 @@
       </div>
 
       <div class="section-card" style="border-color:var(--accent);">
-          <button id="btnRegistrarVenta" class="cta" style="margin-top:25px; height:50px; font-size:1.1rem; background: #7ea094;">CONFIRMAR SEPARADO ($0)</button>
+          <button id="btnRegistrarVenta" class="cta" style="margin-top:10px; height:50px; font-size:1.1rem; background: #7ea094;">CONFIRMAR SEPARADO ($0)</button>
           <input id="v_contrasena" type="hidden">
       </div>
     </div>
@@ -148,10 +187,28 @@
       </div>
 
       <div class="section-card">
+         <div class="section-title">🔍 Buscar Pago Inteligente</div>
+         <div class="vertical-form">
+            <div style="display: flex; gap: 10px;">
+              <div style="flex: 1;"><label>📱 Celular / Ref</label><div class="field"><input id="t_ref_abono" class="pill" type="tel"></div></div>
+              <div style="flex: 1;"><label>💰 Valor</label><div class="field"><input id="t_monto_abono" class="pill" type="number"></div></div>
+            </div>
+            <div><label>📅 Fecha de la transferencia</label><div class="field"><input id="t_fecha_abono" class="pill" type="date"></div></div>
+            <button id="btnBuscarInteligenteAbono" type="button" class="cta" style="margin-top:10px;" onclick="buscarTransferenciasUI('btnBuscarInteligenteAbono', 't_fecha_abono', 't_monto_abono', 't_ref_abono', 'feedbackTransferAbono', 'a_ref', 'a_monto', 'a_metodo')">🔍 Buscar Transferencia</button>
+         </div>
+         <div id="feedbackTransferAbono" class="hint"></div>
+      </div>
+
+      <div class="section-card">
           <div class="section-title">💰 Nuevo Abono</div>
+          <div id="ocrDropAbono" class="ocr-drop">
+             📸 Pega la imagen del comprobante aquí (Ctrl+V) para extraer Referencia<br>
+             <span id="ocrStatusAbono" style="color:var(--accent); font-weight:normal;"></span>
+          </div>
+
           <div class="vertical-form">
              <div>
-               <label>✅ Selecciona boletas a abonar:</label>
+               <label>✅ Selecciona las boletas a abonar:</label>
                <div id="boletas-checkbox-container" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 5px;"></div>
              </div>
              <div><label>Valor Total a Repartir</label><div class="field"><input type="number" id="a_monto" class="pill" placeholder="0"></div></div>
@@ -160,13 +217,13 @@
                <label>Referencia</label>
                <div style="display:flex; gap:10px;">
                  <div class="field" style="flex:1"><input type="text" id="a_ref" class="pill"></div>
+                 <button id="btnForzarPendienteAbono" type="button" class="cta" style="margin:0; width:auto; padding:0 15px; background:linear-gradient(135deg, #e67e22, #d35400);">⏳</button>
                </div>
              </div>
           </div>
           <button id="btnRegistrarAbono" class="cta" onclick="registrarAbono()" style="margin-top:20px;">REGISTRAR ABONO</button>
       </div>
     </div>
-
   </div>
 
   <div id="modalResult" class="modal-overlay">
@@ -178,8 +235,9 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  
   <script>
-    // --- LÓGICA CORE VERCEL + SUPABASE ---
     const $ = id => document.getElementById(id);
     const feedback = $('searchFeedback');
     const topBar = $('topBar');
@@ -220,60 +278,175 @@
     $('btnLogin').onclick = ()=> verifyLogin($('loginPwd').value);
     $('btnLogout').onclick = ()=> { localStorage.removeItem(STORAGE_KEY); location.reload(); };
     
-    // LOGIN (Simulado en frontend por ahora, la BD rechaza contraseñas malas al guardar)
     function verifyLogin(pwd, auto=false){
       if(!pwd) { if(!auto) alert("Por favor ingresa la contraseña."); return; }
       localStorage.setItem(STORAGE_KEY, pwd); 
-      $('loginOverlay').style.display='none';
-      topBar.style.display='block'; 
-      $('asesorDisplay').textContent = "Conectado"; 
-      $('v_contrasena').value = pwd; 
+      $('loginOverlay').style.display='none'; topBar.style.display='block'; 
+      $('asesorDisplay').textContent = "Conectado"; $('v_contrasena').value = pwd; 
       $('smartInput').focus();
     }
 
+    // ==========================================
+    // PORTAPAPELES MAGICO
+    // ==========================================
     const smartInput = $('smartInput');
+    smartInput.addEventListener('paste', (e) => {
+        const pasteData = (e.clipboardData || window.clipboardData).getData('text');
+        const lines = pasteData.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+        if (lines.length >= 3) {
+            e.preventDefault();
+            activateAppMode(); switchView('view-venta');
+            if(lines.length>0) $('v_nombre').value = lines[0];
+            if(lines.length>1) $('v_apellido').value = lines[1];
+            if(lines.length>2) $('v_ciudad').value = lines[2];
+            if(lines.length>3) {
+                const nums = lines[3].split(',').map(n=>n.replace(/\D+/g,'')).filter(n=>n);
+                numList.innerHTML=''; nums.forEach(n=>numList.appendChild(makeNumPill(n))); if(!nums.length) addDefaultPill();
+            }
+            if(lines.length>4) $('v_telefono').value = lines[4];
+            showModal('✨ Pegado Mágico', 'Datos distribuidos correctamente.'); smartInput.value = '';
+        }
+    });
+
     smartInput.onkeydown = (e)=>{ if(e.key==='Enter') runSearch(); };
     $('btnSearch').onclick = runSearch;
-
     function switchView(id){ document.querySelectorAll('.view-section').forEach(el=>el.classList.remove('active')); $(id).classList.add('active'); }
 
     // ==========================================
-    // 1. MOTOR DE BÚSQUEDA (CONECTADO A VERCEL)
+    // OCR: LECTURA DE COMPROBANTES
     // ==========================================
+    async function preprocessBlobToCanvas(blob){
+      return new Promise((resolve)=>{
+        const img = new Image(); img.onload = ()=>{
+          const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+          const scale = Math.min(1.5, 1200 / Math.max(w,h));
+          const W = Math.round(w*scale), H = Math.round(h*scale);
+          const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+          const ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0, W, H); resolve(cv);
+        }; img.onerror = ()=> resolve(null); img.src = URL.createObjectURL(blob);
+      });
+    }
+    function extractRefFromText(txt){ return (txt.toUpperCase().match(/[A-Z0-9]{6,24}/g) || [])[0] || ''; }
+
+    async function handleOCR(e, statusId, inputId) {
+        var items = (e.clipboardData && e.clipboardData.items) ? e.clipboardData.items : [];
+        for(var i=0; i<items.length; i++){ 
+            var it = items[i];
+            if(it.type && it.type.indexOf('image/') === 0){ 
+                document.getElementById(statusId).textContent = 'Leyendo la imagen, por favor espera... ⏳';
+                var f = it.getAsFile(); 
+                var pre = await preprocessBlobToCanvas(f);
+                var res = await Tesseract.recognize(pre || f, 'spa+eng');
+                var ref = extractRefFromText(res.data.text);
+                if(ref) { 
+                    document.getElementById(statusId).textContent = "¡Referencia extraída: " + ref + " ✅!"; 
+                    document.getElementById(inputId).value = ref; 
+                } else { 
+                    document.getElementById(statusId).textContent = '❌ No se detectó ninguna referencia clara.'; 
+                }
+            }
+        }
+    }
+
+    if ($('ocrDrop')) $('ocrDrop').addEventListener('paste', async (e)=>{ handleOCR(e, 'ocrStatus', 'v_referenciaAbono'); });
+    if ($('ocrDropAbono')) $('ocrDropAbono').addEventListener('paste', async (e)=>{ handleOCR(e, 'ocrStatusAbono', 'a_ref'); });
+
+
+    // ==========================================
+    // BUSCADOR INTELIGENTE DE TRANSFERENCIAS
+    // ==========================================
+    function seleccionarTransferencia(refId, montoId, metodoId, feedbackId, refVal, montoVal, metodoVal) {
+        var refInput = document.getElementById(refId); var montoInput = document.getElementById(montoId); var metodoInput = document.getElementById(metodoId);
+        refInput.value = refVal; montoInput.value = montoVal; metodoInput.value = metodoVal;
+        refInput.readOnly = true; montoInput.readOnly = true; metodoInput.readOnly = true;
+        refInput.style.backgroundColor = "#edf7f2"; montoInput.style.backgroundColor = "#edf7f2"; metodoInput.style.backgroundColor = "#edf7f2";
+        document.getElementById(feedbackId).innerHTML = '<span style="color:#1e8f5c; font-weight:bold;">¡Pago cargado y bloqueado por seguridad! 🔒</span><br><span style="color:#e74c3c; cursor:pointer; font-size:0.8rem; font-weight:bold; text-decoration:underline; display:inline-block; margin-top:5px;" onclick="desbloquearCampos(\'' + refId + '\', \'' + montoId + '\', \'' + metodoId + '\', \'' + feedbackId + '\')">❌ Desbloquear y limpiar datos</span>';
+    }
+
+    function desbloquearCampos(refId, montoId, metodoId, feedbackId) {
+        var refInput = document.getElementById(refId); var montoInput = document.getElementById(montoId); var metodoInput = document.getElementById(metodoId);
+        refInput.readOnly = false; montoInput.readOnly = false; metodoInput.readOnly = false;
+        refInput.value = ""; montoInput.value = ""; metodoInput.value = "";
+        refInput.style.backgroundColor = "transparent"; montoInput.style.backgroundColor = "transparent"; metodoInput.style.backgroundColor = "transparent";
+        if(feedbackId) document.getElementById(feedbackId).innerHTML = '<span style="color:#7ea094; font-size:0.85rem;">Campos desbloqueados.</span>';
+    }
+
+    async function buscarTransferenciasUI(btnId, fechaId, montoIdFiltro, refIdFiltro, feedbackId, targetRefId, targetMontoId, targetMetodoId) {
+        var fechaVal = document.getElementById(fechaId).value; 
+        var montoVal = document.getElementById(montoIdFiltro).value;
+        var refVal = document.getElementById(refIdFiltro).value;
+        var fb = document.getElementById(feedbackId);
+        var btn = document.getElementById(btnId);
+
+        if(!fechaVal && !montoVal && !refVal) { fb.innerHTML = "<span class='hint err'>Ingresa al menos un dato.</span>"; return; }
+
+        var originalTxt = btn.textContent;
+        btn.textContent = "Buscando en Bancos..."; btn.disabled = true; fb.innerHTML = "";
+
+        var payload = { fecha: fechaVal, monto: montoVal, referencia: refVal };
+
+        try {
+            const req = await fetch('/api/admin/transferencias', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            const res = await req.json();
+
+            btn.textContent = originalTxt; btn.disabled = false;
+
+            if(res.status === 'ok') {
+                if(res.lista.length === 0) {
+                    fb.innerHTML = "<span class='hint err'>No se encontró ninguna transferencia con esos datos.</span>";
+                } else {
+                    var html = '<div style="display:grid; gap:8px; margin-top:10px;">';
+                    for(var i=0; i<res.lista.length; i++){
+                        var t = res.lista[i];
+                        var montoFmt = new Intl.NumberFormat('es-CO').format(t.monto);
+                        var refSafe = t.referencia.replace(/'/g, "\\'"); var platSafe = t.plataforma.replace(/'/g, "\\'");
+                        html += '<div onclick="seleccionarTransferencia(\'' + targetRefId + '\', \'' + targetMontoId + '\', \'' + targetMetodoId + '\', \'' + feedbackId + '\', \'' + refSafe + '\', ' + t.monto + ', \'' + platSafe + '\')"';
+                        html += ' style="border:1px solid #dfe9e5; padding:10px; border-radius:10px; cursor:pointer; background:#fff; text-align:left; transition:background 0.2s;"';
+                        html += ' onmouseover="this.style.background=\'#f0f9f4\'" onmouseout="this.style.background=\'#fff\'">';
+                        html += '<div style="font-weight:bold; color:#244a3e;">' + t.plataforma + ' - $' + montoFmt + '</div>';
+                        html += '<div style="font-size:0.8rem; color:#7ea094;">Ref: ' + t.referencia + ' | Fecha: ' + t.fecha + '</div>';
+                        html += '<div style="font-size:0.75rem; color:#e74c3c; font-weight:bold; margin-top:4px;">' + (t.status || 'LIBRE') + '</div>';
+                        html += '</div>';
+                    }
+                    html += '</div>';
+                    fb.innerHTML = html;
+                }
+            } else {
+                fb.innerHTML = "<span class='hint err'>Error: " + res.mensaje + "</span>";
+            }
+        } catch(e) {
+            btn.textContent = originalTxt; btn.disabled = false;
+            fb.innerHTML = "<span class='hint err'>Error de conexión.</span>";
+        }
+    }
+
+
+    // ==========================================
+    // CONEXION A VERCEL (BUSQUEDA, VENTA, ABONO)
+    // ==========================================
+    let esVentaPendiente = false; let esAbonoPendiente = false;
+    $('btnForzarPendiente').onclick = ()=>{ if(!$('v_referenciaAbono').value) return alert('Pon referencia'); esVentaPendiente=true; $('feedbackTransfer').textContent='Modo Pendiente Activo'; };
+    $('btnForzarPendienteAbono').onclick = ()=>{ if(!$('a_ref').value) return alert('Pon referencia'); esAbonoPendiente=true; $('feedbackTransferAbono').textContent='Modo Pendiente Activo'; };
+
     async function runSearch(){
-      const q = smartInput.value.trim();
-      if(!q) return;
+      const q = smartInput.value.trim(); if(!q) return;
       feedback.textContent = "Buscando en Supabase...";
-      
       try {
         const response = await fetch('/api/admin/buscar?q=' + encodeURIComponent(q));
         const res = await response.json();
         feedback.textContent = "";
-
-        if(res.tipo === 'ERROR_SERVIDOR'){
-            showModal('Error del Servidor', res.mensaje); return;
-        }
-        
+        if(res.tipo === 'ERROR_SERVIDOR') return showModal('Error', res.mensaje);
         if(res.tipo !== 'NO_EXISTE') activateAppMode();
-        
-        if(res.tipo==='BOLETA_DISPONIBLE'){
-            switchView('view-venta'); numList.innerHTML=''; numList.appendChild(makeNumPill(res.data.numero)); $('v_nombre').focus();
-        } else if(res.tipo==='BOLETA_OCUPADA'){
-            switchView('view-cliente'); renderClienteInfo([res.data.infoVenta]);
-        } else if(res.tipo==='CLIENTE_ENCONTRADO'){
-            switchView('view-cliente'); renderClienteInfo(res.lista);
-        } else { 
-            $('mTitle').textContent = 'No encontrado'; $('mMsg').textContent = res.mensaje || 'Intenta de nuevo'; $('modalResult').style.display='flex';
-        }
-      } catch (err) {
-        feedback.textContent = "";
-        showModal('Error Crítico', 'El servidor no respondió. Causa: ' + err.message);
-      }
+        if(res.tipo==='BOLETA_DISPONIBLE'){ switchView('view-venta'); numList.innerHTML=''; numList.appendChild(makeNumPill(res.data.numero)); $('v_nombre').focus(); } 
+        else if(res.tipo==='BOLETA_OCUPADA'){ switchView('view-cliente'); renderClienteInfo([res.data.infoVenta]); } 
+        else if(res.tipo==='CLIENTE_ENCONTRADO'){ switchView('view-cliente'); renderClienteInfo(res.lista); } 
+        else { showModal('No encontrado', res.mensaje || 'Intenta de nuevo'); }
+      } catch (err) { feedback.textContent = ""; showModal('Error', err.message); }
     }
 
-    // ==========================================
-    // 2. MOTOR DE VENTAS (CONECTADO A VERCEL)
-    // ==========================================
     $('btnRegistrarVenta').onclick = async ()=>{
        const nums = Array.from(numList.querySelectorAll('input')).map(i=>i.value).filter(v=>v.length===4);
        if(!nums.length) return alert('Falta boleta válida');
@@ -284,106 +457,66 @@
        else { totalMoney=Number($('v_primerAbono').value)||0; ref=$('v_referenciaAbono').value; metodo=$('v_metodoPago').value; }
 
        const perNum = Math.floor(totalMoney/nums.length);
-       const baseData = {
-           nombre:$('v_nombre').value, apellido:$('v_apellido').value, ciudad:$('v_ciudad').value, 
-           telefono:$('v_telefono').value, primerAbono:perNum, 
-           referenciaAbono: ref, metodoPago: metodo, 
-           contrasena:localStorage.getItem(STORAGE_KEY)
-       };
+       const baseData = { nombre:$('v_nombre').value, apellido:$('v_apellido').value, ciudad:$('v_ciudad').value, telefono:$('v_telefono').value, primerAbono:perNum, referenciaAbono: ref, metodoPago: metodo, esPendiente:esVentaPendiente, contrasena:localStorage.getItem(STORAGE_KEY) };
        
        let ok=0, fails=0;
-       
-       // Loop para guardar múltiples boletas
        for (let i=0; i < nums.length; i++) {
-           const payload = {...baseData, numeroBoleta: nums[i]};
            try {
-               const req = await fetch('/api/admin/venta', {
-                   method: 'POST', headers: {'Content-Type': 'application/json'},
-                   body: JSON.stringify(payload)
-               });
+               const req = await fetch('/api/admin/venta', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({...baseData, numeroBoleta: nums[i]}) });
                const res = await req.json();
                if(res.status === 'ok') ok++; else fails++;
            } catch(e) { fails++; }
        }
-
        $('btnRegistrarVenta').textContent='REGISTRAR VENTA'; $('btnRegistrarVenta').disabled=false;
        showModal('Resumen', `Registradas: ${ok} / Errores: ${fails}`);
-       
        if(fails===0){ 
-           $('v_nombre').value=''; $('v_apellido').value=''; $('v_telefono').value=''; $('v_ciudad').value=''; 
-           $('v_primerAbono').value=0; $('v_referenciaAbono').value=''; $('v_metodoPago').value='';
+           $('v_nombre').value=''; $('v_apellido').value=''; $('v_telefono').value=''; $('v_ciudad').value=''; $('v_primerAbono').value=0; $('v_referenciaAbono').value=''; $('v_metodoPago').value='';
+           desbloquearCampos('v_referenciaAbono', 'v_primerAbono', 'v_metodoPago', 'feedbackTransfer');
            numList.innerHTML=''; addDefaultPill(); activateHeroMode();
        }
     };
 
-    // ==========================================
-    // 3. MOTOR DE ABONOS (CONECTADO A VERCEL)
-    // ==========================================
     async function registrarAbono() {
         const btn = document.getElementById('btnRegistrarAbono');
         const checkboxes = document.querySelectorAll('.boleta-pay-checkbox:checked');
         const boletasTarget = Array.from(checkboxes).map(c => c.value);
-        
         if(boletasTarget.length === 0) return alert("Selecciona al menos una boleta.");
-        
-        const montoTotal = Number($('a_monto').value);
-        const ref = $('a_ref').value;
-        const metodo = $('a_metodo').value;
-        
+        const montoTotal = Number($('a_monto').value); const ref = $('a_ref').value; const metodo = $('a_metodo').value;
         if(montoTotal <= 0) return alert("El monto debe ser mayor a 0.");
         
         const montoPorBoleta = Math.floor(montoTotal / boletasTarget.length);
+        const textoOriginal = btn.textContent; btn.textContent = 'Procesando...'; btn.disabled = true;
 
-        const textoOriginal = btn.textContent;
-        btn.textContent = 'Procesando...'; btn.disabled = true;
-
-        const basePayload = {
-            metodoPago: metodo, referencia: ref || 'efectivo',
-            contrasena: localStorage.getItem(STORAGE_KEY)
-        };
-
+        const basePayload = { metodoPago: metodo, referencia: ref || 'efectivo', esPendiente: esAbonoPendiente, contrasena: localStorage.getItem(STORAGE_KEY) };
         let ok = 0; let fails = 0;
 
         for (let i=0; i < boletasTarget.length; i++) {
-            const payload = { ...basePayload, numeroBoleta: boletasTarget[i], valorAbono: montoPorBoleta };
             try {
-               const req = await fetch('/api/admin/abono', {
-                   method: 'POST', headers: {'Content-Type': 'application/json'},
-                   body: JSON.stringify(payload)
-               });
+               const req = await fetch('/api/admin/abono', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ ...basePayload, numeroBoleta: boletasTarget[i], valorAbono: montoPorBoleta }) });
                const res = await req.json();
                if(res.status === 'ok') ok++; else fails++;
             } catch(e) { fails++; }
         }
-
         btn.textContent = textoOriginal; btn.disabled = false;
-        
         if (fails === 0) {
             showModal('Éxito', `Abono registrado correctamente.`);
             $('a_monto').value = ''; $('a_ref').value = ''; $('a_metodo').value = '';
-            runSearch(); // Recargar cliente
-        } else {
-            showModal('Aviso', `Se registraron ${ok}, fallaron ${fails}.`);
-        }
+            desbloquearCampos('a_ref', 'a_monto', 'a_metodo', 'feedbackTransferAbono');
+            runSearch(); 
+        } else { showModal('Aviso', `Se registraron ${ok}, fallaron ${fails}.`); }
     }
 
-    // RENDERIZAR VISTA DEL CLIENTE
     function renderClienteInfo(lista){
-       var c = lista[0];
-       var totalAbonadoGlobal = 0; var totalRestanteGlobal = 0; var boletasStr = [];
-       var checkboxContainer = document.getElementById('boletas-checkbox-container');
-       if(checkboxContainer) checkboxContainer.innerHTML = '';
+       var c = lista[0]; var totalAbonadoGlobal = 0; var totalRestanteGlobal = 0; var boletasStr = [];
+       var checkboxContainer = document.getElementById('boletas-checkbox-container'); if(checkboxContainer) checkboxContainer.innerHTML = '';
        var fmt = function(n) { return new Intl.NumberFormat('es-CO').format(n); };
 
        for(var i=0; i<lista.length; i++){
-           var b = lista[i];
-           var restante = Number(b.restante) || 0;
+           var b = lista[i]; var restante = Number(b.restante) || 0;
            totalAbonadoGlobal += (Number(b.totalAbonos) || 0); totalRestanteGlobal += restante;
            boletasStr.push(b.numero);
-           
            if(checkboxContainer) {
-               var label = document.createElement('label');
-               label.style.cssText = "display:flex; align-items:center; gap:8px; background:var(--pill); padding:8px 14px; border-radius:12px; border:1px solid var(--ring-strong); cursor:pointer; font-size:0.9rem;";
+               var label = document.createElement('label'); label.style.cssText = "display:flex; align-items:center; gap:8px; background:var(--pill); padding:8px 14px; border-radius:12px; border:1px solid var(--ring-strong); cursor:pointer; font-size:0.9rem;";
                var chk = document.createElement('input'); chk.type = 'checkbox'; chk.value = b.numero; chk.className = 'boleta-pay-checkbox'; chk.checked = true;
                var span = document.createElement('span'); span.innerHTML = '<b>' + b.numero + '</b> (Resta $' + fmt(restante) + ')'; span.style.color = "var(--ink-2)";
                label.appendChild(chk); label.appendChild(span); checkboxContainer.appendChild(label);
@@ -395,10 +528,6 @@
        html += '  <div><div style="font-size:0.65rem; color:#7ea094; font-weight:700;">BOLETAS</div><div style="font-weight:800; color:var(--ink); font-size:0.95rem;">' + boletasStr.join(', ') + '</div></div>';
        html += '  <div style="text-align:right;"><div style="font-size:0.65rem; color:#7ea094; font-weight:700;">TELÉFONO</div><div style="font-weight:800; color:#1e8f5c; font-size:0.95rem;">' + c.telefono + '</div></div>';
        html += '</div>';
-       html += '<div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:6px;">';
-       html += '  <input id="c_nombre" type="text" style="background:#fff; border:1px solid #dfe9e5; padding:6px 8px; border-radius:8px; width:100%; font-size:0.85rem;" value="' + c.nombre + '" disabled>';
-       html += '  <input id="c_apellido" type="text" style="background:#fff; border:1px solid #dfe9e5; padding:6px 8px; border-radius:8px; width:100%; font-size:0.85rem;" value="' + c.apellido + '" disabled>';
-       html += '</div>';
        html += '<div style="display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid #cfe3dc; border-radius:8px; padding:6px 8px;">';
        html += '  <div style="display:flex; gap:10px; align-items:center;">';
        html += '    <div><span style="font-size:0.6rem; color:#7ea094; display:block;">ABONADO</span><span style="font-size:0.9rem; font-weight:800; color:var(--ink);">$' + fmt(totalAbonadoGlobal) + '</span></div>';
@@ -409,26 +538,15 @@
        html += '</div></div>';
        
        document.getElementById('cliente-info-render').innerHTML = html;
-
        document.getElementById('btnCopiar').addEventListener('click', async function() {
            var links = lista.map(b => window.location.origin + '/boleta/' + b.numero).join('\n');
-           try { await navigator.clipboard.writeText(links); alert('Links copiados al portapapeles'); } catch(e){ alert('Error copiando'); }
+           try { await navigator.clipboard.writeText(links); alert('Links copiados'); } catch(e){}
        });
     }
 
-    // Funciones UI Generales
     function showModal(title,msg){ $('mTitle').textContent=title; $('mMsg').textContent=msg; $('modalResult').style.display='flex'; }
     $('mBtn').onclick = function(){ $('modalResult').style.display='none'; };
-    
-    document.addEventListener('DOMContentLoaded', function() {
-        initLogin();
-        if(typeof addDefaultPill === 'function') addDefaultPill();
-        
-        // Listener para que el botón Enter del login funcione
-        $('loginPwd').addEventListener('keyup', function(e) {
-            if (e.key === 'Enter') verifyLogin(this.value);
-        });
-    });
+    document.addEventListener('DOMContentLoaded', function() { initLogin(); if(typeof addDefaultPill === 'function') addDefaultPill(); $('loginPwd').addEventListener('keyup', function(e) { if (e.key === 'Enter') verifyLogin(this.value); }); });
   </script>
 </body>
 </html>
