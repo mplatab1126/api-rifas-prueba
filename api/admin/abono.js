@@ -86,11 +86,10 @@ export default async function handler(req, res) {
     const { error: updateError } = await supabase
       .from('boletas')
       .update({
-        telefono_cliente: null,
-        estado: 'LIBRE',
-        total_abonado: 0,
-        saldo_restante: 150000,
-        asesor: null // 🌟 LIMPIAMOS EL ASESOR
+        total_abonado: nuevoTotalAbonado,
+        saldo_restante: nuevoSaldoRestante,
+        estado: estadoNuevo,
+        asesor: nombreAsesor // 🌟 ANOTAMOS EL ASESOR
       })
       .eq('numero', numeroLimpio);
 
