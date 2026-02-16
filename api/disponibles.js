@@ -18,49 +18,41 @@ export default async function handler(req, res) {
   );
 
   try {
-    // 3. Traemos las boletas libres (sin límite pequeño, para garantizar que haya de todas las series)
-    const { data: libres, error } = await supabase
-      .from('boletas')
-      .select('numero')
-      .is('telefono_cliente', null);
+    let seleccionados = [];
 
-    if (error) throw error;
+    // 3. Hacemos un recorrido exacto del 0 al 9
+    for (let i = 0; i <= 9; i++) {
+      // Le pedimos a Supabase específicamente boletas que empiecen con el número 'i'
+      const { data: libresSerie, error } = await supabase
+        .from('boletas')
+        .select('numero')
+        .is('telefono_cliente', null)
+        .like('numero', `${i}%`) // Filtro mágico: busca que empiece por i (ej. 0%, 1%, etc)
+        .limit(50); // Traemos hasta 50 opciones de esta serie para que haya variedad
 
-    if (!libres || libres.length === 0) {
+      if (error) throw error;
+
+      if (libresSerie && libresSerie.length > 0) {
+        // Barajamos solo estas opciones de la serie actual
+        libresSerie.sort(() => 0.5 - Math.random());
+        // Agarramos las 5 primeras
+        const elegidos = libresSerie.slice(0, 5).map(b => b.numero);
+        // Las guardamos en nuestra bolsa principal
+        seleccionados.push(...elegidos);
+      }
+    }
+
+    if (seleccionados.length === 0) {
       return res.status(200).json({ numeros_disponibles: "No hay boletas disponibles en este momento." });
     }
 
-    // 4. Creamos los "cajones" para separar las boletas según su primer número (0 al 9)
-    const series = { '0':[], '1':[], '2':[], '3':[], '4':[], '5':[], '6':[], '7':[], '8':[], '9':[] };
-    
-    // Clasificamos cada boleta en su cajón correspondiente
-    for (let b of libres) {
-      const primerDigito = b.numero.charAt(0);
-      if (series[primerDigito]) {
-        series[primerDigito].push(b.numero);
-      }
-    }
-
-    let seleccionados = [];
-
-    // 5. Entramos a cada cajón, los barajamos y sacamos 5 de cada uno
-    for (let i = 0; i <= 9; i++) {
-      let grupo = series[i.toString()];
-      if (grupo && grupo.length > 0) {
-        // Barajamos este grupito al azar
-        grupo.sort(() => 0.5 - Math.random());
-        // Tomamos los primeros 5 (o los que haya, si quedan menos de 5 en esa serie)
-        seleccionados.push(...grupo.slice(0, 5));
-      }
-    }
-
-    // 6. Ahora que tenemos los 50 números, los ordenamos matemáticamente de MENOR a MAYOR
+    // 4. Ordenamos todos los 50 números recolectados matemáticamente de menor a mayor
     seleccionados.sort((a, b) => parseInt(a) - parseInt(b));
 
-    // 7. Los unimos todos en un solo texto separado por guiones
+    // 5. Los unimos todos con un guión
     const textoFinal = seleccionados.join(' - ');
 
-    // 8. Se lo enviamos a Chatea Pro
+    // 6. Se lo enviamos a Chatea Pro
     res.status(200).json({
       numeros_disponibles: textoFinal
     });
