@@ -46,9 +46,8 @@ export default async function handler(req, res) {
         .eq('numero', queryLimpio)
         .single();
 
-      // Si hay error porque NO EXISTE la boleta en BD, significa que está totalmente libre
       if (error && error.code === 'PGRST116') { 
-         return res.status(200).json({ tipo: 'BOLETA_DISPONIBLE', data: { numero: queryLimpio } });
+      return res.status(200).json({ tipo: 'NO_EXISTE', mensaje: '❌ Esta boleta no pertenece a tu inventario.' });
       }
       if (error) throw error;
 
