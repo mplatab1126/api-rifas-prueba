@@ -600,10 +600,22 @@
            boletasStr.push(b.numero);
            
            if(checkboxContainer) {
-               var label = document.createElement('label'); label.style.cssText = "display:flex; align-items:center; gap:8px; background:var(--pill); padding:8px 14px; border-radius:12px; border:1px solid var(--ring-strong); cursor:pointer; font-size:0.9rem;";
+               var label = document.createElement('label'); label.style.cssText = "display:flex; align-items:center; gap:8px; background:var(--pill); padding:8px 14px; border-radius:12px; border:1px solid var(--ring-strong); cursor:pointer; font-size:0.9rem; width:100%;";
                var chk = document.createElement('input'); chk.type = 'checkbox'; chk.value = b.numero; chk.className = 'boleta-pay-checkbox'; chk.checked = true;
                var span = document.createElement('span'); span.innerHTML = '<b>' + b.numero + '</b> (Resta $' + fmt(restante) + ')'; span.style.color = "var(--ink-2)";
-               label.appendChild(chk); label.appendChild(span); checkboxContainer.appendChild(label);
+               
+               // 🌟 NUEVO BOTÓN: Liberar Boleta
+               var btnLiberar = document.createElement('button');
+               btnLiberar.type = 'button';
+               btnLiberar.innerHTML = '⚠️ Liberar';
+               btnLiberar.style.cssText = "margin-left:auto; background:#fbe9e8; color:#e74c3c; border:1px solid #e74c3c; padding:4px 10px; border-radius:8px; font-size:0.75rem; font-weight:bold; cursor:pointer;";
+               btnLiberar.onclick = function(e) {
+                   e.preventDefault(); // Evita que se marque el checkbox
+                   e.stopPropagation();
+                   confirmarLiberarBoleta(b.numero); // Llama a la función destructora
+               };
+
+               label.appendChild(chk); label.appendChild(span); label.appendChild(btnLiberar); checkboxContainer.appendChild(label);
            }
        }
 
@@ -727,9 +739,37 @@
     $('mBtn').onclick = function(){ $('modalResult').style.display='none'; };
     document.addEventListener('DOMContentLoaded', function() { initLogin(); if(typeof addDefaultPill === 'function') addDefaultPill(); $('loginPwd').addEventListener('keyup', function(e) { if (e.key === 'Enter') verifyLogin(this.value); }); });
   
-    // ==========================================
-// LECTOR AUTOMÁTICO DE EXTRACTOS BANCOLOMBIA
-// ==========================================
+
+async function confirmarLiberarBoleta(numero) {
+        if(!confirm(`⚠️ ATENCIÓN PELIGRO: ¿Estás seguro de que quieres LIBERAR la boleta ${numero}? \n\nSe borrará todo su historial de pagos, se liberarán las transferencias asociadas del banco y la boleta podrá ser vendida a otra persona. ¡Esta acción no se puede deshacer!`)) return;
+        
+        const btn = document.getElementById('btnRegistrarAbono'); // Usamos este botón para dar feedback visual
+        const originalText = btn.textContent;
+        btn.textContent = `Liberando boleta ${numero}...`;
+        btn.disabled = true;
+        
+        try {
+            const req = await fetch('/api/admin/liberar-boleta', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ numeroBoleta: numero, contrasena: localStorage.getItem(STORAGE_KEY) })
+            });
+            const res = await req.json();
+            
+            if(res.status === 'ok') {
+                showModal('✅ Boleta Liberada', res.mensaje);
+                // Cerramos el cliente y volvemos al inicio porque los datos en pantalla ya no son válidos
+                activateHeroMode(); 
+            } else {
+                showModal('❌ Error', res.mensaje);
+            }
+        } catch(e) {
+            showModal('❌ Error', 'Error de conexión.');
+        }
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
+    
 async function procesarCSVBancos() {
     const fileInput = document.getElementById('fileBancos');
     if (!fileInput.files.length) return alert("Por favor, selecciona un archivo CSV primero.");
