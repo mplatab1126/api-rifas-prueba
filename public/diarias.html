@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
+    <style>
+      /* --- PREVENCIÓN DE ENLACES AZULES EN MÓVILES --- */
+      a[href^="tel"] { color: inherit !important; text-decoration: none !important; }
+
+      /* --- ESTILOS GENERALES --- */
+      body { 
+        font-family: 'Poppins', sans-serif; 
+        background-color: #f4f7f9; 
+        margin: 0; padding: 0; color: #333;
+        padding-top: 48px; padding-bottom: 100px; 
+        -webkit-tap-highlight-color: transparent;
+      }
+      
+      .container { max-width: 480px; margin: 0 auto; background: transparent; min-height: 100vh; display: flex; flex-direction: column; position: relative; }
+
+      /* --- LOGO BAR --- */
+      .top-logo-bar {
+        background: linear-gradient(to bottom, #051e11, #0a3d24); text-align: center;
+        padding: 12px 20px; border-radius: 0 0 25px 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      }
+      .logo-img { max-width: 85px; height: auto; display: block; margin: 0 auto; }
+
+      /* --- TÍTULO PRINCIPAL --- */
+      .hero-title-area { text-align: center; padding: 25px 20px 10px 20px; }
+      .hero-title-area h1 {
+        margin: 0; font-family: 'Montserrat', sans-serif; font-size: 38px; font-weight: 900;
+        text-transform: uppercase; line-height: 1.1; letter-spacing: 0.5px;
+        background: linear-gradient(135deg, #0a3d24 0%, #1b5e20 40%, #d4af37 100%);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; color: transparent;
+      }
+      .info-sorteo-container { display: flex; justify-content: center; margin-top: 12px; }
+      .badge-sorteo { background-color: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; padding: 5px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+
+      /* --- GANCHO 1: TEMPORIZADOR DE URGENCIA (FIJO ARRIBA) --- */
+      .sticky-timer {
+        position: fixed; top: 0; left: 0; width: 100%;
+        background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); z-index: 950; display: flex; justify-content: center; align-items: center;
+        padding: 10px 15px; box-shadow: 0 4px 15px rgba(229, 62, 62, 0.08); border-bottom: 1px solid #fed7d7; gap: 15px; box-sizing: border-box;
+      }
+      .timer-title { font-size: 12px; font-weight: 800; color: #c53030; text-transform: uppercase; display: flex; align-items: center; gap: 5px; margin: 0;}
+      .timer-digits { display: flex; gap: 4px; align-items: center; }
+      .timer-box { background: #c53030; color: white; padding: 4px 6px; border-radius: 6px; font-size: 14px; font-weight: 900; font-family: 'Montserrat', sans-serif; min-width: 24px; text-align: center; line-height: 1; }
+      .timer-colon { font-weight: 900; color: #c53030; font-size: 14px; }
+
+      /* --- GANCHO 2: NOTIFICACIÓN DE VENTAS EN VIVO (TOAST) --- */
+      .live-toast {
+        position: fixed; top: 65px; left: 50%; transform: translateX(-50%) translateY(-20px);
+        background: rgba(0, 0, 0, 0.85); color: white; padding: 10px 15px; border-radius: 50px; display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 500;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 940; opacity: 0; visibility: hidden; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); white-space: nowrap; backdrop-filter: blur(4px);
+      }
+      .live-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; visibility: visible; }
+      .live-toast-icon { background: #25d366; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;}
+      .live-toast b { color: #4ade80; }
+
+      /* --- ESTADÍSTICAS UNIFICADAS --- */
+      .stats-unified-strip { display: flex; background: #ffffff; border-radius: 16px; margin: 0 20px 45px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; overflow: hidden; }
+      .stat-block { flex: 1; padding: 12px 5px; text-align: center; display: flex; flex-direction: column; justify-content: center; }
+      .stat-divider { width: 1px; background-color: #f1f5f9; margin: 10px 0; }
+      .stat-block.highlight { background: linear-gradient(135deg, #1b5e20 0%, #0a3d24 100%); }
+      .stat-label { font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+      .stat-value { font-size: 16px; font-weight: 900; color: #1b5e20; white-space: nowrap; letter-spacing: -0.5px; }
+      .stat-block.highlight .stat-label { color: #c8e6c9; }
+      .stat-block.highlight .stat-value { color: #ffffff; }
+
+      /* --- EXPLICACIÓN DE LA DINÁMICA --- */
+      .dinamica-section { padding: 0 20px; margin-bottom: 45px; }
+      .section-title-elegant { margin: 0 0 8px 0; font-size: 17px; color: #1b5e20; font-weight: 800; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; }
+      .section-subtitle-elegant { margin: 0 0 25px 0; font-size: 14px; color: #64748b; text-align: center; font-weight: 500; }
+      .bolotas-cayendo { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+      .bolota { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #2b6039 0%, #11331c 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; border: 2px solid #e8f5e9; box-shadow: 0 4px 8px rgba(27, 94, 32, 0.2); }
+      .premios-dinamica { display: flex; flex-direction: column; gap: 8px; }
+      .premio-fila { display: flex; align-items: center; background: #ffffff; border-radius: 12px; padding: 12px 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; }
+      .premio-badge { width: 38px; height: 38px; border-radius: 10px; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; margin-right: 12px; flex-shrink: 0; }
+      .bg-badge-2 { background: linear-gradient(135deg, #1b5e20, #0a2e0e); }
+      .premio-detalle { flex: 1; font-size: 14px; color: #475569; font-weight: 600; }
+      .premio-valor { font-size: 16px; font-weight: 800; color: #334155; }
+      .premio-valor.highlight { color: #1b5e20; font-size: 18px; }
+
+      /* --- NÚMEROS EN TARJETA PREMIUM --- */
+      .numbers-card {
+        background: #ffffff; border: 2px solid #a5d6a7; border-radius: 20px;
+        margin: 0 20px 45px 20px; padding: 25px 20px; box-shadow: 0 10px 30px rgba(27, 94, 32, 0.08); position: relative; transition: all 0.5s ease;
+      }
+      @keyframes popAttention {
+        0% { transform: scale(1); box-shadow: 0 10px 30px rgba(27, 94, 32, 0.08); border-color: #a5d6a7; }
+        50% { transform: scale(1.03); box-shadow: 0 20px 45px rgba(27, 94, 32, 0.3); border-color: #1b5e20; }
+        100% { transform: scale(1); box-shadow: 0 12px 35px rgba(27, 94, 32, 0.15); border-color: #4ade80; }
+      }
+      .animar-resalte { animation: popAttention 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+      .numbers-title { text-align: center; font-size: 18px; font-weight: 900; color: #475569; margin: 0 0 20px 0; text-transform: uppercase; }
+      .grid-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+      .btn-numero { width: 65px; height: 65px; border: none; border-radius: 14px; font-family: 'Poppins', sans-serif; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+      .disponible { background-color: #ffffff; color: #2e7d32; border: 1px solid #c8e6c9; font-size: 24px; font-weight: 700; }
+      .seleccionado { background-color: #ff9800 !important; color: white !important; border-color: #f57c00 !important; transform: scale(1.05); box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3); }
+      .ocupado { background-color: #e2e8f0; color: #94a3b8; cursor: default; box-shadow: none;}
+      .info-mini { font-size: 9px; font-weight: 600; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #64748b; margin-top: 2px; }
+
+      /* --- DEMÁS ESTILOS MANTENIDOS --- */
+      .card-oracle { background: linear-gradient(135deg, #f8faff 0%, #eef2ff 100%); border: 1px solid #d0dfff; border-radius: 20px; margin: 0 20px 45px 20px; padding: 25px 20px; box-shadow: 0 8px 25px rgba(37, 117, 252, 0.08); position: relative; text-align: center; overflow: hidden; }
+      .card-oracle::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(90deg, #6a11cb, #2575fc); }
+      .oracle-title { margin: 0 0 8px 0; font-family: 'Montserrat', sans-serif; font-size: 18px; font-weight: 900; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.5px; }
+      .btn-ai-oracle { background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%); color: white; border: none; padding: 12px 24px; border-radius: 50px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(37, 117, 252, 0.3); transition: transform 0.2s; font-size: 14px; margin: 10px auto 0 auto; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Poppins', sans-serif; }
+      .oracle-textarea { width: 100%; padding: 12px; border: 2px solid #d0dfff; border-radius: 12px; font-size: 16px; background: #fff; outline: none; font-family: 'Poppins', sans-serif; resize: none; box-sizing: border-box; margin-bottom: 15px; }
+      .oracle-result-box { margin-top: 15px; padding: 15px; background: #fff; border-radius: 12px; border: 1px dashed #aecbfa; display: none; }
+      .oracle-numbers { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+      .btn-oracle-num { background: #fff; border: 2px solid #2575fc; color: #2575fc; font-weight: 800; padding: 8px 15px; border-radius: 12px; cursor: pointer; font-size: 16px; }
+
+      .payment-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; margin: 0 20px 45px 20px; padding: 25px 20px; box-shadow: 0 8px 25px rgba(27, 94, 32, 0.04); text-align: center; }
+      .payment-grid { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 20px; }
+      .pay-pill { width: 250px; padding: 12px 20px; border-radius: 16px; display: flex; align-items: center; justify-content: center; gap: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: left; box-sizing: border-box;}
+      .pay-icon { display: flex; align-items: center; justify-content: center; }
+      .pay-icon svg { width: 24px; height: 24px; fill: currentColor; }
+      .pay-text { display: flex; flex-direction: column; width: 110px; }
+      .pay-name { font-size: 16px; font-weight: 800; line-height: 1.1; margin-bottom: 2px; }
+      .pay-number { font-size: 14px; font-weight: 500; line-height: 1; opacity: 0.9; letter-spacing: 0.5px; }
+      .pill-nequi { background-color: #240a38; color: #ffffff; } .pill-nequi .pay-icon { color: #ff00e5; }
+      .pill-llave { background-color: #1e293b; color: #ffffff; } .pill-llave .pay-icon { color: #d4af37; }
+      .pill-daviplata { background-color: #ed1c24; color: #ffffff; } .pill-daviplata .pay-icon { color: #ffffff; }
+
+      .trust-badges-container { display: flex; justify-content: center; gap: 15px; margin: 0 20px 45px 20px; }
+      .trust-badge { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+      .trust-badge svg { width: 16px; height: 16px; fill: #1b5e20; }
+
+      .whatsapp-list-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; margin: 0 20px 45px 20px; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05); overflow: hidden; }
+      .wa-header { background: #f8fafc; padding: 15px 20px; border-bottom: 1px solid #e2e8f0; text-align: center; }
+      .wa-header-title { font-size: 16px; font-weight: 800; color: #0a3d24; margin: 0 0 3px 0; }
+      .wa-header-sub { font-size: 13px; color: #64748b; margin: 0; }
+      .wa-chat-item { display: flex; padding: 18px 20px; border-bottom: 1px solid #f1f5f9; align-items: center; }
+      .wa-avatar { width: 50px; height: 50px; border-radius: 50%; background: #e8f5e9; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-right: 15px; flex-shrink: 0; border: 1px solid #c8e6c9; }
+      .wa-info { flex: 1; overflow: hidden; }
+      .wa-top-line { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3px; }
+      .wa-contact-details { display: flex; flex-direction: column; }
+      .wa-name { font-size: 16px; font-weight: 700; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .wa-phone { font-size: 12px; color: #64748b; font-weight: 500; }
+      .wa-time { font-size: 12px; color: #25d366; font-weight: 500; margin-top: 2px; }
+      .wa-bottom-line { display: flex; justify-content: space-between; align-items: center; margin-top: 2px; }
+      .wa-msg { font-size: 14px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; }
+      .wa-badge { background-color: #25d366; color: white; font-size: 11px; font-weight: bold; height: 20px; min-width: 20px; padding: 0 5px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+
+      .sticky-progress { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(8px); padding: 10px 20px 15px 20px; box-sizing: border-box; border-top: 1px solid #e2e8f0; box-shadow: 0 -4px 20px rgba(0,0,0,0.06); z-index: 850; }
+      .sticky-progress-text { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+      .urgency-text { font-size: 13px; font-weight: 800; color: #d9700b; }
+      .urgency-numbers { font-size: 12px; color: #64748b; font-weight: 600; }
+      .progress-track { width: 100%; height: 6px; background-color: #f1f5f9; border-radius: 10px; overflow: hidden; }
+      .progress-fill { height: 100%; background: linear-gradient(90deg, #3cb579, #1b5e20); border-radius: 10px; width: 0%; transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
+
+      .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd; padding: 12px 20px 20px 20px; box-sizing: border-box; display: none; justify-content: space-between; align-items: center; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); z-index: 900; animation: slideUp 0.3s ease; }
+      @keyframes slideUp { from {transform: translateY(100%);} to {transform: translateY(0);} }
+      .resumen-compra { font-size: 14px; color: #555; }
+      .resumen-total { font-size: 20px; font-weight: 800; color: #1b5e20; display: block;}
+      .btn-pagar-float { background-color: #1b5e20; color: white; padding: 12px 25px; border: none; border-radius: 50px; font-weight: bold; font-size: 16px; cursor: pointer; box-shadow: 0 4px 12px rgba(27, 94, 32, 0.3); }
+
+      .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); display: none; justify-content: center; align-items: center; z-index: 1000; }
+      .modal-content { background: white; padding: 25px; border-radius: 20px; width: 85%; max-width: 320px; text-align: left; }
+      .input-group label { display: block; font-size: 13px; margin-bottom: 6px; color: #444; font-weight: 700; }
+      .input-group input { width: 100%; padding: 12px; border: 2px solid #f0f2f5; border-radius: 12px; font-size: 16px; box-sizing: border-box; outline: none; background: #f9f9f9; font-family: 'Poppins', sans-serif; }
+      .input-group { margin-bottom: 15px; }
+      .btn-confirmar { width: 100%; padding: 14px; background-color: #1b5e20; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer;}
+      .btn-cancelar { width: 100%; padding: 12px; background: white; border: none; color: #999; margin-top: 5px; cursor: pointer; font-weight: 600;}
+      .loader { text-align: center; display: none; margin-top: 15px; font-size: 14px; color: #1b5e20;}
+
+      .float-chat-btn { position: fixed; bottom: 85px; right: 20px; width: 55px; height: 55px; background-color: #1b5e20; color: #fff; border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 15px rgba(27, 94, 32, 0.4); z-index: 950; cursor: pointer; }
+      .chat-widget { position: fixed; bottom: 150px; right: 20px; width: 320px; max-width: calc(100% - 40px); background: #fff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); z-index: 960; display: none; flex-direction: column; overflow: hidden; border: 1px solid #e2e8f0; }
+      .chat-header { background: linear-gradient(135deg, #0a3d24 0%, #1b5e20 100%); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+      .close-chat { background: none; border: none; color: white; font-size: 24px; cursor: pointer; line-height: 1; padding: 0;}
+      .chat-body { padding: 15px; height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #f8fafc; }
+      .chat-bubble { padding: 10px 14px; border-radius: 15px; font-size: 13px; max-width: 85%; line-height: 1.4; word-wrap: break-word;}
+      .bubble-bot { background: #e8f5e9; color: #1b5e20; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #c8e6c9;}
+      .bubble-user { background: #1b5e20; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+      .chat-input-area { padding: 10px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; }
+      .chat-input-area input { flex: 1; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 20px; font-size: 16px; outline: none; }
+      .chat-input-area button { background: #1b5e20; color: white; border: none; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;}
+    </style>
+  </head>
+  <body>
+
+    <div class="sticky-timer">
+      <div class="timer-title">Cierre en:</div>
+      <div class="timer-digits">
+        <div class="timer-box" id="t-hours">00</div><div class="timer-colon">:</div>
+        <div class="timer-box" id="t-minutes">00</div><div class="timer-colon">:</div>
+        <div class="timer-box" id="t-seconds">00</div>
+      </div>
+    </div>
+
+    <div id="live-toast" class="live-toast">
+      <div class="live-toast-icon">✓</div>
+      <span id="live-toast-text">Mateo P. compró <b>2 boletas</b></span>
+    </div>
+
+    <div class="container">
+      
+      <div class="top-logo-bar">
+        <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata" class="logo-img">
+      </div>
+
+      <div class="hero-title-area">
+        <h1>RIFA DIARIA</h1>
+        <div class="info-sorteo-container">
+          <div class="badge-sorteo">📅 JUEGA HOY CON CHONTICO DÍA</div>
+        </div>
+      </div>
+
+      <div class="stats-unified-strip">
+        <div class="stat-block">
+          <span class="stat-label">🎟️ Cada Boleta</span>
+          <span class="stat-value">$20.000</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-block highlight">
+          <span class="stat-label">💰 Premio Mayor</span>
+          <span class="stat-value">$1.000.000</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-block">
+          <span class="stat-label">🏆 Ganadores</span>
+          <span class="stat-value">1</span>
+        </div>
+      </div>
+
+      <div class="dinamica-section">
+        <h3 class="section-title-elegant">💡 ¿Cómo ganas?</h3>
+        <p class="section-subtitle-elegant">Juegas con los 2 últimos números de la lotería</p>
+        
+        <div class="bolotas-cayendo">
+          <div class="bolota" style="background: #94a3b8; opacity: 0.5;">X</div>
+          <div class="bolota" style="background: #94a3b8; opacity: 0.5;">X</div>
+          <div class="bolota">5</div>
+          <div class="bolota">8</div>
+        </div>
+
+        <div class="premios-dinamica">
+          <div class="premio-fila">
+            <div class="premio-badge bg-badge-2">58</div>
+            <div class="premio-detalle">Acierto a las 2 últimas cifras</div>
+            <div class="premio-valor highlight">$1.000.000</div>
+          </div>
+          <div class="premio-fila">
+            <p style="font-size: 12px; color: #64748b; margin: 0;">* Ejemplo: Si el Chontico cae 1258, el ganador es el número 58.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="numbers-card" id="tarjeta-numeros">
+        <h2 class="numbers-title">👇 SELECCIONA TU NÚMERO 👇</h2>
+        <div id="filtro-msg" style="display:none; text-align:center; color:#64748b; font-size:14px; font-weight:700; margin-bottom:15px; padding: 0 10px;"></div>
+        <div id="loading" style="text-align:center; color:#999; padding:20px;">Conectando con la base de datos...</div>
+        
+        <div id="grid" class="grid-container"></div>
+      </div>
+
+      <div class="payment-card">
+        <h3 class="section-title-elegant">💳 Medios de Pago Oficiales</h3>
+        <p class="section-subtitle-elegant" style="margin-bottom: 5px;">Realiza tu pago en cualquiera de estas plataformas:</p>
+        <div class="payment-grid">
+          <div class="pay-pill pill-nequi">
+            <div class="pay-icon"><svg viewBox="0 0 24 24"><path d="M4 4h4l8 10V4h4v16h-4L8 10v10H4V4z"/></svg></div>
+            <div class="pay-text">
+              <span class="pay-name">Nequi</span>
+              <span class="pay-number">312 335 4789</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="trust-badges-container">
+        <div class="trust-badge">Sorteo Transparente</div>
+        <div class="trust-badge">Pago 100% Seguro</div>
+      </div>
+
+    </div> <div class="sticky-progress" id="sticky-progress-bar">
+      <div class="sticky-progress-text">
+        <span class="urgency-text">🔥 ¡Casi agotado!</span>
+        <span class="urgency-numbers"><strong id="progress-percent-text">0%</strong> (Quedan <span id="progress-left-text">0</span>)</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill-bar"></div>
+      </div>
+    </div>
+
+    <div id="bottom-bar" class="bottom-bar">
+      <div class="resumen-compra">
+        <span id="qty-text">0 boletas</span>
+        <span id="total-text" class="resumen-total">$0</span>
+      </div>
+      <button class="btn-pagar-float" onclick="abrirModal()">Comprar</button>
+    </div>
+
+    <div id="modal" class="modal-overlay">
+      <div class="modal-content">
+        <h3 style="text-align:center; margin-top:0; color:#333;">Reservar: <span id="num-modal" style="color:#1b5e20;"></span></h3>
+        <div class="input-group">
+          <label>Nombre Completo</label>
+          <input type="text" id="input-nombre" placeholder="Tu nombre aquí">
+        </div>
+        <div class="input-group">
+          <label>Celular / WhatsApp</label>
+          <input type="tel" id="input-telefono" placeholder="Ej: 3001234567" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+        </div>
+        <button class="btn-confirmar" onclick="confirmarReserva()">Confirmar Reserva</button>
+        <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
+        <div id="msg-carga" class="loader">🔄 Guardando reserva...</div>
+      </div>
+    </div>
+
+    <script>
+      const PRECIO_BOLETA = 20000;
+      let numerosSeleccionados = []; 
+
+      window.onload = function() {
+        iniciarTemporizador();
+        iniciarNotificacionesEnVivo();
+        cargarDatosDesdeVercel(); 
+      };
+
+      // 1. CARGAR NÚMEROS DESDE SUPABASE (A TRAVÉS DE VERCEL)
+      function cargarDatosDesdeVercel() {
+        fetch('/api/diarias/numeros')
+          .then(res => res.json())
+          .then(data => {
+            if (data.status === 'ok') {
+              pintarNumeros(data.lista);
+            } else {
+              document.getElementById('loading').innerText = "Error cargando la rifa.";
+            }
+          })
+          .catch(err => {
+            document.getElementById('loading').innerText = "Error de conexión. Recarga la página.";
+          });
+      }
+
+      // 2. DIBUJAR LOS 100 NÚMEROS EN PANTALLA
+      function pintarNumeros(datos) {
+        const contenedor = document.getElementById('grid');
+        const filtroMsg = document.getElementById('filtro-msg');
+        document.getElementById('loading').style.display = 'none';
+        contenedor.innerHTML = ""; 
+        
+        let contadorDisponibles = 0; 
+        let totalBoletas = datos.length;
+
+        datos.forEach(fila => {
+          if (fila.estado === 'Disponible') contadorDisponibles++;
+        });
+
+        let vendidas = totalBoletas - contadorDisponibles;
+        let porcentaje = totalBoletas > 0 ? Math.round((vendidas / totalBoletas) * 100) : 0;
+        let ocultarOcupados = porcentaje > 80 && porcentaje < 100;
+
+        if (ocultarOcupados) {
+          filtroMsg.style.display = 'block';
+          filtroMsg.innerText = `🔥 ¡Se ha vendido el ${porcentaje}%! Mostrando solo los ${contadorDisponibles} números disponibles para facilitar tu compra:`;
+        } else if (porcentaje === 100 && totalBoletas > 0) {
+          filtroMsg.style.display = 'block';
+          filtroMsg.innerText = `🏆 ¡100% VENDIDO! Aquí puedes ver los dueños de cada número:`;
+          document.querySelector('.numbers-title').innerText = "👇 NÚMEROS VENDIDOS 👇";
+        }
+
+        datos.forEach(fila => {
+          const numero = fila.numero;
+          const estado = fila.estado; 
+          const nombreCliente = fila.nombre_cliente || "Oculto"; 
+          
+          if (ocultarOcupados && estado !== 'Disponible') return;
+
+          const btn = document.createElement('button');
+          btn.id = 'btn-' + numero;
+          btn.className = 'btn-numero ' + (estado === 'Disponible' ? 'disponible' : 'ocupado');
+
+          if (estado === 'Disponible') {
+            btn.innerText = numero;
+            btn.onclick = function() { toggleSeleccion(numero, btn) };
+          } else {
+            btn.innerHTML = `
+              <span style="font-size:16px; color:#888; font-weight:800; line-height:1;">${numero}</span>
+              <span class="info-mini" style="font-weight:700; color:#334155; margin-top:4px;">${nombreCliente}</span>
+            `;
+          }
+          contenedor.appendChild(btn);
+        });
+
+        if (totalBoletas > 0) {
+          document.getElementById('progress-fill-bar').style.width = porcentaje + '%';
+          document.getElementById('progress-percent-text').innerText = porcentaje + '% Vendido';
+          document.getElementById('progress-left-text').innerText = contadorDisponibles;
+        }
+      }
+
+      function toggleSeleccion(numero, btn) {
+        const index = numerosSeleccionados.indexOf(numero);
+        if (index === -1) {
+          if (numerosSeleccionados.length >= 5) {
+            alert("⚠️ Límite alcanzado:\nSolo puedes comprar un máximo de 5 boletas por pedido."); return; 
+          }
+          numerosSeleccionados.push(numero);
+          btn.classList.add('seleccionado');
+        } else {
+          numerosSeleccionados.splice(index, 1);
+          btn.classList.remove('seleccionado');
+        }
+        actualizarBarra();
+      }
+
+      function actualizarBarra() {
+        const bar = document.getElementById('bottom-bar');
+        if (numerosSeleccionados.length > 0) {
+          bar.style.display = 'flex';
+          document.getElementById('qty-text').innerText = numerosSeleccionados.length + " boleta(s)";
+          document.getElementById('total-text').innerText = "$" + (numerosSeleccionados.length * PRECIO_BOLETA).toLocaleString('es-CO');
+        } else {
+          bar.style.display = 'none';
+        }
+      }
+
+      function abrirModal() { document.getElementById('num-modal').innerText = numerosSeleccionados.join(", "); document.getElementById('modal').style.display = 'flex'; document.getElementById('msg-carga').style.display = 'none'; }
+      function cerrarModal() { document.getElementById('modal').style.display = 'none'; }
+
+      // 3. ENVIAR COMPRA A VERCEL/SUPABASE
+      function confirmarReserva() {
+        const nombre = document.getElementById('input-nombre').value;
+        const telefono = document.getElementById('input-telefono').value;
+
+        if (!nombre || telefono.length !== 10) {
+          alert("⚠️ ATENCIÓN:\n\nEl celular debe tener exactamente 10 dígitos."); return;
+        }
+
+        document.getElementById('msg-carga').style.display = 'block';
+        document.querySelector('.btn-confirmar').disabled = true; 
+
+        fetch('/api/diarias/reservar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ numeros: numerosSeleccionados, nombre: nombre, telefono: telefono })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.exito) {
+            window.top.location.href = data.url; // Lo manda al WhatsApp de Los Plata
+          } else {
+            alert("Error: " + data.error);
+            cerrarModal(); location.reload(); 
+          }
+        })
+        .catch(err => {
+          alert("Error de conexión. Intente de nuevo.");
+          document.querySelector('.btn-confirmar').disabled = false;
+          document.getElementById('msg-carga').style.display = 'none';
+        });
+      }
+
+      function iniciarTemporizador() {
+        let cierre = new Date();
+        cierre.setHours(19, 0, 0, 0);
+        setInterval(() => {
+          let actual = new Date().getTime();
+          let distancia = cierre.getTime() - actual;
+          if (distancia < 0) return;
+          document.getElementById("t-hours").innerText = Math.floor((distancia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
+          document.getElementById("t-minutes").innerText = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+          document.getElementById("t-seconds").innerText = Math.floor((distancia % (1000 * 60)) / 1000).toString().padStart(2, '0');
+        }, 1000);
+      }
+
+      function iniciarNotificacionesEnVivo() {
+        const compradoresFalsos = ["Mateo P. compró <b>2 boletas</b>", "Diana M. compró <b>1 boleta</b>", "Carlos R. compró <b>3 boletas</b>"];
+        const toast = document.getElementById('live-toast');
+        const text = document.getElementById('live-toast-text');
+        setInterval(() => {
+          if(document.getElementById('modal').style.display === 'flex') return;
+          text.innerHTML = compradoresFalsos[Math.floor(Math.random() * compradoresFalsos.length)];
+          toast.classList.add('show');
+          setTimeout(() => { toast.classList.remove('show'); }, 3500);
+        }, 12000); 
+      }
+    </script>
+  </body>
+</html>
