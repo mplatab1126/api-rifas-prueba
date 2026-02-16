@@ -10,9 +10,12 @@ export default async function handler(req, res) {
   }
 
   const { id, contrasena } = req.body; // Recibimos el ID único del abono
-  const claveMaestra = process.env.ADMIN_PASSWORD || '1234';
-
-  if (contrasena !== claveMaestra) return res.status(401).json({ status: 'error', mensaje: 'Clave incorrecta' });
+  // 4. SEGURIDAD: Validar la clave del asesor
+  const asesores = { 'sal32':'Saldarriaga', 'ar94':'Arias', 'car61':'Carlos', 'an45':'Anyeli', 'm8a3':'Mateo', 'lu34':'Luisa', 'li05':'Liliana', 'ne26':'Nena', '1234':'Admin' };
+  const nombreAsesor = asesores[contrasena];
+  if (!nombreAsesor) {
+    return res.status(401).json({ status: 'error', mensaje: 'Contraseña de asesor incorrecta' });
+  }
   if (!id) return res.status(400).json({ status: 'error', mensaje: 'Falta el ID del abono' });
 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
