@@ -691,7 +691,13 @@
        showModal('Resumen de Venta', mensajeFinal);
        
        if(fails===0){ 
+           // LIMPIEZA DE DATOS PRINCIPALES
            $('v_nombre').value=''; $('v_apellido').value=''; $('v_telefono').value=''; $('v_ciudad').value=''; $('v_primerAbono').value=0; $('v_referenciaAbono').value=''; $('v_metodoPago').value='';
+           
+           // 🌟 NUEVO: LIMPIEZA DE BÚSQUEDA INTELIGENTE Y OCR
+           $('t_ref').value=''; $('t_monto').value=''; $('t_fecha').value=''; $('t_hora').value='';
+           if($('ocrStatus')) $('ocrStatus').textContent='';
+
            desbloquearCampos('v_referenciaAbono', 'v_primerAbono', 'v_metodoPago', 'feedbackTransfer');
            numList.innerHTML=''; addDefaultPill(); activateHeroMode();
        }
@@ -714,31 +720,31 @@
 
         const basePayload = { metodoPago: metodo, referencia: ref || 'efectivo', esPendiente: esAbonoPendiente, contrasena: localStorage.getItem(STORAGE_KEY) };
         let ok = 0; let fails = 0;
-        let detalleErrores = []; // 🌟 NUEVO: Variable para atrapar la explicación del error
+        let detalleErrores = []; 
 
         for (let i=0; i < boletasTarget.length; i++) {
             try {
                const req = await fetch('/api/admin/abono', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ ...basePayload, numeroBoleta: boletasTarget[i], valorAbono: montoPorBoleta }) });
                const res = await req.json();
                
-               if(res.status === 'ok') {
-                   ok++; 
-               } else { 
-                   fails++; 
-                   detalleErrores.push(`Boleta ${boletasTarget[i]}: ${res.mensaje}`); 
-               }
-            } catch(e) { 
-               fails++; 
-               detalleErrores.push(`Boleta ${boletasTarget[i]}: Error de conexión del servidor`);
-            }
+               if(res.status === 'ok') { ok++; } else { fails++; detalleErrores.push(`Boleta ${boletasTarget[i]}: ${res.mensaje}`); }
+            } catch(e) { fails++; detalleErrores.push(`Boleta ${boletasTarget[i]}: Error de conexión del servidor`); }
         }
         
         btn.textContent = textoOriginal; btn.disabled = false;
         
-        // 🌟 NUEVO: Ahora el modal te dirá el motivo exacto del error
         if (fails === 0) {
             showModal('Éxito', `Abono registrado correctamente.`);
+            // LIMPIEZA DE DATOS PRINCIPALES
             document.getElementById('a_monto').value = ''; document.getElementById('a_ref').value = ''; document.getElementById('a_metodo').value = '';
+            
+            // 🌟 NUEVO: LIMPIEZA DE BÚSQUEDA INTELIGENTE Y OCR DE ABONOS
+            document.getElementById('t_ref_abono').value=''; 
+            document.getElementById('t_monto_abono').value=''; 
+            document.getElementById('t_fecha_abono').value=''; 
+            document.getElementById('t_hora_abono').value='';
+            if(document.getElementById('ocrStatusAbono')) document.getElementById('ocrStatusAbono').textContent='';
+
             desbloquearCampos('a_ref', 'a_monto', 'a_metodo', 'feedbackTransferAbono');
             runSearch(); 
         } else { 
