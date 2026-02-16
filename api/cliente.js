@@ -56,8 +56,8 @@ export default async function handler(req, res) {
     const deudaTotal = boletas.reduce((suma, b) => suma + Number(b.saldo_restante), 0);
     const nombre = boletas[0].clientes?.nombre || "Cliente";
     
-    // NUEVO: Generamos la lista de enlaces de las boletas separadas por un salto de línea
-    const listaEnlaces = boletas.map(b => `https://www.losplata.com.co/boleta/${b.numero}`).join('\n');
+    // NUEVO: Generamos la lista de enlaces con doble salto de línea y un texto ordenado
+const listaEnlaces = boletas.map(b => `🎟️ *Boleta ${b.numero}:*\nhttps://www.losplata.com.co/boleta/${b.numero}`).join('\n\n');
 
     // 8. Le respondemos a Chatea Pro con el paquete listo
     res.status(200).json({
