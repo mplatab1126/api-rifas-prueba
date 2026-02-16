@@ -163,7 +163,7 @@
 
       <div id="paymentSections" style="display: none;">
         <div class="section-card">
-          <div class="section-title">Buscar Pago Inteligente</div>
+          <div class="section-title">BUSCAR PAGO INTELIGENTE</div>
           <div class="vertical-form">
             <p style="font-size: 0.8rem; color: var(--muted); margin-top: -10px;">Llena al menos uno de estos datos para buscar en bancos:</p>
             <div style="display: flex; gap: 10px;">
@@ -218,7 +218,7 @@
 
     <div id="view-cliente" class="view-section">
       <div class="section-card">
-        <div class="section-title" style="margin-bottom: 16px;">Cliente Encontrado</div>
+        <div class="section-title" style="margin-bottom: 16px;">CLIENTE ENCONTRADO</div>
         <div id="cliente-info-render"></div>
       </div>
 
@@ -236,15 +236,15 @@
       </div>
 
       <div class="section-card">
-          <div class="section-title">Nuevo Abono</div>
+          <div class="section-title">NUEVO ABONO</div>
           <div id="ocrDropAbono" class="ocr-drop">
              Pega la imagen del comprobante aquí (Ctrl+V) para extraer Referencia<br>
              <span id="ocrStatusAbono" style="color:var(--accent-2); font-weight:normal; margin-top: 4px; display: block;"></span>
           </div>
 
           <div class="vertical-form">
-             <div><label>Valor Total a Repartir</label><div class="field"><input type="number" id="a_monto" class="pill" placeholder="0"></div></div>
-             <div><label>Método de Pago</label><div class="field"><input id="a_metodo" list="l_metodos" class="pill" type="text"></div></div>
+             <div><label>Valor total a repartir</label><div class="field"><input type="number" id="a_monto" class="pill" placeholder="0"></div></div>
+             <div><label>Método de pago</label><div class="field"><input id="a_metodo" list="l_metodos" class="pill" type="text"></div></div>
              <div>
                <label>Referencia</label>
                <div style="display:flex; gap:8px;">
@@ -622,7 +622,7 @@
        // 4. ZONA DE HISTORIAL DE PAGOS
        html += '<div style="margin-top: 24px;">';
        html += '  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--ring); padding-bottom: 8px;">';
-       html += '    <div style="font-weight: 600; color: var(--ink); font-size: 0.95rem;">Historial de Pagos</div>';
+       html += '    <div style="font-weight: 600; color: var(--ink); font-size: 0.95rem;">HISTORIAL DE PAGOS</div>';
        
        html += '    <select id="boletaSelector" style="background:var(--bg); border:1px solid var(--ring-strong); border-radius:8px; padding:4px 8px; font-weight:500; font-size:0.85rem; color:var(--ink-2); outline:none; font-family:inherit;" onchange="cargarHistorialAbonos(this.value)">';
        for(var i=0; i<boletasStr.length; i++) {
