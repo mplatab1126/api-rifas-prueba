@@ -17,10 +17,12 @@ export default async function handler(req, res) {
 
   const { transferencias, contrasena } = req.body;
 
-  // 2. Seguridad
-  const claveMaestra = process.env.ADMIN_PASSWORD || 'LosPlata2026';
-  if (contrasena !== claveMaestra) {
-    return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
+  // 4. SEGURIDAD: Validar la clave del asesor y obtener su nombre
+  const asesores = { 'sal32':'Saldarriaga', 'ar94':'Arias', 'car61':'Carlos', 'an45':'Anyeli', 'm8a3':'Mateo', 'lu34':'Luisa', 'li05':'Liliana', 'ne26':'Nena', '1234':'Admin' };
+  const nombreAsesor = asesores[contrasena];
+
+  if (!nombreAsesor) {
+    return res.status(401).json({ status: 'error', mensaje: 'Contraseña de asesor incorrecta' });
   }
 
   if (!transferencias || transferencias.length === 0) {
