@@ -564,15 +564,21 @@
         } else { showModal('Aviso', `Se registraron ${ok}, fallaron ${fails}.`); }
     }
 
+    // ==========================================
+    // RENDERIZAR CLIENTE E HISTORIAL DE ABONOS
+    // ==========================================
     function renderClienteInfo(lista){
        var c = lista[0]; var totalAbonadoGlobal = 0; var totalRestanteGlobal = 0; var boletasStr = [];
        var checkboxContainer = document.getElementById('boletas-checkbox-container'); if(checkboxContainer) checkboxContainer.innerHTML = '';
        var fmt = function(n) { return new Intl.NumberFormat('es-CO').format(n); };
 
+       var html = '<div style="background:#f8fbf9; border:1px solid #cfe3dc; border-radius:12px; padding:12px;">';
+       
        for(var i=0; i<lista.length; i++){
            var b = lista[i]; var restante = Number(b.restante) || 0;
            totalAbonadoGlobal += (Number(b.totalAbonos) || 0); totalRestanteGlobal += restante;
            boletasStr.push(b.numero);
+           
            if(checkboxContainer) {
                var label = document.createElement('label'); label.style.cssText = "display:flex; align-items:center; gap:8px; background:var(--pill); padding:8px 14px; border-radius:12px; border:1px solid var(--ring-strong); cursor:pointer; font-size:0.9rem;";
                var chk = document.createElement('input'); chk.type = 'checkbox'; chk.value = b.numero; chk.className = 'boleta-pay-checkbox'; chk.checked = true;
@@ -581,13 +587,11 @@
            }
        }
 
-       var html = '<div style="background:#f8fbf9; border:1px solid #cfe3dc; border-radius:12px; padding:12px;">';
+       // Datos del cliente
        html += '<div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:8px; padding-bottom:8px; border-bottom:1px dashed #cfe3dc;">';
        html += '  <div><div style="font-size:0.65rem; color:#7ea094; font-weight:700;">BOLETAS</div><div style="font-weight:800; color:var(--ink); font-size:0.95rem;">' + boletasStr.join(', ') + '</div></div>';
        html += '  <div style="text-align:right;"><div style="font-size:0.65rem; color:#7ea094; font-weight:700;">TELÉFONO</div><div style="font-weight:800; color:#1e8f5c; font-size:0.95rem;">' + c.telefono + '</div></div>';
        html += '</div>';
-       
-       // --- AQUÍ ESTÁN LOS DATOS RESTAURADOS ---
        html += '<div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:6px;">';
        html += '  <input id="c_nombre" type="text" style="background:#fff; border:1px solid #dfe9e5; padding:6px 8px; border-radius:8px; width:100%; font-size:0.85rem;" value="' + c.nombre + '" disabled>';
        html += '  <input id="c_apellido" type="text" style="background:#fff; border:1px solid #dfe9e5; padding:6px 8px; border-radius:8px; width:100%; font-size:0.85rem;" value="' + c.apellido + '" disabled>';
@@ -595,8 +599,8 @@
        html += '<div style="margin-bottom:10px;">';
        html += '  <input id="c_ciudad" type="text" style="background:#fff; border:1px solid #dfe9e5; padding:6px 8px; border-radius:8px; width:100%; font-size:0.85rem;" value="' + c.ciudad + '" disabled>';
        html += '</div>';
-       // ----------------------------------------
 
+       // Resumen financiero
        html += '<div style="display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid #cfe3dc; border-radius:8px; padding:6px 8px;">';
        html += '  <div style="display:flex; gap:10px; align-items:center;">';
        html += '    <div><span style="font-size:0.6rem; color:#7ea094; display:block;">ABONADO</span><span style="font-size:0.9rem; font-weight:800; color:var(--ink);">$' + fmt(totalAbonadoGlobal) + '</span></div>';
@@ -605,12 +609,98 @@
        html += '  </div>';
        html += '  <button id="btnCopiar" style="background:transparent; border:1px solid #3cb579; color:#3cb579; padding:4px 8px; border-radius:6px; font-weight:700; cursor:pointer; font-size:0.75rem;">📋 Link</button>';
        html += '</div></div>';
+
+       // ZONA DE HISTORIAL DE PAGOS
+       html += '<div style="margin-top: 15px; background: #fcfdfd; border: 1px solid var(--ring); border-radius: 12px; padding: 10px;">';
+       html += '  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">';
+       html += '    <div style="font-weight: 700; color: var(--ink-2); font-size: 0.85rem;">📜 Historial de Pagos</div>';
+       
+       html += '    <select id="boletaSelector" style="background:#e8f5e9; border:1px solid #3cb579; border-radius:6px; padding:2px 6px; font-weight:bold; font-size:0.75rem; color:var(--ink); outline:none; max-width: 60%;" onchange="cargarHistorialAbonos(this.value)">';
+       for(var i=0; i<boletasStr.length; i++) {
+           html += '<option value="'+boletasStr[i]+'">Boleta '+boletasStr[i]+'</option>';
+       }
+       html += '    </select>';
+       html += '  </div>';
+       html += '  <div id="historial-abonos-render"><p style="text-align:center; color:#7ea094; font-size:0.8rem; margin:0;">Cargando...</p></div>';
+       html += '</div>';
        
        document.getElementById('cliente-info-render').innerHTML = html;
+
        document.getElementById('btnCopiar').addEventListener('click', async function() {
            var links = lista.map(b => window.location.origin + '/boleta/' + b.numero).join('\n');
            try { await navigator.clipboard.writeText(links); alert('Links copiados'); } catch(e){}
        });
+
+       // Cargamos automáticamente el historial de la primera boleta del selector
+       if(boletasStr.length > 0) cargarHistorialAbonos(boletasStr[0]);
+    }
+
+    async function cargarHistorialAbonos(numero) {
+        const div = $('historial-abonos-render');
+        div.innerHTML = '<p style="text-align:center; color:var(--accent);">Cargando historial...</p>';
+        try {
+            const req = await fetch('/api/admin/historial?numero=' + numero);
+            const res = await req.json();
+            if(res.status === 'ok') renderTablaAbonos(res.lista);
+            else div.innerHTML = `<p style="text-align:center; color:var(--danger);">${res.mensaje}</p>`;
+        } catch(e) {
+            div.innerHTML = '<p style="text-align:center; color:var(--danger);">Error cargando historial.</p>';
+        }
+    }
+
+    function renderTablaAbonos(lista) {
+        const div = $('historial-abonos-render');
+        if(!lista || lista.length === 0) {
+            div.innerHTML = '<p style="text-align:center; color:#7ea094; font-size:0.85rem;">No hay abonos registrados en esta boleta.</p>';
+            return;
+        }
+
+        let html = '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:0.8rem;">';
+        html += '<thead><tr style="border-bottom:2px solid var(--ring); color: var(--muted);"><th style="text-align:left; padding:4px 2px;">Fecha</th><th style="text-align:left; padding:4px 2px;">Valor</th><th style="text-align:left; padding:4px 2px;">Ref</th><th style="text-align:right; padding:4px 2px;"></th></tr></thead><tbody>';
+        
+        lista.forEach(a => {
+            const valFmt = new Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', minimumFractionDigits:0}).format(a.monto);
+            const fechaLimpia = new Date(a.fecha_pago).toLocaleDateString('es-CO');
+            
+            html += `<tr style="border-bottom:1px solid var(--ring);">
+                        <td style="padding:6px 2px; line-height:1.2;">${fechaLimpia}</td>
+                        <td style="padding:6px 2px; font-weight:700; color:var(--ink-2);">${valFmt}</td>
+                        <td style="padding:6px 2px; font-size:0.75rem; word-break: break-all;">${a.referencia_transferencia || '-'}</td>
+                        <td style="padding:6px 2px; text-align:right;">
+                            <button class="chip-del" style="width:24px; height:24px; padding:0; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; font-size:0.85rem;" 
+                                onclick="confirmarEliminarAbono('${a.id}', this)">🗑️</button>
+                        </td>
+                    </tr>`;
+        });
+        html += '</tbody></table></div>';
+        div.innerHTML = html;
+    }
+
+    async function confirmarEliminarAbono(idAbono, btnElement) {
+        if(!confirm("¿Estás seguro de eliminar este abono? Si se usó una transferencia de banco, ésta quedará LIBRE nuevamente.")) return;
+        
+        btnElement.textContent = '...';
+        btnElement.disabled = true;
+        
+        try {
+            const req = await fetch('/api/admin/eliminar-abono', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ id: idAbono, contrasena: localStorage.getItem(STORAGE_KEY) })
+            });
+            const res = await req.json();
+            
+            if(res.status === 'ok') {
+                showModal('✅ Eliminado', 'Abono eliminado y saldos re-calculados correctamente.');
+                runSearch(); // Recargamos toda la vista para ver los saldos actualizados
+            } else {
+                showModal('❌ Error', res.mensaje);
+                btnElement.textContent = '🗑️'; btnElement.disabled = false;
+            }
+        } catch(e) {
+            showModal('❌ Error', 'Error de conexión.');
+            btnElement.textContent = '🗑️'; btnElement.disabled = false;
+        }
     }
 
     function showModal(title,msg){ $('mTitle').textContent=title; $('mMsg').textContent=msg; $('modalResult').style.display='flex'; }
