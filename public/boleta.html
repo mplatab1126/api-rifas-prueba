@@ -671,9 +671,20 @@
     </div>
 
     <script>
-      // --- 1. CONFIGURACIÓN INICIAL (Motor Vercel) ---
+      // --- 1. CONFIGURACIÓN INICIAL (Motor Vercel Inteligente) ---
+      let boletaParam = "0000";
       const urlParams = new URLSearchParams(window.location.search);
-      const boletaParam = urlParams.get('numero') || "0000";
+      
+      if (urlParams.has('numero')) {
+        boletaParam = urlParams.get('numero'); // Lee el enlace viejo con "?"
+      } else {
+        // Lee el enlace VIP nuevo (/boleta/1234)
+        const ruta = window.location.pathname.split('/');
+        const ultimoValor = ruta[ruta.length - 1];
+        if (!isNaN(ultimoValor) && ultimoValor.trim() !== "") {
+          boletaParam = ultimoValor;
+        }
+      }
       document.getElementById('lbl-boleta').textContent = boletaParam;
 
       async function verificarIdentidad() {
