@@ -293,12 +293,55 @@
     $('btnLogin').onclick = ()=> verifyLogin($('loginPwd').value);
     $('btnLogout').onclick = ()=> { localStorage.removeItem(STORAGE_KEY); location.reload(); };
     
-    function verifyLogin(pwd, auto=false){
-      if(!pwd) { if(!auto) alert("Por favor ingresa la contraseña."); return; }
-      localStorage.setItem(STORAGE_KEY, pwd); 
-      $('loginOverlay').style.display='none'; topBar.style.display='block'; 
-      $('asesorDisplay').textContent = "Conectado"; $('v_contrasena').value = pwd; 
-      $('smartInput').focus();
+    async function verifyLogin(pwd, auto=false){
+      if(!pwd) { 
+          if(!auto) alert("Por favor ingresa la contraseña."); 
+          return; 
+      }
+      
+      const btn = $('btnLogin');
+      const msg = $('loginMsg');
+      
+      if(!auto) {
+          btn.textContent = 'Verificando...';
+          btn.disabled = true;
+          msg.textContent = '';
+      }
+
+      try {
+          // Vamos a preguntarle al servidor si la clave es correcta
+          const req = await fetch('/api/admin/login', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({ contrasena: pwd })
+          });
+          const res = await req.json();
+
+          if(!auto) {
+              btn.textContent = 'Ingresar';
+              btn.disabled = false;
+          }
+
+          if(res.status === 'ok') {
+              // Si el servidor dice que sí, abrimos el panel
+              localStorage.setItem(STORAGE_KEY, pwd); 
+              $('loginOverlay').style.display='none'; 
+              topBar.style.display='block'; 
+              $('asesorDisplay').textContent = "Conectado"; 
+              $('v_contrasena').value = pwd; 
+              $('smartInput').focus();
+          } else {
+              // Si dice que no, mostramos error en rojo y no lo dejamos entrar
+              if(!auto) msg.textContent = '❌ Contraseña incorrecta';
+              localStorage.removeItem(STORAGE_KEY);
+          }
+      } catch (error) {
+          if(!auto) {
+              btn.textContent = 'Ingresar';
+              btn.disabled = false;
+              msg.textContent = '⚠️ Error de conexión';
+          }
+      }
     }
 
     // ==========================================
