@@ -11,17 +11,12 @@ export default async function handler(req, res) {
   }
 
   const { numeroBoleta, contrasena } = req.body;
-  // D. Reiniciar la boleta (Dejarla lista para vender de nuevo)
-    const { error: errBoleta } = await supabase
-      .from('boletas')
-      .update({
-        telefono_cliente: null,
-        estado: 'LIBRE',
-        total_abonado: 0,
-        saldo_restante: 150000,
-        asesor: null
-      })
-      .eq('numero', numeroBoleta);
+  // 2. Seguridad
+  const asesores = { 'sal32':'Saldarriaga', 'ar94':'Arias', 'car61':'Carlos', 'an45':'Anyeli', 'm8a3':'Mateo', 'lu34':'Luisa', 'li05':'Liliana', 'ne26':'Nena', '1234':'Admin' };
+  const nombreAsesor = asesores[contrasena];
+  if (!nombreAsesor) {
+    return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
+  }
   if (!numeroBoleta) return res.status(400).json({ status: 'error', mensaje: 'Falta el número de la boleta' });
 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
