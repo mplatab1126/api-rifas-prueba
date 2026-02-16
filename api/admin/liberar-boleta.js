@@ -11,9 +11,17 @@ export default async function handler(req, res) {
   }
 
   const { numeroBoleta, contrasena } = req.body;
-  const claveMaestra = process.env.ADMIN_PASSWORD || '1234';
-
-  if (contrasena !== claveMaestra) return res.status(401).json({ status: 'error', mensaje: 'Clave incorrecta' });
+  // D. Reiniciar la boleta (Dejarla lista para vender de nuevo)
+    const { error: errBoleta } = await supabase
+      .from('boletas')
+      .update({
+        telefono_cliente: null,
+        estado: 'LIBRE',
+        total_abonado: 0,
+        saldo_restante: 150000,
+        asesor: null
+      })
+      .eq('numero', numeroBoleta);
   if (!numeroBoleta) return res.status(400).json({ status: 'error', mensaje: 'Falta el número de la boleta' });
 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
