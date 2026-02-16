@@ -1003,10 +1003,11 @@ async function procesarCSVBancos() {
                 let descUpper = descAndRef.toUpperCase();
                 let plataforma = 'Bancolombia'; // Valor por defecto
                 
-                if (descUpper.includes('NEQUI')) {
-                    plataforma = 'Nequi';
-                } else if (descUpper.includes('CORRESPONSAL')) {
+                // Le damos prioridad absoluta al Corresponsal
+                if (descUpper.includes('CORRESP')) {
                     plataforma = 'Corresponsal';
+                } else if (descUpper.includes('NEQUI')) {
+                    plataforma = 'Nequi';
                 }
 
                 let referencia = "Sin Ref";
@@ -1049,13 +1050,14 @@ async function procesarCSVBancos() {
                 }
                 
                 // --- CAMBIO AQUÍ PARA CSV TAMBIÉN ---
-                let descUpper = (cols[4] || "").toUpperCase();
-                let plataforma = 'Bancolombia';
+                let descUpper = descAndRef.toUpperCase();
+                let plataforma = 'Bancolombia'; // Valor por defecto
                 
-                if (descUpper.includes('NEQUI')) {
-                    plataforma = 'Nequi';
-                } else if (descUpper.includes('CORRESPONSAL')) {
+                // Le damos prioridad absoluta al Corresponsal
+                if (descUpper.includes('CORRESP')) {
                     plataforma = 'Corresponsal';
+                } else if (descUpper.includes('NEQUI')) {
+                    plataforma = 'Nequi';
                 }
 
                 let referencia = (cols[11] || "").replace(/"/g, ''); 
