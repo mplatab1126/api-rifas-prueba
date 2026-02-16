@@ -200,12 +200,16 @@
             <p style="font-size: 0.8rem; color: var(--muted); margin-top: -10px;">Llena al menos uno de estos datos para buscar en bancos:</p>
             <div style="display: flex; gap: 10px;">
               <div style="flex: 1;">
-                <label>Celular origen</label>
-                <div class="field"><input id="t_ref" class="pill" type="tel" placeholder="Ej: 311..."></div>
+                <label>Ref/Celular</label>
+                <div class="field"><input id="t_ref" class="pill" type="text" placeholder="Ej: 311..."></div>
               </div>
               <div style="flex: 1;">
                 <label>Valor</label>
                 <div class="field"><input id="t_monto" class="pill" type="number" placeholder="Ej: 5000"></div>
+              </div>
+              <div style="flex: 1;">
+                <label>Plataforma</label>
+                <div class="field"><input id="t_plataforma" list="l_metodos" class="pill" type="text" placeholder="Nequi..."></div>
               </div>
             </div>
             
@@ -266,8 +270,9 @@
             </div>
 
             <div style="display: flex; gap: 10px;">
-              <div style="flex: 1;"><label>Referencia</label><div class="field"><input id="t_ref_abono" class="pill" type="tel"></div></div>
+              <div style="flex: 1;"><label>Referencia</label><div class="field"><input id="t_ref_abono" class="pill" type="text"></div></div>
               <div style="flex: 1;"><label>Valor</label><div class="field"><input id="t_monto_abono" class="pill" type="number"></div></div>
+              <div style="flex: 1;"><label>Plataforma</label><div class="field"><input id="t_plataforma_abono" list="l_metodos" class="pill" type="text" placeholder="Nequi..."></div></div>
             </div>
             
             <div style="display: flex; gap: 10px;">
