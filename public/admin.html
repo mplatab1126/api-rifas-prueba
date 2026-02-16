@@ -611,17 +611,22 @@
        }
        html += '</div></div>';
 
-       // 🌟 2. DATOS DEL CLIENTE
+       // 🌟 2. DATOS DEL CLIENTE (AHORA EDITABLES)
        html += '<div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:8px; padding-bottom:8px; border-bottom:1px dashed #cfe3dc;">';
        html += '  <div><div style="font-size:0.65rem; color:#7ea094; font-weight:700;">BOLETAS</div><div style="font-weight:800; color:var(--ink); font-size:0.95rem;">' + boletasStr.join(', ') + '</div></div>';
        html += '  <div style="text-align:right;"><div style="font-size:0.65rem; color:#7ea094; font-weight:700;">TELÉFONO</div><div style="font-weight:800; color:#1e8f5c; font-size:0.95rem;">' + c.telefono + '</div></div>';
        html += '</div>';
+       
+       html += '<div style="font-size:0.75rem; color:#7ea094; font-weight:700; margin-bottom:6px;">✏️ EDITAR DATOS DEL CLIENTE:</div>';
+       
        html += '<div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:6px;">';
-       html += '  <input id="c_nombre" type="text" style="background:#fff; border:1px solid #dfe9e5; padding:6px 8px; border-radius:8px; width:100%; font-size:0.85rem;" value="' + c.nombre + '" disabled>';
-       html += '  <input id="c_apellido" type="text" style="background:#fff; border:1px solid #dfe9e5; padding:6px 8px; border-radius:8px; width:100%; font-size:0.85rem;" value="' + c.apellido + '" disabled>';
+       // Nota: Le quitamos el 'disabled' y le pusimos un borde verde (border:1px solid #3cb579) para que sepan que es editable
+       html += '  <input id="c_nombre" type="text" style="background:#fff; border:1px solid #3cb579; padding:6px 8px; border-radius:8px; width:100%; font-size:0.85rem; outline:none;" value="' + c.nombre + '">';
+       html += '  <input id="c_apellido" type="text" style="background:#fff; border:1px solid #3cb579; padding:6px 8px; border-radius:8px; width:100%; font-size:0.85rem; outline:none;" value="' + c.apellido + '">';
        html += '</div>';
-       html += '<div style="margin-bottom:10px;">';
-       html += '  <input id="c_ciudad" type="text" style="background:#fff; border:1px solid #dfe9e5; padding:6px 8px; border-radius:8px; width:100%; font-size:0.85rem;" value="' + c.ciudad + '" disabled>';
+       html += '<div style="display:flex; gap:6px; margin-bottom:12px;">';
+       html += '  <input id="c_ciudad" type="text" style="background:#fff; border:1px solid #3cb579; padding:6px 8px; border-radius:8px; width:100%; font-size:0.85rem; outline:none;" value="' + c.ciudad + '">';
+       html += '  <button type="button" onclick="guardarCambiosCliente(\'' + c.telefono + '\', this)" style="background:#1e8f5c; color:#fff; border:none; padding:6px 16px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.8rem; white-space:nowrap; transition:0.2s;">💾 Guardar</button>';
        html += '</div>';
 
        // 🌟 3. RESUMEN FINANCIERO
@@ -727,6 +732,42 @@
         }
     }
 
+    async function guardarCambiosCliente(telefono, btnElement) {
+        const nombre = document.getElementById('c_nombre').value;
+        const apellido = document.getElementById('c_apellido').value;
+        const ciudad = document.getElementById('c_ciudad').value;
+        const originalText = btnElement.innerHTML;
+
+        btnElement.innerHTML = '⏳...';
+        btnElement.disabled = true;
+
+        try {
+            const req = await fetch('/api/admin/actualizar-cliente', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    telefono: telefono,
+                    nombre: nombre,
+                    apellido: apellido,
+                    ciudad: ciudad,
+                    contrasena: localStorage.getItem(STORAGE_KEY)
+                })
+            });
+            const res = await req.json();
+
+            if (res.status === 'ok') {
+                showModal('✅ Guardado', res.mensaje);
+            } else {
+                showModal('❌ Error', res.mensaje);
+            }
+        } catch(e) {
+            showModal('❌ Error', 'Error de conexión con el servidor.');
+        }
+        
+        btnElement.innerHTML = originalText;
+        btnElement.disabled = false;
+    }
+    
     function showModal(title,msg){ $('mTitle').textContent=title; $('mMsg').textContent=msg; $('modalResult').style.display='flex'; }
     $('mBtn').onclick = function(){ $('modalResult').style.display='none'; };
     document.addEventListener('DOMContentLoaded', function() { initLogin(); if(typeof addDefaultPill === 'function') addDefaultPill(); $('loginPwd').addEventListener('keyup', function(e) { if (e.key === 'Enter') verifyLogin(this.value); }); });
