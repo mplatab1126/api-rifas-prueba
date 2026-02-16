@@ -26,10 +26,12 @@ export default async function handler(req, res) {
     esPendiente
   } = req.body;
 
-  // 4. SEGURIDAD: Validar la clave del asesor (Unificada a '1234')
-  const claveMaestra = process.env.ADMIN_PASSWORD || '1234';
-  if (contrasena !== claveMaestra) {
-    return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
+  // 4. SEGURIDAD: Validar la clave del asesor y obtener su nombre
+  const asesores = { 'sal32':'Saldarriaga', 'ar94':'Arias', 'car61':'Carlos', 'an45':'Anyeli', 'm8a3':'Mateo', 'lu34':'Luisa', 'li05':'Liliana', 'ne26':'Nena', '1234':'Admin' };
+  const nombreAsesor = asesores[contrasena];
+
+  if (!nombreAsesor) {
+    return res.status(401).json({ status: 'error', mensaje: 'Contraseña de asesor incorrecta' });
   }
 
   if (!numeroBoleta || !valorAbono) {
@@ -70,7 +72,7 @@ export default async function handler(req, res) {
         fecha_pago: new Date().toISOString(),
         referencia_transferencia: referencia || 'Sin Ref',
         nota: `Origen: ${metodoPago || 'Efectivo'}${esPendiente ? ' | PENDIENTE' : ''}`,
-        asesor: nombreAsesor // 🌟 NUEVA COLUMNA
+        asesor: nombreAsesor // 🌟 El problema estaba aquí. Ya está corregido porque arriba definimos la variable.
       });
 
     if (insertError) throw insertError;
@@ -89,7 +91,7 @@ export default async function handler(req, res) {
         total_abonado: nuevoTotalAbonado,
         saldo_restante: nuevoSaldoRestante,
         estado: estadoNuevo,
-        asesor: nombreAsesor // 🌟 ANOTAMOS EL ASESOR
+        asesor: nombreAsesor
       })
       .eq('numero', numeroLimpio);
 
