@@ -1,69 +1,92 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <title>Admin Los Plata</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    /* ESTILOS EXACTOS DE TU VERSIÓN ORIGINAL */
+    /* --- DISEÑO MINIMALISTA Y PASTEL --- */
     :root{
-      --ink:#244a3e; --ink-2:#3c6b5d; --muted:#7ea094; --bg:#f6fbf9; --card:#ffffff;
-      --ring:#dfe9e5; --ring-strong:#cfe3dc; --pill:#edf7f2; --accent:#3cb579; --accent-2:#1e8f5c;
-      --danger:#e74c3c; --danger-bg:#fbe9e8; --shadow:0 10px 30px rgba(0,0,0,.06);
+      --ink: #2b3a35; 
+      --ink-2: #52665e; 
+      --muted: #8ba89d; 
+      --bg: #f7fcf9; 
+      --card: #ffffff;
+      --ring: #e6eee9; 
+      --ring-strong: #d1e3da; 
+      --pill: #f0f7f3; 
+      --accent: #4eb082; 
+      --accent-2: #3a946a;
+      --danger: #d95a53; 
+      --danger-bg: #fcf2f2; 
+      --shadow: 0 4px 12px rgba(0,0,0,.03);
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0; background:radial-gradient(1100px 700px at 8% -10%,rgba(60,181,121,.10),transparent 40%), var(--bg);
-      font-family:Poppins,system-ui,-apple-system,sans-serif; color:var(--ink); padding-bottom: 80px;}
+    body{
+      margin:0; 
+      background: var(--bg);
+      font-family: 'Poppins', system-ui, -apple-system, sans-serif; 
+      color: var(--ink); 
+      padding-bottom: 80px;
+    }
     
-    .shell { max-width: 550px; margin: 20px auto; padding: 0 18px; display: none; opacity: 0; transition: opacity 0.5s ease; }
+    .shell { max-width: 550px; margin: 20px auto; padding: 0 18px; display: none; opacity: 0; transition: opacity 0.4s ease; }
     .shell.visible { display: block; opacity: 1; }
     
-    .top-search-bar { position: sticky; top: 0; z-index: 100; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--ring); padding: 12px 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); margin-bottom: 20px; transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1); transform: translateY(0); }
+    .top-search-bar { position: sticky; top: 0; z-index: 100; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(5px); border-bottom: 1px solid var(--ring); padding: 12px 16px; box-shadow: var(--shadow); margin-bottom: 20px; transition: all 0.5s ease; transform: translateY(0); }
     .top-search-bar.hero-mode { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 600px; background: transparent; border-bottom: none; box-shadow: none; padding: 0; z-index: 1000; }
-    .search-container { max-width: 550px; margin: 0 auto; display: flex; gap: 10px; transition: all 0.3s ease; }
-    .main-input { width: 100%; border: 2px solid var(--ring); border-radius: 14px; padding: 12px 20px; font-size: 1rem; outline: none; transition: all 0.3s ease; background: #fff; color: var(--ink); font-weight: 600; }
-    .main-input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(60,181,121,0.1); }
-    .hero-mode .main-input { padding: 22px 30px; font-size: 1.1rem; border-radius: 50px; box-shadow: 0 20px 40px rgba(60,181,121,0.15); border-color: transparent; text-align: center; }
-    .search-btn { background: var(--ink); color: #fff; border: none; border-radius: 14px; padding: 0 20px; font-weight: 700; cursor: pointer; font-size: 1.2rem; transition: all 0.3s ease; }
+    
+    .search-container { max-width: 550px; margin: 0 auto; display: flex; gap: 8px; transition: all 0.3s ease; }
+    .main-input { width: 100%; border: 1px solid var(--ring-strong); border-radius: 12px; padding: 12px 16px; font-size: 0.95rem; outline: none; transition: all 0.2s ease; background: #fff; color: var(--ink); font-weight: 500; }
+    .main-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(78, 176, 130, 0.1); }
+    .hero-mode .main-input { padding: 20px 24px; font-size: 1.05rem; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.04); border-color: transparent; text-align: center; }
+    
+    .search-btn { background: var(--accent); color: #fff; border: none; border-radius: 12px; padding: 0 20px; font-weight: 600; cursor: pointer; font-size: 0.95rem; transition: all 0.2s ease; }
+    .search-btn:hover { background: var(--accent-2); }
     .hero-mode .search-btn { display: none; }
-    .hero-welcome-text { text-align: center; margin-bottom: 30px; opacity: 0; visibility: hidden; transform: translateY(20px); transition: all 0.4s ease; position: absolute; top: -150px; left: 0; right: 0; }
+    
+    .hero-welcome-text { text-align: center; margin-bottom: 20px; opacity: 0; visibility: hidden; transform: translateY(10px); transition: all 0.4s ease; position: absolute; top: -100px; left: 0; right: 0; }
     .hero-mode .hero-welcome-text { opacity: 1; visibility: visible; transform: translateY(0); position: relative; top: auto; }
-    .user-info-bar { text-align: center; margin-top: 8px; font-size: 0.85rem; transition: all 0.5s ease; }
-    .hero-mode .user-info-bar { position: fixed; top: 20px; right: 20px; margin: 0; background: rgba(255,255,255,0.8); padding: 5px 15px; border-radius: 20px; }
     
-    .section-card { background: #fff; border: 1px solid var(--ring); border-radius: 24px; box-shadow: var(--shadow); padding: 28px 32px; margin-bottom: 24px; }
-    .section-title { font-size: 1.1rem; font-weight: 800; color: var(--ink); text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 20px 0; padding-bottom: 12px; border-bottom: 2px solid var(--ring); display: flex; align-items: center; justify-content: space-between; }
+    .user-info-bar { text-align: center; margin-top: 8px; font-size: 0.8rem; transition: all 0.4s ease; color: var(--muted); }
+    .hero-mode .user-info-bar { position: fixed; top: 20px; right: 20px; margin: 0; background: rgba(255,255,255,0.9); padding: 6px 14px; border-radius: 12px; border: 1px solid var(--ring); box-shadow: var(--shadow); }
     
-    .vertical-form { display: flex; flex-direction: column; gap: 16px; }
-    label { display: block; font-weight: 700; color: var(--ink-2); margin: 0 0 8px; font-size: 0.9rem; }
-    .field { display: flex; align-items: center; gap: 10px; background: #fcfdfd; border: 1px solid var(--ring); border-radius: 12px; padding: 12px 14px; transition: border-color .2s; }
-    .field:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(60,181,121,0.1); }
-    .pill { flex: 1; border: 0; outline: 0; font-size: 16px; background: transparent; color: var(--ink); width: 100%; }
+    .section-card { background: #fff; border: 1px solid var(--ring); border-radius: 16px; box-shadow: var(--shadow); padding: 24px; margin-bottom: 20px; }
+    .section-title { font-size: 1rem; font-weight: 600; color: var(--ink); margin: 0 0 16px 0; padding-bottom: 10px; border-bottom: 1px solid var(--ring); display: flex; align-items: center; justify-content: space-between; }
     
-    .num-wrap { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    .num-pill { background: var(--pill); border: 1px solid var(--ring-strong); border-radius: 14px; padding: 8px 12px; display: flex; gap: 10px; align-items: center; width: fit-content; }
-    .num-pill input { width: 60px; border: 0; outline: 0; background: transparent; font-size: 18px; font-weight: 700; color: var(--accent-2); text-align: center; }
-    .chip-del { border: none; background: var(--danger-bg); color: #d64536; font-weight: 700; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    .btn-add { border: 2px dashed var(--accent); background: rgba(60,181,121,0.05); color: var(--accent-2); border-radius: 12px; padding: 8px 16px; font-weight: 700; cursor: pointer; transition: all .2s; }
+    .vertical-form { display: flex; flex-direction: column; gap: 14px; }
+    label { display: block; font-weight: 500; color: var(--ink-2); margin: 0 0 6px; font-size: 0.85rem; }
+    
+    .field { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--ring-strong); border-radius: 10px; padding: 10px 12px; transition: border-color .2s; }
+    .field:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(78, 176, 130, 0.1); }
+    .pill { flex: 1; border: 0; outline: 0; font-size: 0.95rem; background: transparent; color: var(--ink); width: 100%; font-family: inherit;}
+    
+    .num-wrap { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .num-pill { background: var(--pill); border: 1px solid var(--ring-strong); border-radius: 10px; padding: 6px 10px; display: flex; gap: 8px; align-items: center; width: fit-content; }
+    .num-pill input { width: 50px; border: 0; outline: 0; background: transparent; font-size: 1rem; font-weight: 600; color: var(--ink); text-align: center; font-family: inherit;}
+    .chip-del { border: none; background: transparent; color: var(--muted); font-weight: 500; border-radius: 6px; width: 20px; height: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;}
+    .chip-del:hover { background: var(--danger-bg); color: var(--danger); }
+    .btn-add { border: 1px dashed var(--accent); background: transparent; color: var(--accent-2); border-radius: 8px; padding: 6px 12px; font-weight: 500; font-size: 0.8rem; cursor: pointer; transition: all .2s; }
+    .btn-add:hover { background: var(--pill); }
 
-    .cta { display: block; width: 100%; border: none; border-radius: 12px; padding: 14px; font-weight: 700; font-size: 1rem; background: linear-gradient(180deg, var(--accent), var(--accent-2)); color: #fff; box-shadow: 0 10px 20px rgba(60,181,121,.25); cursor: pointer; text-align: center; margin-top: 10px; }
-    .cta:active { transform: scale(0.98); }
+    .cta { display: block; width: 100%; border: none; border-radius: 10px; padding: 12px; font-weight: 600; font-size: 0.95rem; background: var(--accent); color: #fff; cursor: pointer; text-align: center; margin-top: 8px; transition: background 0.2s; font-family: inherit;}
+    .cta:hover { background: var(--accent-2); }
+    .cta:active { transform: scale(0.99); }
 
-    .modal-overlay { position: fixed; inset: 0; background: rgba(36, 74, 62, 0.4); backdrop-filter: blur(3px); z-index: 2000; display: none; align-items: center; justify-content: center; }
-    .modal-card { background: #fff; width: 90%; max-width: 400px; border-radius: 26px; padding: 32px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
-    #loginOverlay { background: #f6fbf9; z-index: 10000; display: flex; } 
-    .hint { margin-top: 12px; text-align: center; font-weight: 600; color: #3c6b5d; font-size: 0.95rem; }
-    .hint.err { color: #e74c3c; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(247, 252, 249, 0.8); backdrop-filter: blur(4px); z-index: 2000; display: none; align-items: center; justify-content: center; }
+    .modal-card { background: #fff; width: 90%; max-width: 360px; border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.08); border: 1px solid var(--ring); }
+    #loginOverlay { background: var(--bg); z-index: 10000; display: flex; } 
+    .hint { margin-top: 10px; text-align: center; font-weight: 500; color: var(--muted); font-size: 0.85rem; }
+    .hint.err { color: var(--danger); }
     
-    .mode-switch { display: flex; background: #fff; border-radius: 16px; padding: 6px; margin-bottom: 24px; border: 1px solid var(--ring); box-shadow: var(--shadow); }
-    .mode-btn { flex: 1; border: none; background: transparent; padding: 12px; border-radius: 12px; font-weight: 700; color: var(--muted); cursor: pointer; transition: all 0.2s; font-size: 0.95rem; }
-    .mode-btn.active { background: var(--pill); color: var(--accent-2); box-shadow: 0 2px 8px rgba(60,181,121,0.1); border: 1px solid var(--ring-strong); }
+    .mode-switch { display: flex; background: #fff; border-radius: 12px; padding: 4px; margin-bottom: 20px; border: 1px solid var(--ring); box-shadow: var(--shadow); }
+    .mode-btn { flex: 1; border: none; background: transparent; padding: 10px; border-radius: 8px; font-weight: 500; color: var(--muted); cursor: pointer; transition: all 0.2s; font-size: 0.9rem; font-family: inherit;}
+    .mode-btn.active { background: var(--pill); color: var(--accent-2); border: 1px solid var(--ring-strong); font-weight: 600; }
     
-    .ocr-drop { border:2px dashed #cfe3dc; background:#fbfdfc; border-radius:16px; padding:15px; text-align:center; font-weight:700; color:var(--ink-2); cursor:pointer; margin-bottom: 10px; font-size: 0.85rem;}
-    .ocr-drop:hover { border-color:var(--accent); background:#f2faf5; }
+    .ocr-drop { border: 1px dashed var(--ring-strong); background: var(--bg); border-radius: 12px; padding: 16px; text-align: center; font-weight: 500; color: var(--muted); cursor: pointer; margin-bottom: 12px; font-size: 0.85rem; transition: 0.2s; }
+    .ocr-drop:hover { border-color: var(--accent); background: var(--pill); color: var(--ink-2); }
 
     .view-section { display: none; animation: fadeIn 0.3s ease; }
     .view-section.active { display: block; }
@@ -74,8 +97,8 @@
 
   <div id="loginOverlay" class="modal-overlay">
     <div class="modal-card">
-      <h1>🔐 Acceso</h1>
-      <p style="color:#7ea094;">Ingresa tu clave de administrador</p>
+      <h2 style="margin: 0 0 8px; color: var(--ink); font-weight: 600; font-size: 1.4rem;">Acceso</h2>
+      <p style="color:var(--muted); font-size: 0.9rem; margin-bottom: 20px;">Ingresa tu clave de administrador</p>
       <div class="field" style="margin-bottom:20px;">
         <input id="loginPwd" type="password" class="pill" placeholder="Contraseña..." style="text-align:center">
       </div>
@@ -86,140 +109,137 @@
 
   <div class="top-search-bar hero-mode" id="topBar" style="display:none">
     <div class="hero-welcome-text">
-        <div style="font-size: 4rem; margin-bottom: 10px;">👋</div>
-        <h1 style="color:var(--ink); margin:0; font-size: 2rem;">Sistema Unificado</h1>
-        <p style="color:var(--muted); margin: 8px 0 0 0;">Busca boleta, teléfono o pega datos</p>
+        <h1 style="color:var(--ink); margin:0; font-size: 1.8rem; font-weight: 600;">Sistema Unificado</h1>
+        <p style="color:var(--muted); font-size: 0.95rem; margin: 6px 0 0 0;">Busca boleta, teléfono o pega datos</p>
     </div>
     <div class="search-container">
       <input type="text" id="smartInput" class="main-input" placeholder="Escribe para buscar o pegar..." autocomplete="off">
-      <button id="btnSearch" class="search-btn">🔍</button>
+      <button id="btnSearch" class="search-btn">Buscar</button>
     </div>
     <div class="user-info-bar">
-      <span id="asesorDisplay" style="font-weight:700; color:var(--accent-2); margin-right:10px;">Hola</span>
-      <u style="cursor:pointer; color:var(--ink); margin-right:10px; font-weight:bold;" onclick="switchView('view-bancos')">🏦 Subir Bancos</u>
-      <u id="btnLogout" style="cursor:pointer; color:#7ea094;">Salir</u>
-      </div>
+      <span id="asesorDisplay" style="font-weight:600; color:var(--ink); margin-right:12px;">Hola</span>
+      <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:500;" onclick="switchView('view-bancos')">Subir Bancos</span>
+      <span id="btnLogout" style="cursor:pointer; color:var(--muted); font-weight:500;">Salir</span>
+    </div>
     <div id="searchFeedback" class="hint" style="margin: 5px 0 0 0; font-size:0.8rem; min-height: 20px;"></div>
   </div>
 
   <div class="shell" id="appShell">
 
     <div id="view-bancos" class="view-section">
-  <div class="section-card" style="border-top: 5px solid #1e8f5c;">
-    <div class="section-title">🏦 Cargar Extracto Bancolombia</div>
-    <p style="font-size: 0.85rem; color: #7ea094;">Sube el archivo .CSV descargado de la Sucursal Virtual. El sistema extraerá automáticamente el monto, la fecha y la cuenta de origen del cliente.</p>
-    
-    <div class="vertical-form">
-      <div class="field" style="background:#f2faf5; border: 2px dashed #3cb579; padding: 20px; justify-content: center;">
-        <input type="file" id="fileBancos" accept=".csv" style="font-size: 1rem;">
+      <div class="section-card">
+        <div class="section-title">Cargar Extracto Bancolombia</div>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0;">Sube el archivo .CSV descargado de la Sucursal Virtual. El sistema extraerá automáticamente el monto, la fecha y la cuenta de origen.</p>
+        
+        <div class="vertical-form">
+          <div class="field" style="background:var(--bg); border: 1px dashed var(--accent); padding: 20px; justify-content: center;">
+            <input type="file" id="fileBancos" accept=".csv" style="font-size: 0.9rem; color: var(--ink-2);">
+          </div>
+          <button id="btnProcesarBancos" class="cta" onclick="procesarCSVBancos()" style="margin-top:10px;">Procesar archivo</button>
+        </div>
       </div>
-      <button id="btnProcesarBancos" class="cta" onclick="procesarCSVBancos()" style="margin-top:15px;">PROCESAR Y SUBIR ARCHIVO</button>
     </div>
-  </div>
-</div>
     
     <div id="view-venta" class="view-section">
       <div class="section-card">
-        <div class="section-title"><span>🎟️ Boletas</span><button id="btnAddNum" class="btn-add">+ Agregar</button></div>
+        <div class="section-title"><span>Boletas a separar</span><button id="btnAddNum" class="btn-add">Agregar</button></div>
         <div id="numList" class="num-wrap"></div>
       </div>
 
       <div class="section-card">
-        <div class="section-title">👤 Datos del Cliente</div>
+        <div class="section-title">Datos del Cliente</div>
         <div class="vertical-form">
           <div><label>Nombre</label><div class="field"><input id="v_nombre" class="pill" type="text"></div></div>
           <div><label>Apellido</label><div class="field"><input id="v_apellido" class="pill" type="text"></div></div>
-          <div><label>Teléfono</label><div class="field"><input id="v_telefono" class="pill" type="tel"></div></div>
+          <div><label>Teléfono celular</label><div class="field"><input id="v_telefono" class="pill" type="tel"></div></div>
           <div><label>Ciudad</label><div class="field"><input id="v_ciudad" class="pill" type="text"></div></div>
         </div>
       </div>
 
       <div class="mode-switch">
-        <button id="btnModeAbono" class="mode-btn" onclick="setMode('abono')">💰 Con Abono</button>
-        <button id="btnModeSeparar" class="mode-btn active" onclick="setMode('separar')">🎟️ Solo Separar ($0)</button>
+        <button id="btnModeAbono" class="mode-btn" onclick="setMode('abono')">Con Abono</button>
+        <button id="btnModeSeparar" class="mode-btn active" onclick="setMode('separar')">Solo Separar ($0)</button>
       </div>
 
       <div id="paymentSections" style="display: none;">
         <div class="section-card">
-          <div class="section-title">🔍 Buscar Pago Inteligente</div>
+          <div class="section-title">Buscar Pago Inteligente</div>
           <div class="vertical-form">
-            <p style="font-size: 0.8rem; color: #7ea094; margin-top: -10px;">Llena al menos uno de estos datos (Entre más llenes, más exacta será la búsqueda):</p>
+            <p style="font-size: 0.8rem; color: var(--muted); margin-top: -10px;">Llena al menos uno de estos datos para buscar en bancos:</p>
             <div style="display: flex; gap: 10px;">
               <div style="flex: 1;">
-                <label>📱 Celular (WhatsApp)</label>
+                <label>Celular origen</label>
                 <div class="field"><input id="t_ref" class="pill" type="tel" placeholder="Ej: 311..."></div>
               </div>
               <div style="flex: 1;">
-                <label>💰 Valor</label>
+                <label>Valor</label>
                 <div class="field"><input id="t_monto" class="pill" type="number" placeholder="Ej: 5000"></div>
               </div>
             </div>
             <div>
-              <label>📅 Fecha de la transferencia</label>
+              <label>Fecha de la transferencia</label>
               <div class="field"><input id="t_fecha" class="pill" type="date"></div>
             </div>
-            <button id="btnBuscarInteligente" type="button" class="cta" style="margin-top:10px;" onclick="buscarTransferenciasUI('btnBuscarInteligente', 't_fecha', 't_monto', 't_ref', 'feedbackTransfer', 'v_referenciaAbono', 'v_primerAbono', 'v_metodoPago')">🔍 Buscar Transferencia</button>
+            <button id="btnBuscarInteligente" type="button" class="cta" style="margin-top:5px; background:var(--ink);" onclick="buscarTransferenciasUI('btnBuscarInteligente', 't_fecha', 't_monto', 't_ref', 'feedbackTransfer', 'v_referenciaAbono', 'v_primerAbono', 'v_metodoPago')">Buscar transferencia</button>
           </div>
           <div id="feedbackTransfer" class="hint"></div>
         </div>
 
         <div class="section-card">
-          <div class="section-title">💰 Detalle del Pago</div>
+          <div class="section-title">Detalle del Pago</div>
           <div id="ocrDrop" class="ocr-drop">
-             📸 Pega la imagen del comprobante aquí (Ctrl+V) para extraer Referencia<br>
-             <span id="ocrStatus" style="color:var(--accent); font-weight:normal;"></span>
+             Pega la imagen del comprobante aquí (Ctrl+V) para extraer Referencia<br>
+             <span id="ocrStatus" style="color:var(--accent-2); font-weight:normal; margin-top: 4px; display: block;"></span>
           </div>
 
           <div class="vertical-form">
             <div><label>Valor a Abonar</label><div class="field"><input id="v_primerAbono" class="pill" type="number" min="0" value="0"></div></div>
             <div>
-              <label>Método de Pago / Plataforma</label>
+              <label>Método / Plataforma</label>
               <div class="field">
                 <input id="v_metodoPago" list="l_metodos" class="pill" type="text" placeholder="Ej: Nequi, Bancolombia">
                 <datalist id="l_metodos"><option value="Nequi"></option><option value="Bancolombia"></option><option value="Efectivo"></option></datalist>
               </div>
             </div>
             <div>
-              <label>Referencia / Cuenta Origen</label>
-              <div style="display:flex; gap:10px;">
+              <label>Referencia</label>
+              <div style="display:flex; gap:8px;">
                 <div class="field" style="flex:1"><input id="v_referenciaAbono" class="pill" type="text"></div>
-                <button id="btnForzarPendiente" type="button" class="cta" style="margin:0; width:auto; padding:0 15px; background:linear-gradient(135deg, #e67e22, #d35400);">⏳</button>
+                <button id="btnForzarPendiente" type="button" style="border:none; border-radius:10px; padding:0 15px; background:var(--pill); color:var(--ink); font-weight:500; cursor:pointer; font-family:inherit; font-size: 0.85rem;">Pendiente</button>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="section-card" style="border-color:var(--accent);">
-          <button id="btnRegistrarVenta" class="cta" style="margin-top:10px; height:50px; font-size:1.1rem; background: #7ea094;">CONFIRMAR SEPARADO ($0)</button>
-          <input id="v_contrasena" type="hidden">
-      </div>
+      <button id="btnRegistrarVenta" class="cta" style="margin-top:10px; height:48px; font-size:1rem; background: var(--accent-2);">Confirmar Separado ($0)</button>
+      <input id="v_contrasena" type="hidden">
     </div>
 
     <div id="view-cliente" class="view-section">
-      <div class="section-card" style="border-top: 5px solid var(--ink); padding: 20px;">
-        <div class="section-title" style="margin-bottom: 12px;">👤 Cliente Encontrado</div>
+      <div class="section-card">
+        <div class="section-title" style="margin-bottom: 16px;">Cliente Encontrado</div>
         <div id="cliente-info-render"></div>
       </div>
 
       <div class="section-card">
-         <div class="section-title">🔍 Buscar Pago Inteligente</div>
+         <div class="section-title">Buscar Pago Inteligente</div>
          <div class="vertical-form">
             <div style="display: flex; gap: 10px;">
-              <div style="flex: 1;"><label>📱 Celular / Ref</label><div class="field"><input id="t_ref_abono" class="pill" type="tel"></div></div>
-              <div style="flex: 1;"><label>💰 Valor</label><div class="field"><input id="t_monto_abono" class="pill" type="number"></div></div>
+              <div style="flex: 1;"><label>Celular / Ref</label><div class="field"><input id="t_ref_abono" class="pill" type="tel"></div></div>
+              <div style="flex: 1;"><label>Valor</label><div class="field"><input id="t_monto_abono" class="pill" type="number"></div></div>
             </div>
-            <div><label>📅 Fecha de la transferencia</label><div class="field"><input id="t_fecha_abono" class="pill" type="date"></div></div>
-            <button id="btnBuscarInteligenteAbono" type="button" class="cta" style="margin-top:10px;" onclick="buscarTransferenciasUI('btnBuscarInteligenteAbono', 't_fecha_abono', 't_monto_abono', 't_ref_abono', 'feedbackTransferAbono', 'a_ref', 'a_monto', 'a_metodo')">🔍 Buscar Transferencia</button>
+            <div><label>Fecha de la transferencia</label><div class="field"><input id="t_fecha_abono" class="pill" type="date"></div></div>
+            <button id="btnBuscarInteligenteAbono" type="button" class="cta" style="margin-top:5px; background:var(--ink);" onclick="buscarTransferenciasUI('btnBuscarInteligenteAbono', 't_fecha_abono', 't_monto_abono', 't_ref_abono', 'feedbackTransferAbono', 'a_ref', 'a_monto', 'a_metodo')">Buscar transferencia</button>
          </div>
          <div id="feedbackTransferAbono" class="hint"></div>
       </div>
 
       <div class="section-card">
-          <div class="section-title">💰 Nuevo Abono</div>
+          <div class="section-title">Nuevo Abono</div>
           <div id="ocrDropAbono" class="ocr-drop">
-             📸 Pega la imagen del comprobante aquí (Ctrl+V) para extraer Referencia<br>
-             <span id="ocrStatusAbono" style="color:var(--accent); font-weight:normal;"></span>
+             Pega la imagen del comprobante aquí (Ctrl+V) para extraer Referencia<br>
+             <span id="ocrStatusAbono" style="color:var(--accent-2); font-weight:normal; margin-top: 4px; display: block;"></span>
           </div>
 
           <div class="vertical-form">
@@ -227,23 +247,22 @@
              <div><label>Método de Pago</label><div class="field"><input id="a_metodo" list="l_metodos" class="pill" type="text"></div></div>
              <div>
                <label>Referencia</label>
-               <div style="display:flex; gap:10px;">
+               <div style="display:flex; gap:8px;">
                  <div class="field" style="flex:1"><input type="text" id="a_ref" class="pill"></div>
-                 <button id="btnForzarPendienteAbono" type="button" class="cta" style="margin:0; width:auto; padding:0 15px; background:linear-gradient(135deg, #e67e22, #d35400);">⏳</button>
+                 <button id="btnForzarPendienteAbono" type="button" style="border:none; border-radius:10px; padding:0 15px; background:var(--pill); color:var(--ink); font-weight:500; cursor:pointer; font-family:inherit; font-size: 0.85rem;">Pendiente</button>
                </div>
              </div>
           </div>
-          <button id="btnRegistrarAbono" class="cta" onclick="registrarAbono()" style="margin-top:20px;">REGISTRAR ABONO</button>
+          <button id="btnRegistrarAbono" class="cta" onclick="registrarAbono()" style="margin-top:20px;">Registrar Abono</button>
       </div>
     </div>
   </div>
 
   <div id="modalResult" class="modal-overlay">
     <div class="modal-card">
-      <span id="mIcon" style="font-size: 3.5rem; display: block; margin-bottom: 10px;">🎉</span>
-      <h3 id="mTitle" style="color:var(--ink); margin:0 0 10px 0;">Título</h3>
-      <p id="mMsg" style="color:#5a7a70; margin-bottom:20px;">Mensaje</p>
-      <button id="mBtn" class="cta" style="width: auto; padding: 10px 30px; margin: 0 auto; border-radius: 50px;">Aceptar</button>
+      <h3 id="mTitle" style="color:var(--ink); font-weight:600; font-size:1.2rem; margin:0 0 10px 0;">Título</h3>
+      <p id="mMsg" style="color:var(--ink-2); font-size:0.9rem; margin-bottom:24px; line-height: 1.5;">Mensaje</p>
+      <button id="mBtn" class="cta" style="width: auto; padding: 10px 30px; margin: 0 auto; display:inline-block;">Aceptar</button>
     </div>
   </div>
 
@@ -266,11 +285,11 @@
       if (mode === 'separar') {
         btnSeparar.classList.add('active'); btnAbono.classList.remove('active');
         paySection.style.display = 'none';
-        btnReg.textContent = 'CONFIRMAR SEPARADO ($0)'; btnReg.style.background = '#7ea094'; 
+        btnReg.textContent = 'Confirmar Separado ($0)'; btnReg.style.background = 'var(--accent-2)'; 
       } else {
         btnAbono.classList.add('active'); btnSeparar.classList.remove('active');
         paySection.style.display = 'block'; 
-        btnReg.textContent = 'REGISTRAR VENTA'; btnReg.style.background = ''; 
+        btnReg.textContent = 'Registrar Venta'; btnReg.style.background = 'var(--accent)'; 
       }
     }
 
@@ -295,51 +314,27 @@
           if(!auto) alert("Por favor ingresa la contraseña."); 
           return; 
       }
-      
-      const btn = $('btnLogin');
-      const msg = $('loginMsg');
-      
-      if(!auto) {
-          btn.textContent = 'Verificando...';
-          btn.disabled = true;
-          msg.textContent = '';
-      }
-
+      const btn = $('btnLogin'); const msg = $('loginMsg');
+      if(!auto) { btn.textContent = 'Verificando...'; btn.disabled = true; msg.textContent = ''; }
       try {
-          // Vamos a preguntarle al servidor si la clave es correcta
           const req = await fetch('/api/admin/login', {
-              method: 'POST',
-              headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({ contrasena: pwd })
+              method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contrasena: pwd })
           });
           const res = await req.json();
-
-          if(!auto) {
-              btn.textContent = 'Ingresar';
-              btn.disabled = false;
-          }
-
+          if(!auto) { btn.textContent = 'Ingresar'; btn.disabled = false; }
           if(res.status === 'ok') {
               localStorage.setItem(STORAGE_KEY, pwd); 
               $('loginOverlay').style.display='none'; 
               topBar.style.display='block'; 
-              
-              // 🌟 NUEVO: Mostramos el nombre del asesor arriba a la derecha
-              $('asesorDisplay').textContent = "👤 " + res.asesor; 
-              
+              $('asesorDisplay').textContent = res.asesor; 
               $('v_contrasena').value = pwd; 
               $('smartInput').focus();
           } else {
-              // Si dice que no, mostramos error en rojo y no lo dejamos entrar
-              if(!auto) msg.textContent = '❌ Contraseña incorrecta';
+              if(!auto) msg.textContent = 'Contraseña incorrecta';
               localStorage.removeItem(STORAGE_KEY);
           }
       } catch (error) {
-          if(!auto) {
-              btn.textContent = 'Ingresar';
-              btn.disabled = false;
-              msg.textContent = '⚠️ Error de conexión';
-          }
+          if(!auto) { btn.textContent = 'Ingresar'; btn.disabled = false; msg.textContent = 'Error de conexión'; }
       }
     }
 
@@ -361,7 +356,7 @@
                 numList.innerHTML=''; nums.forEach(n=>numList.appendChild(makeNumPill(n))); if(!nums.length) addDefaultPill();
             }
             if(lines.length>4) $('v_telefono').value = lines[4];
-            showModal('✨ Pegado Mágico', 'Datos distribuidos correctamente.'); smartInput.value = '';
+            showModal('Pegado Mágico', 'Datos distribuidos correctamente.'); smartInput.value = '';
         }
     });
 
@@ -390,16 +385,16 @@
         for(var i=0; i<items.length; i++){ 
             var it = items[i];
             if(it.type && it.type.indexOf('image/') === 0){ 
-                document.getElementById(statusId).textContent = 'Leyendo la imagen, por favor espera... ⏳';
+                document.getElementById(statusId).textContent = 'Leyendo la imagen...';
                 var f = it.getAsFile(); 
                 var pre = await preprocessBlobToCanvas(f);
                 var res = await Tesseract.recognize(pre || f, 'spa+eng');
                 var ref = extractRefFromText(res.data.text);
                 if(ref) { 
-                    document.getElementById(statusId).textContent = "¡Referencia extraída: " + ref + " ✅!"; 
+                    document.getElementById(statusId).textContent = "Ref extraída: " + ref; 
                     document.getElementById(inputId).value = ref; 
                 } else { 
-                    document.getElementById(statusId).textContent = '❌ No se detectó ninguna referencia clara.'; 
+                    document.getElementById(statusId).textContent = 'No se detectó referencia clara.'; 
                 }
             }
         }
@@ -416,8 +411,8 @@
         var refInput = document.getElementById(refId); var montoInput = document.getElementById(montoId); var metodoInput = document.getElementById(metodoId);
         refInput.value = refVal; montoInput.value = montoVal; metodoInput.value = metodoVal;
         refInput.readOnly = true; montoInput.readOnly = true; metodoInput.readOnly = true;
-        refInput.style.backgroundColor = "#edf7f2"; montoInput.style.backgroundColor = "#edf7f2"; metodoInput.style.backgroundColor = "#edf7f2";
-        document.getElementById(feedbackId).innerHTML = '<span style="color:#1e8f5c; font-weight:bold;">¡Pago cargado y bloqueado por seguridad! 🔒</span><br><span style="color:#e74c3c; cursor:pointer; font-size:0.8rem; font-weight:bold; text-decoration:underline; display:inline-block; margin-top:5px;" onclick="desbloquearCampos(\'' + refId + '\', \'' + montoId + '\', \'' + metodoId + '\', \'' + feedbackId + '\')">❌ Desbloquear y limpiar datos</span>';
+        refInput.style.backgroundColor = "var(--pill)"; montoInput.style.backgroundColor = "var(--pill)"; metodoInput.style.backgroundColor = "var(--pill)";
+        document.getElementById(feedbackId).innerHTML = '<span style="color:var(--accent-2); font-weight:500; font-size: 0.85rem;">Pago cargado. </span><span style="color:var(--danger); cursor:pointer; font-size:0.85rem; font-weight:500; text-decoration:underline; display:inline-block;" onclick="desbloquearCampos(\'' + refId + '\', \'' + montoId + '\', \'' + metodoId + '\', \'' + feedbackId + '\')">Limpiar datos</span>';
     }
 
     function desbloquearCampos(refId, montoId, metodoId, feedbackId) {
@@ -425,7 +420,7 @@
         refInput.readOnly = false; montoInput.readOnly = false; metodoInput.readOnly = false;
         refInput.value = ""; montoInput.value = ""; metodoInput.value = "";
         refInput.style.backgroundColor = "transparent"; montoInput.style.backgroundColor = "transparent"; metodoInput.style.backgroundColor = "transparent";
-        if(feedbackId) document.getElementById(feedbackId).innerHTML = '<span style="color:#7ea094; font-size:0.85rem;">Campos desbloqueados.</span>';
+        if(feedbackId) document.getElementById(feedbackId).innerHTML = '';
     }
 
     async function buscarTransferenciasUI(btnId, fechaId, montoIdFiltro, refIdFiltro, feedbackId, targetRefId, targetMontoId, targetMetodoId) {
@@ -438,7 +433,7 @@
         if(!fechaVal && !montoVal && !refVal) { fb.innerHTML = "<span class='hint err'>Ingresa al menos un dato.</span>"; return; }
 
         var originalTxt = btn.textContent;
-        btn.textContent = "Buscando en Bancos..."; btn.disabled = true; fb.innerHTML = "";
+        btn.textContent = "Buscando..."; btn.disabled = true; fb.innerHTML = "";
 
         var payload = { fecha: fechaVal, monto: montoVal, referencia: refVal };
 
@@ -453,7 +448,7 @@
 
             if(res.status === 'ok') {
                 if(res.lista.length === 0) {
-                    fb.innerHTML = "<span class='hint err'>No se encontró ninguna transferencia con esos datos.</span>";
+                    fb.innerHTML = "<span class='hint err'>No se encontró transferencia.</span>";
                 } else {
                     var html = '<div style="display:grid; gap:8px; margin-top:10px;">';
                     for(var i=0; i<res.lista.length; i++){
@@ -461,11 +456,11 @@
                         var montoFmt = new Intl.NumberFormat('es-CO').format(t.monto);
                         var refSafe = t.referencia.replace(/'/g, "\\'"); var platSafe = t.plataforma.replace(/'/g, "\\'");
                         html += '<div onclick="seleccionarTransferencia(\'' + targetRefId + '\', \'' + targetMontoId + '\', \'' + targetMetodoId + '\', \'' + feedbackId + '\', \'' + refSafe + '\', ' + t.monto + ', \'' + platSafe + '\')"';
-                        html += ' style="border:1px solid #dfe9e5; padding:10px; border-radius:10px; cursor:pointer; background:#fff; text-align:left; transition:background 0.2s;"';
-                        html += ' onmouseover="this.style.background=\'#f0f9f4\'" onmouseout="this.style.background=\'#fff\'">';
-                        html += '<div style="font-weight:bold; color:#244a3e;">' + t.plataforma + ' - $' + montoFmt + '</div>';
-                        html += '<div style="font-size:0.8rem; color:#7ea094;">Ref: ' + t.referencia + ' | Fecha: ' + t.fecha + '</div>';
-                        html += '<div style="font-size:0.75rem; color:#e74c3c; font-weight:bold; margin-top:4px;">' + (t.status || 'LIBRE') + '</div>';
+                        html += ' style="border:1px solid var(--ring); padding:10px; border-radius:10px; cursor:pointer; background:#fff; text-align:left; transition:background 0.2s;"';
+                        html += ' onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'#fff\'">';
+                        html += '<div style="font-weight:600; color:var(--ink-2); font-size:0.9rem;">' + t.plataforma + ' - $' + montoFmt + '</div>';
+                        html += '<div style="font-size:0.8rem; color:var(--muted);">Ref: ' + t.referencia + ' | Fecha: ' + t.fecha + '</div>';
+                        html += '<div style="font-size:0.75rem; color:var(--danger); font-weight:500; margin-top:4px;">' + (t.status || 'LIBRE') + '</div>';
                         html += '</div>';
                     }
                     html += '</div>';
@@ -490,7 +485,7 @@
 
     async function runSearch(){
       const q = smartInput.value.trim(); if(!q) return;
-      feedback.textContent = "Buscando en Supabase...";
+      feedback.textContent = "Buscando...";
       try {
         const response = await fetch('/api/admin/buscar?q=' + encodeURIComponent(q));
         const res = await response.json();
@@ -517,32 +512,21 @@
        const baseData = { nombre:$('v_nombre').value, apellido:$('v_apellido').value, ciudad:$('v_ciudad').value, telefono:$('v_telefono').value, primerAbono:perNum, referenciaAbono: ref, metodoPago: metodo, esPendiente:esVentaPendiente, contrasena:localStorage.getItem(STORAGE_KEY) };
        
        let ok=0, fails=0;
-       let detalleErrores = []; // 🌟 NUEVO: Array para atrapar el texto de los errores
+       let detalleErrores = []; 
 
        for (let i=0; i < nums.length; i++) {
            try {
                const req = await fetch('/api/admin/venta', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({...baseData, numeroBoleta: nums[i]}) });
                const res = await req.json();
-               if(res.status === 'ok') {
-                   ok++; 
-               } else {
-                   fails++;
-                   detalleErrores.push(`❌ Boleta ${nums[i]}: ${res.mensaje}`); // Guardamos la explicación
-               }
-           } catch(e) { 
-               fails++; 
-               detalleErrores.push(`❌ Boleta ${nums[i]}: Error de conexión`);
-           }
+               if(res.status === 'ok') { ok++; } else { fails++; detalleErrores.push(`Boleta ${nums[i]}: ${res.mensaje}`); }
+           } catch(e) { fails++; detalleErrores.push(`Boleta ${nums[i]}: Error de conexión`); }
        }
-       $('btnRegistrarVenta').textContent='REGISTRAR VENTA'; $('btnRegistrarVenta').disabled=false;
+       $('btnRegistrarVenta').textContent= modoVenta === 'separar' ? 'Confirmar Separado ($0)' : 'Registrar Venta'; 
+       $('btnRegistrarVenta').disabled=false;
        
-       // 🌟 NUEVO: Construimos el mensaje final con las explicaciones
        let mensajeFinal = `Registradas: ${ok} / Errores: ${fails}`;
-       if (fails > 0) {
-           mensajeFinal += `\n\nMotivos:\n` + detalleErrores.join('\n');
-       }
+       if (fails > 0) { mensajeFinal += `\n\nMotivos:\n` + detalleErrores.join('\n'); }
        
-       // Le decimos al modal que respete los saltos de línea
        $('mMsg').style.whiteSpace = 'pre-line'; 
        showModal('Resumen de Venta', mensajeFinal);
        
@@ -584,17 +568,17 @@
     }
 
     // ==========================================
-    // RENDERIZAR CLIENTE E HISTORIAL DE ABONOS
+    // RENDERIZAR CLIENTE E HISTORIAL DE ABONOS (REDISEÑADO)
     // ==========================================
     function renderClienteInfo(lista){
        var c = lista[0]; var totalAbonadoGlobal = 0; var totalRestanteGlobal = 0; var boletasStr = [];
        var fmt = function(n) { return new Intl.NumberFormat('es-CO').format(n); };
 
-       var html = '<div style="background:#f8fbf9; border:1px solid #cfe3dc; border-radius:12px; padding:12px;">';
+       var html = '';
        
-       // 1. CAJITAS DE SELECCIÓN Y LIBERACIÓN ARRIBA
-       html += '<div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px dashed #cfe3dc;">';
-       html += '<label style="font-size:0.75rem; color:#7ea094; font-weight:700; margin-bottom:8px; display:block;">✅ SELECCIONA LAS BOLETAS A ABONAR:</label>';
+       // 1. CAJITAS DE SELECCIÓN Y LIBERACIÓN
+       html += '<div style="margin-bottom: 20px;">';
+       html += '<label style="font-size:0.85rem; color:var(--ink-2); font-weight:500; margin-bottom:10px; display:block;">Boletas vinculadas:</label>';
        html += '<div style="display: flex; flex-direction: column; gap: 8px;">';
 
        for(var i=0; i<lista.length; i++){
@@ -602,53 +586,51 @@
            totalAbonadoGlobal += (Number(b.totalAbonos) || 0); totalRestanteGlobal += restante;
            boletasStr.push(b.numero);
            
-           html += '<label style="display:flex; align-items:center; gap:8px; background:var(--pill); padding:8px 14px; border-radius:12px; border:1px solid var(--ring-strong); cursor:pointer; font-size:0.9rem; width:100%;">';
-           html += '<input type="checkbox" value="' + b.numero + '" class="boleta-pay-checkbox" checked>';
-           html += '<span style="color:var(--ink-2);"><b>' + b.numero + '</b> (Resta $' + fmt(restante) + ')</span>';
-           html += '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); confirmarLiberarBoleta(\'' + b.numero + '\');" style="margin-left:auto; background:#fbe9e8; color:#e74c3c; border:1px solid #e74c3c; padding:4px 10px; border-radius:8px; font-size:0.75rem; font-weight:bold; cursor:pointer;">⚠️ Liberar</button>';
+           html += '<label style="display:flex; align-items:center; gap:10px; background:var(--bg); padding:10px 14px; border-radius:10px; border:1px solid var(--ring-strong); cursor:pointer; font-size:0.9rem; width:100%; transition: 0.2s;">';
+           html += '<input type="checkbox" value="' + b.numero + '" class="boleta-pay-checkbox" checked style="accent-color: var(--accent); width:16px; height:16px;">';
+           html += '<span style="color:var(--ink);"><b>' + b.numero + '</b> <span style="color:var(--muted); font-size:0.85rem;">(Resta $' + fmt(restante) + ')</span></span>';
+           html += '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); confirmarLiberarBoleta(\'' + b.numero + '\');" style="margin-left:auto; background:transparent; color:var(--danger); border:1px solid var(--danger); padding:4px 12px; border-radius:6px; font-size:0.8rem; font-weight:500; font-family:inherit; cursor:pointer; transition: 0.2s;">Liberar</button>';
            html += '</label>';
        }
        html += '</div></div>';
 
-       // 2. DATOS DEL CLIENTE (SIN EL DISABLED Y CON BOTÓN DE GUARDAR)
-       html += '<div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:8px; padding-bottom:8px; border-bottom:1px dashed #cfe3dc;">';
-       html += '  <div><div style="font-size:0.65rem; color:#7ea094; font-weight:700;">BOLETAS</div><div style="font-weight:800; color:var(--ink); font-size:0.95rem;">' + boletasStr.join(', ') + '</div></div>';
-       html += '  <div style="text-align:right;"><div style="font-size:0.65rem; color:#7ea094; font-weight:700;">TELÉFONO</div><div style="font-weight:800; color:#1e8f5c; font-size:0.95rem;">' + c.telefono + '</div></div>';
-       html += '</div>';
+       // 2. DATOS DEL CLIENTE
+       html += '<div style="margin-bottom:20px; padding-top: 15px; border-top: 1px solid var(--ring);">';
+       html += '<label style="font-size:0.85rem; color:var(--ink-2); font-weight:500; margin-bottom:10px; display:block;">Datos personales:</label>';
        
-       html += '<div style="font-size:0.75rem; color:#7ea094; font-weight:700; margin-bottom:6px;">✏️ EDITAR DATOS DEL CLIENTE:</div>';
-       
-       html += '<div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:6px;">';
-       html += '  <input id="c_nombre" type="text" style="background:#fff; border:1px solid #3cb579; padding:6px 8px; border-radius:8px; width:100%; font-size:0.85rem; outline:none;" value="' + c.nombre + '">';
-       html += '  <input id="c_apellido" type="text" style="background:#fff; border:1px solid #3cb579; padding:6px 8px; border-radius:8px; width:100%; font-size:0.85rem; outline:none;" value="' + c.apellido + '">';
+       html += '<div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">';
+       html += '  <input id="c_nombre" type="text" class="main-input" style="padding:8px 12px;" value="' + c.nombre + '">';
+       html += '  <input id="c_apellido" type="text" class="main-input" style="padding:8px 12px;" value="' + c.apellido + '">';
        html += '</div>';
-       html += '<div style="display:flex; gap:6px; margin-bottom:12px;">';
-       html += '  <input id="c_ciudad" type="text" style="background:#fff; border:1px solid #3cb579; padding:6px 8px; border-radius:8px; width:100%; font-size:0.85rem; outline:none;" value="' + c.ciudad + '">';
-       html += '  <button type="button" onclick="guardarCambiosCliente(\'' + c.telefono + '\', this)" style="background:#1e8f5c; color:#fff; border:none; padding:6px 16px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.8rem; white-space:nowrap; transition:0.2s;">💾 Guardar</button>';
+       html += '<div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:12px;">';
+       html += '  <input id="c_telefono_display" type="text" class="main-input" style="padding:8px 12px; background:var(--bg); color:var(--muted);" value="' + c.telefono + '" disabled>';
+       html += '  <input id="c_ciudad" type="text" class="main-input" style="padding:8px 12px;" value="' + c.ciudad + '">';
+       html += '</div>';
+       html += '<button type="button" onclick="guardarCambiosCliente(\'' + c.telefono + '\', this)" class="cta" style="width:auto; padding:8px 20px; margin:0; font-size:0.85rem;">Guardar cambios</button>';
        html += '</div>';
 
        // 3. RESUMEN FINANCIERO
-       html += '<div style="display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid #cfe3dc; border-radius:8px; padding:6px 8px;">';
-       html += '  <div style="display:flex; gap:10px; align-items:center;">';
-       html += '    <div><span style="font-size:0.6rem; color:#7ea094; display:block;">ABONADO</span><span style="font-size:0.9rem; font-weight:800; color:var(--ink);">$' + fmt(totalAbonadoGlobal) + '</span></div>';
-       html += '    <div style="height:20px; width:1px; background:#dfe9e5;"></div>'; 
-       html += '    <div><span style="font-size:0.6rem; color:#e74c3c; display:block;">RESTA</span><span style="font-size:0.9rem; font-weight:800; color:#e74c3c;">$' + fmt(totalRestanteGlobal) + '</span></div>';
+       html += '<div style="display:flex; justify-content:space-between; align-items:center; background:var(--pill); border:1px solid var(--ring-strong); border-radius:12px; padding:12px 16px;">';
+       html += '  <div style="display:flex; gap:16px; align-items:center;">';
+       html += '    <div><span style="font-size:0.7rem; color:var(--muted); display:block; font-weight:500;">Abonado total</span><span style="font-size:1.05rem; font-weight:600; color:var(--ink);">$' + fmt(totalAbonadoGlobal) + '</span></div>';
+       html += '    <div style="height:24px; width:1px; background:var(--ring-strong);"></div>'; 
+       html += '    <div><span style="font-size:0.7rem; color:var(--danger); display:block; font-weight:500;">Resta total</span><span style="font-size:1.05rem; font-weight:600; color:var(--danger);">$' + fmt(totalRestanteGlobal) + '</span></div>';
        html += '  </div>';
-       html += '  <button id="btnCopiar" style="background:transparent; border:1px solid #3cb579; color:#3cb579; padding:4px 8px; border-radius:6px; font-weight:700; cursor:pointer; font-size:0.75rem;">📋 Link</button>';
-       html += '</div></div>';
+       html += '  <button id="btnCopiar" style="background:#fff; border:1px solid var(--ring-strong); color:var(--ink-2); padding:6px 12px; border-radius:8px; font-weight:500; cursor:pointer; font-size:0.8rem; font-family:inherit; transition:0.2s;">Copiar Link</button>';
+       html += '</div>';
 
        // 4. ZONA DE HISTORIAL DE PAGOS
-       html += '<div style="margin-top: 15px; background: #fcfdfd; border: 1px solid var(--ring); border-radius: 12px; padding: 10px;">';
-       html += '  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">';
-       html += '    <div style="font-weight: 700; color: var(--ink-2); font-size: 0.85rem;">📜 Historial de Pagos</div>';
+       html += '<div style="margin-top: 24px;">';
+       html += '  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--ring); padding-bottom: 8px;">';
+       html += '    <div style="font-weight: 600; color: var(--ink); font-size: 0.95rem;">Historial de Pagos</div>';
        
-       html += '    <select id="boletaSelector" style="background:#e8f5e9; border:1px solid #3cb579; border-radius:6px; padding:2px 6px; font-weight:bold; font-size:0.75rem; color:var(--ink); outline:none; max-width: 60%;" onchange="cargarHistorialAbonos(this.value)">';
+       html += '    <select id="boletaSelector" style="background:var(--bg); border:1px solid var(--ring-strong); border-radius:8px; padding:4px 8px; font-weight:500; font-size:0.85rem; color:var(--ink-2); outline:none; font-family:inherit;" onchange="cargarHistorialAbonos(this.value)">';
        for(var i=0; i<boletasStr.length; i++) {
            html += '<option value="'+boletasStr[i]+'">Boleta '+boletasStr[i]+'</option>';
        }
        html += '    </select>';
        html += '  </div>';
-       html += '  <div id="historial-abonos-render"><p style="text-align:center; color:#7ea094; font-size:0.8rem; margin:0;">Cargando...</p></div>';
+       html += '  <div id="historial-abonos-render"><p style="text-align:center; color:var(--muted); font-size:0.85rem; margin:10px 0;">Cargando...</p></div>';
        html += '</div>';
        
        document.getElementById('cliente-info-render').innerHTML = html;
@@ -663,38 +645,38 @@
 
     async function cargarHistorialAbonos(numero) {
         const div = $('historial-abonos-render');
-        div.innerHTML = '<p style="text-align:center; color:var(--accent);">Cargando historial...</p>';
+        div.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem;">Cargando historial...</p>';
         try {
             const req = await fetch('/api/admin/historial?numero=' + numero);
             const res = await req.json();
             if(res.status === 'ok') renderTablaAbonos(res.lista);
-            else div.innerHTML = `<p style="text-align:center; color:var(--danger);">${res.mensaje}</p>`;
+            else div.innerHTML = `<p style="text-align:center; color:var(--danger); font-size:0.85rem;">${res.mensaje}</p>`;
         } catch(e) {
-            div.innerHTML = '<p style="text-align:center; color:var(--danger);">Error cargando historial.</p>';
+            div.innerHTML = '<p style="text-align:center; color:var(--danger); font-size:0.85rem;">Error cargando historial.</p>';
         }
     }
 
     function renderTablaAbonos(lista) {
         const div = $('historial-abonos-render');
         if(!lista || lista.length === 0) {
-            div.innerHTML = '<p style="text-align:center; color:#7ea094; font-size:0.85rem;">No hay abonos registrados en esta boleta.</p>';
+            div.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem; margin:10px 0;">No hay abonos registrados.</p>';
             return;
         }
 
-        let html = '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:0.8rem;">';
-        html += '<thead><tr style="border-bottom:2px solid var(--ring); color: var(--muted);"><th style="text-align:left; padding:4px 2px;">Fecha</th><th style="text-align:left; padding:4px 2px;">Valor</th><th style="text-align:left; padding:4px 2px;">Ref</th><th style="text-align:right; padding:4px 2px;"></th></tr></thead><tbody>';
+        let html = '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:0.85rem; text-align:left;">';
+        html += '<thead><tr style="border-bottom:1px solid var(--ring-strong); color: var(--muted); font-weight:500;"><th style="padding:8px 4px;">Fecha</th><th style="padding:8px 4px;">Valor</th><th style="padding:8px 4px;">Ref</th><th style="padding:8px 4px; text-align:right;"></th></tr></thead><tbody>';
         
         lista.forEach(a => {
             const valFmt = new Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', minimumFractionDigits:0}).format(a.monto);
             const fechaLimpia = new Date(a.fecha_pago).toLocaleDateString('es-CO');
             
             html += `<tr style="border-bottom:1px solid var(--ring);">
-                        <td style="padding:6px 2px; line-height:1.2;">${fechaLimpia}</td>
-                        <td style="padding:6px 2px; font-weight:700; color:var(--ink-2);">${valFmt}</td>
-                        <td style="padding:6px 2px; font-size:0.75rem; word-break: break-all;">${a.referencia_transferencia || '-'}</td>
-                        <td style="padding:6px 2px; text-align:right;">
-                            <button class="chip-del" style="width:24px; height:24px; padding:0; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; font-size:0.85rem;" 
-                                onclick="confirmarEliminarAbono('${a.id}', this)">🗑️</button>
+                        <td style="padding:10px 4px; color:var(--ink-2);">${fechaLimpia}</td>
+                        <td style="padding:10px 4px; font-weight:600; color:var(--ink);">${valFmt}</td>
+                        <td style="padding:10px 4px; font-size:0.8rem; color:var(--muted); word-break: break-all;">${a.referencia_transferencia || '-'}</td>
+                        <td style="padding:10px 4px; text-align:right;">
+                            <button style="background:transparent; border:none; color:var(--danger); font-size:0.8rem; cursor:pointer; font-weight:500; font-family:inherit; padding:0;" 
+                                onclick="confirmarEliminarAbono('${a.id}', this)">Borrar</button>
                         </td>
                     </tr>`;
         });
@@ -703,7 +685,7 @@
     }
 
     async function confirmarEliminarAbono(idAbono, btnElement) {
-        if(!confirm("¿Estás seguro de eliminar este abono? Si se usó una transferencia de banco, ésta quedará LIBRE nuevamente.")) return;
+        if(!confirm("¿Seguro de eliminar este abono? Si usó una transferencia de banco, quedará LIBRE nuevamente.")) return;
         
         btnElement.textContent = '...';
         btnElement.disabled = true;
@@ -717,15 +699,15 @@
             const res = await req.json();
             
             if(res.status === 'ok') {
-                showModal('✅ Eliminado', 'Abono eliminado y saldos re-calculados correctamente.');
-                runSearch(); // Recargamos toda la vista para ver los saldos actualizados
+                showModal('Eliminado', 'Abono eliminado y saldos re-calculados.');
+                runSearch(); 
             } else {
-                showModal('❌ Error', res.mensaje);
-                btnElement.textContent = '🗑️'; btnElement.disabled = false;
+                showModal('Error', res.mensaje);
+                btnElement.textContent = 'Borrar'; btnElement.disabled = false;
             }
         } catch(e) {
-            showModal('❌ Error', 'Error de conexión.');
-            btnElement.textContent = '🗑️'; btnElement.disabled = false;
+            showModal('Error', 'Error de conexión.');
+            btnElement.textContent = 'Borrar'; btnElement.disabled = false;
         }
     }
 
@@ -735,7 +717,7 @@
         const ciudad = document.getElementById('c_ciudad').value;
         const originalText = btnElement.innerHTML;
 
-        btnElement.innerHTML = '⏳...';
+        btnElement.innerHTML = 'Guardando...';
         btnElement.disabled = true;
 
         try {
@@ -753,12 +735,12 @@
             const res = await req.json();
 
             if (res.status === 'ok') {
-                showModal('✅ Guardado', res.mensaje);
+                showModal('Guardado', res.mensaje);
             } else {
-                showModal('❌ Error', res.mensaje);
+                showModal('Error', res.mensaje);
             }
         } catch(e) {
-            showModal('❌ Error', 'Error de conexión con el servidor.');
+            showModal('Error', 'Error de conexión.');
         }
         
         btnElement.innerHTML = originalText;
@@ -771,9 +753,9 @@
   
 
 async function confirmarLiberarBoleta(numero) {
-        if(!confirm(`⚠️ ATENCIÓN PELIGRO: ¿Estás seguro de que quieres LIBERAR la boleta ${numero}? \n\nSe borrará todo su historial de pagos, se liberarán las transferencias asociadas del banco y la boleta podrá ser vendida a otra persona. ¡Esta acción no se puede deshacer!`)) return;
+        if(!confirm(`ATENCIÓN: ¿Seguro que quieres LIBERAR la boleta ${numero}? \n\nSe borrará su historial de pagos, se liberarán transferencias asociadas y podrá ser vendida de nuevo.`)) return;
         
-        const btn = document.getElementById('btnRegistrarAbono'); // Usamos este botón para dar feedback visual
+        const btn = document.getElementById('btnRegistrarAbono'); 
         const originalText = btn.textContent;
         btn.textContent = `Liberando boleta ${numero}...`;
         btn.disabled = true;
@@ -787,14 +769,13 @@ async function confirmarLiberarBoleta(numero) {
             const res = await req.json();
             
             if(res.status === 'ok') {
-                showModal('✅ Boleta Liberada', res.mensaje);
-                // Cerramos el cliente y volvemos al inicio porque los datos en pantalla ya no son válidos
+                showModal('Boleta Liberada', res.mensaje);
                 activateHeroMode(); 
             } else {
-                showModal('❌ Error', res.mensaje);
+                showModal('Error', res.mensaje);
             }
         } catch(e) {
-            showModal('❌ Error', 'Error de conexión.');
+            showModal('Error', 'Error de conexión.');
         }
         btn.textContent = originalText;
         btn.disabled = false;
@@ -809,7 +790,7 @@ async function procesarCSVBancos() {
     
     const btn = document.getElementById('btnProcesarBancos');
     const txtOriginal = btn.textContent;
-    btn.textContent = 'Leyendo y procesando... ⏳';
+    btn.textContent = 'Procesando...';
     btn.disabled = true;
 
     reader.onload = async function(e) {
@@ -821,31 +802,23 @@ async function procesarCSVBancos() {
             const row = rows[i].trim();
             if(!row) continue;
             
-            // Separamos por comas usando una expresión regular sencilla
             const cols = row.split(',');
-            if(cols.length < 12) continue; // Si no tiene al menos 12 columnas, no es una fila válida
+            if(cols.length < 12) continue; 
 
-            // 1. EXTRAER EL VALOR
-            // NOTA: Tienes puesto el índice 9 (Columna J). Si notas que los valores
-            // están saliendo mal y en realidad estaban en la columna A, cambia ese 9 por un 0.
             let montoRaw = cols[9]; 
             let monto = parseFloat(montoRaw) || 0;
 
-            // 2. EXTRAER LA FECHA (Columna B / Índice 1) Ej: "15022026"
             let fechaRaw = cols[1]; 
-            let fechaFormateada = new Date().toISOString(); // Por defecto hoy
+            let fechaFormateada = new Date().toISOString(); 
             if(fechaRaw && fechaRaw.length === 8) {
-                // Lo convertimos de DDMMAAAA a AAAA-MM-DD
                 fechaFormateada = `${fechaRaw.slice(4,8)}-${fechaRaw.slice(2,4)}-${fechaRaw.slice(0,2)}T00:00:00.000Z`;
             }
 
-            // 3. EXTRAER PLATAFORMA (Columna E / Índice 4)
             let descripcion = cols[4] || "";
             let plataforma = descripcion.includes("NEQUI") ? "Nequi" : "Bancolombia";
 
-            // 4. EXTRAER REFERENCIA / CELULAR DE ORIGEN (Columna L / Índice 11)
             let referenciaRaw = cols[11] || "";
-            let referencia = referenciaRaw.replace(/"/g, ''); // Quitamos comillas si las tiene
+            let referencia = referenciaRaw.replace(/"/g, ''); 
 
             transferenciasNuevas.push({
                 monto: monto,
@@ -861,7 +834,6 @@ async function procesarCSVBancos() {
             return alert("No se encontraron transferencias válidas en el archivo.");
         }
 
-        // Enviamos al backend
         try {
             const req = await fetch('/api/admin/subir-bancos', {
                 method: 'POST',
@@ -876,19 +848,18 @@ async function procesarCSVBancos() {
             btn.textContent = txtOriginal; btn.disabled = false;
 
             if(res.status === 'ok') {
-                showModal('¡Archivo Procesado!', res.mensaje);
-                fileInput.value = ""; // Limpiamos el archivo
+                showModal('Procesado', res.mensaje);
+                fileInput.value = ""; 
             } else {
                 showModal('Error al subir', res.mensaje);
             }
 
         } catch(error) {
             btn.textContent = txtOriginal; btn.disabled = false;
-            showModal('Error Crítico', 'No se pudo conectar con el servidor.');
+            showModal('Error', 'No se pudo conectar con el servidor.');
         }
     };
     
-    // Leemos el archivo como texta
     reader.readAsText(file);
 }
   
