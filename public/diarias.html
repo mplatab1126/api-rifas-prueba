@@ -16,8 +16,7 @@
         font-family: 'Poppins', sans-serif; 
         background-color: #f4f7f9; 
         margin: 0; padding: 0; color: #333;
-        padding-top: 55px; /* Ajustado para que el temporizador no tape el logo */
-        padding-bottom: 100px; 
+        padding-top: 48px; padding-bottom: 100px; 
         -webkit-tap-highlight-color: transparent;
       }
       
@@ -80,9 +79,11 @@
       .bolota { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #2b6039 0%, #11331c 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; border: 2px solid #e8f5e9; box-shadow: 0 4px 8px rgba(27, 94, 32, 0.2); }
       .premios-dinamica { display: flex; flex-direction: column; gap: 8px; }
       .premio-fila { display: flex; align-items: center; background: #ffffff; border-radius: 12px; padding: 12px 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; }
-      .premio-badge { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #1b5e20, #0a2e0e); color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; margin-right: 12px; flex-shrink: 0; }
+      .premio-badge { width: 38px; height: 38px; border-radius: 10px; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; margin-right: 12px; flex-shrink: 0; }
+      .bg-badge-1 { background: linear-gradient(135deg, #458d6b, #26543e); } .bg-badge-2 { background: linear-gradient(135deg, #1b5e20, #0a2e0e); } .bg-badge-3 { background: linear-gradient(135deg, #f09433, #d9700b); } .bg-badge-4 { background: linear-gradient(135deg, #e35858, #b83333); }
       .premio-detalle { flex: 1; font-size: 14px; color: #475569; font-weight: 600; }
-      .premio-valor { font-size: 18px; font-weight: 800; color: #1b5e20; }
+      .premio-valor { font-size: 16px; font-weight: 800; color: #334155; }
+      .premio-valor.highlight { color: #1b5e20; font-size: 18px; }
 
       /* --- NÚMEROS EN TARJETA PREMIUM CON EFECTO POP --- */
       .numbers-card {
@@ -103,6 +104,21 @@
       .ocupado { background-color: #e2e8f0; color: #94a3b8; cursor: default; box-shadow: none;}
       .info-mini { font-size: 9px; font-weight: 600; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #64748b; margin-top: 2px; }
 
+      /* --- ORÁCULO IA --- */
+      .card-oracle {
+        background: linear-gradient(135deg, #f8faff 0%, #eef2ff 100%); border: 1px solid #d0dfff; border-radius: 20px;
+        margin: 0 20px 45px 20px; padding: 25px 20px; box-shadow: 0 8px 25px rgba(37, 117, 252, 0.08);
+        position: relative; text-align: center; overflow: hidden;
+      }
+      .card-oracle::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(90deg, #6a11cb, #2575fc); }
+      .oracle-title { margin: 0 0 8px 0; font-family: 'Montserrat', sans-serif; font-size: 18px; font-weight: 900; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.5px; }
+      .btn-ai-oracle { background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%); color: white; border: none; padding: 12px 24px; border-radius: 50px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(37, 117, 252, 0.3); transition: transform 0.2s; font-size: 14px; margin: 10px auto 0 auto; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Poppins', sans-serif; }
+      .btn-ai-oracle:active { transform: scale(0.95); }
+      .oracle-textarea { width: 100%; padding: 12px; border: 2px solid #d0dfff; border-radius: 12px; font-size: 16px; background: #fff; outline: none; font-family: 'Poppins', sans-serif; resize: none; box-sizing: border-box; margin-bottom: 15px; }
+      .oracle-result-box { margin-top: 15px; padding: 15px; background: #fff; border-radius: 12px; border: 1px dashed #aecbfa; display: none; }
+      .oracle-numbers { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+      .btn-oracle-num { background: #fff; border: 2px solid #2575fc; color: #2575fc; font-weight: 800; padding: 8px 15px; border-radius: 12px; cursor: pointer; font-size: 16px; }
+
       /* --- MEDIOS DE PAGO OFICIALES --- */
       .payment-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; margin: 0 20px 45px 20px; padding: 25px 20px; box-shadow: 0 8px 25px rgba(27, 94, 32, 0.04); text-align: center; }
       .payment-grid { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 20px; }
@@ -120,6 +136,25 @@
       .trust-badges-container { display: flex; justify-content: center; gap: 15px; margin: 0 20px 45px 20px; }
       .trust-badge { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; }
       .trust-badge svg { width: 16px; height: 16px; fill: #1b5e20; }
+
+      /* --- LISTA ESTILO WHATSAPP --- */
+      .whatsapp-list-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; margin: 0 20px 45px 20px; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05); overflow: hidden; }
+      .wa-header { background: #f8fafc; padding: 15px 20px; border-bottom: 1px solid #e2e8f0; text-align: center; }
+      .wa-header-title { font-size: 16px; font-weight: 800; color: #0a3d24; margin: 0 0 3px 0; }
+      .wa-header-sub { font-size: 13px; color: #64748b; margin: 0; }
+      .wa-chat-item { display: flex; padding: 18px 20px; border-bottom: 1px solid #f1f5f9; align-items: center; }
+      .wa-chat-item:last-child { border-bottom: none; }
+      .wa-avatar { width: 50px; height: 50px; border-radius: 50%; background: #e8f5e9; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-right: 15px; flex-shrink: 0; border: 1px solid #c8e6c9; }
+      .wa-info { flex: 1; overflow: hidden; }
+      .wa-top-line { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3px; }
+      .wa-contact-details { display: flex; flex-direction: column; }
+      .wa-name { font-size: 16px; font-weight: 700; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .wa-phone { font-size: 12px; color: #64748b; font-weight: 500; }
+      .wa-time { font-size: 12px; color: #25d366; font-weight: 500; margin-top: 2px; }
+      .wa-bottom-line { display: flex; justify-content: space-between; align-items: center; margin-top: 2px; }
+      .wa-msg { font-size: 14px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; }
+      .wa-check { color: #94a3b8; font-size: 13px; letter-spacing: -2px; }
+      .wa-badge { background-color: #25d366; color: white; font-size: 11px; font-weight: bold; height: 20px; min-width: 20px; padding: 0 5px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
 
       /* --- BARRA DE PROGRESO FLOTANTE --- */
       .sticky-progress {
@@ -155,6 +190,42 @@
       .btn-confirmar { width: 100%; padding: 14px; background-color: #1b5e20; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer;}
       .btn-cancelar { width: 100%; padding: 12px; background: white; border: none; color: #999; margin-top: 5px; cursor: pointer; font-weight: 600;}
       .loader { text-align: center; display: none; margin-top: 15px; font-size: 14px; color: #1b5e20;}
+
+      /* --- NUEVO: BOTÓN FLOTANTE DEL CHAT IA --- */
+      .float-chat-btn {
+        position: fixed; bottom: 85px; right: 20px; width: 55px; height: 55px;
+        background-color: #1b5e20; color: #fff; border-radius: 50%;
+        display: flex; justify-content: center; align-items: center;
+        box-shadow: 0 4px 15px rgba(27, 94, 32, 0.4); z-index: 950; cursor: pointer; transition: transform 0.3s;
+      }
+      .float-chat-btn:active { transform: scale(0.9); }
+      .float-chat-btn svg { width: 28px; height: 28px; fill: currentColor; }
+
+      /* --- NUEVO: WIDGET MINI CHAT IA --- */
+      .chat-widget {
+        position: fixed; bottom: 150px; right: 20px; width: 320px; max-width: calc(100% - 40px);
+        background: #fff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        z-index: 960; display: none; flex-direction: column; overflow: hidden;
+        transform-origin: bottom right; animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        border: 1px solid #e2e8f0;
+      }
+      @keyframes scaleUp { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+      .chat-header {
+        background: linear-gradient(135deg, #0a3d24 0%, #1b5e20 100%); color: white;
+        padding: 15px; display: flex; justify-content: space-between; align-items: center;
+      }
+      .chat-header h4 { margin: 0; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px;}
+      .close-chat { background: none; border: none; color: white; font-size: 24px; cursor: pointer; line-height: 1; padding: 0;}
+      .chat-body { padding: 15px; height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #f8fafc; }
+      .chat-bubble { padding: 10px 14px; border-radius: 15px; font-size: 13px; max-width: 85%; line-height: 1.4; word-wrap: break-word;}
+      .bubble-bot { background: #e8f5e9; color: #1b5e20; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #c8e6c9;}
+      .bubble-user { background: #1b5e20; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+      .chat-input-area { padding: 10px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; }
+      .chat-input-area input { flex: 1; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 20px; font-size: 16px; outline: none; font-family: 'Poppins', sans-serif;}
+      .chat-input-area input:focus { border-color: #1b5e20; }
+      .chat-input-area button { background: #1b5e20; color: white; border: none; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;}
+      .typing-bubble { font-style: italic; color: #64748b; font-size: 11px; margin-top: 2px;}
+
     </style>
   </head>
   <body>
@@ -187,7 +258,7 @@
       <div class="hero-title-area">
         <h1>RIFA DIARIA</h1>
         <div class="info-sorteo-container">
-          <div class="badge-sorteo">📅 JUEGA HOY CON CHONTICO DÍA</div>
+          <div class="badge-sorteo">📅 JUEGA EL 13 DE FEB CON CHONTICO DÍA</div>
         </div>
       </div>
 
@@ -198,34 +269,48 @@
         </div>
         <div class="stat-divider"></div>
         <div class="stat-block highlight">
-          <span class="stat-label">💰 Premio Mayor</span>
-          <span class="stat-value">$1.000.000</span>
+          <span class="stat-label">💰 Total Premios</span>
+          <span class="stat-value">$1.300.000</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-block">
           <span class="stat-label">🏆 Ganadores</span>
-          <span class="stat-value">1</span>
+          <span class="stat-value">4</span>
         </div>
       </div>
 
       <div class="dinamica-section">
-        <h3 class="section-title-elegant">💡 ¿Cómo ganas?</h3>
-        <p class="section-subtitle-elegant">Ejemplo: Si cae el número <strong>58</strong></p>
+        <h3 class="section-title-elegant">💡 ¿Cómo se reparten los premios?</h3>
+        <p class="section-subtitle-elegant">Ejemplo: Si cae el número <strong>1528</strong></p>
         
         <div class="bolotas-cayendo">
+          <div class="bolota">1</div>
           <div class="bolota">5</div>
+          <div class="bolota">2</div>
           <div class="bolota">8</div>
         </div>
 
         <div class="premios-dinamica">
           <div class="premio-fila">
-            <div class="premio-badge">58</div>
-            <div class="premio-detalle">Acierto a las 2 últimas cifras</div>
+            <div class="premio-badge bg-badge-1">15</div>
+            <div class="premio-detalle">Primeras 2 cifras</div>
+            <div class="premio-valor">$100.000</div>
+          </div>
+          <div class="premio-fila">
+            <div class="premio-badge bg-badge-2">28</div>
+            <div class="premio-detalle">Últimas 2 cifras</div>
             <div class="premio-valor highlight">$1.000.000</div>
           </div>
-          <p style="font-size: 12px; color: #64748b; text-align: center; margin-top: 10px;">
-            * Si el Chontico cae 1258, el ganador es el número 58.
-          </p>
+          <div class="premio-fila">
+            <div class="premio-badge bg-badge-3">52</div>
+            <div class="premio-detalle">2 cifras del medio</div>
+            <div class="premio-valor">$100.000</div>
+          </div>
+          <div class="premio-fila">
+            <div class="premio-badge bg-badge-4">18</div>
+            <div class="premio-detalle">Primera y última</div>
+            <div class="premio-valor">$100.000</div>
+          </div>
         </div>
       </div>
 
@@ -235,6 +320,16 @@
         <div id="loading" style="text-align:center; color:#999; padding:20px;">Cargando boletas...</div>
         
         <div id="grid" class="grid-container"></div>
+      </div>
+
+      <div class="card-oracle">
+        <h3 class="oracle-title">✨ ¿No sabes qué jugar?</h3>
+        <p style="font-size:13px; color:#64748b; margin-bottom:15px; line-height: 1.5;">
+          Cuéntame tu sueño o qué señal viste hoy y nuestra IA analizará las estrellas para darte tu número de la suerte.
+        </p>
+        <button class="btn-ai-oracle" onclick="abrirOraculo()">
+          <span style="font-size: 18px;">🔮</span> Preguntar al Oráculo
+        </button>
       </div>
 
       <div class="payment-card">
@@ -279,7 +374,71 @@
         </div>
       </div>
 
-    </div> <div class="sticky-progress" id="sticky-progress-bar">
+      <div class="whatsapp-list-card">
+        <div class="wa-header">
+          <h3 class="wa-header-title">📱 Líneas de Atención Oficiales</h3>
+          <p class="wa-header-sub">Atendemos cada sorteo por separado</p>
+        </div>
+        
+        <div class="wa-chat-item">
+          <div class="wa-avatar">🏢</div>
+          <div class="wa-info">
+            <div class="wa-top-line">
+              <div class="wa-contact-details">
+                <span class="wa-name">Boletería LOS PLATA</span>
+                <span class="wa-phone">+57 310 733 4957</span>
+              </div>
+              <span class="wa-time" style="color:#64748b">Ayer</span>
+            </div>
+            <div class="wa-bottom-line">
+              <span class="wa-msg">
+                <span class="wa-check">✓✓</span> Solo atención Rifa Apartamento Lujo
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="wa-chat-item">
+          <div class="wa-avatar">🎟️</div>
+          <div class="wa-info">
+            <div class="wa-top-line">
+              <div class="wa-contact-details">
+                <span class="wa-name">Rifas Diarias LOS PLATA</span>
+                <span class="wa-phone">+57 311 667 5984</span>
+              </div>
+              <span class="wa-time">Ahora</span>
+            </div>
+            <div class="wa-bottom-line">
+              <span class="wa-msg" style="color:#333; font-weight:500;">
+                Atención exclusiva para Sorteo Diario
+              </span>
+              <span class="wa-badge">1</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div> <div class="float-chat-btn" onclick="toggleChat()" title="Hablar con Asistente">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/><path d="M9 10h6v2H9zM9 6h6v2H9z"/></svg>
+    </div>
+
+    <div class="chat-widget" id="chat-widget">
+      <div class="chat-header">
+        <h4>🤖 Asistente Los Plata</h4>
+        <button class="close-chat" onclick="toggleChat()">×</button>
+      </div>
+      <div class="chat-body" id="chat-body">
+        <div class="chat-bubble bubble-bot">¡Hola! Soy tu asistente virtual. Pregúntame sobre medios de pago, cómo jugar o cualquier duda que tengas.</div>
+      </div>
+      <div class="chat-input-area">
+        <input type="text" id="chat-input" placeholder="Ej: ¿A qué Nequi pago?" onkeypress="manejarEnterChat(event)">
+        <button onclick="enviarMensajeChat()">
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="sticky-progress" id="sticky-progress-bar">
       <div class="sticky-progress-text">
         <span class="urgency-text">🔥 ¡Casi agotado!</span>
         <span class="urgency-numbers"><strong id="progress-percent-text">0%</strong> (Quedan <span id="progress-left-text">0</span>)</span>
@@ -310,7 +469,32 @@
         </div>
         <button class="btn-confirmar" onclick="confirmarReserva()">Confirmar Reserva</button>
         <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
-        <div id="msg-carga" class="loader">🔄 Guardando reserva...</div>
+        <div id="msg-carga" class="loader">🔄 Guardando...</div>
+      </div>
+    </div>
+
+    <div id="modal-oracle" class="modal-overlay">
+      <div class="modal-content" style="background: linear-gradient(135deg, #fff 0%, #f4f8ff 100%); border: 1px solid #d0dfff;">
+        <div style="text-align:center; margin-bottom:10px;">
+           <span style="font-size:40px;">🔮</span>
+        </div>
+        <h3 style="text-align:center; margin-top:0; color:#1e3a8a; font-family: 'Montserrat', sans-serif; font-weight: 900;">Oráculo de la Suerte</h3>
+        <p style="text-align:center; color:#64748b; font-size:13px; margin-bottom:20px;">
+          ¿Qué soñaste anoche o qué señal viste hoy?
+        </p>
+        
+        <textarea id="input-oracle-text" rows="3" placeholder="Ej: Soñé con un gato negro cruzando..." class="oracle-textarea"></textarea>
+
+        <button id="btn-ask-oracle" class="btn-ai-oracle" style="width:100%; margin-top:0;" onclick="consultarGemini()">
+          ✨ Interpretar Señales
+        </button>
+        
+        <div id="oracle-result" class="oracle-result-box">
+          <p id="oracle-msg" style="font-size:13px; color:#334155; font-style:italic; text-align:center; margin:0 0 10px 0;">...</p>
+          <div id="oracle-suggestions" class="oracle-numbers"></div>
+        </div>
+
+        <button class="btn-cancelar" onclick="cerrarOraculo()">Cerrar</button>
       </div>
     </div>
 
@@ -347,7 +531,7 @@
         observer.observe(tarjeta);
       }
 
-      /* --- JS CARGAR NÚMEROS DESDE SUPABASE --- */
+      /* --- JS CARGAR NÚMEROS DESDE VERCEL (SUPABASE) --- */
       function cargarDatosDesdeVercel() {
         fetch('/api/diarias/numeros')
           .then(res => res.json())
@@ -363,7 +547,7 @@
           });
       }
 
-      /* --- JS DIBUJAR NÚMEROS --- */
+      /* --- JS DIBUJAR NÚMEROS EN PANTALLA --- */
       function pintarNumeros(datos) {
         const contenedor = document.getElementById('grid');
         const filtroMsg = document.getElementById('filtro-msg');
@@ -395,7 +579,7 @@
         datos.forEach(fila => {
           const numero = fila.numero;
           const estado = fila.estado; 
-          const nombreCliente = fila.nombre_cliente || "Oculto"; 
+          const nombreCliente = fila.nombre_cliente || "Anónimo"; 
           
           if (ocultarOcupados && estado !== 'Disponible') return;
 
@@ -474,7 +658,7 @@
         document.getElementById('modal-soldout').style.display = 'none';
       }
 
-      /* --- JS ENVIAR COMPRA A VERCEL --- */
+      /* --- JS ENVIAR COMPRA A VERCEL (SUPABASE) --- */
       function confirmarReserva() {
         const nombre = document.getElementById('input-nombre').value;
         const telefono = document.getElementById('input-telefono').value;
@@ -543,6 +727,46 @@
           toast.classList.add('show');
           setTimeout(() => { toast.classList.remove('show'); }, 3500);
         }, 12000); 
+      }
+
+      /* --- MOCKS PARA QUE EL CHAT Y ORÁCULO NO SE ROMPAN VISUALMENTE --- */
+      function toggleChat() {
+        const widget = document.getElementById('chat-widget');
+        if (widget.style.display === 'flex') {
+          widget.style.display = 'none';
+        } else {
+          widget.style.display = 'flex';
+          document.getElementById('chat-input').focus();
+        }
+      }
+      function manejarEnterChat(e) { if (e.key === 'Enter') enviarMensajeChat(); }
+      function enviarMensajeChat() {
+        const input = document.getElementById('chat-input');
+        if (input.value.trim().length < 2) return;
+        agregarBurbujaChat(input.value, 'user');
+        input.value = '';
+        setTimeout(() => { agregarBurbujaChat("Estamos conectando la IA a nuestro nuevo servidor. Por ahora, ¡aprovecha y reserva tus números arriba!", 'bot'); }, 1000);
+      }
+      function agregarBurbujaChat(texto, tipo) {
+        const body = document.getElementById('chat-body');
+        const div = document.createElement('div');
+        div.className = `chat-bubble bubble-${tipo}`;
+        div.innerText = texto;
+        body.appendChild(div);
+        body.scrollTop = body.scrollHeight;
+      }
+      function abrirOraculo() { document.getElementById('modal-oracle').style.display = 'flex'; document.getElementById('input-oracle-text').focus(); }
+      function cerrarOraculo() { document.getElementById('modal-oracle').style.display = 'none'; }
+      function consultarGemini() {
+        const texto = document.getElementById('input-oracle-text').value.trim();
+        if(texto.length < 3) return alert("Por favor escribe un poco más sobre tu sueño o señal.");
+        document.getElementById('btn-ask-oracle').disabled = true;
+        document.getElementById('oracle-result').style.display = 'block';
+        document.getElementById('oracle-msg').innerText = "Conectando con los astros...";
+        setTimeout(() => {
+           document.getElementById('oracle-msg').innerText = "🔮 La IA está en mantenimiento, pero las estrellas dicen que debes elegir tu número favorito hoy.";
+           document.getElementById('btn-ask-oracle').disabled = false;
+        }, 1500);
       }
     </script>
   </body>
