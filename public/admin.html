@@ -1,119 +1,72 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <title>Admin Los Plata</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg: #f9fafb;
-      --card: #ffffff;
-      --ink: #111827;
-      --ink-2: #4b5563;
-      --muted: #9ca3af;
-      --border: #e5e7eb;
-      --border-focus: #d1d5db;
-      --accent: #10b981;
-      --accent-hover: #059669;
-      --accent-bg: #ecfdf5;
-      --danger: #ef4444;
-      --danger-bg: #fef2f2;
-      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-      --shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.05);
-      --radius: 8px;
+    /* ESTILOS EXACTOS DE TU VERSIÓN ORIGINAL */
+    :root{
+      --ink:#244a3e; --ink-2:#3c6b5d; --muted:#7ea094; --bg:#f6fbf9; --card:#ffffff;
+      --ring:#dfe9e5; --ring-strong:#cfe3dc; --pill:#edf7f2; --accent:#3cb579; --accent-2:#1e8f5c;
+      --danger:#e74c3c; --danger-bg:#fbe9e8; --shadow:0 10px 30px rgba(0,0,0,.06);
     }
-
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      margin: 0; 
-      background: var(--bg);
-      font-family: 'Inter', system-ui, -apple-system, sans-serif; 
-      color: var(--ink); 
-      padding-bottom: 80px;
-      line-height: 1.5;
-    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; background:radial-gradient(1100px 700px at 8% -10%,rgba(60,181,121,.10),transparent 40%), var(--bg);
+      font-family:Poppins,system-ui,-apple-system,sans-serif; color:var(--ink); padding-bottom: 80px;}
     
-    .shell { max-width: 580px; margin: 20px auto; padding: 0 20px; display: none; opacity: 0; transition: opacity 0.4s ease; }
+    .shell { max-width: 550px; margin: 20px auto; padding: 0 18px; display: none; opacity: 0; transition: opacity 0.5s ease; }
     .shell.visible { display: block; opacity: 1; }
     
-    /* Buscador Superior - Minimalista */
-    .top-search-bar { position: sticky; top: 0; z-index: 100; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); padding: 12px 20px; transition: all 0.5s ease; }
-    .top-search-bar.hero-mode { position: fixed; top: 45%; left: 50%; transform: translate(-50%, -50%); width: 100%; max-width: 500px; background: transparent; border-bottom: none; padding: 0; z-index: 1000; }
-    
-    .search-container { max-width: 580px; margin: 0 auto; display: flex; gap: 8px; transition: all 0.3s ease; }
-    .main-input { width: 100%; border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; font-size: 0.95rem; outline: none; transition: all 0.2s; background: var(--card); color: var(--ink); font-family: inherit; }
-    .main-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-bg); }
-    
-    .hero-mode .main-input { padding: 16px 24px; font-size: 1.05rem; border-radius: 12px; box-shadow: var(--shadow-lg); text-align: center; border: 1px solid var(--border); }
-    .search-btn { background: var(--ink); color: #fff; border: none; border-radius: var(--radius); padding: 0 16px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
-    .search-btn:hover { background: #000; }
+    .top-search-bar { position: sticky; top: 0; z-index: 100; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--ring); padding: 12px 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); margin-bottom: 20px; transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1); transform: translateY(0); }
+    .top-search-bar.hero-mode { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 600px; background: transparent; border-bottom: none; box-shadow: none; padding: 0; z-index: 1000; }
+    .search-container { max-width: 550px; margin: 0 auto; display: flex; gap: 10px; transition: all 0.3s ease; }
+    .main-input { width: 100%; border: 2px solid var(--ring); border-radius: 14px; padding: 12px 20px; font-size: 1rem; outline: none; transition: all 0.3s ease; background: #fff; color: var(--ink); font-weight: 600; }
+    .main-input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(60,181,121,0.1); }
+    .hero-mode .main-input { padding: 22px 30px; font-size: 1.1rem; border-radius: 50px; box-shadow: 0 20px 40px rgba(60,181,121,0.15); border-color: transparent; text-align: center; }
+    .search-btn { background: var(--ink); color: #fff; border: none; border-radius: 14px; padding: 0 20px; font-weight: 700; cursor: pointer; font-size: 1.2rem; transition: all 0.3s ease; }
     .hero-mode .search-btn { display: none; }
-    
-    .hero-welcome-text { text-align: center; margin-bottom: 24px; opacity: 0; visibility: hidden; transform: translateY(10px); transition: all 0.4s ease; position: absolute; top: -100px; left: 0; right: 0; }
+    .hero-welcome-text { text-align: center; margin-bottom: 30px; opacity: 0; visibility: hidden; transform: translateY(20px); transition: all 0.4s ease; position: absolute; top: -150px; left: 0; right: 0; }
     .hero-mode .hero-welcome-text { opacity: 1; visibility: visible; transform: translateY(0); position: relative; top: auto; }
-    .hero-title { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.02em; margin: 0; color: var(--ink); }
-    .hero-subtitle { font-size: 0.9rem; color: var(--muted); margin: 4px 0 0 0; }
-
-    /* Barra del Asesor */
-    .user-info-bar { text-align: center; margin-top: 10px; font-size: 0.8rem; color: var(--ink-2); transition: all 0.3s ease; }
-    .hero-mode .user-info-bar { position: fixed; top: 20px; right: 20px; margin: 0; background: var(--card); padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
-    .nav-link { cursor: pointer; color: var(--ink-2); text-decoration: none; margin-left: 12px; transition: color 0.2s; }
-    .nav-link:hover { color: var(--ink); }
-
-    /* Tarjetas y Secciones */
-    .section-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-sm); padding: 24px; margin-bottom: 20px; }
-    .section-title { font-size: 0.85rem; font-weight: 600; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 16px 0; padding-bottom: 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .user-info-bar { text-align: center; margin-top: 8px; font-size: 0.85rem; transition: all 0.5s ease; }
+    .hero-mode .user-info-bar { position: fixed; top: 20px; right: 20px; margin: 0; background: rgba(255,255,255,0.8); padding: 5px 15px; border-radius: 20px; }
     
-    .vertical-form { display: flex; flex-direction: column; gap: 14px; }
-    label { display: block; font-weight: 500; color: var(--ink-2); margin: 0 0 4px; font-size: 0.85rem; }
-    .field { display: flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; transition: all 0.2s; }
-    .field:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-bg); }
-    .pill { flex: 1; border: 0; outline: 0; font-size: 0.9rem; background: transparent; color: var(--ink); width: 100%; font-family: inherit; }
+    .section-card { background: #fff; border: 1px solid var(--ring); border-radius: 24px; box-shadow: var(--shadow); padding: 28px 32px; margin-bottom: 24px; }
+    .section-title { font-size: 1.1rem; font-weight: 800; color: var(--ink); text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 20px 0; padding-bottom: 12px; border-bottom: 2px solid var(--ring); display: flex; align-items: center; justify-content: space-between; }
     
-    /* Pastillas de Números */
-    .num-wrap { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    .num-pill { background: var(--bg); border: 1px solid var(--border-focus); border-radius: var(--radius); padding: 6px 10px; display: flex; gap: 8px; align-items: center; width: fit-content; }
-    .num-pill input { width: 45px; border: 0; outline: 0; background: transparent; font-size: 1rem; font-weight: 600; color: var(--ink); text-align: center; font-family: inherit; }
-    .chip-del { border: none; background: transparent; color: var(--muted); font-size: 1rem; cursor: pointer; padding: 0 4px; transition: color 0.2s; }
-    .chip-del:hover { color: var(--danger); }
-    .btn-add { border: 1px dashed var(--border-focus); background: transparent; color: var(--ink-2); border-radius: var(--radius); padding: 4px 12px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
-    .btn-add:hover { background: var(--bg); color: var(--ink); }
+    .vertical-form { display: flex; flex-direction: column; gap: 16px; }
+    label { display: block; font-weight: 700; color: var(--ink-2); margin: 0 0 8px; font-size: 0.9rem; }
+    .field { display: flex; align-items: center; gap: 10px; background: #fcfdfd; border: 1px solid var(--ring); border-radius: 12px; padding: 12px 14px; transition: border-color .2s; }
+    .field:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(60,181,121,0.1); }
+    .pill { flex: 1; border: 0; outline: 0; font-size: 16px; background: transparent; color: var(--ink); width: 100%; }
+    
+    .num-wrap { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .num-pill { background: var(--pill); border: 1px solid var(--ring-strong); border-radius: 14px; padding: 8px 12px; display: flex; gap: 10px; align-items: center; width: fit-content; }
+    .num-pill input { width: 60px; border: 0; outline: 0; background: transparent; font-size: 18px; font-weight: 700; color: var(--accent-2); text-align: center; }
+    .chip-del { border: none; background: var(--danger-bg); color: #d64536; font-weight: 700; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .btn-add { border: 2px dashed var(--accent); background: rgba(60,181,121,0.05); color: var(--accent-2); border-radius: 12px; padding: 8px 16px; font-weight: 700; cursor: pointer; transition: all .2s; }
 
-    /* Botones */
-    .cta { display: block; width: 100%; border: none; border-radius: var(--radius); padding: 12px; font-weight: 500; font-size: 0.95rem; background: var(--ink); color: #fff; cursor: pointer; text-align: center; margin-top: 8px; transition: all 0.2s; font-family: inherit; }
-    .cta:hover { background: #000; box-shadow: var(--shadow-md); }
-    .cta:active { transform: translateY(1px); }
-    .cta-secondary { background: var(--bg); color: var(--ink); border: 1px solid var(--border); }
-    .cta-secondary:hover { background: var(--border); color: var(--ink); }
+    .cta { display: block; width: 100%; border: none; border-radius: 12px; padding: 14px; font-weight: 700; font-size: 1rem; background: linear-gradient(180deg, var(--accent), var(--accent-2)); color: #fff; box-shadow: 0 10px 20px rgba(60,181,121,.25); cursor: pointer; text-align: center; margin-top: 10px; }
+    .cta:active { transform: scale(0.98); }
 
-    /* Modal Overlay */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(17, 24, 39, 0.4); backdrop-filter: blur(4px); z-index: 2000; display: none; align-items: center; justify-content: center; }
-    .modal-card { background: var(--card); width: 90%; max-width: 380px; border-radius: 16px; padding: 32px 24px; text-align: center; box-shadow: var(--shadow-lg); border: 1px solid var(--border); }
-    #loginOverlay { background: var(--bg); z-index: 10000; display: flex; } 
-    .modal-title { font-size: 1.25rem; font-weight: 600; margin: 0 0 8px 0; color: var(--ink); }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(36, 74, 62, 0.4); backdrop-filter: blur(3px); z-index: 2000; display: none; align-items: center; justify-content: center; }
+    .modal-card { background: #fff; width: 90%; max-width: 400px; border-radius: 26px; padding: 32px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+    #loginOverlay { background: #f6fbf9; z-index: 10000; display: flex; } 
+    .hint { margin-top: 12px; text-align: center; font-weight: 600; color: #3c6b5d; font-size: 0.95rem; }
+    .hint.err { color: #e74c3c; }
     
-    .hint { margin-top: 8px; text-align: center; color: var(--muted); font-size: 0.8rem; }
-    .hint.err { color: var(--danger); }
+    .mode-switch { display: flex; background: #fff; border-radius: 16px; padding: 6px; margin-bottom: 24px; border: 1px solid var(--ring); box-shadow: var(--shadow); }
+    .mode-btn { flex: 1; border: none; background: transparent; padding: 12px; border-radius: 12px; font-weight: 700; color: var(--muted); cursor: pointer; transition: all 0.2s; font-size: 0.95rem; }
+    .mode-btn.active { background: var(--pill); color: var(--accent-2); box-shadow: 0 2px 8px rgba(60,181,121,0.1); border: 1px solid var(--ring-strong); }
     
-    /* Selector de Modos (Separar / Abonar) */
-    .mode-switch { display: flex; background: var(--bg); border-radius: var(--radius); padding: 4px; margin-bottom: 20px; border: 1px solid var(--border); }
-    .mode-btn { flex: 1; border: none; background: transparent; padding: 8px; border-radius: 6px; font-weight: 500; color: var(--muted); cursor: pointer; transition: all 0.2s; font-size: 0.85rem; font-family: inherit; }
-    .mode-btn.active { background: var(--card); color: var(--ink); box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
-    
-    /* Zona OCR Drop */
-    .ocr-drop { border: 1px dashed var(--border-focus); background: var(--bg); border-radius: var(--radius); padding: 16px; text-align: center; font-weight: 400; color: var(--ink-2); cursor: pointer; margin-bottom: 12px; font-size: 0.8rem; transition: all 0.2s; }
-    .ocr-drop:hover { border-color: var(--muted); background: var(--card); }
+    .ocr-drop { border:2px dashed #cfe3dc; background:#fbfdfc; border-radius:16px; padding:15px; text-align:center; font-weight:700; color:var(--ink-2); cursor:pointer; margin-bottom: 10px; font-size: 0.85rem;}
+    .ocr-drop:hover { border-color:var(--accent); background:#f2faf5; }
 
-    /* Utilidades */
     .view-section { display: none; animation: fadeIn 0.3s ease; }
     .view-section.active { display: block; }
-    .badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: var(--bg); border: 1px solid var(--border); color: var(--ink-2); font-weight: 500; }
-    .badge.success { background: var(--accent-bg); color: var(--accent-hover); border-color: #a7f3d0; }
-    .badge.danger { background: var(--danger-bg); color: var(--danger); border-color: #fecaca; }
-
     @keyframes fadeIn{from{opacity:0} to{opacity:1}}
   </style>
 </head>
@@ -121,8 +74,8 @@
 
   <div id="loginOverlay" class="modal-overlay">
     <div class="modal-card">
-      <h1 class="modal-title">Acceso al Sistema</h1>
-      <p style="color:var(--muted); font-size:0.9rem; margin-bottom: 20px;">Ingresa tu clave de administrador</p>
+      <h1>🔐 Acceso</h1>
+      <p style="color:#7ea094;">Ingresa tu clave de administrador</p>
       <div class="field" style="margin-bottom:20px;">
         <input id="loginPwd" type="password" class="pill" placeholder="Contraseña..." style="text-align:center">
       </div>
@@ -133,44 +86,46 @@
 
   <div class="top-search-bar hero-mode" id="topBar" style="display:none">
     <div class="hero-welcome-text">
-        <h1 class="hero-title">Sistema Unificado</h1>
-        <p class="hero-subtitle">Busca número de boleta, teléfono o pega datos</p>
+        <div style="font-size: 4rem; margin-bottom: 10px;">👋</div>
+        <h1 style="color:var(--ink); margin:0; font-size: 2rem;">Sistema Unificado</h1>
+        <p style="color:var(--muted); margin: 8px 0 0 0;">Busca boleta, teléfono o pega datos</p>
     </div>
     <div class="search-container">
-      <input type="text" id="smartInput" class="main-input" placeholder="Buscar o pegar..." autocomplete="off">
-      <button id="btnSearch" class="search-btn">Buscar</button>
+      <input type="text" id="smartInput" class="main-input" placeholder="Escribe para buscar o pegar..." autocomplete="off">
+      <button id="btnSearch" class="search-btn">🔍</button>
     </div>
     <div class="user-info-bar">
-      <span id="asesorDisplay" style="font-weight:500; color:var(--ink); margin-right:12px;">Asesor</span>
-      <span class="nav-link" onclick="switchView('view-bancos')">Subir Bancos</span>
-      <span id="btnLogout" class="nav-link">Cerrar sesión</span>
-    </div>
-    <div id="searchFeedback" class="hint" style="margin: 8px 0 0 0; min-height: 20px;"></div>
+      <span id="asesorDisplay" style="font-weight:700; color:var(--accent-2); margin-right:10px;">Hola</span>
+      <u style="cursor:pointer; color:var(--ink); margin-right:10px; font-weight:bold;" onclick="switchView('view-bancos')">🏦 Subir Bancos</u>
+      <u id="btnLogout" style="cursor:pointer; color:#7ea094;">Salir</u>
+      </div>
+    <div id="searchFeedback" class="hint" style="margin: 5px 0 0 0; font-size:0.8rem; min-height: 20px;"></div>
   </div>
 
   <div class="shell" id="appShell">
 
     <div id="view-bancos" class="view-section">
-      <div class="section-card">
-        <div class="section-title">Cargar Extracto Bancolombia</div>
-        <p style="font-size: 0.85rem; color: var(--ink-2); margin-bottom: 16px;">Sube el archivo .CSV descargado de la Sucursal Virtual. El sistema procesará el extracto automáticamente.</p>
-        <div class="vertical-form">
-          <div class="field" style="background:var(--bg); border: 1px dashed var(--muted); padding: 20px; justify-content: center;">
-            <input type="file" id="fileBancos" accept=".csv" style="font-size: 0.9rem;">
-          </div>
-          <button id="btnProcesarBancos" class="cta" onclick="procesarCSVBancos()">Procesar y Subir</button>
-        </div>
+  <div class="section-card" style="border-top: 5px solid #1e8f5c;">
+    <div class="section-title">🏦 Cargar Extracto Bancolombia</div>
+    <p style="font-size: 0.85rem; color: #7ea094;">Sube el archivo .CSV descargado de la Sucursal Virtual. El sistema extraerá automáticamente el monto, la fecha y la cuenta de origen del cliente.</p>
+    
+    <div class="vertical-form">
+      <div class="field" style="background:#f2faf5; border: 2px dashed #3cb579; padding: 20px; justify-content: center;">
+        <input type="file" id="fileBancos" accept=".csv" style="font-size: 1rem;">
       </div>
+      <button id="btnProcesarBancos" class="cta" onclick="procesarCSVBancos()" style="margin-top:15px;">PROCESAR Y SUBIR ARCHIVO</button>
     </div>
+  </div>
+</div>
     
     <div id="view-venta" class="view-section">
       <div class="section-card">
-        <div class="section-title"><span>Boletas Seleccionadas</span><button id="btnAddNum" class="btn-add">+ Añadir</button></div>
+        <div class="section-title"><span>🎟️ Boletas</span><button id="btnAddNum" class="btn-add">+ Agregar</button></div>
         <div id="numList" class="num-wrap"></div>
       </div>
 
       <div class="section-card">
-        <div class="section-title">Datos del Cliente</div>
+        <div class="section-title">👤 Datos del Cliente</div>
         <div class="vertical-form">
           <div><label>Nombre</label><div class="field"><input id="v_nombre" class="pill" type="text"></div></div>
           <div><label>Apellido</label><div class="field"><input id="v_apellido" class="pill" type="text"></div></div>
@@ -180,124 +135,125 @@
       </div>
 
       <div class="mode-switch">
-        <button id="btnModeSeparar" class="mode-btn active" onclick="setMode('separar')">Solo Separar ($0)</button>
-        <button id="btnModeAbono" class="mode-btn" onclick="setMode('abono')">Registrar con Abono</button>
+        <button id="btnModeAbono" class="mode-btn" onclick="setMode('abono')">💰 Con Abono</button>
+        <button id="btnModeSeparar" class="mode-btn active" onclick="setMode('separar')">🎟️ Solo Separar ($0)</button>
       </div>
 
       <div id="paymentSections" style="display: none;">
         <div class="section-card">
-          <div class="section-title">Buscar Pago en Bancos</div>
+          <div class="section-title">🔍 Buscar Pago Inteligente</div>
           <div class="vertical-form">
-            <p style="font-size: 0.8rem; color: var(--muted); margin-top: -10px;">Llena al menos un dato para filtrar:</p>
+            <p style="font-size: 0.8rem; color: #7ea094; margin-top: -10px;">Llena al menos uno de estos datos (Entre más llenes, más exacta será la búsqueda):</p>
             <div style="display: flex; gap: 10px;">
               <div style="flex: 1;">
-                <label>Teléfono Origen</label>
+                <label>📱 Celular (WhatsApp)</label>
                 <div class="field"><input id="t_ref" class="pill" type="tel" placeholder="Ej: 311..."></div>
               </div>
               <div style="flex: 1;">
-                <label>Valor exacto</label>
-                <div class="field"><input id="t_monto" class="pill" type="number" placeholder="Ej: 50000"></div>
+                <label>💰 Valor</label>
+                <div class="field"><input id="t_monto" class="pill" type="number" placeholder="Ej: 5000"></div>
               </div>
             </div>
             <div>
-              <label>Fecha de transacción</label>
+              <label>📅 Fecha de la transferencia</label>
               <div class="field"><input id="t_fecha" class="pill" type="date"></div>
             </div>
-            <button id="btnBuscarInteligente" type="button" class="cta cta-secondary" onclick="buscarTransferenciasUI('btnBuscarInteligente', 't_fecha', 't_monto', 't_ref', 'feedbackTransfer', 'v_referenciaAbono', 'v_primerAbono', 'v_metodoPago')">Buscar Transferencia</button>
+            <button id="btnBuscarInteligente" type="button" class="cta" style="margin-top:10px;" onclick="buscarTransferenciasUI('btnBuscarInteligente', 't_fecha', 't_monto', 't_ref', 'feedbackTransfer', 'v_referenciaAbono', 'v_primerAbono', 'v_metodoPago')">🔍 Buscar Transferencia</button>
           </div>
           <div id="feedbackTransfer" class="hint"></div>
         </div>
 
         <div class="section-card">
-          <div class="section-title">Detalle del Abono</div>
+          <div class="section-title">💰 Detalle del Pago</div>
           <div id="ocrDrop" class="ocr-drop">
-             Pegar comprobante aquí (Ctrl+V) para leer referencia<br>
-             <span id="ocrStatus" style="color:var(--ink); font-weight:500; display:block; margin-top:4px;"></span>
+             📸 Pega la imagen del comprobante aquí (Ctrl+V) para extraer Referencia<br>
+             <span id="ocrStatus" style="color:var(--accent); font-weight:normal;"></span>
           </div>
 
           <div class="vertical-form">
-            <div><label>Monto a Abonar</label><div class="field"><input id="v_primerAbono" class="pill" type="number" min="0" value="0"></div></div>
+            <div><label>Valor a Abonar</label><div class="field"><input id="v_primerAbono" class="pill" type="number" min="0" value="0"></div></div>
             <div>
-              <label>Método / Plataforma</label>
+              <label>Método de Pago / Plataforma</label>
               <div class="field">
-                <input id="v_metodoPago" list="l_metodos" class="pill" type="text" placeholder="Nequi, Bancolombia...">
+                <input id="v_metodoPago" list="l_metodos" class="pill" type="text" placeholder="Ej: Nequi, Bancolombia">
                 <datalist id="l_metodos"><option value="Nequi"></option><option value="Bancolombia"></option><option value="Efectivo"></option></datalist>
               </div>
             </div>
             <div>
-              <label>Referencia</label>
-              <div style="display:flex; gap:8px;">
-                <div class="field" style="flex:1"><input id="v_referenciaAbono" class="pill" type="text" placeholder="N° de comprobante"></div>
-                <button id="btnForzarPendiente" type="button" class="cta cta-secondary" style="margin:0; width:auto; padding:0 12px; font-size:0.8rem;" title="Marcar como pendiente">Pendiente</button>
+              <label>Referencia / Cuenta Origen</label>
+              <div style="display:flex; gap:10px;">
+                <div class="field" style="flex:1"><input id="v_referenciaAbono" class="pill" type="text"></div>
+                <button id="btnForzarPendiente" type="button" class="cta" style="margin:0; width:auto; padding:0 15px; background:linear-gradient(135deg, #e67e22, #d35400);">⏳</button>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div style="margin-top: 24px;">
-          <button id="btnRegistrarVenta" class="cta" style="padding: 16px;">Confirmar Separado ($0)</button>
+      <div class="section-card" style="border-color:var(--accent);">
+          <button id="btnRegistrarVenta" class="cta" style="margin-top:10px; height:50px; font-size:1.1rem; background: #7ea094;">CONFIRMAR SEPARADO ($0)</button>
           <input id="v_contrasena" type="hidden">
       </div>
     </div>
 
     <div id="view-cliente" class="view-section">
-      <div class="section-card" style="padding: 0; overflow: hidden;">
+      <div class="section-card" style="border-top: 5px solid var(--ink); padding: 20px;">
+        <div class="section-title" style="margin-bottom: 12px;">👤 Cliente Encontrado</div>
         <div id="cliente-info-render"></div>
       </div>
 
       <div class="section-card">
-         <div class="section-title">Buscar Pago en Bancos</div>
+         <div class="section-title">🔍 Buscar Pago Inteligente</div>
          <div class="vertical-form">
             <div style="display: flex; gap: 10px;">
-              <div style="flex: 1;"><label>Teléfono Origen</label><div class="field"><input id="t_ref_abono" class="pill" type="tel"></div></div>
-              <div style="flex: 1;"><label>Valor exacto</label><div class="field"><input id="t_monto_abono" class="pill" type="number"></div></div>
+              <div style="flex: 1;"><label>📱 Celular / Ref</label><div class="field"><input id="t_ref_abono" class="pill" type="tel"></div></div>
+              <div style="flex: 1;"><label>💰 Valor</label><div class="field"><input id="t_monto_abono" class="pill" type="number"></div></div>
             </div>
-            <div><label>Fecha de transacción</label><div class="field"><input id="t_fecha_abono" class="pill" type="date"></div></div>
-            <button id="btnBuscarInteligenteAbono" type="button" class="cta cta-secondary" onclick="buscarTransferenciasUI('btnBuscarInteligenteAbono', 't_fecha_abono', 't_monto_abono', 't_ref_abono', 'feedbackTransferAbono', 'a_ref', 'a_monto', 'a_metodo')">Buscar Transferencia</button>
+            <div><label>📅 Fecha de la transferencia</label><div class="field"><input id="t_fecha_abono" class="pill" type="date"></div></div>
+            <button id="btnBuscarInteligenteAbono" type="button" class="cta" style="margin-top:10px;" onclick="buscarTransferenciasUI('btnBuscarInteligenteAbono', 't_fecha_abono', 't_monto_abono', 't_ref_abono', 'feedbackTransferAbono', 'a_ref', 'a_monto', 'a_metodo')">🔍 Buscar Transferencia</button>
          </div>
          <div id="feedbackTransferAbono" class="hint"></div>
       </div>
 
       <div class="section-card">
-          <div class="section-title">Registrar Nuevo Abono</div>
+          <div class="section-title">💰 Nuevo Abono</div>
           <div id="ocrDropAbono" class="ocr-drop">
-             Pegar comprobante aquí (Ctrl+V) para leer referencia<br>
-             <span id="ocrStatusAbono" style="color:var(--ink); font-weight:500; display:block; margin-top:4px;"></span>
+             📸 Pega la imagen del comprobante aquí (Ctrl+V) para extraer Referencia<br>
+             <span id="ocrStatusAbono" style="color:var(--accent); font-weight:normal;"></span>
           </div>
 
           <div class="vertical-form">
              <div>
-               <label>Boletas a abonar:</label>
-               <div id="boletas-checkbox-container" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;"></div>
+               <label>✅ Selecciona las boletas a abonar:</label>
+               <div id="boletas-checkbox-container" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 5px;"></div>
              </div>
-             <div><label>Valor Total</label><div class="field"><input type="number" id="a_monto" class="pill" placeholder="0"></div></div>
+             <div><label>Valor Total a Repartir</label><div class="field"><input type="number" id="a_monto" class="pill" placeholder="0"></div></div>
              <div><label>Método de Pago</label><div class="field"><input id="a_metodo" list="l_metodos" class="pill" type="text"></div></div>
              <div>
                <label>Referencia</label>
-               <div style="display:flex; gap:8px;">
+               <div style="display:flex; gap:10px;">
                  <div class="field" style="flex:1"><input type="text" id="a_ref" class="pill"></div>
-                 <button id="btnForzarPendienteAbono" type="button" class="cta cta-secondary" style="margin:0; width:auto; padding:0 12px; font-size:0.8rem;">Pendiente</button>
+                 <button id="btnForzarPendienteAbono" type="button" class="cta" style="margin:0; width:auto; padding:0 15px; background:linear-gradient(135deg, #e67e22, #d35400);">⏳</button>
                </div>
              </div>
           </div>
-          <button id="btnRegistrarAbono" class="cta" onclick="registrarAbono()" style="margin-top:24px; padding:16px;">Registrar Abono</button>
+          <button id="btnRegistrarAbono" class="cta" onclick="registrarAbono()" style="margin-top:20px;">REGISTRAR ABONO</button>
       </div>
     </div>
   </div>
 
   <div id="modalResult" class="modal-overlay">
     <div class="modal-card">
-      <h3 id="mTitle" class="modal-title">Título</h3>
-      <p id="mMsg" style="color:var(--ink-2); margin-bottom:24px; font-size: 0.9rem; line-height: 1.6;">Mensaje</p>
-      <button id="mBtn" class="cta" style="width: auto; padding: 10px 32px; margin: 0 auto;">Aceptar</button>
+      <span id="mIcon" style="font-size: 3.5rem; display: block; margin-bottom: 10px;">🎉</span>
+      <h3 id="mTitle" style="color:var(--ink); margin:0 0 10px 0;">Título</h3>
+      <p id="mMsg" style="color:#5a7a70; margin-bottom:20px;">Mensaje</p>
+      <button id="mBtn" class="cta" style="width: auto; padding: 10px 30px; margin: 0 auto; border-radius: 50px;">Aceptar</button>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   
   <script>
-    // --- LÓGICA JAVASCRIPT INTACTA ---
     const $ = id => document.getElementById(id);
     const feedback = $('searchFeedback');
     const topBar = $('topBar');
@@ -314,11 +270,11 @@
       if (mode === 'separar') {
         btnSeparar.classList.add('active'); btnAbono.classList.remove('active');
         paySection.style.display = 'none';
-        btnReg.textContent = 'Confirmar Separado ($0)'; 
+        btnReg.textContent = 'CONFIRMAR SEPARADO ($0)'; btnReg.style.background = '#7ea094'; 
       } else {
         btnAbono.classList.add('active'); btnSeparar.classList.remove('active');
         paySection.style.display = 'block'; 
-        btnReg.textContent = 'Registrar Venta'; 
+        btnReg.textContent = 'REGISTRAR VENTA'; btnReg.style.background = ''; 
       }
     }
 
@@ -326,7 +282,7 @@
     function makeNumPill(value=''){
       const wrap = document.createElement('div'); wrap.className='num-pill';
       const inp = document.createElement('input'); inp.type='text'; inp.maxLength=4; inp.value=value;
-      const del = document.createElement('button'); del.className='chip-del'; del.innerHTML='&times;';
+      const del = document.createElement('button'); del.className='chip-del'; del.textContent='✕';
       del.onclick = ()=>{ wrap.remove(); if(!numList.children.length) addDefaultPill(); };
       wrap.append(inp, del); return wrap;
     }
@@ -354,6 +310,7 @@
       }
 
       try {
+          // Vamos a preguntarle al servidor si la clave es correcta
           const req = await fetch('/api/admin/login', {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
@@ -371,24 +328,28 @@
               $('loginOverlay').style.display='none'; 
               topBar.style.display='block'; 
               
-              $('asesorDisplay').textContent = "Asesor: " + res.asesor; 
+              // 🌟 NUEVO: Mostramos el nombre del asesor arriba a la derecha
+              $('asesorDisplay').textContent = "👤 " + res.asesor; 
+              
               $('v_contrasena').value = pwd; 
               $('smartInput').focus();
           } else {
-              if(!auto) msg.innerHTML = 'Contraseña incorrecta';
-              msg.classList.add('err');
+              // Si dice que no, mostramos error en rojo y no lo dejamos entrar
+              if(!auto) msg.textContent = '❌ Contraseña incorrecta';
               localStorage.removeItem(STORAGE_KEY);
           }
       } catch (error) {
           if(!auto) {
               btn.textContent = 'Ingresar';
               btn.disabled = false;
-              msg.innerHTML = 'Error de conexión';
-              msg.classList.add('err');
+              msg.textContent = '⚠️ Error de conexión';
           }
       }
     }
 
+    // ==========================================
+    // PORTAPAPELES MAGICO
+    // ==========================================
     const smartInput = $('smartInput');
     smartInput.addEventListener('paste', (e) => {
         const pasteData = (e.clipboardData || window.clipboardData).getData('text');
@@ -404,7 +365,7 @@
                 numList.innerHTML=''; nums.forEach(n=>numList.appendChild(makeNumPill(n))); if(!nums.length) addDefaultPill();
             }
             if(lines.length>4) $('v_telefono').value = lines[4];
-            showModal('Pegado Exitoso', 'Datos distribuidos en el formulario.'); smartInput.value = '';
+            showModal('✨ Pegado Mágico', 'Datos distribuidos correctamente.'); smartInput.value = '';
         }
     });
 
@@ -412,6 +373,9 @@
     $('btnSearch').onclick = runSearch;
     function switchView(id){ document.querySelectorAll('.view-section').forEach(el=>el.classList.remove('active')); $(id).classList.add('active'); }
 
+    // ==========================================
+    // OCR: LECTURA DE COMPROBANTES
+    // ==========================================
     async function preprocessBlobToCanvas(blob){
       return new Promise((resolve)=>{
         const img = new Image(); img.onload = ()=>{
@@ -430,16 +394,16 @@
         for(var i=0; i<items.length; i++){ 
             var it = items[i];
             if(it.type && it.type.indexOf('image/') === 0){ 
-                document.getElementById(statusId).innerHTML = 'Procesando imagen...';
+                document.getElementById(statusId).textContent = 'Leyendo la imagen, por favor espera... ⏳';
                 var f = it.getAsFile(); 
                 var pre = await preprocessBlobToCanvas(f);
                 var res = await Tesseract.recognize(pre || f, 'spa+eng');
                 var ref = extractRefFromText(res.data.text);
                 if(ref) { 
-                    document.getElementById(statusId).innerHTML = "Extraído: " + ref; 
+                    document.getElementById(statusId).textContent = "¡Referencia extraída: " + ref + " ✅!"; 
                     document.getElementById(inputId).value = ref; 
                 } else { 
-                    document.getElementById(statusId).innerHTML = 'Lectura fallida. Ingresa manual.'; 
+                    document.getElementById(statusId).textContent = '❌ No se detectó ninguna referencia clara.'; 
                 }
             }
         }
@@ -448,12 +412,16 @@
     if ($('ocrDrop')) $('ocrDrop').addEventListener('paste', async (e)=>{ handleOCR(e, 'ocrStatus', 'v_referenciaAbono'); });
     if ($('ocrDropAbono')) $('ocrDropAbono').addEventListener('paste', async (e)=>{ handleOCR(e, 'ocrStatusAbono', 'a_ref'); });
 
+
+    // ==========================================
+    // BUSCADOR INTELIGENTE DE TRANSFERENCIAS
+    // ==========================================
     function seleccionarTransferencia(refId, montoId, metodoId, feedbackId, refVal, montoVal, metodoVal) {
         var refInput = document.getElementById(refId); var montoInput = document.getElementById(montoId); var metodoInput = document.getElementById(metodoId);
         refInput.value = refVal; montoInput.value = montoVal; metodoInput.value = metodoVal;
         refInput.readOnly = true; montoInput.readOnly = true; metodoInput.readOnly = true;
-        refInput.style.backgroundColor = "var(--bg)"; montoInput.style.backgroundColor = "var(--bg)"; metodoInput.style.backgroundColor = "var(--bg)";
-        document.getElementById(feedbackId).innerHTML = '<span style="color:var(--accent-hover); font-size:0.85rem; font-weight:500;">Pago vinculado.</span> <span style="color:var(--danger); cursor:pointer; font-size:0.8rem; text-decoration:underline; margin-left:8px;" onclick="desbloquearCampos(\'' + refId + '\', \'' + montoId + '\', \'' + metodoId + '\', \'' + feedbackId + '\')">Desvincular</span>';
+        refInput.style.backgroundColor = "#edf7f2"; montoInput.style.backgroundColor = "#edf7f2"; metodoInput.style.backgroundColor = "#edf7f2";
+        document.getElementById(feedbackId).innerHTML = '<span style="color:#1e8f5c; font-weight:bold;">¡Pago cargado y bloqueado por seguridad! 🔒</span><br><span style="color:#e74c3c; cursor:pointer; font-size:0.8rem; font-weight:bold; text-decoration:underline; display:inline-block; margin-top:5px;" onclick="desbloquearCampos(\'' + refId + '\', \'' + montoId + '\', \'' + metodoId + '\', \'' + feedbackId + '\')">❌ Desbloquear y limpiar datos</span>';
     }
 
     function desbloquearCampos(refId, montoId, metodoId, feedbackId) {
@@ -461,7 +429,7 @@
         refInput.readOnly = false; montoInput.readOnly = false; metodoInput.readOnly = false;
         refInput.value = ""; montoInput.value = ""; metodoInput.value = "";
         refInput.style.backgroundColor = "transparent"; montoInput.style.backgroundColor = "transparent"; metodoInput.style.backgroundColor = "transparent";
-        if(feedbackId) document.getElementById(feedbackId).innerHTML = '<span style="color:var(--muted); font-size:0.8rem;">Desvinculado.</span>';
+        if(feedbackId) document.getElementById(feedbackId).innerHTML = '<span style="color:#7ea094; font-size:0.85rem;">Campos desbloqueados.</span>';
     }
 
     async function buscarTransferenciasUI(btnId, fechaId, montoIdFiltro, refIdFiltro, feedbackId, targetRefId, targetMontoId, targetMetodoId) {
@@ -471,10 +439,10 @@
         var fb = document.getElementById(feedbackId);
         var btn = document.getElementById(btnId);
 
-        if(!fechaVal && !montoVal && !refVal) { fb.innerHTML = "<span class='hint err'>Ingresa un filtro.</span>"; return; }
+        if(!fechaVal && !montoVal && !refVal) { fb.innerHTML = "<span class='hint err'>Ingresa al menos un dato.</span>"; return; }
 
         var originalTxt = btn.textContent;
-        btn.textContent = "Buscando..."; btn.disabled = true; fb.innerHTML = "";
+        btn.textContent = "Buscando en Bancos..."; btn.disabled = true; fb.innerHTML = "";
 
         var payload = { fecha: fechaVal, monto: montoVal, referencia: refVal };
 
@@ -484,33 +452,31 @@
                 body: JSON.stringify(payload)
             });
             const res = await req.json();
+
             btn.textContent = originalTxt; btn.disabled = false;
 
             if(res.status === 'ok') {
                 if(res.lista.length === 0) {
-                    fb.innerHTML = "<span class='hint err'>Sin resultados.</span>";
+                    fb.innerHTML = "<span class='hint err'>No se encontró ninguna transferencia con esos datos.</span>";
                 } else {
-                    var html = '<div style="display:flex; flex-direction:column; gap:8px; margin-top:12px;">';
+                    var html = '<div style="display:grid; gap:8px; margin-top:10px;">';
                     for(var i=0; i<res.lista.length; i++){
                         var t = res.lista[i];
                         var montoFmt = new Intl.NumberFormat('es-CO').format(t.monto);
                         var refSafe = t.referencia.replace(/'/g, "\\'"); var platSafe = t.plataforma.replace(/'/g, "\\'");
-                        
-                        var badgeClass = t.status === 'LIBRE' ? 'success' : 'danger';
-                        
                         html += '<div onclick="seleccionarTransferencia(\'' + targetRefId + '\', \'' + targetMontoId + '\', \'' + targetMetodoId + '\', \'' + feedbackId + '\', \'' + refSafe + '\', ' + t.monto + ', \'' + platSafe + '\')"';
-                        html += ' style="border:1px solid var(--border); padding:12px; border-radius:8px; cursor:pointer; background:var(--card); transition:all 0.2s;"';
-                        html += ' onmouseover="this.style.borderColor=\'var(--accent)\'" onmouseout="this.style.borderColor=\'var(--border)\'">';
-                        html += '<div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span style="font-weight:600; font-size:0.9rem; color:var(--ink);">' + t.plataforma + '</span><span style="font-weight:600; font-size:0.9rem;">$' + montoFmt + '</span></div>';
-                        html += '<div style="display:flex; justify-content:space-between; align-items:center;"><span style="font-size:0.8rem; color:var(--muted);">Ref: ' + t.referencia + ' &bull; ' + t.fecha + '</span>';
-                        html += '<span class="badge ' + badgeClass + '">' + (t.status || 'LIBRE') + '</span></div>';
+                        html += ' style="border:1px solid #dfe9e5; padding:10px; border-radius:10px; cursor:pointer; background:#fff; text-align:left; transition:background 0.2s;"';
+                        html += ' onmouseover="this.style.background=\'#f0f9f4\'" onmouseout="this.style.background=\'#fff\'">';
+                        html += '<div style="font-weight:bold; color:#244a3e;">' + t.plataforma + ' - $' + montoFmt + '</div>';
+                        html += '<div style="font-size:0.8rem; color:#7ea094;">Ref: ' + t.referencia + ' | Fecha: ' + t.fecha + '</div>';
+                        html += '<div style="font-size:0.75rem; color:#e74c3c; font-weight:bold; margin-top:4px;">' + (t.status || 'LIBRE') + '</div>';
                         html += '</div>';
                     }
                     html += '</div>';
                     fb.innerHTML = html;
                 }
             } else {
-                fb.innerHTML = "<span class='hint err'>" + res.mensaje + "</span>";
+                fb.innerHTML = "<span class='hint err'>Error: " + res.mensaje + "</span>";
             }
         } catch(e) {
             btn.textContent = originalTxt; btn.disabled = false;
@@ -518,13 +484,17 @@
         }
     }
 
+
+    // ==========================================
+    // CONEXION A VERCEL (BUSQUEDA, VENTA, ABONO)
+    // ==========================================
     let esVentaPendiente = false; let esAbonoPendiente = false;
-    $('btnForzarPendiente').onclick = ()=>{ if(!$('v_referenciaAbono').value) return alert('Ingresa una referencia'); esVentaPendiente=true; $('btnForzarPendiente').style.background='var(--ink)'; $('btnForzarPendiente').style.color='#fff'; };
-    $('btnForzarPendienteAbono').onclick = ()=>{ if(!$('a_ref').value) return alert('Ingresa una referencia'); esAbonoPendiente=true; $('btnForzarPendienteAbono').style.background='var(--ink)'; $('btnForzarPendienteAbono').style.color='#fff'; };
+    $('btnForzarPendiente').onclick = ()=>{ if(!$('v_referenciaAbono').value) return alert('Pon referencia'); esVentaPendiente=true; $('feedbackTransfer').textContent='Modo Pendiente Activo'; };
+    $('btnForzarPendienteAbono').onclick = ()=>{ if(!$('a_ref').value) return alert('Pon referencia'); esAbonoPendiente=true; $('feedbackTransferAbono').textContent='Modo Pendiente Activo'; };
 
     async function runSearch(){
       const q = smartInput.value.trim(); if(!q) return;
-      feedback.textContent = "Buscando...";
+      feedback.textContent = "Buscando en Supabase...";
       try {
         const response = await fetch('/api/admin/buscar?q=' + encodeURIComponent(q));
         const res = await response.json();
@@ -534,13 +504,13 @@
         if(res.tipo==='BOLETA_DISPONIBLE'){ switchView('view-venta'); numList.innerHTML=''; numList.appendChild(makeNumPill(res.data.numero)); $('v_nombre').focus(); } 
         else if(res.tipo==='BOLETA_OCUPADA'){ switchView('view-cliente'); renderClienteInfo([res.data.infoVenta]); } 
         else if(res.tipo==='CLIENTE_ENCONTRADO'){ switchView('view-cliente'); renderClienteInfo(res.lista); } 
-        else { showModal('Aviso', res.mensaje || 'Intenta de nuevo'); }
+        else { showModal('No encontrado', res.mensaje || 'Intenta de nuevo'); }
       } catch (err) { feedback.textContent = ""; showModal('Error', err.message); }
     }
 
     $('btnRegistrarVenta').onclick = async ()=>{
        const nums = Array.from(numList.querySelectorAll('input')).map(i=>i.value).filter(v=>v.length===4);
-       if(!nums.length) return alert('Número de boleta inválido');
+       if(!nums.length) return alert('Falta boleta válida');
        $('btnRegistrarVenta').textContent='Procesando...'; $('btnRegistrarVenta').disabled=true;
        
        let totalMoney=0, ref='', metodo='';
@@ -551,7 +521,7 @@
        const baseData = { nombre:$('v_nombre').value, apellido:$('v_apellido').value, ciudad:$('v_ciudad').value, telefono:$('v_telefono').value, primerAbono:perNum, referenciaAbono: ref, metodoPago: metodo, esPendiente:esVentaPendiente, contrasena:localStorage.getItem(STORAGE_KEY) };
        
        let ok=0, fails=0;
-       let detalleErrores = []; 
+       let detalleErrores = []; // 🌟 NUEVO: Array para atrapar el texto de los errores
 
        for (let i=0; i < nums.length; i++) {
            try {
@@ -561,29 +531,28 @@
                    ok++; 
                } else {
                    fails++;
-                   detalleErrores.push(`Boleta ${nums[i]}: ${res.mensaje}`); 
+                   detalleErrores.push(`❌ Boleta ${nums[i]}: ${res.mensaje}`); // Guardamos la explicación
                }
            } catch(e) { 
                fails++; 
-               detalleErrores.push(`Boleta ${nums[i]}: Error de conexión`);
+               detalleErrores.push(`❌ Boleta ${nums[i]}: Error de conexión`);
            }
        }
+       $('btnRegistrarVenta').textContent='REGISTRAR VENTA'; $('btnRegistrarVenta').disabled=false;
        
-       $('btnRegistrarVenta').textContent = modoVenta === 'separar' ? 'Confirmar Separado ($0)' : 'Registrar Venta'; 
-       $('btnRegistrarVenta').disabled=false;
-       
-       let mensajeFinal = `Completadas: ${ok} \nErrores: ${fails}`;
+       // 🌟 NUEVO: Construimos el mensaje final con las explicaciones
+       let mensajeFinal = `Registradas: ${ok} / Errores: ${fails}`;
        if (fails > 0) {
-           mensajeFinal += `\n\nDetalles:\n` + detalleErrores.join('\n');
+           mensajeFinal += `\n\nMotivos:\n` + detalleErrores.join('\n');
        }
        
+       // Le decimos al modal que respete los saltos de línea
        $('mMsg').style.whiteSpace = 'pre-line'; 
-       showModal('Resumen de Operación', mensajeFinal);
+       showModal('Resumen de Venta', mensajeFinal);
        
        if(fails===0){ 
            $('v_nombre').value=''; $('v_apellido').value=''; $('v_telefono').value=''; $('v_ciudad').value=''; $('v_primerAbono').value=0; $('v_referenciaAbono').value=''; $('v_metodoPago').value='';
            desbloquearCampos('v_referenciaAbono', 'v_primerAbono', 'v_metodoPago', 'feedbackTransfer');
-           esVentaPendiente=false; $('btnForzarPendiente').style.background=''; $('btnForzarPendiente').style.color='';
            numList.innerHTML=''; addDefaultPill(); activateHeroMode();
        }
     };
@@ -592,9 +561,9 @@
         const btn = document.getElementById('btnRegistrarAbono');
         const checkboxes = document.querySelectorAll('.boleta-pay-checkbox:checked');
         const boletasTarget = Array.from(checkboxes).map(c => c.value);
-        if(boletasTarget.length === 0) return alert("Selecciona boletas.");
+        if(boletasTarget.length === 0) return alert("Selecciona al menos una boleta.");
         const montoTotal = Number($('a_monto').value); const ref = $('a_ref').value; const metodo = $('a_metodo').value;
-        if(montoTotal <= 0) return alert("Monto inválido.");
+        if(montoTotal <= 0) return alert("El monto debe ser mayor a 0.");
         
         const montoPorBoleta = Math.floor(montoTotal / boletasTarget.length);
         const textoOriginal = btn.textContent; btn.textContent = 'Procesando...'; btn.disabled = true;
@@ -611,20 +580,22 @@
         }
         btn.textContent = textoOriginal; btn.disabled = false;
         if (fails === 0) {
-            showModal('Completado', `Abono distribuido correctamente.`);
+            showModal('Éxito', `Abono registrado correctamente.`);
             $('a_monto').value = ''; $('a_ref').value = ''; $('a_metodo').value = '';
             desbloquearCampos('a_ref', 'a_monto', 'a_metodo', 'feedbackTransferAbono');
-            esAbonoPendiente=false; $('btnForzarPendienteAbono').style.background=''; $('btnForzarPendienteAbono').style.color='';
             runSearch(); 
-        } else { showModal('Aviso', `Éxito: ${ok}, Fallos: ${fails}.`); }
+        } else { showModal('Aviso', `Se registraron ${ok}, fallaron ${fails}.`); }
     }
 
+    // ==========================================
+    // RENDERIZAR CLIENTE E HISTORIAL DE ABONOS
+    // ==========================================
     function renderClienteInfo(lista){
        var c = lista[0]; var totalAbonadoGlobal = 0; var totalRestanteGlobal = 0; var boletasStr = [];
        var checkboxContainer = document.getElementById('boletas-checkbox-container'); if(checkboxContainer) checkboxContainer.innerHTML = '';
        var fmt = function(n) { return new Intl.NumberFormat('es-CO').format(n); };
 
-       var html = '<div style="padding:24px; border-bottom:1px solid var(--border);">';
+       var html = '<div style="background:#f8fbf9; border:1px solid #cfe3dc; border-radius:12px; padding:12px;">';
        
        for(var i=0; i<lista.length; i++){
            var b = lista[i]; var restante = Number(b.restante) || 0;
@@ -632,96 +603,107 @@
            boletasStr.push(b.numero);
            
            if(checkboxContainer) {
-               var label = document.createElement('label'); label.style.cssText = "display:flex; align-items:center; gap:12px; background:var(--bg); padding:10px 16px; border-radius:var(--radius); border:1px solid var(--border); cursor:pointer; font-size:0.9rem; width:100%; transition:border 0.2s;";
+               var label = document.createElement('label'); label.style.cssText = "display:flex; align-items:center; gap:8px; background:var(--pill); padding:8px 14px; border-radius:12px; border:1px solid var(--ring-strong); cursor:pointer; font-size:0.9rem; width:100%;";
                var chk = document.createElement('input'); chk.type = 'checkbox'; chk.value = b.numero; chk.className = 'boleta-pay-checkbox'; chk.checked = true;
-               var span = document.createElement('span'); span.innerHTML = '<span style="font-weight:600; color:var(--ink);">' + b.numero + '</span> <span style="color:var(--muted); font-size:0.8rem; margin-left:4px;">(Resta $' + fmt(restante) + ')</span>';
+               var span = document.createElement('span'); span.innerHTML = '<b>' + b.numero + '</b> (Resta $' + fmt(restante) + ')'; span.style.color = "var(--ink-2)";
                
+               // 🌟 NUEVO BOTÓN: Liberar Boleta
                var btnLiberar = document.createElement('button');
                btnLiberar.type = 'button';
-               btnLiberar.innerHTML = 'Liberar';
-               btnLiberar.style.cssText = "margin-left:auto; background:transparent; color:var(--danger); border:1px solid var(--danger); padding:4px 12px; border-radius:6px; font-size:0.75rem; font-weight:500; cursor:pointer; transition:all 0.2s;";
-               btnLiberar.onmouseover = function() { this.style.background = 'var(--danger-bg)'; };
-               btnLiberar.onmouseout = function() { this.style.background = 'transparent'; };
-               btnLiberar.onclick = function(e) { e.preventDefault(); e.stopPropagation(); confirmarLiberarBoleta(b.numero); };
+               btnLiberar.innerHTML = '⚠️ Liberar';
+               btnLiberar.style.cssText = "margin-left:auto; background:#fbe9e8; color:#e74c3c; border:1px solid #e74c3c; padding:4px 10px; border-radius:8px; font-size:0.75rem; font-weight:bold; cursor:pointer;";
+               btnLiberar.onclick = function(e) {
+                   e.preventDefault(); // Evita que se marque el checkbox
+                   e.stopPropagation();
+                   confirmarLiberarBoleta(b.numero); // Llama a la función destructora
+               };
 
                label.appendChild(chk); label.appendChild(span); label.appendChild(btnLiberar); checkboxContainer.appendChild(label);
            }
        }
 
-       html += '<div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:16px;">';
-       html += '  <div><div style="font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:2px;">Números</div><div style="font-weight:600; color:var(--ink); font-size:1.1rem;">' + boletasStr.join(', ') + '</div></div>';
-       html += '  <div style="text-align:right;"><div style="font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:2px;">Teléfono</div><div style="font-weight:500; color:var(--ink); font-size:1rem;">' + c.telefono + '</div></div>';
+       // Datos del cliente
+       html += '<div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:8px; padding-bottom:8px; border-bottom:1px dashed #cfe3dc;">';
+       html += '  <div><div style="font-size:0.65rem; color:#7ea094; font-weight:700;">BOLETAS</div><div style="font-weight:800; color:var(--ink); font-size:0.95rem;">' + boletasStr.join(', ') + '</div></div>';
+       html += '  <div style="text-align:right;"><div style="font-size:0.65rem; color:#7ea094; font-weight:700;">TELÉFONO</div><div style="font-weight:800; color:#1e8f5c; font-size:0.95rem;">' + c.telefono + '</div></div>';
        html += '</div>';
-       
-       html += '<div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">';
-       html += '  <input type="text" style="background:var(--bg); border:1px solid var(--border); padding:10px 12px; border-radius:var(--radius); width:100%; font-size:0.9rem; color:var(--ink-2); outline:none;" value="' + c.nombre + '" readonly>';
-       html += '  <input type="text" style="background:var(--bg); border:1px solid var(--border); padding:10px 12px; border-radius:var(--radius); width:100%; font-size:0.9rem; color:var(--ink-2); outline:none;" value="' + c.apellido + '" readonly>';
+       html += '<div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:6px;">';
+       html += '  <input id="c_nombre" type="text" style="background:#fff; border:1px solid #dfe9e5; padding:6px 8px; border-radius:8px; width:100%; font-size:0.85rem;" value="' + c.nombre + '" disabled>';
+       html += '  <input id="c_apellido" type="text" style="background:#fff; border:1px solid #dfe9e5; padding:6px 8px; border-radius:8px; width:100%; font-size:0.85rem;" value="' + c.apellido + '" disabled>';
        html += '</div>';
-       html += '<input type="text" style="background:var(--bg); border:1px solid var(--border); padding:10px 12px; border-radius:var(--radius); width:100%; font-size:0.9rem; color:var(--ink-2); outline:none; margin-bottom:16px;" value="' + c.ciudad + '" readonly>';
+       html += '<div style="margin-bottom:10px;">';
+       html += '  <input id="c_ciudad" type="text" style="background:#fff; border:1px solid #dfe9e5; padding:6px 8px; border-radius:8px; width:100%; font-size:0.85rem;" value="' + c.ciudad + '" disabled>';
+       html += '</div>';
 
-       html += '<div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg); border-radius:var(--radius); padding:12px 16px;">';
-       html += '  <div style="display:flex; gap:16px; align-items:center;">';
-       html += '    <div><span style="font-size:0.7rem; color:var(--muted); display:block; margin-bottom:2px;">ABONADO</span><span style="font-size:1rem; font-weight:600; color:var(--ink);">$' + fmt(totalAbonadoGlobal) + '</span></div>';
-       html += '    <div style="height:24px; width:1px; background:var(--border);"></div>'; 
-       html += '    <div><span style="font-size:0.7rem; color:var(--muted); display:block; margin-bottom:2px;">PENDIENTE</span><span style="font-size:1rem; font-weight:600; color:var(--danger);">$' + fmt(totalRestanteGlobal) + '</span></div>';
+       // Resumen financiero
+       html += '<div style="display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid #cfe3dc; border-radius:8px; padding:6px 8px;">';
+       html += '  <div style="display:flex; gap:10px; align-items:center;">';
+       html += '    <div><span style="font-size:0.6rem; color:#7ea094; display:block;">ABONADO</span><span style="font-size:0.9rem; font-weight:800; color:var(--ink);">$' + fmt(totalAbonadoGlobal) + '</span></div>';
+       html += '    <div style="height:20px; width:1px; background:#dfe9e5;"></div>'; 
+       html += '    <div><span style="font-size:0.6rem; color:#e74c3c; display:block;">RESTA</span><span style="font-size:0.9rem; font-weight:800; color:#e74c3c;">$' + fmt(totalRestanteGlobal) + '</span></div>';
        html += '  </div>';
-       html += '  <button id="btnCopiar" style="background:#fff; border:1px solid var(--border); color:var(--ink); padding:6px 12px; border-radius:6px; font-weight:500; cursor:pointer; font-size:0.8rem; transition:background 0.2s;">Copiar Link</button>';
+       html += '  <button id="btnCopiar" style="background:transparent; border:1px solid #3cb579; color:#3cb579; padding:4px 8px; border-radius:6px; font-weight:700; cursor:pointer; font-size:0.75rem;">📋 Link</button>';
        html += '</div></div>';
 
-       html += '<div style="padding:24px; background:var(--bg);">';
-       html += '  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">';
-       html += '    <div style="font-weight: 600; color: var(--ink); font-size: 0.95rem;">Historial de Pagos</div>';
-       html += '    <select id="boletaSelector" style="background:#fff; border:1px solid var(--border); border-radius:6px; padding:4px 8px; font-size:0.8rem; color:var(--ink-2); outline:none;" onchange="cargarHistorialAbonos(this.value)">';
-       for(var i=0; i<boletasStr.length; i++) { html += '<option value="'+boletasStr[i]+'">Boleta '+boletasStr[i]+'</option>'; }
+       // ZONA DE HISTORIAL DE PAGOS
+       html += '<div style="margin-top: 15px; background: #fcfdfd; border: 1px solid var(--ring); border-radius: 12px; padding: 10px;">';
+       html += '  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">';
+       html += '    <div style="font-weight: 700; color: var(--ink-2); font-size: 0.85rem;">📜 Historial de Pagos</div>';
+       
+       html += '    <select id="boletaSelector" style="background:#e8f5e9; border:1px solid #3cb579; border-radius:6px; padding:2px 6px; font-weight:bold; font-size:0.75rem; color:var(--ink); outline:none; max-width: 60%;" onchange="cargarHistorialAbonos(this.value)">';
+       for(var i=0; i<boletasStr.length; i++) {
+           html += '<option value="'+boletasStr[i]+'">Boleta '+boletasStr[i]+'</option>';
+       }
        html += '    </select>';
        html += '  </div>';
-       html += '  <div id="historial-abonos-render"><p style="text-align:center; color:var(--muted); font-size:0.85rem; margin:0;">Cargando...</p></div>';
+       html += '  <div id="historial-abonos-render"><p style="text-align:center; color:#7ea094; font-size:0.8rem; margin:0;">Cargando...</p></div>';
        html += '</div>';
        
        document.getElementById('cliente-info-render').innerHTML = html;
 
        document.getElementById('btnCopiar').addEventListener('click', async function() {
            var links = lista.map(b => window.location.origin + '/boleta/' + b.numero).join('\n');
-           try { await navigator.clipboard.writeText(links); 
-             var oldText = this.textContent; this.textContent = '¡Copiado!'; this.style.background = 'var(--accent-bg)'; this.style.color = 'var(--accent-hover)'; this.style.borderColor = 'var(--accent-bg)';
-             setTimeout(()=>{ this.textContent=oldText; this.style.background='#fff'; this.style.color='var(--ink)'; this.style.borderColor='var(--border)'; }, 2000);
-           } catch(e){}
+           try { await navigator.clipboard.writeText(links); alert('Links copiados'); } catch(e){}
        });
 
+       // Cargamos automáticamente el historial de la primera boleta del selector
        if(boletasStr.length > 0) cargarHistorialAbonos(boletasStr[0]);
     }
 
     async function cargarHistorialAbonos(numero) {
         const div = $('historial-abonos-render');
-        div.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem;">Cargando historial...</p>';
+        div.innerHTML = '<p style="text-align:center; color:var(--accent);">Cargando historial...</p>';
         try {
             const req = await fetch('/api/admin/historial?numero=' + numero);
             const res = await req.json();
             if(res.status === 'ok') renderTablaAbonos(res.lista);
             else div.innerHTML = `<p style="text-align:center; color:var(--danger);">${res.mensaje}</p>`;
-        } catch(e) { div.innerHTML = '<p style="text-align:center; color:var(--danger);">Error cargando historial.</p>'; }
+        } catch(e) {
+            div.innerHTML = '<p style="text-align:center; color:var(--danger);">Error cargando historial.</p>';
+        }
     }
 
     function renderTablaAbonos(lista) {
         const div = $('historial-abonos-render');
         if(!lista || lista.length === 0) {
-            div.innerHTML = '<div style="text-align:center; padding:20px; border:1px dashed var(--border); border-radius:8px;"><p style="color:var(--muted); font-size:0.85rem; margin:0;">Sin abonos registrados.</p></div>';
+            div.innerHTML = '<p style="text-align:center; color:#7ea094; font-size:0.85rem;">No hay abonos registrados en esta boleta.</p>';
             return;
         }
 
-        let html = '<div style="overflow-x:auto; background:#fff; border:1px solid var(--border); border-radius:8px;"><table style="width:100%; border-collapse:collapse; font-size:0.85rem; text-align:left;">';
-        html += '<thead><tr style="border-bottom:1px solid var(--border); background:var(--bg); color:var(--ink-2);"><th style="padding:10px 12px; font-weight:500;">Fecha</th><th style="padding:10px 12px; font-weight:500;">Monto</th><th style="padding:10px 12px; font-weight:500;">Ref</th><th style="padding:10px 12px; text-align:right;"></th></tr></thead><tbody>';
+        let html = '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:0.8rem;">';
+        html += '<thead><tr style="border-bottom:2px solid var(--ring); color: var(--muted);"><th style="text-align:left; padding:4px 2px;">Fecha</th><th style="text-align:left; padding:4px 2px;">Valor</th><th style="text-align:left; padding:4px 2px;">Ref</th><th style="text-align:right; padding:4px 2px;"></th></tr></thead><tbody>';
         
         lista.forEach(a => {
             const valFmt = new Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', minimumFractionDigits:0}).format(a.monto);
             const fechaLimpia = new Date(a.fecha_pago).toLocaleDateString('es-CO');
             
-            html += `<tr style="border-bottom:1px solid var(--border);">
-                        <td style="padding:12px; color:var(--ink-2);">${fechaLimpia}</td>
-                        <td style="padding:12px; font-weight:600; color:var(--ink);">${valFmt}</td>
-                        <td style="padding:12px; color:var(--muted); font-size:0.8rem; word-break:break-all;">${a.referencia_transferencia || '-'}</td>
-                        <td style="padding:12px; text-align:right;">
-                            <button style="background:transparent; border:none; color:var(--muted); font-size:1.1rem; cursor:pointer; padding:0 4px; transition:color 0.2s;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--muted)'" title="Eliminar" onclick="confirmarEliminarAbono('${a.id}', this)">&times;</button>
+            html += `<tr style="border-bottom:1px solid var(--ring);">
+                        <td style="padding:6px 2px; line-height:1.2;">${fechaLimpia}</td>
+                        <td style="padding:6px 2px; font-weight:700; color:var(--ink-2);">${valFmt}</td>
+                        <td style="padding:6px 2px; font-size:0.75rem; word-break: break-all;">${a.referencia_transferencia || '-'}</td>
+                        <td style="padding:6px 2px; text-align:right;">
+                            <button class="chip-del" style="width:24px; height:24px; padding:0; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; font-size:0.85rem;" 
+                                onclick="confirmarEliminarAbono('${a.id}', this)">🗑️</button>
                         </td>
                     </tr>`;
         });
@@ -730,97 +712,159 @@
     }
 
     async function confirmarEliminarAbono(idAbono, btnElement) {
-        if(!confirm("¿Eliminar este abono definitivamente? Las transferencias vinculadas se liberarán.")) return;
+        if(!confirm("¿Estás seguro de eliminar este abono? Si se usó una transferencia de banco, ésta quedará LIBRE nuevamente.")) return;
         
-        btnElement.innerHTML = '...'; btnElement.disabled = true;
+        btnElement.textContent = '...';
+        btnElement.disabled = true;
         
         try {
             const req = await fetch('/api/admin/eliminar-abono', {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ id: idAbono, contrasena: localStorage.getItem(STORAGE_KEY) })
             });
             const res = await req.json();
             
-            if(res.status === 'ok') { runSearch(); } 
-            else { showModal('Error', res.mensaje); btnElement.innerHTML = '&times;'; btnElement.disabled = false; }
-        } catch(e) {
-            showModal('Error', 'Error de conexión.'); btnElement.innerHTML = '&times;'; btnElement.disabled = false;
-        }
-    }
-
-    async function confirmarLiberarBoleta(numero) {
-        if(!confirm(`ATENCIÓN: ¿Liberar boleta ${numero}?\n\nSe borrará su historial de pagos y quedará disponible para nueva venta. Esta acción es irreversible.`)) return;
-        
-        try {
-            const req = await fetch('/api/admin/liberar-boleta', {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ numeroBoleta: numero, contrasena: localStorage.getItem(STORAGE_KEY) })
-            });
-            const res = await req.json();
-            
             if(res.status === 'ok') {
-                showModal('Operación Exitosa', res.mensaje);
-                activateHeroMode(); 
-            } else { showModal('Error', res.mensaje); }
-        } catch(e) { showModal('Error', 'Error de conexión.'); }
-    }
-    
-    async function procesarCSVBancos() {
-        const fileInput = document.getElementById('fileBancos');
-        if (!fileInput.files.length) return alert("Selecciona un archivo CSV.");
-        
-        const file = fileInput.files[0];
-        const reader = new FileReader();
-        const btn = document.getElementById('btnProcesarBancos');
-        const txtOriginal = btn.textContent;
-        btn.textContent = 'Procesando...'; btn.disabled = true;
-
-        reader.onload = async function(e) {
-            const text = e.target.result; const rows = text.split('\n'); const transferenciasNuevas = [];
-
-            for(let i = 0; i < rows.length; i++) {
-                const row = rows[i].trim(); if(!row) continue;
-                const cols = row.split(','); if(cols.length < 12) continue; 
-                
-                let monto = parseFloat(cols[9]) || 0;
-                let fechaRaw = cols[1]; 
-                let fechaFormateada = new Date().toISOString(); 
-                if(fechaRaw && fechaRaw.length === 8) {
-                    fechaFormateada = `${fechaRaw.slice(4,8)}-${fechaRaw.slice(2,4)}-${fechaRaw.slice(0,2)}T00:00:00.000Z`;
-                }
-                let descripcion = cols[4] || "";
-                let plataforma = descripcion.includes("NEQUI") ? "Nequi" : "Bancolombia";
-                let referencia = (cols[11] || "").replace(/"/g, ''); 
-
-                transferenciasNuevas.push({ monto: monto, fecha_pago: fechaFormateada, plataforma: plataforma, referencia: referencia, estado: 'LIBRE' });
+                showModal('✅ Eliminado', 'Abono eliminado y saldos re-calculados correctamente.');
+                runSearch(); // Recargamos toda la vista para ver los saldos actualizados
+            } else {
+                showModal('❌ Error', res.mensaje);
+                btnElement.textContent = '🗑️'; btnElement.disabled = false;
             }
-
-            if(transferenciasNuevas.length === 0) {
-                btn.textContent = txtOriginal; btn.disabled = false;
-                return alert("No hay transferencias válidas.");
-            }
-
-            try {
-                const req = await fetch('/api/admin/subir-bancos', {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ transferencias: transferenciasNuevas, contrasena: localStorage.getItem(STORAGE_KEY) })
-                });
-                const res = await req.json();
-                btn.textContent = txtOriginal; btn.disabled = false;
-
-                if(res.status === 'ok') { showModal('Procesado', res.mensaje); fileInput.value = ""; } 
-                else { showModal('Error', res.mensaje); }
-            } catch(error) {
-                btn.textContent = txtOriginal; btn.disabled = false;
-                showModal('Error', 'Error de servidor.');
-            }
-        };
-        reader.readAsText(file);
+        } catch(e) {
+            showModal('❌ Error', 'Error de conexión.');
+            btnElement.textContent = '🗑️'; btnElement.disabled = false;
+        }
     }
 
     function showModal(title,msg){ $('mTitle').textContent=title; $('mMsg').textContent=msg; $('modalResult').style.display='flex'; }
     $('mBtn').onclick = function(){ $('modalResult').style.display='none'; };
     document.addEventListener('DOMContentLoaded', function() { initLogin(); if(typeof addDefaultPill === 'function') addDefaultPill(); $('loginPwd').addEventListener('keyup', function(e) { if (e.key === 'Enter') verifyLogin(this.value); }); });
+  
+
+async function confirmarLiberarBoleta(numero) {
+        if(!confirm(`⚠️ ATENCIÓN PELIGRO: ¿Estás seguro de que quieres LIBERAR la boleta ${numero}? \n\nSe borrará todo su historial de pagos, se liberarán las transferencias asociadas del banco y la boleta podrá ser vendida a otra persona. ¡Esta acción no se puede deshacer!`)) return;
+        
+        const btn = document.getElementById('btnRegistrarAbono'); // Usamos este botón para dar feedback visual
+        const originalText = btn.textContent;
+        btn.textContent = `Liberando boleta ${numero}...`;
+        btn.disabled = true;
+        
+        try {
+            const req = await fetch('/api/admin/liberar-boleta', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ numeroBoleta: numero, contrasena: localStorage.getItem(STORAGE_KEY) })
+            });
+            const res = await req.json();
+            
+            if(res.status === 'ok') {
+                showModal('✅ Boleta Liberada', res.mensaje);
+                // Cerramos el cliente y volvemos al inicio porque los datos en pantalla ya no son válidos
+                activateHeroMode(); 
+            } else {
+                showModal('❌ Error', res.mensaje);
+            }
+        } catch(e) {
+            showModal('❌ Error', 'Error de conexión.');
+        }
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
+    
+async function procesarCSVBancos() {
+    const fileInput = document.getElementById('fileBancos');
+    if (!fileInput.files.length) return alert("Por favor, selecciona un archivo CSV primero.");
+    
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    
+    const btn = document.getElementById('btnProcesarBancos');
+    const txtOriginal = btn.textContent;
+    btn.textContent = 'Leyendo y procesando... ⏳';
+    btn.disabled = true;
+
+    reader.onload = async function(e) {
+        const text = e.target.result;
+        const rows = text.split('\n');
+        const transferenciasNuevas = [];
+
+        for(let i = 0; i < rows.length; i++) {
+            const row = rows[i].trim();
+            if(!row) continue;
+            
+            // Separamos por comas usando una expresión regular sencilla
+            const cols = row.split(',');
+            if(cols.length < 12) continue; // Si no tiene al menos 12 columnas, no es una fila válida
+
+            // 1. EXTRAER EL VALOR
+            // NOTA: Tienes puesto el índice 9 (Columna J). Si notas que los valores
+            // están saliendo mal y en realidad estaban en la columna A, cambia ese 9 por un 0.
+            let montoRaw = cols[9]; 
+            let monto = parseFloat(montoRaw) || 0;
+
+            // 2. EXTRAER LA FECHA (Columna B / Índice 1) Ej: "15022026"
+            let fechaRaw = cols[1]; 
+            let fechaFormateada = new Date().toISOString(); // Por defecto hoy
+            if(fechaRaw && fechaRaw.length === 8) {
+                // Lo convertimos de DDMMAAAA a AAAA-MM-DD
+                fechaFormateada = `${fechaRaw.slice(4,8)}-${fechaRaw.slice(2,4)}-${fechaRaw.slice(0,2)}T00:00:00.000Z`;
+            }
+
+            // 3. EXTRAER PLATAFORMA (Columna E / Índice 4)
+            let descripcion = cols[4] || "";
+            let plataforma = descripcion.includes("NEQUI") ? "Nequi" : "Bancolombia";
+
+            // 4. EXTRAER REFERENCIA / CELULAR DE ORIGEN (Columna L / Índice 11)
+            let referenciaRaw = cols[11] || "";
+            let referencia = referenciaRaw.replace(/"/g, ''); // Quitamos comillas si las tiene
+
+            transferenciasNuevas.push({
+                monto: monto,
+                fecha_pago: fechaFormateada,
+                plataforma: plataforma,
+                referencia: referencia,
+                estado: 'LIBRE'
+            });
+        }
+
+        if(transferenciasNuevas.length === 0) {
+            btn.textContent = txtOriginal; btn.disabled = false;
+            return alert("No se encontraron transferencias válidas en el archivo.");
+        }
+
+        // Enviamos al backend
+        try {
+            const req = await fetch('/api/admin/subir-bancos', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    transferencias: transferenciasNuevas,
+                    contrasena: localStorage.getItem(STORAGE_KEY)
+                })
+            });
+            const res = await req.json();
+
+            btn.textContent = txtOriginal; btn.disabled = false;
+
+            if(res.status === 'ok') {
+                showModal('¡Archivo Procesado!', res.mensaje);
+                fileInput.value = ""; // Limpiamos el archivo
+            } else {
+                showModal('Error al subir', res.mensaje);
+            }
+
+        } catch(error) {
+            btn.textContent = txtOriginal; btn.disabled = false;
+            showModal('Error Crítico', 'No se pudo conectar con el servidor.');
+        }
+    };
+    
+    // Leemos el archivo como texto
+    reader.readAsText(file);
+}
+  
   </script>
 </body>
 </html>
