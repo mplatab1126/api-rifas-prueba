@@ -18,10 +18,10 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Falta el número de teléfono' });
   }
 
-  // 3. EL TRUCO UNIVERSAL: Limpiamos el número y sacamos los últimos 10 dígitos
+  // 3. Limpiamos el número y sacamos los últimos 10 dígitos
   const telefonoLimpio = String(telefono).replace(/\D/g, '').slice(-10);
 
-  // 4. Conectamos con tu Bóveda de Supabase usando las variables de entorno de Vercel
+  // 4. Conectamos con tu Bóveda de Supabase
   const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_ANON_KEY
@@ -29,12 +29,13 @@ export default async function handler(req, res) {
 
   try {
     // 5. Buscamos TODAS las boletas que le pertenecen a este teléfono
-    // Y de paso, le pedimos a Supabase que nos traiga el nombre del cliente de la otra tabla
+    // Agregamos "total_abonado" para traerlo de la base de datos
     const { data: boletas, error } = await supabase
       .from('boletas')
       .select(`
         numero,
         saldo_restante,
+        total_abonado,
         clientes (nombre)
       `)
       .eq('telefono_cliente', telefonoLimpio);
@@ -46,25 +47,31 @@ export default async function handler(req, res) {
       return res.status(200).json({
         boletas_cliente: "Ninguna",
         deuda_cliente: 0,
+        abonado_cliente: 0,
         nombre_cliente: "No encontrado",
         enlaces_boletas: "Ninguno"
       });
     }
 
-    // 7. EMPACAMOS LOS DATOS: Unimos las boletas, sumamos la deuda total y creamos los ENLACES VIP
+    // 7. EMPACAMOS LOS DATOS
     const listaNumeros = boletas.map(b => b.numero).join(', ');
+    
+    // Sumamos la deuda y lo abonado (sin divisiones, valor completo)
     const deudaTotal = boletas.reduce((suma, b) => suma + Number(b.saldo_restante), 0);
+    const abonadoTotal = boletas.reduce((suma, b) => suma + Number(b.total_abonado), 0);
+    
     const nombre = boletas[0].clientes?.nombre || "Cliente";
     
-    // NUEVO: Generamos la lista de enlaces con doble salto de línea y un texto ordenado
-const listaEnlaces = boletas.map(b => `🎟️ *Boleta ${b.numero}:*\nhttps://www.losplata.com.co/boleta/${b.numero}`).join('\n\n');
+    // Lista de enlaces con doble salto de línea y emoji
+    const listaEnlaces = boletas.map(b => `🎟️ *Boleta ${b.numero}:*\nhttps://www.losplata.com.co/boleta/${b.numero}`).join('\n\n');
 
-    // 8. Le respondemos a Chatea Pro con el paquete listo
+    // 8. Le respondemos a Chatea Pro con el paquete listo y valores COMPLETOS
     res.status(200).json({
       boletas_cliente: listaNumeros,
-      deuda_cliente: deudaTotal,
+      deuda_cliente: deudaTotal,        // Ej: 150000
+      abonado_cliente: abonadoTotal,    // Ej: 50000
       nombre_cliente: nombre,
-      enlaces_boletas: listaEnlaces // <--- Nueva variable enviada al bot
+      enlaces_boletas: listaEnlaces 
     });
 
   } catch (error) {
