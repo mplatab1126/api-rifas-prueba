@@ -26,8 +26,8 @@ export default async function handler(req, res) {
     esPendiente
   } = req.body;
 
-  // 4. SEGURIDAD: Validar la clave del asesor
-  const claveMaestra = process.env.ADMIN_PASSWORD || 'LosPlata2026';
+  // 4. SEGURIDAD: Validar la clave del asesor (Unificada a '1234')
+  const claveMaestra = process.env.ADMIN_PASSWORD || '1234';
   if (contrasena !== claveMaestra) {
     return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
   }
@@ -46,7 +46,7 @@ export default async function handler(req, res) {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
-    // PASO A: Consultar cómo está la boleta actualmente (cuánto debe y cuánto ha pagado)
+    // PASO A: Consultar cómo está la boleta actualmente
     const { data: boletaData, error: boletaError } = await supabase
       .from('boletas')
       .select('saldo_restante, total_abonado, telefono_cliente')
@@ -93,30 +93,15 @@ export default async function handler(req, res) {
 
     if (updateError) throw updateError;
 
-    // PASO D: Actualizar la boleta con los nuevos saldos
-    const { error: updateError } = await supabase
-      .from('boletas')
-      .update({
-        total_abonado: nuevoTotalAbonado,
-        saldo_restante: nuevoSaldoRestante,
-        estado: estadoNuevo
-      })
-      .eq('numero', numeroLimpio);
-
-    if (updateError) throw updateError;
-
     // -------------------------------------------------------------------
     // NUEVO PASO E: Marcar la transferencia bancaria como ASIGNADA
     // -------------------------------------------------------------------
     if (referencia && referencia !== 'Sin Ref' && referencia !== 'efectivo') {
       await supabase
         .from('transferencias')
-        .update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }) // O solo 'ASIGNADA' si prefieres
+        .update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }) 
         .eq('referencia', referencia);
     }
-
-    // Respuesta exitosa
-    return res.status(200).json({ status: 'ok', mensaje: 'Abono registrado con éxito' });
 
     // Respuesta exitosa
     return res.status(200).json({ status: 'ok', mensaje: 'Abono registrado con éxito' });
