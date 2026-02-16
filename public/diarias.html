@@ -16,7 +16,8 @@
         font-family: 'Poppins', sans-serif; 
         background-color: #f4f7f9; 
         margin: 0; padding: 0; color: #333;
-        padding-top: 48px; padding-bottom: 100px; 
+        padding-top: 55px; /* Ajustado para que el temporizador no tape el logo */
+        padding-bottom: 100px; 
         -webkit-tap-highlight-color: transparent;
       }
       
@@ -79,13 +80,11 @@
       .bolota { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #2b6039 0%, #11331c 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; border: 2px solid #e8f5e9; box-shadow: 0 4px 8px rgba(27, 94, 32, 0.2); }
       .premios-dinamica { display: flex; flex-direction: column; gap: 8px; }
       .premio-fila { display: flex; align-items: center; background: #ffffff; border-radius: 12px; padding: 12px 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; }
-      .premio-badge { width: 38px; height: 38px; border-radius: 10px; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; margin-right: 12px; flex-shrink: 0; }
-      .bg-badge-2 { background: linear-gradient(135deg, #1b5e20, #0a2e0e); }
+      .premio-badge { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #1b5e20, #0a2e0e); color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; margin-right: 12px; flex-shrink: 0; }
       .premio-detalle { flex: 1; font-size: 14px; color: #475569; font-weight: 600; }
-      .premio-valor { font-size: 16px; font-weight: 800; color: #334155; }
-      .premio-valor.highlight { color: #1b5e20; font-size: 18px; }
+      .premio-valor { font-size: 18px; font-weight: 800; color: #1b5e20; }
 
-      /* --- NÚMEROS EN TARJETA PREMIUM --- */
+      /* --- NÚMEROS EN TARJETA PREMIUM CON EFECTO POP --- */
       .numbers-card {
         background: #ffffff; border: 2px solid #a5d6a7; border-radius: 20px;
         margin: 0 20px 45px 20px; padding: 25px 20px; box-shadow: 0 10px 30px rgba(27, 94, 32, 0.08); position: relative; transition: all 0.5s ease;
@@ -104,16 +103,7 @@
       .ocupado { background-color: #e2e8f0; color: #94a3b8; cursor: default; box-shadow: none;}
       .info-mini { font-size: 9px; font-weight: 600; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #64748b; margin-top: 2px; }
 
-      /* --- DEMÁS ESTILOS MANTENIDOS --- */
-      .card-oracle { background: linear-gradient(135deg, #f8faff 0%, #eef2ff 100%); border: 1px solid #d0dfff; border-radius: 20px; margin: 0 20px 45px 20px; padding: 25px 20px; box-shadow: 0 8px 25px rgba(37, 117, 252, 0.08); position: relative; text-align: center; overflow: hidden; }
-      .card-oracle::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(90deg, #6a11cb, #2575fc); }
-      .oracle-title { margin: 0 0 8px 0; font-family: 'Montserrat', sans-serif; font-size: 18px; font-weight: 900; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.5px; }
-      .btn-ai-oracle { background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%); color: white; border: none; padding: 12px 24px; border-radius: 50px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(37, 117, 252, 0.3); transition: transform 0.2s; font-size: 14px; margin: 10px auto 0 auto; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Poppins', sans-serif; }
-      .oracle-textarea { width: 100%; padding: 12px; border: 2px solid #d0dfff; border-radius: 12px; font-size: 16px; background: #fff; outline: none; font-family: 'Poppins', sans-serif; resize: none; box-sizing: border-box; margin-bottom: 15px; }
-      .oracle-result-box { margin-top: 15px; padding: 15px; background: #fff; border-radius: 12px; border: 1px dashed #aecbfa; display: none; }
-      .oracle-numbers { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
-      .btn-oracle-num { background: #fff; border: 2px solid #2575fc; color: #2575fc; font-weight: 800; padding: 8px 15px; border-radius: 12px; cursor: pointer; font-size: 16px; }
-
+      /* --- MEDIOS DE PAGO OFICIALES --- */
       .payment-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; margin: 0 20px 45px 20px; padding: 25px 20px; box-shadow: 0 8px 25px rgba(27, 94, 32, 0.04); text-align: center; }
       .payment-grid { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 20px; }
       .pay-pill { width: 250px; padding: 12px 20px; border-radius: 16px; display: flex; align-items: center; justify-content: center; gap: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: left; box-sizing: border-box;}
@@ -126,34 +116,31 @@
       .pill-llave { background-color: #1e293b; color: #ffffff; } .pill-llave .pay-icon { color: #d4af37; }
       .pill-daviplata { background-color: #ed1c24; color: #ffffff; } .pill-daviplata .pay-icon { color: #ffffff; }
 
+      /* --- GANCHO 3: SELLOS DE CONFIANZA --- */
       .trust-badges-container { display: flex; justify-content: center; gap: 15px; margin: 0 20px 45px 20px; }
       .trust-badge { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; }
       .trust-badge svg { width: 16px; height: 16px; fill: #1b5e20; }
 
-      .whatsapp-list-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; margin: 0 20px 45px 20px; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05); overflow: hidden; }
-      .wa-header { background: #f8fafc; padding: 15px 20px; border-bottom: 1px solid #e2e8f0; text-align: center; }
-      .wa-header-title { font-size: 16px; font-weight: 800; color: #0a3d24; margin: 0 0 3px 0; }
-      .wa-header-sub { font-size: 13px; color: #64748b; margin: 0; }
-      .wa-chat-item { display: flex; padding: 18px 20px; border-bottom: 1px solid #f1f5f9; align-items: center; }
-      .wa-avatar { width: 50px; height: 50px; border-radius: 50%; background: #e8f5e9; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-right: 15px; flex-shrink: 0; border: 1px solid #c8e6c9; }
-      .wa-info { flex: 1; overflow: hidden; }
-      .wa-top-line { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3px; }
-      .wa-contact-details { display: flex; flex-direction: column; }
-      .wa-name { font-size: 16px; font-weight: 700; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      .wa-phone { font-size: 12px; color: #64748b; font-weight: 500; }
-      .wa-time { font-size: 12px; color: #25d366; font-weight: 500; margin-top: 2px; }
-      .wa-bottom-line { display: flex; justify-content: space-between; align-items: center; margin-top: 2px; }
-      .wa-msg { font-size: 14px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; }
-      .wa-badge { background-color: #25d366; color: white; font-size: 11px; font-weight: bold; height: 20px; min-width: 20px; padding: 0 5px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
-
-      .sticky-progress { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(8px); padding: 10px 20px 15px 20px; box-sizing: border-box; border-top: 1px solid #e2e8f0; box-shadow: 0 -4px 20px rgba(0,0,0,0.06); z-index: 850; }
+      /* --- BARRA DE PROGRESO FLOTANTE --- */
+      .sticky-progress {
+        position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(8px); padding: 10px 20px 15px 20px; box-sizing: border-box;
+        border-top: 1px solid #e2e8f0; box-shadow: 0 -4px 20px rgba(0,0,0,0.06); z-index: 850; 
+      }
       .sticky-progress-text { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
       .urgency-text { font-size: 13px; font-weight: 800; color: #d9700b; }
       .urgency-numbers { font-size: 12px; color: #64748b; font-weight: 600; }
+      .urgency-numbers strong { color: #1b5e20; font-weight: 900; font-size: 13px; }
       .progress-track { width: 100%; height: 6px; background-color: #f1f5f9; border-radius: 10px; overflow: hidden; }
       .progress-fill { height: 100%; background: linear-gradient(90deg, #3cb579, #1b5e20); border-radius: 10px; width: 0%; transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
 
-      .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd; padding: 12px 20px 20px 20px; box-sizing: border-box; display: none; justify-content: space-between; align-items: center; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); z-index: 900; animation: slideUp 0.3s ease; }
+      /* --- BARRA DE COMPRA Y MODALES --- */
+      .bottom-bar {
+        position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd;
+        padding: 12px 20px 20px 20px; box-sizing: border-box; display: none; 
+        justify-content: space-between; align-items: center; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); z-index: 900;
+        animation: slideUp 0.3s ease;
+      }
       @keyframes slideUp { from {transform: translateY(100%);} to {transform: translateY(0);} }
       .resumen-compra { font-size: 14px; color: #555; }
       .resumen-total { font-size: 20px; font-weight: 800; color: #1b5e20; display: block;}
@@ -163,31 +150,25 @@
       .modal-content { background: white; padding: 25px; border-radius: 20px; width: 85%; max-width: 320px; text-align: left; }
       .input-group label { display: block; font-size: 13px; margin-bottom: 6px; color: #444; font-weight: 700; }
       .input-group input { width: 100%; padding: 12px; border: 2px solid #f0f2f5; border-radius: 12px; font-size: 16px; box-sizing: border-box; outline: none; background: #f9f9f9; font-family: 'Poppins', sans-serif; }
+      .input-group input:focus { border-color: #128C7E; background: white; }
       .input-group { margin-bottom: 15px; }
       .btn-confirmar { width: 100%; padding: 14px; background-color: #1b5e20; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer;}
       .btn-cancelar { width: 100%; padding: 12px; background: white; border: none; color: #999; margin-top: 5px; cursor: pointer; font-weight: 600;}
       .loader { text-align: center; display: none; margin-top: 15px; font-size: 14px; color: #1b5e20;}
-
-      .float-chat-btn { position: fixed; bottom: 85px; right: 20px; width: 55px; height: 55px; background-color: #1b5e20; color: #fff; border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 15px rgba(27, 94, 32, 0.4); z-index: 950; cursor: pointer; }
-      .chat-widget { position: fixed; bottom: 150px; right: 20px; width: 320px; max-width: calc(100% - 40px); background: #fff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); z-index: 960; display: none; flex-direction: column; overflow: hidden; border: 1px solid #e2e8f0; }
-      .chat-header { background: linear-gradient(135deg, #0a3d24 0%, #1b5e20 100%); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
-      .close-chat { background: none; border: none; color: white; font-size: 24px; cursor: pointer; line-height: 1; padding: 0;}
-      .chat-body { padding: 15px; height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #f8fafc; }
-      .chat-bubble { padding: 10px 14px; border-radius: 15px; font-size: 13px; max-width: 85%; line-height: 1.4; word-wrap: break-word;}
-      .bubble-bot { background: #e8f5e9; color: #1b5e20; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #c8e6c9;}
-      .bubble-user { background: #1b5e20; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
-      .chat-input-area { padding: 10px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; }
-      .chat-input-area input { flex: 1; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 20px; font-size: 16px; outline: none; }
-      .chat-input-area button { background: #1b5e20; color: white; border: none; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;}
     </style>
   </head>
   <body>
 
     <div class="sticky-timer">
-      <div class="timer-title">Cierre en:</div>
+      <div class="timer-title">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+        Cierre en:
+      </div>
       <div class="timer-digits">
-        <div class="timer-box" id="t-hours">00</div><div class="timer-colon">:</div>
-        <div class="timer-box" id="t-minutes">00</div><div class="timer-colon">:</div>
+        <div class="timer-box" id="t-hours">00</div>
+        <div class="timer-colon">:</div>
+        <div class="timer-box" id="t-minutes">00</div>
+        <div class="timer-colon">:</div>
         <div class="timer-box" id="t-seconds">00</div>
       </div>
     </div>
@@ -229,31 +210,29 @@
 
       <div class="dinamica-section">
         <h3 class="section-title-elegant">💡 ¿Cómo ganas?</h3>
-        <p class="section-subtitle-elegant">Juegas con los 2 últimos números de la lotería</p>
+        <p class="section-subtitle-elegant">Ejemplo: Si cae el número <strong>58</strong></p>
         
         <div class="bolotas-cayendo">
-          <div class="bolota" style="background: #94a3b8; opacity: 0.5;">X</div>
-          <div class="bolota" style="background: #94a3b8; opacity: 0.5;">X</div>
           <div class="bolota">5</div>
           <div class="bolota">8</div>
         </div>
 
         <div class="premios-dinamica">
           <div class="premio-fila">
-            <div class="premio-badge bg-badge-2">58</div>
+            <div class="premio-badge">58</div>
             <div class="premio-detalle">Acierto a las 2 últimas cifras</div>
             <div class="premio-valor highlight">$1.000.000</div>
           </div>
-          <div class="premio-fila">
-            <p style="font-size: 12px; color: #64748b; margin: 0;">* Ejemplo: Si el Chontico cae 1258, el ganador es el número 58.</p>
-          </div>
+          <p style="font-size: 12px; color: #64748b; text-align: center; margin-top: 10px;">
+            * Si el Chontico cae 1258, el ganador es el número 58.
+          </p>
         </div>
       </div>
 
       <div class="numbers-card" id="tarjeta-numeros">
         <h2 class="numbers-title">👇 SELECCIONA TU NÚMERO 👇</h2>
         <div id="filtro-msg" style="display:none; text-align:center; color:#64748b; font-size:14px; font-weight:700; margin-bottom:15px; padding: 0 10px;"></div>
-        <div id="loading" style="text-align:center; color:#999; padding:20px;">Conectando con la base de datos...</div>
+        <div id="loading" style="text-align:center; color:#999; padding:20px;">Cargando boletas...</div>
         
         <div id="grid" class="grid-container"></div>
       </div>
@@ -261,6 +240,7 @@
       <div class="payment-card">
         <h3 class="section-title-elegant">💳 Medios de Pago Oficiales</h3>
         <p class="section-subtitle-elegant" style="margin-bottom: 5px;">Realiza tu pago en cualquiera de estas plataformas:</p>
+        
         <div class="payment-grid">
           <div class="pay-pill pill-nequi">
             <div class="pay-icon"><svg viewBox="0 0 24 24"><path d="M4 4h4l8 10V4h4v16h-4L8 10v10H4V4z"/></svg></div>
@@ -269,12 +249,34 @@
               <span class="pay-number">312 335 4789</span>
             </div>
           </div>
+
+          <div class="pay-pill pill-llave">
+            <div class="pay-icon"><svg viewBox="0 0 24 24"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg></div>
+            <div class="pay-text">
+              <span class="pay-name">Llave (Breve)</span>
+              <span class="pay-number">312 335 4789</span>
+            </div>
+          </div>
+          
+          <div class="pay-pill pill-daviplata">
+            <div class="pay-icon"><svg viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h14v-8h3L12 3z"/></svg></div>
+            <div class="pay-text">
+              <span class="pay-name">DaviPlata</span>
+              <span class="pay-number">312 335 4789</span>
+            </div>
+          </div>
         </div>
       </div>
 
       <div class="trust-badges-container">
-        <div class="trust-badge">Sorteo Transparente</div>
-        <div class="trust-badge">Pago 100% Seguro</div>
+        <div class="trust-badge">
+          <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+          Sorteo Transparente
+        </div>
+        <div class="trust-badge">
+          <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+          Pago 100% Seguro
+        </div>
       </div>
 
     </div> <div class="sticky-progress" id="sticky-progress-bar">
@@ -312,6 +314,14 @@
       </div>
     </div>
 
+    <div id="modal-soldout" class="modal-overlay">
+      <div class="modal-content" style="text-align:center;">
+        <h2 style="color:#d32f2f; margin-top:0;">🚫 ¡NO HAY BOLETAS DISPONIBLES! 🚫</h2>
+        <p style="font-size:14px; color:#555;">¡Hoy arrasaron con todo! Muchas gracias por el apoyo.</p>
+        <button class="btn-confirmar" onclick="cerrarSoldOut()">Aceptar</button>
+      </div>
+    </div>
+
     <script>
       const PRECIO_BOLETA = 20000;
       let numerosSeleccionados = []; 
@@ -319,10 +329,25 @@
       window.onload = function() {
         iniciarTemporizador();
         iniciarNotificacionesEnVivo();
+        observarTarjetaNumeros(); 
         cargarDatosDesdeVercel(); 
       };
 
-      // 1. CARGAR NÚMEROS DESDE SUPABASE (A TRAVÉS DE VERCEL)
+      /* --- JS OBSERVADOR EFECTO POP --- */
+      function observarTarjetaNumeros() {
+        const tarjeta = document.getElementById('tarjeta-numeros');
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              tarjeta.classList.add('animar-resalte');
+              observer.unobserve(tarjeta); 
+            }
+          });
+        }, { threshold: 0.2 });
+        observer.observe(tarjeta);
+      }
+
+      /* --- JS CARGAR NÚMEROS DESDE SUPABASE --- */
       function cargarDatosDesdeVercel() {
         fetch('/api/diarias/numeros')
           .then(res => res.json())
@@ -338,7 +363,7 @@
           });
       }
 
-      // 2. DIBUJAR LOS 100 NÚMEROS EN PANTALLA
+      /* --- JS DIBUJAR NÚMEROS --- */
       function pintarNumeros(datos) {
         const contenedor = document.getElementById('grid');
         const filtroMsg = document.getElementById('filtro-msg');
@@ -354,13 +379,15 @@
 
         let vendidas = totalBoletas - contadorDisponibles;
         let porcentaje = totalBoletas > 0 ? Math.round((vendidas / totalBoletas) * 100) : 0;
-        let ocultarOcupados = porcentaje > 80 && porcentaje < 100;
+        let ocultarOcupados = porcentaje > 70 && porcentaje < 100;
 
         if (ocultarOcupados) {
           filtroMsg.style.display = 'block';
+          filtroMsg.style.color = '#64748b'; 
           filtroMsg.innerText = `🔥 ¡Se ha vendido el ${porcentaje}%! Mostrando solo los ${contadorDisponibles} números disponibles para facilitar tu compra:`;
         } else if (porcentaje === 100 && totalBoletas > 0) {
           filtroMsg.style.display = 'block';
+          filtroMsg.style.color = '#1b5e20'; 
           filtroMsg.innerText = `🏆 ¡100% VENDIDO! Aquí puedes ver los dueños de cada número:`;
           document.querySelector('.numbers-title').innerText = "👇 NÚMEROS VENDIDOS 👇";
         }
@@ -379,11 +406,13 @@
           if (estado === 'Disponible') {
             btn.innerText = numero;
             btn.onclick = function() { toggleSeleccion(numero, btn) };
+            btn.title = "Clic para seleccionar";
           } else {
             btn.innerHTML = `
               <span style="font-size:16px; color:#888; font-weight:800; line-height:1;">${numero}</span>
               <span class="info-mini" style="font-weight:700; color:#334155; margin-top:4px;">${nombreCliente}</span>
             `;
+            btn.onclick = null; 
           }
           contenedor.appendChild(btn);
         });
@@ -393,13 +422,18 @@
           document.getElementById('progress-percent-text').innerText = porcentaje + '% Vendido';
           document.getElementById('progress-left-text').innerText = contadorDisponibles;
         }
+
+        if (contadorDisponibles === 0 && totalBoletas > 0) {
+          document.getElementById('modal-soldout').style.display = 'flex';
+        }
       }
 
       function toggleSeleccion(numero, btn) {
         const index = numerosSeleccionados.indexOf(numero);
         if (index === -1) {
           if (numerosSeleccionados.length >= 5) {
-            alert("⚠️ Límite alcanzado:\nSolo puedes comprar un máximo de 5 boletas por pedido."); return; 
+            alert("⚠️ Límite alcanzado:\nSolo puedes comprar un máximo de 5 boletas por pedido.");
+            return; 
           }
           numerosSeleccionados.push(numero);
           btn.classList.add('seleccionado');
@@ -412,25 +446,42 @@
 
       function actualizarBarra() {
         const bar = document.getElementById('bottom-bar');
+        const qtyText = document.getElementById('qty-text');
+        const totalText = document.getElementById('total-text');
+
         if (numerosSeleccionados.length > 0) {
           bar.style.display = 'flex';
-          document.getElementById('qty-text').innerText = numerosSeleccionados.length + " boleta(s)";
-          document.getElementById('total-text').innerText = "$" + (numerosSeleccionados.length * PRECIO_BOLETA).toLocaleString('es-CO');
+          qtyText.innerText = numerosSeleccionados.length + (numerosSeleccionados.length === 1 ? " boleta" : " boletas");
+          const total = numerosSeleccionados.length * PRECIO_BOLETA;
+          totalText.innerText = "$" + total.toLocaleString('es-CO');
         } else {
           bar.style.display = 'none';
         }
       }
 
-      function abrirModal() { document.getElementById('num-modal').innerText = numerosSeleccionados.join(", "); document.getElementById('modal').style.display = 'flex'; document.getElementById('msg-carga').style.display = 'none'; }
-      function cerrarModal() { document.getElementById('modal').style.display = 'none'; }
+      function abrirModal() {
+        if (numerosSeleccionados.length === 0) return;
+        document.getElementById('num-modal').innerText = numerosSeleccionados.join(", ");
+        document.getElementById('modal').style.display = 'flex';
+        document.getElementById('msg-carga').style.display = 'none';
+      }
 
-      // 3. ENVIAR COMPRA A VERCEL/SUPABASE
+      function cerrarModal() {
+        document.getElementById('modal').style.display = 'none';
+      }
+
+      function cerrarSoldOut() {
+        document.getElementById('modal-soldout').style.display = 'none';
+      }
+
+      /* --- JS ENVIAR COMPRA A VERCEL --- */
       function confirmarReserva() {
         const nombre = document.getElementById('input-nombre').value;
         const telefono = document.getElementById('input-telefono').value;
 
         if (!nombre || telefono.length !== 10) {
-          alert("⚠️ ATENCIÓN:\n\nEl celular debe tener exactamente 10 dígitos."); return;
+          alert("⚠️ ATENCIÓN:\n\nEl celular debe tener exactamente 10 dígitos.");
+          return;
         }
 
         document.getElementById('msg-carga').style.display = 'block';
@@ -444,7 +495,7 @@
         .then(res => res.json())
         .then(data => {
           if (data.exito) {
-            window.top.location.href = data.url; // Lo manda al WhatsApp de Los Plata
+            window.top.location.href = data.url; 
           } else {
             alert("Error: " + data.error);
             cerrarModal(); location.reload(); 
@@ -457,26 +508,38 @@
         });
       }
 
+      /* --- JS TEMPORIZADOR Y NOTIFICACIONES MANTENIDOS --- */
       function iniciarTemporizador() {
         let cierre = new Date();
         cierre.setHours(19, 0, 0, 0);
+
         setInterval(() => {
           let actual = new Date().getTime();
           let distancia = cierre.getTime() - actual;
           if (distancia < 0) return;
-          document.getElementById("t-hours").innerText = Math.floor((distancia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
-          document.getElementById("t-minutes").innerText = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
-          document.getElementById("t-seconds").innerText = Math.floor((distancia % (1000 * 60)) / 1000).toString().padStart(2, '0');
+          let horas = Math.floor((distancia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          let minutos = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60));
+          let segundos = Math.floor((distancia % (1000 * 60)) / 1000);
+
+          document.getElementById("t-hours").innerText = horas.toString().padStart(2, '0');
+          document.getElementById("t-minutes").innerText = minutos.toString().padStart(2, '0');
+          document.getElementById("t-seconds").innerText = segundos.toString().padStart(2, '0');
         }, 1000);
       }
 
       function iniciarNotificacionesEnVivo() {
-        const compradoresFalsos = ["Mateo P. compró <b>2 boletas</b>", "Diana M. compró <b>1 boleta</b>", "Carlos R. compró <b>3 boletas</b>"];
+        const compradoresFalsos = [
+          "Mateo P. compró <b>2 boletas</b>", "Diana M. compró <b>1 boleta</b>",
+          "Carlos R. compró <b>3 boletas</b>", "Juliana G. compró <b>2 boletas</b>",
+          "Luis F. compró <b>1 boleta</b>", "Andrea S. compró <b>4 boletas</b>"
+        ];
         const toast = document.getElementById('live-toast');
         const text = document.getElementById('live-toast-text');
+        
         setInterval(() => {
           if(document.getElementById('modal').style.display === 'flex') return;
-          text.innerHTML = compradoresFalsos[Math.floor(Math.random() * compradoresFalsos.length)];
+          let randomBuyer = compradoresFalsos[Math.floor(Math.random() * compradoresFalsos.length)];
+          text.innerHTML = randomBuyer;
           toast.classList.add('show');
           setTimeout(() => { toast.classList.remove('show'); }, 3500);
         }, 12000); 
