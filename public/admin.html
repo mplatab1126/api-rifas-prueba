@@ -65,7 +65,7 @@
 }
     
     .section-card { background: #fff; border: 1px solid var(--ring); border-radius: 16px; box-shadow: var(--shadow); padding: 24px; margin-bottom: 20px; }
-    .section-title { font-size: 1rem; font-weight: 600; color: var(--ink); margin: 0 0 16px 0; padding-bottom: 10px; border-bottom: 1px solid var(--ring); display: flex; align-items: center; justify-content: space-between; }
+    .section-title { font-size: 1.05rem; font-weight: 600; color: var(--ink); margin: 0 0 16px 0; padding-bottom: 10px; border-bottom: 1px solid var(--ring); display: flex; align-items: center; justify-content: space-between; }
     
     .vertical-form { display: flex; flex-direction: column; gap: 14px; }
     label { display: block; font-weight: 500; color: var(--ink-2); margin: 0 0 6px; font-size: 0.85rem; }
@@ -96,7 +96,7 @@
     .mode-btn { flex: 1; border: none; background: transparent; padding: 10px; border-radius: 8px; font-weight: 500; color: var(--muted); cursor: pointer; transition: all 0.2s; font-size: 0.9rem; font-family: inherit;}
     .mode-btn.active { background: var(--pill); color: var(--accent-2); border: 1px solid var(--ring-strong); font-weight: 600; }
     
-    .ocr-drop { border: 1px dashed var(--ring-strong); background: var(--bg); border-radius: 12px; padding: 16px; text-align: center; font-weight: 500; color: var(--muted); cursor: pointer; margin-bottom: 12px; font-size: 0.85rem; transition: 0.2s; }
+    .ocr-drop { border: 1px dashed var(--ring-strong); background: var(--bg); border-radius: 12px; padding: 16px; text-align: center; font-weight: 500; color: var(--muted); cursor: pointer; margin-bottom: 4px; font-size: 0.85rem; transition: 0.2s; }
     .ocr-drop:hover { border-color: var(--accent); background: var(--pill); color: var(--ink-2); }
 
     .view-section { display: none; animation: fadeIn 0.3s ease; }
@@ -129,13 +129,29 @@
     </div>
     <div class="user-info-bar">
       <span id="asesorDisplay" style="font-weight:600; color:var(--ink); margin-right:12px;">Hola</span>
-      <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:500;" onclick="activateAppMode(); switchView('view-bancos')">Subir transferencias</span>
+      <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:500;" onclick="activateAppMode(); switchView('view-referencias')">Referencia</span>
+      <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:500;" onclick="activateAppMode(); switchView('view-bancos')">Subir Bancos</span>
       <span id="btnLogout" style="cursor:pointer; color:var(--muted); font-weight:500;">Salir</span>
     </div>
     <div id="searchFeedback" class="hint" style="margin: 5px 0 0 0; font-size:0.8rem; min-height: 20px;"></div>
   </div>
 
   <div class="shell" id="appShell">
+
+    <div id="view-referencias" class="view-section">
+      <div class="section-card">
+        <div class="section-title">Buscar Referencia Específica</div>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0;">Ingresa el número de referencia exacto para ver su estado actual y la boleta vinculada.</p>
+        
+        <div class="vertical-form">
+          <div class="field" style="background:var(--bg);">
+            <input type="text" id="inputBuscarRef" class="pill" placeholder="Escribe la referencia... (Ej: M093...)">
+          </div>
+          <button id="btnBuscarRef" class="cta" onclick="buscarReferenciaEspecifica()" style="margin-top:5px; background:var(--ink);">Buscar Referencia</button>
+        </div>
+        <div id="resultadoReferencia" style="margin-top: 20px;"></div>
+      </div>
+    </div>
 
     <div id="view-bancos" class="view-section">
       <div class="section-card">
@@ -242,7 +258,7 @@
       </div>
 
       <div class="section-card">
-         <div class="section-title">BUSCAR PAGO INTELIGENTE</div>
+         <div class="section-title">Buscar Pago Inteligente</div>
          <div class="vertical-form">
             <div id="ocrDropAbono" class="ocr-drop">
                Pega la imagen del comprobante aquí (Ctrl+V) para extraer Referencia<br>
@@ -474,8 +490,8 @@
     function desbloquearCampos(refId, montoId, metodoId, feedbackId) {
         var refInput = document.getElementById(refId); var montoInput = document.getElementById(montoId); var metodoInput = document.getElementById(metodoId);
         refInput.readOnly = false; montoInput.readOnly = false; montoInput.readOnly = false;
-        refInput.value = ""; montoInput.value = ""; metodoInput.value = "";
-        refInput.style.backgroundColor = "transparent"; montoInput.style.backgroundColor = "transparent"; metodoInput.style.backgroundColor = "transparent";
+        refInput.value = ""; montoInput.value = ""; montoInput.value = "";
+        refInput.style.backgroundColor = "transparent"; montoInput.style.backgroundColor = "transparent"; montoInput.style.backgroundColor = "transparent";
         if(feedbackId) document.getElementById(feedbackId).innerHTML = '';
     }
 
@@ -531,6 +547,91 @@
         } catch(e) {
             btn.textContent = originalTxt; btn.disabled = false;
             fb.innerHTML = "<span class='hint err'>Error de conexión.</span>";
+        }
+    }
+
+
+    // ==========================================
+    // BUSCADOR EXCLUSIVO DE REFERENCIAS Y LIBERACIÓN
+    // ==========================================
+    async function buscarReferenciaEspecifica() {
+        const ref = document.getElementById('inputBuscarRef').value.trim();
+        const div = document.getElementById('resultadoReferencia');
+        const btn = document.getElementById('btnBuscarRef');
+
+        if(!ref) return alert('Por favor ingresa una referencia para buscar.');
+
+        btn.textContent = "Buscando..."; btn.disabled = true;
+        div.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem;">Buscando en base de datos...</p>';
+
+        try {
+            const req = await fetch('/api/admin/buscar-referencia', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ referencia: ref, contrasena: localStorage.getItem(STORAGE_KEY) })
+            });
+            const res = await req.json();
+
+            btn.textContent = "Buscar Referencia"; btn.disabled = false;
+
+            if(res.status !== 'ok') {
+                div.innerHTML = `<p style="text-align:center; color:var(--danger); font-size:0.85rem; font-weight:500;">${res.mensaje}</p>`;
+                return;
+            }
+
+            const formatMoney = new Intl.NumberFormat('es-CO').format(res.transferencia?.monto || res.data?.monto || 0);
+
+            if (res.tipo === 'LIBRE') {
+                div.innerHTML = `
+                  <div style="background:var(--pill); border:1px solid var(--ring-strong); padding:16px; border-radius:12px;">
+                     <div style="font-weight:600; color:var(--ink); font-size:1.05rem;">${res.data.plataforma} - $${formatMoney}</div>
+                     <div style="color:var(--muted); font-size:0.85rem; margin-top:4px;">Ref: ${res.data.referencia} | Fecha: ${new Date(res.data.fecha_pago).toLocaleDateString('es-CO')}</div>
+                     <div style="margin-top:12px; display:inline-block; background:#e8f5e9; color:#2e7d32; padding:4px 12px; border-radius:8px; font-size:0.8rem; font-weight:600;">Estado: LIBRE</div>
+                     <p style="font-size:0.8rem; color:var(--muted); margin-top:8px; margin-bottom:0;">Esta transferencia no está asignada a nadie, está lista para usarse.</p>
+                  </div>
+                `;
+            } else if (res.tipo === 'ASIGNADA') {
+                div.innerHTML = `
+                  <div style="background:var(--bg); border:1px solid var(--ring-strong); padding:16px; border-radius:12px;">
+                     <div style="font-weight:600; color:var(--ink); font-size:1.05rem;">${res.transferencia.plataforma} - $${formatMoney}</div>
+                     <div style="color:var(--muted); font-size:0.85rem; margin-top:4px;">Ref: ${res.transferencia.referencia} | Fecha: ${new Date(res.transferencia.fecha_pago).toLocaleDateString('es-CO')}</div>
+                     <div style="margin-top:12px; display:inline-block; background:var(--danger-bg); color:var(--danger); padding:4px 12px; border-radius:8px; font-size:0.8rem; font-weight:600;">Asignada a Boleta: ${res.abono.numero_boleta}</div>
+                     
+                     <button onclick="liberarReferenciaDesdeBusqueda('${res.abono.id}')" style="margin-top:16px; width:100%; background:transparent; border:1px solid var(--danger); color:var(--danger); padding:10px; border-radius:10px; font-weight:600; cursor:pointer; font-family:inherit; transition:0.2s;" onmouseover="this.style.background='var(--danger-bg)'" onmouseout="this.style.background='transparent'">
+                         Liberar y Desasignar
+                     </button>
+                  </div>
+                `;
+            } else {
+               div.innerHTML = `<p style="text-align:center; color:var(--danger); font-size:0.85rem; font-weight:500;">La transferencia está marcada como asignada, pero no se encontró la boleta vinculada.</p>`;
+            }
+
+        } catch(e) {
+            btn.textContent = "Buscar Referencia"; btn.disabled = false;
+            div.innerHTML = `<p style="text-align:center; color:var(--danger); font-size:0.85rem; font-weight:500;">Error de conexión.</p>`;
+        }
+    }
+
+    async function liberarReferenciaDesdeBusqueda(idAbono) {
+        if(!confirm("¿Seguro que deseas liberar esta transferencia? Esto eliminará el abono de la boleta y el cliente perderá este dinero en su deuda.")) return;
+
+        try {
+            // Reutilizamos tu API mágica de eliminar-abono que ya hace todo esto perfecto
+            const req = await fetch('/api/admin/eliminar-abono', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ id: idAbono, contrasena: localStorage.getItem(STORAGE_KEY) })
+            });
+            const res = await req.json();
+            
+            if(res.status === 'ok') {
+                showModal('Liberación Exitosa', 'El abono fue eliminado, la boleta fue actualizada y la transferencia volvió a quedar libre.');
+                document.getElementById('resultadoReferencia').innerHTML = '';
+                document.getElementById('inputBuscarRef').value = '';
+            } else {
+                showModal('Error', res.mensaje);
+            }
+        } catch(e) {
+            showModal('Error', 'Error de conexión.');
         }
     }
 
