@@ -80,7 +80,12 @@ export default async function handler(req, res) {
           nota: `Origen: ${metodoPago || 'Efectivo'}${esPendiente ? ' | PENDIENTE' : ''} | Venta: ${referencia || 'Directa'}`
         });
 
-      if (abonoError) throw abonoError;
+      if (referenciaAbono && referenciaAbono !== 'Sin Ref' && referenciaAbono !== 'efectivo') {
+        await supabase
+          .from('transferencias')
+          .update({ estado: `ASIGNADA a boleta ${numeroLimpio}` })
+          .eq('referencia', referenciaAbono);
+      }
     }
 
     // PASO D: Le amarramos la boleta al cliente y actualizamos sus saldos
