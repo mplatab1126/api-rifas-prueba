@@ -323,11 +323,13 @@
           }
 
           if(res.status === 'ok') {
-              // Si el servidor dice que sí, abrimos el panel
               localStorage.setItem(STORAGE_KEY, pwd); 
               $('loginOverlay').style.display='none'; 
               topBar.style.display='block'; 
-              $('asesorDisplay').textContent = "Conectado"; 
+              
+              // 🌟 NUEVO: Mostramos el nombre del asesor arriba a la derecha
+              $('asesorDisplay').textContent = "👤 " + res.asesor; 
+              
               $('v_contrasena').value = pwd; 
               $('smartInput').focus();
           } else {
