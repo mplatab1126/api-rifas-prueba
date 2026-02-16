@@ -16,7 +16,7 @@ export default async function handler(req, res) {
   const { contrasena } = req.body;
   
   // Aquí validamos con la misma clave que usas en los otros archivos
-  const claveMaestra = process.env.ADMIN_PASSWORD || 'LosPlata2026';
+  const claveMaestra = process.env.ADMIN_PASSWORD || '1234';
 
   if (contrasena === claveMaestra) {
     return res.status(200).json({ status: 'ok', mensaje: 'Acceso concedido' });
