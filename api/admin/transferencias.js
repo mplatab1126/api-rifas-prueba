@@ -50,9 +50,15 @@ export default async function handler(req, res) {
     if (error) throw error;
 
     const listaFormateada = transferencias.map(t => {
-      // 🌟 IMPRIMIMOS LA FECHA Y LA HORA EN EL BOTÓN PARA QUE LO VEAS CLARO
+      // 🌟 SOLUCIÓN: Forzamos la zona horaria de Colombia al imprimir
       const fechaLimpia = new Date(t.fecha_pago).toLocaleString('es-CO', { 
-         day: 'numeric', month: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true 
+         timeZone: 'America/Bogota', // <--- ESTO ES LO QUE LO ARREGLA
+         day: 'numeric', 
+         month: 'numeric', 
+         year: 'numeric', 
+         hour: 'numeric', 
+         minute: 'numeric', 
+         hour12: true 
       });
       
       return {
