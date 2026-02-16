@@ -702,7 +702,11 @@
         const checkboxes = document.querySelectorAll('.boleta-pay-checkbox:checked');
         const boletasTarget = Array.from(checkboxes).map(c => c.value);
         if(boletasTarget.length === 0) return alert("Selecciona al menos una boleta.");
-        const montoTotal = Number($('a_monto').value); const ref = $('a_ref').value; const metodo = $('a_metodo').value;
+        
+        const montoTotal = Number(document.getElementById('a_monto').value); 
+        const ref = document.getElementById('a_ref').value; 
+        const metodo = document.getElementById('a_metodo').value;
+        
         if(montoTotal <= 0) return alert("El monto debe ser mayor a 0.");
         
         const montoPorBoleta = Math.floor(montoTotal / boletasTarget.length);
@@ -710,21 +714,38 @@
 
         const basePayload = { metodoPago: metodo, referencia: ref || 'efectivo', esPendiente: esAbonoPendiente, contrasena: localStorage.getItem(STORAGE_KEY) };
         let ok = 0; let fails = 0;
+        let detalleErrores = []; // 🌟 NUEVO: Variable para atrapar la explicación del error
 
         for (let i=0; i < boletasTarget.length; i++) {
             try {
                const req = await fetch('/api/admin/abono', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ ...basePayload, numeroBoleta: boletasTarget[i], valorAbono: montoPorBoleta }) });
                const res = await req.json();
-               if(res.status === 'ok') ok++; else fails++;
-            } catch(e) { fails++; }
+               
+               if(res.status === 'ok') {
+                   ok++; 
+               } else { 
+                   fails++; 
+                   detalleErrores.push(`Boleta ${boletasTarget[i]}: ${res.mensaje}`); 
+               }
+            } catch(e) { 
+               fails++; 
+               detalleErrores.push(`Boleta ${boletasTarget[i]}: Error de conexión del servidor`);
+            }
         }
+        
         btn.textContent = textoOriginal; btn.disabled = false;
+        
+        // 🌟 NUEVO: Ahora el modal te dirá el motivo exacto del error
         if (fails === 0) {
             showModal('Éxito', `Abono registrado correctamente.`);
-            $('a_monto').value = ''; $('a_ref').value = ''; $('a_metodo').value = '';
+            document.getElementById('a_monto').value = ''; document.getElementById('a_ref').value = ''; document.getElementById('a_metodo').value = '';
             desbloquearCampos('a_ref', 'a_monto', 'a_metodo', 'feedbackTransferAbono');
             runSearch(); 
-        } else { showModal('Aviso', `Se registraron ${ok}, fallaron ${fails}.`); }
+        } else { 
+            let mensajeFinal = `Se registraron ${ok}, fallaron ${fails}.\n\nMotivos del fallo:\n` + detalleErrores.join('\n');
+            document.getElementById('mMsg').style.whiteSpace = 'pre-line';
+            showModal('Aviso Importante', mensajeFinal); 
+        }
     }
 
     // ==========================================
