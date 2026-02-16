@@ -23,25 +23,18 @@ export default async function handler(req, res) {
     if (referencia) query = query.ilike('referencia', `%${referencia}%`); 
     if (monto) query = query.eq('monto', Number(monto));
 
-    if (fecha && hora) {
+    // --- NUEVA BÚSQUEDA MÁS SIMPLE Y EXACTA ---
+    if (fecha) {
       let f = fecha;
       if (fecha.includes('/')) {
          const partes = fecha.split('/'); 
          f = `${partes[2].length===2 ? '20'+partes[2] : partes[2]}-${partes[1]}-${partes[0]}`;
       }
-      // Busca exactamente en el minuto indicado, ajustado a Colombia
-      const exactStart = `${f}T${hora}:00-05:00`;
-      const exactEnd = `${f}T${hora}:59-05:00`;
-      query = query.gte('fecha_pago', exactStart).lte('fecha_pago', exactEnd);
-      
-    } else if (fecha) {
-      let f = fecha;
-      if (fecha.includes('/')) {
-         const partes = fecha.split('/'); 
-         f = `${partes[2].length===2 ? '20'+partes[2] : partes[2]}-${partes[1]}-${partes[0]}`;
-      }
-      // Si no puso hora, busca en todo el día
-      query = query.gte('fecha_pago', `${f}T00:00:00-05:00`).lte('fecha_pago', `${f}T23:59:59-05:00`);
+      query = query.eq('fecha_pago', f); // Busca solo la fecha exacta
+    }
+    
+    if (hora) {
+      query = query.ilike('hora_pago', `${hora}%`); // Busca que la hora coincida
     }
 
     query = query.order('fecha_pago', { ascending: false }).limit(10);
@@ -50,16 +43,8 @@ export default async function handler(req, res) {
     if (error) throw error;
 
     const listaFormateada = transferencias.map(t => {
-      // 🌟 SOLUCIÓN: Forzamos la zona horaria de Colombia al imprimir
-      const fechaLimpia = new Date(t.fecha_pago).toLocaleString('es-CO', { 
-         timeZone: 'America/Bogota', // <--- ESTO ES LO QUE LO ARREGLA
-         day: 'numeric', 
-         month: 'numeric', 
-         year: 'numeric', 
-         hour: 'numeric', 
-         minute: 'numeric', 
-         hour12: true 
-      });
+      // Unimos la fecha y la hora (si la tiene) para mostrarlas en el HTML
+      const fechaLimpia = t.hora_pago ? `${t.fecha_pago} a las ${t.hora_pago}` : t.fecha_pago;
       
       return {
         monto: t.monto,
