@@ -25,12 +25,10 @@ export default async function handler(req, res) {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
-    // 3. Empezamos a armar la consulta a la tabla 'transferencias'
     let query = supabase.from('transferencias').select('*');
 
-    // 4. Aplicamos los filtros inteligentemente (los que el asesor haya llenado)
+    // 3. Aplicamos los filtros
     if (referencia) {
-      // Usamos ilike para que busque coincidencias (ej: si busca "1234", trae "M012345")
       query = query.ilike('referencia', `%${referencia}%`); 
     }
     
@@ -39,30 +37,39 @@ export default async function handler(req, res) {
     }
 
     if (fecha) {
-      // Dependiendo de cómo guardes la fecha, buscamos coincidencias de ese día
-      query = query.ilike('fecha', `%${fecha}%`); 
+      // El panel HTML viejo enviaba la fecha como DD/MM/YYYY, la convertimos a YYYY-MM-DD
+      let f = fecha;
+      if (fecha.includes('/')) {
+         const partes = fecha.split('/'); 
+         f = `${partes[2]}-${partes[1]}-${partes[0]}`;
+      }
+      // Filtramos desde las 00:00 hasta las 23:59 de ese día en específico
+      query = query.gte('fecha_pago', `${f}T00:00:00.000Z`)
+                   .lte('fecha_pago', `${f}T23:59:59.999Z`);
     }
 
-    // Ordenamos para ver las más recientes primero y limitamos a 10 resultados para no saturar
-    query = query.order('id', { ascending: false }).limit(10);
+    // Ordenamos para ver las más recientes primero
+    query = query.order('fecha_pago', { ascending: false }).limit(10);
 
     const { data: transferencias, error } = await query;
 
     if (error) throw error;
 
-    // 5. Transformamos los datos al formato exacto que espera tu panel HTML
-    const listaFormateada = transferencias.map(t => ({
-      monto: t.monto,
-      referencia: t.referencia,
-      plataforma: t.plataforma || 'Banco', // Nequi, Daviplata, etc.
-      fecha: t.fecha || '',
-      status: t.estado || 'LIBRE' // LIBRE o USADO
-    }));
-
-    return res.status(200).json({ 
-      status: 'ok', 
-      lista: listaFormateada 
+    // 4. Transformamos los datos al formato exacto que espera tu panel HTML
+    const listaFormateada = transferencias.map(t => {
+      // Formatear la fecha para que el asesor la lea fácil
+      const fechaLimpia = new Date(t.fecha_pago).toLocaleDateString('es-CO');
+      
+      return {
+        monto: t.monto,
+        referencia: t.referencia,
+        plataforma: t.plataforma || 'Banco',
+        fecha: fechaLimpia,
+        status: t.estado || 'LIBRE'
+      };
     });
+
+    return res.status(200).json({ status: 'ok', lista: listaFormateada });
 
   } catch (error) {
     return res.status(500).json({ status: 'error', mensaje: 'Error interno: ' + error.message });
