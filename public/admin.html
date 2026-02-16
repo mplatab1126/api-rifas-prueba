@@ -160,7 +160,7 @@
         
         <div class="vertical-form">
           <div class="field" style="background:var(--bg); border: 1px dashed var(--accent); padding: 20px; justify-content: center;">
-            <input type="file" id="fileBancos" accept=".csv" style="font-size: 0.9rem; color: var(--ink-2);">
+            <input type="file" id="fileBancos" accept=".csv, .pdf" style="font-size: 0.9rem; color: var(--ink-2);">
           </div>
           <button id="btnProcesarBancos" class="cta" onclick="procesarCSVBancos()" style="margin-top:10px;">Procesar archivo</button>
         </div>
@@ -307,6 +307,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   
   <script>
     const $ = id => document.getElementById(id);
@@ -970,84 +971,125 @@ async function confirmarLiberarBoleta(numero) {
     
 async function procesarCSVBancos() {
     const fileInput = document.getElementById('fileBancos');
-    if (!fileInput.files.length) return alert("Por favor, selecciona un archivo CSV primero.");
+    if (!fileInput.files.length) return alert("Por favor, selecciona un archivo CSV o PDF primero.");
     
     const file = fileInput.files[0];
-    const reader = new FileReader();
-    
     const btn = document.getElementById('btnProcesarBancos');
     const txtOriginal = btn.textContent;
     btn.textContent = 'Procesando...';
     btn.disabled = true;
 
-    reader.onload = async function(e) {
-        const text = e.target.result;
-        const rows = text.split('\n');
-        const transferenciasNuevas = [];
+    try {
+        let transferenciasNuevas = [];
 
-        for(let i = 0; i < rows.length; i++) {
-            const row = rows[i].trim();
-            if(!row) continue;
+        if (file.name.toLowerCase().endsWith('.pdf')) {
+            // --- LÓGICA NUEVA: EXTRAER DATOS DEL PDF DE BANCOLOMBIA ---
+            const arrayBuffer = await file.arrayBuffer();
+            const pdfjsLib = window['pdfjs-dist/build/pdf'];
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
             
-            const cols = row.split(',');
-            if(cols.length < 12) continue; 
-
-            let montoRaw = cols[9]; 
-            let monto = parseFloat(montoRaw) || 0;
-
-            let fechaRaw = cols[1]; 
-            let fechaFormateada = new Date().toISOString(); 
-            if(fechaRaw && fechaRaw.length === 8) {
-                fechaFormateada = `${fechaRaw.slice(4,8)}-${fechaRaw.slice(2,4)}-${fechaRaw.slice(0,2)}T00:00:00.000Z`;
+            const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+            let fullText = "";
+            
+            // Extraer todo el texto de todas las páginas del PDF
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const content = await page.getTextContent();
+                fullText += content.items.map(item => item.str).join(' ') + " ";
             }
 
-            let descripcion = cols[4] || "";
-            let plataforma = descripcion.includes("NEQUI") ? "Nequi" : "Bancolombia";
+            // Esta fórmula busca patrones como: "2026/02/16 (Texto) 50,000.00"
+            const regex = /(20\d{2}\/\d{2}\/\d{2})\s+(.+?)\s+([\d,]+\.\d{2})(?!\d)/g;
+            let match;
 
-            let referenciaRaw = cols[11] || "";
-            let referencia = referenciaRaw.replace(/"/g, ''); 
+            while ((match = regex.exec(fullText)) !== null) {
+                const fechaRaw = match[1]; 
+                const descAndRef = match[2]; 
+                const montoRaw = match[3]; 
 
-            transferenciasNuevas.push({
-                monto: monto,
-                fecha_pago: fechaFormateada,
-                plataforma: plataforma,
-                referencia: referencia,
-                estado: 'LIBRE'
+                let monto = parseFloat(montoRaw.replace(/,/g, ''));
+                if(monto <= 0) continue; 
+
+                // Convertir la fecha al formato que acepta tu base de datos
+                let fechaISO = `${fechaRaw.replace(/\//g, '-')}T00:00:00.000Z`;
+                let plataforma = descAndRef.toUpperCase().includes('NEQUI') ? 'Nequi' : 'Bancolombia';
+
+                let referencia = "Sin Ref";
+                // Extrae el último número largo que encuentre (normalmente la referencia)
+                const refMatch = descAndRef.match(/\b\d{6,15}\b/g); 
+                if (refMatch) {
+                    referencia = refMatch[refMatch.length - 1]; 
+                }
+
+                transferenciasNuevas.push({
+                    monto: monto,
+                    fecha_pago: fechaISO,
+                    plataforma: plataforma,
+                    referencia: referencia,
+                    estado: 'LIBRE'
+                });
+            }
+
+        } else {
+            // --- LÓGICA ORIGINAL: CSV (Se mantiene por si acaso) ---
+            const text = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsText(file);
             });
+            const rows = text.split('\n');
+            for(let i = 0; i < rows.length; i++) {
+                const row = rows[i].trim();
+                if(!row) continue;
+                const cols = row.split(',');
+                if(cols.length < 12) continue; 
+
+                let monto = parseFloat(cols[9]) || 0;
+                if(monto <= 0) continue;
+
+                let fechaRaw = cols[1]; 
+                let fechaFormateada = new Date().toISOString(); 
+                if(fechaRaw && fechaRaw.length === 8) {
+                    fechaFormateada = `${fechaRaw.slice(4,8)}-${fechaRaw.slice(2,4)}-${fechaRaw.slice(0,2)}T00:00:00.000Z`;
+                }
+                let descripcion = cols[4] || "";
+                let plataforma = descripcion.includes("NEQUI") ? "Nequi" : "Bancolombia";
+                let referencia = (cols[11] || "").replace(/"/g, ''); 
+
+                transferenciasNuevas.push({
+                    monto: monto, fecha_pago: fechaFormateada, plataforma: plataforma, referencia: referencia, estado: 'LIBRE'
+                });
+            }
         }
 
         if(transferenciasNuevas.length === 0) {
-            btn.textContent = txtOriginal; btn.disabled = false;
-            return alert("No se encontraron transferencias válidas en el archivo.");
+            throw new Error("No se encontraron transferencias válidas en el archivo.");
         }
 
-        try {
-            const req = await fetch('/api/admin/subir-bancos', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    transferencias: transferenciasNuevas,
-                    contrasena: localStorage.getItem(STORAGE_KEY)
-                })
-            });
-            const res = await req.json();
+        // Subir a la base de datos de Supabase a través de tu API
+        const req = await fetch('/api/admin/subir-bancos', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                transferencias: transferenciasNuevas,
+                contrasena: localStorage.getItem(STORAGE_KEY)
+            })
+        });
+        const res = await req.json();
 
-            btn.textContent = txtOriginal; btn.disabled = false;
-
-            if(res.status === 'ok') {
-                showModal('Procesado', res.mensaje);
-                fileInput.value = ""; 
-            } else {
-                showModal('Error al subir', res.mensaje);
-            }
-
-        } catch(error) {
-            btn.textContent = txtOriginal; btn.disabled = false;
-            showModal('Error', 'No se pudo conectar con el servidor.');
+        if(res.status === 'ok') {
+            showModal('Procesado', res.mensaje);
+            fileInput.value = ""; 
+        } else {
+            showModal('Error al subir', res.mensaje);
         }
-    };
-    
-    reader.readAsText(file);
+
+    } catch(error) {
+        showModal('Error', error.message || 'No se pudo procesar el archivo.');
+    } finally {
+        btn.textContent = txtOriginal; 
+        btn.disabled = false;
+    }
 }
   
   </script>
