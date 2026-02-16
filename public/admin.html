@@ -653,6 +653,33 @@
     async function runSearch(){
       const q = smartInput.value.trim(); if(!q) return;
       feedback.textContent = "Buscando...";
+
+      // --- NUEVO: LIMPIAR CAJAS DE PAGO INTELIGENTE AL BUSCAR ---
+      
+      // 1. Limpiamos los campos de la vista de "Boletas a separar" (Ventas)
+      if(document.getElementById('t_ref')) document.getElementById('t_ref').value = '';
+      if(document.getElementById('t_monto')) document.getElementById('t_monto').value = '';
+      if(document.getElementById('t_fecha')) document.getElementById('t_fecha').value = '';
+      if(document.getElementById('t_hora')) document.getElementById('t_hora').value = '';
+      if(document.getElementById('t_plataforma')) document.getElementById('t_plataforma').value = '';
+      if(document.getElementById('ocrStatus')) document.getElementById('ocrStatus').textContent = '';
+      if(document.getElementById('feedbackTransfer')) document.getElementById('feedbackTransfer').innerHTML = '';
+      
+      // 2. Limpiamos los campos de la vista de "Cliente Encontrado" (Abonos)
+      if(document.getElementById('t_ref_abono')) document.getElementById('t_ref_abono').value = '';
+      if(document.getElementById('t_monto_abono')) document.getElementById('t_monto_abono').value = '';
+      if(document.getElementById('t_fecha_abono')) document.getElementById('t_fecha_abono').value = '';
+      if(document.getElementById('t_hora_abono')) document.getElementById('t_hora_abono').value = '';
+      if(document.getElementById('t_plataforma_abono')) document.getElementById('t_plataforma_abono').value = '';
+      if(document.getElementById('ocrStatusAbono')) document.getElementById('ocrStatusAbono').textContent = '';
+      if(document.getElementById('feedbackTransferAbono')) document.getElementById('feedbackTransferAbono').innerHTML = '';
+
+      // 3. Desbloqueamos los campos por si había un pago cargado previamente
+      desbloquearCampos('v_referenciaAbono', 'v_primerAbono', 'v_metodoPago', 'feedbackTransfer');
+      desbloquearCampos('a_ref', 'a_monto', 'a_metodo', 'feedbackTransferAbono');
+      
+      // ---------------------------------------------------------
+
       try {
         const response = await fetch('/api/admin/buscar?q=' + encodeURIComponent(q));
         const res = await response.json();
@@ -665,50 +692,6 @@
         else { showModal('No encontrado', res.mensaje || 'Intenta de nuevo'); }
       } catch (err) { feedback.textContent = ""; showModal('Error', err.message); }
     }
-
-    $('btnRegistrarVenta').onclick = async ()=>{
-       const nums = Array.from(numList.querySelectorAll('input')).map(i=>i.value).filter(v=>v.length===4);
-       if(!nums.length) return alert('Falta boleta válida');
-       $('btnRegistrarVenta').textContent='Procesando...'; $('btnRegistrarVenta').disabled=true;
-       
-       let totalMoney=0, ref='', metodo='';
-       if (modoVenta === 'separar') { totalMoney=0; ref='0'; metodo='Separado'; } 
-       else { totalMoney=Number($('v_primerAbono').value)||0; ref=$('v_referenciaAbono').value; metodo=$('v_metodoPago').value; }
-
-       const perNum = Math.floor(totalMoney/nums.length);
-       const baseData = { nombre:$('v_nombre').value, apellido:$('v_apellido').value, ciudad:$('v_ciudad').value, telefono:$('v_telefono').value, primerAbono:perNum, referenciaAbono: ref, metodoPago: metodo, esPendiente:esVentaPendiente, contrasena:localStorage.getItem(STORAGE_KEY) };
-       
-       let ok=0, fails=0;
-       let detalleErrores = []; 
-
-       for (let i=0; i < nums.length; i++) {
-           try {
-               const req = await fetch('/api/admin/venta', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({...baseData, numeroBoleta: nums[i]}) });
-               const res = await req.json();
-               if(res.status === 'ok') { ok++; } else { fails++; detalleErrores.push(`Boleta ${nums[i]}: ${res.mensaje}`); }
-           } catch(e) { fails++; detalleErrores.push(`Boleta ${nums[i]}: Error de conexión`); }
-       }
-       $('btnRegistrarVenta').textContent= modoVenta === 'separar' ? 'Confirmar Separado ($0)' : 'Registrar Venta'; 
-       $('btnRegistrarVenta').disabled=false;
-       
-       let mensajeFinal = `Registradas: ${ok} / Errores: ${fails}`;
-       if (fails > 0) { mensajeFinal += `\n\nMotivos:\n` + detalleErrores.join('\n'); }
-       
-       $('mMsg').style.whiteSpace = 'pre-line'; 
-       showModal('Resumen de Venta', mensajeFinal);
-       
-       if(fails===0){ 
-           // LIMPIEZA DE DATOS PRINCIPALES
-           $('v_nombre').value=''; $('v_apellido').value=''; $('v_telefono').value=''; $('v_ciudad').value=''; $('v_primerAbono').value=0; $('v_referenciaAbono').value=''; $('v_metodoPago').value='';
-           
-           // 🌟 NUEVO: LIMPIEZA DE BÚSQUEDA INTELIGENTE Y OCR
-           $('t_ref').value=''; $('t_monto').value=''; $('t_fecha').value=''; $('t_hora').value='';
-           if($('ocrStatus')) $('ocrStatus').textContent='';
-
-           desbloquearCampos('v_referenciaAbono', 'v_primerAbono', 'v_metodoPago', 'feedbackTransfer');
-           numList.innerHTML=''; addDefaultPill(); activateHeroMode();
-       }
-    };
 
     async function registrarAbono() {
         const btn = document.getElementById('btnRegistrarAbono');
