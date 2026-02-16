@@ -18,12 +18,11 @@ export default async function handler(req, res) {
   );
 
   try {
-    // 3. Buscamos hasta 1000 boletas que estén LIBRES (que no tengan teléfono)
+    // 3. Traemos las boletas libres (sin límite pequeño, para garantizar que haya de todas las series)
     const { data: libres, error } = await supabase
       .from('boletas')
       .select('numero')
-      .is('telefono_cliente', null)
-      .limit(1000);
+      .is('telefono_cliente', null);
 
     if (error) throw error;
 
@@ -31,16 +30,37 @@ export default async function handler(req, res) {
       return res.status(200).json({ numeros_disponibles: "No hay boletas disponibles en este momento." });
     }
 
-    // 4. EL TRUCO DE LA RULETA: Mezclamos (barajamos) los números al azar
-    const mezclados = libres.sort(() => 0.5 - Math.random());
+    // 4. Creamos los "cajones" para separar las boletas según su primer número (0 al 9)
+    const series = { '0':[], '1':[], '2':[], '3':[], '4':[], '5':[], '6':[], '7':[], '8':[], '9':[] };
+    
+    // Clasificamos cada boleta en su cajón correspondiente
+    for (let b of libres) {
+      const primerDigito = b.numero.charAt(0);
+      if (series[primerDigito]) {
+        series[primerDigito].push(b.numero);
+      }
+    }
 
-    // 5. Escogemos solo los primeros 50 números de la lista ya mezclada
-    const seleccionados = mezclados.slice(0, 50);
+    let seleccionados = [];
 
-    // 6. Los unimos todos en un solo texto separado por guiones
-    const textoFinal = seleccionados.map(b => b.numero).join(' - ');
+    // 5. Entramos a cada cajón, los barajamos y sacamos 5 de cada uno
+    for (let i = 0; i <= 9; i++) {
+      let grupo = series[i.toString()];
+      if (grupo && grupo.length > 0) {
+        // Barajamos este grupito al azar
+        grupo.sort(() => 0.5 - Math.random());
+        // Tomamos los primeros 5 (o los que haya, si quedan menos de 5 en esa serie)
+        seleccionados.push(...grupo.slice(0, 5));
+      }
+    }
 
-    // 7. Se lo enviamos a Chatea Pro
+    // 6. Ahora que tenemos los 50 números, los ordenamos matemáticamente de MENOR a MAYOR
+    seleccionados.sort((a, b) => parseInt(a) - parseInt(b));
+
+    // 7. Los unimos todos en un solo texto separado por guiones
+    const textoFinal = seleccionados.join(' - ');
+
+    // 8. Se lo enviamos a Chatea Pro
     res.status(200).json({
       numeros_disponibles: textoFinal
     });
