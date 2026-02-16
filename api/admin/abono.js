@@ -69,7 +69,8 @@ export default async function handler(req, res) {
         monto: monto,
         fecha_pago: new Date().toISOString(),
         referencia_transferencia: referencia || 'Sin Ref',
-        nota: `Origen: ${metodoPago || 'Efectivo'}${esPendiente ? ' | PENDIENTE' : ''}`
+        nota: `Origen: ${metodoPago || 'Efectivo'}${esPendiente ? ' | PENDIENTE' : ''}`,
+        asesor: nombreAsesor // 🌟 NUEVA COLUMNA
       });
 
     if (insertError) throw insertError;
@@ -85,9 +86,11 @@ export default async function handler(req, res) {
     const { error: updateError } = await supabase
       .from('boletas')
       .update({
-        total_abonado: nuevoTotalAbonado,
-        saldo_restante: nuevoSaldoRestante,
-        estado: estadoNuevo
+        telefono_cliente: null,
+        estado: 'LIBRE',
+        total_abonado: 0,
+        saldo_restante: 150000,
+        asesor: null // 🌟 LIMPIAMOS EL ASESOR
       })
       .eq('numero', numeroLimpio);
 
