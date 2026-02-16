@@ -58,10 +58,10 @@ export default async function handler(req, res) {
         }
     }
 
-    // Armamos la fecha final para Colombia (-05:00)
-    let fechaISO = new Date().toISOString(); 
+    // Dejamos la fecha limpia (Ej: 2026-02-16)
+    let soloFecha = "2026-01-01";
     if (partesFecha.length === 3) {
-        fechaISO = `${partesFecha[2]}-${partesFecha[1].padStart(2, '0')}-${partesFecha[0].padStart(2, '0')}T${horaISO}-05:00`;
+        soloFecha = `${partesFecha[2]}-${partesFecha[1].padStart(2, '0')}-${partesFecha[0].padStart(2, '0')}`;
     }
 
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
@@ -76,11 +76,13 @@ export default async function handler(req, res) {
          return res.status(200).json({ mensaje: '⚠️ Este comprobante ya había sido registrado anteriormente.' });
     }
 
+    // Insertamos la fecha en fecha_pago y la hora en hora_pago
     const { error } = await supabase.from('transferencias').insert({
         plataforma: plataforma,
         monto: monto,
         referencia: referencia,
-        fecha_pago: fechaISO,
+        fecha_pago: soloFecha,
+        hora_pago: horaISO,  // <--- NUEVA COLUMNA
         estado: 'LIBRE'
     });
 
