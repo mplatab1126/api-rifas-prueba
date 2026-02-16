@@ -997,9 +997,17 @@ async function procesarCSVBancos() {
                 let monto = parseFloat(montoRaw.replace(/,/g, ''));
                 if(monto <= 0) continue; 
 
-                // --- CAMBIO AQUÍ: GUARDAMOS SOLO LA FECHA ---
                 let soloFecha = fechaRaw.replace(/\//g, '-'); 
-                let plataforma = descAndRef.toUpperCase().includes('NEQUI') ? 'Nequi' : 'Bancolombia';
+                
+                // --- CAMBIO AQUÍ: DETECTAR NEQUI, CORRESPONSAL O BANCOLOMBIA ---
+                let descUpper = descAndRef.toUpperCase();
+                let plataforma = 'Bancolombia'; // Valor por defecto
+                
+                if (descUpper.includes('NEQUI')) {
+                    plataforma = 'Nequi';
+                } else if (descUpper.includes('CORRESPONSAL')) {
+                    plataforma = 'Corresponsal';
+                }
 
                 let referencia = "Sin Ref";
                 const refMatch = descAndRef.match(/\b\d{6,15}\b/g); 
@@ -1007,7 +1015,6 @@ async function procesarCSVBancos() {
                     referencia = refMatch[refMatch.length - 1]; 
                 }
 
-                // --- CAMBIO AQUÍ: SE ENVÍA HORA NULA ---
                 transferenciasNuevas.push({
                     monto: monto,
                     fecha_pago: soloFecha,
@@ -1041,11 +1048,18 @@ async function procesarCSVBancos() {
                     soloFechaCSV = `${fechaRaw.slice(4,8)}-${fechaRaw.slice(2,4)}-${fechaRaw.slice(0,2)}`;
                 }
                 
-                let descripcion = cols[4] || "";
-                let plataforma = descripcion.includes("NEQUI") ? "Nequi" : "Bancolombia";
+                // --- CAMBIO AQUÍ PARA CSV TAMBIÉN ---
+                let descUpper = (cols[4] || "").toUpperCase();
+                let plataforma = 'Bancolombia';
+                
+                if (descUpper.includes('NEQUI')) {
+                    plataforma = 'Nequi';
+                } else if (descUpper.includes('CORRESPONSAL')) {
+                    plataforma = 'Corresponsal';
+                }
+
                 let referencia = (cols[11] || "").replace(/"/g, ''); 
 
-                // --- CAMBIO AQUÍ: SE ENVÍA HORA NULA ---
                 transferenciasNuevas.push({
                     monto: monto, 
                     fecha_pago: soloFechaCSV, 
