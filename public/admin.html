@@ -586,6 +586,17 @@
        html += '  <div><div style="font-size:0.65rem; color:#7ea094; font-weight:700;">BOLETAS</div><div style="font-weight:800; color:var(--ink); font-size:0.95rem;">' + boletasStr.join(', ') + '</div></div>';
        html += '  <div style="text-align:right;"><div style="font-size:0.65rem; color:#7ea094; font-weight:700;">TELÉFONO</div><div style="font-weight:800; color:#1e8f5c; font-size:0.95rem;">' + c.telefono + '</div></div>';
        html += '</div>';
+       
+       // --- AQUÍ ESTÁN LOS DATOS RESTAURADOS ---
+       html += '<div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:6px;">';
+       html += '  <input id="c_nombre" type="text" style="background:#fff; border:1px solid #dfe9e5; padding:6px 8px; border-radius:8px; width:100%; font-size:0.85rem;" value="' + c.nombre + '" disabled>';
+       html += '  <input id="c_apellido" type="text" style="background:#fff; border:1px solid #dfe9e5; padding:6px 8px; border-radius:8px; width:100%; font-size:0.85rem;" value="' + c.apellido + '" disabled>';
+       html += '</div>';
+       html += '<div style="margin-bottom:10px;">';
+       html += '  <input id="c_ciudad" type="text" style="background:#fff; border:1px solid #dfe9e5; padding:6px 8px; border-radius:8px; width:100%; font-size:0.85rem;" value="' + c.ciudad + '" disabled>';
+       html += '</div>';
+       // ----------------------------------------
+
        html += '<div style="display:flex; justify-content:space-between; align-items:center; background:#fff; border:1px solid #cfe3dc; border-radius:8px; padding:6px 8px;">';
        html += '  <div style="display:flex; gap:10px; align-items:center;">';
        html += '    <div><span style="font-size:0.6rem; color:#7ea094; display:block;">ABONADO</span><span style="font-size:0.9rem; font-weight:800; color:var(--ink);">$' + fmt(totalAbonadoGlobal) + '</span></div>';
