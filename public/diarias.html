@@ -679,7 +679,12 @@
         .then(res => res.json())
         .then(data => {
           if (data.exito) {
-            window.top.location.href = data.url; 
+            // SOLUCIÓN EMOJIS: Armamos el mensaje directamente aquí en el navegador
+            const total = numerosSeleccionados.length * PRECIO_BOLETA;
+            const mensaje = `¡Hola Los Plata! 👋\nAcabo de reservar en la RIFA DIARIA.\n\n👤 Nombre: ${nombre}\n📱 Celular: ${telefono}\n🎟️ Mis números: ${numerosSeleccionados.join(', ')}\n💰 Total a pagar: $${total.toLocaleString('es-CO')}\n\nQuedo atento para enviar el comprobante.`;
+            
+            const urlWhatsapp = `https://wa.me/573116675984?text=${encodeURIComponent(mensaje)}`;
+            window.top.location.href = urlWhatsapp; 
           } else {
             alert("Error: " + data.error);
             cerrarModal(); location.reload(); 
