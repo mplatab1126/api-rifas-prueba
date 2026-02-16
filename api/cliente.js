@@ -46,20 +46,25 @@ export default async function handler(req, res) {
       return res.status(200).json({
         boletas_cliente: "Ninguna",
         deuda_cliente: 0,
-        nombre_cliente: "No encontrado"
+        nombre_cliente: "No encontrado",
+        enlaces_boletas: "Ninguno"
       });
     }
 
-    // 7. EMPACAMOS LOS DATOS: Unimos las boletas y sumamos la deuda total
+    // 7. EMPACAMOS LOS DATOS: Unimos las boletas, sumamos la deuda total y creamos los ENLACES VIP
     const listaNumeros = boletas.map(b => b.numero).join(', ');
     const deudaTotal = boletas.reduce((suma, b) => suma + Number(b.saldo_restante), 0);
     const nombre = boletas[0].clientes?.nombre || "Cliente";
+    
+    // NUEVO: Generamos la lista de enlaces de las boletas separadas por un salto de línea
+    const listaEnlaces = boletas.map(b => `https://www.losplata.com.co/boleta/${b.numero}`).join('\n');
 
     // 8. Le respondemos a Chatea Pro con el paquete listo
     res.status(200).json({
       boletas_cliente: listaNumeros,
       deuda_cliente: deudaTotal,
-      nombre_cliente: nombre
+      nombre_cliente: nombre,
+      enlaces_boletas: listaEnlaces // <--- Nueva variable enviada al bot
     });
 
   } catch (error) {
