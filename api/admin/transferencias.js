@@ -8,10 +8,10 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  // RECIBIMOS LA HORA DESDE EL PANEL HTML
-  const { fecha, hora, monto, referencia } = req.body;
+  // RECIBIMOS TODOS LOS DATOS DESDE EL PANEL HTML (Incluyendo Plataforma)
+  const { fecha, hora, monto, referencia, plataforma } = req.body;
 
-  if (!fecha && !monto && !referencia && !hora) {
+  if (!fecha && !monto && !referencia && !hora && !plataforma) {
     return res.status(400).json({ status: 'error', mensaje: 'Debes enviar al menos un dato para buscar' });
   }
 
@@ -22,8 +22,9 @@ export default async function handler(req, res) {
 
     if (referencia) query = query.ilike('referencia', `%${referencia}%`); 
     if (monto) query = query.eq('monto', Number(monto));
+    if (plataforma) query = query.ilike('plataforma', `%${plataforma}%`); // Filtramos por plataforma
 
-    // --- NUEVA BÚSQUEDA MÁS SIMPLE Y EXACTA ---
+    // BUSCAMOS POR FECHA
     if (fecha) {
       let f = fecha;
       if (fecha.includes('/')) {
@@ -33,6 +34,7 @@ export default async function handler(req, res) {
       query = query.eq('fecha_pago', f); // Busca solo la fecha exacta
     }
     
+    // BUSCAMOS POR HORA
     if (hora) {
       query = query.ilike('hora_pago', `${hora}%`); // Busca que la hora coincida
     }
