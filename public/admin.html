@@ -1011,7 +1011,7 @@ async function procesarCSVBancos() {
                 if(monto <= 0) continue; 
 
                 // Convertir la fecha al formato que acepta tu base de datos
-                let fechaISO = `${fechaRaw.replace(/\//g, '-')}T00:00:00.000Z`;
+                let fechaISO = `${fechaRaw.replace(/\//g, '-')}T12:00:00-05:00`;
                 let plataforma = descAndRef.toUpperCase().includes('NEQUI') ? 'Nequi' : 'Bancolombia';
 
                 let referencia = "Sin Ref";
@@ -1050,7 +1050,7 @@ async function procesarCSVBancos() {
                 let fechaRaw = cols[1]; 
                 let fechaFormateada = new Date().toISOString(); 
                 if(fechaRaw && fechaRaw.length === 8) {
-                    fechaFormateada = `${fechaRaw.slice(4,8)}-${fechaRaw.slice(2,4)}-${fechaRaw.slice(0,2)}T00:00:00.000Z`;
+                    fechaFormateada = `${fechaRaw.slice(4,8)}-${fechaRaw.slice(2,4)}-${fechaRaw.slice(0,2)}T12:00:00-05:00`;
                 }
                 let descripcion = cols[4] || "";
                 let plataforma = descripcion.includes("NEQUI") ? "Nequi" : "Bancolombia";
