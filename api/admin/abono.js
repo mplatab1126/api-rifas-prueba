@@ -93,6 +93,31 @@ export default async function handler(req, res) {
 
     if (updateError) throw updateError;
 
+    // PASO D: Actualizar la boleta con los nuevos saldos
+    const { error: updateError } = await supabase
+      .from('boletas')
+      .update({
+        total_abonado: nuevoTotalAbonado,
+        saldo_restante: nuevoSaldoRestante,
+        estado: estadoNuevo
+      })
+      .eq('numero', numeroLimpio);
+
+    if (updateError) throw updateError;
+
+    // -------------------------------------------------------------------
+    // NUEVO PASO E: Marcar la transferencia bancaria como ASIGNADA
+    // -------------------------------------------------------------------
+    if (referencia && referencia !== 'Sin Ref' && referencia !== 'efectivo') {
+      await supabase
+        .from('transferencias')
+        .update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }) // O solo 'ASIGNADA' si prefieres
+        .eq('referencia', referencia);
+    }
+
+    // Respuesta exitosa
+    return res.status(200).json({ status: 'ok', mensaje: 'Abono registrado con éxito' });
+
     // Respuesta exitosa
     return res.status(200).json({ status: 'ok', mensaje: 'Abono registrado con éxito' });
 
