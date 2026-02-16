@@ -983,7 +983,7 @@ async function procesarCSVBancos() {
         let transferenciasNuevas = [];
 
         if (file.name.toLowerCase().endsWith('.pdf')) {
-            // --- LÓGICA NUEVA: EXTRAER DATOS DEL PDF DE BANCOLOMBIA ---
+            // --- LÓGICA: EXTRAER DATOS DEL PDF DE BANCOLOMBIA ---
             const arrayBuffer = await file.arrayBuffer();
             const pdfjsLib = window['pdfjs-dist/build/pdf'];
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
@@ -991,14 +991,12 @@ async function procesarCSVBancos() {
             const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
             let fullText = "";
             
-            // Extraer todo el texto de todas las páginas del PDF
             for (let i = 1; i <= pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
                 const content = await page.getTextContent();
                 fullText += content.items.map(item => item.str).join(' ') + " ";
             }
 
-            // Esta fórmula busca patrones como: "2026/02/16 (Texto) 50,000.00"
             const regex = /(20\d{2}\/\d{2}\/\d{2})\s+(.+?)\s+([\d,]+\.\d{2})(?!\d)/g;
             let match;
 
@@ -1010,20 +1008,21 @@ async function procesarCSVBancos() {
                 let monto = parseFloat(montoRaw.replace(/,/g, ''));
                 if(monto <= 0) continue; 
 
-                // Convertir la fecha al formato que acepta tu base de datos
-                let fechaISO = `${fechaRaw.replace(/\//g, '-')}T12:00:00-05:00`;
+                // --- CAMBIO AQUÍ: GUARDAMOS SOLO LA FECHA ---
+                let soloFecha = fechaRaw.replace(/\//g, '-'); 
                 let plataforma = descAndRef.toUpperCase().includes('NEQUI') ? 'Nequi' : 'Bancolombia';
 
                 let referencia = "Sin Ref";
-                // Extrae el último número largo que encuentre (normalmente la referencia)
                 const refMatch = descAndRef.match(/\b\d{6,15}\b/g); 
                 if (refMatch) {
                     referencia = refMatch[refMatch.length - 1]; 
                 }
 
+                // --- CAMBIO AQUÍ: SE ENVÍA HORA NULA ---
                 transferenciasNuevas.push({
                     monto: monto,
-                    fecha_pago: fechaISO,
+                    fecha_pago: soloFecha,
+                    hora_pago: null, 
                     plataforma: plataforma,
                     referencia: referencia,
                     estado: 'LIBRE'
@@ -1031,7 +1030,7 @@ async function procesarCSVBancos() {
             }
 
         } else {
-            // --- LÓGICA ORIGINAL: CSV (Se mantiene por si acaso) ---
+            // --- LÓGICA ORIGINAL: CSV ---
             const text = await new Promise((resolve) => {
                 const reader = new FileReader();
                 reader.onload = (e) => resolve(e.target.result);
@@ -1048,16 +1047,23 @@ async function procesarCSVBancos() {
                 if(monto <= 0) continue;
 
                 let fechaRaw = cols[1]; 
-                let fechaFormateada = new Date().toISOString(); 
+                let soloFechaCSV = new Date().toISOString().split('T')[0]; 
                 if(fechaRaw && fechaRaw.length === 8) {
-                    fechaFormateada = `${fechaRaw.slice(4,8)}-${fechaRaw.slice(2,4)}-${fechaRaw.slice(0,2)}T12:00:00-05:00`;
+                    soloFechaCSV = `${fechaRaw.slice(4,8)}-${fechaRaw.slice(2,4)}-${fechaRaw.slice(0,2)}`;
                 }
+                
                 let descripcion = cols[4] || "";
                 let plataforma = descripcion.includes("NEQUI") ? "Nequi" : "Bancolombia";
                 let referencia = (cols[11] || "").replace(/"/g, ''); 
 
+                // --- CAMBIO AQUÍ: SE ENVÍA HORA NULA ---
                 transferenciasNuevas.push({
-                    monto: monto, fecha_pago: fechaFormateada, plataforma: plataforma, referencia: referencia, estado: 'LIBRE'
+                    monto: monto, 
+                    fecha_pago: soloFechaCSV, 
+                    hora_pago: null, 
+                    plataforma: plataforma, 
+                    referencia: referencia, 
+                    estado: 'LIBRE'
                 });
             }
         }
@@ -1066,7 +1072,6 @@ async function procesarCSVBancos() {
             throw new Error("No se encontraron transferencias válidas en el archivo.");
         }
 
-        // Subir a la base de datos de Supabase a través de tu API
         const req = await fetch('/api/admin/subir-bancos', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
