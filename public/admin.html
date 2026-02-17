@@ -802,15 +802,17 @@ $('btnRegistrarVenta').onclick = async ()=>{
        var boletasStr = [];
        var fmt = function(n) { return new Intl.NumberFormat('es-CO').format(n); };
        
-       // --- NUEVO: Detectamos si estamos viendo una boleta de la Rifa Diaria (2 dígitos) ---
-       var esDiaria = lista.length > 0 && String(lista[0].numero).length === 2;
+       // Evaluamos si el cliente tiene al menos una boleta de apartamento para mostrar la "Resta" roja global
+       var tieneApto = lista.some(b => String(b.numero).length === 4);
 
        var html = '';
        
-       // 1. CAJITAS DE SELECCIÓN Y LIBERACIÓN
+       // 1. CAJITAS DE SELECCIÓN (Desmarcadas si hay más de 1 boleta)
        html += '<div style="margin-bottom: 20px;">';
-       html += '<label style="font-size:0.85rem; color:var(--ink-2); font-weight:500; margin-bottom:10px; display:block;">Boletas vinculadas:</label>';
+       html += '<label style="font-size:0.85rem; color:var(--ink-2); font-weight:600; margin-bottom:10px; display:block;">👇 Selecciona a qué boleta(s) vas a abonar:</label>';
        html += '<div style="display: flex; flex-direction: column; gap: 8px;">';
+
+       var autoCheck = lista.length === 1 ? 'checked' : '';
 
        for(var i=0; i<lista.length; i++){
            var b = lista[i]; 
@@ -819,14 +821,17 @@ $('btnRegistrarVenta').onclick = async ()=>{
            totalRestanteGlobal += restante;
            boletasStr.push(b.numero);
            
-           html += '<label style="display:flex; align-items:center; gap:10px; background:var(--bg); padding:10px 14px; border-radius:10px; border:1px solid var(--ring-strong); cursor:pointer; font-size:0.9rem; width:100%; transition: 0.2s;">';
-           html += '<input type="checkbox" value="' + b.numero + '" class="boleta-pay-checkbox" checked style="accent-color: var(--accent); width:16px; height:16px;">';
+           // Evaluamos individualmente si es diaria o apto
+           var ticketEsDiaria = String(b.numero).length === 2;
            
-           // --- NUEVO: Si es diaria, ocultamos el texto "(Resta $...)" ---
-           if (esDiaria) {
-               html += '<span style="color:var(--ink);"><b>' + b.numero + '</b></span>';
+           html += '<label style="display:flex; align-items:center; gap:10px; background:var(--bg); padding:10px 14px; border-radius:10px; border:1px solid var(--ring-strong); cursor:pointer; font-size:0.9rem; width:100%; transition: 0.2s;">';
+           // Agregamos el onchange para detectar cuando seleccionas la boleta
+           html += '<input type="checkbox" value="' + b.numero + '" class="boleta-pay-checkbox" ' + autoCheck + ' onchange="verificarSeleccionAbonos()" style="accent-color: var(--accent); width:16px; height:16px;">';
+           
+           if (ticketEsDiaria) {
+               html += '<span style="color:var(--ink);"><b>' + b.numero + '</b> <span style="color:var(--muted); font-size:0.8rem;">(Rifa Diaria)</span></span>';
            } else {
-               html += '<span style="color:var(--ink);"><b>' + b.numero + '</b> <span style="color:var(--muted); font-size:0.85rem;">(Resta $' + fmt(restante) + ')</span></span>';
+               html += '<span style="color:var(--ink);"><b>' + b.numero + '</b> <span style="color:var(--muted); font-size:0.85rem;">(Apto - Resta $' + fmt(restante) + ')</span></span>';
            }
 
            html += '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); confirmarLiberarBoleta(\'' + b.numero + '\');" style="margin-left:auto; background:transparent; color:var(--danger); border:1px solid var(--danger); padding:4px 12px; border-radius:6px; font-size:0.8rem; font-weight:500; font-family:inherit; cursor:pointer; transition: 0.2s;">Liberar</button>';
@@ -854,8 +859,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
        html += '  <div style="display:flex; gap:16px; align-items:center;">';
        html += '    <div><span style="font-size:0.7rem; color:var(--muted); display:block; font-weight:500;">Abonado total</span><span style="font-size:1.05rem; font-weight:600; color:var(--ink);">$' + fmt(totalAbonadoGlobal) + '</span></div>';
        
-       // --- NUEVO: Si es diaria, ocultamos el bloque rojo de "Resta total" ---
-       if (!esDiaria) {
+       if (tieneApto) {
            html += '    <div style="height:24px; width:1px; background:var(--ring-strong);"></div>'; 
            html += '    <div><span style="font-size:0.7rem; color:var(--danger); display:block; font-weight:500;">Resta total</span><span style="font-size:1.05rem; font-weight:600; color:var(--danger);">$' + fmt(totalRestanteGlobal) + '</span></div>';
        }
@@ -886,6 +890,30 @@ $('btnRegistrarVenta').onclick = async ()=>{
        });
 
        if(boletasStr.length > 0) cargarHistorialAbonos(boletasStr[0]);
+       
+       // Activamos la revisión para ver si ocultamos o mostramos los pagos de una vez
+       verificarSeleccionAbonos();
+    }
+
+    function verificarSeleccionAbonos() {
+        const checkboxes = document.querySelectorAll('.boleta-pay-checkbox:checked');
+        const zonaPagos = document.getElementById('zonaPagosAbono');
+        const lblInfo = document.getElementById('infoDivisionAbono');
+
+        if (checkboxes.length > 0) {
+            zonaPagos.style.display = 'block'; // Muestra la zona de pago
+            if (lblInfo) {
+                if(checkboxes.length === 1) {
+                    lblInfo.innerHTML = 'El abono irá 100% a la boleta <b>' + checkboxes[0].value + '</b>.';
+                    lblInfo.style.color = 'var(--accent-2)';
+                } else {
+                    lblInfo.innerHTML = '⚠️ El dinero se dividirá uniformemente entre <b>' + checkboxes.length + '</b> boletas.';
+                    lblInfo.style.color = 'var(--danger)';
+                }
+            }
+        } else {
+            zonaPagos.style.display = 'none'; // Esconde si todo está desmarcado
+        }
     }
 
     async function cargarHistorialAbonos(numero) {
