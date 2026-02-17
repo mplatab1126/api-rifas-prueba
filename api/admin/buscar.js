@@ -74,20 +74,55 @@ export default async function handler(req, res) {
     }
     // --- CASO C: CELULAR ---
     else if (queryLimpio.length === 10) {
-      const { data: clienteBoletas, error } = await supabase
+      
+      // 1. Buscamos las boletas del Apartamento (4 cifras)
+      const { data: clienteBoletasApto, error: errApto } = await supabase
         .from('boletas')
         .select(`numero, total_abonado, saldo_restante, telefono_cliente, clientes (nombre, apellido, ciudad)`)
         .eq('telefono_cliente', queryLimpio);
 
-      if (error) throw error;
+      if (errApto) throw errApto;
 
-      if (!clienteBoletas || clienteBoletas.length === 0) {
-        return res.status(200).json({ tipo: 'NO_EXISTE', mensaje: 'No hay cliente o boletas con este celular.' });
+      // 2. Buscamos las boletas de la Rifa Diaria (2 cifras)
+      const { data: clienteBoletasDiarias, error: errDiarias } = await supabase
+        .from('boletas_diarias')
+        .select('*')
+        .eq('telefono_cliente', queryLimpio);
+
+      if (errDiarias) throw errDiarias;
+
+      // Si no tiene boletas en ninguna de las dos rifas
+      if ((!clienteBoletasApto || clienteBoletasApto.length === 0) && (!clienteBoletasDiarias || clienteBoletasDiarias.length === 0)) {
+        return res.status(200).json({ tipo: 'NO_EXISTE', mensaje: 'No hay cliente o boletas con este celular en ninguna rifa.' });
       }
 
-      const lista = clienteBoletas.map(b => ({
-        numero: b.numero, nombre: b.clientes?.nombre || '', apellido: b.clientes?.apellido || '', ciudad: b.clientes?.ciudad || '', telefono: b.telefono_cliente, totalAbonos: b.total_abonado, restante: b.saldo_restante
-      }));
+      let lista = [];
+
+      // Empacamos las boletas del apartamento
+      if (clienteBoletasApto && clienteBoletasApto.length > 0) {
+        lista.push(...clienteBoletasApto.map(b => ({
+          numero: b.numero, 
+          nombre: b.clientes?.nombre || '', 
+          apellido: b.clientes?.apellido || '', 
+          ciudad: b.clientes?.ciudad || '', 
+          telefono: b.telefono_cliente, 
+          totalAbonos: b.total_abonado, 
+          restante: b.saldo_restante
+        })));
+      }
+
+      // Empacamos las boletas diarias
+      if (clienteBoletasDiarias && clienteBoletasDiarias.length > 0) {
+        lista.push(...clienteBoletasDiarias.map(b => ({
+          numero: b.numero, 
+          nombre: b.nombre_cliente || '', 
+          apellido: '', // La diaria no maneja apellido
+          ciudad: '', 
+          telefono: b.telefono_cliente, 
+          totalAbonos: b.total_abonado || 0, 
+          restante: b.saldo_restante !== null && b.saldo_restante !== undefined ? b.saldo_restante : 20000
+        })));
+      }
 
       return res.status(200).json({ tipo: 'CLIENTE_ENCONTRADO', lista: lista });
     }
