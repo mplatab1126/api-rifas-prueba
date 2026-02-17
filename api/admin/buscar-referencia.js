@@ -19,11 +19,14 @@ export default async function handler(req, res) {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
-    // 3. Buscar la transferencia original
+    // 3. Buscar la transferencia original (¡BÚSQUEDA INTELIGENTE!)
+    const refLimpia = referencia.trim(); // Limpiamos espacios accidentales al inicio o final
+
     const { data: transList, error: errTrans } = await supabase
       .from('transferencias')
       .select('*')
-      .eq('referencia', referencia)
+      .ilike('referencia', `%${refLimpia}%`) // Busca cualquier referencia que CONTENGA el texto/número
+      .order('fecha_pago', { ascending: false }) // Si hay varias, trae la más reciente
       .limit(1);
 
     if (errTrans || !transList || transList.length === 0) {
