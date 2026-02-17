@@ -131,8 +131,9 @@
       .pill-nequi { background-color: #240a38; color: #ffffff; } .pill-nequi .pay-icon { color: #ff00e5; }
       .pill-llave { background-color: #1e293b; color: #ffffff; } .pill-llave .pay-icon { color: #d4af37; }
       .pill-daviplata { background-color: #ed1c24; color: #ffffff; } .pill-daviplata .pay-icon { color: #ffffff; }
-      .pill-bancolombia { background-color: #FDDA24; color: #111; box-shadow: 0 6px 15px rgba(253, 218, 36, 0.3); }
-      .btn-copy-account:active { transform: scale(0.9); background: #111 !important; color: #FDDA24 !important; }
+      .pill-minimalista { transition: transform 0.2s, box-shadow 0.2s; }
+      .pill-minimalista:hover { box-shadow: 0 6px 15px rgba(0,0,0,0.06); transform: translateY(-2px); }
+      .btn-copy-account:active { transform: scale(0.9); background: #1b5e20 !important; color: #ffffff !important; border-color: #1b5e20 !important; }
 
       /* --- GANCHO 3: SELLOS DE CONFIANZA --- */
       .trust-badges-container { display: flex; justify-content: center; gap: 15px; margin: 0 20px 45px 20px; }
@@ -339,19 +340,19 @@
         <p class="section-subtitle-elegant" style="margin-bottom: 15px;">Transfiere a nuestra cuenta empresarial:</p>
         
         <div class="payment-grid">
-          <div class="pay-pill pill-bancolombia" style="width: 100%; max-width: 320px; padding: 15px; display: flex; align-items: center; justify-content: space-between;">
+          <div class="pay-pill pill-minimalista" style="width: 100%; max-width: 320px; padding: 18px; display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
             <div style="display: flex; align-items: center; gap: 15px;">
-              <div class="pay-icon" style="background: #111; color: #FDDA24; width: 40px; height: 40px; border-radius: 10px;">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2L1 7v2h22V7L12 2zM2 10v7h3v-7H2zm5 0v7h3v-7H7zm5 0v7h3v-7h-3zm5 0v7h3v-7h-3zM1 19v2h22v-2H1z"/></svg>
+              <div class="pay-icon" style="background: #f1f5f9; color: #1b5e20; width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2L1 7v2h22V7L12 2zM2 10v7h3v-7H2zm5 0v7h3v-7H7zm5 0v7h3v-7h-3zm5 0v7h3v-7h-3zM1 19v2h22v-2H1z"/></svg>
               </div>
               <div class="pay-text" style="width: auto; text-align: left;">
-                <span class="pay-name" style="font-size: 15px; color: #111;">Bancolombia - Ahorros</span>
-                <span class="pay-number" style="font-size: 17px; font-weight: 900; color: #111; letter-spacing: 0px;">706-000025-93</span>
-                <span style="font-size: 11px; color: #333; font-weight: 700; display: block; margin-top: 2px;">LOS PLATA S.A.S.</span>
+                <span class="pay-name" style="font-size: 14px; color: #64748b; font-weight: 600;">Bancolombia - Ahorros</span>
+                <span class="pay-number" style="font-size: 18px; font-weight: 800; color: #1e293b; letter-spacing: 0.5px;">706-000025-93</span>
+                <span style="font-size: 11px; color: #475569; font-weight: 600; display: block; margin-top: 2px;">LOS PLATA S.A.S.</span>
               </div>
             </div>
             
-            <button class="btn-copy-account" onclick="copiarCuenta()" title="Copiar número" style="background: transparent; border: 2px solid #111; color: #111; border-radius: 10px; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; flex-shrink: 0;">
+            <button class="btn-copy-account" onclick="copiarCuenta()" title="Copiar número" style="background: #f8fafc; border: 1px solid #cbd5e1; color: #475569; border-radius: 10px; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; flex-shrink: 0;">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
             </button>
           </div>
@@ -776,14 +777,16 @@
           const btn = document.querySelector('.btn-copy-account');
           const oldHTML = btn.innerHTML;
           btn.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
-          btn.style.background = '#111';
-          btn.style.color = '#FDDA24';
+          btn.style.background = '#1b5e20';
+          btn.style.color = '#ffffff';
+          btn.style.borderColor = '#1b5e20';
           
           // Regresa a la normalidad después de 2 segundos
           setTimeout(() => {
             btn.innerHTML = oldHTML;
-            btn.style.background = 'transparent';
-            btn.style.color = '#111';
+            btn.style.background = '#f8fafc';
+            btn.style.color = '#475569';
+            btn.style.borderColor = '#cbd5e1';
           }, 2000);
         }).catch(err => {
           alert("Error al copiar. La cuenta es: " + cuenta);
