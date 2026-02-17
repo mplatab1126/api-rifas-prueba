@@ -792,12 +792,15 @@ $('btnRegistrarVenta').onclick = async ()=>{
         }
     }
 
-    // ==========================================
-    // RENDERIZAR CLIENTE E HISTORIAL DE ABONOS 
-    // ==========================================
     function renderClienteInfo(lista){
-       var c = lista[0]; var totalAbonadoGlobal = 0; var totalRestanteGlobal = 0; var boletasStr = [];
+       var c = lista[0]; 
+       var totalAbonadoGlobal = 0; 
+       var totalRestanteGlobal = 0; 
+       var boletasStr = [];
        var fmt = function(n) { return new Intl.NumberFormat('es-CO').format(n); };
+       
+       // --- NUEVO: Detectamos si estamos viendo una boleta de la Rifa Diaria (2 dígitos) ---
+       var esDiaria = lista.length > 0 && String(lista[0].numero).length === 2;
 
        var html = '';
        
@@ -807,13 +810,22 @@ $('btnRegistrarVenta').onclick = async ()=>{
        html += '<div style="display: flex; flex-direction: column; gap: 8px;">';
 
        for(var i=0; i<lista.length; i++){
-           var b = lista[i]; var restante = Number(b.restante) || 0;
-           totalAbonadoGlobal += (Number(b.totalAbonos) || 0); totalRestanteGlobal += restante;
+           var b = lista[i]; 
+           var restante = Number(b.restante) || 0;
+           totalAbonadoGlobal += (Number(b.totalAbonos) || 0); 
+           totalRestanteGlobal += restante;
            boletasStr.push(b.numero);
            
            html += '<label style="display:flex; align-items:center; gap:10px; background:var(--bg); padding:10px 14px; border-radius:10px; border:1px solid var(--ring-strong); cursor:pointer; font-size:0.9rem; width:100%; transition: 0.2s;">';
            html += '<input type="checkbox" value="' + b.numero + '" class="boleta-pay-checkbox" checked style="accent-color: var(--accent); width:16px; height:16px;">';
-           html += '<span style="color:var(--ink);"><b>' + b.numero + '</b> <span style="color:var(--muted); font-size:0.85rem;">(Resta $' + fmt(restante) + ')</span></span>';
+           
+           // --- NUEVO: Si es diaria, ocultamos el texto "(Resta $...)" ---
+           if (esDiaria) {
+               html += '<span style="color:var(--ink);"><b>' + b.numero + '</b></span>';
+           } else {
+               html += '<span style="color:var(--ink);"><b>' + b.numero + '</b> <span style="color:var(--muted); font-size:0.85rem;">(Resta $' + fmt(restante) + ')</span></span>';
+           }
+
            html += '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); confirmarLiberarBoleta(\'' + b.numero + '\');" style="margin-left:auto; background:transparent; color:var(--danger); border:1px solid var(--danger); padding:4px 12px; border-radius:6px; font-size:0.8rem; font-weight:500; font-family:inherit; cursor:pointer; transition: 0.2s;">Liberar</button>';
            html += '</label>';
        }
@@ -838,8 +850,13 @@ $('btnRegistrarVenta').onclick = async ()=>{
        html += '<div style="display:flex; justify-content:space-between; align-items:center; background:var(--pill); border:1px solid var(--ring-strong); border-radius:12px; padding:12px 16px;">';
        html += '  <div style="display:flex; gap:16px; align-items:center;">';
        html += '    <div><span style="font-size:0.7rem; color:var(--muted); display:block; font-weight:500;">Abonado total</span><span style="font-size:1.05rem; font-weight:600; color:var(--ink);">$' + fmt(totalAbonadoGlobal) + '</span></div>';
-       html += '    <div style="height:24px; width:1px; background:var(--ring-strong);"></div>'; 
-       html += '    <div><span style="font-size:0.7rem; color:var(--danger); display:block; font-weight:500;">Resta total</span><span style="font-size:1.05rem; font-weight:600; color:var(--danger);">$' + fmt(totalRestanteGlobal) + '</span></div>';
+       
+       // --- NUEVO: Si es diaria, ocultamos el bloque rojo de "Resta total" ---
+       if (!esDiaria) {
+           html += '    <div style="height:24px; width:1px; background:var(--ring-strong);"></div>'; 
+           html += '    <div><span style="font-size:0.7rem; color:var(--danger); display:block; font-weight:500;">Resta total</span><span style="font-size:1.05rem; font-weight:600; color:var(--danger);">$' + fmt(totalRestanteGlobal) + '</span></div>';
+       }
+
        html += '  </div>';
        html += '  <button id="btnCopiar" style="background:#fff; border:1px solid var(--ring-strong); color:var(--ink-2); padding:6px 12px; border-radius:8px; font-weight:500; cursor:pointer; font-size:0.8rem; font-family:inherit; transition:0.2s;">Copiar Link</button>';
        html += '</div>';
