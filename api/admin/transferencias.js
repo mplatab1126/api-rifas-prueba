@@ -20,7 +20,7 @@ export default async function handler(req, res) {
   try {
     let query = supabase.from('transferencias').select('*');
 
-    if (referencia) query = query.ilike('referencia', `%${referencia}%`); 
+    if (referencia) {         const refLimpia = referencia.trim(); // Evita errores si pegas un número con espacios         query = query.ilike('referencia', `%${refLimpia}%`);      } 
     if (monto) query = query.eq('monto', Number(monto));
     if (plataforma) query = query.ilike('plataforma', `%${plataforma}%`); // Filtramos por plataforma
 
