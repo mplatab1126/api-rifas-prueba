@@ -261,47 +261,50 @@
         <div id="cliente-info-render"></div>
       </div>
 
-      <div class="section-card">
-         <div class="section-title">BUSCAR PAGO INTELIGENTE</div>
-         <div class="vertical-form">
-            <div id="ocrDropAbono" class="ocr-drop">
-               Pega la imagen del comprobante aquí (Ctrl+V) para extraer Referencia<br>
-               <span id="ocrStatusAbono" style="color:var(--accent-2); font-weight:normal; margin-top: 4px; display: block;"></span>
-            </div>
+      <div id="zonaPagosAbono" style="display: none;">
+        <div class="section-card">
+           <div class="section-title">BUSCAR PAGO INTELIGENTE</div>
+           <div class="vertical-form">
+              <div id="ocrDropAbono" class="ocr-drop">
+                 Pega la imagen del comprobante aquí (Ctrl+V) para extraer Referencia<br>
+                 <span id="ocrStatusAbono" style="color:var(--accent-2); font-weight:normal; margin-top: 4px; display: block;"></span>
+              </div>
 
-            <div style="display: flex; gap: 10px;">
-              <div style="flex: 1;"><label>Referencia</label><div class="field"><input id="t_ref_abono" class="pill" type="text"></div></div>
-              <div style="flex: 1;"><label>Valor</label><div class="field"><input id="t_monto_abono" class="pill" type="number"></div></div>
-              <div style="flex: 1;"><label>Plataforma</label><div class="field"><input id="t_plataforma_abono" list="l_metodos" class="pill" type="text" placeholder="Nequi..."></div></div>
-            </div>
-            
-            <div style="display: flex; gap: 10px;">
-              <div style="flex: 1;"><label>Fecha de la transferencia</label><div class="field"><input id="t_fecha_abono" class="pill" type="date"></div></div>
-              <div style="flex: 1;"><label>Hora</label><div class="field"><input id="t_hora_abono" class="pill" type="time"></div></div>
-            </div>
-            
-            <button id="btnBuscarInteligenteAbono" type="button" class="cta" style="margin-top:5px; background:var(--ink);" onclick="buscarTransferenciasUI('btnBuscarInteligenteAbono', 't_fecha_abono', 't_hora_abono', 't_monto_abono', 't_ref_abono', 't_plataforma_abono', 'feedbackTransferAbono', 'a_ref', 'a_monto', 'a_metodo')">Buscar transferencia</button>
-         </div>
-         <div id="feedbackTransferAbono" class="hint"></div>
-      </div>
+              <div style="display: flex; gap: 10px;">
+                <div style="flex: 1;"><label>Referencia</label><div class="field"><input id="t_ref_abono" class="pill" type="text"></div></div>
+                <div style="flex: 1;"><label>Valor</label><div class="field"><input id="t_monto_abono" class="pill" type="number"></div></div>
+                <div style="flex: 1;"><label>Plataforma</label><div class="field"><input id="t_plataforma_abono" list="l_metodos" class="pill" type="text" placeholder="Nequi..."></div></div>
+              </div>
+              
+              <div style="display: flex; gap: 10px;">
+                <div style="flex: 1;"><label>Fecha (Transferencia)</label><div class="field"><input id="t_fecha_abono" class="pill" type="date"></div></div>
+                <div style="flex: 1;"><label>Hora</label><div class="field"><input id="t_hora_abono" class="pill" type="time"></div></div>
+              </div>
+              
+              <button id="btnBuscarInteligenteAbono" type="button" class="cta" style="margin-top:5px; background:var(--ink);" onclick="buscarTransferenciasUI('btnBuscarInteligenteAbono', 't_fecha_abono', 't_hora_abono', 't_monto_abono', 't_ref_abono', 't_plataforma_abono', 'feedbackTransferAbono', 'a_ref', 'a_monto', 'a_metodo')">Buscar transferencia</button>
+           </div>
+           <div id="feedbackTransferAbono" class="hint"></div>
+        </div>
 
-      <div class="section-card">
-          <div class="section-title">NUEVO ABONO</div>
-          <div class="vertical-form">
-             <div><label>Valor total a repartir</label><div class="field"><input type="number" id="a_monto" class="pill" placeholder="0"></div></div>
-             <div><label>Método de pago</label><div class="field"><input id="a_metodo" list="l_metodos" class="pill" type="text"></div></div>
-             <div>
-               <label>Referencia</label>
-               <div style="display:flex; gap:8px;">
-                 <div class="field" style="flex:1"><input type="text" id="a_ref" class="pill"></div>
-                 <button id="btnForzarPendienteAbono" type="button" style="border:none; border-radius:10px; padding:0 15px; background:var(--pill); color:var(--ink); font-weight:500; cursor:pointer; font-family:inherit; font-size: 0.85rem;">Pendiente</button>
+        <div class="section-card">
+            <div class="section-title">NUEVO ABONO</div>
+            <div class="vertical-form">
+               <p id="infoDivisionAbono" style="font-size:0.85rem; margin-top:-10px; margin-bottom:5px;"></p>
+               
+               <div><label>Valor total a repartir</label><div class="field"><input type="number" id="a_monto" class="pill" placeholder="0"></div></div>
+               <div><label>Método de pago</label><div class="field"><input id="a_metodo" list="l_metodos" class="pill" type="text"></div></div>
+               <div>
+                 <label>Referencia</label>
+                 <div style="display:flex; gap:8px;">
+                   <div class="field" style="flex:1"><input type="text" id="a_ref" class="pill"></div>
+                   <button id="btnForzarPendienteAbono" type="button" style="border:none; border-radius:10px; padding:0 15px; background:var(--pill); color:var(--ink); font-weight:500; cursor:pointer; font-family:inherit; font-size: 0.85rem;">Pendiente</button>
+                 </div>
                </div>
-             </div>
-          </div>
-          <button id="btnRegistrarAbono" class="cta" onclick="registrarAbono()" style="margin-top:20px;">Registrar Abono</button>
+            </div>
+            <button id="btnRegistrarAbono" class="cta" onclick="registrarAbono()" style="margin-top:20px;">Registrar Abono</button>
+        </div>
       </div>
     </div>
-  </div>
 
   <div id="modalResult" class="modal-overlay">
     <div class="modal-card">
