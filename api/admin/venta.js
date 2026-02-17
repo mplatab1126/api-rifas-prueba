@@ -120,6 +120,17 @@ export default async function handler(req, res) {
 
     if (updateError) throw updateError;
 
+    // --- MAGIA GAMIFICACIÓN: Sumar comisión por venta ---
+    // Gana 800 por la venta. Si además registró abono de una vez, suma 500 más (Total 1300)
+    let comisionGanada = 800; 
+    if (abonoNum > 0) comisionGanada += 500; 
+
+    const { data: asesorData } = await supabase.from('asesores').select('comision_actual').eq('nombre', nombreAsesor).single();
+    if (asesorData) {
+      const nuevaComision = Number(asesorData.comision_actual || 0) + comisionGanada;
+      await supabase.from('asesores').update({ comision_actual: nuevaComision }).eq('nombre', nombreAsesor);
+    }
+
     // TODO SALIÓ BIEN
     return res.status(200).json({ status: 'ok', mensaje: 'Venta registrada con éxito' });
 
