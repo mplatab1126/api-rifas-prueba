@@ -1228,10 +1228,6 @@ async function procesarCSVBancos() {
         btn.disabled = false;
     }
 }
-
-function animarComisionGanada(valorComision) {
-  const comisionSpan = document.getElementById('comisionValor');
-  const contenedor = document.getElementById('comisionDisplay');
   
   // Efecto visual de rebote (Pop)
   contenedor.style.transform = 'scale(1.2)';
@@ -1271,11 +1267,6 @@ async function llamarCoach(nombreAsesor) {
       }
     }
 
-    // --- MOTOR DE ANIMACIÓN DE COMISIONES ---
-    function animarComisionGanada(valorGanado) {
-      const comisionSpan = document.getElementById('comisionDisplayVal');
-      const contenedor = comisionSpan.parentElement.parentElement;
-
       // 1. Efecto visual de rebote y color verde (¡Éxito!)
       contenedor.style.transition = 'all 0.3s ease';
       contenedor.style.transform = 'scale(1.15)';
@@ -1301,6 +1292,74 @@ async function llamarCoach(nombreAsesor) {
       let nuevoPorcentaje = porcentajeActual + 0.5; // Sube un poquito visualmente
       if (nuevoPorcentaje > 100) nuevoPorcentaje = 100;
       barra.style.width = nuevoPorcentaje + '%';
+    }
+
+    // --- MOTOR DE ANIMACIÓN DE COMISIONES (ESTILO VIDEOJUEGO) ---
+    function animarComisionGanada(valorGanado) {
+      if (!valorGanado || valorGanado <= 0) return;
+
+      // 1. Efecto en la barra superior (Rebote y color verde)
+      const comisionSpan = document.getElementById('comisionDisplayVal');
+      const contenedor = comisionSpan.parentElement.parentElement;
+
+      contenedor.style.transition = 'all 0.3s ease';
+      contenedor.style.transform = 'scale(1.15)';
+      contenedor.style.backgroundColor = '#d4edda'; 
+      contenedor.style.borderColor = '#c3e6cb';
+
+      let textoActual = comisionSpan.innerText.replace(/[^0-9]/g, '');
+      let valorActual = parseInt(textoActual) || 0;
+      let nuevoValor = valorActual + valorGanado;
+      comisionSpan.innerText = '$' + new Intl.NumberFormat('es-CO').format(nuevoValor);
+
+      setTimeout(() => {
+        contenedor.style.transform = 'scale(1)';
+        contenedor.style.backgroundColor = '#fff8e1'; 
+        contenedor.style.borderColor = '#ffe082';
+      }, 500);
+
+      // Empujar la barra del sueño
+      let barra = document.getElementById('metaProgreso');
+      let porcentajeActual = parseFloat(barra.style.width) || 0;
+      let nuevoPorcentaje = porcentajeActual + 0.5; 
+      if (nuevoPorcentaje > 100) nuevoPorcentaje = 100;
+      barra.style.width = nuevoPorcentaje + '%';
+
+      // 2. 🌟 NUEVO: EFECTO DE DINERO FLOTANDO EN LA PANTALLA 🌟
+      const flotante = document.createElement('div');
+      flotante.innerText = '+$' + new Intl.NumberFormat('es-CO').format(valorGanado);
+      
+      // Estilos para que parezca un juego RPG
+      Object.assign(flotante.style, {
+        position: 'fixed',
+        top: '55%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        color: '#25d366', // Verde brillante
+        fontSize: '3.5rem',
+        fontWeight: '900',
+        textShadow: '3px 3px 0px #fff, -3px -3px 0px #fff, 3px -3px 0px #fff, -3px 3px 0px #fff, 0px 5px 15px rgba(0,0,0,0.3)',
+        zIndex: '99999', // Por encima de todo
+        pointerEvents: 'none',
+        transition: 'all 1.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
+        opacity: '1'
+      });
+
+      document.body.appendChild(flotante);
+
+      // Animación: Sube, crece un poco y se desvanece
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          flotante.style.top = '20%'; // Se mueve hacia arriba de la pantalla
+          flotante.style.opacity = '0';
+          flotante.style.transform = 'translate(-50%, -50%) scale(1.3)';
+        });
+      });
+
+      // Borrar la etiqueta HTML cuando termine para no llenar la memoria
+      setTimeout(() => {
+        flotante.remove();
+      }, 1500);
     }
     
   </script>
