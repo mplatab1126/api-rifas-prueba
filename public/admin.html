@@ -769,6 +769,12 @@ $('btnRegistrarVenta').onclick = async ()=>{
        }
        $('btnRegistrarVenta').textContent= modoVenta === 'separar' ? 'Confirmar Separado ($0)' : 'Registrar Venta'; 
        $('btnRegistrarVenta').disabled=false;
+
+      // DISPARAR ANIMACIÓN VISUAL DE VENTA
+       if (fails === 0) {
+         let dineroGanadoVisual = ok * (modoVenta === 'separar' ? 800 : 1300);
+         animarComisionGanada(dineroGanadoVisual);
+       }
        
        let mensajeFinal = `Registradas: ${ok} / Errores: ${fails}`;
        if (fails > 0) { mensajeFinal += `\n\nMotivos:\n` + detalleErrores.join('\n'); }
@@ -822,6 +828,10 @@ $('btnRegistrarVenta').onclick = async ()=>{
         }
         
         btn.textContent = textoOriginal; btn.disabled = false;
+        // DISPARAR ANIMACIÓN VISUAL DE ABONO
+        if (fails === 0) {
+            animarComisionGanada(ok * 500);
+        }
         
         if (fails === 0) {
             showModal('Éxito', `Abono registrado correctamente.`);
