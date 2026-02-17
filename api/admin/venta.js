@@ -104,7 +104,8 @@ export default async function handler(req, res) {
         estado: estadoNuevo,
         total_abonado: abonoNum,
         saldo_restante: saldoRestante,
-        asesor: nombreAsesor // 🌟 NUEVA COLUMNA
+        asesor: nombreAsesor, 
+        fecha_venta: new Date().toISOString() // 🌟 CAPTURA FECHA Y HORA EXACTA
       })
       .eq('numero', numeroLimpio);
 
