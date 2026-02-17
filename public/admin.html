@@ -128,6 +128,18 @@
       <button id="btnSearch" class="search-btn">Buscar</button>
     </div>
     <div class="user-info-bar">
+      <div id="gamification-bar" style="display: inline-flex; align-items: center; gap: 15px; margin-right: 15px;">
+  <span id="comisionDisplay" style="font-weight:800; color:#d9700b; background: #fff8e1; padding: 4px 12px; border-radius: 20px; border: 1px solid #ffe082; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.3s;">
+    💰 $<span id="comisionValor">0</span>
+  </span>
+  
+  <div style="display: flex; flex-direction: column; width: 100px;">
+    <span style="font-size: 0.65rem; color: var(--muted); text-transform: uppercase; font-weight: 700;">Viaje a San Andrés</span>
+    <div style="width: 100%; height: 6px; background: var(--ring); border-radius: 10px; overflow: hidden; margin-top: 2px;">
+      <div id="metaProgreso" style="height: 100%; width: 0%; background: var(--accent); transition: width 0.5s;"></div>
+    </div>
+  </div>
+</div>
       <span id="asesorDisplay" style="font-weight:600; color:var(--ink); margin-right:12px;">Hola</span>
       <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:500;" onclick="activateAppMode(); switchView('view-referencias')">Referencia</span>
       <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:500;" onclick="activateAppMode(); switchView('view-bancos')">Subir transferencias</span>
@@ -1166,7 +1178,30 @@ async function procesarCSVBancos() {
         btn.disabled = false;
     }
 }
+
+function animarComisionGanada(valorComision) {
+  const comisionSpan = document.getElementById('comisionValor');
+  const contenedor = document.getElementById('comisionDisplay');
   
+  // Efecto visual de rebote (Pop)
+  contenedor.style.transform = 'scale(1.2)';
+  contenedor.style.backgroundColor = '#c8e6c9'; // Verde éxito
+  
+  // Actualizar valor numérico
+  let valorActual = parseInt(comisionSpan.innerText.replace(/\D/g, '')) || 0;
+  let nuevoValor = valorActual + valorComision;
+  comisionSpan.innerText = new Intl.NumberFormat('es-CO').format(nuevoValor);
+  
+  // Volver a la normalidad
+  setTimeout(() => {
+    contenedor.style.transform = 'scale(1)';
+    contenedor.style.backgroundColor = '#fff8e1';
+  }, 400);
+
+  // Opcional: Librería Confetti para hacer llover monedas
+  // confetti({ particleCount: 50, spread: 70, origin: { y: 0.1 }, colors: ['#FFD700', '#FFA500'] });
+}
+    
   </script>
 </body>
 </html>
