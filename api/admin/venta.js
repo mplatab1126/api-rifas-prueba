@@ -91,11 +91,20 @@ export default async function handler(req, res) {
     }
 
     // PASO D: Le amarramos la boleta al cliente y actualizamos sus saldos
-    const precioTotal = Number(boletaData.precio_total) || 200000; // Asume 200mil si no hay precio en BD
+    const precioTotal = Number(boletaData.precio_total) || 200000; 
     const saldoRestante = precioTotal - abonoNum;
     
-    // Determinamos si ya la pagó toda
     const estadoNuevo = saldoRestante <= 0 ? 'Pagada' : 'Ocupada';
+
+    // --- MAGIA: OBTENER HORA EXACTA DE COLOMBIA ---
+    const fechaCol = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Bogota" }));
+    const fechaVentaColombia = fechaCol.getFullYear() + "-" + 
+             String(fechaCol.getMonth() + 1).padStart(2, '0') + "-" + 
+             String(fechaCol.getDate()).padStart(2, '0') + "T" + 
+             String(fechaCol.getHours()).padStart(2, '0') + ":" + 
+             String(fechaCol.getMinutes()).padStart(2, '0') + ":" + 
+             String(fechaCol.getSeconds()).padStart(2, '0');
+    // ----------------------------------------------
 
     const { error: updateError } = await supabase
       .from('boletas')
@@ -105,7 +114,7 @@ export default async function handler(req, res) {
         total_abonado: abonoNum,
         saldo_restante: saldoRestante,
         asesor: nombreAsesor, 
-        fecha_venta: new Date().toISOString() // 🌟 CAPTURA FECHA Y HORA EXACTA
+        fecha_venta: fechaVentaColombia // 🌟 AHORA SÍ ES HORA COLOMBIA
       })
       .eq('numero', numeroLimpio);
 
