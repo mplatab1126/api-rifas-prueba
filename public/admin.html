@@ -323,6 +323,15 @@
     </div>
   </div>
 
+  <div id="modalCoach" class="modal-overlay">
+    <div class="modal-card">
+      <h2 style="font-size: 2.5rem; margin: 0;">🤖</h2>
+      <h3 style="color:var(--ink); font-weight:600; margin: 10px 0;">Tu Coach Virtual</h3>
+      <p id="textoCoach" style="color:var(--ink-2); font-size:0.95rem; line-height: 1.5; text-align: left; background: var(--bg); padding: 15px; border-radius: 10px;">Cargando tu mensaje de hoy...</p>
+      <button onclick="document.getElementById('modalCoach').style.display='none'" class="cta" style="width: 100%; margin-top: 15px;">¡A vender!</button>
+    </div>
+  </div>
+  
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   
@@ -385,6 +394,7 @@
               $('loginOverlay').style.display='none'; 
               topBar.style.display='block'; 
               $('asesorDisplay').textContent = res.asesor; 
+              llamarCoach(res.asesor);
               $('v_contrasena').value = pwd; 
               $('smartInput').focus();
           } else {
@@ -1201,6 +1211,25 @@ function animarComisionGanada(valorComision) {
   // Opcional: Librería Confetti para hacer llover monedas
   // confetti({ particleCount: 50, spread: 70, origin: { y: 0.1 }, colors: ['#FFD700', '#FFA500'] });
 }
+
+async function llamarCoach(nombreAsesor) {
+      const modal = document.getElementById('modalCoach');
+      const texto = document.getElementById('textoCoach');
+      modal.style.display = 'flex'; 
+      texto.innerHTML = 'Conectando con la IA... ⏳';
+
+      try {
+        const req = await fetch('/api/admin/coach', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre: nombreAsesor })
+        });
+        const res = await req.json();
+        texto.innerHTML = res.mensaje.replace(/\n/g, '<br>'); 
+      } catch (e) {
+        texto.innerHTML = '¡Hola ' + nombreAsesor + '! La IA está tomando café ☕, pero te desea un día lleno de ventas. ¡A romperla!';
+      }
+    }
     
   </script>
 </body>
