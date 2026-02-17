@@ -72,6 +72,13 @@ export default async function handler(req, res) {
     const { error: updateError } = await supabase.from(tabla).update(updatePayload).eq('numero', numeroLimpio);
     if (updateError) throw updateError;
 
+    // --- MAGIA GAMIFICACIÓN: Sumar comisión por abono ---
+    const { data: asesorData } = await supabase.from('asesores').select('comision_actual').eq('nombre', nombreAsesor).single();
+    if (asesorData) {
+      const nuevaComision = Number(asesorData.comision_actual || 0) + 500;
+      await supabase.from('asesores').update({ comision_actual: nuevaComision }).eq('nombre', nombreAsesor);
+    }
+
     if (referencia && referencia !== 'Sin Ref' && referencia !== 'efectivo') {
       await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('referencia', referencia);
     }
