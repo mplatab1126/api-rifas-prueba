@@ -1260,6 +1260,38 @@ async function llamarCoach(nombreAsesor) {
         texto.innerHTML = '¡Hola ' + nombreAsesor + '! La IA está tomando café ☕, pero te desea un día lleno de ventas. ¡A romperla!';
       }
     }
+
+    // --- MOTOR DE ANIMACIÓN DE COMISIONES ---
+    function animarComisionGanada(valorGanado) {
+      const comisionSpan = document.getElementById('comisionDisplayVal');
+      const contenedor = comisionSpan.parentElement.parentElement;
+
+      // 1. Efecto visual de rebote y color verde (¡Éxito!)
+      contenedor.style.transition = 'all 0.3s ease';
+      contenedor.style.transform = 'scale(1.15)';
+      contenedor.style.backgroundColor = '#d4edda'; // Fondo verde
+      contenedor.style.borderColor = '#c3e6cb';
+
+      // 2. Sumamos la plata en la pantalla
+      let textoActual = comisionSpan.innerText.replace(/[^0-9]/g, ''); // Quitamos el signo $ y los puntos
+      let valorActual = parseInt(textoActual) || 0;
+      let nuevoValor = valorActual + valorGanado;
+      comisionSpan.innerText = '$' + new Intl.NumberFormat('es-CO').format(nuevoValor);
+
+      // 3. Volvemos a la normalidad después de medio segundo
+      setTimeout(() => {
+        contenedor.style.transform = 'scale(1)';
+        contenedor.style.backgroundColor = '#fff8e1'; // Fondo amarillo original
+        contenedor.style.borderColor = '#ffe082';
+      }, 500);
+
+      // 4. Empujamos un poquito la barra del sueño para motivarlos
+      let barra = document.getElementById('metaProgreso');
+      let porcentajeActual = parseFloat(barra.style.width) || 0;
+      let nuevoPorcentaje = porcentajeActual + 0.5; // Sube un poquito visualmente
+      if (nuevoPorcentaje > 100) nuevoPorcentaje = 100;
+      barra.style.width = nuevoPorcentaje + '%';
+    }
     
   </script>
 </body>
