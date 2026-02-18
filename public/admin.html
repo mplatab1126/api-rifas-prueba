@@ -1245,24 +1245,22 @@ async function procesarCSVBancos() {
                 }
 
                 let html = '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:0.85rem; text-align:left;">';
-                html += '<thead><tr style="border-bottom:1px solid var(--ring-strong); color: var(--muted); font-weight:500;"><th style="padding:8px 4px;">Boleta</th><th style="padding:8px 4px;">Valor</th><th style="padding:8px 4px;">Fecha</th><th style="padding:8px 4px;">Asesor</th><th style="padding:8px 4px; text-align:right;"></th></tr></thead><tbody>';
+                html += '<thead><tr style="border-bottom:1px solid var(--ring-strong); color: var(--muted); font-weight:500;"><th style="padding:8px 4px;">Fecha</th><th style="padding:8px 4px;">Asesor</th><th style="padding:8px 4px;">Acción</th><th style="padding:8px 4px;">Boleta</th><th style="padding:8px 4px;">Detalle</th></tr></thead><tbody>';
                 
-                const fmt = function(n) { return new Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', minimumFractionDigits:0}).format(n); };
-
-                res.lista.forEach(a => {
-                    const valFmt = fmt(a.monto);
-                    const fechaObj = new Date(a.fecha_pago);
+                res.lista.forEach(m => {
+                    const fechaObj = new Date(m.created_at);
                     const fechaStr = fechaObj.toLocaleDateString('es-CO') + ' ' + fechaObj.toLocaleTimeString('es-CO', {hour: '2-digit', minute:'2-digit'});
                     
+                    let colorAccion = 'var(--ink)';
+                    if (m.accion === 'Eliminar Abono' || m.accion === 'Liberar Boleta') colorAccion = 'var(--danger)';
+                    if (m.accion === 'Nuevo Abono') colorAccion = 'var(--accent-2)';
+
                     html += `<tr style="border-bottom:1px solid var(--ring);">
-                                <td style="padding:10px 4px; font-weight:600; color:var(--ink);">${a.numero_boleta}</td>
-                                <td style="padding:10px 4px; color:var(--accent-2); font-weight:600;">${valFmt}</td>
-                                <td style="padding:10px 4px; color:var(--ink-2); font-size:0.8rem;">${fechaStr}</td>
-                                <td style="padding:10px 4px; color:var(--muted); font-size:0.8rem;">${a.asesor || '-'}</td>
-                                <td style="padding:10px 4px; text-align:right;">
-                                    <button style="background:transparent; border:none; color:var(--danger); font-size:0.8rem; cursor:pointer; font-weight:500; font-family:inherit; padding:0;" 
-                                        onclick="confirmarDeshacerMovimiento('${a.id}', this)">Deshacer</button>
-                                </td>
+                                <td style="padding:10px 4px; color:var(--ink-2); font-size:0.8rem; white-space: nowrap;">${fechaStr}</td>
+                                <td style="padding:10px 4px; font-weight:600; color:var(--ink);">${m.asesor}</td>
+                                <td style="padding:10px 4px; color:${colorAccion}; font-weight:600; white-space: nowrap;">${m.accion}</td>
+                                <td style="padding:10px 4px; font-weight:800;">${m.boleta}</td>
+                                <td style="padding:10px 4px; color:var(--muted); font-size:0.8rem;">${m.detalle}</td>
                             </tr>`;
                 });
                 html += '</tbody></table></div>';
@@ -1272,33 +1270,6 @@ async function procesarCSVBancos() {
             }
         } catch(e) {
             div.innerHTML = '<p style="text-align:center; color:var(--danger); font-size:0.85rem;">Error cargando movimientos.</p>';
-        }
-    }
-
-    async function confirmarDeshacerMovimiento(idAbono, btnElement) {
-        if(!confirm("¿Seguro de DESHACER este movimiento?\n\nEl dinero se restará de la boleta y, si usaste una transferencia de banco, ésta quedará LIBRE nuevamente.")) return;
-        
-        btnElement.textContent = '...';
-        btnElement.disabled = true;
-        
-        try {
-            const req = await fetch('/api/admin/eliminar-abono', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ id: idAbono, contrasena: localStorage.getItem(STORAGE_KEY) })
-            });
-            const res = await req.json();
-            
-            if(res.status === 'ok') {
-                showModal('Deshecho Exitoso', 'El movimiento fue revertido. Todo ha vuelto a la normalidad.');
-                cargarUltimosMovimientos(); 
-            } else {
-                showModal('Error', res.mensaje);
-                btnElement.textContent = 'Deshacer'; btnElement.disabled = false;
-            }
-        } catch(e) {
-            showModal('Error', 'Error de conexión.');
-            btnElement.textContent = 'Deshacer'; btnElement.disabled = false;
         }
     }
     
