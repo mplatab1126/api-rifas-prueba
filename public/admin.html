@@ -799,7 +799,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
             if(document.getElementById('ocrStatusAbono')) document.getElementById('ocrStatusAbono').textContent='';
 
             desbloquearCampos('a_ref', 'a_monto', 'a_metodo', 'feedbackTransferAbono');
-            runSearch(); 
+            activateHeroMode(); 
         } else { 
             let mensajeFinal = `Se registraron ${ok}, fallaron ${fails}.\n\nMotivos del fallo:\n` + detalleErrores.join('\n');
             document.getElementById('mMsg').style.whiteSpace = 'pre-line';
