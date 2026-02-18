@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     if (queryLimpio.length === 4) {
       const { data: boleta, error } = await supabase
         .from('boletas')
-        .select(`numero, total_abonado, saldo_restante, telefono_cliente, clientes (nombre, apellido, ciudad)`)
+        .select(`numero, total_abonado, saldo_restante, telefono_cliente, asesor, clientes (nombre, apellido, ciudad)`)
         .eq('numero', queryLimpio)
         .single();
 
@@ -36,7 +36,7 @@ export default async function handler(req, res) {
           tipo: 'BOLETA_OCUPADA',
           data: {
             infoVenta: {
-              numero: boleta.numero, nombre: boleta.clientes?.nombre || '', apellido: boleta.clientes?.apellido || '', ciudad: boleta.clientes?.ciudad || '', telefono: boleta.telefono_cliente, totalAbonos: boleta.total_abonado, restante: boleta.saldo_restante
+              numero: boleta.numero, nombre: boleta.clientes?.nombre || '', apellido: boleta.clientes?.apellido || '', ciudad: boleta.clientes?.ciudad || '', telefono: boleta.telefono_cliente, totalAbonos: boleta.total_abonado, restante: boleta.saldo_restante, asesor: boleta.asesor
             }
           }
         });
@@ -78,7 +78,7 @@ export default async function handler(req, res) {
       // 1. Buscamos las boletas del Apartamento (4 cifras)
       const { data: clienteBoletasApto, error: errApto } = await supabase
         .from('boletas')
-        .select(`numero, total_abonado, saldo_restante, telefono_cliente, clientes (nombre, apellido, ciudad)`)
+        .select(`numero, total_abonado, saldo_restante, telefono_cliente, asesor, clientes (nombre, apellido, ciudad)`)
         .eq('telefono_cliente', queryLimpio);
 
       if (errApto) throw errApto;
@@ -91,14 +91,12 @@ export default async function handler(req, res) {
 
       if (errDiarias) throw errDiarias;
 
-      // Si no tiene boletas en ninguna de las dos rifas
       if ((!clienteBoletasApto || clienteBoletasApto.length === 0) && (!clienteBoletasDiarias || clienteBoletasDiarias.length === 0)) {
         return res.status(200).json({ tipo: 'NO_EXISTE', mensaje: 'No hay cliente o boletas con este celular en ninguna rifa.' });
       }
 
       let lista = [];
 
-      // Empacamos las boletas del apartamento
       if (clienteBoletasApto && clienteBoletasApto.length > 0) {
         lista.push(...clienteBoletasApto.map(b => ({
           numero: b.numero, 
@@ -107,16 +105,16 @@ export default async function handler(req, res) {
           ciudad: b.clientes?.ciudad || '', 
           telefono: b.telefono_cliente, 
           totalAbonos: b.total_abonado, 
-          restante: b.saldo_restante
+          restante: b.saldo_restante,
+          asesor: b.asesor
         })));
       }
 
-      // Empacamos las boletas diarias
       if (clienteBoletasDiarias && clienteBoletasDiarias.length > 0) {
         lista.push(...clienteBoletasDiarias.map(b => ({
           numero: b.numero, 
           nombre: b.nombre_cliente || '', 
-          apellido: '', // La diaria no maneja apellido
+          apellido: '',
           ciudad: '', 
           telefono: b.telefono_cliente, 
           totalAbonos: b.total_abonado || 0, 
