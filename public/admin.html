@@ -131,6 +131,7 @@
       <span id="asesorDisplay" style="font-weight:600; color:var(--ink); margin-right:12px;">Hola</span>
       <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:500;" onclick="activateAppMode(); switchView('view-referencias')">Referencia</span>
       <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:500;" onclick="activateAppMode(); switchView('view-bancos')">Subir transferencias</span>
+      <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:500;" onclick="activateAppMode(); switchView('view-movimientos'); cargarUltimosMovimientos();">Últimos Movimientos</span>
       <span id="btnLogout" style="cursor:pointer; color:var(--muted); font-weight:500;">Salir</span>
     </div>
     <div id="searchFeedback" class="hint" style="margin: 5px 0 0 0; font-size:0.8rem; min-height: 20px;"></div>
@@ -163,6 +164,17 @@
             <input type="file" id="fileBancos" accept=".csv, .pdf" style="font-size: 0.9rem; color: var(--ink-2);">
           </div>
           <button id="btnProcesarBancos" class="cta" onclick="procesarCSVBancos()" style="margin-top:10px;">Procesar archivo</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-movimientos" class="view-section">
+      <div class="section-card">
+        <div class="section-title">Últimos Movimientos Registrados</div>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0;">Aquí puedes revisar tus últimas ventas y abonos. Si te equivocaste en uno, presiona "Deshacer".</p>
+        
+        <div id="tablaMovimientosRender" style="margin-top: 15px;">
+          <p style="text-align:center; color:var(--muted); font-size:0.85rem;">Cargando...</p>
         </div>
       </div>
     </div>
@@ -1210,7 +1222,86 @@ async function procesarCSVBancos() {
         btn.disabled = false;
     }
 }
-  
+
+// ==========================================
+    // HISTORIAL GLOBAL DE ÚLTIMOS MOVIMIENTOS
+    // ==========================================
+    async function cargarUltimosMovimientos() {
+        const div = document.getElementById('tablaMovimientosRender');
+        div.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem;">Cargando movimientos...</p>';
+        
+        try {
+            const req = await fetch('/api/admin/ultimos-movimientos', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ contrasena: localStorage.getItem(STORAGE_KEY) })
+            });
+            const res = await req.json();
+            
+            if (res.status === 'ok') {
+                if(res.lista.length === 0) {
+                    div.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem;">No hay movimientos recientes.</p>';
+                    return;
+                }
+
+                let html = '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:0.85rem; text-align:left;">';
+                html += '<thead><tr style="border-bottom:1px solid var(--ring-strong); color: var(--muted); font-weight:500;"><th style="padding:8px 4px;">Boleta</th><th style="padding:8px 4px;">Valor</th><th style="padding:8px 4px;">Fecha</th><th style="padding:8px 4px;">Asesor</th><th style="padding:8px 4px; text-align:right;"></th></tr></thead><tbody>';
+                
+                const fmt = function(n) { return new Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', minimumFractionDigits:0}).format(n); };
+
+                res.lista.forEach(a => {
+                    const valFmt = fmt(a.monto);
+                    const fechaObj = new Date(a.fecha_pago);
+                    const fechaStr = fechaObj.toLocaleDateString('es-CO') + ' ' + fechaObj.toLocaleTimeString('es-CO', {hour: '2-digit', minute:'2-digit'});
+                    
+                    html += `<tr style="border-bottom:1px solid var(--ring);">
+                                <td style="padding:10px 4px; font-weight:600; color:var(--ink);">${a.numero_boleta}</td>
+                                <td style="padding:10px 4px; color:var(--accent-2); font-weight:600;">${valFmt}</td>
+                                <td style="padding:10px 4px; color:var(--ink-2); font-size:0.8rem;">${fechaStr}</td>
+                                <td style="padding:10px 4px; color:var(--muted); font-size:0.8rem;">${a.asesor || '-'}</td>
+                                <td style="padding:10px 4px; text-align:right;">
+                                    <button style="background:transparent; border:none; color:var(--danger); font-size:0.8rem; cursor:pointer; font-weight:500; font-family:inherit; padding:0;" 
+                                        onclick="confirmarDeshacerMovimiento('${a.id}', this)">Deshacer</button>
+                                </td>
+                            </tr>`;
+                });
+                html += '</tbody></table></div>';
+                div.innerHTML = html;
+            } else {
+                div.innerHTML = `<p style="text-align:center; color:var(--danger); font-size:0.85rem;">${res.mensaje}</p>`;
+            }
+        } catch(e) {
+            div.innerHTML = '<p style="text-align:center; color:var(--danger); font-size:0.85rem;">Error cargando movimientos.</p>';
+        }
+    }
+
+    async function confirmarDeshacerMovimiento(idAbono, btnElement) {
+        if(!confirm("¿Seguro de DESHACER este movimiento?\n\nEl dinero se restará de la boleta y, si usaste una transferencia de banco, ésta quedará LIBRE nuevamente.")) return;
+        
+        btnElement.textContent = '...';
+        btnElement.disabled = true;
+        
+        try {
+            const req = await fetch('/api/admin/eliminar-abono', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ id: idAbono, contrasena: localStorage.getItem(STORAGE_KEY) })
+            });
+            const res = await req.json();
+            
+            if(res.status === 'ok') {
+                showModal('Deshecho Exitoso', 'El movimiento fue revertido. Todo ha vuelto a la normalidad.');
+                cargarUltimosMovimientos(); 
+            } else {
+                showModal('Error', res.mensaje);
+                btnElement.textContent = 'Deshacer'; btnElement.disabled = false;
+            }
+        } catch(e) {
+            showModal('Error', 'Error de conexión.');
+            btnElement.textContent = 'Deshacer'; btnElement.disabled = false;
+        }
+    }
+    
   </script>
 </body>
 </html>
