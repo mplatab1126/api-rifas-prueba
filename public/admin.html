@@ -855,8 +855,16 @@ $('btnRegistrarVenta').onclick = async ()=>{
        html += '</div></div>';
 
        // 2. DATOS DEL CLIENTE
+       // Revisamos si las boletas tienen un asesor asignado para mostrarlo
+       var asesoresVenta = [...new Set(lista.map(b => b.asesor).filter(a => a))].join(', ');
+       var htmlAsesor = asesoresVenta ? `<span style="color:var(--accent-2); font-weight:600; font-size:0.75rem; background:var(--pill); padding:2px 8px; border-radius:8px;">👤 Asesor: ${asesoresVenta}</span>` : '';
+
        html += '<div style="margin-bottom:20px; padding-top: 15px; border-top: 1px solid var(--ring);">';
-       html += '<label style="font-size:0.85rem; color:var(--ink-2); font-weight:500; margin-bottom:10px; display:block;">Datos personales:</label>';
+       
+       html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">';
+       html += '  <label style="font-size:0.85rem; color:var(--ink-2); font-weight:500; margin:0;">Datos personales:</label>';
+       html +=    htmlAsesor;
+       html += '</div>';
        
        html += '<div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">';
        html += '  <input id="c_nombre" type="text" class="main-input" style="padding:8px 12px;" value="' + c.nombre + '">';
