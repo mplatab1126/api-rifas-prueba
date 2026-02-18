@@ -23,7 +23,6 @@ export default async function handler(req, res) {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
-    // --- MAGIA: DETECTA SI ES DE 2 O 4 CIFRAS ---
     const esDiaria = numeroLimpio.length === 2;
     const tabla = esDiaria ? 'boletas_diarias' : 'boletas';
 
@@ -36,6 +35,7 @@ export default async function handler(req, res) {
     if (boletaError || !boletaData) return res.status(404).json({ status: 'error', mensaje: 'La boleta no existe' });
     if (!boletaData.telefono_cliente) return res.status(400).json({ status: 'error', mensaje: 'Esta boleta está libre' });
 
+    // 1. Insertar el Abono
     const { error: insertError } = await supabase
       .from('abonos')
       .insert({
@@ -46,9 +46,9 @@ export default async function handler(req, res) {
         nota: `Origen: ${metodoPago || 'Efectivo'}${esPendiente ? ' | PENDIENTE' : ''}`,
         asesor: nombreAsesor
       });
-
     if (insertError) throw insertError;
 
+    // 2. Calcular los nuevos saldos de la boleta
     const saldoActual = boletaData.saldo_restante !== null && boletaData.saldo_restante !== undefined ? Number(boletaData.saldo_restante) : (esDiaria ? 20000 : 200000);
     const abonadoActual = boletaData.total_abonado !== null && boletaData.total_abonado !== undefined ? Number(boletaData.total_abonado) : 0;
 
@@ -56,12 +56,35 @@ export default async function handler(req, res) {
     const nuevoSaldoRestante = saldoActual - monto;
     
     let estadoNuevo = '';
-    if (esDiaria) {
-        estadoNuevo = nuevoSaldoRestante <= 0 ? 'Pagada' : 'Reservado';
-    } else {
-        estadoNuevo = nuevoSaldoRestante <= 0 ? 'Pagada' : 'Ocupada';
+    if (esDiaria) estadoNuevo = nuevoSaldoRestante <= 0 ? 'Pagada' : 'Reservado';
+    else estadoNuevo = nuevoSaldoRestante <= 0 ? 'Pagada' : 'Ocupada';
+
+    // 3. ACTUALIZAR ESTADÍSTICAS DEL CLIENTE (¡AQUÍ SUCEDE LA MAGIA!)
+    const { data: clienteActual } = await supabase
+      .from('clientes')
+      .select('total_comprado, boletas_grandes_compradas, boletas_diarias_compradas')
+      .eq('telefono', boletaData.telefono_cliente)
+      .single();
+
+    if (clienteActual) {
+        let totalComprado = (clienteActual.total_comprado || 0) + monto;
+        let diariasCompradas = clienteActual.boletas_diarias_compradas || 0;
+        let grandesCompradas = clienteActual.boletas_grandes_compradas || 0;
+
+        // Solo si la boleta debía dinero y con este pago quedó en 0, le sumamos +1 boleta a su historial
+        if (saldoActual > 0 && nuevoSaldoRestante <= 0) {
+            if (esDiaria) diariasCompradas += 1;
+            else grandesCompradas += 1;
+        }
+
+        await supabase.from('clientes').update({
+            total_comprado: totalComprado,
+            boletas_diarias_compradas: diariasCompradas,
+            boletas_grandes_compradas: grandesCompradas
+        }).eq('telefono', boletaData.telefono_cliente);
     }
 
+    // 4. Actualizar la boleta
     let updatePayload = {
         total_abonado: nuevoTotalAbonado,
         saldo_restante: nuevoSaldoRestante,
@@ -72,11 +95,12 @@ export default async function handler(req, res) {
     const { error: updateError } = await supabase.from(tabla).update(updatePayload).eq('numero', numeroLimpio);
     if (updateError) throw updateError;
 
+    // 5. Amarrar la referencia a la boleta
     if (referencia && referencia !== 'Sin Ref' && referencia !== 'efectivo') {
       await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('referencia', referencia);
     }
 
-    return res.status(200).json({ status: 'ok', mensaje: 'Abono registrado con éxito' });
+    return res.status(200).json({ status: 'ok', mensaje: 'Abono y estadísticas registrados con éxito' });
 
   } catch (error) {
     return res.status(500).json({ status: 'error', mensaje: 'Error interno: ' + error.message });
