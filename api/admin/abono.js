@@ -100,6 +100,14 @@ export default async function handler(req, res) {
       await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('referencia', referencia);
     }
 
+    // GUARDAR EN LA BITÁCORA
+    await supabase.from('registro_movimientos').insert({
+        asesor: nombreAsesor,
+        accion: 'Nuevo Abono',
+        boleta: numeroLimpio,
+        detalle: `Abonó $${monto} usando ${metodoPago}`
+    });
+    
     return res.status(200).json({ status: 'ok', mensaje: 'Abono y estadísticas registrados con éxito' });
 
   } catch (error) {
