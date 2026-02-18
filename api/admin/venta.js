@@ -117,6 +117,14 @@ export default async function handler(req, res) {
     const { error: updateError } = await supabase.from(tabla).update(updatePayload).eq('numero', numeroLimpio);
     if (updateError) throw updateError;
 
+    // GUARDAR EN LA BITÁCORA
+    await supabase.from('registro_movimientos').insert({
+        asesor: nombreAsesor,
+        accion: 'Nueva Venta',
+        boleta: numeroLimpio,
+        detalle: `Venta separada por ${telefonoLimpio} con abono de $${abonoNum}`
+    });
+    
     return res.status(200).json({ status: 'ok', mensaje: 'Venta y estadísticas registradas con éxito' });
 
   } catch (error) {
