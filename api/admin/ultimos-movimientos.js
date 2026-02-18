@@ -15,12 +15,12 @@ export default async function handler(req, res) {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
-    // Buscamos los últimos 15 abonos registrados ordenados por el más reciente
+    // Leemos la nueva tabla de Bitácora (registro_movimientos)
     const { data, error } = await supabase
-      .from('abonos')
+      .from('registro_movimientos')
       .select('*')
-      .order('id', { ascending: false })
-      .limit(15);
+      .order('created_at', { ascending: false })
+      .limit(30);
 
     if (error) throw error;
 
