@@ -40,6 +40,14 @@ export default async function handler(req, res) {
       await supabase.from(tabla).update({ total_abonado: nuevoAbonado, saldo_restante: nuevoSaldo, estado: nuevoEstado }).eq('numero', numero_boleta);
     }
 
+  // GUARDAR EN LA BITÁCORA
+    await supabase.from('registro_movimientos').insert({
+        asesor: nombreAsesor,
+        accion: 'Eliminar Abono',
+        boleta: numero_boleta,
+        detalle: `Se eliminó un abono de $${monto}`
+    });
+    
     return res.status(200).json({ status: 'ok', mensaje: 'Abono eliminado y saldos ajustados.' });
   } catch (error) {
     return res.status(500).json({ status: 'error', mensaje: error.message });
