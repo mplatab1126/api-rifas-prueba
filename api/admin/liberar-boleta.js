@@ -48,18 +48,31 @@ export default async function handler(req, res) {
     // C. Eliminar definitivamente todos los abonos de esta boleta
     await supabase.from('abonos').delete().eq('numero_boleta', numeroBoleta);
 
-    // D. Reiniciar la boleta (Dejarla lista para vender de nuevo)
+    // D. Reiniciar la boleta (Soporta Diarias y Apartamento)
+    const esDiaria = String(numeroBoleta).length === 2;
+    const tabla = esDiaria ? 'boletas_diarias' : 'boletas';
+    const precioOriginal = esDiaria ? 20000 : 150000;
+    const estadoOriginal = esDiaria ? 'Disponible' : 'LIBRE';
+
     const { error: errBoleta } = await supabase
-      .from('boletas')
+      .from(tabla)
       .update({
         telefono_cliente: null,
-        estado: 'LIBRE',
+        estado: estadoOriginal,
         total_abonado: 0,
-        saldo_restante: 150000 // Volvemos al precio original
+        saldo_restante: precioOriginal
       })
       .eq('numero', numeroBoleta);
 
     if (errBoleta) throw errBoleta;
+
+    // GUARDAR EN LA BITÁCORA
+    await supabase.from('registro_movimientos').insert({
+        asesor: nombreAsesor,
+        accion: 'Liberar Boleta',
+        boleta: numeroBoleta,
+        detalle: 'Se liberó la boleta, borrando historial y pagos'
+    });
 
     return res.status(200).json({ status: 'ok', mensaje: `La boleta ${numeroBoleta} quedó totalmente LIBRE y sus pagos fueron borrados.` });
   } catch (error) {
