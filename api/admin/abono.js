@@ -101,12 +101,14 @@ export default async function handler(req, res) {
     }
 
     // GUARDAR EN LA BITÁCORA
-    await supabase.from('registro_movimientos').insert({
+    const { error: errorBitacora } = await supabase.from('registro_movimientos').insert({
         asesor: nombreAsesor,
         accion: 'Nuevo Abono',
         boleta: numeroLimpio,
         detalle: `Abonó $${monto} usando ${metodoPago}`
     });
+    
+    if (errorBitacora) throw new Error("Error en Bitácora: " + errorBitacora.message);
     
     return res.status(200).json({ status: 'ok', mensaje: 'Abono y estadísticas registrados con éxito' });
 
