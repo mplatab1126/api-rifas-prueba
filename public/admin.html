@@ -172,16 +172,15 @@
 
 
     <div id="view-estadisticas" class="view-section">
-      <div style="display: flex; gap: 15px; margin-bottom: 20px;">
-        <div class="section-card" style="flex: 1; margin-bottom: 0; text-align: center; padding: 15px;">
-          <div style="color: var(--muted); font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">💰 Total Recaudado</div>
-          <div id="lblTotalRecaudado" style="color: var(--ink); font-size: 1.8rem; font-weight: 800; margin-top: 5px;">$0</div>
-        </div>
-        <div class="section-card" style="flex: 1; margin-bottom: 0; text-align: center; padding: 15px;">
-          <div style="color: var(--muted); font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">👑 Mejor Asesor</div>
-          <div id="lblMejorAsesor" style="color: var(--accent-2); font-size: 1.3rem; font-weight: 800; margin-top: 5px;">-</div>
+      <div class="section-card">
+        <div class="section-title">Rendimiento por Asesor y Día</div>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0;">Aquí puedes ver cuántas boletas nuevas separó cada asesor, cuántas recibieron abono y el dinero total recaudado en el día.</p>
+        
+        <div id="tablaEstadisticasRender" style="margin-top: 15px;">
+          <p style="text-align:center; color:var(--muted); font-size:0.85rem;">Cargando tabla de rendimiento...</p>
         </div>
       </div>
+    </div>
 
       <div class="section-card">
         <div class="section-title">Ingresos de la Empresa (Últimos 15 días)</div>
@@ -1307,12 +1306,11 @@ async function procesarCSVBancos() {
     }
 
   // ==========================================
-    // ESTADÍSTICAS Y GRÁFICAS
+    // ESTADÍSTICAS EN TABLA DIARIA
     // ==========================================
-    let chartAsesores = null;
-    let chartDias = null;
-
     async function cargarEstadisticas() {
+        const div = document.getElementById('tablaEstadisticasRender');
+        div.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem;">Calculando rendimiento...</p>';
         try {
             const req = await fetch('/api/admin/estadisticas', {
                 method: 'POST',
@@ -1322,93 +1320,85 @@ async function procesarCSVBancos() {
             const res = await req.json();
             
             if (res.status === 'ok') {
-                procesarGraficas(res.abonos);
+                renderTablaEstadisticas(res.abonos, res.ventas);
             } else {
-                showModal('Error', res.mensaje);
+                div.innerHTML = `<p style="text-align:center; color:var(--danger); font-size:0.85rem;">${res.mensaje}</p>`;
             }
         } catch(e) {
-            showModal('Error', 'No se pudieron cargar las estadísticas.');
+            div.innerHTML = '<p style="text-align:center; color:var(--danger); font-size:0.85rem;">Error de conexión.</p>';
         }
     }
 
-    function procesarGraficas(abonos) {
-        const porAsesor = {};
-        const porDia = {};
-        let totalGeneral = 0;
+    function renderTablaEstadisticas(abonos, ventas) {
+        const stats = {};
 
-        // 1. Agrupar los datos
-        abonos.forEach(a => {
-            const monto = Number(a.monto);
-            totalGeneral += monto;
+        // Función para normalizar la fecha a la zona horaria de Colombia (YYYY-MM-DD)
+        const getFechaLocal = (isoString) => {
+            const date = new Date(isoString);
+            const offset = date.getTimezoneOffset() * 60000;
+            const localISOTime = (new Date(date.getTime() - offset)).toISOString().split('T')[0];
+            return localISOTime;
+        };
+
+        // 1. Sumar las boletas NUEVAS registradas (Incluso las de $0)
+        ventas.forEach(v => {
+            const f = getFechaLocal(v.created_at);
+            const asesor = v.asesor || 'Sin Asesor';
+            if(!stats[f]) stats[f] = {};
+            if(!stats[f][asesor]) stats[f][asesor] = { nuevas: 0, conDinero: 0, recaudado: 0 };
             
-            // Agrupar por Asesor
+            stats[f][asesor].nuevas++;
+        });
+
+        // 2. Sumar los ABONOS (Boletas que recibieron dinero y total en $)
+        abonos.forEach(a => {
+            const f = getFechaLocal(a.fecha_pago);
             const asesor = a.asesor || 'Sin Asesor';
-            porAsesor[asesor] = (porAsesor[asesor] || 0) + monto;
+            if(!stats[f]) stats[f] = {};
+            if(!stats[f][asesor]) stats[f][asesor] = { nuevas: 0, conDinero: 0, recaudado: 0 };
 
-            // Agrupar por Día (formato YYYY-MM-DD para ordenar fácil)
-            const isoDate = a.fecha_pago.split('T')[0];
-            porDia[isoDate] = (porDia[isoDate] || 0) + monto;
+            stats[f][asesor].conDinero++;
+            stats[f][asesor].recaudado += Number(a.monto);
         });
 
-        // 2. Llenar Tarjetas Resumen
-        document.getElementById('lblTotalRecaudado').innerText = '$' + new Intl.NumberFormat('es-CO').format(totalGeneral);
-        
-        const asesoresOrdenados = Object.keys(porAsesor).sort((a, b) => porAsesor[b] - porAsesor[a]);
-        document.getElementById('lblMejorAsesor').innerText = asesoresOrdenados.length > 0 ? asesoresOrdenados[0] : '-';
-
-        // 3. Renderizar Gráfica de Asesores (Barras)
-        const ctxAsesores = document.getElementById('graficaAsesores').getContext('2d');
-        if(chartAsesores) chartAsesores.destroy(); // Destruye la anterior si ya existía
-        
-        chartAsesores = new Chart(ctxAsesores, {
-            type: 'bar',
-            data: {
-                labels: asesoresOrdenados,
-                datasets: [{
-                    label: 'Dinero Recaudado',
-                    data: asesoresOrdenados.map(k => porAsesor[k]),
-                    backgroundColor: '#4eb082',
-                    borderRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, ticks: { callback: value => '$' + new Intl.NumberFormat('es-CO').format(value) } } }
-            }
+        // 3. Transformar a un arreglo para ordenarlo por fecha (más reciente primero)
+        const filas = [];
+        Object.keys(stats).forEach(fecha => {
+            Object.keys(stats[fecha]).forEach(asesor => {
+                filas.push({
+                    fecha: fecha,
+                    asesor: asesor,
+                    ...stats[fecha][asesor]
+                });
+            });
         });
 
-        // 4. Renderizar Gráfica de Empresa (Líneas - Últimos 15 días activos)
-        const ctxDias = document.getElementById('graficaDias').getContext('2d');
-        if(chartDias) chartDias.destroy();
+        filas.sort((a, b) => b.fecha.localeCompare(a.fecha) || b.recaudado - a.recaudado);
+
+        const div = document.getElementById('tablaEstadisticasRender');
+        if(filas.length === 0) {
+            div.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem;">No hay datos para mostrar.</p>';
+            return;
+        }
+
+        let html = '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:0.85rem; text-align:left;">';
+        html += '<thead><tr style="border-bottom:2px solid var(--ring-strong); color: var(--ink); font-weight:600;"><th style="padding:10px 4px;">Día</th><th style="padding:10px 4px;">Asesor</th><th style="padding:10px 4px; text-align:center;">Boletas Nuevas</th><th style="padding:10px 4px; text-align:center;">Pagos Recibidos</th><th style="padding:10px 4px; text-align:right;">Total Recaudado</th></tr></thead><tbody>';
         
-        // Ordenar fechas de la más antigua a la más nueva y tomar las últimas 15
-        const diasOrdenados = Object.keys(porDia).sort().slice(-15);
-        
-        chartDias = new Chart(ctxDias, {
-            type: 'line',
-            data: {
-                // Cambiamos el formato de fecha para que se vea bonito (Ej: "14 Feb")
-                labels: diasOrdenados.map(d => { const date = new Date(d + 'T12:00:00'); return date.toLocaleDateString('es-CO', {day: 'numeric', month:'short'}); }),
-                datasets: [{
-                    label: 'Ingresos Diarios',
-                    data: diasOrdenados.map(k => porDia[k]),
-                    borderColor: '#3a946a',
-                    backgroundColor: 'rgba(78, 176, 130, 0.2)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4, // Curvas suaves
-                    pointBackgroundColor: '#2b3a35'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, ticks: { callback: value => '$' + new Intl.NumberFormat('es-CO').format(value) } } }
-            }
+        filas.forEach(f => {
+            const fechaStr = new Date(f.fecha + 'T12:00:00').toLocaleDateString('es-CO', {weekday:'short', day:'2-digit', month:'short'});
+            const fmt = new Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', minimumFractionDigits:0}).format(f.recaudado);
+            
+            html += `<tr style="border-bottom:1px solid var(--ring);">
+                        <td style="padding:12px 4px; color:var(--ink-2); text-transform:capitalize;">${fechaStr}</td>
+                        <td style="padding:12px 4px; font-weight:600; color:var(--ink);">👤 ${f.asesor}</td>
+                        <td style="padding:12px 4px; text-align:center; font-weight:600; color:var(--muted);">${f.nuevas}</td>
+                        <td style="padding:12px 4px; text-align:center; font-weight:600; color:var(--accent-2);">${f.conDinero}</td>
+                        <td style="padding:12px 4px; text-align:right; font-weight:800; color:var(--ink);">${fmt}</td>
+                    </tr>`;
         });
+        
+        html += '</tbody></table></div>';
+        div.innerHTML = html;
     }
     
   </script>
