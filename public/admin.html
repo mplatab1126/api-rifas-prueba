@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <title>Admin Los Plata</title>
@@ -131,6 +132,7 @@
       <span id="asesorDisplay" style="font-weight:600; color:var(--ink); margin-right:12px;">Hola</span>
       <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:500;" onclick="activateAppMode(); switchView('view-referencias')">Referencia</span>
       <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:500;" onclick="activateAppMode(); switchView('view-bancos')">Subir transferencias</span>
+      <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:500;" onclick="activateAppMode(); switchView('view-estadisticas'); cargarEstadisticas();">📈 Rendimiento</span>
       <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:500;" onclick="activateAppMode(); switchView('view-movimientos'); cargarUltimosMovimientos();">Últimos Movimientos</span>
       <span id="btnLogout" style="cursor:pointer; color:var(--muted); font-weight:500;">Salir</span>
     </div>
@@ -168,6 +170,29 @@
       </div>
     </div>
 
+
+    <div id="view-estadisticas" class="view-section">
+      <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+        <div class="section-card" style="flex: 1; margin-bottom: 0; text-align: center; padding: 15px;">
+          <div style="color: var(--muted); font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">💰 Total Recaudado</div>
+          <div id="lblTotalRecaudado" style="color: var(--ink); font-size: 1.8rem; font-weight: 800; margin-top: 5px;">$0</div>
+        </div>
+        <div class="section-card" style="flex: 1; margin-bottom: 0; text-align: center; padding: 15px;">
+          <div style="color: var(--muted); font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">👑 Mejor Asesor</div>
+          <div id="lblMejorAsesor" style="color: var(--accent-2); font-size: 1.3rem; font-weight: 800; margin-top: 5px;">-</div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-title">Ingresos de la Empresa (Últimos 15 días)</div>
+        <canvas id="graficaDias" style="width: 100%; height: 250px;"></canvas>
+      </div>
+
+      <div class="section-card">
+        <div class="section-title">Rendimiento por Asesor</div>
+        <canvas id="graficaAsesores" style="width: 100%; height: 250px;"></canvas>
+      </div>
+    </div>
     <div id="view-movimientos" class="view-section">
       <div class="section-card">
         <div class="section-title">Últimos Movimientos Registrados</div>
@@ -1279,6 +1304,111 @@ async function procesarCSVBancos() {
         } catch(e) {
             div.innerHTML = '<p style="text-align:center; color:var(--danger); font-size:0.85rem;">Error cargando movimientos.</p>';
         }
+    }
+
+  // ==========================================
+    // ESTADÍSTICAS Y GRÁFICAS
+    // ==========================================
+    let chartAsesores = null;
+    let chartDias = null;
+
+    async function cargarEstadisticas() {
+        try {
+            const req = await fetch('/api/admin/estadisticas', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ contrasena: localStorage.getItem(STORAGE_KEY) })
+            });
+            const res = await req.json();
+            
+            if (res.status === 'ok') {
+                procesarGraficas(res.abonos);
+            } else {
+                showModal('Error', res.mensaje);
+            }
+        } catch(e) {
+            showModal('Error', 'No se pudieron cargar las estadísticas.');
+        }
+    }
+
+    function procesarGraficas(abonos) {
+        const porAsesor = {};
+        const porDia = {};
+        let totalGeneral = 0;
+
+        // 1. Agrupar los datos
+        abonos.forEach(a => {
+            const monto = Number(a.monto);
+            totalGeneral += monto;
+            
+            // Agrupar por Asesor
+            const asesor = a.asesor || 'Sin Asesor';
+            porAsesor[asesor] = (porAsesor[asesor] || 0) + monto;
+
+            // Agrupar por Día (formato YYYY-MM-DD para ordenar fácil)
+            const isoDate = a.fecha_pago.split('T')[0];
+            porDia[isoDate] = (porDia[isoDate] || 0) + monto;
+        });
+
+        // 2. Llenar Tarjetas Resumen
+        document.getElementById('lblTotalRecaudado').innerText = '$' + new Intl.NumberFormat('es-CO').format(totalGeneral);
+        
+        const asesoresOrdenados = Object.keys(porAsesor).sort((a, b) => porAsesor[b] - porAsesor[a]);
+        document.getElementById('lblMejorAsesor').innerText = asesoresOrdenados.length > 0 ? asesoresOrdenados[0] : '-';
+
+        // 3. Renderizar Gráfica de Asesores (Barras)
+        const ctxAsesores = document.getElementById('graficaAsesores').getContext('2d');
+        if(chartAsesores) chartAsesores.destroy(); // Destruye la anterior si ya existía
+        
+        chartAsesores = new Chart(ctxAsesores, {
+            type: 'bar',
+            data: {
+                labels: asesoresOrdenados,
+                datasets: [{
+                    label: 'Dinero Recaudado',
+                    data: asesoresOrdenados.map(k => porAsesor[k]),
+                    backgroundColor: '#4eb082',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { callback: value => '$' + new Intl.NumberFormat('es-CO').format(value) } } }
+            }
+        });
+
+        // 4. Renderizar Gráfica de Empresa (Líneas - Últimos 15 días activos)
+        const ctxDias = document.getElementById('graficaDias').getContext('2d');
+        if(chartDias) chartDias.destroy();
+        
+        // Ordenar fechas de la más antigua a la más nueva y tomar las últimas 15
+        const diasOrdenados = Object.keys(porDia).sort().slice(-15);
+        
+        chartDias = new Chart(ctxDias, {
+            type: 'line',
+            data: {
+                // Cambiamos el formato de fecha para que se vea bonito (Ej: "14 Feb")
+                labels: diasOrdenados.map(d => { const date = new Date(d + 'T12:00:00'); return date.toLocaleDateString('es-CO', {day: 'numeric', month:'short'}); }),
+                datasets: [{
+                    label: 'Ingresos Diarios',
+                    data: diasOrdenados.map(k => porDia[k]),
+                    borderColor: '#3a946a',
+                    backgroundColor: 'rgba(78, 176, 130, 0.2)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4, // Curvas suaves
+                    pointBackgroundColor: '#2b3a35'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { callback: value => '$' + new Intl.NumberFormat('es-CO').format(value) } } }
+            }
+        });
     }
     
   </script>
