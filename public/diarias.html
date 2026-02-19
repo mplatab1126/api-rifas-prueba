@@ -62,7 +62,7 @@
       .live-toast b { color: #4ade80; }
 
       /* --- ESTADÍSTICAS UNIFICADAS --- */
-      .stats-unified-strip { display: flex; background: #ffffff; border-radius: 16px; margin: 0 20px 45px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; overflow: hidden; }
+      .stats-unified-strip { display: flex; background: #ffffff; border-radius: 16px; margin: 0 20px 25px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; overflow: hidden; }
       .stat-block { flex: 1; padding: 12px 5px; text-align: center; display: flex; flex-direction: column; justify-content: center; }
       .stat-divider { width: 1px; background-color: #f1f5f9; margin: 10px 0; }
       .stat-block.highlight { background: linear-gradient(135deg, #1b5e20 0%, #0a3d24 100%); }
@@ -70,6 +70,90 @@
       .stat-value { font-size: 16px; font-weight: 900; color: #1b5e20; white-space: nowrap; letter-spacing: -0.5px; }
       .stat-block.highlight .stat-label { color: #c8e6c9; }
       .stat-block.highlight .stat-value { color: #ffffff; }
+
+      /* --- NUEVA TARJETA: PROMOCIÓN DEL APARTAMENTO --- */
+      .promo-apto-card {
+        background: #ffffff;
+        border: 2px solid #d4af37;
+        border-radius: 20px;
+        margin: 0 20px 45px 20px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(212, 175, 55, 0.15);
+      }
+      .promo-apto-img-wrapper {
+        position: relative;
+        width: 100%;
+        height: 200px;
+      }
+      .promo-apto-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .promo-apto-badge {
+        position: absolute;
+        bottom: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1b5e20;
+        color: white;
+        padding: 6px 20px;
+        border-radius: 50px;
+        font-weight: 900;
+        font-size: 12px;
+        text-transform: uppercase;
+        border: 2px solid white;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        white-space: nowrap;
+      }
+      .promo-apto-content {
+        padding: 30px 20px 20px 20px;
+        text-align: center;
+      }
+      .promo-apto-title {
+        font-family: 'Montserrat', sans-serif;
+        color: #111;
+        font-weight: 900;
+        font-size: 17px;
+        margin: 0 0 8px 0;
+        line-height: 1.2;
+      }
+      .promo-apto-desc {
+        font-size: 13px;
+        color: #475569;
+        margin: 0 0 15px 0;
+        line-height: 1.4;
+      }
+      .promo-apto-benefits {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        text-align: left;
+      }
+      .benefit-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #1e293b;
+        background: #f8fafc;
+        padding: 10px 14px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+      }
+      .benefit-icon {
+        font-size: 18px;
+        background: white;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        flex-shrink: 0;
+      }
 
       /* --- EXPLICACIÓN DE LA DINÁMICA --- */
       .dinamica-section { padding: 0 20px; margin-bottom: 45px; }
@@ -261,7 +345,7 @@
       <div class="hero-title-area">
         <h1 style="font-size: 32px;">RIFA DE BOLETAS</h1>
         <div class="info-sorteo-container">
-          <div class="badge-sorteo">📅 JUEGA ESTE FIN DE SEMANA</div> 
+          <div class="badge-sorteo">📅 JUEGA ESTE FIN DE SEMANA</div>
         </div>
       </div>
 
@@ -273,7 +357,7 @@
         <div class="stat-divider"></div>
         <div class="stat-block highlight">
           <span class="stat-label">🏢 Premio Mayor</span>
-          <span class="stat-value">Acumulado 20M</span>
+          <span class="stat-value">4 Boletas (Apto)</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-block">
@@ -282,8 +366,33 @@
         </div>
       </div>
 
+      <div class="promo-apto-card">
+        <div class="promo-apto-img-wrapper">
+          <img src="https://losplata.s3.us-east-2.amazonaws.com/sala+2+h.png" alt="Apartamento Amoblado" class="promo-apto-img">
+          <div class="promo-apto-badge">¡El Apartamento de tus sueños!</div>
+        </div>
+        <div class="promo-apto-content">
+          <h3 class="promo-apto-title">¿QUÉ GANAS CON ESTAS BOLETAS?</h3>
+          <p class="promo-apto-desc">Si te ganas las boletas oficiales quedarás participando automáticamente por todos estos increíbles premios:</p>
+          <div class="promo-apto-benefits">
+            <div class="benefit-item">
+              <span class="benefit-icon">💰</span>
+              <span>Acumulado de $20 Millones (Este fin de semana)</span>
+            </div>
+            <div class="benefit-item">
+              <span class="benefit-icon">💵</span>
+              <span>$5 Millones en efectivo (Cada fin de semana)</span>
+            </div>
+            <div class="benefit-item">
+              <span class="benefit-icon">🏢</span>
+              <span>El Apartamento Amoblado (Gran Sorteo 4 de Abril)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="dinamica-section">
-        <h3 class="section-title-elegant">💡 ¿Cómo se reparten los premios?</h3>
+        <h3 class="section-title-elegant">💡 ¿Cómo se reparten las Boletas?</h3>
         <p class="section-subtitle-elegant">Ejemplo: Si cae el número <strong>1528</strong></p>
         
         <div class="bolotas-cayendo">
@@ -318,9 +427,9 @@
       </div>
 
       <div class="numbers-card" id="tarjeta-numeros">
-        <h2 class="numbers-title">👇 SELECCIONA TU NÚMERO 👇</h2>
+        <h2 class="numbers-title">👇 SELECCIONA TU PUESTO 👇</h2>
         <div id="filtro-msg" style="display:none; text-align:center; color:#64748b; font-size:14px; font-weight:700; margin-bottom:15px; padding: 0 10px;"></div>
-        <div id="loading" style="text-align:center; color:#999; padding:20px;">Cargando boletas...</div>
+        <div id="loading" style="text-align:center; color:#999; padding:20px;">Cargando puestos...</div>
         
         <div id="grid" class="grid-container"></div>
       </div>
@@ -446,7 +555,7 @@
 
     <div id="bottom-bar" class="bottom-bar">
       <div class="resumen-compra">
-        <span id="qty-text">0 boletas</span>
+        <span id="qty-text">0 puestos</span>
         <span id="total-text" class="resumen-total">$0</span>
       </div>
       <button class="btn-pagar-float" onclick="abrirModal()">Comprar</button>
@@ -496,7 +605,7 @@
 
     <div id="modal-soldout" class="modal-overlay">
       <div class="modal-content" style="text-align:center;">
-        <h2 style="color:#d32f2f; margin-top:0;">🚫 ¡NO HAY BOLETAS DISPONIBLES! 🚫</h2>
+        <h2 style="color:#d32f2f; margin-top:0;">🚫 ¡NO HAY PUESTOS DISPONIBLES! 🚫</h2>
         <p style="font-size:14px; color:#555;">¡Hoy arrasaron con todo! Muchas gracias por el apoyo.</p>
         <button class="btn-confirmar" onclick="cerrarSoldOut()">Aceptar</button>
       </div>
@@ -564,12 +673,12 @@
         if (ocultarOcupados) {
           filtroMsg.style.display = 'block';
           filtroMsg.style.color = '#64748b'; 
-          filtroMsg.innerText = `🔥 ¡Se ha vendido el ${porcentaje}%! Mostrando solo los ${contadorDisponibles} números disponibles para facilitar tu compra:`;
+          filtroMsg.innerText = `🔥 ¡Se ha vendido el ${porcentaje}%! Mostrando solo los ${contadorDisponibles} puestos disponibles para facilitar tu compra:`;
         } else if (porcentaje === 100 && totalBoletas > 0) {
           filtroMsg.style.display = 'block';
           filtroMsg.style.color = '#1b5e20'; 
-          filtroMsg.innerText = `🏆 ¡100% VENDIDO! Aquí puedes ver los dueños de cada número:`;
-          document.querySelector('.numbers-title').innerText = "👇 NÚMEROS VENDIDOS 👇";
+          filtroMsg.innerText = `🏆 ¡100% VENDIDO! Aquí puedes ver los dueños de cada puesto:`;
+          document.querySelector('.numbers-title').innerText = "👇 PUESTOS VENDIDOS 👇";
         }
 
         datos.forEach(fila => {
@@ -612,7 +721,7 @@
         const index = numerosSeleccionados.indexOf(numero);
         if (index === -1) {
           if (numerosSeleccionados.length >= 5) {
-            alert("⚠️ Límite alcanzado:\nSolo puedes comprar un máximo de 5 boletas por pedido.");
+            alert("⚠️ Límite alcanzado:\nSolo puedes comprar un máximo de 5 puestos por pedido.");
             return; 
           }
           numerosSeleccionados.push(numero);
@@ -631,7 +740,7 @@
 
         if (numerosSeleccionados.length > 0) {
           bar.style.display = 'flex';
-          qtyText.innerText = numerosSeleccionados.length + (numerosSeleccionados.length === 1 ? " boleta" : " boletas");
+          qtyText.innerText = numerosSeleccionados.length + (numerosSeleccionados.length === 1 ? " puesto" : " puestos");
           const total = numerosSeleccionados.length * PRECIO_BOLETA;
           totalText.innerText = "$" + total.toLocaleString('es-CO');
         } else {
@@ -677,7 +786,7 @@
           if (data.exito) {
             // SOLUCIÓN EMOJIS: Armamos el mensaje directamente aquí en el navegador
             const total = numerosSeleccionados.length * PRECIO_BOLETA;
-            const mensaje = `¡Hola Los Plata! 👋\nAcabo de reservar en la RIFA DE BOLETAS (Acumulado 20M).\n\n👤 Nombre: ${nombre}\n📱 Celular: ${telefono}\n🎟️ Mis números: ${numerosSeleccionados.join(', ')}\n💰 Total a pagar: $${total.toLocaleString('es-CO')}\n\nQuedo atento para enviar el comprobante.`;
+            const mensaje = `¡Hola Los Plata! 👋\nAcabo de reservar en la RIFA DE BOLETAS (Acumulado 20M).\n\n👤 Nombre: ${nombre}\n📱 Celular: ${telefono}\n🎟️ Mis puestos: ${numerosSeleccionados.join(', ')}\n💰 Total a pagar: $${total.toLocaleString('es-CO')}\n\nQuedo atento para enviar el comprobante.`;
             
             const urlWhatsapp = `https://wa.me/573116675984?text=${encodeURIComponent(mensaje)}`;
             window.top.location.href = urlWhatsapp; 
@@ -714,9 +823,9 @@
 
       function iniciarNotificacionesEnVivo() {
         const compradoresFalsos = [
-          "Mateo P. compró <b>2 boletas</b>", "Diana M. compró <b>1 boleta</b>",
-          "Carlos R. compró <b>3 boletas</b>", "Juliana G. compró <b>2 boletas</b>",
-          "Luis F. compró <b>1 boleta</b>", "Andrea S. compró <b>4 boletas</b>"
+          "Mateo P. compró <b>2 puestos</b>", "Diana M. compró <b>1 puesto</b>",
+          "Carlos R. compró <b>3 puestos</b>", "Juliana G. compró <b>2 puestos</b>",
+          "Luis F. compró <b>1 puesto</b>", "Andrea S. compró <b>4 puestos</b>"
         ];
         const toast = document.getElementById('live-toast');
         const text = document.getElementById('live-toast-text');
