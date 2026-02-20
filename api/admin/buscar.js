@@ -10,9 +10,28 @@ export default async function handler(req, res) {
   const q = req.query.q || (req.body && req.body.q);
   if (!q) return res.status(400).json({ tipo: 'ERROR_SERVIDOR', mensaje: 'Escribe algo para buscar.' });
 
+  // 🚨 1. REGLA: Prohibir letras en la búsqueda
+  if (/[a-zA-Z]/.test(String(q))) {
+    return res.status(200).json({ 
+      tipo: 'ERROR_SERVIDOR', 
+      mensaje: '⚠️ Búsqueda inválida: No combines letras y números (Ej: m8a3). Escribe únicamente el número exacto de la boleta o el celular.' 
+    });
+  }
+
+  // 2. Quitamos cualquier símbolo o espacio
   let queryLimpio = String(q).replace(/\D/g, '');
+
+  // 3. Ajuste por si pegan un celular con el 57 de Colombia
   if (queryLimpio.length === 12 && queryLimpio.startsWith('57')) {
     queryLimpio = queryLimpio.slice(2); 
+  }
+
+  // 🚨 4. REGLA ESTRICTA DE CANTIDAD DE NÚMEROS (1, 3 o cantidades raras no están permitidas)
+  if (queryLimpio.length === 1 || queryLimpio.length === 3 || (queryLimpio.length > 4 && queryLimpio.length !== 10)) {
+    return res.status(200).json({ 
+      tipo: 'ERROR_SERVIDOR', 
+      mensaje: `⚠️ Formato incorrecto: Escribiste ${queryLimpio.length} cifras.\n\nDebes buscar:\n• 2 cifras (Rifa Diaria)\n• 4 cifras (Apartamento)\n• 10 cifras (Celular)` 
+    });
   }
 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
