@@ -10,15 +10,15 @@ export default async function handler(req, res) {
   const q = req.query.q || (req.body && req.body.q);
   if (!q) return res.status(400).json({ tipo: 'ERROR_SERVIDOR', mensaje: 'Escribe algo para buscar.' });
 
-  // 🚨 1. REGLA: Prohibir letras en la búsqueda
+  // 🚨 1. REGLA ESTRICTA: Bloquear letras
   if (/[a-zA-Z]/.test(String(q))) {
     return res.status(200).json({ 
       tipo: 'ERROR_SERVIDOR', 
-      mensaje: '⚠️ Búsqueda inválida: No combines letras y números (Ej: m8a3). Escribe únicamente el número exacto de la boleta o el celular.' 
+      mensaje: `⚠️ Búsqueda inválida.\nEscribiste "${q}", pero no puedes combinar letras y números.\nEscribe únicamente los números.` 
     });
   }
 
-  // 2. Quitamos cualquier símbolo o espacio
+  // 2. Limpiamos espacios o símbolos
   let queryLimpio = String(q).replace(/\D/g, '');
 
   // 3. Ajuste por si pegan un celular con el 57 de Colombia
@@ -26,11 +26,11 @@ export default async function handler(req, res) {
     queryLimpio = queryLimpio.slice(2); 
   }
 
-  // 🚨 4. REGLA ESTRICTA DE CANTIDAD DE NÚMEROS (1, 3 o cantidades raras no están permitidas)
+  // 🚨 4. REGLA ESTRICTA DE TAMAÑO (Bloquea 1, 3 o cantidades raras)
   if (queryLimpio.length === 1 || queryLimpio.length === 3 || (queryLimpio.length > 4 && queryLimpio.length !== 10)) {
     return res.status(200).json({ 
       tipo: 'ERROR_SERVIDOR', 
-      mensaje: `⚠️ Formato incorrecto: Escribiste ${queryLimpio.length} cifras.\n\nDebes buscar:\n• 2 cifras (Rifa Diaria)\n• 4 cifras (Apartamento)\n• 10 cifras (Celular)` 
+      mensaje: `⚠️ Formato incorrecto.\nEscribiste un número de ${queryLimpio.length} cifras.\n\nEl sistema solo permite buscar:\n• 2 cifras (Rifa Diaria)\n• 4 cifras (Apartamento)\n• 10 cifras (Celular)` 
     });
   }
 
