@@ -7,18 +7,7 @@ export default async function handler(req, res) {
 
   const { contrasena } = req.body;
   
-  // 🌟 DICCIONARIO DE ASESORES
-  const asesores = {
-    'sal32': 'Saldarriaga',
-    'ar94': 'Arias',
-    'car61': 'Carlos',
-    'an45': 'Anyeli',
-    'AYX': 'Mateo',
-    'lu34': 'Luisa',
-    'li05': 'Liliana',
-    'ne26': 'Nena',
-    '1234': 'Admin' // Tu clave maestra
-  };
+  const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
 
   const nombreAsesor = asesores[contrasena];
 
