@@ -368,11 +368,14 @@
         </div>
       </div>
     </div>
-  </div> <div id="modalResult" class="modal-overlay">
+  <div id="modalConfirmAction" class="modal-overlay">
     <div class="modal-card">
-      <h3 id="mTitle" style="color:var(--ink); font-weight:600; font-size:1.2rem; margin:0 0 10px 0;">Título</h3>
-      <p id="mMsg" style="color:var(--ink-2); font-size:0.9rem; margin-bottom:24px; line-height: 1.5;">Mensaje</p>
-      <button id="mBtn" class="cta" style="width: auto; padding: 10px 30px; margin: 0 auto; display:inline-block;">Aceptar</button>
+      <h3 style="color:var(--ink); font-weight:600; font-size:1.2rem; margin:0 0 10px 0;">Aviso de Cliente</h3>
+      <p id="mcMsg" style="color:var(--ink-2); font-size:0.9rem; margin-bottom:24px; line-height: 1.5;"></p>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button id="mcBtnCancel" class="cta" style="flex:1; background: transparent; border: 1px solid var(--ring-strong); color: var(--ink-2);">Cancelar</button>
+        <button id="mcBtnOk" class="cta" style="flex:1; background: var(--ink);">Sí, agregar</button>
+      </div>
     </div>
   </div>
 
@@ -756,8 +759,13 @@
         else if(res.tipo==='BOLETA_OCUPADA'){ switchView('view-cliente'); renderClienteInfo([res.data.infoVenta]); } 
         else if(res.tipo==='CLIENTE_ENCONTRADO'){ switchView('view-cliente'); renderClienteInfo(res.lista); } 
         else if(res.tipo==='CLIENTE_SIN_BOLETAS') {
-            // Preguntamos si quiere crearle la venta
-            if (confirm(`El cliente ${res.data.nombre || ''} ${res.data.apellido || ''} está registrado, pero NO tiene boletas en este momento.\n\n¿Deseas agregarle nuevas boletas?`)) {
+            // 1. Escribimos el mensaje en el cuadro bonito y lo mostramos
+            $('mcMsg').innerHTML = `El cliente <b>${res.data.nombre || ''} ${res.data.apellido || ''}</b> está registrado, pero NO tiene boletas en este momento.<br><br>¿Deseas agregarle nuevas boletas?`;
+            $('modalConfirmAction').style.display = 'flex';
+            
+            // 2. Si el asesor presiona "Sí, agregar"
+            $('mcBtnOk').onclick = function() {
+                $('modalConfirmAction').style.display = 'none'; // Cierra el cuadro
                 activateAppMode();
                 switchView('view-venta');
                 $('v_nombre').value = res.data.nombre || '';
@@ -769,10 +777,14 @@
                 addDefaultPill(); // Prepara el espacio para escribir la boleta
                 setMode('separar');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
-            } else {
+            };
+            
+            // 3. Si el asesor presiona "Cancelar"
+            $('mcBtnCancel').onclick = function() {
+                $('modalConfirmAction').style.display = 'none'; // Cierra el cuadro
                 $('smartInput').value = '';
                 $('smartInput').focus();
-            }
+            };
         }
         else { showModal('No encontrado', res.mensaje || 'Intenta de nuevo'); }
       } catch (err) { feedback.textContent = ""; showModal('Error', err.message); }
