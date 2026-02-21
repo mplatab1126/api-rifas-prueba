@@ -163,7 +163,7 @@
         
         <div class="vertical-form">
           <div class="field" style="background:var(--bg); border: 1px dashed var(--accent); padding: 20px; justify-content: center;">
-            <input type="file" id="fileBancos" accept=".csv, .pdf" style="font-size: 0.9rem; color: var(--ink-2);">
+            <input type="file" id="fileBancos" accept=".csv, .pdf" multiple style="font-size: 0.9rem; color: var(--ink-2);">
           </div>
           <button id="btnProcesarBancos" class="cta" onclick="procesarCSVBancos()" style="margin-top:10px;">Procesar archivo</button>
         </div>
@@ -1083,142 +1083,135 @@ async function confirmarLiberarBoleta(numero) {
     
 async function procesarCSVBancos() {
     const fileInput = document.getElementById('fileBancos');
-    if (!fileInput.files.length) return alert("Por favor, selecciona un archivo CSV o PDF primero.");
+    if (!fileInput.files.length) return alert("Por favor, selecciona al menos un archivo CSV o PDF.");
     
-    const file = fileInput.files[0];
     const btn = document.getElementById('btnProcesarBancos');
     const txtOriginal = btn.textContent;
-    btn.textContent = 'Procesando...';
+    btn.textContent = `Procesando ${fileInput.files.length} archivo(s)...`;
     btn.disabled = true;
 
     try {
         let transferenciasNuevas = [];
+        const meses = {'ene': '01', 'feb': '02', 'mar': '03', 'abr': '04', 'may': '05', 'jun': '06', 'jul': '07', 'ago': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dic': '12'};
 
-        if (file.name.toLowerCase().endsWith('.pdf')) {
-            // --- LÓGICA: EXTRAER DATOS DEL PDF DE BANCOLOMBIA ---
-            const arrayBuffer = await file.arrayBuffer();
-            const pdfjsLib = window['pdfjs-dist/build/pdf'];
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
-            
-            const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-            let fullText = "";
-            
-            for (let i = 1; i <= pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const content = await page.getTextContent();
-                fullText += content.items.map(item => item.str).join(' ') + " ";
-            }
+        // Ciclo para procesar TODOS los archivos seleccionados
+        for (let f = 0; f < fileInput.files.length; f++) {
+            const file = fileInput.files[f];
 
-            const regex = /(20\d{2}\/\d{2}\/\d{2})\s+(.+?)\s+([\d,]+\.\d{2})(?!\d)/g;
-            let match;
-
-            while ((match = regex.exec(fullText)) !== null) {
-                const fechaRaw = match[1]; 
-                const descAndRef = match[2]; 
-                const montoRaw = match[3]; 
-
-                let monto = parseFloat(montoRaw.replace(/,/g, ''));
-                if(monto <= 0) continue; 
-
-                let soloFecha = fechaRaw.replace(/\//g, '-'); 
+            if (file.name.toLowerCase().endsWith('.pdf')) {
+                // --- LÓGICA: EXTRAER DATOS DEL NUEVO PDF DE BANCOLOMBIA ---
+                const arrayBuffer = await file.arrayBuffer();
+                const pdfjsLib = window['pdfjs-dist/build/pdf'];
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
                 
-                // 1. CLASIFICACIÓN DE LA PLATAFORMA (DESCRIPCIÓN)
-                let descUpper = descAndRef.toUpperCase();
-                let plataforma = 'Bancolombia'; // Por defecto
+                const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+                let fullText = "";
                 
+                // Leemos el PDF respetando los saltos de línea (\n)
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const content = await page.getTextContent();
+                    fullText += content.items.map(item => item.str).join('\n') + "\n";
+                }
+
+                // 1. Extraer Referencia
+                let refMatch = fullText.match(/Referencia 1\s*\n(\d+)/);
+                let referencia = refMatch ? refMatch[1] : "Sin Ref";
+
+                // 2. Extraer Valor (Limpia formatos como "COP $ 20.000 ,00")
+                let valorMatch = fullText.match(/COP \$ ([\d\.,\s]+)/);
+                let monto = 0;
+                if (valorMatch) {
+                    let valorLimpio = valorMatch[1].replace(/\./g, '').replace(/\s/g, '').split(',')[0];
+                    monto = parseInt(valorLimpio) || 0;
+                }
+
+                // 3. Extraer Fecha y HORA
+                let fechaMatch = fullText.match(/Fecha de aplicación\s*\n(.*?)\n(\d{2}:\d{2}:\d{2})/);
+                let fecha_pago = new Date().toISOString().split('T')[0]; 
+                let hora_pago = null;
+
+                if(fechaMatch) {
+                    let partes = fechaMatch[1].trim().split(" ");
+                    if(partes.length >= 3) {
+                        let dia = partes[0].padStart(2, '0');
+                        let mes = meses[partes[1].toLowerCase()] || '01';
+                        let anio = partes[2];
+                        fecha_pago = `${anio}-${mes}-${dia}`;
+                    }
+                    hora_pago = fechaMatch[2]; // Ej: "19:04:56"
+                }
+
+                // 4. Plataforma
+                let descUpper = fullText.toUpperCase();
+                let plataforma = 'Bancolombia';
                 if (descUpper.includes('TRANSFERENCIA DESDE NEQUI') || descUpper.includes('TRANSFERENCIA NEQUI')) {
                     plataforma = 'Nequi';
-                } else if (descUpper.includes('SUC VIRTUAL') || descUpper.includes('TRANSFERENCIA CTA')) {
-                    plataforma = 'Bancolombia';
-                } else if (descUpper.includes('CORRESPONSAL') || descUpper.includes('CONSIGNACION CORRESPONSAL')) {
+                } else if (descUpper.includes('CORRESPONSAL')) {
                     plataforma = 'Corresponsal';
                 }
 
-                // 2. EXTRACCIÓN EXACTA DE LA REFERENCIA
-                // Primero limpiamos las palabras del banco y de la sucursal para que quede solo la referencia pura
-                let textForRef = descUpper
-                    .replace(/TRANSFERENCIA DESDE NEQUI/g, '')
-                    .replace(/TRANSFERENCIA NEQUI BANCOLOMBI/g, '')
-                    .replace(/TRANSFERENCIA CTA SUC VIRTUAL/g, '')
-                    .replace(/CONSIGNACION CORRESPONSAL CB/g, '')
-                    .replace(/CHINCHINA/g, '') // Quitamos la palabra Chinchiná para que no estorbe
-                    .trim()
-                    .replace(/\s+/g, ' '); // Normalizamos los espacios
-                
-                let referencia = "Sin Ref";
-                
-                // Opción A: Es un Nombre seguido de 4 dígitos (Ej: YADY RENTERIA 5766)
-                const matchNombreNequi = textForRef.match(/\b[A-ZÁÉÍÓÚÑ\s]+\d{4}\b/);
-                // Opción B: Es una cadena de solo números de 6 a 15 dígitos (Ej: 91278621176)
-                const matchNumerico = textForRef.match(/\b\d{6,15}\b/);
-                
-                if (matchNombreNequi) {
-                    referencia = matchNombreNequi[0].trim(); // Se lleva exactamente el "Nombre + 4 dígitos"
-                } else if (matchNumerico) {
-                    referencia = matchNumerico[0]; // Se lleva la cadena exacta de números
+                if (monto > 0) {
+                    transferenciasNuevas.push({
+                        monto: monto,
+                        fecha_pago: fecha_pago,
+                        hora_pago: hora_pago, 
+                        plataforma: plataforma,
+                        referencia: referencia,
+                        estado: 'LIBRE'
+                    });
                 }
 
-                transferenciasNuevas.push({
-                    monto: monto,
-                    fecha_pago: soloFecha,
-                    hora_pago: null, 
-                    plataforma: plataforma,
-                    referencia: referencia,
-                    estado: 'LIBRE'
+            } else {
+                // --- LÓGICA ORIGINAL CSV (Se mantiene intacta) ---
+                const text = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.readAsText(file);
                 });
-            }
+                const rows = text.split('\n');
+                for(let i = 0; i < rows.length; i++) {
+                    const row = rows[i].trim();
+                    if(!row) continue;
+                    const cols = row.split(',');
+                    if(cols.length < 12) continue; 
 
-        } else {
-            // --- LÓGICA ORIGINAL: CSV ---
-            const text = await new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.readAsText(file);
-            });
-            const rows = text.split('\n');
-            for(let i = 0; i < rows.length; i++) {
-                const row = rows[i].trim();
-                if(!row) continue;
-                const cols = row.split(',');
-                if(cols.length < 12) continue; 
+                    let monto = parseFloat(cols[9]) || 0;
+                    if(monto <= 0) continue;
 
-                let monto = parseFloat(cols[9]) || 0;
-                if(monto <= 0) continue;
+                    let fechaRaw = cols[1]; 
+                    let soloFechaCSV = new Date().toISOString().split('T')[0]; 
+                    if(fechaRaw && fechaRaw.length === 8) {
+                        soloFechaCSV = `${fechaRaw.slice(4,8)}-${fechaRaw.slice(2,4)}-${fechaRaw.slice(0,2)}`;
+                    }
+                    
+                    let descUpper = (cols[10] || "").toUpperCase();
+                    let plataforma = 'Bancolombia'; 
+                    if (descUpper.includes('CORRESP')) {
+                        plataforma = 'Corresponsal';
+                    } else if (descUpper.includes('NEQUI')) {
+                        plataforma = 'Nequi';
+                    }
 
-                let fechaRaw = cols[1]; 
-                let soloFechaCSV = new Date().toISOString().split('T')[0]; 
-                if(fechaRaw && fechaRaw.length === 8) {
-                    soloFechaCSV = `${fechaRaw.slice(4,8)}-${fechaRaw.slice(2,4)}-${fechaRaw.slice(0,2)}`;
+                    let refCol = (cols[11] || "").replace(/"/g, ''); 
+
+                    transferenciasNuevas.push({
+                        monto: monto, 
+                        fecha_pago: soloFechaCSV, 
+                        hora_pago: null, 
+                        plataforma: plataforma, 
+                        referencia: refCol, 
+                        estado: 'LIBRE'
+                    });
                 }
-                
-                // --- CAMBIO AQUÍ PARA CSV TAMBIÉN ---
-                let descUpper = descAndRef.toUpperCase();
-                let plataforma = 'Bancolombia'; // Valor por defecto
-                
-                // Le damos prioridad absoluta al Corresponsal
-                if (descUpper.includes('CORRESP')) {
-                    plataforma = 'Corresponsal';
-                } else if (descUpper.includes('NEQUI')) {
-                    plataforma = 'Nequi';
-                }
-
-                let referencia = (cols[11] || "").replace(/"/g, ''); 
-
-                transferenciasNuevas.push({
-                    monto: monto, 
-                    fecha_pago: soloFechaCSV, 
-                    hora_pago: null, 
-                    plataforma: plataforma, 
-                    referencia: referencia, 
-                    estado: 'LIBRE'
-                });
             }
-        }
+        } // Fin del ciclo de archivos
 
         if(transferenciasNuevas.length === 0) {
-            throw new Error("No se encontraron transferencias válidas en el archivo.");
+            throw new Error("No se encontraron transferencias válidas en los archivos.");
         }
 
+        // Se envía a tu API api/admin/subir-bancos.js
         const req = await fetch('/api/admin/subir-bancos', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
