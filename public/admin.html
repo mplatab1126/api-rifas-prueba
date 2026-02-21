@@ -1262,10 +1262,14 @@ async function procesarCSVBancos() {
                 html += '<thead><tr style="border-bottom:1px solid var(--ring-strong); color: var(--muted); font-weight:500;"><th style="padding:8px 4px;">Fecha</th><th style="padding:8px 4px;">Asesor</th><th style="padding:8px 4px;">Acción</th><th style="padding:8px 4px;">Boleta</th><th style="padding:8px 4px;">Detalle</th></tr></thead><tbody>';
                 
                 res.lista.forEach(m => {
-                    const fechaObj = new Date(m.created_at);
-                    const opcionesFecha = { timeZone: 'America/Bogota' };
-                    const opcionesHora = { timeZone: 'America/Bogota', hour: '2-digit', minute:'2-digit' };
-                    const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fechaObj.toLocaleTimeString('es-CO', opcionesHora);
+                    let fechaString = m.created_at;
+if (!fechaString.includes('Z') && !fechaString.includes('+')) {
+    fechaString += 'Z';
+}
+const fechaObj = new Date(fechaString);
+const opcionesFecha = { timeZone: 'America/Bogota' };
+const opcionesHora = { timeZone: 'America/Bogota', hour: '2-digit', minute:'2-digit' };
+const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fechaObj.toLocaleTimeString('es-CO', opcionesHora);
                     
                     let colorAccion = 'var(--ink)';
                     if (m.accion === 'Eliminar Abono' || m.accion === 'Liberar Boleta') colorAccion = 'var(--danger)';
