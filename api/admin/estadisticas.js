@@ -8,9 +8,20 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const { contrasena } = req.body;
+  // 1. Vercel lee el secreto y descubre quién es el asesor según la contraseña que envió
   const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
+  const nombreAsesor = asesores[contrasena];
   
-  if (!asesores[contrasena]) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
+  // 2. Si la contraseña no existe, lo bloquea
+  if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
+
+  // 3. CANDADO DE SEGURIDAD: Solo Mateo y Alejo P pasan de aquí
+  if (nombreAsesor !== 'Mateo' && nombreAsesor !== 'Alejo P') {
+    return res.status(403).json({ 
+      status: 'error', 
+      mensaje: 'Acceso Denegado: Solo Mateo y Alejo P tienen permisos para ver el rendimiento de la empresa.' 
+    });
+  }
 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
