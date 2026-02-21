@@ -39,9 +39,12 @@ export default async function handler(req, res) {
       query = query.eq('fecha_pago', f); // Busca solo la fecha exacta
     }
     
-    // BUSCAMOS POR HORA
+    // --- 🌟 AQUÍ ESTÁ LA CORRECCIÓN PARA LA HORA 🌟 ---
     if (hora) {
-      query = query.ilike('hora_pago', `${hora}%`); // Busca que la hora coincida
+      // Tomamos solo "HH:mm" del input
+      const horaLimpia = hora.substring(0, 5); 
+      // Buscamos todo lo que haya caído dentro de ese minuto exacto (Ej: 19:04:00 a 19:04:59)
+      query = query.gte('hora_pago', `${horaLimpia}:00`).lte('hora_pago', `${horaLimpia}:59`);
     }
 
     query = query.order('fecha_pago', { ascending: false }).limit(10);
