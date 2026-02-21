@@ -403,6 +403,8 @@
               $('asesorDisplay').textContent = res.asesor; 
               $('v_contrasena').value = pwd; 
               $('smartInput').focus();
+              cargarPlataformas(); // <--- Hace que la lista se llene sola
+          }
           } else {
               if(!auto) msg.textContent = 'Contraseña incorrecta';
               localStorage.removeItem(STORAGE_KEY);
@@ -1388,6 +1390,31 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         html += '</tbody></table></div>';
         div.innerHTML = html;
     }
+
+    // ==========================================
+    // CARGAR PLATAFORMAS AUTOMÁTICAMENTE
+    // ==========================================
+    async function cargarPlataformas() {
+        try {
+            const req = await fetch('/api/admin/plataformas');
+            const res = await req.json();
+            
+            if (res.status === 'ok') {
+                const datalist = document.getElementById('l_metodos');
+                datalist.innerHTML = ''; // Limpiamos la lista vieja
+                
+                // Agregamos las nuevas opciones sacadas de la base de datos
+                res.lista.forEach(plat => {
+                    const option = document.createElement('option');
+                    option.value = plat;
+                    datalist.appendChild(option);
+                });
+            }
+        } catch (e) {
+            console.log("No se pudieron cargar las plataformas", e);
+        }
+    }
+    
     
   </script>
 </body>
