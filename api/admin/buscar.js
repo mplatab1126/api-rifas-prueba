@@ -111,6 +111,23 @@ export default async function handler(req, res) {
       if (errDiarias) throw errDiarias;
 
       if ((!clienteBoletasApto || clienteBoletasApto.length === 0) && (!clienteBoletasDiarias || clienteBoletasDiarias.length === 0)) {
+        
+        // El cliente no tiene boletas, pero vamos a revisar si existe en nuestra agenda de clientes
+        const { data: clienteSolo, error: errCliente } = await supabase
+          .from('clientes')
+          .select('nombre, apellido, ciudad, telefono')
+          .eq('telefono', queryLimpio)
+          .maybeSingle();
+
+        // Si lo encontramos en la agenda, le avisamos al panel
+        if (clienteSolo) {
+          return res.status(200).json({ 
+            tipo: 'CLIENTE_SIN_BOLETAS', 
+            data: clienteSolo 
+          });
+        }
+
+        // Si definitivamente no está en ningún lado
         return res.status(200).json({ tipo: 'NO_EXISTE', mensaje: 'No hay cliente o boletas con este celular en ninguna rifa.' });
       }
 
