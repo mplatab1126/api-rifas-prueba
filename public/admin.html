@@ -925,7 +925,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
        html += '  <input id="c_telefono_display" type="text" class="main-input" style="padding:8px 12px; background:var(--bg); color:var(--muted);" value="' + c.telefono + '" disabled>';
        html += '  <input id="c_ciudad" type="text" class="main-input" style="padding:8px 12px;" value="' + c.ciudad + '">';
        html += '</div>';
-       html += '<button type="button" onclick="guardarCambiosCliente(\'' + c.telefono + '\', this)" class="cta" style="width:auto; padding:8px 20px; margin:0; font-size:0.85rem;">Guardar cambios</button>';
+       html += '<div style="display:flex; gap:10px; flex-wrap:wrap;">';        html += '  <button type="button" onclick="guardarCambiosCliente(\'' + c.telefono + '\', this)" class="cta" style="flex:1; padding:8px 20px; margin:0; font-size:0.85rem;">Guardar cambios</button>';        html += '  <button type="button" onclick="prepararNuevaVentaExistente(\'' + c.telefono + '\')" class="cta" style="flex:1; padding:8px 20px; margin:0; font-size:0.85rem; background:var(--ink);">➕ Agregar Boletas</button>';        html += '</div>';
        html += '</div>';
 
        // 3. ZONA DE HISTORIAL DE PAGOS (El bloque rojo global fue eliminado)
@@ -1449,6 +1449,35 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         } catch (e) {
             console.log("No se pudieron cargar las plataformas", e);
         }
+    }
+
+    // ==========================================
+    // AGREGAR BOLETAS A CLIENTE EXISTENTE
+    // ==========================================
+    function prepararNuevaVentaExistente(telefono) {
+        // 1. Recogemos los datos que ya están en la pantalla del cliente
+        const nombre = document.getElementById('c_nombre').value;
+        const apellido = document.getElementById('c_apellido').value;
+        const ciudad = document.getElementById('c_ciudad').value;
+
+        // 2. Cambiamos a la pestaña de "Ventas"
+        activateAppMode();
+        switchView('view-venta');
+
+        // 3. Llenamos el formulario de venta automáticamente
+        document.getElementById('v_nombre').value = nombre;
+        document.getElementById('v_apellido').value = apellido;
+        document.getElementById('v_telefono').value = telefono;
+        document.getElementById('v_ciudad').value = ciudad;
+
+        // 4. Limpiamos las cajas de boletas por si había algo escrito antes
+        const listaNumeros = document.getElementById('numList');
+        listaNumeros.innerHTML = '';
+        addDefaultPill(); // Agrega una cajita vacía lista para escribir
+
+        // 5. Subimos la pantalla arriba del todo y por defecto ponemos modo "Solo Separar"
+        setMode('separar');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     
   </script>
