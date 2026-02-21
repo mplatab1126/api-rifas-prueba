@@ -755,6 +755,25 @@
         if(res.tipo==='BOLETA_DISPONIBLE'){ switchView('view-venta'); numList.innerHTML=''; numList.appendChild(makeNumPill(res.data.numero)); $('v_nombre').focus(); } 
         else if(res.tipo==='BOLETA_OCUPADA'){ switchView('view-cliente'); renderClienteInfo([res.data.infoVenta]); } 
         else if(res.tipo==='CLIENTE_ENCONTRADO'){ switchView('view-cliente'); renderClienteInfo(res.lista); } 
+        else if(res.tipo==='CLIENTE_SIN_BOLETAS') {
+            // Preguntamos si quiere crearle la venta
+            if (confirm(`El cliente ${res.data.nombre || ''} ${res.data.apellido || ''} está registrado, pero NO tiene boletas en este momento.\n\n¿Deseas agregarle nuevas boletas?`)) {
+                activateAppMode();
+                switchView('view-venta');
+                $('v_nombre').value = res.data.nombre || '';
+                $('v_apellido').value = res.data.apellido || '';
+                $('v_telefono').value = res.data.telefono || '';
+                $('v_ciudad').value = res.data.ciudad || '';
+                
+                numList.innerHTML = '';
+                addDefaultPill(); // Prepara el espacio para escribir la boleta
+                setMode('separar');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                $('smartInput').value = '';
+                $('smartInput').focus();
+            }
+        }
         else { showModal('No encontrado', res.mensaje || 'Intenta de nuevo'); }
       } catch (err) { feedback.textContent = ""; showModal('Error', err.message); }
     }
