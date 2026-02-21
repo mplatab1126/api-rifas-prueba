@@ -1263,7 +1263,9 @@ async function procesarCSVBancos() {
                 
                 res.lista.forEach(m => {
                     const fechaObj = new Date(m.created_at);
-                    const fechaStr = fechaObj.toLocaleDateString('es-CO') + ' ' + fechaObj.toLocaleTimeString('es-CO', {hour: '2-digit', minute:'2-digit'});
+                    const opcionesFecha = { timeZone: 'America/Bogota' };
+                    const opcionesHora = { timeZone: 'America/Bogota', hour: '2-digit', minute:'2-digit' };
+                    const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fechaObj.toLocaleTimeString('es-CO', opcionesHora);
                     
                     let colorAccion = 'var(--ink)';
                     if (m.accion === 'Eliminar Abono' || m.accion === 'Liberar Boleta') colorAccion = 'var(--danger)';
