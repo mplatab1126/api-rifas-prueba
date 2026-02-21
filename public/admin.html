@@ -103,6 +103,43 @@
     .view-section { display: none; animation: fadeIn 0.3s ease; }
     .view-section.active { display: block; }
     @keyframes fadeIn{from{opacity:0} to{opacity:1}}
+    /* ================================================== */
+    /* DISEÑO RESPONSIVE (ADAPTACIÓN A CELULARES Y PC)    */
+    /* ================================================== */
+
+    /* 1. Ajustar el contenedor principal para que use mejor el espacio en PC */
+    .shell, .search-container { max-width: 700px; }
+
+    /* 2. Arreglar el menú de navegación para que haga saltos de línea en celulares */
+    .user-info-bar { 
+        display: flex; 
+        flex-wrap: wrap; 
+        justify-content: center; 
+        gap: 12px; 
+        line-height: 1.5;
+    }
+    .user-info-bar span { margin-right: 0 !important; }
+    .hero-mode .user-info-bar { max-width: 90%; }
+
+    /* 3. REGLAS ESPECIALES SOLO PARA CELULARES (Pantallas menores a 650px) */
+    @media (max-width: 650px) {
+        /* Evitar que los formularios de 3 columnas (Ref, Valor, Banco) se aplasten: los apila hacia abajo */
+        div[style*="display: flex; gap: 10px;"] {
+            flex-direction: column !important;
+        }
+        
+        /* Ajustar los campos divididos en 2 columnas (Nombre, Apellido, Ciudad) */
+        div[style*="display:grid; grid-template-columns: 1fr 1fr;"] {
+            grid-template-columns: 1fr !important;
+        }
+
+        /* Hacer que las letras de las tablas se achiquen un poco para que quepan completas */
+        table { font-size: 0.75rem !important; }
+        th, td { padding: 8px 4px !important; }
+        
+        /* Ajustar las ventanas emergentes (modales) para que no toquen los bordes del celular */
+        .modal-card { width: 92%; padding: 20px; }
+    }
   </style>
 </head>
 <body>
