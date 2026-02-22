@@ -61,7 +61,8 @@ export default async function handler(req, res) {
         referencia: t.referencia,
         plataforma: t.plataforma || 'Banco',
         fecha: fechaLimpia,
-        status: t.estado || 'LIBRE'
+        status: t.estado || 'LIBRE',
+        url_comprobante: t.url_comprobante || null // ✨ AQUÍ AGREGAMOS LA URL ✨
       };
     });
 
