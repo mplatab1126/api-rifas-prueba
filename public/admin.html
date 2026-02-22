@@ -406,6 +406,13 @@
         </div>
       </div>
     </div>
+    <div id="modalResult" class="modal-overlay">
+    <div class="modal-card">
+      <h3 id="mTitle" style="color:var(--ink); font-weight:600; font-size:1.2rem; margin:0 0 10px 0;">Título</h3>
+      <p id="mMsg" style="color:var(--ink-2); font-size:0.9rem; margin-bottom:24px; line-height: 1.5; white-space: pre-line;">Mensaje</p>
+      <button id="mBtn" class="cta" style="width: auto; padding: 10px 30px; margin: 0 auto; display:inline-block;">Aceptar</button>
+    </div>
+  </div>
   <div id="modalConfirmAction" class="modal-overlay">
     <div class="modal-card">
       <h3 style="color:var(--ink); font-weight:600; font-size:1.2rem; margin:0 0 10px 0;">Aviso de Cliente</h3>
@@ -1607,6 +1614,45 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         setMode('separar');
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+
+    // ==========================================
+    // FUNCIONES DE MODALES Y ARRANQUE (RESTAURADAS)
+    // ==========================================
+    function showModal(title, msg) { 
+        const mTitle = document.getElementById('mTitle');
+        const mMsg = document.getElementById('mMsg');
+        const modalRes = document.getElementById('modalResult');
+        
+        if(mTitle && mMsg && modalRes) {
+            mTitle.textContent = title; 
+            mMsg.textContent = msg; 
+            modalRes.style.display = 'flex'; 
+        } else {
+            // Un respaldo de emergencia por si algo falla
+            alert(title + "\n\n" + msg); 
+        }
+    }
+    
+    // Cerrar el modal al darle Aceptar
+    const mBtn = document.getElementById('mBtn');
+    if(mBtn) {
+        mBtn.onclick = function() { 
+            document.getElementById('modalResult').style.display='none'; 
+        };
+    }
+
+    // Arranque automático al cargar la página
+    document.addEventListener('DOMContentLoaded', function() { 
+        initLogin(); 
+        if(typeof addDefaultPill === 'function') addDefaultPill(); 
+        
+        const pwdInput = document.getElementById('loginPwd');
+        if(pwdInput) {
+            pwdInput.addEventListener('keyup', function(e) { 
+                if (e.key === 'Enter') verifyLogin(this.value); 
+            });
+        }
+    });
     
   </script>
 </body>
