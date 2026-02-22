@@ -71,7 +71,7 @@ export default async function handler(req, res) {
        return res.status(400).json({ status: 'error', mensaje: 'La imagen es borrosa o no es un comprobante válido.' });
     }
 
-    // 5. ESCUDO ANTI-CLONES (Ahora con validación de hora)
+    // 5. ESCUDO ANTI-CLONES (Con detector de detalles del clon)
     const { data: existentes, error: errExistentes } = await supabase
         .from('transferencias')
         .select('*')
@@ -81,24 +81,40 @@ export default async function handler(req, res) {
     if (errExistentes) throw errExistentes;
 
     let esDuplicado = false;
+    let transferenciaOriginal = null; // Aquí guardaremos la que ya existía
+
     if (existentes && existentes.length > 0) {
         esDuplicado = existentes.some(tExist => {
             if (datos.hora_pago && tExist.hora_pago && datos.hora_pago !== tExist.hora_pago) {
                 return false; 
             }
+            
+            let coinciden = false;
             if (datos.plataforma.toLowerCase().includes('nequi') && tExist.plataforma.toLowerCase().includes('nequi')) {
                 const digitosNueva = String(datos.referencia).replace(/\D/g, ''); 
                 const digitosExist = String(tExist.referencia).replace(/\D/g, '');
                 if (digitosNueva.length >= 4 && digitosExist.length >= 4) {
-                    return digitosNueva.slice(-4) === digitosExist.slice(-4);
+                    coinciden = digitosNueva.slice(-4) === digitosExist.slice(-4);
                 }
+            } else {
+                coinciden = String(datos.referencia).trim() === String(tExist.referencia).trim();
             }
-            return String(datos.referencia).trim() === String(tExist.referencia).trim();
+
+            if (coinciden) {
+                transferenciaOriginal = tExist; // ¡Atrapamos los datos de la original!
+                return true;
+            }
+            return false;
         });
     }
 
     if (esDuplicado) {
-        return res.status(200).json({ status: 'duplicado', mensaje: `La ref ${datos.referencia} ya estaba registrada.` });
+        // Le devolvemos al frontend exactamente el estado y los datos de la original
+        return res.status(200).json({ 
+            status: 'duplicado', 
+            mensaje: `Ya registrada el ${transferenciaOriginal.fecha_pago}`,
+            clon: transferenciaOriginal // Enviamos el objeto completo
+        });
     }
 
     // 6. 🚀 SUBIR LA IMAGEN A SUPABASE STORAGE 🚀
