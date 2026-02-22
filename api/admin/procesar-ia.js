@@ -87,6 +87,12 @@ export default async function handler(req, res) {
     let esDuplicado = false;
     if (existentes && existentes.length > 0) {
         esDuplicado = existentes.some(tExist => {
+            // ✨ LA NUEVA REGLA DE LA HORA ✨
+            // Si ambas transferencias tienen hora, y las horas son diferentes, DEFINITIVAMENTE son transferencias distintas.
+            if (datos.hora_pago && tExist.hora_pago && datos.hora_pago !== tExist.hora_pago) {
+                return false; // Permite guardarla porque la hora no coincide
+            }
+
             // Regla para Nequi: Compara los últimos 4 dígitos
             if (datos.plataforma.toLowerCase().includes('nequi') && tExist.plataforma.toLowerCase().includes('nequi')) {
                 const digitosNueva = String(datos.referencia).replace(/\D/g, ''); 
@@ -95,6 +101,7 @@ export default async function handler(req, res) {
                     return digitosNueva.slice(-4) === digitosExist.slice(-4);
                 }
             }
+            
             // Regla para otros bancos: Referencia exacta
             return String(datos.referencia).trim() === String(tExist.referencia).trim();
         });
