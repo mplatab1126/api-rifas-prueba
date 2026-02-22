@@ -18,12 +18,11 @@ export default async function handler(req, res) {
   if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
   if (!imagenBase64) return res.status(400).json({ status: 'error', mensaje: 'No se envió ninguna imagen' });
 
-  // Necesitarás agregar esta variable en tu panel de Vercel
   const openAiKey = process.env.OPENAI_API_KEY; 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
-    // 3. Instrucciones estrictas para OpenAI
+    // 3. Instrucciones para OpenAI
     const prompt = `
       Eres un asistente contable experto y preciso. Analiza este comprobante de transferencia bancaria y extrae la siguiente información.
       Devuelve ÚNICAMENTE un objeto JSON válido (sin formato Markdown, sin comillas invertidas, solo llaves y texto).
@@ -57,25 +56,22 @@ export default async function handler(req, res) {
           }
         ],
         max_tokens: 300,
-        temperature: 0.0 // 0.0 para que sea súper preciso y matemático
+        temperature: 0.0
       })
     });
 
     const dataAI = await responseAI.json();
-    
     if (dataAI.error) throw new Error("Error en OpenAI: " + dataAI.error.message);
 
-    // 5. Limpiamos la respuesta y la convertimos en objeto
     const respuestaTexto = dataAI.choices[0].message.content.trim();
     const jsonLimpio = respuestaTexto.replace(/```json/g, '').replace(/```/g, '').trim();
     const datos = JSON.parse(jsonLimpio);
 
-    // Validación de que la IA encontró el monto y la referencia
     if (!datos.monto || !datos.referencia || !datos.fecha_pago) {
-       return res.status(400).json({ status: 'error', mensaje: 'La imagen borrosa o no es un comprobante válido.' });
+       return res.status(400).json({ status: 'error', mensaje: 'La imagen es borrosa o no es un comprobante válido.' });
     }
 
-    // 6. ESCUDO ANTI-CLONES
+    // 5. ESCUDO ANTI-CLONES (Ahora con validación de hora)
     const { data: existentes, error: errExistentes } = await supabase
         .from('transferencias')
         .select('*')
@@ -87,13 +83,9 @@ export default async function handler(req, res) {
     let esDuplicado = false;
     if (existentes && existentes.length > 0) {
         esDuplicado = existentes.some(tExist => {
-            // ✨ LA NUEVA REGLA DE LA HORA ✨
-            // Si ambas transferencias tienen hora, y las horas son diferentes, DEFINITIVAMENTE son transferencias distintas.
             if (datos.hora_pago && tExist.hora_pago && datos.hora_pago !== tExist.hora_pago) {
-                return false; // Permite guardarla porque la hora no coincide
+                return false; 
             }
-
-            // Regla para Nequi: Compara los últimos 4 dígitos
             if (datos.plataforma.toLowerCase().includes('nequi') && tExist.plataforma.toLowerCase().includes('nequi')) {
                 const digitosNueva = String(datos.referencia).replace(/\D/g, ''); 
                 const digitosExist = String(tExist.referencia).replace(/\D/g, '');
@@ -101,35 +93,53 @@ export default async function handler(req, res) {
                     return digitosNueva.slice(-4) === digitosExist.slice(-4);
                 }
             }
-            
-            // Regla para otros bancos: Referencia exacta
             return String(datos.referencia).trim() === String(tExist.referencia).trim();
         });
     }
 
     if (esDuplicado) {
-        return res.status(200).json({ status: 'duplicado', mensaje: `La referencia ${datos.referencia} ya estaba registrada.` });
+        return res.status(200).json({ status: 'duplicado', mensaje: `La ref ${datos.referencia} ya estaba registrada.` });
     }
 
-    // 7. Guardar en Supabase
+    // 6. 🚀 SUBIR LA IMAGEN A SUPABASE STORAGE 🚀
+    // Convertimos la imagen Base64 a código binario (Buffer) para que Supabase la guarde
+    const base64Data = imagenBase64.replace(/^data:image\/\w+;base64,/, "");
+    const buffer = Buffer.from(base64Data, 'base64');
+    const fileName = `pago_${Date.now()}_${Math.floor(Math.random() * 1000)}.jpg`;
+
+    const { data: uploadData, error: uploadError } = await supabase
+        .storage
+        .from('comprobantes')
+        .upload(fileName, buffer, {
+            contentType: 'image/jpeg'
+        });
+
+    if (uploadError) throw new Error("Error subiendo la foto: " + uploadError.message);
+
+    // Obtenemos el link público de la imagen que acabamos de subir
+    const { data: publicUrlData } = supabase.storage.from('comprobantes').getPublicUrl(fileName);
+    const urlFoto = publicUrlData.publicUrl;
+
+    // 7. Guardar en Supabase Database (Ahora incluyendo la URL de la foto)
     const { error: errInsert } = await supabase.from('transferencias').insert({
         plataforma: datos.plataforma,
         monto: Number(datos.monto),
         referencia: String(datos.referencia),
         fecha_pago: datos.fecha_pago,
         hora_pago: datos.hora_pago || '12:00:00',
-        estado: 'LIBRE'
+        estado: 'LIBRE',
+        url_comprobante: urlFoto // <-- ¡Aquí guardamos el link en la tabla!
     });
 
     if (errInsert) throw errInsert;
 
     return res.status(200).json({ 
         status: 'ok', 
-        mensaje: `✅ $${datos.monto} en ${datos.plataforma} guardado.`, 
+        mensaje: `✅ $${datos.monto} guardado con su foto en la nube.`, 
         datosExtraidos: datos 
     });
 
   } catch (error) {
-    return res.status(500).json({ status: 'error', mensaje: 'Error en el servidor: ' + error.message });
+    return res.status(500).json({ status: 'error', mensaje: 'Error: ' + error.message });
   }
 }
