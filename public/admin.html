@@ -737,12 +737,27 @@
                         var montoFmt = new Intl.NumberFormat('es-CO').format(t.monto);
                         var refSafe = t.referencia ? t.referencia.replace(/'/g, "\\'") : ''; 
                         var platSafe = t.plataforma ? t.plataforma.replace(/'/g, "\\'") : '';
-                        html += '<div onclick="seleccionarTransferencia(\'' + targetRefId + '\', \'' + targetMontoId + '\', \'' + targetMetodoId + '\', \'' + feedbackId + '\', \'' + refSafe + '\', ' + t.monto + ', \'' + platSafe + '\')"';
-                        html += ' style="border:1px solid var(--ring); padding:10px; border-radius:10px; cursor:pointer; background:#fff; text-align:left; transition:background 0.2s;"';
-                        html += ' onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'#fff\'">';
+                        
+                        // Contenedor principal de la tarjeta (Flexbox para separar textos del botón)
+                        html += '<div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--ring); padding:10px; border-radius:10px; cursor:pointer; background:#fff; text-align:left; transition:background 0.2s;"';
+                        html += ' onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'#fff\'"';
+                        html += ' onclick="seleccionarTransferencia(\'' + targetRefId + '\', \'' + targetMontoId + '\', \'' + targetMetodoId + '\', \'' + feedbackId + '\', \'' + refSafe + '\', ' + t.monto + ', \'' + platSafe + '\')">';
+                        
+                        // Lado izquierdo: Textos de la transferencia
+                        html += '<div>';
                         html += '<div style="font-weight:600; color:var(--ink-2); font-size:0.9rem;">' + t.plataforma + ' - $' + montoFmt + '</div>';
                         html += '<div style="font-size:0.8rem; color:var(--muted);">Ref: ' + t.referencia + ' | Fecha: ' + t.fecha + '</div>';
                         html += '<div style="font-size:0.75rem; color:var(--danger); font-weight:500; margin-top:4px;">' + (t.status || 'LIBRE') + '</div>';
+                        html += '</div>';
+
+                        // Lado derecho: Botón de "Ver Foto" (Solo si existe la URL)
+                        // Usamos event.stopPropagation() para que al dar clic al botón no se seleccione la transferencia por accidente
+                        if (t.url_comprobante) {
+                            html += '<div>';
+                            html += `<button onclick="event.stopPropagation(); window.open('${t.url_comprobante}', '_blank')" style="background:var(--pill); color:var(--accent-2); border:1px solid var(--accent); padding:6px 12px; border-radius:8px; font-size:0.8rem; font-weight:600; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='var(--accent)'; this.style.color='#fff';" onmouseout="this.style.background='var(--pill)'; this.style.color='var(--accent-2)';">👁️ Ver Foto</button>`;
+                            html += '</div>';
+                        }
+
                         html += '</div>';
                     }
                     html += '</div>';
