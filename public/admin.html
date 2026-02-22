@@ -1767,6 +1767,178 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
             });
         }
     });
+
+    // ==========================================
+    // LÓGICA DE CARGA MASIVA CON INTELIGENCIA ARTIFICIAL
+    // ==========================================
+    let filaArchivosIA = [];
+
+    // 1. Manejar cuando el asesor selecciona archivos
+    function manejarSeleccionArchivosIA(event) {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+
+        for (let i = 0; i < files.length; i++) {
+            filaArchivosIA.push({
+                id: Date.now() + i, // ID único para cada archivo
+                file: files[i],
+                status: 'pendiente', // Estados: pendiente, procesando, exito, duplicado, error
+                mensaje: 'Esperando en fila...'
+            });
+        }
+        
+        document.getElementById('fileInputIA').value = ""; // Limpiamos el input
+        actualizarUIIA();
+    }
+
+    // 2. Permitir Arrastrar y Soltar (Drag & Drop)
+    const dropZone = document.getElementById('dropZoneIA');
+    if (dropZone) {
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.background = 'var(--pill)';
+            dropZone.style.borderColor = 'var(--accent-2)';
+        });
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.style.background = 'var(--bg)';
+            dropZone.style.borderColor = 'var(--accent)';
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.background = 'var(--bg)';
+            dropZone.style.borderColor = 'var(--accent)';
+            if (e.dataTransfer.files.length > 0) {
+                manejarSeleccionArchivosIA({ target: { files: e.dataTransfer.files } });
+            }
+        });
+    }
+
+    // 3. Dibujar la lista de progreso en la pantalla
+    function actualizarUIIA() {
+        const listaDiv = document.getElementById('listaProgresoIA');
+        const btnIniciar = document.getElementById('btnIniciarIA');
+        const contador = document.getElementById('statusContadorIA');
+
+        if (filaArchivosIA.length === 0) {
+            listaDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--muted); font-size: 0.85rem; border: 1px dashed var(--ring); border-radius: 8px;">Aún no hay archivos en la fila.</div>';
+            btnIniciar.style.display = 'none';
+            contador.textContent = '0 archivos listos';
+            return;
+        }
+
+        const pendientes = filaArchivosIA.filter(f => f.status === 'pendiente').length;
+        contador.textContent = `${filaArchivosIA.length} archivos totales (${pendientes} pendientes)`;
+        btnIniciar.style.display = pendientes > 0 ? 'block' : 'none';
+
+        let html = '';
+        filaArchivosIA.forEach(item => {
+            let icono = '⏳';
+            let color = 'var(--muted)';
+            if (item.status === 'procesando') { icono = '⚙️'; color = '#ff9800'; }
+            if (item.status === 'exito') { icono = '✅'; color = 'var(--accent-2)'; }
+            if (item.status === 'duplicado') { icono = '⚠️'; color = '#f57c00'; }
+            if (item.status === 'error') { icono = '❌'; color = 'var(--danger)'; }
+
+            html += `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; border: 1px solid var(--ring); border-radius: 8px; background: #fff;">
+                <div style="display: flex; align-items: center; gap: 10px; overflow: hidden; max-width: 50%;">
+                    <span style="font-size: 1.2rem;">${icono}</span>
+                    <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.85rem; font-weight: 500;">
+                        ${item.file.name}
+                    </div>
+                </div>
+                <div style="font-size: 0.75rem; color: ${color}; font-weight: 600; text-align: right; max-width: 45%;">
+                    ${item.mensaje}
+                </div>
+            </div>`;
+        });
+        listaDiv.innerHTML = html;
+        listaDiv.scrollTop = listaDiv.scrollHeight; // Auto-scroll hacia abajo
+    }
+
+    // 4. Iniciar el procesamiento (UNO POR UNO para no saturar)
+    async function iniciarProcesamientoMasivoIA() {
+        document.getElementById('btnIniciarIA').style.display = 'none';
+        
+        for (let i = 0; i < filaArchivosIA.length; i++) {
+            let item = filaArchivosIA[i];
+            
+            if (item.status !== 'pendiente') continue;
+
+            item.status = 'procesando';
+            item.mensaje = 'Extrayendo datos con IA...';
+            actualizarUIIA();
+
+            try {
+                // Si es PDF, lo convierte a imagen mágicamente
+                let base64 = await convertirABase64(item.file);
+                
+                // Envía la imagen a nuestra nueva API en Vercel
+                const req = await fetch('/api/admin/procesar-ia', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        imagenBase64: base64,
+                        contrasena: localStorage.getItem(STORAGE_KEY) 
+                    })
+                });
+                
+                const res = await req.json();
+
+                if (res.status === 'ok') {
+                    item.status = 'exito';
+                    item.mensaje = res.mensaje;
+                } else if (res.status === 'duplicado') {
+                    item.status = 'duplicado';
+                    item.mensaje = 'Duplicado (Ignorado)';
+                } else {
+                    item.status = 'error';
+                    item.mensaje = res.mensaje || 'Error en validación';
+                }
+            } catch (error) {
+                item.status = 'error';
+                item.mensaje = 'Fallo de conexión';
+            }
+
+            actualizarUIIA();
+        }
+    }
+
+    // 5. Motor conversor (Imágenes pasan directo, PDFs se renderizan)
+    async function convertirABase64(file) {
+        return new Promise(async (resolve, reject) => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            } else if (file.type === 'application/pdf') {
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdfjsLib = window['pdfjs-dist/build/pdf'];
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+                    
+                    const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+                    const page = await pdf.getPage(1); // Tomamos solo la primera página del PDF
+                    
+                    const viewport = page.getViewport({ scale: 1.5 }); // Buena calidad para que la IA lo lea perfecto
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+
+                    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+                    
+                    resolve(canvas.toDataURL('image/jpeg', 0.8)); // Convertimos a Base64
+                } catch (e) {
+                    reject(e);
+                }
+            } else {
+                reject(new Error('El archivo no es una imagen ni un PDF'));
+            }
+        });
+    }
     
   </script>
 </body>
