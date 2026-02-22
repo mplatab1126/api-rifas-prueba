@@ -182,6 +182,9 @@
     <div class="user-info-bar">
       <span id="asesorDisplay" style="font-weight:600; color:var(--ink); margin-right:12px;">Hola</span>
       <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:500;" onclick="activateAppMode(); switchView('view-referencias')">Referencia</span>
+      
+      <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:600; background: var(--pill); padding: 2px 10px; border-radius: 8px;" onclick="activateAppMode(); switchView('view-carga-masiva')">🤖 Carga IA</span>
+      
       <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:500;" onclick="activateAppMode(); switchView('view-bancos')">Subir transferencias</span>
       <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:500;" onclick="activateAppMode(); switchView('view-estadisticas'); cargarEstadisticas();">📈 Rendimiento</span>
       <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:500;" onclick="activateAppMode(); switchView('view-movimientos'); cargarUltimosMovimientos();">Últimos Movimientos</span>
@@ -217,6 +220,35 @@
             <input type="file" id="fileBancos" accept=".csv, .pdf" multiple style="font-size: 0.9rem; color: var(--ink-2);">
           </div>
           <button id="btnProcesarBancos" class="cta" onclick="procesarCSVBancos()" style="margin-top:10px;">Procesar archivo</button>
+        </div>
+      </div>
+    </div>
+    <div id="view-carga-masiva" class="view-section">
+      <div class="section-card">
+        <div class="section-title">🤖 Carga Masiva Inteligente (OpenAI)</div>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0; line-height: 1.5;">
+          Sube docenas de <b>imágenes</b> o <b>PDFs</b>. El sistema los convertirá, los enviará uno por uno a la Inteligencia Artificial para extraer los datos perfectos y los guardará como Libres para evitar caídas del servidor.
+        </p>
+        
+        <div class="vertical-form">
+          <div id="dropZoneIA" style="border: 2px dashed var(--accent); border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; background: var(--bg); transition: 0.3s;" onmouseover="this.style.background='var(--pill)'" onmouseout="this.style.background='var(--bg)'" onclick="document.getElementById('fileInputIA').click()">
+            <span style="font-size: 2.5rem; display: block; margin-bottom: 10px;">📥</span>
+            <p style="margin: 0; font-weight: 600; color: var(--ink); font-size: 1.1rem;">Haz clic aquí o arrastra tus archivos</p>
+            <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: var(--muted);">(Admite capturas PNG/JPG y documentos PDF)</p>
+            <input type="file" id="fileInputIA" multiple accept="image/*,application/pdf" style="display: none;" onchange="manejarSeleccionArchivosIA(event)">
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 10px; background: #fff; border: 1px solid var(--ring-strong); border-radius: 12px;">
+            <span id="statusContadorIA" style="font-weight: 600; font-size: 0.9rem; color: var(--ink-2);">0 archivos listos</span>
+            <button id="btnIniciarIA" class="cta" style="width: auto; margin: 0; padding: 8px 20px; display: none;" onclick="iniciarProcesamientoMasivoIA()">🚀 Iniciar Extracción</button>
+          </div>
+
+          <div id="listaProgresoIA" style="margin-top: 15px; display: flex; flex-direction: column; gap: 8px; max-height: 400px; overflow-y: auto; padding-right: 5px;">
+            <div style="text-align: center; padding: 20px; color: var(--muted); font-size: 0.85rem; border: 1px dashed var(--ring); border-radius: 8px;">
+              Aún no hay archivos en la fila de procesamiento.
+            </div>
+          </div>
+          
         </div>
       </div>
     </div>
