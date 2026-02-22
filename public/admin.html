@@ -226,34 +226,56 @@
       <div class="section-card" style="background: transparent; box-shadow: none; border: none; padding: 0;">
         
         <div class="section-card">
-            <div class="section-title">📊 Panel de Rendimiento Global</div>
-            <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0; margin-bottom:20px;">Visión general del estado de las ventas y recaudos.</p>
-            
+            <div class="section-title">🌍 Inventario Global (Apartamento)</div>
+            <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0; margin-bottom:15px;">Cantidades totales de toda la operación (No cambian con los filtros).</p>
             <div class="dashboard-grid">
-              <div class="kpi-card"><h3>💰 Recaudo Total</h3><p id="kpi-total-money">$0</p></div>
-              <div class="kpi-card"><h3>🎟️ Boletas Vendidas</h3><p id="kpi-total-tickets">0</p></div>
-              <div class="kpi-card"><h3>💳 Pagos Registrados</h3><p id="kpi-total-abonos">0</p></div>
+              <div class="kpi-card" style="border-left: 4px solid var(--ink);"><h3>🎟️ Total Registradas</h3><p id="kpi-global-registradas">0</p></div>
+              <div class="kpi-card" style="border-left: 4px solid var(--danger);"><h3>⚠️ Separadas con $0</h3><p id="kpi-global-cero" style="color:var(--danger);">0</p></div>
+              <div class="kpi-card" style="border-left: 4px solid var(--accent-2);"><h3>✅ Total Libres</h3><p id="kpi-global-libres">0</p></div>
             </div>
+        </div>
 
-            <div class="charts-grid">
-              <div class="chart-container">
-                 <h4 style="font-size:0.9rem; color:var(--ink-2); text-align:center; margin-top:0; margin-bottom:15px;">Ingresos por Día</h4>
-                 <canvas id="chartIngresos"></canvas>
-              </div>
-              <div class="chart-container">
-                 <h4 style="font-size:0.9rem; color:var(--ink-2); text-align:center; margin-top:0; margin-bottom:15px;">Recaudo por Asesor</h4>
-                 <canvas id="chartAsesores"></canvas>
-              </div>
+        <div class="section-card" style="background: #fdfdfd;">
+            <div style="display:flex; gap:10px; flex-wrap: wrap; align-items:flex-end;">
+               <div style="flex:1; min-width:130px;">
+                  <label style="font-size:0.8rem; color:var(--ink-2); font-weight:600;">Desde (Fecha)</label>
+                  <div class="field"><input type="date" id="filt-desde" class="pill" onchange="aplicarFiltrosEstadisticas()"></div>
+               </div>
+               <div style="flex:1; min-width:130px;">
+                  <label style="font-size:0.8rem; color:var(--ink-2); font-weight:600;">Hasta (Fecha)</label>
+                  <div class="field"><input type="date" id="filt-hasta" class="pill" onchange="aplicarFiltrosEstadisticas()"></div>
+               </div>
+               <div style="flex:1; min-width:150px;">
+                  <label style="font-size:0.8rem; color:var(--ink-2); font-weight:600;">Asesor</label>
+                  <div class="field">
+                     <select id="filt-asesor" class="pill" onchange="aplicarFiltrosEstadisticas()">
+                        <option value="ALL">Todos los asesores</option>
+                     </select>
+                  </div>
+               </div>
+               <div style="flex:0;">
+                   <button onclick="document.getElementById('filt-desde').value=''; document.getElementById('filt-hasta').value=''; document.getElementById('filt-asesor').value='ALL'; aplicarFiltrosEstadisticas();" style="height:44px; padding:0 15px; border-radius:10px; border:1px solid var(--ring-strong); background:#fff; cursor:pointer;">Limpiar</button>
+               </div>
             </div>
         </div>
 
         <div class="section-card">
-            <div class="section-title">📋 Desglose Diario Detallado</div>
-            <div id="tablaEstadisticasRender">
-              <p style="text-align:center; color:var(--muted); font-size:0.85rem;">Cargando tabla de rendimiento...</p>
+            <div class="section-title">📈 Rendimiento Filtrado</div>
+            
+            <div class="dashboard-grid">
+              <div class="kpi-card"><h3>📝 Boletas Nuevas</h3><p id="kpi-filt-nuevas">0</p></div>
+              <div class="kpi-card"><h3>💸 Boletas con Abono</h3><p id="kpi-filt-con-abono">0</p></div>
+              <div class="kpi-card"><h3>💳 Cantidad Abonos</h3><p id="kpi-filt-abonos">0</p></div>
+              <div class="kpi-card" style="background:#e8f5e9;"><h3>💰 Recaudo Total</h3><p id="kpi-filt-recaudo" style="color:#1b5e20;">$0</p></div>
             </div>
-        </div>
 
+            <div class="charts-grid">
+              <div class="chart-container"><h4 style="font-size:0.9rem; text-align:center; margin:0 0 15px;">Ingresos en el tiempo</h4><canvas id="chartIngresos"></canvas></div>
+              <div class="chart-container"><h4 style="font-size:0.9rem; text-align:center; margin:0 0 15px;">Recaudo por Asesor</h4><canvas id="chartAsesores"></canvas></div>
+            </div>
+            
+            <div id="tablaEstadisticasRender"><p style="text-align:center; color:var(--muted); font-size:0.85rem;">Cargando tabla de rendimiento...</p></div>
+        </div>
       </div>
     </div>
   
@@ -1409,9 +1431,12 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         }
     }
 
-  // ==========================================
-    // ESTADÍSTICAS EN TABLA DIARIA
-    // ==========================================
+ // Variables globales para los filtros
+    let globalAbonos = [];
+    let globalVentas = [];
+    let chartLinea = null;
+    let chartDona = null;
+
     async function cargarEstadisticas() {
         const div = document.getElementById('tablaEstadisticasRender');
         div.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem;">Calculando rendimiento...</p>';
@@ -1424,7 +1449,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
             const res = await req.json();
             
             if (res.status === 'ok') {
-                renderTablaEstadisticas(res.abonos, res.ventas);
+                prepararDashboard(res.abonos, res.ventas, res.globales);
             } else {
                 div.innerHTML = `<p style="text-align:center; color:var(--danger); font-size:0.85rem;">${res.mensaje}</p>`;
             }
@@ -1433,20 +1458,36 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         }
     }
 
-    // Variables globales para evitar que las gráficas se sobrepongan al recargar
-    let chartLinea = null;
-    let chartDona = null;
+    function prepararDashboard(abonos, ventas, globales) {
+        globalAbonos = abonos;
+        globalVentas = ventas;
 
-    function renderTablaEstadisticas(abonos, ventas) {
-        const stats = {};
-        let totalDinero = 0;
-        let totalAbonos = abonos.length;
-        let totalBoletas = ventas.length;
+        // 1. Mostrar Datos Globales
+        document.getElementById('kpi-global-registradas').textContent = globales.registradas;
+        document.getElementById('kpi-global-cero').textContent = globales.separadas_cero;
+        document.getElementById('kpi-global-libres').textContent = globales.libres;
 
-        let recaudoPorDia = {};
-        let recaudoPorAsesor = {};
+        // 2. Llenar la lista de asesores automáticamente
+        const asesoresSet = new Set();
+        ventas.forEach(v => asesoresSet.add(v.asesor || 'Sin Asesor'));
+        abonos.forEach(a => asesoresSet.add(a.asesor || 'Sin Asesor'));
+        
+        const selectAsesor = document.getElementById('filt-asesor');
+        selectAsesor.innerHTML = '<option value="ALL">Todos los asesores</option>';
+        [...asesoresSet].forEach(a => {
+            selectAsesor.innerHTML += `<option value="${a}">${a}</option>`;
+        });
 
-        // 1. Normalizar fechas
+        // 3. Aplicar filtros iniciales (Mostrará todo por defecto)
+        aplicarFiltrosEstadisticas();
+    }
+
+    function aplicarFiltrosEstadisticas() {
+        const fechaDesde = document.getElementById('filt-desde').value;
+        const fechaHasta = document.getElementById('filt-hasta').value;
+        const asesorSel = document.getElementById('filt-asesor').value;
+
+        // Función para estandarizar fechas
         const getFechaLocal = (isoString) => {
             let fString = isoString;
             if (!fString.includes('Z') && !fString.includes('+')) fString += 'Z';
@@ -1455,95 +1496,104 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
             return (new Date(date.getTime() - offset)).toISOString().split('T')[0];
         };
 
-        // 2. Procesar Ventas (Boletas separadas)
-        ventas.forEach(v => {
+        // FILTRAR VENTAS
+        const ventasFiltradas = globalVentas.filter(v => {
             const f = getFechaLocal(v.created_at);
-            const asesor = v.asesor || 'Sin Asesor';
-            if(!stats[f]) stats[f] = {};
-            if(!stats[f][asesor]) stats[f][asesor] = { nuevas: 0, conDinero: 0, recaudado: 0 };
-            stats[f][asesor].nuevas++;
+            if (fechaDesde && f < fechaDesde) return false;
+            if (fechaHasta && f > fechaHasta) return false;
+            if (asesorSel !== 'ALL' && (v.asesor || 'Sin Asesor') !== asesorSel) return false;
+            return true;
         });
 
-        // 3. Procesar Abonos (Dinero que entra)
-        abonos.forEach(a => {
+        // FILTRAR ABONOS
+        const abonosFiltrados = globalAbonos.filter(a => {
             const f = getFechaLocal(a.fecha_pago);
-            const asesor = a.asesor || 'Sin Asesor';
-            const monto = Number(a.monto);
-            
-            totalDinero += monto; // Suma Global
-            
-            // Suma para gráficas
-            recaudoPorDia[f] = (recaudoPorDia[f] || 0) + monto;
-            recaudoPorAsesor[asesor] = (recaudoPorAsesor[asesor] || 0) + monto;
-
-            // Suma para la tabla
-            if(!stats[f]) stats[f] = {};
-            if(!stats[f][asesor]) stats[f][asesor] = { nuevas: 0, conDinero: 0, recaudado: 0 };
-            stats[f][asesor].conDinero++;
-            stats[f][asesor].recaudado += monto;
+            if (fechaDesde && f < fechaDesde) return false;
+            if (fechaHasta && f > fechaHasta) return false;
+            if (asesorSel !== 'ALL' && (a.asesor || 'Sin Asesor') !== asesorSel) return false;
+            return true;
         });
+
+        // CALCULAR KPIs FILTRADOS
+        let totalNuevas = ventasFiltradas.length;
+        let nuevasConAbono = 0;
+        ventasFiltradas.forEach(v => {
+            // Si el texto del movimiento no dice "abono de $0", es porque dejó dinero.
+            if (v.detalle && !v.detalle.includes('abono de $0')) nuevasConAbono++;
+        });
+
+        let totalPagos = abonosFiltrados.length;
+        let dineroRecaudado = abonosFiltrados.reduce((acc, curr) => acc + Number(curr.monto), 0);
 
         const formatoPlata = new Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', minimumFractionDigits:0});
 
-        // --- ACTUALIZAR TARJETAS KPI ---
-        document.getElementById('kpi-total-money').textContent = formatoPlata.format(totalDinero);
-        document.getElementById('kpi-total-tickets').textContent = totalBoletas;
-        document.getElementById('kpi-total-abonos').textContent = totalAbonos;
+        document.getElementById('kpi-filt-nuevas').textContent = totalNuevas;
+        document.getElementById('kpi-filt-con-abono').textContent = nuevasConAbono;
+        document.getElementById('kpi-filt-abonos').textContent = totalPagos;
+        document.getElementById('kpi-filt-recaudo').textContent = formatoPlata.format(dineroRecaudado);
 
-        // --- RENDERIZAR GRÁFICO DE LÍNEA (INGRESOS DIARIOS) ---
-        // Ordenamos las fechas de más antigua a más reciente para la gráfica
+        // ACTUALIZAR GRÁFICAS Y TABLA
+        const stats = {};
+        let recaudoPorDia = {};
+        let recaudoPorAsesor = {};
+
+        ventasFiltradas.forEach(v => {
+            const f = getFechaLocal(v.created_at);
+            const a = v.asesor || 'Sin Asesor';
+            if(!stats[f]) stats[f] = {};
+            if(!stats[f][a]) stats[f][a] = { nuevas: 0, conDinero: 0, recaudado: 0 };
+            stats[f][a].nuevas++;
+        });
+
+        abonosFiltrados.forEach(a => {
+            const f = getFechaLocal(a.fecha_pago);
+            const as = a.asesor || 'Sin Asesor';
+            const monto = Number(a.monto);
+            recaudoPorDia[f] = (recaudoPorDia[f] || 0) + monto;
+            recaudoPorAsesor[as] = (recaudoPorAsesor[as] || 0) + monto;
+            
+            if(!stats[f]) stats[f] = {};
+            if(!stats[f][as]) stats[f][as] = { nuevas: 0, conDinero: 0, recaudado: 0 };
+            stats[f][as].conDinero++;
+            stats[f][as].recaudado += monto;
+        });
+
+        // GRAFICA 1: LÍNEAS
         const fechasOrdenadas = Object.keys(recaudoPorDia).sort();
         const dataLinea = fechasOrdenadas.map(f => recaudoPorDia[f]);
         const labelsLinea = fechasOrdenadas.map(f => new Date(f + 'T12:00:00').toLocaleDateString('es-CO', {day:'2-digit', month:'short'}));
 
-        if (chartLinea) chartLinea.destroy(); // Destruye la vieja si existe
+        if (chartLinea) chartLinea.destroy();
         const ctxLinea = document.getElementById('chartIngresos').getContext('2d');
         chartLinea = new Chart(ctxLinea, {
             type: 'line',
-            data: {
-                labels: labelsLinea,
-                datasets: [{
-                    label: 'Recaudo Diario ($)',
-                    data: dataLinea,
-                    borderColor: '#4eb082',
-                    backgroundColor: 'rgba(78, 176, 130, 0.2)',
-                    borderWidth: 3,
-                    tension: 0.4, // Curvas suaves
-                    fill: true,
-                    pointBackgroundColor: '#2b3a35'
-                }]
-            },
+            data: { labels: labelsLinea, datasets: [{ label: 'Recaudo ($)', data: dataLinea, borderColor: '#4eb082', backgroundColor: 'rgba(78, 176, 130, 0.2)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#2b3a35' }] },
             options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
         });
 
-        // --- RENDERIZAR GRÁFICO DE DONA (RENDIMIENTO POR ASESOR) ---
+        // GRAFICA 2: DONA
         const asesoresNombres = Object.keys(recaudoPorAsesor);
         const dataDona = asesoresNombres.map(a => recaudoPorAsesor[a]);
-        const colores = ['#4eb082', '#2b3a35', '#C5A059', '#d95a53', '#8ba89d'];
+        const colores = ['#4eb082', '#2b3a35', '#C5A059', '#d95a53', '#8ba89d', '#ff9800'];
 
         if (chartDona) chartDona.destroy();
         const ctxDona = document.getElementById('chartAsesores').getContext('2d');
         chartDona = new Chart(ctxDona, {
             type: 'doughnut',
-            data: {
-                labels: asesoresNombres,
-                datasets: [{ data: dataDona, backgroundColor: colores, borderWidth: 0 }]
-            },
+            data: { labels: asesoresNombres, datasets: [{ data: dataDona, backgroundColor: colores, borderWidth: 0 }] },
             options: { responsive: true, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
         });
 
-        // --- RENDERIZAR LA TABLA (IGUAL QUE ANTES PERO EN SU CAJA) ---
+        // TABLA DETALLADA
+        const div = document.getElementById('tablaEstadisticasRender');
         const filas = [];
         Object.keys(stats).forEach(fecha => {
-            Object.keys(stats[fecha]).forEach(asesor => {
-                filas.push({ fecha: fecha, asesor: asesor, ...stats[fecha][asesor] });
-            });
+            Object.keys(stats[fecha]).forEach(as => { filas.push({ fecha: fecha, asesor: as, ...stats[fecha][as] }); });
         });
         filas.sort((a, b) => b.fecha.localeCompare(a.fecha) || b.recaudado - a.recaudado);
 
-        const div = document.getElementById('tablaEstadisticasRender');
         if(filas.length === 0) {
-            div.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem;">No hay datos para mostrar.</p>';
+            div.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem;">No hay datos para mostrar con estos filtros.</p>';
             return;
         }
 
