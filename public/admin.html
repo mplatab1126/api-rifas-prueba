@@ -1848,7 +1848,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                         ${item.file.name}
                     </div>
                 </div>
-                <div style="font-size: 0.75rem; color: ${color}; font-weight: 600; text-align: right; max-width: 45%;">
+                <div style="font-size: 0.75rem; color: ${color}; font-weight: 600; text-align: right; max-width: 55%;">
                     ${item.mensaje}
                 </div>
             </div>`;
@@ -1891,10 +1891,11 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                     item.mensaje = res.mensaje;
                 } else if (res.status === 'duplicado') {
                     item.status = 'duplicado';
-                    item.mensaje = 'Duplicado (Ignorado)';
+                    // Aquí mostramos el detalle exacto de la transferencia con la que chocó
+                    item.mensaje = `⚠️ Choca con Ref: <b>${res.clon.referencia}</b><br><span style="font-size:0.7rem; color:#888;">${res.mensaje} (${res.clon.estado})</span>`;
                 } else {
                     item.status = 'error';
-                    item.mensaje = res.mensaje || 'Error en validación';
+                    item.mensaje = res.mensaje || 'Error desconocido';
                 }
             } catch (error) {
                 item.status = 'error';
