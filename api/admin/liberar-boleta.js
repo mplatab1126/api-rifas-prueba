@@ -48,11 +48,21 @@ export default async function handler(req, res) {
     // C. Eliminar definitivamente todos los abonos de esta boleta
     await supabase.from('abonos').delete().eq('numero_boleta', numeroBoleta);
 
-    // D. Reiniciar la boleta (Soporta Diarias y Apartamento)
-    const esDiaria = String(numeroBoleta).length === 2;
-    const tabla = esDiaria ? 'boletas_diarias' : 'boletas';
-    const precioOriginal = esDiaria ? 20000 : 150000;
-    const estadoOriginal = esDiaria ? 'Disponible' : 'LIBRE';
+    let tabla = 'boletas';
+    let precioOriginal = 150000;
+    let estadoOriginal = 'LIBRE';
+    
+    const longitud = String(numeroBoleta).trim().length;
+
+    if (longitud === 2) {
+      tabla = 'boletas_diarias';
+      precioOriginal = 20000;
+      estadoOriginal = 'Disponible';
+    } else if (longitud === 3) {
+      tabla = 'boletas_diarias_3cifras';
+      precioOriginal = 30000; // <--- Pon aquí el precio exacto de las de 3 cifras
+      estadoOriginal = 'Disponible';
+    }
 
     const { error: errBoleta } = await supabase
       .from(tabla)
