@@ -23,8 +23,16 @@ export default async function handler(req, res) {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
-    const esDiaria = numeroLimpio.length === 2;
-    const tabla = esDiaria ? 'boletas_diarias' : 'boletas';
+    let tabla = 'boletas';
+    let esDiaria = false;
+
+    if (numeroLimpio.length === 2) {
+      tabla = 'boletas_diarias';
+      esDiaria = true; 
+    } else if (numeroLimpio.length === 3) {
+      tabla = 'boletas_diarias_3cifras';
+      esDiaria = true; 
+    }
 
     const { data: boletaData, error: boletaError } = await supabase
       .from(tabla)
