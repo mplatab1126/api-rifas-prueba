@@ -51,22 +51,33 @@
       .timer-box { background: #c53030; color: white; padding: 4px 6px; border-radius: 6px; font-size: 14px; font-weight: 900; font-family: 'Montserrat', sans-serif; min-width: 24px; text-align: center; line-height: 1; }
       .timer-colon { font-weight: 900; color: #c53030; font-size: 14px; }
 
-      /* --- ESTADÍSTICAS UNIFICADAS --- */
+      /* --- ESTADÍSTICAS UNIFICADAS (MODIFICADO) --- */
       .stats-unified-strip { display: flex; background: #ffffff; border-radius: 16px; margin: 0 20px 25px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; overflow: hidden; }
       .stat-block { flex: 1; padding: 12px 5px; text-align: center; display: flex; flex-direction: column; justify-content: center; }
       .stat-divider { width: 1px; background-color: #f1f5f9; margin: 10px 0; }
       .stat-block.highlight { background: linear-gradient(135deg, #1b5e20 0%, #0a3d24 100%); }
-      .stat-label { font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
-      .stat-value { font-size: 16px; font-weight: 900; color: #1b5e20; white-space: nowrap; letter-spacing: -0.5px; }
+      .stat-label { font-size: 10px; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 3px; letter-spacing: 0.5px;}
+      .stat-value { font-size: 15px; font-weight: 900; color: #1b5e20; white-space: nowrap; letter-spacing: -0.5px; }
       .stat-block.highlight .stat-label { color: #c8e6c9; }
-      .stat-block.highlight .stat-value { color: #ffffff; }
+      .stat-block.highlight .stat-value { color: #ffffff; font-size: 16px; }
+       /* Ajuste específico para el texto largo de oportunidades */
+      .stat-block:last-child .stat-value { font-size: 13px; }
 
-      /* --- EXPLICACIÓN DE LA DINÁMICA --- */
+
+      /* --- EXPLICACIÓN DE LA DINÁMICA (MODIFICADO PARA BALOTAS) --- */
       .dinamica-section { padding: 0 20px; margin-bottom: 45px; }
       .section-title-elegant { margin: 0 0 8px 0; font-size: 17px; color: #1b5e20; font-weight: 800; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; }
       .section-subtitle-elegant { margin: 0 0 25px 0; font-size: 14px; color: #64748b; text-align: center; font-weight: 500; }
-      .bolotas-cayendo { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
-      .bolota { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #2b6039 0%, #11331c 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; border: 2px solid #e8f5e9; box-shadow: 0 4px 8px rgba(27, 94, 32, 0.2); }
+      
+      /* Nuevos estilos para las balotas etiquetadas */
+      .balotas-labeled-container { display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; align-items: flex-end;}
+      .balotas-group { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+      .group-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+      .quinta-label { color: #d9700b; }
+      .bolotas-row { display: flex; gap: 8px; }
+      .bolota { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #2b6039 0%, #11331c 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 800; border: 2px solid #e8f5e9; box-shadow: 0 3px 6px rgba(27, 94, 32, 0.2); }
+      .bolota.quinta-highlight { background: linear-gradient(135deg, #f09433 0%, #d9700b 100%); border-color: #ffcc80; box-shadow: 0 3px 8px rgba(217, 112, 11, 0.3); transform: scale(1.05); }
+
       .premios-dinamica { display: flex; flex-direction: column; gap: 8px; }
       .premio-fila { display: flex; align-items: center; background: #ffffff; border-radius: 12px; padding: 12px 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; }
       .premio-badge { width: 38px; height: 38px; border-radius: 10px; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; margin-right: 12px; flex-shrink: 0; }
@@ -154,13 +165,13 @@
         </div>
         <div class="stat-divider"></div>
         <div class="stat-block highlight">
-          <span class="stat-label">🏢 Múltiples Premios</span>
-          <span class="stat-value">$800 MIL</span>
+          <span class="stat-label">💰 TOTAL PREMIOS</span>
+          <span class="stat-value">$2.4 MILLONES</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-block">
-          <span class="stat-label">🏆 Total Boletas</span>
-          <span class="stat-value">1.000</span>
+          <span class="stat-label">⚡ OPORTUNIDADES</span>
+          <span class="stat-value">3 POR BOLETA</span>
         </div>
       </div>
 
@@ -168,12 +179,22 @@
         <h3 class="section-title-elegant">💡 ¿Cómo se reparten los Premios?</h3>
         <p class="section-subtitle-elegant">Ejemplo: Si cae el número <strong>15284</strong></p>
         
-        <div class="bolotas-cayendo">
-          <div class="bolota">1</div>
-          <div class="bolota">5</div>
-          <div class="bolota">2</div>
-          <div class="bolota">8</div>
-          <div class="bolota">4</div>
+        <div class="balotas-labeled-container">
+            <div class="balotas-group">
+                <span class="group-label">Balotas Normales</span>
+                <div class="bolotas-row">
+                    <div class="bolota">1</div>
+                    <div class="bolota">5</div>
+                    <div class="bolota">2</div>
+                    <div class="bolota">8</div>
+                </div>
+            </div>
+            <div class="balotas-group">
+                <span class="group-label quinta-label">✨ La Quinta Balota</span>
+                <div class="bolotas-row">
+                    <div class="bolota quinta-highlight">4</div>
+                </div>
+            </div>
         </div>
 
         <div class="premios-dinamica">
