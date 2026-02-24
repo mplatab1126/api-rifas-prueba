@@ -27,7 +27,7 @@ export default async function handler(req, res) {
   }
 
   // 🚨 4. REGLA ESTRICTA DE TAMAÑO (Bloquea 1, 3 o cantidades raras)
-  if (queryLimpio.length === 1 || queryLimpio.length === 3 || (queryLimpio.length > 4 && queryLimpio.length !== 10)) {
+  if (queryLimpio.length === 1 || (queryLimpio.length > 4 && queryLimpio.length !== 10)) {
     return res.status(200).json({ 
       tipo: 'ERROR_SERVIDOR', 
       mensaje: `⚠️ Formato incorrecto.\nEscribiste un número de ${queryLimpio.length} cifras.\n\nEl sistema solo permite buscar:\n• 2 cifras (Rifa Diaria)\n• 4 cifras (Apartamento)\n• 10 cifras (Celular)` 
