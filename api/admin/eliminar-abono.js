@@ -25,8 +25,16 @@ export default async function handler(req, res) {
       await supabase.from('transferencias').update({ estado: 'LIBRE' }).eq('referencia', referencia_transferencia);
     }
 
-    const esDiaria = numero_boleta.length === 2;
-    const tabla = esDiaria ? 'boletas_diarias' : 'boletas';
+    let tabla = 'boletas';
+    let esDiaria = false;
+
+    if (numeroLimpio.length === 2) {
+      tabla = 'boletas_diarias';
+      esDiaria = true; 
+    } else if (numeroLimpio.length === 3) {
+      tabla = 'boletas_diarias_3cifras';
+      esDiaria = true; 
+    }
 
     const { data: boleta } = await supabase.from(tabla).select('saldo_restante, total_abonado').eq('numero', numero_boleta).single();
     
