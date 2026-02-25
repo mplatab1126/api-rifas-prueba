@@ -731,12 +731,21 @@
 
       function iniciarTemporizador() {
         let cierre = new Date();
-        cierre.setHours(19, 0, 0, 0);
+        // Configuramos la hora de cierre a las 11:00 AM exactas (Horas, Minutos, Segundos, Milisegundos)
+        cierre.setHours(11, 0, 0, 0);
+
+        // TRUCO: Si el cliente entra a la página y ya pasaron las 11:00 AM de hoy, 
+        // el reloj apuntará automáticamente a las 11:00 AM de mañana.
+        if (new Date().getTime() > cierre.getTime()) {
+            cierre.setDate(cierre.getDate() + 1);
+        }
 
         setInterval(() => {
           let actual = new Date().getTime();
           let distancia = cierre.getTime() - actual;
-          if (distancia < 0) return;
+          
+          if (distancia < 0) return; // Por seguridad, si llega a cero se detiene
+          
           let horas = Math.floor((distancia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
           let minutos = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60));
           let segundos = Math.floor((distancia % (1000 * 60)) / 1000);
