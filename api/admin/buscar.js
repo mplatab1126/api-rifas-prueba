@@ -26,11 +26,11 @@ export default async function handler(req, res) {
     queryLimpio = queryLimpio.slice(2); 
   }
 
-  // 🚨 4. REGLA ESTRICTA DE TAMAÑO (Bloquea 1, 3 o cantidades raras)
+  // 🚨 4. REGLA DE TAMAÑO ACTUALIZADA (Ahora permite 3 cifras)
   if (queryLimpio.length === 1 || (queryLimpio.length > 4 && queryLimpio.length !== 10)) {
     return res.status(200).json({ 
       tipo: 'ERROR_SERVIDOR', 
-      mensaje: `⚠️ Formato incorrecto.\nEscribiste un número de ${queryLimpio.length} cifras.\n\nEl sistema solo permite buscar:\n• 2 cifras (Rifa Diaria)\n• 4 cifras (Apartamento)\n• 10 cifras (Celular)` 
+      mensaje: `⚠️ Formato incorrecto.\nEscribiste un número de ${queryLimpio.length} cifras.\n\nEl sistema solo permite buscar:\n• 2 cifras (Diaria)\n• 3 cifras (Diaria 3C)\n• 4 cifras (Apto)\n• 10 cifras (Celular)` 
     });
   }
 
@@ -79,55 +79,67 @@ export default async function handler(req, res) {
           tipo: 'BOLETA_OCUPADA',
           data: {
             infoVenta: {
-              numero: boleta.numero, 
-              nombre: boleta.nombre_cliente || '', 
-              apellido: '', // La diaria no usa apellido
-              ciudad: '', 
-              telefono: boleta.telefono_cliente, 
-              totalAbonos: boleta.total_abonado || 0, 
-              restante: boleta.saldo_restante !== null && boleta.saldo_restante !== undefined ? boleta.saldo_restante : 20000
+              numero: boleta.numero, nombre: boleta.nombre_cliente || '', apellido: '', ciudad: '', telefono: boleta.telefono_cliente, totalAbonos: boleta.total_abonado || 0, restante: boleta.saldo_restante !== null && boleta.saldo_restante !== undefined ? boleta.saldo_restante : 20000
             }
           }
         });
       }
     }
-    // --- CASO C: CELULAR ---
+    // --- CASO C: 3 CIFRAS (NUEVO) ---
+    else if (queryLimpio.length === 3) {
+      const { data: boleta, error } = await supabase
+        .from('boletas_diarias_3cifras')
+        .select('*')
+        .eq('numero', queryLimpio)
+        .single();
+
+      if (error && error.code === 'PGRST116') return res.status(200).json({ tipo: 'NO_EXISTE', mensaje: '❌ Esta boleta de 3 cifras no existe.' });
+      if (error) throw error;
+
+      if (boleta.estado === 'Disponible' || !boleta.telefono_cliente) {
+        return res.status(200).json({ tipo: 'BOLETA_DISPONIBLE', data: { numero: queryLimpio } });
+      } else {
+        return res.status(200).json({
+          tipo: 'BOLETA_OCUPADA',
+          data: {
+            infoVenta: {
+              numero: boleta.numero, nombre: boleta.nombre_cliente || '', apellido: '', ciudad: '', telefono: boleta.telefono_cliente, totalAbonos: boleta.total_abonado || 0, restante: boleta.saldo_restante !== null && boleta.saldo_restante !== undefined ? boleta.saldo_restante : 5000
+            }
+          }
+        });
+      }
+    }
+    // --- CASO D: CELULAR (AHORA SÍ BUSCA EN LAS 3 TABLAS A LA VEZ) ---
     else if (queryLimpio.length === 10) {
       
-      // 1. Buscamos las boletas del Apartamento (4 cifras)
-      const { data: clienteBoletasApto, error: errApto } = await supabase
+      const { data: clienteBoletasApto } = await supabase
         .from('boletas')
         .select(`numero, total_abonado, saldo_restante, telefono_cliente, asesor, clientes (nombre, apellido, ciudad)`)
         .eq('telefono_cliente', queryLimpio);
 
-      if (errApto) throw errApto;
-
-      // 2. Buscamos las boletas de la Rifa Diaria (2 cifras)
-      const { data: clienteBoletasDiarias, error: errDiarias } = await supabase
+      const { data: clienteBoletasDiarias } = await supabase
         .from('boletas_diarias')
         .select('*')
         .eq('telefono_cliente', queryLimpio);
 
-      if (errDiarias) throw errDiarias;
+      const { data: clienteBoletas3Cifras } = await supabase
+        .from('boletas_diarias_3cifras')
+        .select('*')
+        .eq('telefono_cliente', queryLimpio);
 
-      if ((!clienteBoletasApto || clienteBoletasApto.length === 0) && (!clienteBoletasDiarias || clienteBoletasDiarias.length === 0)) {
+      if ((!clienteBoletasApto || clienteBoletasApto.length === 0) && 
+          (!clienteBoletasDiarias || clienteBoletasDiarias.length === 0) &&
+          (!clienteBoletas3Cifras || clienteBoletas3Cifras.length === 0)) {
         
-        // El cliente no tiene boletas, pero vamos a revisar si existe en nuestra agenda de clientes
-        const { data: clienteSolo, error: errCliente } = await supabase
+        const { data: clienteSolo } = await supabase
           .from('clientes')
           .select('nombre, apellido, ciudad, telefono')
           .eq('telefono', queryLimpio)
           .maybeSingle();
 
-        // Si lo encontramos en la agenda, le avisamos al panel
         if (clienteSolo) {
-          return res.status(200).json({ 
-            tipo: 'CLIENTE_SIN_BOLETAS', 
-            data: clienteSolo 
-          });
+          return res.status(200).json({ tipo: 'CLIENTE_SIN_BOLETAS', data: clienteSolo });
         }
-
-        // Si definitivamente no está en ningún lado
         return res.status(200).json({ tipo: 'NO_EXISTE', mensaje: 'No hay cliente o boletas con este celular en ninguna rifa.' });
       }
 
@@ -135,33 +147,24 @@ export default async function handler(req, res) {
 
       if (clienteBoletasApto && clienteBoletasApto.length > 0) {
         lista.push(...clienteBoletasApto.map(b => ({
-          numero: b.numero, 
-          nombre: b.clientes?.nombre || '', 
-          apellido: b.clientes?.apellido || '', 
-          ciudad: b.clientes?.ciudad || '', 
-          telefono: b.telefono_cliente, 
-          totalAbonos: b.total_abonado, 
-          restante: b.saldo_restante,
-          asesor: b.asesor
+          numero: b.numero, nombre: b.clientes?.nombre || '', apellido: b.clientes?.apellido || '', ciudad: b.clientes?.ciudad || '', telefono: b.telefono_cliente, totalAbonos: b.total_abonado, restante: b.saldo_restante, asesor: b.asesor
         })));
       }
 
       if (clienteBoletasDiarias && clienteBoletasDiarias.length > 0) {
         lista.push(...clienteBoletasDiarias.map(b => ({
-          numero: b.numero, 
-          nombre: b.nombre_cliente || '', 
-          apellido: '',
-          ciudad: '', 
-          telefono: b.telefono_cliente, 
-          totalAbonos: b.total_abonado || 0, 
-          restante: b.saldo_restante !== null && b.saldo_restante !== undefined ? b.saldo_restante : 20000
+          numero: b.numero, nombre: b.nombre_cliente || '', apellido: '', ciudad: '', telefono: b.telefono_cliente, totalAbonos: b.total_abonado || 0, restante: b.saldo_restante !== null && b.saldo_restante !== undefined ? b.saldo_restante : 20000
+        })));
+      }
+
+      // ¡AQUÍ ESTÁ LA PIEZA QUE TE FALTABA!
+      if (clienteBoletas3Cifras && clienteBoletas3Cifras.length > 0) {
+        lista.push(...clienteBoletas3Cifras.map(b => ({
+          numero: b.numero, nombre: b.nombre_cliente || '', apellido: '', ciudad: '', telefono: b.telefono_cliente, totalAbonos: b.total_abonado || 0, restante: b.saldo_restante !== null && b.saldo_restante !== undefined ? b.saldo_restante : 5000
         })));
       }
 
       return res.status(200).json({ tipo: 'CLIENTE_ENCONTRADO', lista: lista });
-    }
-    else {
-       return res.status(200).json({ tipo: 'NO_EXISTE', mensaje: 'Ingresa 4 dígitos (Apartamento), 2 dígitos (Diaria) o 10 dígitos (Celular).' });
     }
 
   } catch (error) {
