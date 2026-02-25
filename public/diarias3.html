@@ -51,7 +51,17 @@
       .timer-box { background: #c53030; color: white; padding: 4px 6px; border-radius: 6px; font-size: 14px; font-weight: 900; font-family: 'Montserrat', sans-serif; min-width: 24px; text-align: center; line-height: 1; }
       .timer-colon { font-weight: 900; color: #c53030; font-size: 14px; }
 
-      /* --- ESTADÍSTICAS UNIFICADAS (MODIFICADO) --- */
+      /* --- GANCHO 2: NOTIFICACIÓN DE VENTAS EN VIVO (TOAST) --- */
+      .live-toast {
+        position: fixed; top: 65px; left: 50%; transform: translateX(-50%) translateY(-20px);
+        background: rgba(0, 0, 0, 0.85); color: white; padding: 10px 15px; border-radius: 50px; display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 500;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 940; opacity: 0; visibility: hidden; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); white-space: nowrap; backdrop-filter: blur(4px);
+      }
+      .live-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; visibility: visible; }
+      .live-toast-icon { background: #25d366; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;}
+      .live-toast b { color: #4ade80; }
+
+      /* --- ESTADÍSTICAS UNIFICADAS --- */
       .stats-unified-strip { display: flex; background: #ffffff; border-radius: 16px; margin: 0 20px 25px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; overflow: hidden; }
       .stat-block { flex: 1; padding: 12px 5px; text-align: center; display: flex; flex-direction: column; justify-content: center; }
       .stat-divider { width: 1px; background-color: #f1f5f9; margin: 10px 0; }
@@ -60,16 +70,34 @@
       .stat-value { font-size: 15px; font-weight: 900; color: #1b5e20; white-space: nowrap; letter-spacing: -0.5px; }
       .stat-block.highlight .stat-label { color: #c8e6c9; }
       .stat-block.highlight .stat-value { color: #ffffff; font-size: 16px; }
-       /* Ajuste específico para el texto largo de oportunidades */
       .stat-block:last-child .stat-value { font-size: 13px; }
 
+      /* --- TARJETA: PROMOCIÓN DEL APARTAMENTO (GANCHO COMERCIAL) --- */
+      .promo-apto-card {
+        background: #ffffff;
+        border: 2px solid #d4af37;
+        border-radius: 20px;
+        margin: 0 20px 45px 20px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(212, 175, 55, 0.15);
+      }
+      .promo-apto-img-wrapper { position: relative; width: 100%; height: 200px; }
+      .promo-apto-img { width: 100%; height: 100%; object-fit: cover; }
+      .promo-apto-badge {
+        position: absolute; bottom: -15px; left: 50%; transform: translateX(-50%); background: #1b5e20; color: white; padding: 6px 20px; border-radius: 50px; font-weight: 900; font-size: 12px; text-transform: uppercase; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.2); white-space: nowrap;
+      }
+      .promo-apto-content { padding: 30px 20px 20px 20px; text-align: center; }
+      .promo-apto-title { font-family: 'Montserrat', sans-serif; color: #111; font-weight: 900; font-size: 17px; margin: 0 0 8px 0; line-height: 1.2; }
+      .promo-apto-desc { font-size: 13px; color: #475569; margin: 0 0 15px 0; line-height: 1.4; }
+      .promo-apto-benefits { display: flex; flex-direction: column; gap: 8px; text-align: left; }
+      .benefit-item { display: flex; align-items: center; gap: 12px; font-size: 12px; font-weight: 700; color: #1e293b; background: #f8fafc; padding: 10px 14px; border-radius: 12px; border: 1px solid #e2e8f0; }
+      .benefit-icon { font-size: 18px; background: white; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.05); flex-shrink: 0; }
 
-      /* --- EXPLICACIÓN DE LA DINÁMICA (MODIFICADO PARA BALOTAS) --- */
+      /* --- EXPLICACIÓN DE LA DINÁMICA --- */
       .dinamica-section { padding: 0 20px; margin-bottom: 45px; }
       .section-title-elegant { margin: 0 0 8px 0; font-size: 17px; color: #1b5e20; font-weight: 800; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; }
       .section-subtitle-elegant { margin: 0 0 25px 0; font-size: 14px; color: #64748b; text-align: center; font-weight: 500; }
       
-      /* Nuevos estilos para las balotas etiquetadas */
       .balotas-labeled-container { display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; align-items: flex-end;}
       .balotas-group { display: flex; flex-direction: column; align-items: center; gap: 8px; }
       .group-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -85,16 +113,36 @@
       .premio-detalle { flex: 1; font-size: 14px; color: #475569; font-weight: 600; }
       .premio-valor { font-size: 16px; font-weight: 800; color: #1b5e20; }
 
-      /* --- NÚMEROS EN TARJETA PREMIUM --- */
+      /* --- NÚMEROS EN TARJETA PREMIUM CON EFECTO POP --- */
       .numbers-card {
         background: #ffffff; border: 2px solid #a5d6a7; border-radius: 20px;
         margin: 0 20px 45px 20px; padding: 25px 20px; box-shadow: 0 10px 30px rgba(27, 94, 32, 0.08); position: relative; transition: all 0.5s ease;
       }
+      @keyframes popAttention {
+        0% { transform: scale(1); box-shadow: 0 10px 30px rgba(27, 94, 32, 0.08); border-color: #a5d6a7; }
+        50% { transform: scale(1.03); box-shadow: 0 20px 45px rgba(27, 94, 32, 0.3); border-color: #1b5e20; }
+        100% { transform: scale(1); box-shadow: 0 12px 35px rgba(27, 94, 32, 0.15); border-color: #4ade80; }
+      }
+      .animar-resalte { animation: popAttention 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
       .numbers-title { text-align: center; font-size: 18px; font-weight: 900; color: #475569; margin: 0 0 20px 0; text-transform: uppercase; }
       .grid-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
       .btn-numero { width: 65px; height: 65px; border: none; border-radius: 14px; font-family: 'Poppins', sans-serif; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
       .disponible { background-color: #ffffff; color: #2e7d32; border: 1px solid #c8e6c9; font-size: 20px; font-weight: 700; }
       .seleccionado { background-color: #ff9800 !important; color: white !important; border-color: #f57c00 !important; transform: scale(1.05); box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3); }
+
+      /* --- ORÁCULO IA --- */
+      .card-oracle {
+        background: linear-gradient(135deg, #f8faff 0%, #eef2ff 100%); border: 1px solid #d0dfff; border-radius: 20px;
+        margin: 0 20px 45px 20px; padding: 25px 20px; box-shadow: 0 8px 25px rgba(37, 117, 252, 0.08); position: relative; text-align: center; overflow: hidden;
+      }
+      .card-oracle::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(90deg, #6a11cb, #2575fc); }
+      .oracle-title { margin: 0 0 8px 0; font-family: 'Montserrat', sans-serif; font-size: 18px; font-weight: 900; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.5px; }
+      .btn-ai-oracle { background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%); color: white; border: none; padding: 12px 24px; border-radius: 50px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(37, 117, 252, 0.3); transition: transform 0.2s; font-size: 14px; margin: 10px auto 0 auto; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Poppins', sans-serif; }
+      .btn-ai-oracle:active { transform: scale(0.95); }
+      .oracle-textarea { width: 100%; padding: 12px; border: 2px solid #d0dfff; border-radius: 12px; font-size: 16px; background: #fff; outline: none; font-family: 'Poppins', sans-serif; resize: none; box-sizing: border-box; margin-bottom: 15px; }
+      .oracle-result-box { margin-top: 15px; padding: 15px; background: #fff; border-radius: 12px; border: 1px dashed #aecbfa; display: none; }
+      .oracle-numbers { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+      .btn-oracle-num { background: #fff; border: 2px solid #2575fc; color: #2575fc; font-weight: 800; padding: 8px 15px; border-radius: 12px; cursor: pointer; font-size: 16px; }
 
       /* --- MEDIOS DE PAGO OFICIALES --- */
       .payment-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; margin: 0 20px 45px 20px; padding: 25px 20px; box-shadow: 0 8px 25px rgba(27, 94, 32, 0.04); text-align: center; }
@@ -105,6 +153,45 @@
       .pay-text { display: flex; flex-direction: column; width: 110px; }
       .pay-name { font-size: 16px; font-weight: 800; line-height: 1.1; margin-bottom: 2px; }
       .pay-number { font-size: 14px; font-weight: 500; line-height: 1; opacity: 0.9; letter-spacing: 0.5px; }
+      .pill-minimalista { transition: transform 0.2s, box-shadow 0.2s; }
+      .pill-minimalista:hover { box-shadow: 0 6px 15px rgba(0,0,0,0.06); transform: translateY(-2px); }
+
+      /* --- GANCHO 3: SELLOS DE CONFIANZA --- */
+      .trust-badges-container { display: flex; justify-content: center; gap: 15px; margin: 0 20px 45px 20px; }
+      .trust-badge { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+      .trust-badge svg { width: 16px; height: 16px; fill: #1b5e20; }
+
+      /* --- LISTA ESTILO WHATSAPP --- */
+      .whatsapp-list-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; margin: 0 20px 45px 20px; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05); overflow: hidden; }
+      .wa-header { background: #f8fafc; padding: 15px 20px; border-bottom: 1px solid #e2e8f0; text-align: center; }
+      .wa-header-title { font-size: 16px; font-weight: 800; color: #0a3d24; margin: 0 0 3px 0; }
+      .wa-header-sub { font-size: 13px; color: #64748b; margin: 0; }
+      .wa-chat-item { display: flex; padding: 18px 20px; border-bottom: 1px solid #f1f5f9; align-items: center; }
+      .wa-chat-item:last-child { border-bottom: none; }
+      .wa-avatar { width: 50px; height: 50px; border-radius: 50%; background: #e8f5e9; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-right: 15px; flex-shrink: 0; border: 1px solid #c8e6c9; }
+      .wa-info { flex: 1; overflow: hidden; }
+      .wa-top-line { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3px; }
+      .wa-contact-details { display: flex; flex-direction: column; }
+      .wa-name { font-size: 16px; font-weight: 700; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .wa-phone { font-size: 12px; color: #64748b; font-weight: 500; }
+      .wa-time { font-size: 12px; color: #25d366; font-weight: 500; margin-top: 2px; }
+      .wa-bottom-line { display: flex; justify-content: space-between; align-items: center; margin-top: 2px; }
+      .wa-msg { font-size: 14px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; }
+      .wa-check { color: #94a3b8; font-size: 13px; letter-spacing: -2px; }
+      .wa-badge { background-color: #25d366; color: white; font-size: 11px; font-weight: bold; height: 20px; min-width: 20px; padding: 0 5px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+
+      /* --- BARRA DE PROGRESO FLOTANTE --- */
+      .sticky-progress {
+        position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(8px); padding: 10px 20px 15px 20px; box-sizing: border-box;
+        border-top: 1px solid #e2e8f0; box-shadow: 0 -4px 20px rgba(0,0,0,0.06); z-index: 850; 
+      }
+      .sticky-progress-text { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+      .urgency-text { font-size: 13px; font-weight: 800; color: #d9700b; }
+      .urgency-numbers { font-size: 12px; color: #64748b; font-weight: 600; }
+      .urgency-numbers strong { color: #1b5e20; font-weight: 900; font-size: 13px; }
+      .progress-track { width: 100%; height: 6px; background-color: #f1f5f9; border-radius: 10px; overflow: hidden; }
+      .progress-fill { height: 100%; background: linear-gradient(90deg, #3cb579, #1b5e20); border-radius: 10px; width: 0%; transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
 
       /* --- BARRA DE COMPRA Y MODALES --- */
       .bottom-bar {
@@ -127,6 +214,41 @@
       .btn-confirmar { width: 100%; padding: 14px; background-color: #1b5e20; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer;}
       .btn-cancelar { width: 100%; padding: 12px; background: white; border: none; color: #999; margin-top: 5px; cursor: pointer; font-weight: 600;}
       .loader { text-align: center; display: none; margin-top: 15px; font-size: 14px; color: #1b5e20;}
+
+      /* --- NUEVO: BOTÓN FLOTANTE DEL CHAT IA --- */
+      .float-chat-btn {
+        position: fixed; bottom: 85px; right: 20px; width: 55px; height: 55px;
+        background-color: #1b5e20; color: #fff; border-radius: 50%;
+        display: flex; justify-content: center; align-items: center;
+        box-shadow: 0 4px 15px rgba(27, 94, 32, 0.4); z-index: 950; cursor: pointer; transition: transform 0.3s;
+      }
+      .float-chat-btn:active { transform: scale(0.9); }
+      .float-chat-btn svg { width: 28px; height: 28px; fill: currentColor; }
+
+      /* --- NUEVO: WIDGET MINI CHAT IA --- */
+      .chat-widget {
+        position: fixed; bottom: 150px; right: 20px; width: 320px; max-width: calc(100% - 40px);
+        background: #fff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        z-index: 960; display: none; flex-direction: column; overflow: hidden;
+        transform-origin: bottom right; animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        border: 1px solid #e2e8f0;
+      }
+      @keyframes scaleUp { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+      .chat-header {
+        background: linear-gradient(135deg, #0a3d24 0%, #1b5e20 100%); color: white;
+        padding: 15px; display: flex; justify-content: space-between; align-items: center;
+      }
+      .chat-header h4 { margin: 0; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px;}
+      .close-chat { background: none; border: none; color: white; font-size: 24px; cursor: pointer; line-height: 1; padding: 0;}
+      .chat-body { padding: 15px; height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #f8fafc; }
+      .chat-bubble { padding: 10px 14px; border-radius: 15px; font-size: 13px; max-width: 85%; line-height: 1.4; word-wrap: break-word;}
+      .bubble-bot { background: #e8f5e9; color: #1b5e20; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #c8e6c9;}
+      .bubble-user { background: #1b5e20; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+      .chat-input-area { padding: 10px; background: white; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; }
+      .chat-input-area input { flex: 1; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 20px; font-size: 16px; outline: none; font-family: 'Poppins', sans-serif;}
+      .chat-input-area input:focus { border-color: #1b5e20; }
+      .chat-input-area button { background: #1b5e20; color: white; border: none; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;}
+
     </style>
   </head>
   <body>
@@ -143,6 +265,11 @@
         <div class="timer-colon">:</div>
         <div class="timer-box" id="t-seconds">00</div>
       </div>
+    </div>
+
+    <div id="live-toast" class="live-toast">
+      <div class="live-toast-icon">✓</div>
+      <span id="live-toast-text">Mateo P. compró <b>2 boletas</b></span>
     </div>
 
     <div class="container">
@@ -172,6 +299,31 @@
         <div class="stat-block">
           <span class="stat-label">⚡ OPORTUNIDADES</span>
           <span class="stat-value">3 POR BOLETA</span>
+        </div>
+      </div>
+
+      <div class="promo-apto-card">
+        <div class="promo-apto-img-wrapper">
+          <img src="https://losplata.s3.us-east-2.amazonaws.com/sala+2+h.png" alt="Apartamento Amoblado" class="promo-apto-img">
+          <div class="promo-apto-badge">¡El Apartamento de tus sueños!</div>
+        </div>
+        <div class="promo-apto-content">
+          <h3 class="promo-apto-title">¿QUÉ MÁS GANAS CON ESTAS BOLETAS?</h3>
+          <p class="promo-apto-desc">Si te ganas las boletas oficiales quedarás participando automáticamente por todos estos increíbles premios:</p>
+          <div class="promo-apto-benefits">
+            <div class="benefit-item">
+              <span class="benefit-icon">💰</span>
+              <span>Acumulado de 20 MILLONES (Este fin de semana)</span>
+            </div>
+            <div class="benefit-item">
+              <span class="benefit-icon">💵</span>
+              <span>5 Millones en efectivo (Cada fin de semana)</span>
+            </div>
+            <div class="benefit-item">
+              <span class="benefit-icon">🏢</span>
+              <span>El Apartamento Amoblado (Gran Sorteo 4 de Abril)</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -224,6 +376,16 @@
         <div id="grid" class="grid-container"></div>
       </div>
 
+      <div class="card-oracle">
+        <h3 class="oracle-title">✨ ¿No sabes qué jugar?</h3>
+        <p style="font-size:13px; color:#64748b; margin-bottom:15px; line-height: 1.5;">
+          Cuéntame tu sueño o qué señal viste hoy y nuestra IA analizará las estrellas para darte tu número de la suerte.
+        </p>
+        <button class="btn-ai-oracle" onclick="abrirOraculo()">
+          <span style="font-size: 18px;">🔮</span> Preguntar al Oráculo
+        </button>
+      </div>
+
       <div class="payment-card">
         <h3 class="section-title-elegant">💳 Cuenta Oficial</h3>
         <p class="section-subtitle-elegant" style="margin-bottom: 15px;">Transfiere a nuestra cuenta empresarial:</p>
@@ -248,7 +410,92 @@
         </div>
       </div>
 
+      <div class="trust-badges-container">
+        <div class="trust-badge">
+          <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+          Sorteo Transparente
+        </div>
+        <div class="trust-badge">
+          <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+          Pago 100% Seguro
+        </div>
+      </div>
+
+      <div class="whatsapp-list-card">
+        <div class="wa-header">
+          <h3 class="wa-header-title">📱 Líneas de Atención Oficiales</h3>
+          <p class="wa-header-sub">Atendemos cada sorteo por separado</p>
+        </div>
+        
+        <div class="wa-chat-item">
+          <div class="wa-avatar">🏢</div>
+          <div class="wa-info">
+            <div class="wa-top-line">
+              <div class="wa-contact-details">
+                <span class="wa-name">Boletería LOS PLATA</span>
+                <span class="wa-phone">+57 310 733 4957</span>
+              </div>
+              <span class="wa-time" style="color:#64748b">Ayer</span>
+            </div>
+            <div class="wa-bottom-line">
+              <span class="wa-msg">
+                <span class="wa-check">✓✓</span> Solo atención Rifa Apartamento Lujo
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="wa-chat-item">
+          <div class="wa-avatar">🎟️</div>
+          <div class="wa-info">
+            <div class="wa-top-line">
+              <div class="wa-contact-details">
+                <span class="wa-name">Rifas Diarias LOS PLATA</span>
+                <span class="wa-phone">+57 311 667 5984</span>
+              </div>
+              <span class="wa-time">Ahora</span>
+            </div>
+            <div class="wa-bottom-line">
+              <span class="wa-msg" style="color:#333; font-weight:500;">
+                Atención exclusiva para Sorteo Diario
+              </span>
+              <span class="wa-badge">1</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div> 
+
+    <div class="float-chat-btn" onclick="toggleChat()" title="Hablar con Asistente">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/><path d="M9 10h6v2H9zM9 6h6v2H9z"/></svg>
+    </div>
+
+    <div class="chat-widget" id="chat-widget">
+      <div class="chat-header">
+        <h4>🤖 Asistente Los Plata</h4>
+        <button class="close-chat" onclick="toggleChat()">×</button>
+      </div>
+      <div class="chat-body" id="chat-body">
+        <div class="chat-bubble bubble-bot">¡Hola! Soy tu asistente virtual. Pregúntame sobre medios de pago, cómo jugar o cualquier duda que tengas.</div>
+      </div>
+      <div class="chat-input-area">
+        <input type="text" id="chat-input" placeholder="Ej: ¿A qué Nequi pago?" onkeypress="manejarEnterChat(event)">
+        <button onclick="enviarMensajeChat()">
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="sticky-progress" id="sticky-progress-bar">
+      <div class="sticky-progress-text">
+        <span class="urgency-text">🔥 ¡Casi agotado!</span>
+        <span class="urgency-numbers"><strong id="progress-percent-text">0%</strong> (Quedan <span id="progress-left-text">0</span>)</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill-bar"></div>
+      </div>
+    </div>
 
     <div id="bottom-bar" class="bottom-bar">
       <div class="resumen-compra">
@@ -275,16 +522,63 @@
       </div>
     </div>
 
+    <div id="modal-oracle" class="modal-overlay">
+      <div class="modal-content" style="background: linear-gradient(135deg, #fff 0%, #f4f8ff 100%); border: 1px solid #d0dfff;">
+        <div style="text-align:center; margin-bottom:10px;">
+           <span style="font-size:40px;">🔮</span>
+        </div>
+        <h3 style="text-align:center; margin-top:0; color:#1e3a8a; font-family: 'Montserrat', sans-serif; font-weight: 900;">Oráculo de la Suerte</h3>
+        <p style="text-align:center; color:#64748b; font-size:13px; margin-bottom:20px;">
+          ¿Qué soñaste anoche o qué señal viste hoy?
+        </p>
+        
+        <textarea id="input-oracle-text" rows="3" placeholder="Ej: Soñé con un gato negro cruzando..." class="oracle-textarea"></textarea>
+
+        <button id="btn-ask-oracle" class="btn-ai-oracle" style="width:100%; margin-top:0;" onclick="consultarGemini()">
+          ✨ Interpretar Señales
+        </button>
+        
+        <div id="oracle-result" class="oracle-result-box">
+          <p id="oracle-msg" style="font-size:13px; color:#334155; font-style:italic; text-align:center; margin:0 0 10px 0;">...</p>
+          <div id="oracle-suggestions" class="oracle-numbers"></div>
+        </div>
+
+        <button class="btn-cancelar" onclick="cerrarOraculo()">Cerrar</button>
+      </div>
+    </div>
+
+    <div id="modal-soldout" class="modal-overlay">
+      <div class="modal-content" style="text-align:center;">
+        <h2 style="color:#d32f2f; margin-top:0;">🚫 ¡NO HAY PUESTOS DISPONIBLES! 🚫</h2>
+        <p style="font-size:14px; color:#555;">¡Hoy arrasaron con todo! Muchas gracias por el apoyo.</p>
+        <button class="btn-confirmar" onclick="cerrarSoldOut()">Aceptar</button>
+      </div>
+    </div>
+
     <script>
       const PRECIO_BOLETA = 5000;
       let numerosSeleccionados = []; 
 
       window.onload = function() {
         iniciarTemporizador();
+        iniciarNotificacionesEnVivo();
+        observarTarjetaNumeros(); 
         cargarDatosDesdeVercel(); 
       };
 
-      /* --- JS CARGAR NÚMEROS DESDE VERCEL (TABLA 3 CIFRAS) --- */
+      function observarTarjetaNumeros() {
+        const tarjeta = document.getElementById('tarjeta-numeros');
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              tarjeta.classList.add('animar-resalte');
+              observer.unobserve(tarjeta); 
+            }
+          });
+        }, { threshold: 0.2 });
+        observer.observe(tarjeta);
+      }
+
       function cargarDatosDesdeVercel() {
         fetch('/api/diarias3/numeros')
           .then(res => res.json())
@@ -300,13 +594,29 @@
           });
       }
 
-      /* --- JS DIBUJAR NÚMEROS SEGÚN LA REGLA --- */
       function pintarNumeros(datos) {
         const contenedor = document.getElementById('grid');
         document.getElementById('loading').style.display = 'none';
         contenedor.innerHTML = ""; 
         
         let disponibles = datos.filter(d => d.estado === 'Disponible');
+        
+        // --- CÁLCULO DE LA BARRA DE PROGRESO FLOTANTE ---
+        let totalBoletas = 1000; // Base total de la rifa de 3 cifras
+        let contadorDisponibles = disponibles.length;
+        let vendidas = totalBoletas - contadorDisponibles;
+        let porcentaje = Math.round((vendidas / totalBoletas) * 100);
+
+        if (totalBoletas > 0) {
+          document.getElementById('progress-fill-bar').style.width = porcentaje + '%';
+          document.getElementById('progress-percent-text').innerText = porcentaje + '% Vendido';
+          document.getElementById('progress-left-text').innerText = contadorDisponibles;
+        }
+
+        if (contadorDisponibles === 0 && totalBoletas > 0) {
+          document.getElementById('modal-soldout').style.display = 'flex';
+        }
+        
         let aMostrar = [];
 
         // Regla: 5 números que empiecen por 0, y 10 números para los demás dígitos
@@ -314,15 +624,12 @@
           let prefijo = i.toString();
           let grupo = disponibles.filter(d => d.numero.startsWith(prefijo));
           
-          // Mezclamos aleatoriamente los números de este grupo
           grupo.sort(() => 0.5 - Math.random());
           
-          // Escogemos la cantidad requerida
           let cantidad = (i === 0) ? 5 : 10;
-          aMostrar.push(...grupo.slice(0, cantidad));
+          aMostrar.push(...grupo.slice(0, Math.min(cantidad, grupo.length)));
         }
 
-        // Ordenamos los números a mostrar de menor a mayor para que se vea estético
         aMostrar.sort((a, b) => parseInt(a.numero) - parseInt(b.numero));
 
         aMostrar.forEach(fila => {
@@ -334,8 +641,8 @@
           contenedor.appendChild(btn);
         });
 
-        if (aMostrar.length === 0) {
-            contenedor.innerHTML = "<p style='text-align:center; color:#d32f2f; font-weight:bold;'>¡No hay boletas disponibles en este momento!</p>";
+        if (aMostrar.length === 0 && disponibles.length > 0) {
+             contenedor.innerHTML = "<p style='text-align:center; color:#d32f2f; font-weight:bold;'>¡No hay boletas disponibles en este momento!</p>";
         }
       }
 
@@ -371,7 +678,6 @@
       }
 
       function abrirModal() {
-        // --- VALIDACIÓN DE COMPRA MÍNIMA ---
         if (numerosSeleccionados.length < 3) {
           alert("⚠️ ATENCIÓN:\nLa compra mínima es de 3 boletas.");
           return;
@@ -386,7 +692,10 @@
         document.getElementById('modal').style.display = 'none';
       }
 
-      /* --- JS ENVIAR COMPRA A VERCEL --- */
+      function cerrarSoldOut() {
+        document.getElementById('modal-soldout').style.display = 'none';
+      }
+
       function confirmarReserva() {
         const nombre = document.getElementById('input-nombre').value;
         const telefono = document.getElementById('input-telefono').value;
@@ -436,6 +745,64 @@
           document.getElementById("t-minutes").innerText = minutos.toString().padStart(2, '0');
           document.getElementById("t-seconds").innerText = segundos.toString().padStart(2, '0');
         }, 1000);
+      }
+
+      function iniciarNotificacionesEnVivo() {
+        const compradoresFalsos = [
+          "Mateo P. compró <b>5 puestos</b>", "Diana M. compró <b>3 puestos</b>",
+          "Carlos R. compró <b>10 puestos</b>", "Juliana G. compró <b>4 puestos</b>",
+          "Luis F. compró <b>3 puestos</b>", "Andrea S. compró <b>6 puestos</b>"
+        ];
+        const toast = document.getElementById('live-toast');
+        const text = document.getElementById('live-toast-text');
+        
+        setInterval(() => {
+          if(document.getElementById('modal').style.display === 'flex') return;
+          let randomBuyer = compradoresFalsos[Math.floor(Math.random() * compradoresFalsos.length)];
+          text.innerHTML = randomBuyer;
+          toast.classList.add('show');
+          setTimeout(() => { toast.classList.remove('show'); }, 3500);
+        }, 12000); 
+      }
+
+      function toggleChat() {
+        const widget = document.getElementById('chat-widget');
+        if (widget.style.display === 'flex') {
+          widget.style.display = 'none';
+        } else {
+          widget.style.display = 'flex';
+          document.getElementById('chat-input').focus();
+        }
+      }
+      function manejarEnterChat(e) { if (e.key === 'Enter') enviarMensajeChat(); }
+      function enviarMensajeChat() {
+        const input = document.getElementById('chat-input');
+        if (input.value.trim().length < 2) return;
+        agregarBurbujaChat(input.value, 'user');
+        input.value = '';
+        setTimeout(() => { agregarBurbujaChat("Estamos conectando la IA a nuestro nuevo servidor. Por ahora, ¡aprovecha y reserva tus números arriba!", 'bot'); }, 1000);
+      }
+      function agregarBurbujaChat(texto, tipo) {
+        const body = document.getElementById('chat-body');
+        const div = document.createElement('div');
+        div.className = `chat-bubble bubble-${tipo}`;
+        div.innerText = texto;
+        body.appendChild(div);
+        body.scrollTop = body.scrollHeight;
+      }
+      
+      function abrirOraculo() { document.getElementById('modal-oracle').style.display = 'flex'; document.getElementById('input-oracle-text').focus(); }
+      function cerrarOraculo() { document.getElementById('modal-oracle').style.display = 'none'; }
+      function consultarGemini() {
+        const texto = document.getElementById('input-oracle-text').value.trim();
+        if(texto.length < 3) return alert("Por favor escribe un poco más sobre tu sueño o señal.");
+        document.getElementById('btn-ask-oracle').disabled = true;
+        document.getElementById('oracle-result').style.display = 'block';
+        document.getElementById('oracle-msg').innerText = "Conectando con los astros...";
+        setTimeout(() => {
+           document.getElementById('oracle-msg').innerText = "🔮 La IA está en mantenimiento, pero las estrellas dicen que debes elegir tu número favorito hoy.";
+           document.getElementById('btn-ask-oracle').disabled = false;
+        }, 1500);
       }
 
       function copiarCuenta() {
