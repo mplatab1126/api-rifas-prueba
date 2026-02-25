@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     // Calcula el total a pagar (Ajusta este PRECIO_BOLETA a lo que valga la de 3 cifras)
     const PRECIO_BOLETA_3_CIFRAS = 5000; 
     const totalPagar = numeros.length * PRECIO_BOLETA_3_CIFRAS;
-    const mensaje = `¡Hola Los Plata! 👋\nAcabo de reservar en la RIFA DE 3 CIFRAS.\n\n👤 Nombre: ${nombre}\n📱 Celular: ${telefono}\n🎟️ Mis números: ${numeros.join(', ')}\n💰 Total a pagar: $${totalPagar.toLocaleString('es-CO')}\n\nQuedo atento para enviar el comprobante.`;
+    const mensaje = `¡Hola Los Plata! 👋\nAcabo de reservar en la RIFA DE 3 CIFRAS.\n\n👤 Nombre: ${nombre}\n📱 Celular: ${telefono}\n🎟️ Mis números: ${numeros.join(', ')}\n💰 Total a pagar: $${totalPagar.toLocaleString('es-CO')}\n\nMuchas gracias`;
     
     const urlWhatsapp = `https://wa.me/573116675984?text=${encodeURIComponent(mensaje)}`;
     return res.status(200).json({ exito: true, url: urlWhatsapp });
