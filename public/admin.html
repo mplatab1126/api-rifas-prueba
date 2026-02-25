@@ -1076,7 +1076,6 @@ $('btnRegistrarVenta').onclick = async ()=>{
            // El botón de copiar link SOLO se muestra si es del Apartamento (4 cifras)
            if (String(b.numero).length === 4) {
                html += '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); copiarLinkBoleta(\'' + b.numero + '\');" style="background:#fff; border:1px solid var(--ring-strong); color:var(--ink-2); padding:4px 8px; border-radius:6px; font-size:0.75rem; font-weight:500; font-family:inherit; cursor:pointer; transition:0.2s;">Copiar Link</button>';
-           }tml += '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); copiarLinkBoleta(\'' + b.numero + '\');" style="background:#fff; border:1px solid var(--ring-strong); color:var(--ink-2); padding:4px 8px; border-radius:6px; font-size:0.75rem; font-weight:500; font-family:inherit; cursor:pointer; transition:0.2s;">Copiar Link</button>';
            }
            
            html += '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); confirmarLiberarBoleta(\'' + b.numero + '\');" style="background:transparent; color:var(--danger); border:1px solid var(--danger); padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:500; font-family:inherit; cursor:pointer; transition: 0.2s;">Liberar</button>';
