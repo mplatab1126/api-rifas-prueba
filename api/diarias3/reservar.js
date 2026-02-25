@@ -35,7 +35,7 @@ export default async function handler(req, res) {
     if (updateError) throw updateError;
 
     // Calcula el total a pagar (Ajusta este PRECIO_BOLETA a lo que valga la de 3 cifras)
-    const PRECIO_BOLETA_3_CIFRAS = 30000; 
+    const PRECIO_BOLETA_3_CIFRAS = 5000; 
     const totalPagar = numeros.length * PRECIO_BOLETA_3_CIFRAS;
     const mensaje = `¡Hola Los Plata! 👋\nAcabo de reservar en la RIFA DE 3 CIFRAS.\n\n👤 Nombre: ${nombre}\n📱 Celular: ${telefono}\n🎟️ Mis números: ${numeros.join(', ')}\n💰 Total a pagar: $${totalPagar.toLocaleString('es-CO')}\n\nQuedo atento para enviar el comprobante.`;
     
