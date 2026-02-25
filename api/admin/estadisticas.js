@@ -26,20 +26,23 @@ export default async function handler(req, res) {
     // 1. Traemos los Abonos
     const { data: abonos, error: errAbonos } = await supabase
       .from('abonos')
-      .select('monto, fecha_pago, asesor, numero_boleta');
+      .select('monto, fecha_pago, asesor, numero_boleta')
+      .limit(100000); // <--- AGREGAR ESTO
     if (errAbonos) throw errAbonos;
 
     // 2. Traemos las Ventas (ahora incluimos el "detalle" para saber si el abono fue $0)
     const { data: ventas, error: errVentas } = await supabase
       .from('registro_movimientos')
       .select('created_at, asesor, boleta, detalle')
-      .eq('accion', 'Nueva Venta');
+      .eq('accion', 'Nueva Venta')
+      .limit(100000); // <--- AGREGAR ESTO
     if (errVentas) throw errVentas;
 
     // 3. Traemos el resumen global del Apartamento (10.000 boletas)
     const { data: boletasGlobal, error: errBoletas } = await supabase
       .from('boletas')
-      .select('estado, total_abonado, telefono_cliente');
+      .select('estado, total_abonado, telefono_cliente')
+      .limit(100000); // <--- AGREGAR ESTO
     if (errBoletas) throw errBoletas;
 
     let registradas = 0;
