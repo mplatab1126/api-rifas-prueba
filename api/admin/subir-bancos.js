@@ -46,6 +46,11 @@ export default async function handler(req, res) {
           return false;
         }
 
+        // ⏱️ NUEVA REGLA DE LA HORA: Si las horas son diferentes, NO es un duplicado
+        if (tNueva.hora_pago && tExist.hora_pago && tNueva.hora_pago !== tExist.hora_pago) {
+          return false;
+        }
+
         // REGLA NEQUI: Si ambas son de Nequi, sacamos solo los números y comparamos los últimos 4
         if (tNueva.plataforma === 'Nequi') {
           const digitosNueva = String(tNueva.referencia).replace(/\D/g, ''); 
