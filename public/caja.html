@@ -6,7 +6,7 @@
   <title>Cuadre de Caja - Los Plata</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* Usamos tu mismo diseño minimalista */
+    /* Diseño minimalista y elegante */
     :root{
       --ink: #2b3a35; --ink-2: #52665e; --muted: #8ba89d; --bg: #f7fcf9; 
       --card: #ffffff; --ring: #e6eee9; --ring-strong: #d1e3da; --pill: #f0f7f3; 
@@ -37,35 +37,40 @@
     .cta-outline { background: transparent; color: var(--ink); border: 1px solid var(--ring-strong); }
 
     .modal-overlay { position: fixed; inset: 0; background: rgba(247, 252, 249, 0.8); backdrop-filter: blur(4px); z-index: 2000; display: none; align-items: center; justify-content: center; }
-    .modal-card { background: #fff; width: 90%; max-width: 360px; border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.08); border: 1px solid var(--ring); }
+    .modal-card { background: #fff; width: 90%; max-width: 380px; border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.08); border: 1px solid var(--ring); }
     
     .field input { width: 100%; border: 1px solid var(--ring-strong); border-radius: 10px; padding: 12px; font-size: 1.2rem; font-weight: 700; text-align: center; outline: none; color: var(--ink); font-family: inherit;}
     .field input:focus { border-color: var(--accent); }
+
+    .badge-owner { font-size: 0.7rem; background: var(--pill); color: var(--accent-2); padding: 4px 10px; border-radius: 50px; font-weight: 700; border: 1px solid var(--accent); display: none; }
   </style>
 </head>
 <body>
 
   <div id="loginOverlay" class="modal-overlay" style="display: flex;">
     <div class="modal-card">
-      <h2 style="margin: 0 0 8px; color: var(--ink); font-weight: 700;">Seguridad</h2>
-      <p style="color:var(--muted); font-size: 0.9rem; margin-bottom: 20px;">Clave de administrador requerida</p>
+      <h2 style="margin: 0 0 8px; color: var(--ink); font-weight: 700;">Control de Caja</h2>
+      <p style="color:var(--muted); font-size: 0.9rem; margin-bottom: 20px;">Solo 1 asesor puede tener la caja al día.</p>
       <div class="field" style="margin-bottom:20px;">
         <input id="loginPwd" type="password" placeholder="Contraseña...">
       </div>
-      <button id="btnLogin" class="cta" style="width: 100%;">Ingresar</button>
-      <p id="loginMsg" style="color:var(--danger); font-size:0.85rem; font-weight:600; margin-top:10px;"></p>
+      <button id="btnLogin" class="cta" style="width: 100%;">Acceder a la Caja</button>
+      <p id="loginMsg" style="color:var(--danger); font-size:0.85rem; font-weight:600; margin-top:10px; line-height:1.4;"></p>
     </div>
   </div>
 
   <div class="top-bar">
-    <div style="font-weight: 800; font-size: 1.2rem;">💰 Caja Los Plata</div>
-    <div>
-      <button class="cta cta-outline" onclick="window.location.href='/admin.html'">🔙 Volver al Admin</button>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="font-weight: 800; font-size: 1.2rem;">💰 Caja Física</span>
+      <span id="badgeOwner" class="badge-owner">🟢 A cargo de: ...</span>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="cta" style="background: var(--danger);" onclick="abrirModalCierre()">🔒 Cerrar Caja</button>
+      <button class="cta cta-outline" onclick="window.location.href='/admin.html'">🔙 Volver</button>
     </div>
   </div>
 
-  <div class="shell">
-    
+  <div class="shell" id="mainDashboard" style="display: none;">
     <div class="dashboard-grid">
       <div class="kpi-card" style="border-left: 4px solid var(--muted);">
         <h3>💵 Base Fija Inicial</h3>
@@ -80,21 +85,20 @@
       <div class="kpi-card" style="border-left: 4px solid var(--accent); background: #e8f5e9;">
         <h3>🏦 Efectivo Físico Esperado</h3>
         <p id="lbl-oficina" style="color:var(--accent-2);">$0</p>
-        <span style="font-size:0.75rem; color:var(--ink-2); font-weight:600;">(Base + Recaudado hoy)</span>
+        <span style="font-size:0.75rem; color:var(--ink-2); font-weight:600;">(Base + Entregado a caja hoy)</span>
       </div>
     </div>
 
     <div class="section-card">
       <div class="section-title">Asesores con efectivo pendiente</div>
       <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0; margin-bottom: 15px;">
-        Este es el dinero que los asesores cobraron hoy en efectivo pero que aún no han entregado a la caja física.
+        Este es el dinero que los asesores cobraron hoy en efectivo pero que aún no te han entregado físicamente.
       </p>
       
       <div id="lista-asesores">
         <p style="text-align:center; color:var(--muted); font-weight:500;">Cargando datos de hoy...</p>
       </div>
     </div>
-
   </div>
 
   <div id="modalRecibir" class="modal-overlay">
@@ -104,7 +108,7 @@
         Asesor: <strong id="modalAsesorNombre" style="color:var(--ink);">---</strong>
       </p>
       <div class="field" style="margin-bottom:15px;">
-        <label style="display:block; text-align:left; font-size:0.8rem; font-weight:600; color:var(--ink-2); margin-bottom:5px;">Monto a entregar:</label>
+        <label style="display:block; text-align:left; font-size:0.8rem; font-weight:600; color:var(--ink-2); margin-bottom:5px;">Monto a entregar a la caja:</label>
         <input type="number" id="montoRecibir" placeholder="Ej: 50000">
       </div>
       <div style="display:flex; gap:10px;">
@@ -128,28 +132,100 @@
     </div>
   </div>
 
+  <div id="modalCierre" class="modal-overlay">
+    <div class="modal-card">
+      <h3 style="margin: 0 0 5px; color: var(--ink);">🔒 Arqueo y Cierre</h3>
+      <p style="color:var(--muted); font-size: 0.85rem; margin-bottom: 15px;">Revisa que el dinero físico coincida exactamente con este resumen antes de cerrar tu turno.</p>
+      
+      <div style="background: var(--bg); border: 1px solid var(--ring); border-radius: 12px; padding: 15px; text-align: left; margin-bottom: 20px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+              <span style="color:var(--muted); font-size:0.9rem;">💵 Base Fija:</span>
+              <strong id="cierreBase" style="color:var(--ink);">$0</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+              <span style="color:var(--muted); font-size:0.9rem;">📥 Recaudado hoy:</span>
+              <strong id="cierreRecaudo" style="color:var(--accent-2);">$0</strong>
+          </div>
+          <hr style="border:0; border-top:1px dashed var(--ring-strong); margin: 10px 0;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="color:var(--ink); font-weight:700; font-size:1rem;">TOTAL FÍSICO<br><span style="font-size:0.7rem; color:var(--muted); font-weight:normal;">Que debe haber en la caja:</span></span>
+              <strong id="cierreTotal" style="color:var(--ink); font-size:1.4rem;">$0</strong>
+          </div>
+      </div>
+
+      <div style="display:flex; gap:10px;">
+        <button class="cta cta-outline" style="flex:1;" onclick="document.getElementById('modalCierre').style.display='none'">Cancelar</button>
+        <button class="cta" style="flex:1; background:var(--danger);" onclick="confirmarCierre()">Confirmar Cierre</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const STORAGE_KEY = 'asesor_pwd';
 
-    // 1. SISTEMA DE LOGIN Y ARRANQUE
+    // --- 1. LÓGICA DE LOGIN Y "DUEÑO DE CAJA" ---
     document.addEventListener('DOMContentLoaded', () => {
       const pwd = localStorage.getItem(STORAGE_KEY);
-      if (pwd) {
-        document.getElementById('loginOverlay').style.display = 'none';
-        cargarDatosCaja();
-      }
+      if (pwd) verificarLogin(pwd, true);
     });
 
     document.getElementById('btnLogin').onclick = () => {
       const pwd = document.getElementById('loginPwd').value;
-      if(pwd) {
-        localStorage.setItem(STORAGE_KEY, pwd);
-        document.getElementById('loginOverlay').style.display = 'none';
-        cargarDatosCaja();
-      }
+      if(pwd) verificarLogin(pwd, false);
     };
 
-    // 2. ABRIR MODALES
+    async function verificarLogin(pwd, auto) {
+      const btn = document.getElementById('btnLogin');
+      const msg = document.getElementById('loginMsg');
+      if(!auto) { btn.textContent = 'Verificando...'; btn.disabled = true; msg.textContent = ''; }
+
+      // AQUÍ SIMULAMOS LO QUE HARÁ LA API (Paso siguiente)
+      // 1. Validaremos la contraseña para saber quién eres (Ej: "Mateo")
+      // 2. Buscaremos en la BD si la caja de hoy ya está abierta.
+      
+      try {
+        const req = await fetch('/api/admin/login', {
+          method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contrasena: pwd })
+        });
+        const res = await req.json();
+
+        if (res.status === 'ok') {
+            const asesorActual = res.asesor;
+            
+            // --- SIMULACIÓN DE SEGURIDAD (Pronto lo cambiaremos por una consulta real a Supabase) ---
+            // Supongamos que la caja ya la abrió Mateo.
+            const duenoCaja = asesorActual; // En el futuro: if(BD.dueno) duenoCaja = BD.dueno; else duenoCaja = asesorActual;
+
+            if (asesorActual !== duenoCaja) {
+                // BLOQUEO DE SEGURIDAD
+                msg.innerHTML = `⚠️ <b>Acceso Denegado:</b><br>La caja de hoy ya fue abierta por <b>${duenoCaja}</b>. Solo él/ella puede manipularla y cerrarla.`;
+                localStorage.removeItem(STORAGE_KEY);
+                btn.textContent = 'Acceder a la Caja'; btn.disabled = false;
+                return;
+            }
+
+            // ACCESO PERMITIDO
+            localStorage.setItem(STORAGE_KEY, pwd);
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('mainDashboard').style.display = 'block';
+            
+            // Mostrar quién es el dueño
+            const badge = document.getElementById('badgeOwner');
+            badge.style.display = 'inline-block';
+            badge.textContent = `🟢 A cargo de: ${duenoCaja}`;
+
+            cargarDatosCaja();
+        } else {
+            if(!auto) msg.textContent = 'Contraseña incorrecta';
+            localStorage.removeItem(STORAGE_KEY);
+            btn.textContent = 'Acceder a la Caja'; btn.disabled = false;
+        }
+      } catch (error) {
+        if(!auto) { btn.textContent = 'Acceder a la Caja'; btn.disabled = false; msg.textContent = 'Error de conexión'; }
+      }
+    }
+
+    // --- 2. ABRIR MODALES ---
     function abrirModalRecibir(asesor, montoAdeudado) {
       document.getElementById('modalAsesorNombre').textContent = asesor;
       document.getElementById('montoRecibir').value = montoAdeudado;
@@ -161,12 +237,22 @@
       document.getElementById('montoBase').focus();
     }
 
-    // --- LAS FUNCIONES DE LA API SE CONECTARÁN EN EL SIGUIENTE PASO ---
-    
+    function abrirModalCierre() {
+      // Tomamos los números de las tarjetas principales para armar el resumen
+      const base = document.getElementById('lbl-base').textContent;
+      const recaudo = document.getElementById('lbl-oficina').textContent; 
+      
+      // En el futuro, estos cálculos se harán con los datos exactos del backend
+      document.getElementById('cierreBase').textContent = base;
+      document.getElementById('cierreRecaudo').textContent = "$150.000"; // Simulación de lo que le dieron a la caja
+      document.getElementById('cierreTotal').textContent = recaudo;
+
+      document.getElementById('modalCierre').style.display = 'flex';
+    }
+
+    // --- 3. FUNCIONES DE BASE DE DATOS (Mocks temporales) ---
     function cargarDatosCaja() {
-      // Aquí llamaremos a /api/caja/resumen
-      console.log("Cargando saldos...");
-      // Por ahora dibujamos un ejemplo para que veas lo bonito que queda:
+      // Simulación visual
       setTimeout(() => {
         document.getElementById('lbl-base').textContent = "$200.000";
         document.getElementById('lbl-calle').textContent = "$50.000";
@@ -188,18 +274,18 @@
     }
 
     function confirmarRecepcionDinero() {
-      const asesor = document.getElementById('modalAsesorNombre').textContent;
-      const monto = document.getElementById('montoRecibir').value;
-      // Aquí llamaremos a /api/caja/entregar
-      alert(`Guardando que ${asesor} entregó $${monto} a la caja física...`);
       document.getElementById('modalRecibir').style.display = 'none';
+      alert("En el siguiente paso conectaremos esto para que guarde el recaudo.");
     }
 
     function guardarBase() {
-      const monto = document.getElementById('montoBase').value;
-      // Aquí llamaremos a /api/caja/base
-      alert(`Base inicial ajustada a $${monto}`);
       document.getElementById('modalBase').style.display = 'none';
+      alert("En el siguiente paso conectaremos esto para guardar la base inicial.");
+    }
+
+    function confirmarCierre() {
+      document.getElementById('modalCierre').style.display = 'none';
+      alert("¡Turno terminado! La caja se cerrará y no aceptará más dinero por hoy.");
     }
   </script>
 </body>
