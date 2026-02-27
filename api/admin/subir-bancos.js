@@ -30,28 +30,27 @@ export default async function handler(req, res) {
     // 3. Obtener las fechas de los pagos que estamos intentando subir
     const fechas = [...new Set(transferencias.map(t => t.fecha_pago))];
 
-   // 4. Traer los pagos que YA EXISTEN en la base de datos en esas fechas
+    // 4. Traer los pagos que YA EXISTEN en la base de datos en esas fechas
     const { data: existentes, error: errExistentes } = await supabase
       .from('transferencias')
-      .select('monto, fecha_pago, referencia, plataforma, hora_pago') // <-- AGREGAMOS hora_pago AQUÍ
+      .select('monto, fecha_pago, referencia, plataforma, hora_pago')
       .in('fecha_pago', fechas);
 
     if (errExistentes) throw errExistentes;
 
-    // 5. ESCUDO ANTI-CLONES (Filtramos los duplicados)
+    // 5. ESCUDO ANTI-CLONES 1: Filtramos contra la base de datos
     const transferenciasNuevas = transferencias.filter(tNueva => {
       return !existentes.some(tExist => {
-        // Si no es la misma fecha, monto o plataforma, definitivamente NO son la misma
         if (tNueva.fecha_pago !== tExist.fecha_pago || tNueva.monto !== tExist.monto || tNueva.plataforma !== tExist.plataforma) {
           return false;
         }
 
-        // ⏱️ NUEVA REGLA DE LA HORA: Si las horas son diferentes, NO es un duplicado
+        // REGLA DE LA HORA
         if (tNueva.hora_pago && tExist.hora_pago && tNueva.hora_pago !== tExist.hora_pago) {
           return false;
         }
 
-        // REGLA NEQUI: Si ambas son de Nequi, sacamos solo los números y comparamos los últimos 4
+        // REGLA NEQUI
         if (tNueva.plataforma === 'Nequi') {
           const digitosNueva = String(tNueva.referencia).replace(/\D/g, ''); 
           const digitosExist = String(tExist.referencia).replace(/\D/g, '');
@@ -59,16 +58,14 @@ export default async function handler(req, res) {
           if (digitosNueva.length >= 4 && digitosExist.length >= 4) {
             const ultimos4Nueva = digitosNueva.slice(-4);
             const ultimos4Exist = digitosExist.slice(-4);
-            if (ultimos4Nueva === ultimos4Exist) return true; // ¡Son la misma! La descartamos
+            if (ultimos4Nueva === ultimos4Exist) return true;
           }
         }
 
-        // Para Bancolombia u otros bancos, comparamos la referencia exacta
         return String(tNueva.referencia).trim() === String(tExist.referencia).trim();
       });
     });
 
-    // 6. Si todas las transferencias del archivo ya existían, no hacemos nada y avisamos
     if (transferenciasNuevas.length === 0) {
       return res.status(200).json({ 
         status: 'ok', 
@@ -76,15 +73,49 @@ export default async function handler(req, res) {
       });
     }
 
-    // 7. Insertar SOLO las transferencias que son verdaderamente nuevas
-    const { error } = await supabase.from('transferencias').insert(transferenciasNuevas);
-
-    if (error) throw error;
-
-    return res.status(200).json({ 
-      status: 'ok', 
-      mensaje: `¡Éxito! Se subieron ${transferenciasNuevas.length} transferencias nuevas.\n(Se bloquearon ${transferencias.length - transferenciasNuevas.length} repetidas).` 
+    // 6. ESCUDO ANTI-CLONES 2 (NUEVO): Filtramos duplicados DENTRO del mismo lote de subida
+    const loteLimpio = [];
+    transferenciasNuevas.forEach(tNueva => {
+      const esDuplicadoInterno = loteLimpio.some(tLimpia => 
+        tLimpia.fecha_pago === tNueva.fecha_pago && 
+        tLimpia.monto === tNueva.monto && 
+        tLimpia.referencia === tNueva.referencia &&
+        tLimpia.hora_pago === tNueva.hora_pago
+      );
+      if (!esDuplicadoInterno) loteLimpio.push(tNueva);
     });
+
+    // 7. INSERCIÓN BLINDADA (NUEVO): Subimos una por una
+    let exitosas = 0;
+    let fallidas = 0;
+
+    for (const trans of loteLimpio) {
+      const { error } = await supabase.from('transferencias').insert(trans);
+      if (error) {
+        fallidas++; // Si falla, solo suma al contador de fallos y continúa con la siguiente
+      } else {
+        exitosas++;
+      }
+    }
+
+    // 8. Crear un mensaje de resumen detallado
+    let mensajeFinal = `¡Éxito! Se subieron ${exitosas} transferencias nuevas.\n`;
+    
+    const bloqueadasBD = transferencias.length - transferenciasNuevas.length;
+    if (bloqueadasBD > 0) {
+      mensajeFinal += `\n🔒 Se ignoraron ${bloqueadasBD} que ya estaban en el sistema.`;
+    }
+    
+    const bloqueadasInternas = transferenciasNuevas.length - loteLimpio.length;
+    if (bloqueadasInternas > 0) {
+      mensajeFinal += `\n⚠️ Se ignoraron ${bloqueadasInternas} archivos duplicados en esta misma subida.`;
+    }
+
+    if (fallidas > 0) {
+      mensajeFinal += `\n❌ Hubo ${fallidas} transferencias que no se pudieron guardar por un error en su formato.`;
+    }
+
+    return res.status(200).json({ status: 'ok', mensaje: mensajeFinal });
 
   } catch (error) {
     return res.status(500).json({ status: 'error', mensaje: 'Error interno: ' + error.message });
