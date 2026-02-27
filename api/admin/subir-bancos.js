@@ -30,10 +30,10 @@ export default async function handler(req, res) {
     // 3. Obtener las fechas de los pagos que estamos intentando subir
     const fechas = [...new Set(transferencias.map(t => t.fecha_pago))];
 
-    // 4. Traer los pagos que YA EXISTEN en la base de datos en esas fechas
+   // 4. Traer los pagos que YA EXISTEN en la base de datos en esas fechas
     const { data: existentes, error: errExistentes } = await supabase
       .from('transferencias')
-      .select('monto, fecha_pago, referencia, plataforma')
+      .select('monto, fecha_pago, referencia, plataforma, hora_pago') // <-- AGREGAMOS hora_pago AQUÍ
       .in('fecha_pago', fechas);
 
     if (errExistentes) throw errExistentes;
