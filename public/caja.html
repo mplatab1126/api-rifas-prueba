@@ -82,10 +82,11 @@
         <p id="lbl-calle" style="color:var(--danger);">$0</p>
         <span style="font-size:0.75rem; color:var(--muted); font-weight:600;">(Dinero que tienen los asesores)</span>
       </div>
-      <div class="kpi-card" style="border-left: 4px solid var(--accent); background: #e8f5e9;">
+      <div class="kpi-card" style="border-left: 4px solid var(--accent); background: #e8f5e9; position: relative;">
         <h3>🏦 Efectivo Físico Esperado</h3>
         <p id="lbl-oficina" style="color:var(--accent-2);">$0</p>
-        <span style="font-size:0.75rem; color:var(--ink-2); font-weight:600;">(Base + Entregado a caja hoy)</span>
+        <span style="font-size:0.75rem; color:var(--ink-2); font-weight:600;">(Base + Recaudo + Extra - Gastos)</span>
+        <button onclick="abrirModalMovimiento()" style="margin-top:10px; background:#fff; border:1px solid var(--accent); color:var(--accent-2); font-weight:600; cursor:pointer; font-size:0.75rem; padding:4px 10px; border-radius: 8px; width: 100%;">💸 Registrar Ingreso / Gasto</button>
       </div>
     </div>
 
@@ -132,18 +133,52 @@
     </div>
   </div>
 
+  <div id="modalMovimiento" class="modal-overlay">
+    <div class="modal-card">
+      <h3 style="margin: 0 0 5px; color: var(--ink);">💸 Ingreso o Salida</h3>
+      <p style="color:var(--muted); font-size: 0.85rem; margin-bottom: 15px;">Registra un gasto de la oficina o un dinero extra ingresado.</p>
+      
+      <div class="field" style="margin-bottom:10px;">
+        <select id="movTipo" style="width: 100%; border: 1px solid var(--ring-strong); border-radius: 10px; padding: 12px; font-size: 1rem; font-weight: 700; color: var(--ink); outline: none; background: #fff; font-family: inherit;">
+          <option value="salida">🔴 Salida (Ej: Pago internet, tintos)</option>
+          <option value="ingreso">🟢 Ingreso Extra (Ej: Más sencillo)</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:10px;">
+        <input type="number" id="movMonto" placeholder="Valor Ej: 50000">
+      </div>
+      <div class="field" style="margin-bottom:15px;">
+        <input type="text" id="movDetalle" placeholder="¿De qué es? (Ej: Recibo de luz)" style="font-size: 0.9rem; font-weight: normal; text-align: left;">
+      </div>
+
+      <div style="display:flex; gap:10px;">
+        <button class="cta cta-outline" style="flex:1;" onclick="document.getElementById('modalMovimiento').style.display='none'">Cancelar</button>
+        <button class="cta" style="flex:1;" onclick="confirmarMovimiento()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
   <div id="modalCierre" class="modal-overlay">
-    <div class="modal-card" style="max-width: 420px;"> <h3 style="margin: 0 0 5px; color: var(--ink);">🔒 Arqueo y Cierre</h3>
+    <div class="modal-card" style="max-width: 420px;"> 
+      <h3 style="margin: 0 0 5px; color: var(--ink);">🔒 Arqueo y Cierre</h3>
       <p style="color:var(--muted); font-size: 0.85rem; margin-bottom: 15px;">Revisa que el dinero físico coincida exactamente con este resumen.</p>
       
       <div style="background: var(--bg); border: 1px solid var(--ring); border-radius: 12px; padding: 15px; text-align: left; margin-bottom: 15px;">
-          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-              <span style="color:var(--muted); font-size:0.9rem;">💵 Base Fija:</span>
-              <strong id="cierreBase" style="color:var(--ink);">$0</strong>
+          <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+              <span style="color:var(--muted); font-size:0.85rem;">💵 Base Fija:</span>
+              <strong id="cierreBase" style="color:var(--ink); font-size:0.9rem;">$0</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+              <span style="color:var(--muted); font-size:0.85rem;">📥 Recaudo Ventas:</span>
+              <strong id="cierreRecaudo" style="color:var(--accent-2); font-size:0.9rem;">$0</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+              <span style="color:var(--muted); font-size:0.85rem;">🟢 Ingresos Extra:</span>
+              <strong id="cierreIngresos" style="color:var(--accent-2); font-size:0.9rem;">$0</strong>
           </div>
           <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-              <span style="color:var(--muted); font-size:0.9rem;">📥 Recaudado hoy:</span>
-              <strong id="cierreRecaudo" style="color:var(--accent-2);">$0</strong>
+              <span style="color:var(--muted); font-size:0.85rem;">🔴 Salidas/Gastos:</span>
+              <strong id="cierreSalidas" style="color:var(--danger); font-size:0.9rem;">$0</strong>
           </div>
           <hr style="border:0; border-top:1px dashed var(--ring-strong); margin: 10px 0;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -246,33 +281,45 @@
       document.getElementById('montoBase').focus();
     }
 
+    function abrirModalMovimiento() {
+      document.getElementById('movMonto').value = '';
+      document.getElementById('movDetalle').value = '';
+      document.getElementById('modalMovimiento').style.display = 'flex';
+      document.getElementById('movMonto').focus();
+    }
+
     function abrirModalCierre() {
-      // Tomamos los números de las tarjetas principales para armar el resumen
+      // Tomamos los números para armar el resumen (Esto luego vendrá de la base de datos)
       const base = document.getElementById('lbl-base').textContent;
-      const recaudo = document.getElementById('lbl-oficina').textContent; 
+      const recaudo = "$150.000"; // Simulación de ventas pagadas
+      const ingresosExtra = "$20.000"; // Simulación de ingresos extra
+      const salidasGastos = "-$50.000"; // Simulación de gastos
+      const totalEsperado = document.getElementById('lbl-oficina').textContent; 
       
       // Totales
       document.getElementById('cierreBase').textContent = base;
-      document.getElementById('cierreRecaudo').textContent = "$150.000"; // Simulación de lo entregado
-      document.getElementById('cierreTotal').textContent = recaudo;
+      document.getElementById('cierreRecaudo').textContent = recaudo;
+      document.getElementById('cierreIngresos').textContent = ingresosExtra;
+      document.getElementById('cierreSalidas').textContent = salidasGastos;
+      document.getElementById('cierreTotal').textContent = totalEsperado;
 
-      // 🌟 NUEVO: Simulación del historial de movimientos en efectivo
+      // 🌟 Simulación del historial de movimientos que saldrá en la tirilla
       const listaHTML = `
         <div style="display:flex; justify-content:space-between; border-bottom: 1px solid var(--ring); padding: 6px 0;">
             <span style="color:var(--muted);">10:15 AM - Venta Boleta 1234</span>
             <strong style="color:var(--accent-2);">+$20.000</strong>
         </div>
         <div style="display:flex; justify-content:space-between; border-bottom: 1px solid var(--ring); padding: 6px 0;">
-            <span style="color:var(--muted);">11:30 AM - Abono Boleta 4321</span>
-            <strong style="color:var(--accent-2);">+$30.000</strong>
+            <span style="color:var(--muted);">11:00 AM - Gasto: Internet 🔴</span>
+            <strong style="color:var(--danger);">-$50.000</strong>
         </div>
         <div style="display:flex; justify-content:space-between; border-bottom: 1px solid var(--ring); padding: 6px 0;">
             <span style="color:var(--muted);">01:45 PM - Venta Boleta 9999</span>
             <strong style="color:var(--accent-2);">+$50.000</strong>
         </div>
         <div style="display:flex; justify-content:space-between; padding: 6px 0;">
-            <span style="color:var(--muted);">03:00 PM - Abono Boleta 1111</span>
-            <strong style="color:var(--accent-2);">+$50.000</strong>
+            <span style="color:var(--muted);">02:00 PM - Ingreso: Más sencillo 🟢</span>
+            <strong style="color:var(--accent-2);">+$20.000</strong>
         </div>
       `;
       document.getElementById('listaMovimientosCierre').innerHTML = listaHTML;
@@ -286,7 +333,7 @@
       setTimeout(() => {
         document.getElementById('lbl-base').textContent = "$200.000";
         document.getElementById('lbl-calle').textContent = "$50.000";
-        document.getElementById('lbl-oficina').textContent = "$350.000";
+        document.getElementById('lbl-oficina').textContent = "$320.000"; // 200base + 150recaudo + 20ingreso - 50gasto
 
         document.getElementById('lista-asesores').innerHTML = `
           <div class="asesor-row">
@@ -306,6 +353,17 @@
     function confirmarRecepcionDinero() {
       document.getElementById('modalRecibir').style.display = 'none';
       alert("En el siguiente paso conectaremos esto para que guarde el recaudo.");
+    }
+
+    function confirmarMovimiento() {
+      const tipo = document.getElementById('movTipo').value;
+      const monto = document.getElementById('movMonto').value;
+      const detalle = document.getElementById('movDetalle').value;
+      
+      if(!monto || !detalle) return alert('Por favor, ingresa el valor y de qué es.');
+
+      document.getElementById('modalMovimiento').style.display = 'none';
+      alert(`En el backend guardaremos un(a) ${tipo} por $${monto} por concepto de: ${detalle}`);
     }
 
     function guardarBase() {
