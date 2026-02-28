@@ -1570,7 +1570,10 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
     function aplicarFiltrosEstadisticas() {
         const fechaDesde = document.getElementById('filt-desde').value;
         const fechaHasta = document.getElementById('filt-hasta').value;
-        // Obtenemos todos los checkboxes que estén marcados         const checkboxes = document.querySelectorAll('.asesor-chk:checked');         const asesoresSeleccionados = Array.from(checkboxes).map(chk => chk.value);
+      
+        // Obtenemos todos los checkboxes que estén marcados      
+      const checkboxes = document.querySelectorAll('.asesor-chk:checked');      
+      const asesoresSeleccionados = Array.from(checkboxes).map(chk => chk.value);
 
         // Función para estandarizar fechas
         const getFechaLocal = (isoString) => {
