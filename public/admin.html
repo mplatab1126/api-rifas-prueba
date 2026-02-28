@@ -280,16 +280,16 @@
                   <label style="font-size:0.8rem; color:var(--ink-2); font-weight:600;">Hasta (Fecha)</label>
                   <div class="field"><input type="date" id="filt-hasta" class="pill" onchange="aplicarFiltrosEstadisticas()"></div>
                </div>
-               <div style="flex:1; min-width:150px;">
-                  <label style="font-size:0.8rem; color:var(--ink-2); font-weight:600;">Asesor</label>
-                  <div class="field">
-                     <select id="filt-asesor" class="pill" onchange="aplicarFiltrosEstadisticas()">
-                        <option value="ALL">Todos los asesores</option>
-                     </select>
+               <div id="asesor-dropdown-container" style="flex:1; min-width:180px; position: relative;">
+                  <label style="font-size:0.8rem; color:var(--ink-2); font-weight:600;">Asesores</label>
+                  <div class="field" style="cursor: pointer;" onclick="document.getElementById('dropdown-asesores').style.display = document.getElementById('dropdown-asesores').style.display === 'block' ? 'none' : 'block'">
+                     <div class="pill" id="lbl-asesores-seleccionados" style="user-select: none; font-size: 0.85rem; padding: 2px 0;">Todos los asesores ▼</div>
                   </div>
+                  <div id="dropdown-asesores" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; background: #fff; border: 1px solid var(--ring-strong); border-radius: 8px; max-height: 250px; overflow-y: auto; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 12px; margin-top: 4px;">
+                     </div>
                </div>
                <div style="flex:0;">
-                   <button onclick="document.getElementById('filt-desde').value=''; document.getElementById('filt-hasta').value=''; document.getElementById('filt-asesor').value='ALL'; aplicarFiltrosEstadisticas();" style="height:44px; padding:0 15px; border-radius:10px; border:1px solid var(--ring-strong); background:#fff; cursor:pointer;">Limpiar</button>
+                   <button onclick="limpiarFiltrosRendimiento()" style="height:44px; padding:0 15px; border-radius:10px; border:1px solid var(--ring-strong); background:#fff; cursor:pointer;">Limpiar</button>
                </div>
             </div>
         </div>
@@ -1550,16 +1550,18 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         document.getElementById('kpi-global-cero').textContent = globales.separadas_cero;
         document.getElementById('kpi-global-libres').textContent = globales.libres;
 
-        // 2. Llenar la lista de asesores automáticamente
+        // 2. Llenar la lista de asesores con Checkboxes automáticamente
         const asesoresSet = new Set();
         ventas.forEach(v => asesoresSet.add(v.asesor || 'Sin Asesor'));
         abonos.forEach(a => asesoresSet.add(a.asesor || 'Sin Asesor'));
         
-        const selectAsesor = document.getElementById('filt-asesor');
-        selectAsesor.innerHTML = '<option value="ALL">Todos los asesores</option>';
-        [...asesoresSet].forEach(a => {
-            selectAsesor.innerHTML += `<option value="${a}">${a}</option>`;
+        const dropdownAsesores = document.getElementById('dropdown-asesores');
+        let htmlCheckboxes = `<label style="display:flex; gap:8px; margin-bottom:8px; cursor:pointer; color:var(--ink); font-weight:600;"><input type="checkbox" id="chk-all-asesores" checked onchange="toggleAllAsesores(this)" style="accent-color: var(--accent);"> Seleccionar Todos</label><hr style="border:0; border-top:1px solid var(--ring); margin: 8px 0;">`;
+        
+        [...asesoresSet].sort().forEach(a => {
+            htmlCheckboxes += `<label style="display:flex; gap:8px; margin-bottom:6px; cursor:pointer; font-size:0.85rem; color:var(--ink-2);"><input type="checkbox" value="${a}" class="asesor-chk" checked onchange="verificarAsesoresYFiltrar()" style="accent-color: var(--accent);"> ${a}</label>`;
         });
+        dropdownAsesores.innerHTML = htmlCheckboxes;
 
         // 3. Aplicar filtros iniciales (Mostrará todo por defecto)
         aplicarFiltrosEstadisticas();
@@ -1568,7 +1570,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
     function aplicarFiltrosEstadisticas() {
         const fechaDesde = document.getElementById('filt-desde').value;
         const fechaHasta = document.getElementById('filt-hasta').value;
-        const asesorSel = document.getElementById('filt-asesor').value;
+        // Obtenemos todos los checkboxes que estén marcados         const checkboxes = document.querySelectorAll('.asesor-chk:checked');         const asesoresSeleccionados = Array.from(checkboxes).map(chk => chk.value);
 
         // Función para estandarizar fechas
         const getFechaLocal = (isoString) => {
@@ -1584,7 +1586,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
             const f = getFechaLocal(v.created_at);
             if (fechaDesde && f < fechaDesde) return false;
             if (fechaHasta && f > fechaHasta) return false;
-            if (asesorSel !== 'ALL' && (v.asesor || 'Sin Asesor') !== asesorSel) return false;
+            if (!asesoresSeleccionados.includes(v.asesor || 'Sin Asesor')) return false;
             return true;
         });
 
@@ -1593,7 +1595,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
             const f = getFechaLocal(a.fecha_pago);
             if (fechaDesde && f < fechaDesde) return false;
             if (fechaHasta && f > fechaHasta) return false;
-            if (asesorSel !== 'ALL' && (a.asesor || 'Sin Asesor') !== asesorSel) return false;
+            if (!asesoresSeleccionados.includes(a.asesor || 'Sin Asesor')) return false;
             return true;
         });
 
@@ -1961,6 +1963,55 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
             }
         });
     }
+
+    // ==========================================
+    // FUNCIONES DEL NUEVO FILTRO MULTIPLE DE ASESORES
+    // ==========================================
+    function toggleAllAsesores(source) {
+        const checkboxes = document.querySelectorAll('.asesor-chk');
+        checkboxes.forEach(chk => chk.checked = source.checked);
+        verificarAsesoresYFiltrar();
+    }
+
+    function verificarAsesoresYFiltrar() {
+        const checkboxes = document.querySelectorAll('.asesor-chk');
+        const allChecked = Array.from(checkboxes).every(chk => chk.checked);
+        document.getElementById('chk-all-asesores').checked = allChecked;
+        
+        const seleccionados = Array.from(checkboxes).filter(chk => chk.checked).length;
+        const lbl = document.getElementById('lbl-asesores-seleccionados');
+        
+        if (allChecked) {
+            lbl.textContent = 'Todos los asesores ▼';
+        } else if (seleccionados === 0) {
+            lbl.textContent = 'Ninguno seleccionado ▼';
+        } else {
+            lbl.textContent = `${seleccionados} asesores filtrados ▼`;
+        }
+        
+        aplicarFiltrosEstadisticas();
+    }
+
+    function limpiarFiltrosRendimiento() {
+        document.getElementById('filt-desde').value = '';
+        document.getElementById('filt-hasta').value = '';
+        const chkAll = document.getElementById('chk-all-asesores');
+        if (chkAll) {
+            chkAll.checked = true;
+            toggleAllAsesores(chkAll);
+        } else {
+            aplicarFiltrosEstadisticas();
+        }
+    }
+
+    // Cierra el menú desplegable si hacen clic afuera para que no estorbe
+    document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('dropdown-asesores');
+        const container = document.getElementById('asesor-dropdown-container');
+        if (dropdown && container && !container.contains(event.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
     
   </script>
 </body>
