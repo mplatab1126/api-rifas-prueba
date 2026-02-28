@@ -8,7 +8,9 @@ export default async function handler(req, res) {
 
   const { id, contrasena } = req.body; 
   const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
-  if (!asesores[contrasena]) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
+  const nombreAsesor = asesores[contrasena]; // <-- CORRECCIÓN: Definimos el nombre del asesor
+
+  if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
   if (!id) return res.status(400).json({ status: 'error', mensaje: 'Falta el ID del abono' });
 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
@@ -18,6 +20,8 @@ export default async function handler(req, res) {
     if (errAbono || !abono) throw new Error('Abono no encontrado');
 
     const { numero_boleta, monto, referencia_transferencia } = abono;
+    const numeroLimpio = String(numero_boleta).trim(); // <-- CORRECCIÓN: Creamos la variable que faltaba
+
     const { error: errDelete } = await supabase.from('abonos').delete().eq('id', id);
     if (errDelete) throw errDelete;
 
@@ -36,7 +40,7 @@ export default async function handler(req, res) {
       esDiaria = true; 
     }
 
-    const { data: boleta } = await supabase.from(tabla).select('saldo_restante, total_abonado').eq('numero', numero_boleta).single();
+    const { data: boleta } = await supabase.from(tabla).select('saldo_restante, total_abonado').eq('numero', numeroLimpio).single();
     
     if (boleta) {
       const nuevoAbonado = Number(boleta.total_abonado) - Number(monto);
@@ -45,14 +49,14 @@ export default async function handler(req, res) {
       if (esDiaria) nuevoEstado = nuevoSaldo <= 0 ? 'Pagada' : 'Reservado';
       else nuevoEstado = nuevoSaldo <= 0 ? 'Pagada' : 'Ocupada';
 
-      await supabase.from(tabla).update({ total_abonado: nuevoAbonado, saldo_restante: nuevoSaldo, estado: nuevoEstado }).eq('numero', numero_boleta);
+      await supabase.from(tabla).update({ total_abonado: nuevoAbonado, saldo_restante: nuevoSaldo, estado: nuevoEstado }).eq('numero', numeroLimpio);
     }
 
-  // GUARDAR EN LA BITÁCORA
+    // GUARDAR EN LA BITÁCORA
     await supabase.from('registro_movimientos').insert({
         asesor: nombreAsesor,
         accion: 'Eliminar Abono',
-        boleta: numero_boleta,
+        boleta: numeroLimpio,
         detalle: `Se eliminó un abono de $${monto}`
     });
     
