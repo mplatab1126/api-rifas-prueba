@@ -43,13 +43,22 @@ export default async function handler(req, res) {
     if (boletaError || !boletaData) return res.status(404).json({ status: 'error', mensaje: 'La boleta no existe' });
     if (!boletaData.telefono_cliente) return res.status(400).json({ status: 'error', mensaje: 'Esta boleta está libre' });
 
+    // Crear hora de Colombia
+    const fechaCol = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Bogota" }));
+    const fechaPagoColombia = fechaCol.getFullYear() + "-" +
+             String(fechaCol.getMonth() + 1).padStart(2, '0') + "-" +
+             String(fechaCol.getDate()).padStart(2, '0') + "T" +
+             String(fechaCol.getHours()).padStart(2, '0') + ":" +
+             String(fechaCol.getMinutes()).padStart(2, '0') + ":" +
+             String(fechaCol.getSeconds()).padStart(2, '0');
+    
     // 1. Insertar el Abono
     const { error: insertError } = await supabase
       .from('abonos')
       .insert({
         numero_boleta: numeroLimpio,
         monto: monto,
-        fecha_pago: new Date().toISOString(),
+        fecha_pago: fechaPagoColombia,
         referencia_transferencia: referencia || 'Sin Ref',
         nota: `Origen: ${metodoPago || 'Efectivo'}${esPendiente ? ' | PENDIENTE' : ''}`,
         asesor: nombreAsesor
