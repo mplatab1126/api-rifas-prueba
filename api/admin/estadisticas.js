@@ -13,10 +13,11 @@ export default async function handler(req, res) {
   
   if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
 
-  if (nombreAsesor !== 'Mateo' && nombreAsesor !== 'Alejo P') {
+  // Agregué Alejo Plata por si acaso también usa ese alias
+  if (nombreAsesor !== 'Mateo' && nombreAsesor !== 'Alejo P' && nombreAsesor !== 'Alejo Plata') {
     return res.status(403).json({ 
       status: 'error', 
-      mensaje: 'Acceso Denegado: Solo Mateo y Alejo P tienen permisos para ver el rendimiento de la empresa.' 
+      mensaje: 'Acceso Denegado: Solo gerencia tiene permisos para ver el rendimiento de la empresa.' 
     });
   }
 
@@ -27,7 +28,7 @@ export default async function handler(req, res) {
     const { data: abonos, error: errAbonos } = await supabase
       .from('abonos')
       .select('monto, fecha_pago, asesor, numero_boleta')
-      .limit(100000); // <--- AGREGAR ESTO
+      .limit(100000); 
     if (errAbonos) throw errAbonos;
 
     // 2. Traemos las Ventas (ahora incluimos el "detalle" para saber si el abono fue $0)
@@ -35,22 +36,29 @@ export default async function handler(req, res) {
       .from('registro_movimientos')
       .select('created_at, asesor, boleta, detalle')
       .eq('accion', 'Nueva Venta')
-      .limit(100000); // <--- AGREGAR ESTO
+      .limit(100000); 
     if (errVentas) throw errVentas;
 
     // 3. Traemos el resumen global del Apartamento (10.000 boletas)
     const { data: boletasGlobal, error: errBoletas } = await supabase
       .from('boletas')
       .select('estado, total_abonado, telefono_cliente')
-      .limit(100000); // <--- AGREGAR ESTO
+      .limit(100000); 
     if (errBoletas) throw errBoletas;
 
-    // 🌟 4. LO NUEVO: Traemos el rendimiento de Chatea Pro 🌟
+    // 4. Traemos el rendimiento de Chatea Pro 
     const { data: chateaData, error: errChatea } = await supabase
       .from('rendimiento_asesores')
       .select('*')
       .limit(10000);
     if (errChatea) throw errChatea;
+
+    // 🌟 5. LO NUEVO: Traemos el rendimiento de Facebook Ads 🌟
+    const { data: fbData, error: errFb } = await supabase
+      .from('metricas_facebook')
+      .select('*')
+      .limit(10000);
+    if (errFb) throw errFb;
 
     let registradas = 0;
     let separadas_cero = 0;
@@ -73,7 +81,8 @@ export default async function handler(req, res) {
         abonos: abonos, 
         ventas: ventas,
         globales: { registradas, separadas_cero, libres },
-        chatea: chateaData // <-- Se lo enviamos a la nueva página de rendimiento
+        chatea: chateaData,
+        fb: fbData // <-- Se lo enviamos a la nueva página de rendimiento
     });
   } catch (error) {
     return res.status(500).json({ status: 'error', mensaje: error.message });
