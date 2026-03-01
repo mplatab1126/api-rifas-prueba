@@ -28,7 +28,7 @@ export default async function handler(req, res) {
     for (const cuenta of cuentas) {
       const idLimpio = cuenta.id.replace(/\D/g, ''); 
       
-     // AQUÍ ESTÁ LA CORRECCIÓN MÁGICA: Le agregamos &time_increment=1
+      // LA LÍNEA MÁGICA (Con los filtros correctos para que separe por días)
       const url = `https://graph.facebook.com/v19.0/act_${idLimpio}/insights?level=ad&date_preset=last_7d&time_increment=1&fields=date_start,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,spend,reach,impressions,frequency,cpm,inline_link_clicks,cpc,inline_link_click_ctr,actions&access_token=${cuenta.token.trim()}`;
 
       const fbReq = await fetch(url);
@@ -61,12 +61,12 @@ export default async function handler(req, res) {
             fecha: item.date_start,
             cuenta_id: idLimpio,
             nombre_cuenta: cuenta.nombre,
-            campana_id: item.campaign_id,
-            nombre_campana: item.campaign_name,
-            adset_id: item.adset_id,
-            nombre_adset: item.adset_name,
-            ad_id: item.ad_id,
-            nombre_ad: item.ad_name,
+            campana_id: item.campaign_id || '000',
+            nombre_campana: item.campaign_name || 'Desconocida',
+            adset_id: item.adset_id || '000',
+            nombre_adset: item.adset_name || 'Desconocido',
+            ad_id: item.ad_id || '000',
+            nombre_ad: item.ad_name || 'Desconocido',
             gasto: Math.round(gasto),
             alcance: parseInt(item.reach) || 0,
             impresiones: parseInt(item.impressions) || 0,
@@ -97,7 +97,7 @@ export default async function handler(req, res) {
 
     if (error) throw error;
 
-    let mensajeFinal = `¡Meta Sincronizado! Se extrajeron ${registrosTotales.length} bloques de anuncios activos.`;
+    let mensajeFinal = `¡Meta Sincronizado! Se extrajeron ${registrosTotales.length} bloques diarios de anuncios.`;
     if (erroresFB.length > 0) {
         mensajeFinal += `\n\n⚠️ OJO, falló una cuenta:\n` + erroresFB.join('\n');
     }
