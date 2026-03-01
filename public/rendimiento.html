@@ -226,7 +226,28 @@
     function prepararDashboard(abonos, ventas, globales, chatea) {
         globalAbonos = abonos;
         globalVentas = ventas;
-        globalChatea = chatea || []; // GUARDAMOS LOS DATOS DE CHATEA
+
+        // 🌟 DICCIONARIO TRADUCTOR DE NOMBRES 🌟
+        // A la izquierda el nombre de Chatea Pro, a la derecha tu nombre de Ventas
+        const mapaNombres = {
+            "Mateo Plata Buitrago": "Mateo",
+            "Luisa Arias": "Arias",
+            "Anyeli Zuleta": "Anyeli",
+            "Manuela Saldarriaga": "Saldarriaga",
+            "jennifer": "Jenifer",
+            "Carlos Flores": "Carlos",
+            "Stiven ramirez": "Stiven",
+            "Alejandra Valencia": "Aleja Valencia",
+            "Manuela Rojas": "Manu R"
+        };
+
+        // Traducimos los nombres de Chatea antes de guardarlos
+        let chateaTraducido = (chatea || []).map(c => {
+            let nombreCorregido = mapaNombres[c.asesor] || c.asesor;
+            return { ...c, asesor: nombreCorregido };
+        });
+
+        globalChatea = chateaTraducido; // Guardamos los datos ya corregidos
 
         document.getElementById('kpi-global-registradas').textContent = globales.registradas;
         document.getElementById('kpi-global-cero').textContent = globales.separadas_cero;
