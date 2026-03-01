@@ -228,65 +228,17 @@
     }
 
     function prepararDashboard(abonos, ventas, globales, chatea) {
-        
-        // 🌟 DICCIONARIO TRADUCTOR UNIVERSAL BLINDADO 🌟
-        const mapaNombres = {
-            // --- Luisa ---
-            "Luisa Arias": "Arias",
-            "luisa arias": "Arias", 
-            "Luisa": "Arias",
+        // Guardar los datos tal cual vienen, solo limpiando espacios en blanco extra
+        globalVentas = ventas.map(v => ({ ...v, asesor: v.asesor ? v.asesor.trim() : 'Sin Asesor' }));
+        globalAbonos = abonos.map(a => ({ ...a, asesor: a.asesor ? a.asesor.trim() : 'Sin Asesor' }));
+        globalChatea = (chatea || []).map(c => ({ ...c, asesor: c.asesor ? c.asesor.trim() : 'Sin Asesor' }));
 
-            // --- Manuela Rojas ---
-            "Manuela Rojas": "Manu R",
-            "manuela rojas": "Manu R",
-
-            // --- Alejandra Valencia ---
-            "Alejandra Valencia": "Aleja Valencia", 
-            "Aleja Valencia": "Aleja Valencia",     
-
-            // --- Jenifer ---
-            "jennifer": "Jenifer",
-            "Jennifer": "Jenifer",
-
-            // --- Alejandra Rodriguez ---
-            "Alejandra Rodriguez": "Aleja Rodriguez",
-
-            // --- Manuela Saldarriaga ---
-            "Manuela Saldarriaga": "Saldarriaga",
-
-            // --- Los demás ---
-            "Mateo Plata Buitrago": "Mateo",
-            "Anyeli Zuleta": "Anyeli",
-            "Carlos Flores": "Carlos",
-            "Stiven ramirez": "Stiven",
-            "Valeria Velez": "Valeria",
-            "Alejandro": "Alejo P"
-        };
-
-        // 1. TRADUCIMOS LAS VENTAS ANTES DE GUARDARLAS
-        globalVentas = ventas.map(v => {
-            let nombreLimpio = v.asesor ? v.asesor.trim() : 'Sin Asesor';
-            return { ...v, asesor: mapaNombres[nombreLimpio] || nombreLimpio };
-        });
-
-        // 2. TRADUCIMOS LOS ABONOS ANTES DE GUARDARLOS
-        globalAbonos = abonos.map(a => {
-            let nombreLimpio = a.asesor ? a.asesor.trim() : 'Sin Asesor';
-            return { ...a, asesor: mapaNombres[nombreLimpio] || nombreLimpio };
-        });
-
-        // 3. TRADUCIMOS LOS CHATS
-        globalChatea = (chatea || []).map(c => {
-            let nombreLimpio = c.asesor ? c.asesor.trim() : 'Sin Asesor';
-            return { ...c, asesor: mapaNombres[nombreLimpio] || nombreLimpio };
-        }); 
-
-        // 4. Actualizamos el resumen global de arriba
+        // Actualizamos el resumen global de arriba
         document.getElementById('kpi-global-registradas').textContent = globales.registradas;
         document.getElementById('kpi-global-cero').textContent = globales.separadas_cero;
         document.getElementById('kpi-global-libres').textContent = globales.libres;
 
-        // 5. Creamos la lista de checkboxes unificada
+        // Creamos la lista de checkboxes unificada con los nombres puros
         const asesoresSet = new Set();
         globalVentas.forEach(v => asesoresSet.add(v.asesor));
         globalAbonos.forEach(a => asesoresSet.add(a.asesor));
