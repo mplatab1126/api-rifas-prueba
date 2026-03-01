@@ -450,12 +450,26 @@
         setRangoFecha('semana');
     }
 
+// Función global y segura para normalizar cualquier fecha a YYYY-MM-DD
+    function normalizarFecha(isoString) {
+        if (!isoString) return '';
+        let f = String(isoString).trim();
+        // Si ya viene en formato corto perfecto, no lo tocamos
+        if (/^\d{4}-\d{2}-\d{2}$/.test(f.substring(0, 10))) {
+            return f.substring(0, 10);
+        }
+        // Si viene con horas (ej: de la base de datos) lo ajustamos
+        if (!f.includes('Z') && !f.includes('+')) f += 'Z';
+        const d = new Date(f);
+        if (isNaN(d.getTime())) return f.substring(0, 10);
+        return (new Date(d.getTime() - d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    }
+
     // Actualiza Selects de FB en Cascada
     function actualizarDropdownsFB(fDesde, fHasta) {
         let fbF = globalFb.filter(f => {
-            // 🛠️ CORRECCIÓN: Extraemos solo los primeros 10 caracteres (YYYY-MM-DD)
-            const fechaLimpia = f.fecha ? f.fecha.substring(0, 10) : '';
-            return (!fDesde || fechaLimpia >= fDesde) && (!fHasta || fechaLimpia <= fHasta);
+            const fDate = normalizarFecha(f.fecha);
+            return (!fDesde || fDate >= fDesde) && (!fHasta || fDate <= fHasta);
         });
 
         const selCampana = document.getElementById('fb-campana');
@@ -485,7 +499,6 @@
         const fDesde = document.getElementById('filt-desde').value; 
         const fHasta = document.getElementById('filt-hasta').value;
         const asesoresSeleccionados = Array.from(document.querySelectorAll('.asesor-chk:checked')).map(chk => chk.value);
-        const getFechaLocal = (isoString) => { let f = isoString; if (!f.includes('Z') && !f.includes('+')) f += 'Z'; const d = new Date(f); return (new Date(d.getTime() - d.getTimezoneOffset() * 60000)).toISOString().split('T')[0]; };
 
         const formatoPlata = new Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', minimumFractionDigits:0});
         const formatoNum = new Intl.NumberFormat('es-CO');
@@ -493,9 +506,9 @@
         // ============================================
         // 1. RENDIMIENTO GENERAL Y ASESORES
         // ============================================
-        const ventasF = globalVentas.filter(v => { const f = getFechaLocal(v.created_at); return (!fDesde || f >= fDesde) && (!fHasta || f <= fHasta) && asesoresSeleccionados.includes(v.asesor || 'Sin Asesor'); });
-        const abonosF = globalAbonos.filter(a => { const f = getFechaLocal(a.fecha_pago); return (!fDesde || f >= fDesde) && (!fHasta || f <= fHasta) && asesoresSeleccionados.includes(a.asesor || 'Sin Asesor'); });
-        const chateaF = globalChatea.filter(c => {              const fechaLimpia = c.fecha ? c.fecha.substring(0, 10) : '';             return (!fDesde || fechaLimpia >= fDesde) && (!fHasta || fechaLimpia <= fHasta) && asesoresSeleccionados.includes(c.asesor || 'Sin Asesor');          });
+        const ventasF = globalVentas.filter(v => { const f = normalizarFecha(v.created_at); return (!fDesde || f >= fDesde) && (!fHasta || f <= fHasta) && asesoresSeleccionados.includes(v.asesor || 'Sin Asesor'); });
+        const abonosF = globalAbonos.filter(a => { const f = normalizarFecha(a.fecha_pago); return (!fDesde || f >= fDesde) && (!fHasta || f <= fHasta) && asesoresSeleccionados.includes(a.asesor || 'Sin Asesor'); });
+        const chateaF = globalChatea.filter(c => { const f = normalizarFecha(c.fecha); return (!fDesde || f >= fDesde) && (!fHasta || f <= fHasta) && asesoresSeleccionados.includes(c.asesor || 'Sin Asesor'); });
 
         let totalNuevas = ventasF.length;
         let dineroRecaudado = abonosF.reduce((acc, curr) => acc + Number(curr.monto), 0);
@@ -530,7 +543,7 @@
 
         ventasF.forEach(v => { const a = v.asesor || 'Sin Asesor'; if(statsAsesor[a]) statsAsesor[a].nuevas++; });
         abonosF.forEach(a => { 
-            const as = a.asesor || 'Sin Asesor'; const m = Number(a.monto); const f = getFechaLocal(a.fecha_pago);
+            const as = a.asesor || 'Sin Asesor'; const m = Number(a.monto); const f = normalizarFecha(a.fecha_pago);
             recaudoPorDia[f] = (recaudoPorDia[f] || 0) + m;
             if(statsAsesor[as]) { statsAsesor[as].recaudo += m; statsAsesor[as].cantAbonos++; }
         });
@@ -578,16 +591,18 @@
             options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
         });
 
-
-actualizarDropdownsFB(fDesde, fHasta);
+        // ============================================
+        // 2. RENDIMIENTO FACEBOOK ADS
+        // ============================================
+        actualizarDropdownsFB(fDesde, fHasta);
         
         const selCampana = document.getElementById('fb-campana').value;
         const selAdset = document.getElementById('fb-adset').value;
         const selAd = document.getElementById('fb-ad').value;
 
         const fbF = globalFb.filter(f => {
-            const fechaLimpia = f.fecha ? f.fecha.substring(0, 10) : '';
-            const dateOk = (!fDesde || fechaLimpia >= fDesde) && (!fHasta || fechaLimpia <= fHasta);
+            const fDate = normalizarFecha(f.fecha);
+            const dateOk = (!fDesde || fDate >= fDesde) && (!fHasta || fDate <= fHasta);
             const campOk = !selCampana || f.nombre_campana === selCampana;
             const adsetOk = !selAdset || f.nombre_adset === selAdset;
             const adOk = !selAd || f.nombre_ad === selAd;
@@ -599,7 +614,7 @@ actualizarDropdownsFB(fDesde, fHasta);
         const agrupadoFB = {};
 
         fbF.forEach(f => {
-            const fechaLimpia = f.fecha ? f.fecha.substring(0, 10) : ''; 
+            const fDate = normalizarFecha(f.fecha);
             const gas = Number(f.gasto) || 0;
             const imp = Number(f.impresiones) || 0;
             const cli = Number(f.clics_enlace) || 0;
@@ -607,7 +622,7 @@ actualizarDropdownsFB(fDesde, fHasta);
             const com = Number(f.compras) || 0;
 
             totalGasto += gas; totalImpresiones += imp; totalClicks += cli; totalChatsAds += cha; totalComprasAds += com;
-            fbRecaudoPorDia[fechaLimpia] = (fbRecaudoPorDia[fechaLimpia] || 0) + gas;
+            fbRecaudoPorDia[fDate] = (fbRecaudoPorDia[fDate] || 0) + gas;
 
             const key = f.ad_id || f.nombre_ad;
             if(!agrupadoFB[key]) {
