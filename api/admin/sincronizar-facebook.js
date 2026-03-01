@@ -25,11 +25,20 @@ export default async function handler(req, res) {
     let registrosTotales = [];
     let erroresFB = []; 
 
+    // 🌟 LA MAGIA: Calculamos el rango de fechas exacto (Hora Colombia)
+    const offset = -5; 
+    const hoy = new Date(new Date().getTime() + offset * 3600 * 1000);
+    const hace7Dias = new Date(hoy.getTime() - 7 * 24 * 3600 * 1000);
+    
+    const since = hace7Dias.toISOString().split('T')[0];
+    const until = hoy.toISOString().split('T')[0];
+    const timeRange = JSON.stringify({ since, until });
+
     for (const cuenta of cuentas) {
       const idLimpio = cuenta.id.replace(/\D/g, ''); 
       
-      // LA LÍNEA MÁGICA (Con los filtros correctos para que separe por días)
-      const url = `https://graph.facebook.com/v19.0/act_${idLimpio}/insights?level=ad&date_preset=last_7d&time_increment=1&fields=date_start,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,spend,reach,impressions,frequency,cpm,inline_link_clicks,cpc,inline_link_click_ctr,actions&access_token=${cuenta.token.trim()}`;
+      // Enviamos "time_range" obligando a Facebook a incluir HOY, y "time_increment=1" para separar por días
+      const url = `https://graph.facebook.com/v19.0/act_${idLimpio}/insights?level=ad&time_range=${encodeURIComponent(timeRange)}&time_increment=1&fields=date_start,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,spend,reach,impressions,frequency,cpm,inline_link_clicks,cpc,inline_link_click_ctr,actions&access_token=${cuenta.token.trim()}`;
 
       const fbReq = await fetch(url);
       const fbRes = await fbReq.json();
@@ -88,7 +97,7 @@ export default async function handler(req, res) {
        if (erroresFB.length > 0) {
            return res.status(200).json({ status: 'error', mensaje: 'Facebook rechazó la conexión:\n\n' + erroresFB.join('\n\n') });
        }
-       return res.status(200).json({ status: 'ok', mensaje: 'Las cuentas están conectadas, pero no hubo gasto en los últimos 7 días.' });
+       return res.status(200).json({ status: 'ok', mensaje: 'Las cuentas están conectadas, pero no hubo gasto en estas fechas.' });
     }
 
     const { error } = await supabase
