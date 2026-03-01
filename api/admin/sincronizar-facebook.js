@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req, res) {
-  // 1. Permisos CORS para conectar con tu panel
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'OPTIONS,POST');
@@ -15,28 +14,30 @@ export default async function handler(req, res) {
 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
-  // 2. Traemos tus llaves seguras de Vercel
   const cuentas = [
     { id: process.env.FB_ACT_1_ID, token: process.env.FB_ACT_1_TOKEN, nombre: 'Cuenta Principal' },
     { id: process.env.FB_ACT_2_ID, token: process.env.FB_ACT_2_TOKEN, nombre: 'Cuenta Secundaria' }
-  ].filter(c => c.id && c.token); // Filtra por si falta alguna llave
+  ].filter(c => c.id && c.token);
 
-  if(cuentas.length === 0) return res.status(500).json({status: 'error', mensaje: 'Faltan las llaves de Facebook en Vercel'});
+  if(cuentas.length === 0) return res.status(200).json({status: 'error', mensaje: 'Faltan las llaves de Facebook en Vercel'});
 
   try {
     let registrosTotales = [];
+    let erroresFB = []; // <-- NUEVO: Guardaremos los errores reales aquí
 
-    // 3. El ciclo mágico: Facebook nos manda los datos de los últimos 7 días
     for (const cuenta of cuentas) {
-      // Le pedimos a Facebook TODAS tus métricas a nivel Anuncio (Ad)
-      const url = `https://graph.facebook.com/v19.0/act_${cuenta.id}/insights?level=ad&date_preset=last_7_days&fields=date_start,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,spend,reach,impressions,frequency,cpm,inline_link_clicks,cpc,inline_link_click_ctr,actions&access_token=${cuenta.token}`;
+      // Limpiamos el ID por si le pusiste "act=" o espacios por error en Vercel
+      const idLimpio = cuenta.id.replace(/\D/g, ''); 
+      
+      const url = `https://graph.facebook.com/v19.0/act_${idLimpio}/insights?level=ad&date_preset=last_7_days&fields=date_start,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,spend,reach,impressions,frequency,cpm,inline_link_clicks,cpc,inline_link_click_ctr,actions&access_token=${cuenta.token.trim()}`;
 
       const fbReq = await fetch(url);
       const fbRes = await fbReq.json();
 
+      // Si Facebook arroja error, lo anotamos
       if (fbRes.error) {
-        console.error("Error en cuenta " + cuenta.nombre + ":", fbRes.error);
-        continue; // Si falla una cuenta, no detiene el proceso de la otra
+        erroresFB.push(`❌ ${cuenta.nombre}: ${fbRes.error.message}`);
+        continue; 
       }
 
       if (fbRes.data && fbRes.data.length > 0) {
@@ -45,7 +46,6 @@ export default async function handler(req, res) {
           let conversaciones = 0;
           let compras = 0;
 
-          // Extraemos los eventos de tu embudo directamente de Facebook
           if (item.actions) {
             const actConv = item.actions.find(a => a.action_type === 'onsite_conversion.messaging_conversation_started_7d');
             if (actConv) conversaciones = parseInt(actConv.value);
@@ -55,13 +55,12 @@ export default async function handler(req, res) {
           }
 
           const gasto = parseFloat(item.spend) || 0;
-          // Matemáticas para costos
           const costo_conv = conversaciones > 0 ? (gasto / conversaciones) : 0;
           const costo_comp = compras > 0 ? (gasto / compras) : 0;
 
           registrosTotales.push({
             fecha: item.date_start,
-            cuenta_id: cuenta.id,
+            cuenta_id: idLimpio,
             nombre_cuenta: cuenta.nombre,
             campana_id: item.campaign_id,
             nombre_campana: item.campaign_name,
@@ -69,7 +68,7 @@ export default async function handler(req, res) {
             nombre_adset: item.adset_name,
             ad_id: item.ad_id,
             nombre_ad: item.ad_name,
-            gasto: Math.round(gasto), // Redondeamos para no tener 10 decimales
+            gasto: Math.round(gasto),
             alcance: parseInt(item.reach) || 0,
             impresiones: parseInt(item.impressions) || 0,
             frecuencia: parseFloat(item.frequency) || 0,
@@ -86,18 +85,26 @@ export default async function handler(req, res) {
       }
     }
 
+    // Evaluamos los resultados
     if (registrosTotales.length === 0) {
+       if (erroresFB.length > 0) {
+           return res.status(200).json({ status: 'error', mensaje: 'Facebook rechazó la conexión:\n\n' + erroresFB.join('\n\n') });
+       }
        return res.status(200).json({ status: 'ok', mensaje: 'Las cuentas están conectadas, pero no hubo gasto en los últimos 7 días.' });
     }
 
-    // 4. Inyectamos la información a Supabase (reemplazando lo viejo del día si ya existía)
     const { error } = await supabase
       .from('metricas_facebook')
       .upsert(registrosTotales, { onConflict: 'fecha, cuenta_id, campana_id, adset_id, ad_id' });
 
     if (error) throw error;
 
-    return res.status(200).json({ status: 'ok', mensaje: `¡Meta Sincronizado! Se extrajeron ${registrosTotales.length} bloques de anuncios activos.` });
+    let mensajeFinal = `¡Meta Sincronizado! Se extrajeron ${registrosTotales.length} bloques de anuncios activos.`;
+    if (erroresFB.length > 0) {
+        mensajeFinal += `\n\n⚠️ OJO, falló una cuenta:\n` + erroresFB.join('\n');
+    }
+
+    return res.status(200).json({ status: 'ok', mensaje: mensajeFinal });
 
   } catch (error) {
     return res.status(500).json({ status: 'error', mensaje: 'Fallo al procesar: ' + error.message });
