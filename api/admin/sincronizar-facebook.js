@@ -23,18 +23,17 @@ export default async function handler(req, res) {
 
   try {
     let registrosTotales = [];
-    let erroresFB = []; // <-- NUEVO: Guardaremos los errores reales aquí
+    let erroresFB = []; 
 
     for (const cuenta of cuentas) {
-      // Limpiamos el ID por si le pusiste "act=" o espacios por error en Vercel
       const idLimpio = cuenta.id.replace(/\D/g, ''); 
       
-      const url = `https://graph.facebook.com/v19.0/act_${idLimpio}/insights?level=ad&date_preset=last_7_days&fields=date_start,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,spend,reach,impressions,frequency,cpm,inline_link_clicks,cpc,inline_link_click_ctr,actions&access_token=${cuenta.token.trim()}`;
+      // AQUÍ ESTÁ LA CORRECCIÓN MÁGICA: date_preset=last_7d
+      const url = `https://graph.facebook.com/v19.0/act_${idLimpio}/insights?level=ad&date_preset=last_7d&fields=date_start,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,spend,reach,impressions,frequency,cpm,inline_link_clicks,cpc,inline_link_click_ctr,actions&access_token=${cuenta.token.trim()}`;
 
       const fbReq = await fetch(url);
       const fbRes = await fbReq.json();
 
-      // Si Facebook arroja error, lo anotamos
       if (fbRes.error) {
         erroresFB.push(`❌ ${cuenta.nombre}: ${fbRes.error.message}`);
         continue; 
@@ -85,7 +84,6 @@ export default async function handler(req, res) {
       }
     }
 
-    // Evaluamos los resultados
     if (registrosTotales.length === 0) {
        if (erroresFB.length > 0) {
            return res.status(200).json({ status: 'error', mensaje: 'Facebook rechazó la conexión:\n\n' + erroresFB.join('\n\n') });
