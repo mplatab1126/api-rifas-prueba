@@ -390,13 +390,22 @@
     }
 
     function setRangoFecha(rango) {
-        const inputDesde = document.getElementById('filt-desde'); const inputHasta = document.getElementById('filt-hasta');
-        const hoy = new Date(); const getFormat = (d) => d.toISOString().split('T')[0];
+        const inputDesde = document.getElementById('filt-desde'); 
+        const inputHasta = document.getElementById('filt-hasta');
+        const hoy = new Date(); 
+        
+        // 👇 CORRECCIÓN MAGICA DE ZONA HORARIA PARA COLOMBIA 👇
+        const getFormat = (d) => {
+            const offset = d.getTimezoneOffset() * 60000;
+            return new Date(d.getTime() - offset).toISOString().split('T')[0];
+        };
+
         if (rango === 'hoy') { inputDesde.value = getFormat(hoy); inputHasta.value = getFormat(hoy); } 
         else if (rango === 'ayer') { const ayer = new Date(hoy); ayer.setDate(ayer.getDate() - 1); inputDesde.value = getFormat(ayer); inputHasta.value = getFormat(ayer); } 
         else if (rango === 'semana') { const semana = new Date(hoy); semana.setDate(semana.getDate() - 6); inputDesde.value = getFormat(semana); inputHasta.value = getFormat(hoy); } 
         else if (rango === 'mes') { const primeroMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1); inputDesde.value = getFormat(primeroMes); inputHasta.value = getFormat(hoy); } 
         else if (rango === 'todo') { inputDesde.value = ''; inputHasta.value = ''; }
+        
         aplicarFiltrosEstadisticas();
     }
 
