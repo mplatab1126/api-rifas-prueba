@@ -7,7 +7,6 @@
   <title>BI Dashboard - Los Plata</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
-    /* --- DISEÑO CORPORATIVO --- */
     :root{
       --bg: #f4f7fa; --card: #ffffff; --ink: #1e293b; --ink-2: #475569; --muted: #94a3b8; 
       --ring: #e2e8f0; --ring-strong: #cbd5e1; 
@@ -147,12 +146,37 @@
         </div>
     </div>
 
+    <div class="row" style="margin-top: -10px;">
+        <div class="col-100 mega-kpi-grid">
+            <div class="mega-kpi" style="background: linear-gradient(135deg, #e0f2fe 0%, #fff 100%); border-color: #bae6fd;">
+                <div class="mega-kpi-title">📢 Gasto Meta Ads</div>
+                <div class="mega-kpi-value" id="kpi-gasto-ads" style="color: #0369a1;">$0</div>
+                <span class="mega-kpi-sub" id="kpi-roas" style="font-weight: 800; color: #0284c7;">ROAS: 0x</span>
+            </div>
+            <div class="mega-kpi" style="background: linear-gradient(135deg, #fce7f3 0%, #fff 100%); border-color: #fbcfe8;">
+                <div class="mega-kpi-title">🖱️ Costo por Clic (CPC)</div>
+                <div class="mega-kpi-value" id="kpi-cpc" style="color: #be185d;">$0</div>
+                <span class="mega-kpi-sub" id="kpi-ctr">CTR: 0%</span>
+            </div>
+            <div class="mega-kpi" style="background: linear-gradient(135deg, #ffedd5 0%, #fff 100%); border-color: #fdba74;">
+                <div class="mega-kpi-title">💬 Costo por Chat</div>
+                <div class="mega-kpi-value" id="kpi-cpc-chat" style="color: #c2410c;">$0</div>
+                <span class="mega-kpi-sub" id="kpi-chats-ads">0 chats generados</span>
+            </div>
+            <div class="mega-kpi" style="background: linear-gradient(135deg, #dcfce7 0%, #fff 100%); border-color: #86efac;">
+                <div class="mega-kpi-title">🛍️ Costo x Venta (CPA)</div>
+                <div class="mega-kpi-value" id="kpi-cpa" style="color: #15803d;">$0</div>
+                <span class="mega-kpi-sub" id="kpi-compras-ads">0 ventas de ads</span>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
         <div class="col-100">
             <div class="card" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; display: flex; justify-content: space-between; align-items: center; padding: 24px 30px; flex-wrap: wrap; gap: 15px; height: auto;">
                 <div style="flex: 1; min-width: 300px;">
                     <h3 style="margin: 0 0 5px 0; font-size: 1.3rem; color: white;">🧠 Analista de Datos Inteligente (IA)</h3>
-                    <p style="margin: 0; font-size: 0.9rem; color: #94a3b8;">Cruza el recaudo, las ventas, abonos y chats para extraer conclusiones precisas de cada asesor.</p>
+                    <p style="margin: 0; font-size: 0.9rem; color: #94a3b8;">Cruza el recaudo, las ventas, abonos, Facebook Ads y chats para extraer conclusiones precisas.</p>
                 </div>
                 <button id="btnIA" class="btn" style="background: linear-gradient(90deg, #6a11cb, #2575fc); color: white; font-size: 1.05rem; padding: 12px 24px;" onclick="generarReporteIA()">✨ Generar Reporte Gerencial</button>
             </div>
@@ -190,10 +214,9 @@
 
   <script>
     const STORAGE_KEY = 'asesor_pwd';
-    let globalAbonos = []; let globalVentas = []; let globalChatea = []; 
+    let globalAbonos = []; let globalVentas = []; let globalChatea = []; let globalFb = [];
     let chartLinea = null; let chartDona = null;
     
-    // Variables para enviar a la IA
     window.globalStatsIA = {};
     window.rankArrayIA = [];
 
@@ -243,12 +266,12 @@
         try {
             const req = await fetch('/api/admin/estadisticas', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contrasena: localStorage.getItem(STORAGE_KEY) }) });
             const res = await req.json();
-            if (res.status === 'ok') prepararDashboard(res.abonos, res.ventas, res.globales, res.chatea);
+            if (res.status === 'ok') prepararDashboard(res.abonos, res.ventas, res.globales, res.chatea, res.fb);
             else div.innerHTML = `<p style="text-align:center; color:var(--danger);">${res.mensaje}</p>`;
         } catch(e) { div.innerHTML = '<p style="text-align:center; color:var(--danger);">Error de conexión con la base de datos.</p>'; }
     }
 
-    function prepararDashboard(abonos, ventas, globales, chatea) {
+    function prepararDashboard(abonos, ventas, globales, chatea, fb) {
         const mapaNombres = {
             "Luisa Arias": "Arias", "luisa arias": "Arias", 
             "Manuela Rojas": "Manu R", "manuela rojas": "Manu R",
@@ -262,6 +285,7 @@
         globalVentas = ventas.map(v => ({ ...v, asesor: mapaNombres[v.asesor?.trim()] || v.asesor?.trim() || 'Sin Asesor' }));
         globalAbonos = abonos.map(a => ({ ...a, asesor: mapaNombres[a.asesor?.trim()] || a.asesor?.trim() || 'Sin Asesor' }));
         globalChatea = (chatea || []).map(c => ({ ...c, asesor: mapaNombres[c.asesor?.trim()] || c.asesor?.trim() || 'Sin Asesor' })); 
+        globalFb = fb || [];
 
         const asesoresSet = new Set();
         globalVentas.forEach(v => asesoresSet.add(v.asesor)); globalAbonos.forEach(a => asesoresSet.add(a.asesor)); globalChatea.forEach(c => asesoresSet.add(c.asesor));
@@ -285,7 +309,7 @@
 
         let totalNuevas = ventasF.length;
         let dineroRecaudado = abonosF.reduce((acc, curr) => acc + Number(curr.monto), 0);
-        let totalPagos = abonosF.length; // Cantidad de abonos
+        let totalPagos = abonosF.length;
 
         let totalAsignadas = 0, tiempos = [];
         chateaF.forEach(c => { totalAsignadas += (c.conversaciones_asignadas || 0); if (c.tiempo_respuesta_segundos > 0) tiempos.push(c.tiempo_respuesta_segundos); });
@@ -300,6 +324,32 @@
         document.getElementById('kpi-ipc').textContent = "Ingreso por Chat (IPC): " + formatoPlata.format(ipc);
         document.getElementById('kpi-conversion').textContent = convProm + '%';
         document.getElementById('kpi-tiempo').textContent = tProm > 0 ? (tProm < 60 ? Math.floor(tProm) + "s" : Math.floor(tProm/60) + "m " + Math.floor(tProm%60) + "s") : "-";
+
+        // MATEMÁTICAS DE FACEBOOK ADS
+        const fbF = globalFb.filter(f => { return (!fDesde || f.fecha >= fDesde) && (!fHasta || f.fecha <= fHasta); });
+        
+        let totalGasto = fbF.reduce((acc, curr) => acc + Number(curr.gasto), 0);
+        let totalClicks = fbF.reduce((acc, curr) => acc + Number(curr.clics_enlace), 0);
+        let totalImpresiones = fbF.reduce((acc, curr) => acc + Number(curr.impresiones), 0);
+        let totalChatsAds = fbF.reduce((acc, curr) => acc + Number(curr.conversaciones), 0);
+        let totalComprasAds = fbF.reduce((acc, curr) => acc + Number(curr.compras), 0);
+
+        let cpc = totalClicks > 0 ? (totalGasto / totalClicks) : 0;
+        let ctr = totalImpresiones > 0 ? ((totalClicks / totalImpresiones) * 100).toFixed(2) : 0;
+        let costoChat = totalChatsAds > 0 ? (totalGasto / totalChatsAds) : 0;
+        let cpa = totalComprasAds > 0 ? (totalGasto / totalComprasAds) : 0;
+        let roas = totalGasto > 0 ? (dineroRecaudado / totalGasto).toFixed(2) : 0;
+
+        if(document.getElementById('kpi-gasto-ads')){
+            document.getElementById('kpi-gasto-ads').textContent = formatoPlata.format(totalGasto);
+            document.getElementById('kpi-roas').textContent = "ROAS (Retorno): " + roas + "x";
+            document.getElementById('kpi-cpc').textContent = formatoPlata.format(cpc);
+            document.getElementById('kpi-ctr').textContent = "CTR: " + ctr + "%";
+            document.getElementById('kpi-cpc-chat').textContent = formatoPlata.format(costoChat);
+            document.getElementById('kpi-chats-ads').textContent = totalChatsAds + " chats en Ads";
+            document.getElementById('kpi-cpa').textContent = formatoPlata.format(cpa);
+            document.getElementById('kpi-compras-ads').textContent = totalComprasAds + " ventas en Ads";
+        }
 
         let recaudoPorDia = {}, statsAsesor = {};
         asesoresSeleccionados.forEach(a => statsAsesor[a] = { recaudo: 0, nuevas: 0, cantAbonos: 0, chats: 0, tiempos: [] });
@@ -320,7 +370,6 @@
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
         });
 
-        // Construir Array de Leaderboard (AQUÍ GUARDAMOS DATOS PARA LA IA)
         const rankArray = [];
         Object.keys(statsAsesor).forEach(as => {
             const d = statsAsesor[as];
@@ -330,10 +379,19 @@
                 rankArray.push({ asesor: as, recaudo: d.recaudo, nuevas: d.nuevas, cantAbonos: d.cantAbonos, chats: d.chats, conversion: conv, ipc: ipcAs });
             }
         });
-        rankArray.sort((a, b) => b.recaudo - a.recaudo); // Ordena por recaudo
+        rankArray.sort((a, b) => b.recaudo - a.recaudo); 
 
-        // Guardamos variables globales para la IA
-        window.globalStatsIA = { recaudoTotal: dineroRecaudado, ventasNuevas: totalNuevas, cantidadAbonos: totalPagos, chatsTotales: totalAsignadas, conversionPromedio: convProm + '%' };
+        window.globalStatsIA = { 
+            recaudoTotal: dineroRecaudado, 
+            ventasNuevas: totalNuevas, 
+            cantidadAbonos: totalPagos, 
+            chatsTotales: totalAsignadas, 
+            conversionPromedio: convProm + '%',
+            gastoFacebook: totalGasto,
+            roasFacebook: roas + 'x',
+            costoPromedioPorChat: costoChat,
+            costoDeAdquisicionCPA: cpa
+        };
         window.rankArrayIA = rankArray;
 
         // Gráfica Dona
@@ -343,7 +401,6 @@
             options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right' } } }
         });
 
-        // Tabla Leaderboard Visual (CON LAS COLUMNAS NUEVAS)
         const leadDiv = document.getElementById('leaderboardRender');
         if(rankArray.length === 0) { leadDiv.innerHTML = '<p style="text-align:center; color:var(--muted); padding:20px;">No hay actividad en estas fechas.</p>'; } 
         else {
@@ -369,7 +426,6 @@
         }
     }
 
-    // --- FUNCIÓN ESTRELLA: LLAMADA A LA INTELIGENCIA ARTIFICIAL ---
     async function generarReporteIA() {
         const btn = document.getElementById('btnIA');
         const card = document.getElementById('ai-card');
@@ -380,25 +436,13 @@
         card.style.display = 'block';
         content.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--muted);"><div style="font-size: 2.5rem; margin-bottom: 10px;">🧠</div>Cruzando variables y escribiendo conclusiones ejecutivas...</div>';
 
-        const payload = {
-            globales: window.globalStatsIA,
-            stats: window.rankArrayIA,
-            contrasena: localStorage.getItem(STORAGE_KEY)
-        };
+        const payload = { globales: window.globalStatsIA, stats: window.rankArrayIA, contrasena: localStorage.getItem(STORAGE_KEY) };
 
         try {
-            const req = await fetch('/api/admin/analisis-ia', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+            const req = await fetch('/api/admin/analisis-ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
             const res = await req.json();
-
-            if (res.status === 'ok') {
-                content.innerHTML = res.html;
-            } else {
-                content.innerHTML = `<p style="color:var(--danger); text-align:center;"><b>Error de IA:</b> ${res.mensaje}</p>`;
-            }
+            if (res.status === 'ok') content.innerHTML = res.html;
+            else content.innerHTML = `<p style="color:var(--danger); text-align:center;"><b>Error de IA:</b> ${res.mensaje}</p>`;
         } catch (e) {
             content.innerHTML = `<p style="color:var(--danger); text-align:center;">Error crítico de conexión con OpenAI.</p>`;
         }
@@ -407,7 +451,6 @@
         btn.disabled = false;
     }
 
-    // Funciones de Checkbox
     function toggleAllAsesores(source) { document.querySelectorAll('.asesor-chk').forEach(chk => chk.checked = source.checked); verificarAsesoresYFiltrar(); }
     function verificarAsesoresYFiltrar() {
         const chks = document.querySelectorAll('.asesor-chk'); const allChecked = Array.from(chks).every(c => c.checked);
@@ -430,6 +473,7 @@
         finally { btn.innerHTML = orig; btn.style.pointerEvents = 'auto'; }
     }
 
+    // 🌟 NUEVA FUNCIÓN PARA EL BOTÓN DE FACEBOOK 🌟
     async function sincronizarFacebook(btn) {
         const orig = btn.innerHTML; 
         btn.innerHTML = '⏳ Conectando con Meta...'; 
@@ -442,7 +486,11 @@
             });
             const res = await req.json();
             showModal(res.status === 'ok' ? 'Éxito' : 'Atención', res.mensaje);
-            // Cuando tengamos las gráficas listas, aquí recargaremos la página automáticamente
+            
+            // Recarga las estadísticas para que se vean los números inmediatamente
+            if (res.status === 'ok') {
+                setTimeout(() => cargarEstadisticas(), 1500);
+            }
         } catch (e) { 
             showModal('Error', 'Fallo conexión con los servidores de Facebook.'); 
         } finally { 
