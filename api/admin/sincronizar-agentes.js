@@ -26,7 +26,6 @@ export default async function handler(req, res) {
       headers: { 'accept': 'application/json', 'Authorization': `Bearer ${CHATEA_TOKEN_LINEA_2}` }
     }).then(r => r.json());
 
-    // 🚨 EL DETECTOR DE ERRORES (NUEVO) 🚨
     if (!respuesta1.data) {
         return res.status(200).json({ status: 'error', mensaje: 'Fallo en Línea 1. Chatea Pro dice: ' + JSON.stringify(respuesta1) });
     }
@@ -77,7 +76,9 @@ export default async function handler(req, res) {
         mensajes_enviados: reg.mensajes_enviados,
         conversaciones_asignadas: reg.conversaciones_asignadas,
         conversaciones_cerradas: reg.conversaciones_cerradas,
-        tiempo_respuesta_segundos: tiempoFinal
+        
+        // ✨ AQUÍ ESTÁ LA MAGIA: Math.round le quita los decimales antes de enviarlo
+        tiempo_respuesta_segundos: Math.round(tiempoFinal) 
       };
     });
 
