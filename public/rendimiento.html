@@ -1,4 +1,5 @@
 function prepararDashboard(abonos, ventas, globales, chatea) {
+
         // 1. RECOLECTAMOS LOS NOMBRES EXACTOS (Sin modificar nada)
         const nombresVentas = new Set();
         ventas.forEach(v => nombresVentas.add(v.asesor ? v.asesor.trim() : 'Sin Asesor'));
