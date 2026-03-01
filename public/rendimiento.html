@@ -473,6 +473,12 @@
         finally { btn.innerHTML = orig; btn.style.pointerEvents = 'auto'; }
     }
 
+    function showModal(title, msg) {
+        document.getElementById('mTitle').textContent = title;
+        document.getElementById('mMsg').textContent = msg;
+        document.getElementById('modalResult').style.display = 'flex';
+    }
+    
     // 🌟 NUEVA FUNCIÓN PARA EL BOTÓN DE FACEBOOK 🌟
     async function sincronizarFacebook(btn) {
         const orig = btn.innerHTML; 
