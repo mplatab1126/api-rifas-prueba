@@ -12,6 +12,10 @@
     {
       "source": "/diarias3",
       "destination": "/diarias3.html"
+    },
+    {
+      "source": "/rendimiento",
+      "destination": "/rendimiento.html"
     }
   ]
 }
