@@ -453,7 +453,9 @@
     // Actualiza Selects de FB en Cascada
     function actualizarDropdownsFB(fDesde, fHasta) {
         let fbF = globalFb.filter(f => {
-            return (!fDesde || f.fecha >= fDesde) && (!fHasta || f.fecha <= fHasta);
+            // 🛠️ CORRECCIÓN: Extraemos solo los primeros 10 caracteres (YYYY-MM-DD)
+            const fechaLimpia = f.fecha ? f.fecha.substring(0, 10) : '';
+            return (!fDesde || fechaLimpia >= fDesde) && (!fHasta || fechaLimpia <= fHasta);
         });
 
         const selCampana = document.getElementById('fb-campana');
