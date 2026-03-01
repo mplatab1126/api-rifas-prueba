@@ -45,6 +45,13 @@ export default async function handler(req, res) {
       .limit(100000); // <--- AGREGAR ESTO
     if (errBoletas) throw errBoletas;
 
+    // 🌟 4. LO NUEVO: Traemos el rendimiento de Chatea Pro 🌟
+    const { data: chateaData, error: errChatea } = await supabase
+      .from('rendimiento_asesores')
+      .select('*')
+      .limit(10000);
+    if (errChatea) throw errChatea;
+
     let registradas = 0;
     let separadas_cero = 0;
     let libres = 0;
@@ -65,7 +72,8 @@ export default async function handler(req, res) {
         status: 'ok', 
         abonos: abonos, 
         ventas: ventas,
-        globales: { registradas, separadas_cero, libres }
+        globales: { registradas, separadas_cero, libres },
+        chatea: chateaData // <-- Se lo enviamos a la nueva página de rendimiento
     });
   } catch (error) {
     return res.status(500).json({ status: 'error', mensaje: error.message });
