@@ -15,6 +15,7 @@ export default async function handler(req, res) {
   const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
   if (!asesores[contrasena]) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
 
+  // Llave de OpenAI (Asegúrate de tener OPENAI_API_KEY en tu Vercel)
   const openAiKey = process.env.OPENAI_API_KEY; 
   if (!openAiKey) return res.status(500).json({ status: 'error', mensaje: 'Falta la API Key de OpenAI en el servidor' });
 
@@ -38,7 +39,7 @@ export default async function handler(req, res) {
       - Utiliza listas <ul> y <li> con márgenes limpios.
       - Utiliza separadores <hr style="border:0; border-top:1px dashed #cbd5e1; margin:20px 0;">.
 
-      Estructura Obligatoria del Reporte (Compórtate como un profesional estadístico):
+      Estructura Obligatoria del Reporte:
       1. 📊 RESUMEN EJECUTIVO: Un análisis duro del panorama general. (¿Fueron buenos los ingresos totales? ¿La conversión general es sana o estamos quemando tráfico?).
       2. 👤 ANÁLISIS DETALLADO POR ASESOR: Evalúa a CADA asesor presente en los datos sacando 1 conclusión por cada uno basada en cruzar sus datos:
          - Analiza su relación entre 'Ventas (Nuevas)' y 'Cantidad de Abonos'.
@@ -49,7 +50,7 @@ export default async function handler(req, res) {
       No incluyas saludos genéricos, ni comillas invertidas de markdown (\`\`\`). Entrega directamente el HTML puro. Sé incisivo, analítico, crítico y constructivo. Usa emojis de forma profesional.
     `;
 
-    // Llamada a OpenAI
+    // Llamada a OpenAI (Usamos gpt-4o-mini para que Vercel no se sature por tiempo)
     const responseAI = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -57,7 +58,7 @@ export default async function handler(req, res) {
         'Authorization': `Bearer ${openAiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o', // Usamos el modelo más inteligente
+        model: 'gpt-4o-mini', 
         messages: [{ role: 'system', content: prompt }],
         temperature: 0.7,
         max_tokens: 1500
