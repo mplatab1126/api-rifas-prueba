@@ -495,7 +495,7 @@
         // ============================================
         const ventasF = globalVentas.filter(v => { const f = getFechaLocal(v.created_at); return (!fDesde || f >= fDesde) && (!fHasta || f <= fHasta) && asesoresSeleccionados.includes(v.asesor || 'Sin Asesor'); });
         const abonosF = globalAbonos.filter(a => { const f = getFechaLocal(a.fecha_pago); return (!fDesde || f >= fDesde) && (!fHasta || f <= fHasta) && asesoresSeleccionados.includes(a.asesor || 'Sin Asesor'); });
-        const chateaF = globalChatea.filter(c => { return (!fDesde || c.fecha >= fDesde) && (!fHasta || c.fecha <= fHasta) && asesoresSeleccionados.includes(c.asesor || 'Sin Asesor'); });
+        const chateaF = globalChatea.filter(c => {              const fechaLimpia = c.fecha ? c.fecha.substring(0, 10) : '';             return (!fDesde || fechaLimpia >= fDesde) && (!fHasta || fechaLimpia <= fHasta) && asesoresSeleccionados.includes(c.asesor || 'Sin Asesor');          });
 
         let totalNuevas = ventasF.length;
         let dineroRecaudado = abonosF.reduce((acc, curr) => acc + Number(curr.monto), 0);
@@ -579,17 +579,15 @@
         });
 
 
-        // ============================================
-        // 2. RENDIMIENTO FACEBOOK ADS
-        // ============================================
-        actualizarDropdownsFB(fDesde, fHasta);
+actualizarDropdownsFB(fDesde, fHasta);
         
         const selCampana = document.getElementById('fb-campana').value;
         const selAdset = document.getElementById('fb-adset').value;
         const selAd = document.getElementById('fb-ad').value;
 
         const fbF = globalFb.filter(f => {
-            const dateOk = (!fDesde || f.fecha >= fDesde) && (!fHasta || f.fecha <= fHasta);
+            const fechaLimpia = f.fecha ? f.fecha.substring(0, 10) : '';
+            const dateOk = (!fDesde || fechaLimpia >= fDesde) && (!fHasta || fechaLimpia <= fHasta);
             const campOk = !selCampana || f.nombre_campana === selCampana;
             const adsetOk = !selAdset || f.nombre_adset === selAdset;
             const adOk = !selAd || f.nombre_ad === selAd;
@@ -601,6 +599,7 @@
         const agrupadoFB = {};
 
         fbF.forEach(f => {
+            const fechaLimpia = f.fecha ? f.fecha.substring(0, 10) : ''; 
             const gas = Number(f.gasto) || 0;
             const imp = Number(f.impresiones) || 0;
             const cli = Number(f.clics_enlace) || 0;
@@ -608,7 +607,7 @@
             const com = Number(f.compras) || 0;
 
             totalGasto += gas; totalImpresiones += imp; totalClicks += cli; totalChatsAds += cha; totalComprasAds += com;
-            fbRecaudoPorDia[f.fecha] = (fbRecaudoPorDia[f.fecha] || 0) + gas;
+            fbRecaudoPorDia[fechaLimpia] = (fbRecaudoPorDia[fechaLimpia] || 0) + gas;
 
             const key = f.ad_id || f.nombre_ad;
             if(!agrupadoFB[key]) {
