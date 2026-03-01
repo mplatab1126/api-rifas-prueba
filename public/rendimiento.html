@@ -231,17 +231,38 @@
         globalAbonos = abonos;
         globalVentas = ventas;
         
-        // 🌟 DICCIONARIO TRADUCTOR DE NOMBRES 🌟
+       // 🌟 DICCIONARIO TRADUCTOR UNIVERSAL (ACTUALIZADO CON AMBAS LÍNEAS) 🌟
         const mapaNombres = {
-            "Mateo Plata Buitrago": "Mateo",
-            "Luisa Arias": "Luisa",
-            "Anyeli Zuleta": "Anyeli",
-            "Manuela Saldarriaga": "Saldarriaga",
+            // --- Luisa ---
+            "Luisa Arias": "Arias",
+            "luisa arias": "Arias",   // <-- Cubre la línea 2 (minúsculas)
+          
+
+            // --- Manuela Rojas ---
+            "Manuela Rojas": "Manu R",
+            "manuela rojas": "Manu R", // <-- Por seguridad
+
+            // --- Alejandra Valencia ---
+            "Alejandra Valencia": "Aleja Valencia", // <-- Línea 1
+            "Aleja Valencia": "Aleja Valencia",     // <-- Línea 2
+
+            // --- Jenifer ---
             "jennifer": "Jenifer",
+            "Jennifer": "Jenifer",
+
+            // --- Alejandra Rodriguez ---
+            "Alejandra Rodriguez": "Aleja Rodriguez",
+
+            // --- Manuela Saldarriaga ---
+            "Manuela Saldarriaga": "Saldarriaga",
+
+            // --- Los demás ---
+            "Mateo Plata Buitrago": "Mateo",
+            "Anyeli Zuleta": "Anyeli",
             "Carlos Flores": "Carlos",
             "Stiven ramirez": "Stiven",
-            "Alejandra Valencia": "Aleja Valencia",
-            "Manuela Rojas": "Manu R"
+            "Valeria Velez": "Valeria",
+            "Alejandro": "Alejo P"
         };
 
         // Traducimos los nombres de Chatea antes de guardarlos
