@@ -94,6 +94,7 @@
     <div style="display:flex; gap:10px; align-items: center;">
       <span style="font-size: 0.8rem; color: #94a3b8; margin-right: 10px;" id="lastSyncTime">Corte: -</span>
       <button class="btn" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2);" onclick="sincronizarChateaPro(this)">🔄 Sincronizar ChateaPro</button>
+      <button class="btn" style="background: #3b82f6; color: white; border: none; font-weight: 700;" onclick="sincronizarFacebook(this)">📊 Sincronizar Meta Ads</button>
       <button class="btn" style="background: white; color: var(--primary);" onclick="window.location.href='/admin.html'">🔙 Volver</button>
     </div>
   </div>
@@ -427,6 +428,27 @@
             if (res.status === 'ok') { document.getElementById('lastSyncTime').textContent = "Corte: " + new Date().toLocaleTimeString('es-CO', {hour: '2-digit', minute:'2-digit'}); setTimeout(() => cargarEstadisticas(), 1500); }
         } catch (e) { showModal('Error', 'Fallo conexión con el servidor.'); } 
         finally { btn.innerHTML = orig; btn.style.pointerEvents = 'auto'; }
+    }
+
+    async function sincronizarFacebook(btn) {
+        const orig = btn.innerHTML; 
+        btn.innerHTML = '⏳ Conectando con Meta...'; 
+        btn.style.pointerEvents = 'none';
+        try {
+            const req = await fetch('/api/admin/sincronizar-facebook', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ contrasena: localStorage.getItem(STORAGE_KEY) }) 
+            });
+            const res = await req.json();
+            showModal(res.status === 'ok' ? 'Éxito' : 'Atención', res.mensaje);
+            // Cuando tengamos las gráficas listas, aquí recargaremos la página automáticamente
+        } catch (e) { 
+            showModal('Error', 'Fallo conexión con los servidores de Facebook.'); 
+        } finally { 
+            btn.innerHTML = orig; 
+            btn.style.pointerEvents = 'auto'; 
+        }
     }
   </script>
 </body>
