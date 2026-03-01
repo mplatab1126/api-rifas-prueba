@@ -4,149 +4,250 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-  <title>Rendimiento - Los Plata</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <title>BI Dashboard - Los Plata</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
-    /* --- DISEÑO MINIMALISTA --- */
+    /* --- DISEÑO CORPORATIVO (Business Intelligence) --- */
     :root{
-      --ink: #2b3a35; --ink-2: #52665e; --muted: #8ba89d; --bg: #f7fcf9; 
-      --card: #ffffff; --ring: #e6eee9; --ring-strong: #d1e3da; --pill: #f0f7f3; 
-      --accent: #4eb082; --accent-2: #3a946a; --danger: #d95a53; --danger-bg: #fcf2f2; 
-      --shadow: 0 4px 12px rgba(0,0,0,.03);
+      --bg: #f4f7fa; --card: #ffffff; --ink: #1e293b; --ink-2: #475569; --muted: #94a3b8; 
+      --ring: #e2e8f0; --ring-strong: #cbd5e1; 
+      --primary: #0f172a; --accent: #10b981; --accent-hover: #059669; --accent-light: #ecfdf5;
+      --blue: #3b82f6; --blue-light: #eff6ff;
+      --purple: #8b5cf6; --purple-light: #f5f3ff;
+      --orange: #f59e0b; --orange-light: #fffbeb;
+      --danger: #ef4444; --danger-light: #fef2f2;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
     }
     *{box-sizing:border-box}
-    body{ margin:0; background: var(--bg); font-family: 'Poppins', sans-serif; color: var(--ink); padding-bottom: 80px; }
+    body{ margin:0; background: var(--bg); font-family: 'Inter', sans-serif; color: var(--ink); padding-bottom: 80px; }
     
-    .top-bar { position: sticky; top: 0; z-index: 100; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(5px); border-bottom: 1px solid var(--ring); padding: 15px 20px; box-shadow: var(--shadow); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;}
-    .shell { max-width: 1000px; margin: 30px auto; padding: 0 18px; display: none; }
+    /* TOP BAR */
+    .top-bar { position: sticky; top: 0; z-index: 100; background: var(--primary); color: white; padding: 12px 24px; box-shadow: var(--shadow-md); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;}
+    .top-bar-title { font-weight: 800; font-size: 1.3rem; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px;}
+    .top-bar-title span { background: var(--accent); color: white; padding: 2px 8px; border-radius: 6px; font-size: 0.8rem; text-transform: uppercase; font-weight: 900;}
     
-    .section-card { background: #fff; border: 1px solid var(--ring); border-radius: 16px; box-shadow: var(--shadow); padding: 24px; margin-bottom: 20px; }
-    .section-title { font-size: 1.1rem; font-weight: 700; color: var(--ink); margin: 0 0 16px 0; padding-bottom: 10px; border-bottom: 1px solid var(--ring); display: flex; align-items: center; justify-content: space-between; }
-    
-    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 15px; }
-    .kpi-card { background: linear-gradient(135deg, #f0f7f3 0%, #e6eee9 100%); border: 1px solid var(--ring-strong); padding: 15px; border-radius: 16px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.02); transition: transform 0.2s;}
-    .kpi-card:hover { transform: translateY(-3px); }
-    .kpi-card h3 { margin: 0 0 5px 0; font-size: 0.7rem; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;}
-    .kpi-card p { margin: 0; font-size: 1.4rem; font-weight: 800; color: var(--accent-2); line-height: 1; }
-    
-    .charts-grid { display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 25px; }
-    @media (min-width: 768px) { .charts-grid { grid-template-columns: 2fr 1fr; } } 
-    .chart-container { background: #fff; border: 1px solid var(--ring); border-radius: 16px; padding: 15px; box-shadow: var(--shadow); position: relative; }
+    /* LAYOUT */
+    .shell { max-width: 1400px; margin: 30px auto; padding: 0 20px; display: none; }
+    .row { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px; }
+    .col-100 { width: 100%; }
+    .col-60 { flex: 1 1 60%; min-width: 300px; }
+    .col-40 { flex: 1 1 35%; min-width: 300px; }
+    .col-33 { flex: 1 1 30%; min-width: 250px; }
+    .col-25 { flex: 1 1 22%; min-width: 200px; }
 
-    .cta { border: none; border-radius: 10px; padding: 10px 20px; font-weight: 600; font-size: 0.9rem; background: var(--accent); color: #fff; cursor: pointer; transition: 0.2s; font-family: inherit;}
-    .cta:hover { background: var(--accent-2); }
-    .cta-outline { background: transparent; color: var(--ink); border: 1px solid var(--ring-strong); }
+    /* CARDS */
+    .card { background: var(--card); border: 1px solid var(--ring); border-radius: 16px; box-shadow: var(--shadow-sm); padding: 24px; transition: box-shadow 0.3s; height: 100%;}
+    .card:hover { box-shadow: var(--shadow-md); }
+    .card-title { font-size: 1.1rem; font-weight: 700; color: var(--ink); margin: 0 0 16px 0; padding-bottom: 12px; border-bottom: 1px solid var(--ring); display: flex; align-items: center; justify-content: space-between; }
+    
+    /* FILTROS */
+    .filter-zone { background: white; padding: 16px 24px; border-radius: 12px; border: 1px solid var(--ring); margin-bottom: 24px; display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; box-shadow: var(--shadow-sm);}
+    .quick-filters { display: flex; gap: 8px; margin-bottom: 15px; width: 100%; border-bottom: 1px dashed var(--ring); padding-bottom: 15px;}
+    .btn-quick { background: var(--bg); border: 1px solid var(--ring-strong); color: var(--ink-2); padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
+    .btn-quick:hover { background: var(--ring); color: var(--ink); }
+    .input-group { flex: 1; min-width: 150px; display: flex; flex-direction: column; gap: 6px; }
+    .input-group label { font-size: 0.8rem; font-weight: 600; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.5px;}
+    .field-input { width: 100%; border: 1px solid var(--ring-strong); border-radius: 8px; padding: 10px; font-family: inherit; font-size: 0.95rem; outline: none; background: #fff;}
+    .field-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-light); }
 
-    .field { display: flex; align-items: center; background: #fff; border: 1px solid var(--ring-strong); border-radius: 10px; padding: 8px 12px; transition: border-color .2s; }
-    .pill { flex: 1; border: 0; outline: 0; font-size: 0.9rem; background: transparent; color: var(--ink); width: 100%; font-family: inherit;}
+    /* MEGA KPIS */
+    .mega-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+    .mega-kpi { padding: 20px; border-radius: 16px; position: relative; overflow: hidden; border: 1px solid var(--ring); }
+    .mega-kpi.money { background: linear-gradient(135deg, var(--accent-light) 0%, #fff 100%); border-color: #a7f3d0; }
+    .mega-kpi.chats { background: linear-gradient(135deg, var(--blue-light) 0%, #fff 100%); border-color: #bfdbfe; }
+    .mega-kpi.warning { background: linear-gradient(135deg, var(--orange-light) 0%, #fff 100%); border-color: #fde68a; }
+    .mega-kpi.purple { background: linear-gradient(135deg, var(--purple-light) 0%, #fff 100%); border-color: #ddd6fe; }
+    .mega-kpi-title { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--ink-2); margin-bottom: 5px; display: flex; align-items: center; gap: 6px;}
+    .mega-kpi-value { font-size: 2rem; font-weight: 900; color: var(--ink); margin: 0; line-height: 1.1; letter-spacing: -1px;}
+    .mega-kpi-sub { font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-top: 8px; display: block;}
+    
+    /* BOTONES */
+    .btn { border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: 0.2s; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 8px;}
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-outline { background: transparent; border: 1px solid var(--ring-strong); color: var(--ink); }
+    .btn-outline:hover { background: var(--bg); }
+    .btn-dark { background: var(--primary); color: white; }
 
-    .modal-overlay { position: fixed; inset: 0; background: rgba(247, 252, 249, 0.9); backdrop-filter: blur(4px); z-index: 2000; display: none; align-items: center; justify-content: center; }
-    .modal-card { background: #fff; width: 90%; max-width: 360px; border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.08); border: 1px solid var(--ring); }
+    /* TABLAS Y RANKING */
+    .table-container { overflow-x: auto; width: 100%; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; white-space: nowrap; }
+    th { padding: 12px 8px; border-bottom: 2px solid var(--ring-strong); color: var(--ink-2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.75rem; }
+    td { padding: 14px 8px; border-bottom: 1px solid var(--ring); color: var(--ink); font-weight: 500;}
+    tr:hover td { background-color: var(--bg); }
+    
+    .medal { font-size: 1.2rem; margin-right: 5px; }
+    .rank-1 { background-color: #fffbeb !important; }
+    .rank-2 { background-color: #f8fafc !important; }
+    .rank-3 { background-color: #fff1f2 !important; }
+    
+    .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
+    .badge-green { background: var(--accent-light); color: var(--accent-hover); }
+    .badge-blue { background: var(--blue-light); color: var(--blue); }
+    .badge-purple { background: var(--purple-light); color: var(--purple); }
+
+    /* MODAL */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(4px); z-index: 2000; display: none; align-items: center; justify-content: center; }
+    .modal-card { background: #fff; width: 90%; max-width: 400px; border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+
+    canvas { max-height: 300px; }
   </style>
 </head>
 <body>
 
   <div id="loginOverlay" class="modal-overlay" style="display: flex;">
     <div class="modal-card">
-      <h2 style="margin: 0 0 8px; color: var(--ink); font-weight: 700;">Panel de Rendimiento</h2>
-      <p style="color:var(--muted); font-size: 0.9rem; margin-bottom: 20px;">Acceso exclusivo gerencia</p>
-      <div class="field" style="margin-bottom:20px;">
-        <input id="loginPwd" type="password" class="pill" placeholder="Contraseña..." style="text-align:center">
+      <h2 style="margin: 0 0 8px; color: var(--ink); font-weight: 800; font-size: 1.5rem;">BI Dashboard</h2>
+      <p style="color:var(--muted); font-size: 0.9rem; margin-bottom: 24px;">Centro de inteligencia de Los Plata</p>
+      <div class="input-group" style="margin-bottom:24px;">
+        <input id="loginPwd" type="password" class="field-input" placeholder="Clave de gerencia..." style="text-align:center; font-size: 1.1rem; padding: 12px;">
       </div>
-      <button id="btnLogin" class="cta" style="width: 100%;" onclick="verificarLogin()">Ver Estadísticas</button>
-      <p id="loginMsg" style="color:var(--danger); font-size:0.85rem; font-weight:600; margin-top:10px;"></p>
+      <button id="btnLogin" class="btn btn-primary" style="width: 100%; font-size: 1rem; padding: 12px;" onclick="verificarLogin()">Acceder a la Data</button>
+      <p id="loginMsg" style="color:var(--danger); font-size:0.85rem; font-weight:600; margin-top:12px;"></p>
     </div>
   </div>
 
   <div class="top-bar" id="topBar" style="display:none;">
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <span style="font-weight: 800; font-size: 1.2rem; color: var(--ink);">📈 Rendimiento Los Plata</span>
+    <div class="top-bar-title">
+      LOS PLATA <span>BI Analytics</span>
     </div>
     <div style="display:flex; gap:10px; align-items: center;">
-      <button class="cta" style="background: #e3f2fd; color: #0d47a1; border: 1px solid #bbdefb;" onclick="sincronizarChateaPro(this)">
+      <span style="font-size: 0.8rem; color: #94a3b8; margin-right: 10px;" id="lastSyncTime">Corte: -</span>
+      <button class="btn" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2);" onclick="sincronizarChateaPro(this)">
         🔄 Sincronizar ChateaPro
       </button>
-      <button class="cta cta-outline" onclick="window.location.href='/admin.html'">🔙 Volver al Admin</button>
+      <button class="btn" style="background: white; color: var(--primary);" onclick="window.location.href='/admin.html'">🔙 Volver al Admin</button>
     </div>
   </div>
 
   <div class="shell" id="mainDashboard">
     
-    <div class="section-card">
-        <div class="section-title">🌍 Inventario Global (Apartamento)</div>
-        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0; margin-bottom:15px;">Cantidades totales de toda la operación (No cambian con los filtros).</p>
-        <div class="dashboard-grid">
-          <div class="kpi-card" style="border-left: 4px solid var(--ink);"><h3>🎟️ Total Registradas</h3><p id="kpi-global-registradas">0</p></div>
-          <div class="kpi-card" style="border-left: 4px solid var(--danger);"><h3>⚠️ Separadas con $0</h3><p id="kpi-global-cero" style="color:var(--danger);">0</p></div>
-          <div class="kpi-card" style="border-left: 4px solid var(--accent-2);"><h3>✅ Total Libres</h3><p id="kpi-global-libres">0</p></div>
+    <div class="filter-zone">
+        <div class="quick-filters col-100">
+            <span style="font-size: 0.85rem; font-weight: 700; color: var(--ink-2); margin-right: 10px; display:flex; align-items:center;">Filtros rápidos:</span>
+            <button class="btn-quick" onclick="setRangoFecha('hoy')">Hoy</button>
+            <button class="btn-quick" onclick="setRangoFecha('ayer')">Ayer</button>
+            <button class="btn-quick" onclick="setRangoFecha('semana')">Últimos 7 días</button>
+            <button class="btn-quick" onclick="setRangoFecha('mes')">Este Mes</button>
+            <button class="btn-quick" onclick="setRangoFecha('todo')">Histórico Total</button>
+        </div>
+        
+        <div class="input-group">
+            <label>Desde</label>
+            <input type="date" id="filt-desde" class="field-input" onchange="aplicarFiltrosEstadisticas()">
+        </div>
+        <div class="input-group">
+            <label>Hasta</label>
+            <input type="date" id="filt-hasta" class="field-input" onchange="aplicarFiltrosEstadisticas()">
+        </div>
+        <div class="input-group" id="asesor-dropdown-container" style="position: relative; min-width: 200px;">
+            <label>Asesores</label>
+            <div class="field-input" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between;" onclick="document.getElementById('dropdown-asesores').style.display = document.getElementById('dropdown-asesores').style.display === 'block' ? 'none' : 'block'">
+                <span id="lbl-asesores-seleccionados" style="user-select: none;">Todos ▼</span>
+            </div>
+            <div id="dropdown-asesores" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; background: #fff; border: 1px solid var(--ring-strong); border-radius: 8px; max-height: 250px; overflow-y: auto; z-index: 100; box-shadow: var(--shadow-lg); padding: 12px; margin-top: 4px;">
+                </div>
+        </div>
+        <button class="btn btn-outline" style="height: 42px;" onclick="limpiarFiltrosRendimiento()">Limpiar</button>
+    </div>
+
+    <div class="row">
+        <div class="col-100 mega-kpi-grid">
+            <div class="mega-kpi money">
+                <div class="mega-kpi-title">💰 Recaudo Real (Periodo)</div>
+                <div class="mega-kpi-value" id="kpi-recaudo">$0</div>
+                <span class="mega-kpi-sub" id="kpi-ticket">Ticket Promedio: $0</span>
+            </div>
+            <div class="mega-kpi chats">
+                <div class="mega-kpi-title">👥 Tráfico (Chats Asignados)</div>
+                <div class="mega-kpi-value" id="kpi-chats">0</div>
+                <span class="mega-kpi-sub" id="kpi-ipc" style="color: var(--blue);">Valor de cada chat (IPC): $0</span>
+            </div>
+            <div class="mega-kpi purple">
+                <div class="mega-kpi-title">🎯 Tasa de Conversión</div>
+                <div class="mega-kpi-value" id="kpi-conversion">0%</div>
+                <span class="mega-kpi-sub">Ventas Reales / Chats</span>
+            </div>
+            <div class="mega-kpi warning">
+                <div class="mega-kpi-title">⏱️ Eficiencia Operativa</div>
+                <div class="mega-kpi-value" id="kpi-tiempo" style="font-size: 1.6rem; margin-top: 5px;">-</div>
+                <span class="mega-kpi-sub">Tiempo Promedio de Respuesta</span>
+            </div>
         </div>
     </div>
 
-    <div class="section-card" style="background: #fdfdfd;">
-        <div style="display:flex; gap:10px; flex-wrap: wrap; align-items:flex-end;">
-           <div style="flex:1; min-width:130px;">
-              <label style="font-size:0.8rem; color:var(--ink-2); font-weight:600;">Desde (Fecha)</label>
-              <div class="field"><input type="date" id="filt-desde" class="pill" onchange="aplicarFiltrosEstadisticas()"></div>
-           </div>
-           <div style="flex:1; min-width:130px;">
-              <label style="font-size:0.8rem; color:var(--ink-2); font-weight:600;">Hasta (Fecha)</label>
-              <div class="field"><input type="date" id="filt-hasta" class="pill" onchange="aplicarFiltrosEstadisticas()"></div>
-           </div>
-           <div id="asesor-dropdown-container" style="flex:1; min-width:180px; position: relative;">
-              <label style="font-size:0.8rem; color:var(--ink-2); font-weight:600;">Asesores</label>
-              <div class="field" style="cursor: pointer;" onclick="document.getElementById('dropdown-asesores').style.display = document.getElementById('dropdown-asesores').style.display === 'block' ? 'none' : 'block'">
-                 <div class="pill" id="lbl-asesores-seleccionados" style="user-select: none; padding: 2px 0;">Todos los asesores ▼</div>
-              </div>
-              <div id="dropdown-asesores" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; background: #fff; border: 1px solid var(--ring-strong); border-radius: 8px; max-height: 250px; overflow-y: auto; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 12px; margin-top: 4px;">
-                 </div>
-           </div>
-           <div style="flex:0;">
-               <button onclick="limpiarFiltrosRendimiento()" style="height:44px; padding:0 15px; border-radius:10px; border:1px solid var(--ring-strong); background:#fff; cursor:pointer;">Limpiar</button>
-           </div>
+    <div class="row">
+        <div class="col-60">
+            <div class="card">
+                <h3 class="card-title">📈 Evolución del Recaudo Diario</h3>
+                <canvas id="chartEvolucion"></canvas>
+            </div>
         </div>
-        <p style="font-size: 0.75rem; color: var(--muted); text-align: right; margin: 10px 0 0 0;">* Corte de datos de Chatea Pro: 7:00 PM (Hora Col)</p>
+        <div class="col-40">
+            <div class="card">
+                <h3 class="card-title">💼 Recaudo por Asesor</h3>
+                <canvas id="chartDona"></canvas>
+            </div>
+        </div>
     </div>
 
-    <div class="section-card">
-        <div class="section-title">📈 Rendimiento (Ventas y Chat)</div>
-        
-        <div class="dashboard-grid">
-          <div class="kpi-card"><h3>📝 Boletas Nuevas</h3><p id="kpi-filt-nuevas">0</p></div>
-          <div class="kpi-card"><h3>💸 Boletas con Abono</h3><p id="kpi-filt-con-abono">0</p></div>
-          <div class="kpi-card"><h3>💳 Cantidad Abonos</h3><p id="kpi-filt-abonos">0</p></div>
-          <div class="kpi-card" style="background:#e8f5e9;"><h3>💰 Recaudo Total</h3><p id="kpi-filt-recaudo" style="color:#1b5e20;">$0</p></div>
+    <div class="row">
+        <div class="col-60">
+            <div class="card">
+                <h3 class="card-title">🎯 Embudo de Conversión por Asesor (%)</h3>
+                <canvas id="chartConversion"></canvas>
+            </div>
         </div>
+        <div class="col-40">
+            <div class="card">
+                <h3 class="card-title">🌍 Inventario Global de Apartamento</h3>
+                <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 20px;">
+                    <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid var(--ring);">
+                        <span style="font-weight: 600; color: var(--ink-2);">🎟️ Boletas Pagadas</span>
+                        <span style="font-weight: 900; color: var(--ink);" id="inv-registradas">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid var(--ring);">
+                        <span style="font-weight: 600; color: var(--ink-2);">⚠️ Separadas (Deuda 100%)</span>
+                        <span style="font-weight: 900; color: var(--danger);" id="inv-cero">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="font-weight: 600; color: var(--ink-2);">✅ Total Libres</span>
+                        <span style="font-weight: 900; color: var(--accent-hover);" id="inv-libres">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        <div class="dashboard-grid" style="border-top: 1px dashed var(--ring); padding-top: 15px;">
-          <div class="kpi-card" style="border-left: 4px solid #3b82f6; background: #eff6ff;">
-            <h3 style="color:#1e40af;">💬 Mensajes Chat</h3><p id="kpi-filt-mensajes" style="color:#1d4ed8;">0</p>
-          </div>
-          <div class="kpi-card" style="border-left: 4px solid #8b5cf6; background: #f5f3ff;">
-            <h3 style="color:#4c1d95;">👥 Chats Asignados</h3><p id="kpi-filt-chats" style="color:#4338ca;">0</p>
-          </div>
-          <div class="kpi-card" style="border-left: 4px solid #10b981; background: #ecfdf5;">
-            <h3 style="color:#047857;">🎯 Tasa Conversión</h3><p id="kpi-filt-conversion" style="color:#059669;">0%</p>
-          </div>
-          <div class="kpi-card" style="border-left: 4px solid #f59e0b; background: #fffbeb;">
-            <h3 style="color:#b45309;">⏱️ T. Respuesta</h3><p id="kpi-filt-tiempo" style="color:#b45309; font-size: 1.1rem; line-height: 1.4;">-</p>
-          </div>
-        </div>
-
-        <div class="charts-grid">
-          <div class="chart-container"><h4 style="font-size:0.9rem; text-align:center; margin:0 0 15px;">Ingresos en el tiempo</h4><canvas id="chartIngresos"></canvas></div>
-          <div class="chart-container"><h4 style="font-size:0.9rem; text-align:center; margin:0 0 15px;">Recaudo por Asesor</h4><canvas id="chartAsesores"></canvas></div>
+    <div class="row">
+        <div class="col-100">
+            <div class="card">
+                <h3 class="card-title">🏆 Ranking Oficial de Asesores (Leaderboard)</h3>
+                <div class="table-container" id="leaderboardRender">
+                    <p style="text-align:center; color:var(--muted); padding: 20px;">Calculando ranking...</p>
+                </div>
+            </div>
         </div>
         
-        <div id="tablaEstadisticasRender"><p style="text-align:center; color:var(--muted); font-size:0.85rem;">Cargando tabla de rendimiento...</p></div>
+        <div class="col-100">
+            <div class="card">
+                <h3 class="card-title">📋 Registro Detallado Diario (Auditoría)</h3>
+                <div class="table-container" id="tablaEstadisticasRender">
+                    <p style="text-align:center; color:var(--muted); padding: 20px;">Cargando tabla de rendimiento...</p>
+                </div>
+            </div>
+        </div>
     </div>
 
   </div>
 
   <div id="modalResult" class="modal-overlay">
     <div class="modal-card">
-      <h3 id="mTitle" style="color:var(--ink); font-weight:700; margin:0 0 10px 0;">Título</h3>
-      <p id="mMsg" style="color:var(--ink-2); font-size:0.9rem; margin-bottom:24px; white-space: pre-line;"></p>
-      <button class="cta" style="width: 100%;" onclick="document.getElementById('modalResult').style.display='none'">Aceptar</button>
+      <h3 id="mTitle" style="color:var(--ink); font-weight:800; margin:0 0 10px 0; font-size: 1.3rem;">Título</h3>
+      <p id="mMsg" style="color:var(--ink-2); font-size:0.95rem; margin-bottom:24px; white-space: pre-line; line-height: 1.5;"></p>
+      <button class="btn btn-primary" style="width: 100%;" onclick="document.getElementById('modalResult').style.display='none'">Aceptar</button>
     </div>
   </div>
 
@@ -157,6 +258,7 @@
     let globalChatea = []; 
     let chartLinea = null;
     let chartDona = null;
+    let chartBar = null;
 
     // --- 1. SEGURIDAD ---
     document.addEventListener('DOMContentLoaded', () => {
@@ -166,6 +268,10 @@
       document.getElementById('loginPwd').addEventListener('keyup', function(e) { 
         if (e.key === 'Enter') verificarLogin(); 
       });
+      
+      // Actualizar hora de corte
+      const now = new Date();
+      document.getElementById('lastSyncTime').textContent = "Último acceso: " + now.toLocaleTimeString('es-CO', {hour: '2-digit', minute:'2-digit'});
     });
 
     async function verificarLogin(pwdAuto = null, auto = false) {
@@ -182,20 +288,20 @@
               method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contrasena: pwd })
           });
           const res = await req.json();
-          if(!auto) { btn.textContent = 'Ver Estadísticas'; btn.disabled = false; }
+          if(!auto) { btn.textContent = 'Acceder a la Data'; btn.disabled = false; }
           
-          if(res.status === 'ok' && (res.asesor === 'Mateo' || res.asesor === 'Alejo P')) {
+          if(res.status === 'ok' && (res.asesor === 'Mateo' || res.asesor === 'Alejo P' || res.asesor === 'Alejo Plata')) {
               localStorage.setItem(STORAGE_KEY, pwd); 
               document.getElementById('loginOverlay').style.display='none'; 
               document.getElementById('topBar').style.display='flex'; 
               document.getElementById('mainDashboard').style.display='block'; 
               cargarEstadisticas();
           } else {
-              if(!auto) msg.textContent = 'Acceso denegado. Solo gerencia.';
+              if(!auto) msg.textContent = 'Acceso denegado. Solo nivel gerencial.';
               localStorage.removeItem(STORAGE_KEY);
           }
       } catch (error) {
-          if(!auto) { btn.textContent = 'Ver Estadísticas'; btn.disabled = false; msg.textContent = 'Error de conexión'; }
+          if(!auto) { btn.textContent = 'Acceder a la Data'; btn.disabled = false; msg.textContent = 'Error de conexión'; }
       }
     }
 
@@ -205,10 +311,39 @@
         document.getElementById('modalResult').style.display = 'flex'; 
     }
 
-    // --- 2. TRAER DATOS DE SUPABASE ---
+    // --- 2. BOTONES DE FECHA RÁPIDA ---
+    function setRangoFecha(rango) {
+        const inputDesde = document.getElementById('filt-desde');
+        const inputHasta = document.getElementById('filt-hasta');
+        const hoy = new Date();
+        const getFormat = (d) => d.toISOString().split('T')[0];
+
+        if (rango === 'hoy') {
+            inputDesde.value = getFormat(hoy);
+            inputHasta.value = getFormat(hoy);
+        } else if (rango === 'ayer') {
+            const ayer = new Date(hoy); ayer.setDate(ayer.getDate() - 1);
+            inputDesde.value = getFormat(ayer);
+            inputHasta.value = getFormat(ayer);
+        } else if (rango === 'semana') {
+            const semana = new Date(hoy); semana.setDate(semana.getDate() - 6);
+            inputDesde.value = getFormat(semana);
+            inputHasta.value = getFormat(hoy);
+        } else if (rango === 'mes') {
+            const primeroMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+            inputDesde.value = getFormat(primeroMes);
+            inputHasta.value = getFormat(hoy);
+        } else if (rango === 'todo') {
+            inputDesde.value = '';
+            inputHasta.value = '';
+        }
+        aplicarFiltrosEstadisticas();
+    }
+
+    // --- 3. TRAER DATOS DE SUPABASE ---
     async function cargarEstadisticas() {
         const div = document.getElementById('tablaEstadisticasRender');
-        div.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem;">Calculando rendimiento...</p>';
+        div.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.9rem; padding:30px;">Descargando Big Data...</p>';
         try {
             const req = await fetch('/api/admin/estadisticas', {
                 method: 'POST',
@@ -220,10 +355,10 @@
             if (res.status === 'ok') {
                 prepararDashboard(res.abonos, res.ventas, res.globales, res.chatea);
             } else {
-                div.innerHTML = `<p style="text-align:center; color:var(--danger); font-size:0.85rem;">${res.mensaje}</p>`;
+                div.innerHTML = `<p style="text-align:center; color:var(--danger); font-size:0.9rem;">${res.mensaje}</p>`;
             }
         } catch(e) {
-            div.innerHTML = '<p style="text-align:center; color:var(--danger); font-size:0.85rem;">Error de conexión.</p>';
+            div.innerHTML = '<p style="text-align:center; color:var(--danger); font-size:0.9rem;">Error de conexión con la base de datos.</p>';
         }
     }
 
@@ -231,30 +366,17 @@
         
         // 🌟 DICCIONARIO TRADUCTOR UNIVERSAL BLINDADO 🌟
         const mapaNombres = {
-            // --- El caso especial de Luisa / Arias ---
             "Luisa Arias": "Arias",
             "luisa arias": "Arias", 
-            // 💡 Nota: "Luisa" fue omitida intencionalmente para que quede como una fila independiente.
-
-            // --- Manuela Rojas ---
+            // "Luisa" se omite para ser independiente
             "Manuela Rojas": "Manu R",
             "manuela rojas": "Manu R",
-
-            // --- Alejandra Valencia ---
             "Alejandra Valencia": "Aleja Valencia", 
             "Aleja Valencia": "Aleja Valencia",     
-
-            // --- Jenifer ---
             "jennifer": "Jenifer",
             "Jennifer": "Jenifer",
-
-            // --- Alejandra Rodriguez ---
             "Alejandra Rodriguez": "Aleja Rodriguez",
-
-            // --- Manuela Saldarriaga ---
             "Manuela Saldarriaga": "Saldarriaga",
-
-            // --- Los demás ---
             "Mateo Plata Buitrago": "Mateo",
             "Anyeli Zuleta": "Anyeli",
             "Carlos Flores": "Carlos",
@@ -263,49 +385,46 @@
             "Alejandro": "Alejo Plata"
         };
 
-        // 1. TRADUCIMOS LAS VENTAS ANTES DE GUARDARLAS
+        // 1. Limpieza y traducción
         globalVentas = ventas.map(v => {
             let nombreLimpio = v.asesor ? v.asesor.trim() : 'Sin Asesor';
             return { ...v, asesor: mapaNombres[nombreLimpio] || nombreLimpio };
         });
-
-        // 2. TRADUCIMOS LOS ABONOS ANTES DE GUARDARLOS
         globalAbonos = abonos.map(a => {
             let nombreLimpio = a.asesor ? a.asesor.trim() : 'Sin Asesor';
             return { ...a, asesor: mapaNombres[nombreLimpio] || nombreLimpio };
         });
-
-        // 3. TRADUCIMOS LOS CHATS
         globalChatea = (chatea || []).map(c => {
             let nombreLimpio = c.asesor ? c.asesor.trim() : 'Sin Asesor';
             return { ...c, asesor: mapaNombres[nombreLimpio] || nombreLimpio };
         }); 
 
-        // 4. Actualizamos el resumen global de arriba
-        document.getElementById('kpi-global-registradas').textContent = globales.registradas;
-        document.getElementById('kpi-global-cero').textContent = globales.separadas_cero;
-        document.getElementById('kpi-global-libres').textContent = globales.libres;
+        // 2. Inventario Global
+        document.getElementById('inv-registradas').textContent = globales.registradas;
+        document.getElementById('inv-cero').textContent = globales.separadas_cero;
+        document.getElementById('inv-libres').textContent = globales.libres;
 
-        // 5. Creamos la lista de checkboxes unificada
+        // 3. Menú de Asesores
         const asesoresSet = new Set();
         globalVentas.forEach(v => asesoresSet.add(v.asesor));
         globalAbonos.forEach(a => asesoresSet.add(a.asesor));
         globalChatea.forEach(c => asesoresSet.add(c.asesor));
         
         const dropdownAsesores = document.getElementById('dropdown-asesores');
-        let htmlCheckboxes = `<label style="display:flex; gap:8px; margin-bottom:8px; cursor:pointer; color:var(--ink); font-weight:600;"><input type="checkbox" id="chk-all-asesores" checked onchange="toggleAllAsesores(this)" style="accent-color: var(--accent);"> Seleccionar Todos</label><hr style="border:0; border-top:1px solid var(--ring); margin: 8px 0;">`;
+        let htmlCheckboxes = `<label style="display:flex; gap:8px; margin-bottom:8px; cursor:pointer; color:var(--ink); font-weight:700;"><input type="checkbox" id="chk-all-asesores" checked onchange="toggleAllAsesores(this)" style="accent-color: var(--accent);"> Seleccionar Todos</label><hr style="border:0; border-top:1px solid var(--ring); margin: 8px 0;">`;
         
         [...asesoresSet].sort().forEach(a => {
             if(a !== 'Sin Asesor') {
-                htmlCheckboxes += `<label style="display:flex; gap:8px; margin-bottom:6px; cursor:pointer; font-size:0.85rem; color:var(--ink-2);"><input type="checkbox" value="${a}" class="asesor-chk" checked onchange="verificarAsesoresYFiltrar()" style="accent-color: var(--accent);"> ${a}</label>`;
+                htmlCheckboxes += `<label style="display:flex; gap:8px; margin-bottom:6px; cursor:pointer; font-size:0.85rem; color:var(--ink-2);"><input type="checkbox" value="${a}" class="asesor-chk" checked onchange="verificarAsesoresYFiltrar()" style="accent-color: var(--blue);"> ${a}</label>`;
             }
         });
         dropdownAsesores.innerHTML = htmlCheckboxes;
 
-        aplicarFiltrosEstadisticas();
+        // Por defecto, muestra los últimos 7 días al abrir
+        setRangoFecha('semana');
     }
 
-    // --- 3. LÓGICA DE FILTRADO Y GRÁFICAS ---
+    // --- 4. MOTOR ESTADÍSTICO (CÁLCULOS) ---
     function aplicarFiltrosEstadisticas() {
         const fechaDesde = document.getElementById('filt-desde').value;
         const fechaHasta = document.getElementById('filt-hasta').value;
@@ -320,7 +439,7 @@
             return (new Date(date.getTime() - offset)).toISOString().split('T')[0];
         };
 
-        // FILTROS
+        // A. FILTRAMOS LAS LISTAS GLOBALES
         const ventasFiltradas = globalVentas.filter(v => {
             const f = getFechaLocal(v.created_at);
             if (fechaDesde && f < fechaDesde) return false;
@@ -345,58 +464,60 @@
             return true;
         });
 
-        // MATEMÁTICAS VENTAS
+        // B. MEGA KPIs GENERALES
         let totalNuevas = ventasFiltradas.length;
         let nuevasConAbono = 0;
-        ventasFiltradas.forEach(v => {
-            if (v.detalle && !v.detalle.includes('abono de $0')) nuevasConAbono++;
-        });
-        let totalPagos = abonosFiltrados.length;
+        ventasFiltradas.forEach(v => { if (v.detalle && !v.detalle.includes('abono de $0')) nuevasConAbono++; });
         let dineroRecaudado = abonosFiltrados.reduce((acc, curr) => acc + Number(curr.monto), 0);
 
-        // MATEMÁTICAS CHAT Y CONVERSIÓN
         let totalMensajes = 0;
         let totalAsignadas = 0;
         let tiempos = [];
-        
         chateaFiltrado.forEach(c => {
             totalMensajes += (c.mensajes_enviados || 0);
             totalAsignadas += (c.conversaciones_asignadas || 0);
             if (c.tiempo_respuesta_segundos > 0) tiempos.push(c.tiempo_respuesta_segundos);
         });
 
+        // Matemáticas Avanzadas
+        let ticketPromedio = nuevasConAbono > 0 ? (dineroRecaudado / nuevasConAbono) : 0;
+        let ipc = totalAsignadas > 0 ? (dineroRecaudado / totalAsignadas) : 0;
+        let tasaConversionGlobal = totalAsignadas > 0 ? ((totalNuevas / totalAsignadas) * 100).toFixed(1) : 0;
+        
         let promSegundos = tiempos.length > 0 ? (tiempos.reduce((a,b)=>a+b, 0) / tiempos.length) : 0;
         let textoTiempo = "-";
         if (promSegundos > 0) {
-            if (promSegundos < 60) textoTiempo = Math.floor(promSegundos) + " seg";
+            if (promSegundos < 60) textoTiempo = Math.floor(promSegundos) + "s";
             else textoTiempo = Math.floor(promSegundos/60) + "m " + Math.floor(promSegundos%60) + "s";
         }
-        
-        let tasaConversionGlobal = totalAsignadas > 0 ? ((totalNuevas / totalAsignadas) * 100).toFixed(1) : 0;
 
-        // PINTAR KPI
         const formatoPlata = new Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', minimumFractionDigits:0});
-        document.getElementById('kpi-filt-nuevas').textContent = totalNuevas;
-        document.getElementById('kpi-filt-con-abono').textContent = nuevasConAbono;
-        document.getElementById('kpi-filt-abonos').textContent = totalPagos;
-        document.getElementById('kpi-filt-recaudo').textContent = formatoPlata.format(dineroRecaudado);
-        
-        document.getElementById('kpi-filt-mensajes').textContent = totalMensajes;
-        document.getElementById('kpi-filt-chats').textContent = totalAsignadas;
-        document.getElementById('kpi-filt-conversion').textContent = tasaConversionGlobal + '%';
-        document.getElementById('kpi-filt-tiempo').textContent = textoTiempo;
 
-        // AGRUPAR TABLA
-        const stats = {};
-        let recaudoPorDia = {};
-        let recaudoPorAsesor = {};
+        document.getElementById('kpi-recaudo').textContent = formatoPlata.format(dineroRecaudado);
+        document.getElementById('kpi-ticket').textContent = "Ticket Promedio: " + formatoPlata.format(ticketPromedio);
+        document.getElementById('kpi-chats').textContent = new Intl.NumberFormat('es-CO').format(totalAsignadas);
+        document.getElementById('kpi-ipc').textContent = "Ingreso por Chat (IPC): " + formatoPlata.format(ipc);
+        document.getElementById('kpi-conversion').textContent = tasaConversionGlobal + '%';
+        document.getElementById('kpi-tiempo').textContent = textoTiempo;
+
+        // C. AGRUPACIÓN PARA GRÁFICAS Y TABLAS (Por Asesor y por Día)
+        const statsDiarios = {}; // Para la tabla raw
+        let recaudoPorDia = {}; // Para gráfica línea
+        let statsAsesor = {}; // Para el Leaderboard
+
+        // Inicializar statsAsesor
+        asesoresSeleccionados.forEach(a => {
+            statsAsesor[a] = { recaudo: 0, nuevas: 0, chats: 0, tiemposArray: [] };
+        });
 
         ventasFiltradas.forEach(v => {
             const f = getFechaLocal(v.created_at);
             const a = v.asesor || 'Sin Asesor';
-            if(!stats[f]) stats[f] = {};
-            if(!stats[f][a]) stats[f][a] = { nuevas: 0, conDinero: 0, recaudado: 0, mensajes: 0, chats: 0, tiempo: 0 };
-            stats[f][a].nuevas++;
+            if(!statsDiarios[f]) statsDiarios[f] = {};
+            if(!statsDiarios[f][a]) statsDiarios[f][a] = { nuevas: 0, recaudado: 0, mensajes: 0, chats: 0, tiempo: 0 };
+            statsDiarios[f][a].nuevas++;
+            
+            if(statsAsesor[a]) statsAsesor[a].nuevas++;
         });
 
         abonosFiltrados.forEach(a => {
@@ -404,87 +525,148 @@
             const as = a.asesor || 'Sin Asesor';
             const monto = Number(a.monto);
             recaudoPorDia[f] = (recaudoPorDia[f] || 0) + monto;
-            recaudoPorAsesor[as] = (recaudoPorAsesor[as] || 0) + monto;
             
-            if(!stats[f]) stats[f] = {};
-            if(!stats[f][as]) stats[f][as] = { nuevas: 0, conDinero: 0, recaudado: 0, mensajes: 0, chats: 0, tiempo: 0 };
-            stats[f][as].conDinero++;
-            stats[f][as].recaudado += monto;
+            if(!statsDiarios[f]) statsDiarios[f] = {};
+            if(!statsDiarios[f][as]) statsDiarios[f][as] = { nuevas: 0, recaudado: 0, mensajes: 0, chats: 0, tiempo: 0 };
+            statsDiarios[f][as].recaudado += monto;
+
+            if(statsAsesor[as]) statsAsesor[as].recaudo += monto;
         });
 
         chateaFiltrado.forEach(c => {
             const f = c.fecha;
             const as = c.asesor || 'Sin Asesor';
-            if(!stats[f]) stats[f] = {};
-            if(!stats[f][as]) stats[f][as] = { nuevas: 0, conDinero: 0, recaudado: 0, mensajes: 0, chats: 0, tiempo: 0 };
-            stats[f][as].mensajes += (c.mensajes_enviados || 0);
-            stats[f][as].chats += (c.conversaciones_asignadas || 0);
-            stats[f][as].tiempo = c.tiempo_respuesta_segundos; 
+            if(!statsDiarios[f]) statsDiarios[f] = {};
+            if(!statsDiarios[f][as]) statsDiarios[f][as] = { nuevas: 0, recaudado: 0, mensajes: 0, chats: 0, tiempo: 0 };
+            statsDiarios[f][as].mensajes += (c.mensajes_enviados || 0);
+            statsDiarios[f][as].chats += (c.conversaciones_asignadas || 0);
+            statsDiarios[f][as].tiempo = c.tiempo_respuesta_segundos; 
+
+            if(statsAsesor[as]) {
+                statsAsesor[as].chats += (c.conversaciones_asignadas || 0);
+                if(c.tiempo_respuesta_segundos > 0) statsAsesor[as].tiemposArray.push(c.tiempo_respuesta_segundos);
+            }
         });
 
-        // GRÁFICA DE LÍNEAS
+        // D. PINTAR GRÁFICA DE LÍNEAS
         const fechasOrdenadas = Object.keys(recaudoPorDia).sort();
         const dataLinea = fechasOrdenadas.map(f => recaudoPorDia[f]);
-        const labelsLinea = fechasOrdenadas.map(f => new Date(f + 'T12:00:00').toLocaleDateString('es-CO', {day:'2-digit', month:'short'}));
+        const labelsLinea = fechasOrdenadas.map(f => {
+            const objD = new Date(f + 'T12:00:00');
+            return objD.toLocaleDateString('es-CO', {weekday:'short', day:'2-digit', month:'short'});
+        });
 
         if (chartLinea) chartLinea.destroy();
-        const ctxLinea = document.getElementById('chartIngresos').getContext('2d');
+        const ctxLinea = document.getElementById('chartEvolucion').getContext('2d');
         chartLinea = new Chart(ctxLinea, {
             type: 'line',
-            data: { labels: labelsLinea, datasets: [{ label: 'Recaudo ($)', data: dataLinea, borderColor: '#4eb082', backgroundColor: 'rgba(78, 176, 130, 0.2)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#2b3a35' }] },
-            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+            data: { labels: labelsLinea, datasets: [{ label: 'Recaudo ($)', data: dataLinea, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#0f172a', pointRadius: 4 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: {color: '#e2e8f0'} }, x: { grid: {display: false} } } }
         });
 
-        // GRÁFICA DE DONA
-        const asesoresNombres = Object.keys(recaudoPorAsesor);
-        const dataDona = asesoresNombres.map(a => recaudoPorAsesor[a]);
-        const colores = ['#4eb082', '#2b3a35', '#C5A059', '#d95a53', '#8ba89d', '#ff9800', '#3b82f6', '#8b5cf6', '#f43f5e'];
+        // E. PINTAR LEADERBOARD Y SACAR ARRAYS PARA LAS OTRAS GRÁFICAS
+        const rankArray = [];
+        Object.keys(statsAsesor).forEach(as => {
+            const data = statsAsesor[as];
+            if (data.recaudo > 0 || data.nuevas > 0 || data.chats > 0) {
+                let conv = data.chats > 0 ? ((data.nuevas / data.chats) * 100) : 0;
+                let ipcAsesor = data.chats > 0 ? (data.recaudo / data.chats) : 0;
+                let tProm = data.tiemposArray.length > 0 ? (data.tiemposArray.reduce((a,b)=>a+b,0) / data.tiemposArray.length) : 0;
+                rankArray.push({ asesor: as, recaudo: data.recaudo, nuevas: data.nuevas, chats: data.chats, conversion: conv, ipc: ipcAsesor, tiempo: tProm });
+            }
+        });
 
+        // Ordenamos por quien trajo más plata
+        rankArray.sort((a, b) => b.recaudo - a.recaudo);
+
+        // -- Gráfica Dona (Top 8 Asesores)
+        const topDona = rankArray.slice(0, 8);
+        const colores = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#0f172a', '#64748b', '#06b6d4'];
+        
         if (chartDona) chartDona.destroy();
-        const ctxDona = document.getElementById('chartAsesores').getContext('2d');
+        const ctxDona = document.getElementById('chartDona').getContext('2d');
         chartDona = new Chart(ctxDona, {
             type: 'doughnut',
-            data: { labels: asesoresNombres, datasets: [{ data: dataDona, backgroundColor: colores, borderWidth: 0 }] },
-            options: { responsive: true, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+            data: { labels: topDona.map(r=>r.asesor), datasets: [{ data: topDona.map(r=>r.recaudo), backgroundColor: colores, borderWidth: 0 }] },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels:{boxWidth:12, font:{size:11}} } } }
         });
 
-        // TABLA DETALLADA
-        const div = document.getElementById('tablaEstadisticasRender');
+        // -- Gráfica Barras (Embudo Conversión)
+        // Ordenamos por mejor conversión para esta gráfica
+        const rankConv = [...rankArray].sort((a,b) => b.conversion - a.conversion).slice(0, 10);
+        
+        if (chartBar) chartBar.destroy();
+        const ctxBar = document.getElementById('chartConversion').getContext('2d');
+        chartBar = new Chart(ctxBar, {
+            type: 'bar',
+            data: { labels: rankConv.map(r=>r.asesor), datasets: [{ label: '% Conversión', data: rankConv.map(r=>r.conversion.toFixed(1)), backgroundColor: '#8b5cf6', borderRadius: 6 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: {color: '#e2e8f0'} }, x: { grid: {display: false} } } }
+        });
+
+        // -- Render Leaderboard Table
+        const leadDiv = document.getElementById('leaderboardRender');
+        if(rankArray.length === 0) {
+            leadDiv.innerHTML = '<p style="text-align:center; color:var(--muted); padding:20px;">No hay actividad en estas fechas.</p>';
+        } else {
+            let lHtml = '<table><thead><tr><th>Posición</th><th>Asesor</th><th style="text-align:right;">Recaudo</th><th style="text-align:center;">Nuevas</th><th style="text-align:center;">Chats</th><th style="text-align:center;">Conv %</th><th style="text-align:right;">IPC (Valor Chat)</th></tr></thead><tbody>';
+            
+            rankArray.forEach((r, idx) => {
+                let medalla = `${idx + 1}°`;
+                let trClass = '';
+                if(idx === 0) { medalla = '🥇 1°'; trClass = 'rank-1'; }
+                else if(idx === 1) { medalla = '🥈 2°'; trClass = 'rank-2'; }
+                else if(idx === 2) { medalla = '🥉 3°'; trClass = 'rank-3'; }
+
+                let convClass = r.conversion > 15 ? 'badge-green' : (r.conversion > 5 ? 'badge-blue' : '');
+
+                lHtml += `<tr class="${trClass}">
+                            <td style="font-weight:800; color:var(--ink-2);">${medalla}</td>
+                            <td style="font-weight:700;">👤 ${r.asesor}</td>
+                            <td style="text-align:right; font-weight:800; color:var(--accent-hover);">${formatoPlata.format(r.recaudo)}</td>
+                            <td style="text-align:center; font-weight:600;">${r.nuevas}</td>
+                            <td style="text-align:center; font-weight:600; color:var(--blue);">${r.chats}</td>
+                            <td style="text-align:center;"><span class="badge ${convClass}">${r.conversion.toFixed(1)}%</span></td>
+                            <td style="text-align:right; font-size:0.8rem; font-weight:700; color:var(--ink-2);">${formatoPlata.format(r.ipc)}</td>
+                          </tr>`;
+            });
+            lHtml += '</tbody></table>';
+            leadDiv.innerHTML = lHtml;
+        }
+
+        // F. RENDER TABLA RAW DETALLADA
+        const rawDiv = document.getElementById('tablaEstadisticasRender');
         const filas = [];
-        Object.keys(stats).forEach(fecha => {
-            Object.keys(stats[fecha]).forEach(as => { filas.push({ fecha: fecha, asesor: as, ...stats[fecha][as] }); });
+        Object.keys(statsDiarios).forEach(fecha => {
+            Object.keys(statsDiarios[fecha]).forEach(as => { filas.push({ fecha: fecha, asesor: as, ...statsDiarios[fecha][as] }); });
         });
         filas.sort((a, b) => b.fecha.localeCompare(a.fecha) || b.recaudado - a.recaudado);
 
         if(filas.length === 0) {
-            div.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem;">No hay datos para mostrar.</p>';
+            rawDiv.innerHTML = '<p style="text-align:center; color:var(--muted); padding:20px;">No hay datos para mostrar.</p>';
             return;
         }
 
-        let html = '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:0.8rem; text-align:left; white-space:nowrap;">';
-        html += '<thead><tr style="border-bottom:2px solid var(--ring-strong); color: var(--ink); font-weight:600;"><th style="padding:10px 4px;">Día</th><th style="padding:10px 4px;">Asesor</th><th style="padding:10px 4px; text-align:center;">Nuevas</th><th style="padding:10px 4px; text-align:right;">Recaudo</th><th style="padding:10px 4px; text-align:center; color:#1d4ed8;">Msg Chat</th><th style="padding:10px 4px; text-align:center; color:#4338ca;">Chats</th><th style="padding:10px 4px; text-align:center; color:#047857;">Conv %</th></tr></thead><tbody>';
+        let rHtml = '<table><thead><tr><th>Día</th><th>Asesor</th><th style="text-align:center;">Ventas</th><th style="text-align:right;">Recaudo</th><th style="text-align:center;">Msg Chat</th><th style="text-align:center;">Chats Asig.</th><th style="text-align:center;">Conv %</th></tr></thead><tbody>';
         
         filas.forEach(f => {
             const fechaStr = new Date(f.fecha + 'T12:00:00').toLocaleDateString('es-CO', {weekday:'short', day:'2-digit', month:'short'});
-            
-            // Fórmula de conversión por asesor en ese día
             let conversion = f.chats > 0 ? ((f.nuevas / f.chats) * 100).toFixed(1) + '%' : '0%';
 
-            html += `<tr style="border-bottom:1px solid var(--ring);">
-                        <td style="padding:12px 4px; color:var(--ink-2); text-transform:capitalize;">${fechaStr}</td>
-                        <td style="padding:12px 4px; font-weight:600; color:var(--ink);">👤 ${f.asesor}</td>
-                        <td style="padding:12px 4px; text-align:center; font-weight:600; color:var(--muted);">${f.nuevas}</td>
-                        <td style="padding:12px 4px; text-align:right; font-weight:800; color:var(--ink);">${formatoPlata.format(f.recaudado)}</td>
-                        <td style="padding:12px 4px; text-align:center; font-weight:700; color:#3b82f6;">${f.mensajes > 0 ? f.mensajes : '-'}</td>
-                        <td style="padding:12px 4px; text-align:center; font-weight:700; color:#4338ca;">${f.chats > 0 ? f.chats : '-'}</td>
-                        <td style="padding:12px 4px; text-align:center; font-weight:800; color:#059669; font-size:0.85rem;">${conversion}</td>
+            rHtml += `<tr>
+                        <td style="color:var(--ink-2); text-transform:capitalize;">${fechaStr}</td>
+                        <td style="font-weight:600;">${f.asesor}</td>
+                        <td style="text-align:center; font-weight:600;">${f.nuevas}</td>
+                        <td style="text-align:right; font-weight:700;">${formatoPlata.format(f.recaudado)}</td>
+                        <td style="text-align:center; color:var(--muted);">${f.mensajes > 0 ? f.mensajes : '-'}</td>
+                        <td style="text-align:center; font-weight:600; color:var(--blue);">${f.chats > 0 ? f.chats : '-'}</td>
+                        <td style="text-align:center; font-weight:700; font-size:0.8rem;">${conversion}</td>
                     </tr>`;
         });
-        html += '</tbody></table></div>';
-        div.innerHTML = html;
+        rHtml += '</tbody></table>';
+        rawDiv.innerHTML = rHtml;
     }
 
-    // --- 4. FUNCIONES EXTRAS (Checkboxes y ChateaPro) ---
+    // --- 5. FUNCIONES EXTRAS (Checkboxes y ChateaPro) ---
     function toggleAllAsesores(source) {
         const checkboxes = document.querySelectorAll('.asesor-chk');
         checkboxes.forEach(chk => chk.checked = source.checked);
@@ -500,8 +682,8 @@
         const lbl = document.getElementById('lbl-asesores-seleccionados');
         
         if (allChecked) lbl.textContent = 'Todos los asesores ▼';
-        else if (seleccionados === 0) lbl.textContent = 'Ninguno seleccionado ▼';
-        else lbl.textContent = `${seleccionados} asesores filtrados ▼`;
+        else if (seleccionados === 0) lbl.textContent = 'Ninguno ▼';
+        else lbl.textContent = `${seleccionados} filtrados ▼`;
         
         aplicarFiltrosEstadisticas();
     }
@@ -534,13 +716,15 @@
                 body: JSON.stringify({ contrasena: localStorage.getItem(STORAGE_KEY) })
             });
             const res = await req.json();
-            showModal(res.status === 'ok' ? 'Sincronizado ✅' : 'Atención ⚠️', res.mensaje);
+            showModal(res.status === 'ok' ? 'Éxito' : 'Atención', res.mensaje);
             
             if (res.status === 'ok') {
+                const now = new Date();
+                document.getElementById('lastSyncTime').textContent = "Corte: " + now.toLocaleTimeString('es-CO', {hour: '2-digit', minute:'2-digit'});
                 setTimeout(() => { cargarEstadisticas(); }, 1500);
             }
         } catch (error) {
-            showModal('Error ❌', 'Fallo la conexión con el servidor.');
+            showModal('Error', 'Fallo la conexión con el servidor.');
         } finally {
             btnElement.innerHTML = originalText;
             btnElement.style.pointerEvents = 'auto';
