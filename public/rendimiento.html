@@ -23,7 +23,7 @@
     .section-card { background: #fff; border: 1px solid var(--ring); border-radius: 16px; box-shadow: var(--shadow); padding: 24px; margin-bottom: 20px; }
     .section-title { font-size: 1.1rem; font-weight: 700; color: var(--ink); margin: 0 0 16px 0; padding-bottom: 10px; border-bottom: 1px solid var(--ring); display: flex; align-items: center; justify-content: space-between; }
     
-    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 15px; }
+    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 15px; }
     .kpi-card { background: linear-gradient(135deg, #f0f7f3 0%, #e6eee9 100%); border: 1px solid var(--ring-strong); padding: 15px; border-radius: 16px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.02); transition: transform 0.2s;}
     .kpi-card:hover { transform: translateY(-3px); }
     .kpi-card h3 { margin: 0 0 5px 0; font-size: 0.7rem; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;}
@@ -104,6 +104,7 @@
                <button onclick="limpiarFiltrosRendimiento()" style="height:44px; padding:0 15px; border-radius:10px; border:1px solid var(--ring-strong); background:#fff; cursor:pointer;">Limpiar</button>
            </div>
         </div>
+        <p style="font-size: 0.75rem; color: var(--muted); text-align: right; margin: 10px 0 0 0;">* Corte de datos de Chatea Pro: 7:00 PM (Hora Col)</p>
     </div>
 
     <div class="section-card">
@@ -118,13 +119,16 @@
 
         <div class="dashboard-grid" style="border-top: 1px dashed var(--ring); padding-top: 15px;">
           <div class="kpi-card" style="border-left: 4px solid #3b82f6; background: #eff6ff;">
-            <h3 style="color:#1e40af;">💬 Mensajes ChateaPro</h3><p id="kpi-filt-mensajes" style="color:#1d4ed8;">0</p>
+            <h3 style="color:#1e40af;">💬 Mensajes Chat</h3><p id="kpi-filt-mensajes" style="color:#1d4ed8;">0</p>
           </div>
           <div class="kpi-card" style="border-left: 4px solid #8b5cf6; background: #f5f3ff;">
             <h3 style="color:#4c1d95;">👥 Chats Asignados</h3><p id="kpi-filt-chats" style="color:#4338ca;">0</p>
           </div>
+          <div class="kpi-card" style="border-left: 4px solid #10b981; background: #ecfdf5;">
+            <h3 style="color:#047857;">🎯 Tasa Conversión</h3><p id="kpi-filt-conversion" style="color:#059669;">0%</p>
+          </div>
           <div class="kpi-card" style="border-left: 4px solid #f59e0b; background: #fffbeb;">
-            <h3 style="color:#b45309;">⏱️ Tiempos de Respuesta</h3><p id="kpi-filt-tiempo" style="color:#b45309; font-size: 1.1rem; line-height: 1.4;">-</p>
+            <h3 style="color:#b45309;">⏱️ T. Respuesta</h3><p id="kpi-filt-tiempo" style="color:#b45309; font-size: 1.1rem; line-height: 1.4;">-</p>
           </div>
         </div>
 
@@ -150,7 +154,7 @@
     const STORAGE_KEY = 'asesor_pwd';
     let globalAbonos = [];
     let globalVentas = [];
-    let globalChatea = []; // NUEVA VARIABLE PARA LOS CHATS
+    let globalChatea = []; 
     let chartLinea = null;
     let chartDona = null;
 
@@ -226,12 +230,11 @@
     function prepararDashboard(abonos, ventas, globales, chatea) {
         globalAbonos = abonos;
         globalVentas = ventas;
-
+        
         // 🌟 DICCIONARIO TRADUCTOR DE NOMBRES 🌟
-        // A la izquierda el nombre de Chatea Pro, a la derecha tu nombre de Ventas
         const mapaNombres = {
             "Mateo Plata Buitrago": "Mateo",
-            "Luisa Arias": "Arias",
+            "Luisa Arias": "Luisa",
             "Anyeli Zuleta": "Anyeli",
             "Manuela Saldarriaga": "Saldarriaga",
             "jennifer": "Jenifer",
@@ -247,7 +250,7 @@
             return { ...c, asesor: nombreCorregido };
         });
 
-        globalChatea = chateaTraducido; // Guardamos los datos ya corregidos
+        globalChatea = chateaTraducido; 
 
         document.getElementById('kpi-global-registradas').textContent = globales.registradas;
         document.getElementById('kpi-global-cero').textContent = globales.separadas_cero;
@@ -256,7 +259,7 @@
         const asesoresSet = new Set();
         ventas.forEach(v => asesoresSet.add(v.asesor || 'Sin Asesor'));
         abonos.forEach(a => asesoresSet.add(a.asesor || 'Sin Asesor'));
-        globalChatea.forEach(c => asesoresSet.add(c.asesor || 'Sin Asesor')); // Agregamos los que vienen de Chatea
+        globalChatea.forEach(c => asesoresSet.add(c.asesor || 'Sin Asesor'));
         
         const dropdownAsesores = document.getElementById('dropdown-asesores');
         let htmlCheckboxes = `<label style="display:flex; gap:8px; margin-bottom:8px; cursor:pointer; color:var(--ink); font-weight:600;"><input type="checkbox" id="chk-all-asesores" checked onchange="toggleAllAsesores(this)" style="accent-color: var(--accent);"> Seleccionar Todos</label><hr style="border:0; border-top:1px solid var(--ring); margin: 8px 0;">`;
@@ -302,7 +305,7 @@
         });
 
         const chateaFiltrado = globalChatea.filter(c => {
-            const f = c.fecha; // Chatea ya viene en YYYY-MM-DD
+            const f = c.fecha; 
             if (fechaDesde && f < fechaDesde) return false;
             if (fechaHasta && f > fechaHasta) return false;
             if (!asesoresSeleccionados.includes(c.asesor || 'Sin Asesor')) return false;
@@ -318,7 +321,7 @@
         let totalPagos = abonosFiltrados.length;
         let dineroRecaudado = abonosFiltrados.reduce((acc, curr) => acc + Number(curr.monto), 0);
 
-        // MATEMÁTICAS CHAT
+        // MATEMÁTICAS CHAT Y CONVERSIÓN
         let totalMensajes = 0;
         let totalAsignadas = 0;
         let tiempos = [];
@@ -335,6 +338,8 @@
             if (promSegundos < 60) textoTiempo = Math.floor(promSegundos) + " seg";
             else textoTiempo = Math.floor(promSegundos/60) + "m " + Math.floor(promSegundos%60) + "s";
         }
+        
+        let tasaConversionGlobal = totalAsignadas > 0 ? ((totalNuevas / totalAsignadas) * 100).toFixed(1) : 0;
 
         // PINTAR KPI
         const formatoPlata = new Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', minimumFractionDigits:0});
@@ -345,6 +350,7 @@
         
         document.getElementById('kpi-filt-mensajes').textContent = totalMensajes;
         document.getElementById('kpi-filt-chats').textContent = totalAsignadas;
+        document.getElementById('kpi-filt-conversion').textContent = tasaConversionGlobal + '%';
         document.getElementById('kpi-filt-tiempo').textContent = textoTiempo;
 
         // AGRUPAR TABLA
@@ -356,7 +362,7 @@
             const f = getFechaLocal(v.created_at);
             const a = v.asesor || 'Sin Asesor';
             if(!stats[f]) stats[f] = {};
-            if(!stats[f][a]) stats[f][a] = { nuevas: 0, conDinero: 0, recaudado: 0, mensajes: 0, tiempo: 0 };
+            if(!stats[f][a]) stats[f][a] = { nuevas: 0, conDinero: 0, recaudado: 0, mensajes: 0, chats: 0, tiempo: 0 };
             stats[f][a].nuevas++;
         });
 
@@ -368,7 +374,7 @@
             recaudoPorAsesor[as] = (recaudoPorAsesor[as] || 0) + monto;
             
             if(!stats[f]) stats[f] = {};
-            if(!stats[f][as]) stats[f][as] = { nuevas: 0, conDinero: 0, recaudado: 0, mensajes: 0, tiempo: 0 };
+            if(!stats[f][as]) stats[f][as] = { nuevas: 0, conDinero: 0, recaudado: 0, mensajes: 0, chats: 0, tiempo: 0 };
             stats[f][as].conDinero++;
             stats[f][as].recaudado += monto;
         });
@@ -377,9 +383,10 @@
             const f = c.fecha;
             const as = c.asesor || 'Sin Asesor';
             if(!stats[f]) stats[f] = {};
-            if(!stats[f][as]) stats[f][as] = { nuevas: 0, conDinero: 0, recaudado: 0, mensajes: 0, tiempo: 0 };
-            stats[f][as].mensajes += c.mensajes_enviados;
-            stats[f][as].tiempo = c.tiempo_respuesta_segundos; // Nos quedamos con el promedio diario de ese asesor
+            if(!stats[f][as]) stats[f][as] = { nuevas: 0, conDinero: 0, recaudado: 0, mensajes: 0, chats: 0, tiempo: 0 };
+            stats[f][as].mensajes += (c.mensajes_enviados || 0);
+            stats[f][as].chats += (c.conversaciones_asignadas || 0);
+            stats[f][as].tiempo = c.tiempo_respuesta_segundos; 
         });
 
         // GRÁFICA DE LÍNEAS
@@ -398,7 +405,7 @@
         // GRÁFICA DE DONA
         const asesoresNombres = Object.keys(recaudoPorAsesor);
         const dataDona = asesoresNombres.map(a => recaudoPorAsesor[a]);
-        const colores = ['#4eb082', '#2b3a35', '#C5A059', '#d95a53', '#8ba89d', '#ff9800'];
+        const colores = ['#4eb082', '#2b3a35', '#C5A059', '#d95a53', '#8ba89d', '#ff9800', '#3b82f6', '#8b5cf6', '#f43f5e'];
 
         if (chartDona) chartDona.destroy();
         const ctxDona = document.getElementById('chartAsesores').getContext('2d');
@@ -408,7 +415,7 @@
             options: { responsive: true, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
         });
 
-        // TABLA DETALLADA (AHORA CON MENSAJES Y TIEMPOS)
+        // TABLA DETALLADA (AHORA CON CONVERSIÓN)
         const div = document.getElementById('tablaEstadisticasRender');
         const filas = [];
         Object.keys(stats).forEach(fecha => {
@@ -422,25 +429,22 @@
         }
 
         let html = '<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:0.8rem; text-align:left; white-space:nowrap;">';
-        html += '<thead><tr style="border-bottom:2px solid var(--ring-strong); color: var(--ink); font-weight:600;"><th style="padding:10px 4px;">Día</th><th style="padding:10px 4px;">Asesor</th><th style="padding:10px 4px; text-align:center;">Nuevas</th><th style="padding:10px 4px; text-align:center;">Pagos</th><th style="padding:10px 4px; text-align:right;">Recaudo</th><th style="padding:10px 4px; text-align:center; color:#1d4ed8;">Msg Chat</th><th style="padding:10px 4px; text-align:center; color:#b45309;">T. Resp</th></tr></thead><tbody>';
+        html += '<thead><tr style="border-bottom:2px solid var(--ring-strong); color: var(--ink); font-weight:600;"><th style="padding:10px 4px;">Día</th><th style="padding:10px 4px;">Asesor</th><th style="padding:10px 4px; text-align:center;">Nuevas</th><th style="padding:10px 4px; text-align:right;">Recaudo</th><th style="padding:10px 4px; text-align:center; color:#1d4ed8;">Msg Chat</th><th style="padding:10px 4px; text-align:center; color:#4338ca;">Chats</th><th style="padding:10px 4px; text-align:center; color:#047857;">Conv %</th></tr></thead><tbody>';
         
         filas.forEach(f => {
             const fechaStr = new Date(f.fecha + 'T12:00:00').toLocaleDateString('es-CO', {weekday:'short', day:'2-digit', month:'short'});
             
-            let txtTiempo = "-";
-            if (f.tiempo > 0) {
-                if (f.tiempo < 60) txtTiempo = Math.floor(f.tiempo) + "s";
-                else txtTiempo = Math.floor(f.tiempo/60) + "m " + Math.floor(f.tiempo%60) + "s";
-            }
+            // Fórmula de conversión por asesor en ese día
+            let conversion = f.chats > 0 ? ((f.nuevas / f.chats) * 100).toFixed(1) + '%' : '0%';
 
             html += `<tr style="border-bottom:1px solid var(--ring);">
                         <td style="padding:12px 4px; color:var(--ink-2); text-transform:capitalize;">${fechaStr}</td>
                         <td style="padding:12px 4px; font-weight:600; color:var(--ink);">👤 ${f.asesor}</td>
                         <td style="padding:12px 4px; text-align:center; font-weight:600; color:var(--muted);">${f.nuevas}</td>
-                        <td style="padding:12px 4px; text-align:center; font-weight:600; color:var(--accent-2);">${f.conDinero}</td>
                         <td style="padding:12px 4px; text-align:right; font-weight:800; color:var(--ink);">${formatoPlata.format(f.recaudado)}</td>
                         <td style="padding:12px 4px; text-align:center; font-weight:700; color:#3b82f6;">${f.mensajes > 0 ? f.mensajes : '-'}</td>
-                        <td style="padding:12px 4px; text-align:center; font-weight:600; color:#f59e0b; font-size:0.75rem;">${txtTiempo}</td>
+                        <td style="padding:12px 4px; text-align:center; font-weight:700; color:#4338ca;">${f.chats > 0 ? f.chats : '-'}</td>
+                        <td style="padding:12px 4px; text-align:center; font-weight:800; color:#059669; font-size:0.85rem;">${conversion}</td>
                     </tr>`;
         });
         html += '</tbody></table></div>';
@@ -500,7 +504,6 @@
             showModal(res.status === 'ok' ? 'Sincronizado ✅' : 'Atención ⚠️', res.mensaje);
             
             if (res.status === 'ok') {
-                // Recargamos las estadísticas para que se vean los datos nuevos inmediatamente
                 setTimeout(() => { cargarEstadisticas(); }, 1500);
             }
         } catch (error) {
