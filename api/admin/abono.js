@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  const { numeroBoleta, valorAbono, metodoPago, referencia, contrasena, esPendiente } = req.body;
+  const { numeroBoleta, valorAbono, metodoPago, referencia, contrasena, esPendiente, idTransferencia } = req.body;
 
   const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
   const nombreAsesor = asesores[contrasena];
@@ -23,6 +23,18 @@ export default async function handler(req, res) {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
+    // 🚨 NUEVA VALIDACIÓN ANTI-DUPLICADOS (Bloqueo por ID)
+    if (idTransferencia && idTransferencia.trim() !== '') {
+      const { data: dbTrans, error: errTrans } = await supabase
+        .from('transferencias')
+        .select('estado')
+        .eq('id', idTransferencia)
+        .single();
+
+      if (errTrans || !dbTrans) return res.status(400).json({ status: 'error', mensaje: 'No se encontró la transferencia en el banco.' });
+      if (dbTrans.estado !== 'LIBRE') return res.status(400).json({ status: 'error', mensaje: `🛑 Esta transferencia ya está asignada (${dbTrans.estado}). Otro asesor pudo haberla usado.` });
+    }
+    
     let tabla = 'boletas';
     let esDiaria = false;
 
@@ -112,8 +124,11 @@ export default async function handler(req, res) {
     const { error: updateError } = await supabase.from(tabla).update(updatePayload).eq('numero', numeroLimpio);
     if (updateError) throw updateError;
 
-    // 5. Amarrar la referencia a la boleta
-    if (referencia && referencia !== 'Sin Ref' && referencia !== 'efectivo' && referencia !== '0') {
+    // 5. Amarrar la referencia a la boleta (ASIGNACIÓN SEGURA POR ID)
+    if (idTransferencia && idTransferencia.trim() !== '') {
+      await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('id', idTransferencia);
+    } else if (referencia && referencia !== 'Sin Ref' && referencia !== 'efectivo' && referencia !== '0') {
+      // Fallback a lógica vieja
       await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('referencia', referencia);
     }
 
