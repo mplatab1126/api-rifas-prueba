@@ -57,6 +57,7 @@ export default async function handler(req, res) {
       const fechaLimpia = t.hora_pago ? `${t.fecha_pago} a las ${t.hora_pago}` : t.fecha_pago;
       
       return {
+        id: t.id,
         monto: t.monto,
         referencia: t.referencia,
         plataforma: t.plataforma || 'Banco',
