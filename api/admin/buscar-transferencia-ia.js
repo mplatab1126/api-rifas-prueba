@@ -13,7 +13,7 @@ export default async function handler(req, res) {
 
   if (!datos_ia || !datos_ia.monto) return res.status(400).json({ status: 'error', mensaje: 'Faltan datos del pago' });
 
-  const { monto, fecha_pago, hora_pago, referencia, plataforma_origen } = datos_ia;
+  const { monto, fecha_pago, hora_pago, referencia, plataforma } = datos_ia;
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
