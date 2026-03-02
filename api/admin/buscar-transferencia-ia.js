@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     // DESCARGA MAESTRA: Traemos los pagos LIBRES de ese día y monto exacto
     const { data: candidatas, error } = await supabase
       .from('transferencias')
-      .select('id, monto, fecha_pago, hora_pago, referencia, plataforma, estado')
+      .select('id, monto, fecha_pago, hora_pago, referencia, plataforma, estado, url_comprobante')
       .eq('estado', 'LIBRE')
       .eq('fecha_pago', fecha_pago)
       .eq('monto', Number(monto));
