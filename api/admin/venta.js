@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   const {
     numeroBoleta, nombre, apellido, ciudad, telefono,
     primerAbono, referenciaAbono, metodoPago, referencia,
-    contrasena, esPendiente
+    contrasena, esPendiente, idTransferencia
   } = req.body;
 
   const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
@@ -27,6 +27,18 @@ export default async function handler(req, res) {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
+    // 🚨 1. NUEVA VALIDACIÓN ANTI-DUPLICADOS (Bloqueo por ID)
+    if (idTransferencia && idTransferencia.trim() !== '') {
+      const { data: dbTrans, error: errTrans } = await supabase
+        .from('transferencias')
+        .select('estado')
+        .eq('id', idTransferencia)
+        .single();
+
+      if (errTrans || !dbTrans) return res.status(400).json({ status: 'error', mensaje: 'No se encontró la transferencia en el banco.' });
+      if (dbTrans.estado !== 'LIBRE') return res.status(400).json({ status: 'error', mensaje: `🛑 Esta transferencia ya está asignada (${dbTrans.estado}). Otro asesor pudo haberla usado.` });
+    }
+    
     let tabla = 'boletas';
     let esDiaria = false;
 
@@ -93,10 +105,12 @@ export default async function handler(req, res) {
           asesor: nombreAsesor
       });
 
-      if (referenciaAbono && referenciaAbono !== 'Sin Ref' && referenciaAbono !== 'efectivo' && referenciaAbono !== '0') {
+      // ASIGNACIÓN SEGURA AL ID DE LA BASE DE DATOS
+      if (idTransferencia && idTransferencia.trim() !== '') {
+        await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('id', idTransferencia);
+      } else if (referenciaAbono && referenciaAbono !== 'Sin Ref' && referenciaAbono !== 'efectivo' && referenciaAbono !== '0') {
         await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('referencia', referenciaAbono);
       }
-    }
 
     // 6. Actualizar el estado de la boleta
     const estadoNuevo = saldoRestante <= 0 ? 'Pagada' : (esDiaria ? 'Reservado' : 'Ocupada');
