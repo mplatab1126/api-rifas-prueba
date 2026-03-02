@@ -111,6 +111,7 @@ export default async function handler(req, res) {
       } else if (referenciaAbono && referenciaAbono !== 'Sin Ref' && referenciaAbono !== 'efectivo' && referenciaAbono !== '0') {
         await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('referencia', referenciaAbono);
       }
+    }
 
     // 6. Actualizar el estado de la boleta
     const estadoNuevo = saldoRestante <= 0 ? 'Pagada' : (esDiaria ? 'Reservado' : 'Ocupada');
