@@ -692,7 +692,7 @@
 
             if (resBusqueda.status === 'ok') {
                 const t = resBusqueda.transferencia;
-                seleccionarTransferencia(targetIdOculto, refId, montoId, metodoId, feedbackId, t.id, t.referencia, t.monto, t.plataforma);
+                seleccionarTransferencia(targetIdOculto, refId, montoId, metodoId, feedbackId, t.id, t.referencia, t.monto, t.plataforma, t.url_comprobante);
                 document.getElementById(statusId).textContent = "¡Eureka! Transferencia hallada y lista ✅";
             } else {
                 document.getElementById(statusId).textContent = '⚠️ ' + resBusqueda.mensaje;
@@ -792,7 +792,9 @@
                         // Contenedor principal de la tarjeta (Flexbox para separar textos del botón)
                         html += '<div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--ring); padding:10px; border-radius:10px; cursor:pointer; background:#fff; text-align:left; transition:background 0.2s;"';
                         html += ' onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'#fff\'"';
-                        let idOculto = targetRefId === 'v_referenciaAbono' ? 'v_idTransferencia' : 'a_idTransferencia'; html += ' onclick="seleccionarTransferencia(\'' + idOculto + '\', \'' + targetRefId + '\', \'' + targetMontoId + '\', \'' + targetMetodoId + '\', \'' + feedbackId + '\', \'' + t.id + '\', \'' + refSafe + '\', ' + t.monto + ', \'' + platSafe + '\')">';
+                        let idOculto = targetRefId === 'v_referenciaAbono' ? 'v_idTransferencia' : 'a_idTransferencia'; 
+                        let urlSegura = t.url_comprobante ? t.url_comprobante : '';
+                        html += ' onclick="seleccionarTransferencia(\'' + idOculto + '\', \'' + targetRefId + '\', \'' + targetMontoId + '\', \'' + targetMetodoId + '\', \'' + feedbackId + '\', \'' + t.id + '\', \'' + refSafe + '\', ' + t.monto + ', \'' + platSafe + '\', \'' + urlSegura + '\')">';
                         
                         // Lado izquierdo: Textos de la transferencia
                         html += '<div>';
