@@ -421,6 +421,8 @@
 
       <button id="btnRegistrarVenta" class="cta" style="margin-top:10px; height:48px; font-size:1rem; background: var(--accent-2);">Confirmar Separado ($0)</button>
       <input id="v_contrasena" type="hidden">
+      <input id="v_idTransferencia" type="hidden">
+      <input id="a_idTransferencia" type="hidden">
     </div>
 
     <div id="view-cliente" class="view-section">
@@ -645,52 +647,88 @@
         }
     }
 
-    // OCR ACTUALIZADO
-    async function handleOCR(e, statusId, inputId, montoId, metodoId, feedbackId) {
-        var items = (e.clipboardData && e.clipboardData.items) ? e.clipboardData.items : [];
-        for(var i=0; i<items.length; i++){ 
-            var it = items[i];
-            if(it.type && it.type.indexOf('image/') === 0){ 
-                document.getElementById(statusId).textContent = 'Leyendo la imagen...';
-                var f = it.getAsFile(); 
-                var pre = await preprocessBlobToCanvas(f);
-                var res = await Tesseract.recognize(pre || f, 'spa+eng');
-                var ref = extractRefFromText(res.data.text);
-                
-                if(ref) { 
-                    document.getElementById(inputId).value = ref; 
-                    document.getElementById(statusId).textContent = "Ref extraída: " + ref + " (Buscando... ⏳)";
-                    
-                    // Llama a la búsqueda automática instantáneamente
-                    await autoBuscarPorReferencia(ref, inputId, montoId, metodoId, feedbackId, statusId);
-                } else { 
-                    document.getElementById(statusId).textContent = 'No se detectó referencia clara.'; 
-                }
+    async function handleOCR(e, statusId, targetIdOculto, refId, montoId, metodoId, feedbackId) {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        let blob = null;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf("image") === 0) blob = items[i].getAsFile();
+        }
+        
+        if (!blob) return; // Si no pegó una imagen, se sale.
+        
+        // El teléfono está en el formulario de ventas o lo dejamos vacío si no lo han llenado
+        const telefonoAUsar = document.getElementById('v_telefono') ? document.getElementById('v_telefono').value : '';
+        
+        document.getElementById(statusId).textContent = '🤖 IA leyendo comprobante...';
+        
+        try {
+            // 1. Convertimos imagen a código (Ya tienes esta función abajo en tu código)
+            const base64 = await convertirABase64(blob);
+            
+            // 2. Enviamos a procesar-ia.js (OpenAI)
+            const reqIA = await fetch('/api/admin/procesar-ia', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ imagenBase64: base64, contrasena: localStorage.getItem(STORAGE_KEY) })
+            });
+            const resIA = await reqIA.json();
+            
+            if (resIA.status !== 'ok') {
+                document.getElementById(statusId).textContent = '❌ IA falló: ' + resIA.mensaje;
+                return;
             }
+
+            document.getElementById(statusId).textContent = '🔍 IA leyó bien. Buscando en Supabase...';
+
+            // 3. Enviamos el JSON extraído a nuestro buscador en cascada
+            const reqBusqueda = await fetch('/api/admin/buscar-transferencia-ia', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ 
+                    datos_ia: resIA.datosExtraidos, 
+                    telefono_cliente: telefonoAUsar, 
+                    contrasena: localStorage.getItem(STORAGE_KEY) 
+                })
+            });
+            const resBusqueda = await reqBusqueda.json();
+
+            if (resBusqueda.status === 'ok') {
+                const t = resBusqueda.transferencia;
+                seleccionarTransferencia(targetIdOculto, refId, montoId, metodoId, feedbackId, t.id, t.referencia, t.monto, t.plataforma);
+                document.getElementById(statusId).textContent = "¡Eureka! Transferencia hallada y lista ✅";
+            } else {
+                document.getElementById(statusId).textContent = '⚠️ ' + resBusqueda.mensaje;
+            }
+            
+        } catch (error) {
+            document.getElementById(statusId).textContent = 'Error en el proceso: ' + error.message;
         }
     }
 
-    // LE PASAMOS LAS CAJAS DE TEXTO EXTRA AL OCR PARA QUE SEPA DÓNDE PEGAR EL DINERO
-    if ($('ocrDrop')) $('ocrDrop').addEventListener('paste', async (e)=>{ handleOCR(e, 'ocrStatus', 'v_referenciaAbono', 'v_primerAbono', 'v_metodoPago', 'feedbackTransfer'); });
-    if ($('ocrDropAbono')) $('ocrDropAbono').addEventListener('paste', async (e)=>{ handleOCR(e, 'ocrStatusAbono', 'a_ref', 'a_monto', 'a_metodo', 'feedbackTransferAbono'); });
-
-
+    // Modificamos las llamadas de Paste para que pasen el ID Oculto correcto
+    if ($('ocrDrop')) $('ocrDrop').addEventListener('paste', async (e)=>{ handleOCR(e, 'ocrStatus', 'v_idTransferencia', 'v_referenciaAbono', 'v_primerAbono', 'v_metodoPago', 'feedbackTransfer'); });
+    if ($('ocrDropAbono')) $('ocrDropAbono').addEventListener('paste', async (e)=>{ handleOCR(e, 'ocrStatusAbono', 'a_idTransferencia', 'a_ref', 'a_monto', 'a_metodo', 'feedbackTransferAbono'); });
     // ==========================================
     // BUSCADOR INTELIGENTE DE TRANSFERENCIAS
     // ==========================================
-    function seleccionarTransferencia(refId, montoId, metodoId, feedbackId, refVal, montoVal, metodoVal) {
-        var refInput = document.getElementById(refId); var montoInput = document.getElementById(montoId); var metodoInput = document.getElementById(metodoId);
+    function seleccionarTransferencia(targetIdTransferencia, refId, montoId, metodoId, feedbackId, idReal, refVal, montoVal, metodoVal) {
+        var idInput = document.getElementById(targetIdTransferencia);
+        var refInput = document.getElementById(refId); 
+        var montoInput = document.getElementById(montoId); 
+        var metodoInput = document.getElementById(metodoId);
+        
+        if(idInput) idInput.value = idReal; // Guarda la cédula del pago
         refInput.value = refVal; montoInput.value = montoVal; metodoInput.value = metodoVal;
-        refInput.readOnly = true; montoInput.readOnly = true; montoInput.readOnly = true;
+        refInput.readOnly = true; montoInput.readOnly = true; metodoInput.readOnly = true;
         refInput.style.backgroundColor = "var(--pill)"; montoInput.style.backgroundColor = "var(--pill)"; metodoInput.style.backgroundColor = "var(--pill)";
-        document.getElementById(feedbackId).innerHTML = '<span style="color:var(--accent-2); font-weight:500; font-size: 0.85rem;">Pago cargado. </span><span style="color:var(--danger); cursor:pointer; font-size:0.85rem; font-weight:500; text-decoration:underline; display:inline-block;" onclick="desbloquearCampos(\'' + refId + '\', \'' + montoId + '\', \'' + metodoId + '\', \'' + feedbackId + '\')">Limpiar datos</span>';
+        document.getElementById(feedbackId).innerHTML = '<span style="color:var(--accent-2); font-weight:600; font-size: 0.9rem;">✅ Pago enlazado y asegurado. </span><span style="color:var(--danger); cursor:pointer; font-size:0.85rem; font-weight:500; text-decoration:underline; display:inline-block;" onclick="desbloquearCampos(\''+targetIdTransferencia+'\', \'' + refId + '\', \'' + montoId + '\', \'' + metodoId + '\', \'' + feedbackId + '\')">Quitar</span>';
     }
 
-    function desbloquearCampos(refId, montoId, metodoId, feedbackId) {
+    function desbloquearCampos(targetIdTransferencia, refId, montoId, metodoId, feedbackId) {
+        var idInput = document.getElementById(targetIdTransferencia);
         var refInput = document.getElementById(refId); var montoInput = document.getElementById(montoId); var metodoInput = document.getElementById(metodoId);
-        refInput.readOnly = false; montoInput.readOnly = false; montoInput.readOnly = false;
-        refInput.value = ""; montoInput.value = ""; montoInput.value = "";
-        refInput.style.backgroundColor = "transparent"; montoInput.style.backgroundColor = "transparent"; montoInput.style.backgroundColor = "transparent";
+        if(idInput) idInput.value = "";
+        refInput.readOnly = false; montoInput.readOnly = false; metodoInput.readOnly = false;
+        refInput.value = ""; montoInput.value = ""; metodoInput.value = "";
+        refInput.style.backgroundColor = "transparent"; montoInput.style.backgroundColor = "transparent"; metodoInput.style.backgroundColor = "transparent";
         if(feedbackId) document.getElementById(feedbackId).innerHTML = '';
     }
 
@@ -744,7 +782,7 @@
                         // Contenedor principal de la tarjeta (Flexbox para separar textos del botón)
                         html += '<div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--ring); padding:10px; border-radius:10px; cursor:pointer; background:#fff; text-align:left; transition:background 0.2s;"';
                         html += ' onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'#fff\'"';
-                        html += ' onclick="seleccionarTransferencia(\'' + targetRefId + '\', \'' + targetMontoId + '\', \'' + targetMetodoId + '\', \'' + feedbackId + '\', \'' + refSafe + '\', ' + t.monto + ', \'' + platSafe + '\')">';
+                        let idOculto = targetRefId === 'v_referenciaAbono' ? 'v_idTransferencia' : 'a_idTransferencia'; html += ' onclick="seleccionarTransferencia(\'' + idOculto + '\', \'' + targetRefId + '\', \'' + targetMontoId + '\', \'' + targetMetodoId + '\', \'' + feedbackId + '\', \'' + t.id + '\', \'' + refSafe + '\', ' + t.monto + ', \'' + platSafe + '\')">';
                         
                         // Lado izquierdo: Textos de la transferencia
                         html += '<div>';
@@ -949,8 +987,19 @@ $('btnRegistrarVenta').onclick = async ()=>{
        else { totalMoney=Number($('v_primerAbono').value)||0; ref=$('v_referenciaAbono').value; metodo=$('v_metodoPago').value; }
 
        const perNum = Math.floor(totalMoney/nums.length);
-       const baseData = { nombre:$('v_nombre').value, apellido:$('v_apellido').value, ciudad:$('v_ciudad').value, telefono:$('v_telefono').value, primerAbono:perNum, referenciaAbono: ref, metodoPago: metodo, esPendiente:esVentaPendiente, contrasena:localStorage.getItem(STORAGE_KEY) };
-       
+       const baseData = { 
+           nombre: $('v_nombre').value, 
+           apellido: $('v_apellido').value, 
+           ciudad: $('v_ciudad').value, 
+           telefono: $('v_telefono').value, 
+           primerAbono: perNum, 
+           referenciaAbono: ref, 
+           metodoPago: metodo, 
+           esPendiente: esVentaPendiente, 
+           contrasena: localStorage.getItem(STORAGE_KEY),
+           idTransferencia: $('v_idTransferencia').value // <-- ESTO ES LO NUEVO
+       };
+  
        let ok=0, fails=0;
        let detalleErrores = []; 
 
@@ -1002,7 +1051,14 @@ $('btnRegistrarVenta').onclick = async ()=>{
         const montoPorBoleta = Math.floor(montoTotal / boletasTarget.length);
         const textoOriginal = btn.textContent; btn.textContent = 'Procesando...'; btn.disabled = true;
 
-        const basePayload = { metodoPago: metodo, referencia: ref || 'efectivo', esPendiente: esAbonoPendiente, contrasena: localStorage.getItem(STORAGE_KEY) };
+        const basePayload = { 
+            metodoPago: metodo, 
+            referencia: ref || 'efectivo', 
+            esPendiente: esAbonoPendiente, 
+            contrasena: localStorage.getItem(STORAGE_KEY),
+            idTransferencia: document.getElementById('a_idTransferencia').value // <-- ESTO ES LO NUEVO
+        };
+      
         let ok = 0; let fails = 0;
         let detalleErrores = []; 
 
