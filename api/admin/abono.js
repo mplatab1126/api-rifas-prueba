@@ -113,7 +113,7 @@ export default async function handler(req, res) {
     if (updateError) throw updateError;
 
     // 5. Amarrar la referencia a la boleta
-    if (referencia && referencia !== 'Sin Ref' && referencia !== 'efectivo') {
+    if (referencia && referencia !== 'Sin Ref' && referencia !== 'efectivo' && referencia !== '0') {
       await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('referencia', referencia);
     }
 
