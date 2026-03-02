@@ -22,7 +22,6 @@ export default async function handler(req, res) {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
-// 3. Instrucciones para OpenAI (Actualizado)
     const prompt = `
       Eres un asistente bancario experto. Analiza este comprobante de transferencia y extrae los datos.
       Devuelve ÚNICAMENTE un objeto JSON válido (sin formato Markdown, sin comillas invertidas, solo llaves y texto).
@@ -30,7 +29,7 @@ export default async function handler(req, res) {
       
       Formato exacto esperado:
       {
-        "plataforma_origen": "Nombre del banco o app (Ej: Nequi, Bancolombia, Daviplata)",
+        "plataforma": "Nombre del banco o app (Ej: Nequi, Bancolombia, Daviplata)",
         "monto": "Solo el número sin símbolos (Ej: 20000)",
         "referencia": "Código de comprobante o referencia. Si no hay, pon '0'",
         "fecha_pago": "La fecha exacta en formato YYYY-MM-DD",
