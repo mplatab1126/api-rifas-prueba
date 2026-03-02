@@ -656,34 +656,38 @@
         
         if (!blob) return; // Si no pegó una imagen, se sale.
         
-        // El teléfono está en el formulario de ventas o lo dejamos vacío si no lo han llenado
         const telefonoAUsar = document.getElementById('v_telefono') ? document.getElementById('v_telefono').value : '';
         
-        document.getElementById(statusId).textContent = '🤖 IA leyendo comprobante...';
+        document.getElementById(statusId).innerHTML = '<span style="color:var(--muted);">🤖 IA leyendo comprobante...</span>';
         
         try {
-            // 1. Convertimos imagen a código (Ya tienes esta función abajo en tu código)
             const base64 = await convertirABase64(blob);
             
-            // 2. Enviamos a procesar-ia.js (OpenAI)
             const reqIA = await fetch('/api/admin/procesar-ia', {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ imagenBase64: base64, contrasena: localStorage.getItem(STORAGE_KEY) })
             });
             const resIA = await reqIA.json();
             
-            if (resIA.status !== 'ok') {
-                document.getElementById(statusId).textContent = '❌ IA falló: ' + resIA.mensaje;
+            let datosParaBuscar = null;
+
+            if (resIA.status === 'ok') {
+                datosParaBuscar = resIA.datosExtraidos;
+                document.getElementById(statusId).innerHTML = '<span style="color:var(--ink-2);">🔍 IA leyó bien. Buscando en BD...</span>';
+            } else if (resIA.status === 'duplicado') {
+                // Mensaje amigable para cuando ya habías subido el pago por Carga IA
+                datosParaBuscar = resIA.clon;
+                document.getElementById(statusId).innerHTML = '<span style="color:#f57c00; font-weight:600;">⚠️ Pago detectado en el sistema. Verificando si está LIBRE...</span>';
+            } else {
+                document.getElementById(statusId).innerHTML = '<span style="color:var(--danger); font-weight:bold;">❌ IA falló: ' + resIA.mensaje + '</span>';
                 return;
             }
 
-            document.getElementById(statusId).textContent = '🔍 IA leyó bien. Buscando en Supabase...';
-
-            // 3. Enviamos el JSON extraído a nuestro buscador en cascada
+            // Enviamos los datos a nuestro buscador para saber si está LIBRE o ASIGNADA
             const reqBusqueda = await fetch('/api/admin/buscar-transferencia-ia', {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ 
-                    datos_ia: resIA.datosExtraidos, 
+                    datos_ia: datosParaBuscar, 
                     telefono_cliente: telefonoAUsar, 
                     contrasena: localStorage.getItem(STORAGE_KEY) 
                 })
@@ -691,21 +695,19 @@
             const resBusqueda = await reqBusqueda.json();
 
             if (resBusqueda.status === 'ok') {
+                // SI ESTÁ LIBRE, SE PONE VERDE Y MUESTRA EL BOTÓN DE VER FOTO
                 const t = resBusqueda.transferencia;
                 seleccionarTransferencia(targetIdOculto, refId, montoId, metodoId, feedbackId, t.id, t.referencia, t.monto, t.plataforma, t.url_comprobante);
-                document.getElementById(statusId).textContent = "¡Eureka! Transferencia hallada y lista ✅";
+                document.getElementById(statusId).innerHTML = '<span style="color:var(--accent-2); font-weight:bold;">¡Eureka! El pago está LIBRE y listo para usarse ✅</span>';
             } else {
-                document.getElementById(statusId).textContent = '⚠️ ' + resBusqueda.mensaje;
+                document.getElementById(statusId).innerHTML = '<span style="color:var(--danger); font-weight:bold;">❌ No se puede usar: ' + resBusqueda.mensaje + '</span>';
             }
             
         } catch (error) {
-            document.getElementById(statusId).textContent = 'Error en el proceso: ' + error.message;
+            document.getElementById(statusId).innerHTML = '<span style="color:var(--danger);">Error en el proceso: ' + error.message + '</span>';
         }
     }
-
-    // Modificamos las llamadas de Paste para que pasen el ID Oculto correcto
-    if ($('ocrDrop')) $('ocrDrop').addEventListener('paste', async (e)=>{ handleOCR(e, 'ocrStatus', 'v_idTransferencia', 'v_referenciaAbono', 'v_primerAbono', 'v_metodoPago', 'feedbackTransfer'); });
-    if ($('ocrDropAbono')) $('ocrDropAbono').addEventListener('paste', async (e)=>{ handleOCR(e, 'ocrStatusAbono', 'a_idTransferencia', 'a_ref', 'a_monto', 'a_metodo', 'feedbackTransferAbono'); });
+    
     // ==========================================
     // BUSCADOR INTELIGENTE DE TRANSFERENCIAS
     // ==========================================
