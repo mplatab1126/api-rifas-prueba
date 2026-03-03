@@ -226,13 +226,7 @@
     </div>
 
     <div class="row">
-        <div class="col-40">
-            <div class="card" style="height: 400px;">
-                <h3 class="card-title">💼 Recaudo por Asesor</h3>
-                <canvas id="chartDona"></canvas>
-            </div>
-        </div>
-        <div class="col-60">
+        <div class="col-100">
             <div class="card" style="height: 400px; display: flex; flex-direction: column;">
                 <h3 class="card-title">🏆 Ranking Oficial (Leaderboard)</h3>
                 <div class="table-container" id="leaderboardRender" style="flex: 1; overflow-y: auto;">
@@ -242,20 +236,36 @@
         </div>
     </div>
 
-    <div class="saas-divider"><span>📢 3. ANÁLISIS DE META ADS</span></div>
+    <div class="saas-divider"><span>📢 3. ANÁLISIS DE META ADS</span><span id="meta-ultima-fecha-badge" style="display:none; font-size:0.7rem; font-weight:700; background:#fef3c7; color:#92400e; border:1px solid #fde68a; padding:4px 12px; border-radius:20px; text-transform:none; letter-spacing:0;">Cargando...</span></div>
     
     <div class="ads-filters">
-        <div class="input-group">
+        <div class="input-group" id="fb-cuenta-wrap" style="position:relative;">
+            <label>🏦 Cuenta Publicitaria</label>
+            <div class="field-input" style="cursor:pointer;display:flex;justify-content:space-between;" onclick="toggleFbDrop('fb-cuenta-drop')">
+                <span id="fb-cuenta-label" style="user-select:none;">Todas las Cuentas ▼</span>
+            </div>
+            <div id="fb-cuenta-drop" style="display:none;position:absolute;top:100%;left:0;width:100%;min-width:220px;background:#fff;border:1px solid var(--ring-strong);border-radius:12px;max-height:250px;overflow-y:auto;z-index:300;box-shadow:var(--shadow-lg);padding:15px;margin-top:5px;"></div>
+        </div>
+        <div class="input-group" id="fb-campana-wrap" style="position:relative;">
             <label>🎯 Campaña</label>
-            <select id="fb-campana" class="field-input" onchange="aplicarFiltrosEstadisticas()"><option value="">Todas las Campañas</option></select>
+            <div class="field-input" style="cursor:pointer;display:flex;justify-content:space-between;" onclick="toggleFbDrop('fb-campana-drop')">
+                <span id="fb-campana-label" style="user-select:none;">Todas las Campañas ▼</span>
+            </div>
+            <div id="fb-campana-drop" style="display:none;position:absolute;top:100%;left:0;width:100%;min-width:300px;background:#fff;border:1px solid var(--ring-strong);border-radius:12px;max-height:300px;overflow-y:auto;z-index:300;box-shadow:var(--shadow-lg);padding:15px;margin-top:5px;"></div>
         </div>
-        <div class="input-group">
+        <div class="input-group" id="fb-adset-wrap" style="position:relative;">
             <label>📂 Conjunto de Anuncios</label>
-            <select id="fb-adset" class="field-input" onchange="aplicarFiltrosEstadisticas()"><option value="">Todos los Conjuntos</option></select>
+            <div class="field-input" style="cursor:pointer;display:flex;justify-content:space-between;" onclick="toggleFbDrop('fb-adset-drop')">
+                <span id="fb-adset-label" style="user-select:none;">Todos los Conjuntos ▼</span>
+            </div>
+            <div id="fb-adset-drop" style="display:none;position:absolute;top:100%;left:0;width:100%;min-width:300px;background:#fff;border:1px solid var(--ring-strong);border-radius:12px;max-height:300px;overflow-y:auto;z-index:300;box-shadow:var(--shadow-lg);padding:15px;margin-top:5px;"></div>
         </div>
-        <div class="input-group">
+        <div class="input-group" id="fb-ad-wrap" style="position:relative;">
             <label>🖼️ Anuncio Específico</label>
-            <select id="fb-ad" class="field-input" onchange="aplicarFiltrosEstadisticas()"><option value="">Todos los Anuncios</option></select>
+            <div class="field-input" style="cursor:pointer;display:flex;justify-content:space-between;" onclick="toggleFbDrop('fb-ad-drop')">
+                <span id="fb-ad-label" style="user-select:none;">Todos los Anuncios ▼</span>
+            </div>
+            <div id="fb-ad-drop" style="display:none;position:absolute;top:100%;left:0;width:100%;min-width:300px;background:#fff;border:1px solid var(--ring-strong);border-radius:12px;max-height:300px;overflow-y:auto;z-index:300;box-shadow:var(--shadow-lg);padding:15px;margin-top:5px;"></div>
         </div>
     </div>
 
@@ -314,14 +324,7 @@
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-100">
-            <div class="card">
-                <h3 class="card-title">📑 Desglose de Rendimiento por Anuncio</h3>
-                <div id="fb-table-render"><p style="text-align:center; color:var(--muted); padding: 20px;">Calculando datos...</p></div>
-            </div>
-        </div>
-    </div>
+    <div id="fb-table-render" style="display:none;"></div>
 
     <div class="saas-divider"><span>🧠 4. INTELIGENCIA ARTIFICIAL GERENCIAL</span></div>
     
@@ -355,7 +358,8 @@
   <script>
     const STORAGE_KEY = 'asesor_pwd';
     let globalAbonos = []; let globalVentas = []; let globalChatea = []; let globalFb = []; let globalesAPI = {};
-    let chartLinea = null; let chartDona = null; let chartMix = null;
+    let globalEstadoFb = {}; // { nombre → effective_status } obtenido directamente de Facebook
+    let chartLinea = null; let chartMix = null;
     
     window.globalStatsIA = {};
     window.rankArrayIA = [];
@@ -382,6 +386,7 @@
               document.getElementById('topBar').style.display='flex'; 
               document.getElementById('mainDashboard').style.display='block'; 
               cargarEstadisticas();
+              cargarEstadoFacebook();
           } else {
               if(!auto) msg.textContent = 'Acceso denegado. Solo gerencia.';
               localStorage.removeItem(STORAGE_KEY);
@@ -447,6 +452,7 @@
         });
         document.getElementById('dropdown-asesores').innerHTML = htmlCheckboxes;
         
+        actualizarDropdownsFB();
         setRangoFecha('semana');
     }
 
@@ -465,34 +471,136 @@
         return (new Date(d.getTime() - d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
     }
 
-    // Actualiza Selects de FB en Cascada
-    function actualizarDropdownsFB(fDesde, fHasta) {
-        let fbF = globalFb.filter(f => {
-            const fDate = normalizarFecha(f.fecha);
-            return (!fDesde || fDate >= fDesde) && (!fHasta || fDate <= fHasta);
+    // ── SISTEMA MULTI-SELECT META ADS ────────────────────────────────────────
+
+    // Devuelve un mapa { nombre → effective_status } para el campo dado.
+    // Usa el estado real de Facebook si ya cargó; mientras tanto deja null (sin badge).
+    function getStatusMapFb(campo) {
+        const nombres = [...new Set(globalFb.map(f => f[campo]))].filter(Boolean);
+        const map = {};
+        nombres.forEach(n => { map[n] = globalEstadoFb[n] || null; });
+        return map;
+    }
+
+    // Genera el HTML del badge según el effective_status de Facebook
+    function getBadgeFb(status) {
+        if (!status) return ''; // Aún cargando, no mostrar nada
+        const cfg = {
+            'ACTIVE':          { bg: '#dcfce7', color: '#15803d', border: '#86efac', txt: '● Activa'         },
+            'PAUSED':          { bg: '#fef9c3', color: '#854d0e', border: '#fde047', txt: '● Pausada'        },
+            'CAMPAIGN_PAUSED': { bg: '#fef9c3', color: '#854d0e', border: '#fde047', txt: '● Camp. pausada'  },
+            'ADSET_PAUSED':    { bg: '#fef9c3', color: '#854d0e', border: '#fde047', txt: '● Conj. pausado'  },
+            'WITH_ISSUES':     { bg: '#fee2e2', color: '#b91c1c', border: '#fca5a5', txt: '● Con errores'    },
+            'DISAPPROVED':     { bg: '#fee2e2', color: '#b91c1c', border: '#fca5a5', txt: '● Rechazado'      },
+            'ARCHIVED':        { bg: '#f1f5f9', color: '#94a3b8', border: '#e2e8f0', txt: '● Archivada'      },
+            'DELETED':         { bg: '#f1f5f9', color: '#94a3b8', border: '#e2e8f0', txt: '● Eliminada'      },
+        };
+        const c = cfg[status] || { bg: '#f1f5f9', color: '#64748b', border: '#e2e8f0', txt: `● ${status}` };
+        return `<span style="flex-shrink:0;background:${c.bg};color:${c.color};border:1px solid ${c.border};padding:2px 9px;border-radius:20px;font-size:0.68rem;font-weight:800;letter-spacing:0.3px;">${c.txt}</span>`;
+    }
+
+    function toggleFbDrop(id) {
+        const todos = ['fb-cuenta-drop','fb-campana-drop','fb-adset-drop','fb-ad-drop'];
+        todos.forEach(d => { if (d !== id) document.getElementById(d).style.display = 'none'; });
+        const el = document.getElementById(id);
+        el.style.display = el.style.display === 'block' ? 'none' : 'block';
+    }
+
+    // Devuelve [] si "todos" están marcados (= sin filtro), o el array de marcados.
+    function getSelFb(prefix) {
+        const allChk = document.getElementById(`${prefix}-all`);
+        if (!allChk || allChk.checked) return [];
+        return Array.from(document.querySelectorAll(`.${prefix}-chk:checked`)).map(c => c.value);
+    }
+
+    function actualizarLabelFb(prefix, todosTxt) {
+        const chks = document.querySelectorAll(`.${prefix}-chk`);
+        const sel = Array.from(chks).filter(c => c.checked).length;
+        const lbl = document.getElementById(`${prefix}-label`);
+        if (lbl) lbl.textContent = (sel === chks.length || sel === 0) ? `${todosTxt} ▼` : `${sel} seleccionados ▼`;
+    }
+
+    function poblarCheckboxesFb(dropId, prefix, opciones, todosTxt, statusMap = null) {
+        const drop = document.getElementById(dropId);
+        if (!drop) return;
+        const prevChecked = new Set(Array.from(document.querySelectorAll(`.${prefix}-chk:checked`)).map(c => c.value));
+        const allWasChecked = document.getElementById(`${prefix}-all`)?.checked !== false;
+
+        // Ordenar: Activas primero, luego el resto
+        const sorted = statusMap
+            ? [...opciones].sort((a, b) => {
+                const sa = statusMap[a] === 'ACTIVE' ? 0 : 1;
+                const sb = statusMap[b] === 'ACTIVE' ? 0 : 1;
+                return sa - sb || a.localeCompare(b);
+              })
+            : opciones;
+
+        let html = `<label style="display:flex;gap:8px;margin-bottom:8px;cursor:pointer;font-weight:800;color:var(--ink);align-items:center;">
+            <input type="checkbox" id="${prefix}-all" ${allWasChecked ? 'checked' : ''} onchange="toggleAllFbGroup('${prefix}','${todosTxt}')" style="accent-color:var(--accent);width:16px;height:16px;flex-shrink:0;"> Seleccionar Todos
+        </label><hr style="border:0;border-top:1px solid var(--ring);margin:10px 0;">`;
+        sorted.forEach(op => {
+            const checked = allWasChecked || prevChecked.has(op) ? 'checked' : '';
+            const safe = op.replace(/"/g, '&quot;');
+            const badge = statusMap ? getBadgeFb(statusMap[op]) : '';
+            html += `<label style="display:flex;gap:8px;margin-bottom:8px;cursor:pointer;font-size:0.88rem;font-weight:600;color:var(--ink-2);align-items:center;">
+                <input type="checkbox" value="${safe}" class="${prefix}-chk" ${checked} onchange="verificarFbGrupo('${prefix}','${todosTxt}')" style="accent-color:#3b82f6;width:16px;height:16px;flex-shrink:0;">
+                <span style="flex:1;line-height:1.3;">${op}</span>
+                ${badge}
+            </label>`;
         });
+        drop.innerHTML = html;
+        actualizarLabelFb(prefix, todosTxt);
+    }
 
-        const selCampana = document.getElementById('fb-campana');
-        const selAdset = document.getElementById('fb-adset');
-        const selAd = document.getElementById('fb-ad');
+    function toggleAllFbGroup(prefix, todosTxt) {
+        const allChk = document.getElementById(`${prefix}-all`);
+        document.querySelectorAll(`.${prefix}-chk`).forEach(c => c.checked = allChk.checked);
+        actualizarLabelFb(prefix, todosTxt);
+        fbCascadeDesde(prefix);
+    }
 
-        let valCampana = selCampana.value; let valAdset = selAdset.value; let valAd = selAd.value;
+    function verificarFbGrupo(prefix, todosTxt) {
+        const chks = document.querySelectorAll(`.${prefix}-chk`);
+        document.getElementById(`${prefix}-all`).checked = Array.from(chks).every(c => c.checked);
+        actualizarLabelFb(prefix, todosTxt);
+        fbCascadeDesde(prefix);
+    }
 
-        const campanas = [...new Set(fbF.map(f => f.nombre_campana))].filter(Boolean).sort();
-        selCampana.innerHTML = '<option value="">Todas las Campañas</option>' + campanas.map(c => `<option value="${c}">${c}</option>`).join('');
-        if(campanas.includes(valCampana)) selCampana.value = valCampana; else valCampana = "";
+    // Cuando cambia un nivel, reconstruye los niveles inferiores en cascada y recalcula KPIs.
+    function fbCascadeDesde(prefix) {
+        const cuentasSel  = getSelFb('fb-cuenta');
+        const campanasSel = getSelFb('fb-campana');
+        const adsetsSel   = getSelFb('fb-adset');
 
-        if(valCampana) fbF = fbF.filter(f => f.nombre_campana === valCampana);
-        
-        const adsets = [...new Set(fbF.map(f => f.nombre_adset))].filter(Boolean).sort();
-        selAdset.innerHTML = '<option value="">Todos los Conjuntos</option>' + adsets.map(c => `<option value="${c}">${c}</option>`).join('');
-        if(adsets.includes(valAdset)) selAdset.value = valAdset; else valAdset = "";
+        const byC  = cuentasSel.length  > 0 ? globalFb.filter(f => cuentasSel.includes(f.nombre_cuenta))  : globalFb;
+        const byCP = campanasSel.length > 0 ? byC.filter(f => campanasSel.includes(f.nombre_campana))      : byC;
+        const byA  = adsetsSel.length   > 0 ? byCP.filter(f => adsetsSel.includes(f.nombre_adset))         : byCP;
 
-        if(valAdset) fbF = fbF.filter(f => f.nombre_adset === valAdset);
+        if (prefix === 'fb-cuenta') {
+            poblarCheckboxesFb('fb-campana-drop', 'fb-campana', [...new Set(byC.map(f=>f.nombre_campana))].filter(Boolean).sort(), 'Todas las Campañas',  getStatusMapFb('nombre_campana'));
+            const cp2 = getSelFb('fb-campana');
+            const byCP2 = cp2.length > 0 ? byC.filter(f => cp2.includes(f.nombre_campana)) : byC;
+            poblarCheckboxesFb('fb-adset-drop',   'fb-adset',   [...new Set(byCP2.map(f=>f.nombre_adset))].filter(Boolean).sort(), 'Todos los Conjuntos', getStatusMapFb('nombre_adset'));
+            const a2 = getSelFb('fb-adset');
+            const byA2 = a2.length > 0 ? byCP2.filter(f => a2.includes(f.nombre_adset)) : byCP2;
+            poblarCheckboxesFb('fb-ad-drop',      'fb-ad',      [...new Set(byA2.map(f=>f.nombre_ad))].filter(Boolean).sort(),     'Todos los Anuncios',  getStatusMapFb('nombre_ad'));
+        } else if (prefix === 'fb-campana') {
+            poblarCheckboxesFb('fb-adset-drop',   'fb-adset',   [...new Set(byCP.map(f=>f.nombre_adset))].filter(Boolean).sort(),  'Todos los Conjuntos', getStatusMapFb('nombre_adset'));
+            const a2 = getSelFb('fb-adset');
+            const byA2 = a2.length > 0 ? byCP.filter(f => a2.includes(f.nombre_adset)) : byCP;
+            poblarCheckboxesFb('fb-ad-drop',      'fb-ad',      [...new Set(byA2.map(f=>f.nombre_ad))].filter(Boolean).sort(),     'Todos los Anuncios',  getStatusMapFb('nombre_ad'));
+        } else if (prefix === 'fb-adset') {
+            poblarCheckboxesFb('fb-ad-drop',      'fb-ad',      [...new Set(byA.map(f=>f.nombre_ad))].filter(Boolean).sort(),      'Todos los Anuncios',  getStatusMapFb('nombre_ad'));
+        }
+        aplicarFiltrosEstadisticas();
+    }
 
-        const ads = [...new Set(fbF.map(f => f.nombre_ad))].filter(Boolean).sort();
-        selAd.innerHTML = '<option value="">Todos los Anuncios</option>' + ads.map(c => `<option value="${c}">${c}</option>`).join('');
-        if(ads.includes(valAd)) selAd.value = valAd; else valAd = "";
+    // Carga inicial de los 4 dropdowns (llamado cuando llegan los datos o cuando actualiza el estado)
+    function actualizarDropdownsFB() {
+        poblarCheckboxesFb('fb-cuenta-drop',  'fb-cuenta',  [...new Set(globalFb.map(f=>f.nombre_cuenta))].filter(Boolean).sort(),  'Todas las Cuentas',   getStatusMapFb('nombre_cuenta'));
+        poblarCheckboxesFb('fb-campana-drop', 'fb-campana', [...new Set(globalFb.map(f=>f.nombre_campana))].filter(Boolean).sort(), 'Todas las Campañas',  getStatusMapFb('nombre_campana'));
+        poblarCheckboxesFb('fb-adset-drop',   'fb-adset',   [...new Set(globalFb.map(f=>f.nombre_adset))].filter(Boolean).sort(),   'Todos los Conjuntos', getStatusMapFb('nombre_adset'));
+        poblarCheckboxesFb('fb-ad-drop',      'fb-ad',      [...new Set(globalFb.map(f=>f.nombre_ad))].filter(Boolean).sort(),      'Todos los Anuncios',  getStatusMapFb('nombre_ad'));
     }
 
     function aplicarFiltrosEstadisticas() {
@@ -584,30 +692,40 @@
             leadDiv.innerHTML = lHtml;
         }
 
-        // Gráfica Dona
-        if (chartDona) chartDona.destroy();
-        chartDona = new Chart(document.getElementById('chartDona').getContext('2d'), {
-            type: 'doughnut', data: { labels: rankArray.slice(0,8).map(r=>r.asesor), datasets: [{ data: rankArray.slice(0,8).map(r=>r.recaudo), backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#0f172a', '#64748b', '#06b6d4'], borderWidth: 0 }] },
-            options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
-        });
 
         // ============================================
         // 2. RENDIMIENTO FACEBOOK ADS
         // ============================================
-        actualizarDropdownsFB(fDesde, fHasta);
-        
-        const selCampana = document.getElementById('fb-campana').value;
-        const selAdset = document.getElementById('fb-adset').value;
-        const selAd = document.getElementById('fb-ad').value;
+        const selCuentas  = getSelFb('fb-cuenta');
+        const selCampanas = getSelFb('fb-campana');
+        const selAdsets   = getSelFb('fb-adset');
+        const selAds      = getSelFb('fb-ad');
 
         const fbF = globalFb.filter(f => {
-            const fDate = normalizarFecha(f.fecha);
-            const dateOk = (!fDesde || fDate >= fDesde) && (!fHasta || fDate <= fHasta);
-            const campOk = !selCampana || f.nombre_campana === selCampana;
-            const adsetOk = !selAdset || f.nombre_adset === selAdset;
-            const adOk = !selAd || f.nombre_ad === selAd;
-            return dateOk && campOk && adsetOk && adOk;
+            const fDate    = normalizarFecha(f.fecha);
+            const dateOk   = (!fDesde || fDate >= fDesde) && (!fHasta || fDate <= fHasta);
+            const cuentaOk = selCuentas.length  === 0 || selCuentas.includes(f.nombre_cuenta);
+            const campOk   = selCampanas.length === 0 || selCampanas.includes(f.nombre_campana);
+            const adsetOk  = selAdsets.length   === 0 || selAdsets.includes(f.nombre_adset);
+            const adOk     = selAds.length      === 0 || selAds.includes(f.nombre_ad);
+            return dateOk && cuentaOk && campOk && adsetOk && adOk;
         });
+
+        // Badge que muestra el último dato disponible de Meta
+        const metaBadge = document.getElementById('meta-ultima-fecha-badge');
+        if (globalFb.length > 0) {
+            const ultimaFechaDb = [...new Set(globalFb.map(f => normalizarFecha(f.fecha)))].filter(Boolean).sort().pop();
+            const fechaLeg = new Date(ultimaFechaDb + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
+            // Solo avisar si el último dato tiene más de 7 días (probable falta de sync)
+            const hace7DiasStr = (()=>{ const d=new Date(); d.setDate(d.getDate()-7); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().split('T')[0]; })();
+            let estadoBadge = `📅 Último dato Meta: ${fechaLeg}`;
+            if (ultimaFechaDb < hace7DiasStr) estadoBadge += ' — ⚠️ Sincroniza Meta Ads';
+            metaBadge.textContent = estadoBadge;
+            metaBadge.style.display = 'inline-block';
+        } else {
+            metaBadge.textContent = '⚠️ Sin datos de Meta — Haz clic en "Sync Meta Ads"';
+            metaBadge.style.display = 'inline-block';
+        }
 
         let totalGasto = 0, totalClicks = 0, totalImpresiones = 0, totalChatsAds = 0, totalComprasAds = 0;
         let fbRecaudoPorDia = {};
@@ -743,13 +861,42 @@
     function limpiarFiltrosRendimiento() { 
         setRangoFecha('todo'); 
         const chkAll = document.getElementById('chk-all-asesores'); 
-        if (chkAll) { chkAll.checked = true; toggleAllAsesores(chkAll); } 
-        document.getElementById('fb-campana').value = '';
-        document.getElementById('fb-adset').value = '';
-        document.getElementById('fb-ad').value = '';
+        if (chkAll) { chkAll.checked = true; toggleAllAsesores(chkAll); }
+        // Resetear todos los multi-select de Meta a "Todos seleccionados"
+        [['fb-cuenta','Todas las Cuentas'],['fb-campana','Todas las Campañas'],['fb-adset','Todos los Conjuntos'],['fb-ad','Todos los Anuncios']].forEach(([prefix, txt]) => {
+            const allChk = document.getElementById(`${prefix}-all`);
+            if (allChk) { allChk.checked = true; document.querySelectorAll(`.${prefix}-chk`).forEach(c => c.checked = true); }
+            const lbl = document.getElementById(`${prefix}-label`);
+            if (lbl) lbl.textContent = `${txt} ▼`;
+        });
         aplicarFiltrosEstadisticas();
     }
-    document.addEventListener('click', e => { const d = document.getElementById('dropdown-asesores'); const c = document.getElementById('asesor-dropdown-container'); if (d && c && !c.contains(e.target)) d.style.display = 'none'; });
+    document.addEventListener('click', e => {
+        // Cerrar dropdown de asesores
+        const da = document.getElementById('dropdown-asesores'); const ca = document.getElementById('asesor-dropdown-container');
+        if (da && ca && !ca.contains(e.target)) da.style.display = 'none';
+        // Cerrar dropdowns de Meta Ads
+        ['fb-cuenta','fb-campana','fb-adset','fb-ad'].forEach(prefix => {
+            const wrap = document.getElementById(`${prefix}-wrap`);
+            const drop = document.getElementById(`${prefix}-drop`);
+            if (wrap && drop && !wrap.contains(e.target)) drop.style.display = 'none';
+        });
+    });
+
+    // Carga el estado real (ACTIVE/PAUSED/etc.) de campañas, conjuntos y anuncios desde Facebook
+    async function cargarEstadoFacebook() {
+        try {
+            const req = await fetch('/api/admin/estado-facebook', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contrasena: localStorage.getItem(STORAGE_KEY) })
+            });
+            const res = await req.json();
+            if (res.status === 'ok') {
+                globalEstadoFb = res.estados;
+                actualizarDropdownsFB(); // Reconstruir dropdowns con status real
+            }
+        } catch(e) { /* silencioso, los badges simplemente no aparecen */ }
+    }
 
     // Botones de Sincronización
     function showModal(title, msg) { document.getElementById('mTitle').textContent = title; document.getElementById('mMsg').textContent = msg; document.getElementById('modalResult').style.display = 'flex'; }
@@ -771,7 +918,7 @@
             const req = await fetch('/api/admin/sincronizar-facebook', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contrasena: localStorage.getItem(STORAGE_KEY) }) });
             const res = await req.json();
             showModal(res.status === 'ok' ? 'Éxito' : 'Atención', res.mensaje);
-            if (res.status === 'ok') setTimeout(() => cargarEstadisticas(), 1500);
+            if (res.status === 'ok') { setTimeout(() => cargarEstadisticas(), 1500); setTimeout(() => cargarEstadoFacebook(), 2000); }
         } catch (e) { showModal('Error', 'Fallo conexión con Meta.'); } 
         finally { btn.innerHTML = orig; btn.style.pointerEvents = 'auto'; }
     }

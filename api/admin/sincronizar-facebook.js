@@ -15,8 +15,8 @@ export default async function handler(req, res) {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   const cuentas = [
-    { id: process.env.FB_ACT_1_ID, token: process.env.FB_ACT_1_TOKEN, nombre: 'Cuenta Principal' },
-    { id: process.env.FB_ACT_2_ID, token: process.env.FB_ACT_2_TOKEN, nombre: 'Cuenta Secundaria' }
+    { id: process.env.FB_ACT_1_ID, token: process.env.FB_ACT_1_TOKEN, nombre: 'Facebook de Mateo' },
+    { id: process.env.FB_ACT_2_ID, token: process.env.FB_ACT_2_TOKEN, nombre: 'Facebook de Alejandro' }
   ].filter(c => c.id && c.token);
 
   if(cuentas.length === 0) return res.status(200).json({status: 'error', mensaje: 'Faltan las llaves de Facebook en Vercel'});
@@ -25,71 +25,75 @@ export default async function handler(req, res) {
     let registrosTotales = [];
     let erroresFB = []; 
 
-    // 🌟 LA MAGIA: Calculamos el rango de fechas exacto (Hora Colombia)
+    // Calculamos el rango de fechas en hora Colombia (UTC-5)
     const offset = -5; 
     const hoy = new Date(new Date().getTime() + offset * 3600 * 1000);
-    const hace7Dias = new Date(hoy.getTime() - 7 * 24 * 3600 * 1000);
     
-    const since = hace7Dias.toISOString().split('T')[0];
+    // Desde el 1 de enero del año actual hasta hoy
+    const since = `${hoy.getUTCFullYear()}-01-01`;
     const until = hoy.toISOString().split('T')[0];
     const timeRange = JSON.stringify({ since, until });
 
-    for (const cuenta of cuentas) {
-      const idLimpio = cuenta.id.replace(/\D/g, ''); 
-      
-      // Enviamos "time_range" obligando a Facebook a incluir HOY, y "time_increment=1" para separar por días
-      const url = `https://graph.facebook.com/v19.0/act_${idLimpio}/insights?level=ad&time_range=${encodeURIComponent(timeRange)}&time_increment=1&fields=date_start,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,spend,reach,impressions,frequency,cpm,inline_link_clicks,cpc,inline_link_click_ctr,actions&access_token=${cuenta.token.trim()}`;
-
-      const fbReq = await fetch(url);
-      const fbRes = await fbReq.json();
-
-      if (fbRes.error) {
-        erroresFB.push(`❌ ${cuenta.nombre}: ${fbRes.error.message}`);
-        continue; 
+    const procesarItem = (item, idLimpio, nombreCuenta) => {
+      let conversaciones = 0;
+      let compras = 0;
+      if (item.actions) {
+        const actConv = item.actions.find(a => a.action_type === 'onsite_conversion.messaging_conversation_started_7d');
+        if (actConv) conversaciones = parseInt(actConv.value);
+        const actCompra = item.actions.find(a => a.action_type === 'purchase' || a.action_type === 'offsite_conversion.fb_pixel_purchase');
+        if (actCompra) compras = parseInt(actCompra.value);
       }
+      const gasto = parseFloat(item.spend) || 0;
+      return {
+        fecha: item.date_start,
+        cuenta_id: idLimpio,
+        nombre_cuenta: nombreCuenta,
+        campana_id: item.campaign_id || '000',
+        nombre_campana: item.campaign_name || 'Desconocida',
+        adset_id: item.adset_id || '000',
+        nombre_adset: item.adset_name || 'Desconocido',
+        ad_id: item.ad_id || '000',
+        nombre_ad: item.ad_name || 'Desconocido',
+        gasto: Math.round(gasto),
+        alcance: parseInt(item.reach) || 0,
+        impresiones: parseInt(item.impressions) || 0,
+        frecuencia: parseFloat(item.frequency) || 0,
+        cpm: parseFloat(item.cpm) || 0,
+        clics_enlace: parseInt(item.inline_link_clicks) || 0,
+        cpc: parseFloat(item.cpc) || 0,
+        ctr: parseFloat(item.inline_link_click_ctr) || 0,
+        conversaciones,
+        costo_conversacion: conversaciones > 0 ? Math.round(gasto / conversaciones) : 0,
+        compras,
+        costo_compra: compras > 0 ? Math.round(gasto / compras) : 0
+      };
+    };
 
-      if (fbRes.data && fbRes.data.length > 0) {
-        for (const item of fbRes.data) {
-          
-          let conversaciones = 0;
-          let compras = 0;
+    for (const cuenta of cuentas) {
+      const idLimpio = cuenta.id.replace(/\D/g, '');
 
-          if (item.actions) {
-            const actConv = item.actions.find(a => a.action_type === 'onsite_conversion.messaging_conversation_started_7d');
-            if (actConv) conversaciones = parseInt(actConv.value);
+      // limit=500 maximiza resultados por página; seguimos paginando hasta que no haya más
+      let urlActual = `https://graph.facebook.com/v19.0/act_${idLimpio}/insights?level=ad&limit=500&time_range=${encodeURIComponent(timeRange)}&time_increment=1&fields=date_start,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,spend,reach,impressions,frequency,cpm,inline_link_clicks,cpc,inline_link_click_ctr,actions&access_token=${cuenta.token.trim()}`;
 
-            const actCompra = item.actions.find(a => a.action_type === 'purchase' || a.action_type === 'offsite_conversion.fb_pixel_purchase');
-            if (actCompra) compras = parseInt(actCompra.value);
-          }
+      let paginas = 0;
+      while (urlActual) {
+        paginas++;
+        const fbReq = await fetch(urlActual);
+        const fbRes = await fbReq.json();
 
-          const gasto = parseFloat(item.spend) || 0;
-          const costo_conv = conversaciones > 0 ? (gasto / conversaciones) : 0;
-          const costo_comp = compras > 0 ? (gasto / compras) : 0;
-
-          registrosTotales.push({
-            fecha: item.date_start,
-            cuenta_id: idLimpio,
-            nombre_cuenta: cuenta.nombre,
-            campana_id: item.campaign_id || '000',
-            nombre_campana: item.campaign_name || 'Desconocida',
-            adset_id: item.adset_id || '000',
-            nombre_adset: item.adset_name || 'Desconocido',
-            ad_id: item.ad_id || '000',
-            nombre_ad: item.ad_name || 'Desconocido',
-            gasto: Math.round(gasto),
-            alcance: parseInt(item.reach) || 0,
-            impresiones: parseInt(item.impressions) || 0,
-            frecuencia: parseFloat(item.frequency) || 0,
-            cpm: parseFloat(item.cpm) || 0,
-            clics_enlace: parseInt(item.inline_link_clicks) || 0,
-            cpc: parseFloat(item.cpc) || 0,
-            ctr: parseFloat(item.inline_link_click_ctr) || 0,
-            conversaciones: conversaciones,
-            costo_conversacion: Math.round(costo_conv),
-            compras: compras,
-            costo_compra: Math.round(costo_comp)
-          });
+        if (fbRes.error) {
+          erroresFB.push(`❌ ${cuenta.nombre} (pág ${paginas}): ${fbRes.error.message}`);
+          break;
         }
+
+        if (fbRes.data && fbRes.data.length > 0) {
+          for (const item of fbRes.data) {
+            registrosTotales.push(procesarItem(item, idLimpio, cuenta.nombre));
+          }
+        }
+
+        // Seguir a la siguiente página si existe
+        urlActual = fbRes.paging?.next || null;
       }
     }
 
@@ -106,7 +110,7 @@ export default async function handler(req, res) {
 
     if (error) throw error;
 
-    let mensajeFinal = `¡Meta Sincronizado! Se extrajeron ${registrosTotales.length} bloques diarios de anuncios.`;
+    let mensajeFinal = `¡Meta Sincronizado! Se extrajeron ${registrosTotales.length} registros de anuncios (${since} → ${until}).`;
     if (erroresFB.length > 0) {
         mensajeFinal += `\n\n⚠️ OJO, falló una cuenta:\n` + erroresFB.join('\n');
     }

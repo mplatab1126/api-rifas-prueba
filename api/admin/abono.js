@@ -55,6 +55,21 @@ export default async function handler(req, res) {
     if (boletaError || !boletaData) return res.status(404).json({ status: 'error', mensaje: 'La boleta no existe' });
     if (!boletaData.telefono_cliente) return res.status(400).json({ status: 'error', mensaje: 'Esta boleta está libre' });
 
+    // 2. Calcular saldos y VALIDAR antes de tocar la base de datos
+    const saldoActual = boletaData.saldo_restante !== null && boletaData.saldo_restante !== undefined ? Number(boletaData.saldo_restante) : (esDiaria ? 20000 : 200000);
+    const abonadoActual = boletaData.total_abonado !== null && boletaData.total_abonado !== undefined ? Number(boletaData.total_abonado) : 0;
+
+    const fmt = (n) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
+    if (saldoActual <= 0) {
+      return res.status(400).json({ status: 'error', mensaje: `🚫 La boleta ${numeroLimpio} ya está PAGADA COMPLETAMENTE. No acepta más abonos.` });
+    }
+    if (monto > saldoActual) {
+      return res.status(400).json({ status: 'error', mensaje: `🚫 El abono de ${fmt(monto)} supera el saldo restante de ${fmt(saldoActual)} de la boleta ${numeroLimpio}. Ajusta el valor para no exceder lo que debe el cliente.` });
+    }
+
+    const nuevoTotalAbonado = abonadoActual + monto;
+    const nuevoSaldoRestante = saldoActual - monto;
+
     // Crear hora de Colombia
     const fechaCol = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Bogota" }));
     const fechaPagoColombia = fechaCol.getFullYear() + "-" +
@@ -64,7 +79,7 @@ export default async function handler(req, res) {
              String(fechaCol.getMinutes()).padStart(2, '0') + ":" +
              String(fechaCol.getSeconds()).padStart(2, '0');
     
-    // 1. Insertar el Abono
+    // 1. Insertar el Abono (solo llega aquí si pasó las validaciones de arriba)
     const { error: insertError } = await supabase
       .from('abonos')
       .insert({
@@ -76,13 +91,6 @@ export default async function handler(req, res) {
         asesor: nombreAsesor
       });
     if (insertError) throw insertError;
-
-    // 2. Calcular los nuevos saldos de la boleta
-    const saldoActual = boletaData.saldo_restante !== null && boletaData.saldo_restante !== undefined ? Number(boletaData.saldo_restante) : (esDiaria ? 20000 : 200000);
-    const abonadoActual = boletaData.total_abonado !== null && boletaData.total_abonado !== undefined ? Number(boletaData.total_abonado) : 0;
-
-    const nuevoTotalAbonado = abonadoActual + monto;
-    const nuevoSaldoRestante = saldoActual - monto;
     
     let estadoNuevo = '';
     if (esDiaria) estadoNuevo = nuevoSaldoRestante <= 0 ? 'Pagada' : 'Reservado';
