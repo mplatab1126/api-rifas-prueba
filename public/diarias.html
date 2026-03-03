@@ -279,14 +279,14 @@
       .loader { text-align: center; display: none; margin-top: 15px; font-size: 14px; color: #1b5e20;}
 
       /* --- NUEVO: BOTÓN FLOTANTE DEL CHAT IA --- */
-      .float-chat-btn {
+      .float-wa-btn {
         position: fixed; bottom: 85px; right: 20px; width: 55px; height: 55px;
-        background-color: #1b5e20; color: #fff; border-radius: 50%;
+        background-color: #25d366; color: #fff; border-radius: 50%;
         display: flex; justify-content: center; align-items: center;
-        box-shadow: 0 4px 15px rgba(27, 94, 32, 0.4); z-index: 950; cursor: pointer; transition: transform 0.3s;
+        box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4); z-index: 950; cursor: pointer; transition: transform 0.3s;
       }
-      .float-chat-btn:active { transform: scale(0.9); }
-      .float-chat-btn svg { width: 28px; height: 28px; fill: currentColor; }
+      .float-wa-btn:active { transform: scale(0.9); }
+      .float-wa-btn svg { width: 32px; height: 32px; fill: currentColor; }
 
       /* --- NUEVO: WIDGET MINI CHAT IA --- */
       .chat-widget {
@@ -509,7 +509,7 @@
             <div class="wa-top-line">
               <div class="wa-contact-details">
                 <span class="wa-name">Rifas Diarias LOS PLATA</span>
-                <span class="wa-phone">+57 311 667 5984</span>
+                <span class="wa-phone">+57 310 733 4957</span>
               </div>
               <span class="wa-time">Ahora</span>
             </div>
@@ -523,9 +523,10 @@
         </div>
       </div>
 
-    </div> <div class="float-chat-btn" onclick="toggleChat()" title="Hablar con Asistente">
-      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/><path d="M9 10h6v2H9zM9 6h6v2H9z"/></svg>
     </div>
+    <a href="https://wa.me/573107334957" target="_blank" class="float-wa-btn" title="Escríbenos por WhatsApp">
+      <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.305-.88-.653-1.473-1.46-1.646-1.757-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    </a>
 
     <div class="chat-widget" id="chat-widget">
       <div class="chat-header">
@@ -565,8 +566,16 @@
       <div class="modal-content">
         <h3 style="text-align:center; margin-top:0; color:#333;">Reservar: <span id="num-modal" style="color:#1b5e20;"></span></h3>
         <div class="input-group">
-          <label>Nombre Completo</label>
-          <input type="text" id="input-nombre" placeholder="Tu nombre aquí">
+          <label>Nombre</label>
+          <input type="text" id="input-nombre" placeholder="Tu nombre">
+        </div>
+        <div class="input-group">
+          <label>Apellido</label>
+          <input type="text" id="input-apellido" placeholder="Tu apellido">
+        </div>
+        <div class="input-group">
+          <label>Ciudad</label>
+          <input type="text" id="input-ciudad" placeholder="Tu ciudad">
         </div>
         <div class="input-group">
           <label>Celular / WhatsApp</label>
@@ -608,6 +617,56 @@
         <h2 style="color:#d32f2f; margin-top:0;">🚫 ¡NO HAY PUESTOS DISPONIBLES! 🚫</h2>
         <p style="font-size:14px; color:#555;">¡Hoy arrasaron con todo! Muchas gracias por el apoyo.</p>
         <button class="btn-confirmar" onclick="cerrarSoldOut()">Aceptar</button>
+      </div>
+    </div>
+
+    <div id="modal-exito" class="modal-overlay" style="align-items: flex-end;">
+      <div class="modal-content" style="width:100%; max-width:480px; border-radius:24px 24px 0 0; padding:28px 22px 32px 22px; max-height:92vh; overflow-y:auto; box-sizing:border-box;">
+
+        <div style="text-align:center; margin-bottom:18px;">
+          <div style="font-size:52px; line-height:1;">✅</div>
+          <h2 style="margin:10px 0 4px 0; color:#1b5e20; font-size:20px; font-weight:900;">¡Boletas separadas!</h2>
+          <p style="margin:0; color:#64748b; font-size:13px;">Tu separado fue registrado con éxito</p>
+        </div>
+
+        <div style="background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:14px; padding:14px 16px; margin-bottom:16px;">
+          <p style="margin:0 0 6px 0; font-size:12px; font-weight:800; color:#166534; text-transform:uppercase; letter-spacing:0.5px;">🎟️ Tus puestos separados</p>
+          <p id="exito-numeros" style="margin:0; font-size:18px; font-weight:900; color:#1b5e20; letter-spacing:1px;"></p>
+          <p id="exito-total" style="margin:6px 0 0 0; font-size:14px; font-weight:700; color:#15803d;"></p>
+        </div>
+
+        <div style="background:#fff; border:1.5px solid #e2e8f0; border-radius:14px; padding:14px 16px; margin-bottom:16px;">
+          <p style="margin:0 0 10px 0; font-size:12px; font-weight:800; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">💳 Realiza tu pago a</p>
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div>
+              <p style="margin:0; font-size:13px; color:#64748b; font-weight:600;">Bancolombia · Cuenta de Ahorros</p>
+              <p style="margin:3px 0 0 0; font-size:20px; font-weight:900; color:#1e293b; letter-spacing:0.5px;">706-000025-93</p>
+              <p style="margin:2px 0 0 0; font-size:12px; color:#475569; font-weight:600;">LOS PLATA S.A.S.</p>
+            </div>
+            <button onclick="copiarCuentaExito()" id="btn-copiar-exito" style="background:#f1f5f9; border:1px solid #cbd5e1; color:#475569; border-radius:10px; width:42px; height:42px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div style="background:#fff7ed; border:2px solid #fed7aa; border-radius:14px; padding:14px 16px; margin-bottom:16px; text-align:center;">
+          <p style="margin:0; font-size:15px; font-weight:900; color:#c2410c;">⚠️ BOLETA SIN CANCELAR NO JUEGA</p>
+          <p style="margin:6px 0 0 0; font-size:12px; color:#92400e; font-weight:600; line-height:1.4;">Una vez realices la transferencia, toma un pantallazo del comprobante y envíalo por WhatsApp para que tu boleta quede activa.</p>
+        </div>
+
+        <div style="background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:14px; padding:12px 16px; margin-bottom:20px; display:flex; align-items:center; gap:10px;">
+          <span style="font-size:22px;">📸</span>
+          <p style="margin:0; font-size:12px; color:#166534; font-weight:600; line-height:1.4;">Toma pantallazo de tu transferencia y envíalo al WhatsApp de la empresa para confirmar tu pago.</p>
+        </div>
+
+        <a id="btn-whatsapp-exito" href="#" target="_blank" style="display:flex; align-items:center; justify-content:center; gap:10px; background:#25d366; color:white; text-decoration:none; border-radius:14px; padding:16px; font-size:16px; font-weight:800; margin-bottom:10px; box-shadow:0 4px 15px rgba(37,211,102,0.3);">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.305-.88-.653-1.473-1.46-1.646-1.757-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Enviar comprobante por WhatsApp
+        </a>
+
+        <button onclick="cerrarExito()" style="width:100%; padding:13px; background:white; border:1.5px solid #e2e8f0; border-radius:14px; font-size:14px; font-weight:600; color:#64748b; cursor:pointer; font-family:'Poppins',sans-serif;">
+          Cerrar
+        </button>
       </div>
     </div>
 
@@ -763,33 +822,58 @@
         document.getElementById('modal-soldout').style.display = 'none';
       }
 
+      function cerrarExito() {
+        document.getElementById('modal-exito').style.display = 'none';
+        location.reload();
+      }
+
+      function copiarCuentaExito() {
+        navigator.clipboard.writeText('70600002593').then(() => {
+          const btn = document.getElementById('btn-copiar-exito');
+          btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="#1b5e20"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+          btn.style.background = '#f0fdf4';
+          btn.style.borderColor = '#bbf7d0';
+          setTimeout(() => {
+            btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>';
+            btn.style.background = '#f1f5f9';
+            btn.style.borderColor = '#cbd5e1';
+          }, 2000);
+        });
+      }
+
       /* --- JS ENVIAR COMPRA A VERCEL (SUPABASE) --- */
       function confirmarReserva() {
-        const nombre = document.getElementById('input-nombre').value;
+        const nombre = document.getElementById('input-nombre').value.trim();
+        const apellido = document.getElementById('input-apellido').value.trim();
+        const ciudad = document.getElementById('input-ciudad').value.trim();
         const telefono = document.getElementById('input-telefono').value;
 
-        if (!nombre || telefono.length !== 10) {
-          alert("⚠️ ATENCIÓN:\n\nEl celular debe tener exactamente 10 dígitos.");
+        if (!nombre || !apellido || !ciudad || telefono.length !== 10) {
+          alert("⚠️ ATENCIÓN:\n\nDebes completar nombre, apellido, ciudad y un celular de 10 dígitos.");
           return;
         }
 
         document.getElementById('msg-carga').style.display = 'block';
-        document.querySelector('.btn-confirmar').disabled = true; 
+        document.querySelector('.btn-confirmar').disabled = true;
 
         fetch('/api/diarias/reservar', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ numeros: numerosSeleccionados, nombre: nombre, telefono: telefono })
+          body: JSON.stringify({ numeros: numerosSeleccionados, nombre: nombre, apellido: apellido, ciudad: ciudad, telefono: telefono })
         })
         .then(res => res.json())
         .then(data => {
           if (data.exito) {
-            // SOLUCIÓN EMOJIS: Armamos el mensaje directamente aquí en el navegador
             const total = numerosSeleccionados.length * PRECIO_BOLETA;
-            const mensaje = `¡Hola Los Plata! 👋\nAcabo de reservar en la RIFA DE BOLETAS (Acumulado 20M).\n\n👤 Nombre: ${nombre}\n📱 Celular: ${telefono}\n🎟️ Mis puestos: ${numerosSeleccionados.join(', ')}\n💰 Total a pagar: $${total.toLocaleString('es-CO')}\n\nQuedo atento para enviar el comprobante.`;
-            
-            const urlWhatsapp = `https://wa.me/573116675984?text=${encodeURIComponent(mensaje)}`;
-            window.top.location.href = urlWhatsapp; 
+            const mensaje = `¡Hola Los Plata! 👋\nAcabo de reservar en la RIFA DIARIA.\n\n👤 Nombre: ${nombre} ${apellido}\n📱 Celular: ${telefono}\n🎟️ Mis puestos: ${numerosSeleccionados.join(', ')}\n💰 Total a pagar: $${total.toLocaleString('es-CO')}\n\nAquí va el comprobante de pago 👇`;
+            const urlWhatsapp = `https://wa.me/573107334957?text=${encodeURIComponent(mensaje)}`;
+
+            document.getElementById('exito-numeros').textContent = numerosSeleccionados.join('  ·  ');
+            document.getElementById('exito-total').textContent = `Total a pagar: $${total.toLocaleString('es-CO')}`;
+            document.getElementById('btn-whatsapp-exito').href = urlWhatsapp;
+
+            cerrarModal();
+            document.getElementById('modal-exito').style.display = 'flex';
           } else {
             alert("Error: " + data.error);
             cerrarModal(); location.reload(); 

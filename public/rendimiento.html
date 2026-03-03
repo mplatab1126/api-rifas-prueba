@@ -92,6 +92,20 @@
     .btn-outline { background: transparent; border: 1px solid var(--ring-strong); color: var(--ink); }
     .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(5px); z-index: 2000; display: none; align-items: center; justify-content: center; }
     .modal-card { background: #fff; width: 90%; max-width: 400px; border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+
+    /* SELECTOR DE RIFA */
+    #selectorRifa { position: fixed; inset: 0; background: #0f172a; z-index: 150; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
+    .selector-titulo { font-size: 1.1rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
+    .selector-subtitulo { font-size: 2rem; font-weight: 900; color: #fff; margin: 0 0 40px 0; letter-spacing: -1px; text-align: center; }
+    .selector-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; width: 100%; max-width: 780px; }
+    .selector-card { background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 32px 24px; cursor: pointer; transition: all 0.2s; text-align: center; }
+    .selector-card:hover { background: rgba(255,255,255,0.1); border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+    .selector-card-icon { font-size: 3rem; margin-bottom: 12px; display: block; }
+    .selector-card-title { font-size: 1.3rem; font-weight: 900; color: #fff; margin-bottom: 6px; }
+    .selector-card-sub { font-size: 0.85rem; font-weight: 600; color: #64748b; }
+    .selector-card-badge { display: inline-block; margin-top: 14px; padding: 5px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; }
+    .badge-diaria { background: #1e3a5f; color: #60a5fa; }
+    .badge-grande { background: #14532d; color: #4ade80; }
   </style>
 </head>
 <body>
@@ -108,12 +122,39 @@
     </div>
   </div>
 
+  <div id="selectorRifa">
+    <p class="selector-titulo">BI Analytics PRO · Los Plata</p>
+    <h2 class="selector-subtitulo">¿Qué rendimiento quieres ver?</h2>
+    <div class="selector-grid">
+      <div class="selector-card" onclick="seleccionarRifa('2cifras')">
+        <span class="selector-card-icon">🎟️</span>
+        <div class="selector-card-title">Rifas 2 Cifras</div>
+        <div class="selector-card-sub">Boletas del 01 al 99</div>
+        <span class="selector-card-badge badge-diaria">Rifa Diaria · $20.000</span>
+      </div>
+      <div class="selector-card" onclick="seleccionarRifa('3cifras')">
+        <span class="selector-card-icon">🏷️</span>
+        <div class="selector-card-title">Rifas 3 Cifras</div>
+        <div class="selector-card-sub">Boletas del 001 al 999</div>
+        <span class="selector-card-badge badge-diaria">Rifa Diaria · $20.000</span>
+      </div>
+      <div class="selector-card" onclick="seleccionarRifa('4cifras')">
+        <span class="selector-card-icon">🏢</span>
+        <div class="selector-card-title">El Apartamento</div>
+        <div class="selector-card-sub">Boletas del 0001 al 9999</div>
+        <span class="selector-card-badge badge-grande">Rifa Grande · $200.000</span>
+      </div>
+    </div>
+    <button onclick="window.location.href='/admin.html'" style="margin-top: 40px; background: transparent; border: 1px solid rgba(255,255,255,0.15); color: #64748b; border-radius: 10px; padding: 10px 20px; font-family: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer;">🔙 Volver al Panel</button>
+  </div>
+
   <div class="top-bar" id="topBar" style="display:none;">
-    <div class="top-bar-title">LOS PLATA <span>BI Analytics PRO</span></div>
+    <div class="top-bar-title">LOS PLATA <span id="badgeRifa">BI Analytics PRO</span></div>
     <div style="display:flex; gap:10px; align-items: center; flex-wrap: wrap;">
       <span style="font-size: 0.8rem; color: #94a3b8; margin-right: 10px; font-weight: 600;" id="lastSyncTime">Corte: -</span>
-      <button class="btn" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2);" onclick="sincronizarChateaPro(this)">🔄 Sync ChateaPro</button>
-      <button class="btn" style="background: #3b82f6; color: white;" onclick="sincronizarFacebook(this)">📊 Sync Meta Ads</button>
+      <button class="btn" style="background: rgba(255,255,255,0.08); color: #94a3b8; border: 1px solid rgba(255,255,255,0.12); font-size:0.8rem;" onclick="volverAlSelector()">🔄 Cambiar Rifa</button>
+      <button class="btn btn-sync-avanzado" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); display:none;" onclick="sincronizarChateaPro(this)">🔄 Sync ChateaPro</button>
+      <button class="btn btn-sync-avanzado" style="background: #3b82f6; color: white; display:none;" onclick="sincronizarFacebook(this)">📊 Sync Meta Ads</button>
       <button class="btn" style="background: white; color: var(--primary);" onclick="window.location.href='/admin.html'">🔙 Volver</button>
     </div>
   </div>
@@ -170,21 +211,49 @@
     </div>
 
     <div class="row">
-        <div class="col-100 mega-kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
-            <div class="mega-kpi kpi-dark">
-                <div class="mega-kpi-title">🏢 INVENTARIO: Registradas</div>
-                <div class="mega-kpi-value" id="kpi-inv-registradas">0</div>
-                <span class="mega-kpi-sub">Boletas a nombre de un cliente</span>
-            </div>
-            <div class="mega-kpi kpi-red">
-                <div class="mega-kpi-title">⚠️ INVENTARIO: Separadas con $0</div>
-                <div class="mega-kpi-value" id="kpi-inv-cero">0</div>
-                <span class="mega-kpi-sub">Boletas en riesgo de liberación</span>
-            </div>
-            <div class="mega-kpi kpi-green">
-                <div class="mega-kpi-title">✅ INVENTARIO: Disponibles</div>
-                <div class="mega-kpi-value" id="kpi-inv-libres">0</div>
-                <span class="mega-kpi-sub">Boletas 100% Libres</span>
+        <div class="col-100">
+            <div class="card" style="height: auto;">
+                <h3 class="card-title">🎟️ INVENTARIO DE BOLETAS</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <div class="mega-kpi kpi-dark" style="padding: 18px;">
+                        <div class="mega-kpi-title">📦 Total Boletas</div>
+                        <div class="mega-kpi-value" id="kpi-inv-total" style="font-size: 1.8rem;">0</div>
+                        <span class="mega-kpi-sub">En la rifa</span>
+                    </div>
+                    <div class="mega-kpi kpi-blue" style="padding: 18px;">
+                        <div class="mega-kpi-title">🧾 Vendidas</div>
+                        <div class="mega-kpi-value" id="kpi-inv-registradas" style="font-size: 1.8rem;">0</div>
+                        <span class="mega-kpi-sub">Con cliente asignado</span>
+                    </div>
+                    <div class="mega-kpi kpi-green" style="padding: 18px;">
+                        <div class="mega-kpi-title">✅ Pagadas completo</div>
+                        <div class="mega-kpi-value" id="kpi-inv-pagadas" style="font-size: 1.8rem;">0</div>
+                        <span class="mega-kpi-sub">Sin saldo pendiente</span>
+                    </div>
+                    <div class="mega-kpi kpi-red" style="padding: 18px;">
+                        <div class="mega-kpi-title">⚠️ Sin abono inicial</div>
+                        <div class="mega-kpi-value" id="kpi-inv-cero" style="font-size: 1.8rem;">0</div>
+                        <span class="mega-kpi-sub">Separadas con $0</span>
+                    </div>
+                    <div class="mega-kpi kpi-green" style="padding: 18px; background: linear-gradient(135deg,#f0fdf4,#fff);">
+                        <div class="mega-kpi-title">🟢 Disponibles</div>
+                        <div class="mega-kpi-value" id="kpi-inv-libres" style="font-size: 1.8rem;">0</div>
+                        <span class="mega-kpi-sub">Boletas 100% libres</span>
+                    </div>
+                </div>
+                <div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--muted);">Ocupación de la rifa</span>
+                        <span style="font-size: 0.8rem; font-weight: 800; color: var(--ink);" id="kpi-inv-pct">0%</span>
+                    </div>
+                    <div style="background: var(--ring); border-radius: 99px; height: 10px; overflow: hidden;">
+                        <div id="kpi-inv-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #10b981, #3b82f6); border-radius: 99px; transition: width 0.6s ease;"></div>
+                    </div>
+                    <div style="display: flex; gap: 20px; margin-top: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 0.75rem; color: var(--muted); font-weight: 600;">🔵 Vendidas <strong id="kpi-inv-bar-v" style="color: var(--ink);">0</strong></span>
+                        <span style="font-size: 0.75rem; color: var(--muted); font-weight: 600;">🟢 Disponibles <strong id="kpi-inv-bar-l" style="color: var(--ink);">0</strong></span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -197,6 +266,74 @@
             </div>
         </div>
     </div>
+
+  <!-- Zona administración: solo visible para rifas diarias -->
+  <div id="zonaAdminRifa" style="display:none; max-width:1500px; margin: 0 auto; padding: 0 20px;">
+
+    <!-- Historial de ganancias -->
+    <div class="saas-divider" style="margin-top: 40px;"><span>📆 HISTORIAL DE RIFAS ANTERIORES</span></div>
+
+    <!-- KPIs resumen del historial -->
+    <div class="row" style="margin-bottom: 20px;">
+      <div class="col-100 mega-kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+        <div class="mega-kpi kpi-green" style="padding:18px;">
+          <div class="mega-kpi-title">💰 Ganancia Total</div>
+          <div class="mega-kpi-value" id="hist-ganancia-total" style="font-size:1.8rem;">$0</div>
+          <span class="mega-kpi-sub">Suma de todas las rifas</span>
+        </div>
+        <div class="mega-kpi kpi-blue" style="padding:18px;">
+          <div class="mega-kpi-title">📋 Rifas Jugadas</div>
+          <div class="mega-kpi-value" id="hist-total-rifas" style="font-size:1.8rem;">0</div>
+          <span class="mega-kpi-sub">Total en historial</span>
+        </div>
+        <div class="mega-kpi kpi-purple" style="padding:18px;">
+          <div class="mega-kpi-title">📈 Ganancia Promedio</div>
+          <div class="mega-kpi-value" id="hist-ganancia-prom" style="font-size:1.8rem;">$0</div>
+          <span class="mega-kpi-sub">Por rifa</span>
+        </div>
+        <div class="mega-kpi kpi-orange" style="padding:18px;">
+          <div class="mega-kpi-title">🏆 Mejor Rifa</div>
+          <div class="mega-kpi-value" id="hist-mejor" style="font-size:1.8rem;">$0</div>
+          <span class="mega-kpi-sub">Ganancia máxima</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráfica de barras -->
+    <div class="row" style="margin-bottom: 20px;">
+      <div class="col-100">
+        <div class="card" style="height: 360px;">
+          <h3 class="card-title">💰 Ganancia Neta por Rifa
+            <span id="hist-sin-datos" style="font-size:0.8rem; font-weight:600; color:var(--muted); text-transform:none; letter-spacing:0;">Sin datos aún</span>
+          </h3>
+          <canvas id="chartHistorial"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla detalle -->
+    <div class="row" style="margin-bottom: 30px;">
+      <div class="col-100">
+        <div class="card" style="height: auto;">
+          <h3 class="card-title">📋 Detalle por Rifa</h3>
+          <div class="table-container" id="tablaHistorial">
+            <p style="text-align:center; color:var(--muted); padding:20px; font-weight:600;">Cargando historial...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Zona peligro: iniciar nueva rifa -->
+    <div style="background: #fff8f8; border: 2px dashed #fecaca; border-radius: 16px; padding: 24px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+      <div>
+        <div style="font-size: 1rem; font-weight: 800; color: #7f1d1d;">🔁 Administración de la Rifa</div>
+        <div style="font-size: 0.85rem; color: #b91c1c; font-weight: 500; margin-top: 4px;">Guarda el historial del sorteo actual y habilita uno nuevo. Esta acción limpia todas las boletas.</div>
+      </div>
+      <button class="btn" style="background: #dc2626; color: white; font-size: 0.95rem; padding: 12px 24px; white-space: nowrap;" onclick="abrirModalNuevaRifa()">🆕 Empezar Nueva Rifa</button>
+    </div>
+  </div>
+
+  <div id="seccionesAvanzadas" style="display:none;">
 
     <div class="saas-divider"><span>👥 2. RENDIMIENTO POR ASESOR</span></div>
     
@@ -345,6 +482,72 @@
         </div>
     </div>
 
+  </div><!-- fin seccionesAvanzadas -->
+
+  </div><!-- fin mainDashboard -->
+
+  <!-- Modal Nueva Rifa -->
+  <div id="modalNuevaRifa" class="modal-overlay">
+    <div class="modal-card" style="max-width: 460px; text-align: left;">
+      <div id="nrPaso1">
+        <h3 style="color: #dc2626; font-weight: 900; margin: 0 0 6px 0; font-size: 1.4rem;">🆕 Empezar Nueva Rifa</h3>
+        <p style="color: var(--ink-2); font-size: 0.9rem; margin-bottom: 20px; line-height: 1.5;">
+          Se <strong>guardará un snapshot</strong> del estado actual (boletas vendidas, recaudo, etc.) y luego <strong>todas las boletas quedarán disponibles</strong> para la nueva rifa.
+        </p>
+        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 14px; margin-bottom: 20px; font-size: 0.85rem; color: #b91c1c; font-weight: 600; line-height: 1.5;">
+          ⚠️ Esta acción es <strong>irreversible</strong>. Asegúrate de que el sorteo de hoy ya haya jugado antes de continuar.
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 22px;">
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 6px;">📅 ¿Cuándo juega el próximo sorteo?</label>
+            <input type="text" id="nrFecha" class="field-input" placeholder="Ej: 15 MAR, MARTES 18 MAR..." style="width:100%; box-sizing:border-box;">
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 6px;">⏰ ¿A qué hora cierra la venta? (para el temporizador)</label>
+            <input type="time" id="nrHora" class="field-input" value="11:00" style="width:100%; box-sizing:border-box;">
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 6px;">🎱 ¿Con qué lotería juega?</label>
+            <input type="text" id="nrLoteria" class="field-input" placeholder="Ej: CHONTICO DÍA, MARDE BOGOTÁ..." style="width:100%; box-sizing:border-box; text-transform: uppercase;">
+          </div>
+          <div style="border-top: 1px dashed var(--ring-strong); padding-top: 14px; margin-top: 4px;">
+            <p style="font-size: 0.8rem; font-weight: 800; color: var(--ink-2); text-transform: uppercase; margin: 0 0 12px 0;">📊 Resultados de la rifa que termina</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div>
+                <label style="font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 6px;">🏆 Nº de ganadores</label>
+                <input type="number" id="nrGanadores" class="field-input" placeholder="Ej: 3" min="0" style="width:100%; box-sizing:border-box;">
+              </div>
+              <div>
+                <label style="font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 6px;">💸 Total pagado</label>
+                <input type="number" id="nrPagado" class="field-input" placeholder="Ej: 2400000" min="0" style="width:100%; box-sizing:border-box;">
+              </div>
+            </div>
+          </div>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 16px; font-weight: 600;" id="nrRifaLabel">Rifa: —</p>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-outline" style="flex:1;" onclick="document.getElementById('modalNuevaRifa').style.display='none'">Cancelar</button>
+          <button class="btn" style="flex:1; background:#dc2626; color:white;" onclick="pasarAConfirmacion()">Continuar →</button>
+        </div>
+      </div>
+
+      <div id="nrPaso2" style="display:none;">
+        <h3 style="color: #dc2626; font-weight: 900; margin: 0 0 12px 0;">⚠️ Confirmar acción</h3>
+        <div style="background: var(--bg); border: 1px solid var(--ring); border-radius: 12px; padding: 16px; margin-bottom: 20px; font-size: 0.9rem; line-height: 1.8;">
+          <div>📅 Juega el: <strong id="nrResumenFecha">—</strong></div>
+          <div>⏰ Cierre venta: <strong id="nrResumenHora">—</strong></div>
+          <div>🎱 Lotería: <strong id="nrResumenLoteria">—</strong></div>
+          <div>🏆 Ganadores rifa anterior: <strong id="nrResumenGanadores">—</strong></div>
+          <div>💸 Total pagado a ganadores: <strong id="nrResumenPagado">—</strong></div>
+        </div>
+        <p style="font-size: 0.9rem; color: #b91c1c; font-weight: 700; margin-bottom: 20px;">¿Confirmas que el sorteo anterior ya jugó y quieres reiniciar la rifa?</p>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-outline" style="flex:1;" onclick="volverAPaso1()">← Atrás</button>
+          <button class="btn" id="btnConfirmarNuevaRifa" style="flex:2; background:#dc2626; color:white;" onclick="confirmarNuevaRifa()">🔁 Sí, reiniciar rifa</button>
+        </div>
+        <p id="nrMsg" style="margin-top:12px; font-size:0.85rem; font-weight:700; text-align:center;"></p>
+      </div>
+    </div>
   </div>
 
   <div id="modalResult" class="modal-overlay">
@@ -360,9 +563,16 @@
     let globalAbonos = []; let globalVentas = []; let globalChatea = []; let globalFb = []; let globalesAPI = {};
     let globalEstadoFb = {}; // { nombre → effective_status } obtenido directamente de Facebook
     let chartLinea = null; let chartMix = null;
+    let tipoRifaActual = null; // '2cifras' | '3cifras' | '4cifras'
     
     window.globalStatsIA = {};
     window.rankArrayIA = [];
+
+    const LABELS_RIFA = {
+      '2cifras': { badge: '🎟️ Rifas 2 Cifras',  titulo: '2 Cifras · Diaria $20K' },
+      '3cifras': { badge: '🏷️ Rifas 3 Cifras',  titulo: '3 Cifras · Diaria $20K' },
+      '4cifras': { badge: '🏢 El Apartamento', titulo: '4 Cifras · $200K' }
+    };
 
     document.addEventListener('DOMContentLoaded', () => {
       const pwd = localStorage.getItem(STORAGE_KEY);
@@ -381,17 +591,49 @@
           const res = await req.json();
           if(!auto) { btn.textContent = 'Acceder a la Data'; btn.disabled = false; }
           if(res.status === 'ok' && (res.asesor === 'Mateo' || res.asesor === 'Alejo P' || res.asesor === 'Alejo Plata')) {
-              localStorage.setItem(STORAGE_KEY, pwd); 
-              document.getElementById('loginOverlay').style.display='none'; 
-              document.getElementById('topBar').style.display='flex'; 
-              document.getElementById('mainDashboard').style.display='block'; 
-              cargarEstadisticas();
-              cargarEstadoFacebook();
+              localStorage.setItem(STORAGE_KEY, pwd);
+              document.getElementById('loginOverlay').style.display = 'none';
+              mostrarSelectorRifa();
           } else {
               if(!auto) msg.textContent = 'Acceso denegado. Solo gerencia.';
               localStorage.removeItem(STORAGE_KEY);
           }
       } catch (error) { if(!auto) { btn.textContent = 'Acceder a la Data'; btn.disabled = false; msg.textContent = 'Error de conexión'; } }
+    }
+
+    function mostrarSelectorRifa() {
+      document.getElementById('selectorRifa').style.display = 'flex';
+      document.getElementById('topBar').style.display = 'none';
+      document.getElementById('mainDashboard').style.display = 'none';
+    }
+
+    function seleccionarRifa(tipo) {
+      tipoRifaActual = tipo;
+      document.getElementById('selectorRifa').style.display = 'none';
+      document.getElementById('topBar').style.display = 'flex';
+      document.getElementById('mainDashboard').style.display = 'block';
+      document.getElementById('badgeRifa').textContent = LABELS_RIFA[tipo]?.titulo || 'BI Analytics PRO';
+
+      // Secciones 2, 3 y 4 solo para la rifa de 4 cifras
+      const soloGrande = tipo === '4cifras';
+      document.getElementById('seccionesAvanzadas').style.display = soloGrande ? 'block' : 'none';
+
+      // Zona administración: solo para rifas diarias
+      document.getElementById('zonaAdminRifa').style.display = soloGrande ? 'none' : 'block';
+
+      // Botones de Sync en el top bar: solo relevantes para 4 cifras
+      document.querySelectorAll('.btn-sync-avanzado').forEach(b => {
+        b.style.display = soloGrande ? 'inline-flex' : 'none';
+      });
+
+      cargarEstadisticas();
+      if (soloGrande) cargarEstadoFacebook();
+      if (!soloGrande) cargarHistorialRifas();
+    }
+
+    function volverAlSelector() {
+      tipoRifaActual = null;
+      mostrarSelectorRifa();
     }
 
     function setRangoFecha(rango) {
@@ -418,7 +660,11 @@
         const div = document.getElementById('leaderboardRender');
         div.innerHTML = '<p style="text-align:center; color:var(--muted); padding:30px; font-weight:600;">Descargando Big Data...</p>';
         try {
-            const req = await fetch('/api/admin/estadisticas', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contrasena: localStorage.getItem(STORAGE_KEY) }) });
+            const req = await fetch('/api/admin/estadisticas', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({ contrasena: localStorage.getItem(STORAGE_KEY), tipo: tipoRifaActual || '4cifras' })
+            });
             const res = await req.json();
             if (res.status === 'ok') prepararDashboard(res.abonos, res.ventas, res.globales, res.chatea, res.fb);
             else div.innerHTML = `<p style="text-align:center; color:var(--danger);">${res.mensaje}</p>`;
@@ -440,7 +686,7 @@
         globalAbonos = abonos.map(a => ({ ...a, asesor: mapaNombres[a.asesor?.trim()] || a.asesor?.trim() || 'Sin Asesor' }));
         globalChatea = (chatea || []).map(c => ({ ...c, asesor: mapaNombres[c.asesor?.trim()] || c.asesor?.trim() || 'Sin Asesor' })); 
         globalFb = fb || [];
-        globalesAPI = globales || { registradas: 0, separadas_cero: 0, libres: 0 };
+        globalesAPI = globales || { registradas: 0, separadas_cero: 0, libres: 0, pagadas: 0, total: 0 };
 
         // Llenar check de Asesores
         const asesoresSet = new Set();
@@ -636,9 +882,18 @@
         document.getElementById('kpi-gen-abonos').textContent = formatoNum.format(totalPagos);
         document.getElementById('kpi-gen-nuevas').textContent = formatoNum.format(totalNuevas);
 
+        document.getElementById('kpi-inv-total').textContent = formatoNum.format(globalesAPI.total || 0);
         document.getElementById('kpi-inv-registradas').textContent = formatoNum.format(globalesAPI.registradas);
+        document.getElementById('kpi-inv-pagadas').textContent = formatoNum.format(globalesAPI.pagadas || 0);
         document.getElementById('kpi-inv-cero').textContent = formatoNum.format(globalesAPI.separadas_cero);
         document.getElementById('kpi-inv-libres').textContent = formatoNum.format(globalesAPI.libres);
+
+        // Barra de progreso de ocupación
+        const pctOcup = globalesAPI.total > 0 ? ((globalesAPI.registradas / globalesAPI.total) * 100) : 0;
+        document.getElementById('kpi-inv-pct').textContent = pctOcup.toFixed(1) + '%';
+        document.getElementById('kpi-inv-bar').style.width = pctOcup.toFixed(1) + '%';
+        document.getElementById('kpi-inv-bar-v').textContent = formatoNum.format(globalesAPI.registradas);
+        document.getElementById('kpi-inv-bar-l').textContent = formatoNum.format(globalesAPI.libres);
 
         // Escribir KPIs Asesores
         document.getElementById('kpi-ase-chats').textContent = formatoNum.format(totalAsignadas);
@@ -871,6 +1126,218 @@
         });
         aplicarFiltrosEstadisticas();
     }
+    // ── HISTORIAL DE RIFAS ────────────────────────────────────────────
+    let chartHistorial = null;
+
+    async function cargarHistorialRifas() {
+      document.getElementById('tablaHistorial').innerHTML =
+        '<p style="text-align:center; color:var(--muted); padding:20px; font-weight:600;">Cargando...</p>';
+
+      try {
+        const req = await fetch('/api/admin/nueva-rifa', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            accion: 'obtener_historial',
+            tipo:   tipoRifaActual
+          })
+        });
+        const res = await req.json();
+        if (res.status !== 'ok') throw new Error(res.mensaje);
+        renderHistorial(res.historial || []);
+      } catch (e) {
+        document.getElementById('tablaHistorial').innerHTML =
+          `<p style="text-align:center; color:var(--danger); padding:20px;">${e.message}</p>`;
+      }
+    }
+
+    function renderHistorial(data) {
+      const fmtCOP = (n) => new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 }).format(n || 0);
+      const fmtNum = (n) => new Intl.NumberFormat('es-CO').format(n || 0);
+
+      const sinDatos = document.getElementById('hist-sin-datos');
+
+      if (data.length === 0) {
+        sinDatos.style.display = 'inline';
+        document.getElementById('tablaHistorial').innerHTML =
+          '<p style="text-align:center; color:var(--muted); padding:30px; font-weight:600;">Aún no hay rifas guardadas en el historial.</p>';
+        return;
+      }
+      sinDatos.style.display = 'none';
+
+      // KPIs resumen
+      const totalGanancia  = data.reduce((s, r) => s + Number(r.ganancia_neta || 0), 0);
+      const totalRifas     = data.length;
+      const promGanancia   = totalRifas > 0 ? totalGanancia / totalRifas : 0;
+      const mejorGanancia  = Math.max(...data.map(r => Number(r.ganancia_neta || 0)));
+
+      document.getElementById('hist-ganancia-total').textContent = fmtCOP(totalGanancia);
+      document.getElementById('hist-total-rifas').textContent    = totalRifas;
+      document.getElementById('hist-ganancia-prom').textContent  = fmtCOP(promGanancia);
+      document.getElementById('hist-mejor').textContent          = fmtCOP(mejorGanancia);
+
+      // Gráfica de barras
+      const labels  = data.map(r => {
+        const d = new Date(r.fecha_guardado + 'T12:00:00');
+        return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' });
+      });
+      const ganancias = data.map(r => Number(r.ganancia_neta || 0));
+      const colores   = ganancias.map(g => g >= 0 ? '#10b981' : '#ef4444');
+
+      if (chartHistorial) chartHistorial.destroy();
+      chartHistorial = new Chart(document.getElementById('chartHistorial').getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Ganancia neta ($)',
+            data: ganancias,
+            backgroundColor: colores,
+            borderRadius: 8,
+            borderSkipped: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => ' ' + fmtCOP(ctx.raw)
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: v => fmtCOP(v)
+              }
+            }
+          }
+        }
+      });
+
+      // Tabla detalle (más reciente primero)
+      const dataSorted = [...data].reverse();
+      let html = `<table class="premium-table">
+        <thead><tr>
+          <th>Fecha</th><th>Lotería</th><th>Vendidas</th>
+          <th style="text-align:right;">Recaudo</th>
+          <th>Ganadores</th>
+          <th style="text-align:right;">Pagado</th>
+          <th style="text-align:right;">Ganancia</th>
+        </tr></thead><tbody>`;
+
+      dataSorted.forEach(r => {
+        const ganancia = Number(r.ganancia_neta || 0);
+        const colorG   = ganancia >= 0 ? '#15803d' : '#b91c1c';
+        const badgeG   = ganancia >= 0
+          ? `<span style="background:#dcfce7; color:#15803d; padding:3px 8px; border-radius:6px; font-size:0.8rem; font-weight:800;">${fmtCOP(ganancia)}</span>`
+          : `<span style="background:#fee2e2; color:#b91c1c; padding:3px 8px; border-radius:6px; font-size:0.8rem; font-weight:800;">${fmtCOP(ganancia)}</span>`;
+
+        const fecha = new Date(r.fecha_guardado + 'T12:00:00').toLocaleDateString('es-CO', { weekday:'short', day:'2-digit', month:'short' });
+
+        html += `<tr>
+          <td style="font-weight:700;">${fecha}</td>
+          <td style="color:var(--ink-2);">${r.loteria || '—'}</td>
+          <td>${fmtNum(r.vendidas)} <span style="color:var(--muted); font-size:0.8rem;">/ ${fmtNum(r.total_boletas)}</span></td>
+          <td style="text-align:right; font-weight:800; color:var(--accent-hover);">${fmtCOP(r.recaudo_total)}</td>
+          <td style="text-align:center;">${fmtNum(r.ganadores)}</td>
+          <td style="text-align:right; color:var(--danger); font-weight:700;">${fmtCOP(r.total_pagado_ganadores)}</td>
+          <td style="text-align:right;">${badgeG}</td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      document.getElementById('tablaHistorial').innerHTML = html;
+    }
+
+    // ── NUEVA RIFA ────────────────────────────────────────────────────
+    function abrirModalNuevaRifa() {
+      document.getElementById('nrPaso1').style.display = 'block';
+      document.getElementById('nrPaso2').style.display = 'none';
+      document.getElementById('nrMsg').textContent = '';
+      document.getElementById('nrRifaLabel').textContent = `Rifa: ${LABELS_RIFA[tipoRifaActual]?.badge || tipoRifaActual}`;
+      document.getElementById('modalNuevaRifa').style.display = 'flex';
+    }
+
+    function pasarAConfirmacion() {
+      const fecha     = document.getElementById('nrFecha').value.trim().toUpperCase();
+      const hora      = document.getElementById('nrHora').value;
+      const loteria   = document.getElementById('nrLoteria').value.trim().toUpperCase();
+      const ganadores = document.getElementById('nrGanadores').value;
+      const pagado    = document.getElementById('nrPagado').value;
+      if (!fecha || !hora || !loteria) return alert('Por favor completa fecha, hora y lotería.');
+
+      const fmtCOP = (n) => '$' + Number(n || 0).toLocaleString('es-CO');
+      document.getElementById('nrResumenFecha').textContent     = fecha;
+      document.getElementById('nrResumenHora').textContent      = hora;
+      document.getElementById('nrResumenLoteria').textContent   = loteria;
+      document.getElementById('nrResumenGanadores').textContent = ganadores || '0';
+      document.getElementById('nrResumenPagado').textContent    = fmtCOP(pagado);
+      document.getElementById('nrPaso1').style.display = 'none';
+      document.getElementById('nrPaso2').style.display = 'block';
+    }
+
+    function volverAPaso1() {
+      document.getElementById('nrPaso1').style.display = 'block';
+      document.getElementById('nrPaso2').style.display = 'none';
+    }
+
+    async function confirmarNuevaRifa() {
+      const fecha     = document.getElementById('nrFecha').value.trim().toUpperCase();
+      const hora      = document.getElementById('nrHora').value;
+      const loteria   = document.getElementById('nrLoteria').value.trim().toUpperCase();
+      const ganadores = Number(document.getElementById('nrGanadores').value) || 0;
+      const pagado    = Number(document.getElementById('nrPagado').value)    || 0;
+      const btn       = document.getElementById('btnConfirmarNuevaRifa');
+      const msg       = document.getElementById('nrMsg');
+
+      btn.textContent = '⏳ Procesando...'; btn.disabled = true;
+      msg.style.color = 'var(--muted)'; msg.textContent = 'Guardando historial y reiniciando boletas...';
+
+      try {
+        const req = await fetch('/api/admin/nueva-rifa', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            accion:              'guardar_y_reiniciar',
+            contrasena:          localStorage.getItem(STORAGE_KEY),
+            tipo:                tipoRifaActual,
+            fechaSorteo:         fecha,
+            horaCierre:          hora,
+            loteria,
+            ganadores,
+            totalPagadoGanadores: pagado
+          })
+        });
+        const res = await req.json();
+
+        if (res.status === 'ok') {
+          const snap    = res.snapshot;
+          const fmtCOP  = (n) => '$' + Number(n || 0).toLocaleString('es-CO');
+          const ganancia = snap.recaudo - pagado;
+          document.getElementById('modalNuevaRifa').style.display = 'none';
+          showModal('✅ ¡Rifa reiniciada!',
+            `📊 Resumen de la rifa anterior:\n` +
+            `• Boletas vendidas: ${snap.vendidas} de ${snap.totalBoletas}\n` +
+            `• Recaudo total: ${fmtCOP(snap.recaudo)}\n` +
+            `• Ganadores: ${ganadores} — Total pagado: ${fmtCOP(pagado)}\n` +
+            `• 💰 GANANCIA NETA: ${fmtCOP(ganancia)}\n\n` +
+            `Todas las boletas están disponibles para la nueva rifa. 🎉`
+          );
+          cargarEstadisticas();
+          cargarHistorialRifas();
+        } else {
+          msg.style.color = '#dc2626'; msg.textContent = 'Error: ' + res.mensaje;
+        }
+      } catch (e) {
+        msg.style.color = '#dc2626'; msg.textContent = 'Error de conexión.';
+      }
+      btn.textContent = '🔁 Sí, reiniciar rifa'; btn.disabled = false;
+    }
+
     document.addEventListener('click', e => {
         // Cerrar dropdown de asesores
         const da = document.getElementById('dropdown-asesores'); const ca = document.getElementById('asesor-dropdown-container');

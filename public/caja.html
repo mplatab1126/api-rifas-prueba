@@ -216,9 +216,15 @@
 
   <script>
     const STORAGE_KEY = 'asesor_pwd';
-    let valorEsperadoCaja = 0; // Variable global para la matemática del arqueo
+    let contrasenaActual = '';
+    let asesorActual = '';
+    let datosCaja = null;
+    let valorEsperadoCaja = 0;
+    let asesorRecibiendoNombre = '';
 
-    // --- 1. LÓGICA DE LOGIN Y "DUEÑO DE CAJA" ---
+    const fmt = (n) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
+
+    // --- 1. LOGIN ---
     document.addEventListener('DOMContentLoaded', () => {
       const pwd = localStorage.getItem(STORAGE_KEY);
       if (pwd) verificarLogin(pwd, true);
@@ -226,58 +232,97 @@
 
     document.getElementById('btnLogin').onclick = () => {
       const pwd = document.getElementById('loginPwd').value;
-      if(pwd) verificarLogin(pwd, false);
+      if (pwd) verificarLogin(pwd, false);
     };
 
     async function verificarLogin(pwd, auto) {
       const btn = document.getElementById('btnLogin');
       const msg = document.getElementById('loginMsg');
-      if(!auto) { btn.textContent = 'Verificando...'; btn.disabled = true; msg.textContent = ''; }
-      
+      if (!auto) { btn.textContent = 'Verificando...'; btn.disabled = true; msg.textContent = ''; }
+
       try {
         const req = await fetch('/api/admin/login', {
-          method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contrasena: pwd })
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contrasena: pwd })
         });
         const res = await req.json();
 
         if (res.status === 'ok') {
-            const asesorActual = res.asesor;
-            const duenoCaja = asesorActual; // MOCK: En el futuro vendrá de la base de datos
+          contrasenaActual = pwd;
+          asesorActual = res.asesor;
 
-            if (asesorActual !== duenoCaja) {
-                msg.innerHTML = `⚠️ <b>Acceso Denegado:</b><br>La caja de hoy ya fue abierta por <b>${duenoCaja}</b>. Solo él/ella puede manipularla y cerrarla.`;
-                localStorage.removeItem(STORAGE_KEY);
-                btn.textContent = 'Acceder a la Caja'; btn.disabled = false;
-                return;
-            }
+          localStorage.setItem(STORAGE_KEY, pwd);
+          document.getElementById('loginOverlay').style.display = 'none';
+          document.getElementById('mainDashboard').style.display = 'block';
 
-            localStorage.setItem(STORAGE_KEY, pwd);
-            document.getElementById('loginOverlay').style.display = 'none';
-            document.getElementById('mainDashboard').style.display = 'block';
-            
-            const badge = document.getElementById('badgeOwner');
-            badge.style.display = 'inline-block';
-            badge.textContent = `🟢 A cargo de: ${duenoCaja}`;
+          const badge = document.getElementById('badgeOwner');
+          badge.style.display = 'inline-block';
+          badge.textContent = `🟢 A cargo de: ${asesorActual}`;
 
-            cargarDatosCaja();
+          cargarDatosCaja();
         } else {
-            if(!auto) msg.textContent = 'Contraseña incorrecta';
-            localStorage.removeItem(STORAGE_KEY);
-            btn.textContent = 'Acceder a la Caja'; btn.disabled = false;
+          if (!auto) msg.textContent = 'Contraseña incorrecta';
+          localStorage.removeItem(STORAGE_KEY);
+          btn.textContent = 'Acceder a la Caja'; btn.disabled = false;
         }
       } catch (error) {
-        if(!auto) { btn.textContent = 'Acceder a la Caja'; btn.disabled = false; msg.textContent = 'Error de conexión'; }
+        if (!auto) { btn.textContent = 'Acceder a la Caja'; btn.disabled = false; msg.textContent = 'Error de conexión'; }
       }
     }
 
-    // --- 2. ABRIR MODALES ---
+    // --- 2. CARGAR DATOS REALES ---
+    async function cargarDatosCaja() {
+      document.getElementById('lista-asesores').innerHTML = '<p style="text-align:center; color:var(--muted); font-weight:500;">Cargando datos de hoy...</p>';
+
+      try {
+        const req = await fetch('/api/admin/caja', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accion: 'datos', contrasena: contrasenaActual })
+        });
+        const res = await req.json();
+
+        if (res.status !== 'ok') {
+          document.getElementById('lista-asesores').innerHTML = `<p style="text-align:center; color:var(--danger);">Error al cargar: ${res.mensaje}</p>`;
+          return;
+        }
+
+        datosCaja = res;
+
+        document.getElementById('lbl-base').textContent = fmt(res.baseFija);
+        document.getElementById('lbl-calle').textContent = fmt(res.totalEnCalle);
+        document.getElementById('lbl-oficina').textContent = fmt(res.efectivoFisicoEsperado);
+
+        if (res.asesoresEnCalle.length === 0) {
+          document.getElementById('lista-asesores').innerHTML = '<p style="text-align:center; color:var(--muted); font-weight:500; padding:20px 0;">✅ Ningún asesor tiene efectivo pendiente por entregar.</p>';
+        } else {
+          document.getElementById('lista-asesores').innerHTML = res.asesoresEnCalle.map(a => `
+            <div class="asesor-row">
+              <div class="asesor-info">
+                <span class="asesor-name">👤 ${a.asesor}</span>
+                <span style="font-size:0.8rem; color:var(--muted);">Debe entregar a caja:</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:15px;">
+                <span class="asesor-deuda">${fmt(a.pendiente)}</span>
+                <button class="cta" onclick="abrirModalRecibir('${a.asesor}', ${a.pendiente})">📥 Recibir</button>
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (error) {
+        document.getElementById('lista-asesores').innerHTML = `<p style="text-align:center; color:var(--danger);">Error de conexión al cargar los datos.</p>`;
+      }
+    }
+
+    // --- 3. ABRIR MODALES ---
     function abrirModalRecibir(asesor, montoAdeudado) {
+      asesorRecibiendoNombre = asesor;
       document.getElementById('modalAsesorNombre').textContent = asesor;
       document.getElementById('montoRecibir').value = montoAdeudado;
       document.getElementById('modalRecibir').style.display = 'flex';
     }
 
     function abrirModalBase() {
+      document.getElementById('montoBase').value = datosCaja?.baseFija || '';
       document.getElementById('modalBase').style.display = 'flex';
       document.getElementById('montoBase').focus();
     }
@@ -290,123 +335,194 @@
     }
 
     function abrirModalCierre() {
-      // Mocks temporales (luego vendrán de la Base de Datos)
-      const base = 200000;
-      const recaudo = 150000;
-      const ingresosExtra = 20000;
-      const salidasGastos = 50000;
-      const consignaciones = 0;
-      
-      // Matemáticas de la caja
+      if (!datosCaja) return alert('Primero espera a que carguen los datos.');
+
+      const base = datosCaja.baseFija;
+      const recaudo = datosCaja.totalRecepciones;
+      const ingresosExtra = datosCaja.totalIngresos;
+      const salidasGastos = datosCaja.totalSalidas;
+      const consignaciones = datosCaja.totalConsignaciones;
+
       valorEsperadoCaja = base + recaudo + ingresosExtra - salidasGastos - consignaciones;
 
-      const formatoPlata = new Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', minimumFractionDigits:0});
+      document.getElementById('cierreBase').textContent = fmt(base);
+      document.getElementById('cierreRecaudo').textContent = fmt(recaudo);
+      document.getElementById('cierreIngresos').textContent = fmt(ingresosExtra);
+      document.getElementById('cierreSalidas').textContent = '-' + fmt(salidasGastos);
+      document.getElementById('cierreConsignaciones').textContent = '-' + fmt(consignaciones);
+      document.getElementById('cierreTotal').textContent = fmt(valorEsperadoCaja);
 
-      document.getElementById('cierreBase').textContent = formatoPlata.format(base);
-      document.getElementById('cierreRecaudo').textContent = formatoPlata.format(recaudo);
-      document.getElementById('cierreIngresos').textContent = formatoPlata.format(ingresosExtra);
-      document.getElementById('cierreSalidas').textContent = "-" + formatoPlata.format(salidasGastos);
-      document.getElementById('cierreConsignaciones').textContent = "-" + formatoPlata.format(consignaciones);
-      document.getElementById('cierreTotal').textContent = formatoPlata.format(valorEsperadoCaja);
-
-      // Bloquear botón de confirmación y resetear input ciego
       document.getElementById('montoContado').value = '';
       document.getElementById('resultadoCuadre').innerHTML = '';
       const btnConfirmar = document.getElementById('btnConfirmarCierre');
       btnConfirmar.disabled = true;
       btnConfirmar.style.opacity = '0.5';
 
-      // Historial para la tirilla
-      const listaHTML = `
-        <div style="display:flex; justify-content:space-between; border-bottom: 1px solid var(--ring); padding: 6px 0;">
-            <span style="color:var(--muted);">10:15 AM - Venta Boleta 1234</span>
-            <strong style="color:var(--accent-2);">+$20.000</strong>
-        </div>
-        <div style="display:flex; justify-content:space-between; border-bottom: 1px solid var(--ring); padding: 6px 0;">
-            <span style="color:var(--muted);">11:00 AM - Gasto: Internet 🔴</span>
-            <strong style="color:var(--danger);">-$50.000</strong>
-        </div>
-      `;
-      document.getElementById('listaMovimientosCierre').innerHTML = listaHTML;
+      // Historial de movimientos del día
+      const movs = datosCaja.movimientos || [];
+      const tipoLabel = { ingreso: '🟢 Ingreso', salida: '🔴 Gasto', consignacion: '🔵 Consignación', recepcion: '📥 Recibido' };
+      const tipoColor = { ingreso: 'var(--accent-2)', salida: 'var(--danger)', consignacion: 'var(--accent)', recepcion: 'var(--accent-2)' };
+
+      if (movs.length === 0) {
+        document.getElementById('listaMovimientosCierre').innerHTML = '<p style="text-align:center; color:var(--muted); margin:0;">Sin movimientos registrados hoy.</p>';
+      } else {
+        document.getElementById('listaMovimientosCierre').innerHTML = movs.map(m => {
+          const hora = new Date(m.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' });
+          const signo = (m.tipo === 'salida' || m.tipo === 'consignacion') ? '-' : '+';
+          return `
+            <div style="display:flex; justify-content:space-between; border-bottom: 1px solid var(--ring); padding: 6px 0;">
+              <span style="color:var(--muted);">${hora} - ${tipoLabel[m.tipo] || m.tipo}: ${m.descripcion}</span>
+              <strong style="color:${tipoColor[m.tipo] || 'var(--ink)'};">${signo}${fmt(m.monto)}</strong>
+            </div>
+          `;
+        }).join('');
+      }
 
       document.getElementById('modalCierre').style.display = 'flex';
     }
 
-    // --- FUNCIÓN MATEMÁTICA: ARQUEO CIEGO ---
+    // --- ARQUEO CIEGO ---
     function calcularCuadre() {
-        const contadoInput = document.getElementById('montoContado').value;
-        const contado = Number(contadoInput) || 0;
-        const diferencia = contado - valorEsperadoCaja;
-        const resultadoDiv = document.getElementById('resultadoCuadre');
-        const btnConfirmar = document.getElementById('btnConfirmarCierre');
+      const contadoInput = document.getElementById('montoContado').value;
+      const contado = Number(contadoInput) || 0;
+      const diferencia = contado - valorEsperadoCaja;
+      const resultadoDiv = document.getElementById('resultadoCuadre');
+      const btnConfirmar = document.getElementById('btnConfirmarCierre');
 
-        if (contadoInput === '') {
-            resultadoDiv.innerHTML = '';
-            btnConfirmar.disabled = true;
-            btnConfirmar.style.opacity = '0.5';
-            return;
-        }
+      if (contadoInput === '') {
+        resultadoDiv.innerHTML = '';
+        btnConfirmar.disabled = true;
+        btnConfirmar.style.opacity = '0.5';
+        return;
+      }
 
-        // Si escribió algo, le habilitamos el botón rojo de cierre
-        btnConfirmar.disabled = false;
-        btnConfirmar.style.opacity = '1';
+      btnConfirmar.disabled = false;
+      btnConfirmar.style.opacity = '1';
 
-        const formatoPlata = new Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', minimumFractionDigits:0});
+      if (diferencia === 0) {
+        resultadoDiv.innerHTML = '<span style="color:var(--accent-2);">✅ ¡Caja cuadrada perfectamente! ($0)</span>';
+      } else if (diferencia > 0) {
+        resultadoDiv.innerHTML = `<span style="color:#f57c00;">⚠️ Te sobran ${fmt(diferencia)} físicos</span>`;
+      } else {
+        resultadoDiv.innerHTML = `<span style="color:var(--danger);">❌ Te faltan ${fmt(Math.abs(diferencia))} físicos</span>`;
+      }
+    }
 
-        if (diferencia === 0) {
-            resultadoDiv.innerHTML = '<span style="color:var(--accent-2);">✅ ¡Caja cuadrada perfectamente! ($0)</span>';
-        } else if (diferencia > 0) {
-            resultadoDiv.innerHTML = `<span style="color:#f57c00;">⚠️ Te sobran ${formatoPlata.format(diferencia)} físicos</span>`;
+    // --- 4. ACCIONES CON LA API ---
+    async function confirmarRecepcionDinero() {
+      const monto = Number(document.getElementById('montoRecibir').value);
+      if (!monto || monto <= 0) return alert('Ingresa un monto válido.');
+
+      const btn = document.querySelector('#modalRecibir .cta:not(.cta-outline)');
+      btn.textContent = 'Guardando...'; btn.disabled = true;
+
+      try {
+        const req = await fetch('/api/admin/caja', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accion: 'recibir_dinero', contrasena: contrasenaActual, asesor: asesorRecibiendoNombre, monto })
+        });
+        const res = await req.json();
+
+        if (res.status === 'ok') {
+          document.getElementById('modalRecibir').style.display = 'none';
+          cargarDatosCaja();
         } else {
-            resultadoDiv.innerHTML = `<span style="color:var(--danger);">❌ Te faltan ${formatoPlata.format(Math.abs(diferencia))} físicos</span>`;
+          alert('Error: ' + res.mensaje);
         }
+      } catch (e) {
+        alert('Error de conexión');
+      }
+
+      btn.textContent = '✅ Recibir'; btn.disabled = false;
     }
 
-    // --- 3. FUNCIONES DE BASE DE DATOS (Mocks temporales) ---
-    function cargarDatosCaja() {
-      setTimeout(() => {
-        document.getElementById('lbl-base').textContent = "$200.000";
-        document.getElementById('lbl-calle').textContent = "$50.000";
-        document.getElementById('lbl-oficina').textContent = "$320.000"; 
-
-        document.getElementById('lista-asesores').innerHTML = `
-          <div class="asesor-row">
-            <div class="asesor-info">
-              <span class="asesor-name">👤 Mateo</span>
-              <span style="font-size:0.8rem; color:var(--muted);">Debe entregar a caja:</span>
-            </div>
-            <div style="display:flex; align-items:center; gap:15px;">
-              <span class="asesor-deuda">$50.000</span>
-              <button class="cta" onclick="abrirModalRecibir('Mateo', 50000)">📥 Recibir</button>
-            </div>
-          </div>
-        `;
-      }, 500);
-    }
-
-    function confirmarRecepcionDinero() {
-      document.getElementById('modalRecibir').style.display = 'none';
-      alert("Se guardó el recaudo.");
-    }
-
-    function confirmarMovimiento() {
+    async function confirmarMovimiento() {
       const tipo = document.getElementById('movTipo').value;
-      const monto = document.getElementById('movMonto').value;
-      const detalle = document.getElementById('movDetalle').value;
-      
-      if(!monto || !detalle) return alert('Por favor, ingresa el valor y de qué es.');
-      document.getElementById('modalMovimiento').style.display = 'none';
-      alert(`Guardado: ${tipo} por $${monto}`);
+      const monto = Number(document.getElementById('movMonto').value);
+      const descripcion = document.getElementById('movDetalle').value;
+
+      if (!monto || monto <= 0) return alert('Ingresa un monto válido.');
+      if (!descripcion) return alert('Ingresa una descripción del movimiento.');
+
+      const btn = document.querySelector('#modalMovimiento .cta:not(.cta-outline)');
+      btn.textContent = 'Guardando...'; btn.disabled = true;
+
+      try {
+        const req = await fetch('/api/admin/caja', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accion: 'registrar_movimiento', contrasena: contrasenaActual, tipo, monto, descripcion })
+        });
+        const res = await req.json();
+
+        if (res.status === 'ok') {
+          document.getElementById('modalMovimiento').style.display = 'none';
+          cargarDatosCaja();
+        } else {
+          alert('Error: ' + res.mensaje);
+        }
+      } catch (e) {
+        alert('Error de conexión');
+      }
+
+      btn.textContent = 'Guardar'; btn.disabled = false;
     }
 
-    function guardarBase() {
-      document.getElementById('modalBase').style.display = 'none';
-      alert("Base inicial ajustada.");
+    async function guardarBase() {
+      const monto = Number(document.getElementById('montoBase').value);
+      if (!monto || monto <= 0) return alert('Ingresa un monto válido.');
+
+      const btn = document.querySelector('#modalBase .cta:not(.cta-outline)');
+      btn.textContent = 'Guardando...'; btn.disabled = true;
+
+      try {
+        const req = await fetch('/api/admin/caja', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accion: 'guardar_base', contrasena: contrasenaActual, monto })
+        });
+        const res = await req.json();
+
+        if (res.status === 'ok') {
+          document.getElementById('modalBase').style.display = 'none';
+          cargarDatosCaja();
+        } else {
+          alert('Error: ' + res.mensaje);
+        }
+      } catch (e) {
+        alert('Error de conexión');
+      }
+
+      btn.textContent = 'Guardar Base'; btn.disabled = false;
     }
 
-    function confirmarCierre() {
-      document.getElementById('modalCierre').style.display = 'none';
-      alert("¡Turno terminado y caja cerrada!");
+    async function confirmarCierre() {
+      const montoContado = Number(document.getElementById('montoContado').value) || 0;
+      const btnConfirmar = document.getElementById('btnConfirmarCierre');
+      btnConfirmar.textContent = 'Cerrando...'; btnConfirmar.disabled = true;
+
+      try {
+        const req = await fetch('/api/admin/caja', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accion: 'cerrar_caja', contrasena: contrasenaActual, montoContado, totalEsperado: valorEsperadoCaja })
+        });
+        const res = await req.json();
+
+        document.getElementById('modalCierre').style.display = 'none';
+
+        if (res.status === 'ok') {
+          alert('✅ ¡Caja cerrada y arqueo guardado!');
+          localStorage.removeItem(STORAGE_KEY);
+          window.location.href = '/admin.html';
+        } else {
+          alert('Error al cerrar caja: ' + res.mensaje);
+        }
+      } catch (e) {
+        alert('Error de conexión');
+        btnConfirmar.textContent = 'Confirmar Cierre'; btnConfirmar.disabled = false;
+      }
     }
   </script>
 </body>

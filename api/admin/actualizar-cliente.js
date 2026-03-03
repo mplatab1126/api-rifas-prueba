@@ -21,15 +21,15 @@ export default async function handler(req, res) {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
-    // Actualizamos la tabla de clientes donde coincida el número de teléfono
+    // Upsert: crea el registro si no existe, o actualiza si ya existe
     const { error } = await supabase
       .from('clientes')
-      .update({
+      .upsert({
+        telefono: telefono,
         nombre: nombre || '',
         apellido: apellido || '',
         ciudad: ciudad || ''
-      })
-      .eq('telefono', telefono);
+      }, { onConflict: 'telefono' });
 
     if (error) throw error;
 

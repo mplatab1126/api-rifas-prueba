@@ -75,17 +75,28 @@ export default async function handler(req, res) {
       if (boleta.estado === 'Disponible' || !boleta.telefono_cliente) {
         return res.status(200).json({ tipo: 'BOLETA_DISPONIBLE', data: { numero: queryLimpio } });
       } else {
+        const { data: clienteDB } = await supabase
+          .from('clientes')
+          .select('nombre, apellido, ciudad')
+          .eq('telefono', boleta.telefono_cliente)
+          .maybeSingle();
         return res.status(200).json({
           tipo: 'BOLETA_OCUPADA',
           data: {
             infoVenta: {
-              numero: boleta.numero, nombre: boleta.nombre_cliente || '', apellido: '', ciudad: '', telefono: boleta.telefono_cliente, totalAbonos: boleta.total_abonado || 0, restante: boleta.saldo_restante !== null && boleta.saldo_restante !== undefined ? boleta.saldo_restante : 20000
+              numero: boleta.numero,
+              nombre: clienteDB?.nombre || boleta.nombre_cliente || '',
+              apellido: clienteDB?.apellido || '',
+              ciudad: clienteDB?.ciudad || '',
+              telefono: boleta.telefono_cliente,
+              totalAbonos: boleta.total_abonado || 0,
+              restante: boleta.saldo_restante !== null && boleta.saldo_restante !== undefined ? boleta.saldo_restante : 20000
             }
           }
         });
       }
     }
-    // --- CASO C: 3 CIFRAS (NUEVO) ---
+    // --- CASO C: 3 CIFRAS ---
     else if (queryLimpio.length === 3) {
       const { data: boleta, error } = await supabase
         .from('boletas_diarias_3cifras')
@@ -99,11 +110,22 @@ export default async function handler(req, res) {
       if (boleta.estado === 'Disponible' || !boleta.telefono_cliente) {
         return res.status(200).json({ tipo: 'BOLETA_DISPONIBLE', data: { numero: queryLimpio } });
       } else {
+        const { data: clienteDB } = await supabase
+          .from('clientes')
+          .select('nombre, apellido, ciudad')
+          .eq('telefono', boleta.telefono_cliente)
+          .maybeSingle();
         return res.status(200).json({
           tipo: 'BOLETA_OCUPADA',
           data: {
             infoVenta: {
-              numero: boleta.numero, nombre: boleta.nombre_cliente || '', apellido: '', ciudad: '', telefono: boleta.telefono_cliente, totalAbonos: boleta.total_abonado || 0, restante: boleta.saldo_restante !== null && boleta.saldo_restante !== undefined ? boleta.saldo_restante : 5000
+              numero: boleta.numero,
+              nombre: clienteDB?.nombre || boleta.nombre_cliente || '',
+              apellido: clienteDB?.apellido || '',
+              ciudad: clienteDB?.ciudad || '',
+              telefono: boleta.telefono_cliente,
+              totalAbonos: boleta.total_abonado || 0,
+              restante: boleta.saldo_restante !== null && boleta.saldo_restante !== undefined ? boleta.saldo_restante : 5000
             }
           }
         });
@@ -151,16 +173,34 @@ export default async function handler(req, res) {
         })));
       }
 
+      // Buscamos datos del cliente en la tabla clientes para nombre/apellido/ciudad correctos
+      const { data: clienteDB } = await supabase
+        .from('clientes')
+        .select('nombre, apellido, ciudad')
+        .eq('telefono', queryLimpio)
+        .maybeSingle();
+
       if (clienteBoletasDiarias && clienteBoletasDiarias.length > 0) {
         lista.push(...clienteBoletasDiarias.map(b => ({
-          numero: b.numero, nombre: b.nombre_cliente || '', apellido: '', ciudad: '', telefono: b.telefono_cliente, totalAbonos: b.total_abonado || 0, restante: b.saldo_restante !== null && b.saldo_restante !== undefined ? b.saldo_restante : 20000
+          numero: b.numero,
+          nombre: clienteDB?.nombre || b.nombre_cliente || '',
+          apellido: clienteDB?.apellido || '',
+          ciudad: clienteDB?.ciudad || '',
+          telefono: b.telefono_cliente,
+          totalAbonos: b.total_abonado || 0,
+          restante: b.saldo_restante !== null && b.saldo_restante !== undefined ? b.saldo_restante : 20000
         })));
       }
 
-      // ¡AQUÍ ESTÁ LA PIEZA QUE TE FALTABA!
       if (clienteBoletas3Cifras && clienteBoletas3Cifras.length > 0) {
         lista.push(...clienteBoletas3Cifras.map(b => ({
-          numero: b.numero, nombre: b.nombre_cliente || '', apellido: '', ciudad: '', telefono: b.telefono_cliente, totalAbonos: b.total_abonado || 0, restante: b.saldo_restante !== null && b.saldo_restante !== undefined ? b.saldo_restante : 5000
+          numero: b.numero,
+          nombre: clienteDB?.nombre || b.nombre_cliente || '',
+          apellido: clienteDB?.apellido || '',
+          ciudad: clienteDB?.ciudad || '',
+          telefono: b.telefono_cliente,
+          totalAbonos: b.total_abonado || 0,
+          restante: b.saldo_restante !== null && b.saldo_restante !== undefined ? b.saldo_restante : 5000
         })));
       }
 

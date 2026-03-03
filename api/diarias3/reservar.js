@@ -6,17 +6,20 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
 
-  const { numeros, nombre, telefono } = req.body;
+  const { numeros, nombre, apellido, ciudad, telefono } = req.body;
   
-  if (!numeros || numeros.length === 0 || !nombre || !telefono) {
+  if (!numeros || numeros.length === 0 || !nombre || !apellido || !ciudad || !telefono) {
     return res.status(400).json({ error: 'Faltan datos para la reserva' });
   }
+
+  const telefonoLimpio = String(telefono).replace(/\D/g, '').slice(-10);
+  const nombreCompleto = `${nombre} ${apellido}`.trim();
 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
     const { data: checkData, error: checkError } = await supabase
-      .from('boletas_diarias_3cifras') // <-- TABLA NUEVA
+      .from('boletas_diarias_3cifras')
       .select('numero, estado')
       .in('numero', numeros);
 
@@ -28,16 +31,32 @@ export default async function handler(req, res) {
     }
 
     const { error: updateError } = await supabase
-      .from('boletas_diarias_3cifras') // <-- TABLA NUEVA
-      .update({ estado: 'Reservado', nombre_cliente: nombre, telefono_cliente: telefono })
+      .from('boletas_diarias_3cifras')
+      .update({ estado: 'Reservado', nombre_cliente: nombreCompleto, telefono_cliente: telefonoLimpio })
       .in('numero', numeros);
 
     if (updateError) throw updateError;
 
-    // Calcula el total a pagar (Ajusta este PRECIO_BOLETA a lo que valga la de 3 cifras)
+    // Guardamos/actualizamos el cliente en la tabla clientes
+    const { data: clienteActual } = await supabase
+      .from('clientes')
+      .select('total_comprado, boletas_diarias_compradas, boletas_grandes_compradas')
+      .eq('telefono', telefonoLimpio)
+      .single();
+
+    await supabase.from('clientes').upsert({
+      telefono: telefonoLimpio,
+      nombre: nombre,
+      apellido: apellido,
+      ciudad: ciudad,
+      total_comprado: clienteActual?.total_comprado || 0,
+      boletas_diarias_compradas: clienteActual?.boletas_diarias_compradas || 0,
+      boletas_grandes_compradas: clienteActual?.boletas_grandes_compradas || 0
+    }, { onConflict: 'telefono' });
+
     const PRECIO_BOLETA_3_CIFRAS = 5000; 
     const totalPagar = numeros.length * PRECIO_BOLETA_3_CIFRAS;
-    const mensaje = `¡Hola Los Plata! 👋\nAcabo de reservar en la RIFA DE 3 CIFRAS.\n\n👤 Nombre: ${nombre}\n📱 Celular: ${telefono}\n🎟️ Mis números: ${numeros.join(', ')}\n💰 Total a pagar: $${totalPagar.toLocaleString('es-CO')}\n\nMuchas gracias`;
+    const mensaje = `¡Hola Los Plata! 👋\nAcabo de reservar en la RIFA DE 3 CIFRAS.\n\n👤 Nombre: ${nombreCompleto}\n📱 Celular: ${telefonoLimpio}\n🎟️ Mis números: ${numeros.join(', ')}\n💰 Total a pagar: $${totalPagar.toLocaleString('es-CO')}\n\nMuchas gracias`;
     
     const urlWhatsapp = `https://wa.me/573107334957?text=${encodeURIComponent(mensaje)}`;
     return res.status(200).json({ exito: true, url: urlWhatsapp });

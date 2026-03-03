@@ -49,7 +49,8 @@ export default async function handler(req, res) {
         deuda_cliente: 0,
         abonado_cliente: 0,
         nombre_cliente: "No encontrado",
-        enlaces_boletas: "Ninguno"
+        enlaces_boletas: "Ninguno",
+        resumen: "No tienes boletas registradas aún."
       });
     }
 
@@ -65,13 +66,22 @@ export default async function handler(req, res) {
     // Lista de enlaces con doble salto de línea y emoji
     const listaEnlaces = boletas.map(b => `🎟️ *Boleta ${b.numero}:*\nhttps://www.losplata.com.co/boleta/${b.numero}`).join('\n\n');
 
+    // Resumen bonito: número de boleta + saldo restante de cada una
+    const formatearPesos = (valor) =>
+      '$' + Number(valor).toLocaleString('es-CO');
+
+    const resumen = boletas.map(b =>
+      `🎟️ *Boleta ${b.numero}* → Restante: *${formatearPesos(b.saldo_restante)}*`
+    ).join('\n');
+
     // 8. Le respondemos a Chatea Pro con el paquete listo y valores COMPLETOS
     res.status(200).json({
       boletas_cliente: listaNumeros,
-      deuda_cliente: deudaTotal,        // Ej: 150000
-      abonado_cliente: abonadoTotal,    // Ej: 50000
+      deuda_cliente: deudaTotal,
+      abonado_cliente: abonadoTotal,
       nombre_cliente: nombre,
-      enlaces_boletas: listaEnlaces 
+      enlaces_boletas: listaEnlaces,
+      resumen
     });
 
   } catch (error) {

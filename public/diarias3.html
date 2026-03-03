@@ -281,7 +281,7 @@
       <div class="hero-title-area">
         <h1 style="font-size: 32px;">RIFA DE 3 CIFRAS</h1>
         <div class="info-sorteo-container">
-          <div class="badge-sorteo">📅 JUEGA EL 27 FEB CON CHONTICO DÍA</div>
+          <div id="badge-sorteo-info" class="badge-sorteo">📅 Cargando info del sorteo...</div>
         </div>
       </div>
 
@@ -470,8 +470,16 @@
       <div class="modal-content">
         <h3 style="text-align:center; margin-top:0; color:#333;">Reservar: <span id="num-modal" style="color:#1b5e20;"></span></h3>
         <div class="input-group">
-          <label>Nombre Completo</label>
-          <input type="text" id="input-nombre" placeholder="Tu nombre aquí">
+          <label>Nombre</label>
+          <input type="text" id="input-nombre" placeholder="Tu nombre">
+        </div>
+        <div class="input-group">
+          <label>Apellido</label>
+          <input type="text" id="input-apellido" placeholder="Tu apellido">
+        </div>
+        <div class="input-group">
+          <label>Ciudad</label>
+          <input type="text" id="input-ciudad" placeholder="Tu ciudad">
         </div>
         <div class="input-group">
           <label>Celular / WhatsApp</label>
@@ -516,16 +524,95 @@
       </div>
     </div>
 
+    <div id="modal-exito" class="modal-overlay" style="align-items: flex-end;">
+      <div class="modal-content" style="width:100%; max-width:480px; border-radius:24px 24px 0 0; padding:28px 22px 32px 22px; max-height:92vh; overflow-y:auto; box-sizing:border-box;">
+
+        <div style="text-align:center; margin-bottom:18px;">
+          <div style="font-size:52px; line-height:1;">✅</div>
+          <h2 style="margin:10px 0 4px 0; color:#1b5e20; font-size:20px; font-weight:900;">¡Boletas separadas!</h2>
+          <p style="margin:0; color:#64748b; font-size:13px;">Tu separado fue registrado con éxito</p>
+        </div>
+
+        <div style="background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:14px; padding:14px 16px; margin-bottom:16px;">
+          <p style="margin:0 0 6px 0; font-size:12px; font-weight:800; color:#166534; text-transform:uppercase; letter-spacing:0.5px;">🎟️ Tus puestos separados</p>
+          <p id="exito-numeros" style="margin:0; font-size:18px; font-weight:900; color:#1b5e20; letter-spacing:1px;"></p>
+          <p id="exito-total" style="margin:6px 0 0 0; font-size:14px; font-weight:700; color:#15803d;"></p>
+        </div>
+
+        <div style="background:#fff; border:1.5px solid #e2e8f0; border-radius:14px; padding:14px 16px; margin-bottom:16px;">
+          <p style="margin:0 0 10px 0; font-size:12px; font-weight:800; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">💳 Realiza tu pago a</p>
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div>
+              <p style="margin:0; font-size:13px; color:#64748b; font-weight:600;">Bancolombia · Cuenta de Ahorros</p>
+              <p style="margin:3px 0 0 0; font-size:20px; font-weight:900; color:#1e293b; letter-spacing:0.5px;">706-000025-93</p>
+              <p style="margin:2px 0 0 0; font-size:12px; color:#475569; font-weight:600;">LOS PLATA S.A.S.</p>
+            </div>
+            <button onclick="copiarCuentaExito()" id="btn-copiar-exito" style="background:#f1f5f9; border:1px solid #cbd5e1; color:#475569; border-radius:10px; width:42px; height:42px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div style="background:#fff7ed; border:2px solid #fed7aa; border-radius:14px; padding:14px 16px; margin-bottom:16px; text-align:center;">
+          <p style="margin:0; font-size:15px; font-weight:900; color:#c2410c;">⚠️ BOLETA SIN CANCELAR NO JUEGA</p>
+          <p style="margin:6px 0 0 0; font-size:12px; color:#92400e; font-weight:600; line-height:1.4;">Una vez realices la transferencia, toma un pantallazo del comprobante y envíalo por WhatsApp para que tu boleta quede activa.</p>
+        </div>
+
+        <div style="background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:14px; padding:12px 16px; margin-bottom:20px; display:flex; align-items:center; gap:10px;">
+          <span style="font-size:22px;">📸</span>
+          <p style="margin:0; font-size:12px; color:#166534; font-weight:600; line-height:1.4;">Toma pantallazo de tu transferencia y envíalo al WhatsApp de la empresa para confirmar tu pago.</p>
+        </div>
+
+        <a id="btn-whatsapp-exito" href="#" target="_blank" style="display:flex; align-items:center; justify-content:center; gap:10px; background:#25d366; color:white; text-decoration:none; border-radius:14px; padding:16px; font-size:16px; font-weight:800; margin-bottom:10px; box-shadow:0 4px 15px rgba(37,211,102,0.3);">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.305-.88-.653-1.473-1.46-1.646-1.757-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Enviar comprobante por WhatsApp
+        </a>
+
+        <button onclick="cerrarExito()" style="width:100%; padding:13px; background:white; border:1.5px solid #e2e8f0; border-radius:14px; font-size:14px; font-weight:600; color:#64748b; cursor:pointer; font-family:'Poppins',sans-serif;">
+          Cerrar
+        </button>
+      </div>
+    </div>
+
     <script>
       const PRECIO_BOLETA = 5000;
       let numerosSeleccionados = []; 
 
+      let horaCierreSorteo = { h: 11, m: 0 }; // Fallback por defecto
+
       window.onload = function() {
-        iniciarTemporizador();
+        cargarConfigYArrancar();
         iniciarNotificacionesEnVivo();
-        observarTarjetaNumeros(); 
-        cargarDatosDesdeVercel(); 
+        observarTarjetaNumeros();
+        cargarDatosDesdeVercel();
       };
+
+      async function cargarConfigYArrancar() {
+        try {
+          const res = await fetch('/api/admin/nueva-rifa?tipo=3cifras');
+          const data = await res.json();
+          if (data.status === 'ok' && data.config) {
+            const cfg = data.config;
+
+            // Actualizar badge del sorteo
+            const badge = document.getElementById('badge-sorteo-info');
+            if (cfg.fecha_sorteo && cfg.loteria) {
+              badge.textContent = `📅 JUEGA EL ${cfg.fecha_sorteo} CON ${cfg.loteria}`;
+            }
+
+            // Parsear hora de cierre para el temporizador
+            if (cfg.hora_cierre) {
+              const partes = cfg.hora_cierre.split(':');
+              horaCierreSorteo = { h: parseInt(partes[0]) || 11, m: parseInt(partes[1]) || 0 };
+            }
+          } else {
+            document.getElementById('badge-sorteo-info').textContent = '📅 SORTEO PRÓXIMAMENTE';
+          }
+        } catch (e) {
+          document.getElementById('badge-sorteo-info').textContent = '📅 SORTEO PRÓXIMAMENTE';
+        }
+        iniciarTemporizador();
+      }
 
       function observarTarjetaNumeros() {
         const tarjeta = document.getElementById('tarjeta-numeros');
@@ -657,12 +744,33 @@
         document.getElementById('modal-soldout').style.display = 'none';
       }
 
+      function cerrarExito() {
+        document.getElementById('modal-exito').style.display = 'none';
+        location.reload();
+      }
+
+      function copiarCuentaExito() {
+        navigator.clipboard.writeText('70600002593').then(() => {
+          const btn = document.getElementById('btn-copiar-exito');
+          btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="#1b5e20"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+          btn.style.background = '#f0fdf4';
+          btn.style.borderColor = '#bbf7d0';
+          setTimeout(() => {
+            btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>';
+            btn.style.background = '#f1f5f9';
+            btn.style.borderColor = '#cbd5e1';
+          }, 2000);
+        });
+      }
+
       function confirmarReserva() {
-        const nombre = document.getElementById('input-nombre').value;
+        const nombre = document.getElementById('input-nombre').value.trim();
+        const apellido = document.getElementById('input-apellido').value.trim();
+        const ciudad = document.getElementById('input-ciudad').value.trim();
         const telefono = document.getElementById('input-telefono').value;
 
-        if (!nombre || telefono.length !== 10) {
-          alert("⚠️ ATENCIÓN:\n\nEl celular debe tener exactamente 10 dígitos.");
+        if (!nombre || !apellido || !ciudad || telefono.length !== 10) {
+          alert("⚠️ ATENCIÓN:\n\nDebes completar nombre, apellido, ciudad y un celular de 10 dígitos.");
           return;
         }
 
@@ -672,12 +780,21 @@
         fetch('/api/diarias3/reservar', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ numeros: numerosSeleccionados, nombre: nombre, telefono: telefono })
+          body: JSON.stringify({ numeros: numerosSeleccionados, nombre: nombre, apellido: apellido, ciudad: ciudad, telefono: telefono })
         })
         .then(res => res.json())
         .then(data => {
           if (data.exito) {
-            window.top.location.href = data.url; 
+            const total = numerosSeleccionados.length * PRECIO_BOLETA;
+            const mensaje = `¡Hola Los Plata! 👋\nAcabo de reservar en la RIFA DE 3 CIFRAS.\n\n👤 Nombre: ${nombre} ${apellido}\n📱 Celular: ${telefono}\n🎟️ Mis puestos: ${numerosSeleccionados.join(', ')}\n💰 Total a pagar: $${total.toLocaleString('es-CO')}\n\nAquí va el comprobante de pago 👇`;
+            const urlWhatsapp = `https://wa.me/573107334957?text=${encodeURIComponent(mensaje)}`;
+
+            document.getElementById('exito-numeros').textContent = numerosSeleccionados.join('  ·  ');
+            document.getElementById('exito-total').textContent = `Total a pagar: $${total.toLocaleString('es-CO')}`;
+            document.getElementById('btn-whatsapp-exito').href = urlWhatsapp;
+
+            cerrarModal();
+            document.getElementById('modal-exito').style.display = 'flex';
           } else {
             alert("Error: " + data.error);
             cerrarModal(); location.reload(); 
@@ -692,11 +809,10 @@
 
       function iniciarTemporizador() {
         let cierre = new Date();
-        // Configuramos la hora de cierre a las 11:00 AM exactas (Horas, Minutos, Segundos, Milisegundos)
-        cierre.setHours(11, 0, 0, 0);
+        // Usar la hora configurada dinámicamente (o 11:00 por defecto)
+        cierre.setHours(horaCierreSorteo.h, horaCierreSorteo.m, 0, 0);
 
-        // TRUCO: Si el cliente entra a la página y ya pasaron las 11:00 AM de hoy, 
-        // el reloj apuntará automáticamente a las 11:00 AM de mañana.
+        // Si ya pasó la hora de cierre de hoy, apuntar al mismo horario de mañana
         if (new Date().getTime() > cierre.getTime()) {
             cierre.setDate(cierre.getDate() + 1);
         }

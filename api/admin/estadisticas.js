@@ -7,7 +7,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const { contrasena } = req.body;
+  const { contrasena, tipo = '4cifras' } = req.body;
   const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
   const nombreAsesor = asesores[contrasena];
   
@@ -21,27 +21,35 @@ export default async function handler(req, res) {
     });
   }
 
+  // Determinar tabla de boletas e identificador de cifras según el tipo seleccionado
+  const tablaBoletasMap = { '2cifras': 'boletas_diarias', '3cifras': 'boletas_diarias_3cifras', '4cifras': 'boletas' };
+  const patronLengthMap = { '2cifras': '__', '3cifras': '___', '4cifras': '____' };
+  const tablaBoletas = tablaBoletasMap[tipo] || 'boletas';
+  const patronLength = patronLengthMap[tipo] || '____';
+
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
-    // 1. Traemos los Abonos
+    // 1. Traemos los Abonos filtrados por cifras del número de boleta
     const { data: abonos, error: errAbonos } = await supabase
       .from('abonos')
       .select('monto, fecha_pago, asesor, numero_boleta')
+      .like('numero_boleta', patronLength)
       .limit(100000); 
     if (errAbonos) throw errAbonos;
 
-    // 2. Traemos las Ventas (ahora incluimos el "detalle" para saber si el abono fue $0)
+    // 2. Traemos las Ventas filtradas por cifras del número de boleta
     const { data: ventas, error: errVentas } = await supabase
       .from('registro_movimientos')
       .select('created_at, asesor, boleta, detalle')
       .eq('accion', 'Nueva Venta')
+      .like('boleta', patronLength)
       .limit(100000); 
     if (errVentas) throw errVentas;
 
-    // 3. Traemos el resumen global del Apartamento (10.000 boletas)
+    // 3. Traemos el resumen global de la tabla de boletas correspondiente
     const { data: boletasGlobal, error: errBoletas } = await supabase
-      .from('boletas')
+      .from(tablaBoletas)
       .select('estado, total_abonado, telefono_cliente')
       .limit(100000); 
     if (errBoletas) throw errBoletas;
@@ -63,6 +71,8 @@ export default async function handler(req, res) {
     let registradas = 0;
     let separadas_cero = 0;
     let libres = 0;
+    let pagadas = 0;
+    const total = boletasGlobal.length;
 
     // Calculamos el inventario global
     boletasGlobal.forEach(b => {
@@ -70,6 +80,7 @@ export default async function handler(req, res) {
             libres++;
         } else {
             registradas++;
+            if (b.estado === 'Pagada') pagadas++;
             if (!b.total_abonado || Number(b.total_abonado) === 0) {
                 separadas_cero++;
             }
@@ -80,9 +91,9 @@ export default async function handler(req, res) {
         status: 'ok', 
         abonos: abonos, 
         ventas: ventas,
-        globales: { registradas, separadas_cero, libres },
+        globales: { registradas, separadas_cero, libres, pagadas, total },
         chatea: chateaData,
-        fb: fbData // <-- Se lo enviamos a la nueva página de rendimiento
+        fb: fbData
     });
   } catch (error) {
     return res.status(500).json({ status: 'error', mensaje: error.message });
