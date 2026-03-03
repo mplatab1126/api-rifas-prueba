@@ -10,40 +10,48 @@
 </head>
 <body>
 
-  <div id="loginOverlay" class="modal-overlay">
-    <div class="modal-card">
-      <h2 style="margin: 0 0 8px; color: var(--ink); font-weight: 600; font-size: 1.4rem;">Acceso</h2>
-      <p style="color:var(--muted); font-size: 0.9rem; margin-bottom: 20px;">Ingresa tu clave de administrador</p>
-      <div class="field" style="margin-bottom:20px;">
-        <input id="loginPwd" type="password" class="pill" placeholder="Contraseña..." style="text-align:center">
-      </div>
-      <button id="btnLogin" class="cta">Ingresar</button>
-      <div id="loginMsg" class="hint"></div>
+  <div id="heroBg" style="
+    position: fixed; inset: 0; z-index: 0;
+    background: linear-gradient(160deg, #0f2010 0%, #1e4a1a 40%, #2d6b25 70%, #1a3a14 100%);
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+  "></div>
+
+  <div id="loginOverlay" style="position:fixed; inset:0; z-index:1500; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0;">
+    <div style="text-align:center; margin-bottom:32px;">
+      <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata S.A.S." style="height:180px; width:auto; display:block; margin:0 auto; filter:drop-shadow(0 8px 24px rgba(0,0,0,0.45));">
+      <p style="color:rgba(255,255,255,0.6); font-size:0.95rem; margin:14px 0 0 0; letter-spacing:0.18em; text-transform:uppercase; font-weight:400;">Escribe tu contraseña de asesor</p>
+    </div>
+    <div style="width:90%; max-width:580px; display:flex; flex-direction:column; align-items:center; gap:14px;">
+      <input id="loginPwd" type="password" placeholder="Contraseña..."
+        onkeydown="if(event.key==='Enter') document.getElementById('btnLogin').click()"
+        style="width:100%; box-sizing:border-box; padding:18px 24px; border-radius:100px; border:1.5px solid rgba(255,255,255,0.25); background:rgba(255,255,255,0.12); backdrop-filter:blur(8px); color:#fff; font-size:1.1rem; font-family:inherit; text-align:center; outline:none; letter-spacing:0.1em;">
+      <button id="btnLogin"
+        style="width:100%; padding:16px; border-radius:100px; border:none; background:rgba(255,255,255,0.18); backdrop-filter:blur(8px); color:#fff; font-size:1rem; font-weight:600; font-family:inherit; cursor:pointer; letter-spacing:0.05em; transition:background 0.2s;"
+        onmouseover="this.style.background='rgba(255,255,255,0.28)'" onmouseout="this.style.background='rgba(255,255,255,0.18)'">
+        Ingresar
+      </button>
+      <div id="loginMsg" style="color:rgba(255,120,120,0.9); font-size:0.9rem; min-height:20px;"></div>
     </div>
   </div>
 
   <div class="top-search-bar hero-mode" id="topBar" style="display:none">
     <div class="hero-welcome-text">
-        <h1 style="color:var(--ink); margin:0; font-size: 1.8rem; font-weight: 600;">LOS PLATA S.A.S.</h1>
-        <p style="color:var(--muted); font-size: 0.95rem; margin: 6px 0 0 0;">Busca boleta, teléfono o pega datos</p>
+        <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata S.A.S." style="height: 180px; width: auto; display: block; margin: 0 auto; filter: drop-shadow(0 8px 24px rgba(0,0,0,0.45));">
+        <p style="color: rgba(255,255,255,0.6); font-size: 0.95rem; margin: 14px 0 0 0; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 400;">Busca boleta, teléfono o pega datos</p>
     </div>
     <div class="search-container">
       <input type="text" id="smartInput" class="main-input" placeholder="Escribe para buscar o pegar..." autocomplete="off">
       <button id="btnSearch" class="search-btn">Buscar</button>
     </div>
     <div class="user-info-bar">
-      <span id="asesorDisplay" style="font-weight:600; color:var(--ink); margin-right:12px;">Hola</span>
-      <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:500;" onclick="activateAppMode(); switchView('view-referencias')">Referencia</span>
-      
-      <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:600; background: var(--pill); padding: 2px 10px; border-radius: 8px;" onclick="activateAppMode(); switchView('view-carga-masiva')">🤖 Carga IA</span>
-      
-      <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:500;" onclick="activateAppMode(); switchView('view-bancos')">Subir transferencias</span>
-      <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:500;" onclick="window.location.href='/rendimiento'">📈 Rendimiento</span>
-      <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:500;" onclick="activateAppMode(); switchView('view-movimientos'); cargarUltimosMovimientos();">Últimos Movimientos</span>
-      
-      <span style="cursor:pointer; color:var(--accent-2); margin-right:12px; font-weight:800; background: #e8f5e9; padding: 2px 10px; border-radius: 8px; border: 1px solid #c8e6c9;" onclick="window.location.href='/caja.html'">💰 Cuadre de Caja</span>
-      
-      <span id="btnLogout" style="cursor:pointer; color:var(--muted); font-weight:500;">Salir</span>
+      <span id="asesorDisplay" class="nav-item nav-name">Hola</span>
+      <span class="nav-item" onclick="activateAppMode(); switchView('view-referencias')">Referencia</span>
+      <span class="nav-item" onclick="activateAppMode(); switchView('view-carga-masiva')">Carga IA</span>
+      <span class="nav-item" onclick="window.location.href='/rendimiento'">Rendimiento</span>
+      <span class="nav-item" onclick="activateAppMode(); switchView('view-movimientos'); cargarUltimosMovimientos();">Movimientos</span>
+      <span class="nav-item" onclick="window.location.href='/caja.html'">Cuadre de Caja</span>
+      <span id="btnLogout" class="nav-item nav-salir">Salir</span>
     </div>
     <div id="searchFeedback" class="hint" style="margin: 5px 0 0 0; font-size:0.8rem; min-height: 20px;"></div>
   </div>
@@ -65,19 +73,6 @@
       </div>
     </div>
 
-    <div id="view-bancos" class="view-section">
-      <div class="section-card">
-        <div class="section-title">Cargar Extracto Bancolombia</div>
-        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0;">Sube el archivo .CSV descargado de la Sucursal Virtual. El sistema extraerá automáticamente el monto, la fecha y la cuenta de origen.</p>
-        
-        <div class="vertical-form">
-          <div class="field" style="background:var(--bg); border: 1px dashed var(--accent); padding: 20px; justify-content: center;">
-            <input type="file" id="fileBancos" accept=".csv, .pdf" multiple style="font-size: 0.9rem; color: var(--ink-2);">
-          </div>
-          <button id="btnProcesarBancos" class="cta" onclick="procesarCSVBancos()" style="margin-top:10px;">Procesar archivo</button>
-        </div>
-      </div>
-    </div>
     <div id="view-carga-masiva" class="view-section">
       <div class="section-card">
         <div class="section-title">🤖 Carga Masiva Inteligente (OpenAI)</div>
@@ -202,8 +197,8 @@
         <div class="section-card">
           <div class="section-title">BUSCAR PAGO INTELIGENTE</div>
           <div class="vertical-form">
-            <div id="ocrDrop" class="ocr-drop">
-               Pega la imagen del comprobante aquí (Ctrl+V) para extraer Referencia<br>
+            <div id="ocrDrop" class="ocr-drop" tabindex="0" onclick="this.focus()" title="Haz clic aquí y luego Ctrl+V para pegar la imagen">
+               📋 Pega la imagen del comprobante aquí (Ctrl+V)<br>
                <span id="ocrStatus" style="color:var(--accent-2); font-weight:normal; margin-top: 4px; display: block;"></span>
             </div>
 
@@ -287,8 +282,8 @@
         <div class="section-card">
            <div class="section-title">BUSCAR PAGO INTELIGENTE</div>
            <div class="vertical-form">
-              <div id="ocrDropAbono" class="ocr-drop">
-                 Pega la imagen del comprobante aquí (Ctrl+V) para extraer Referencia<br>
+              <div id="ocrDropAbono" class="ocr-drop" tabindex="0" onclick="this.focus()" title="Haz clic aquí y luego Ctrl+V para pegar la imagen">
+                 📋 Pega la imagen del comprobante aquí (Ctrl+V)<br>
                  <span id="ocrStatusAbono" style="color:var(--accent-2); font-weight:normal; margin-top: 4px; display: block;"></span>
               </div>
 
@@ -356,6 +351,15 @@
       <button id="mBtn" class="cta" style="width: auto; padding: 10px 30px; margin: 0 auto; display:inline-block;">Aceptar</button>
     </div>
   </div>
+
+  <!-- Modal visor de comprobante simple -->
+  <div id="fotoModal" onclick="this.style.display='none'" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.85); backdrop-filter:blur(4px); align-items:center; justify-content:center; cursor:zoom-out;">
+    <div onclick="event.stopPropagation()" style="position:relative; max-width:92vw; max-height:92vh;">
+      <img id="fotoModalImg" src="" alt="Comprobante" style="max-width:100%; max-height:88vh; border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,0.6); display:block;">
+      <button onclick="document.getElementById('fotoModal').style.display='none'" style="position:absolute; top:-14px; right:-14px; background:#fff; border:none; border-radius:50%; width:32px; height:32px; font-size:1.1rem; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center; font-weight:700; color:#333;">✕</button>
+    </div>
+  </div>
+
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>

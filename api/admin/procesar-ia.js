@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  const { imagenBase64, contrasena } = req.body;
+  const { imagenBase64, contrasena, soloConsulta } = req.body;
 
   // 2. Seguridad
   const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
@@ -85,23 +85,34 @@ export default async function handler(req, res) {
 
     if (existentes && existentes.length > 0) {
         esDuplicado = existentes.some(tExist => {
-            if (datos.hora_pago && tExist.hora_pago && datos.hora_pago !== tExist.hora_pago) {
-                return false; 
-            }
-            
             let coinciden = false;
-            if (datos.plataforma.toLowerCase().includes('nequi') && tExist.plataforma.toLowerCase().includes('nequi')) {
-                const digitosNueva = String(datos.referencia).replace(/\D/g, ''); 
+            const plataformaNueva = datos.plataforma.toLowerCase();
+            const plataformaExist = String(tExist.plataforma).toLowerCase();
+
+            if (plataformaNueva.includes('nequi') && plataformaExist.includes('nequi')) {
+                // Nequi→Nequi: comparar últimos 4 dígitos de la referencia
+                const digitosNueva = String(datos.referencia).replace(/\D/g, '');
                 const digitosExist = String(tExist.referencia).replace(/\D/g, '');
                 if (digitosNueva.length >= 4 && digitosExist.length >= 4) {
                     coinciden = digitosNueva.slice(-4) === digitosExist.slice(-4);
+                }
+            } else if (plataformaNueva.includes('bancolombia') || plataformaExist.includes('bancolombia')) {
+                // Bancolombia: las referencias entre la app del cliente y el extracto SVN son distintas
+                // (p.ej. "0000049000" vs "86096513013"), así que usamos la hora como criterio principal
+                const refExacta = String(datos.referencia).trim() === String(tExist.referencia).trim();
+                if (refExacta) {
+                    coinciden = true;
+                } else if (datos.hora_pago && tExist.hora_pago) {
+                    // Mismo minuto exacto → misma transferencia aunque el número de comprobante difiera
+                    const mismoMinuto = datos.hora_pago.substring(0, 5) === tExist.hora_pago.substring(0, 5);
+                    coinciden = mismoMinuto;
                 }
             } else {
                 coinciden = String(datos.referencia).trim() === String(tExist.referencia).trim();
             }
 
             if (coinciden) {
-                transferenciaOriginal = tExist; // ¡Atrapamos los datos de la original!
+                transferenciaOriginal = tExist;
                 return true;
             }
             return false;
@@ -109,11 +120,19 @@ export default async function handler(req, res) {
     }
 
     if (esDuplicado) {
-        // Le devolvemos al frontend exactamente el estado y los datos de la original
         return res.status(200).json({ 
             status: 'duplicado', 
             mensaje: `Ya registrada el ${transferenciaOriginal.fecha_pago}`,
-            clon: transferenciaOriginal // Enviamos el objeto completo
+            clon: transferenciaOriginal
+        });
+    }
+
+    // Si es solo consulta (pegar foto del cliente), NO crear nada — informar que no se encontró
+    if (soloConsulta) {
+        return res.status(200).json({
+            status: 'no_encontrada',
+            mensaje: `No se encontró ninguna transferencia de $${datos.monto} del ${datos.fecha_pago} en el sistema. Verifica que esté cargada con Carga IA.`,
+            datosExtraidos: datos
         });
     }
 

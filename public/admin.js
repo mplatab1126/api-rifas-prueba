@@ -3,8 +3,13 @@ const $ = id => document.getElementById(id);
     const topBar = $('topBar');
     const appShell = $('appShell');
 
-    function activateAppMode() { topBar.classList.remove('hero-mode'); appShell.classList.add('visible'); }
-    function activateHeroMode() { topBar.classList.add('hero-mode'); appShell.classList.remove('visible'); $('smartInput').value = ''; $('smartInput').focus(); setMode('separar'); }
+    function activateAppMode() { topBar.classList.remove('hero-mode'); appShell.classList.add('visible'); const bg = $('heroBg'); if(bg){ bg.style.opacity='0'; setTimeout(()=>{ bg.style.display='none'; }, 500); } }
+    function activateHeroMode() { topBar.classList.add('hero-mode'); appShell.classList.remove('visible'); $('smartInput').value = ''; $('smartInput').focus(); setMode('separar'); resetOcrZone('ocrDrop', 'ocrStatus'); resetOcrZone('ocrDropAbono', 'ocrStatusAbono'); const bg = $('heroBg'); if(bg){ bg.style.display='block'; setTimeout(()=>{ bg.style.opacity='1'; }, 10); } }
+
+    function resetOcrZone(dropId, statusId) {
+        const el = document.getElementById(dropId);
+        if (el) el.innerHTML = `📋 Pega la imagen del comprobante aquí (Ctrl+V)<br><span id="${statusId}" style="color:var(--accent-2); font-weight:normal; margin-top:4px; display:block;"></span>`;
+    }
 
     let modoVenta = 'separar'; 
     function setMode(mode) {
@@ -92,7 +97,30 @@ const $ = id => document.getElementById(id);
 
     smartInput.onkeydown = (e)=>{ if(e.key==='Enter') runSearch(); };
     $('btnSearch').onclick = runSearch;
-    function switchView(id){ document.querySelectorAll('.view-section').forEach(el=>el.classList.remove('active')); $(id).classList.add('active'); }
+    function switchView(id){ document.querySelectorAll('.view-section').forEach(el=>el.classList.remove('active')); $(id).classList.add('active'); resetOcrZone('ocrDrop', 'ocrStatus'); resetOcrZone('ocrDropAbono', 'ocrStatusAbono'); }
+
+    // ==========================================
+    // PASTE GLOBAL PARA OCR DE COMPROBANTES
+    // Intercepta Ctrl+V con imagen en cualquier punto de la página
+    // y lo routea al formulario que esté visible en ese momento
+    // ==========================================
+    document.addEventListener('paste', (e) => {
+        const items = (e.clipboardData || window.clipboardData)?.items;
+        if (!items) return;
+        const hasImage = Array.from(items).some(i => i.type.startsWith('image'));
+        if (!hasImage) return; // Solo actúa si hay imagen; el texto lo maneja smartInput
+
+        const paySection = $('paymentSections');
+        const abonoSection = $('zonaPagosAbono');
+
+        if (paySection && paySection.style.display !== 'none') {
+            e.preventDefault();
+            handleOCR(e, 'ocrStatus', 'v_idTransferencia', 'v_referenciaAbono', 'v_primerAbono', 'v_metodoPago', 'feedbackTransfer');
+        } else if (abonoSection && abonoSection.style.display !== 'none') {
+            e.preventDefault();
+            handleOCR(e, 'ocrStatusAbono', 'a_idTransferencia', 'a_ref', 'a_monto', 'a_metodo', 'feedbackTransferAbono');
+        }
+    });
 
     // ==========================================
     // OCR: LECTURA DE COMPROBANTES
@@ -137,64 +165,176 @@ const $ = id => document.getElementById(id);
     }
 
     async function handleOCR(e, statusId, targetIdOculto, refId, montoId, metodoId, feedbackId) {
-        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        const items = (e.clipboardData || e.originalEvent?.clipboardData || e.clipboardData).items;
         let blob = null;
         for (let i = 0; i < items.length; i++) {
             if (items[i].type.indexOf("image") === 0) blob = items[i].getAsFile();
         }
         
-        if (!blob) return; // Si no pegó una imagen, se sale.
+        if (!blob) return;
         
+        // Mostrar preview de la imagen pegada inmediatamente en el área OCR
+        const dropElId = statusId === 'ocrStatus' ? 'ocrDrop' : 'ocrDropAbono';
+        const dropEl = document.getElementById(dropElId);
+        const localUrl = URL.createObjectURL(blob);
+
+        const setStatus = (html) => {
+            const el = document.getElementById(statusId);
+            if (el) el.innerHTML = html;
+        };
+
+        if (dropEl) {
+            dropEl.innerHTML = `
+                <img src="${localUrl}" onclick="mostrarFoto('${localUrl}')" 
+                     style="max-height:130px; max-width:100%; border-radius:8px; cursor:zoom-in; display:block; margin:0 auto; box-shadow:0 2px 10px rgba(0,0,0,0.15);">
+                <span id="${statusId}" style="color:var(--muted); display:block; margin-top:8px; font-size:0.85rem; text-align:center;">🤖 IA leyendo comprobante...</span>`;
+        }
+
         const telefonoAUsar = document.getElementById('v_telefono') ? document.getElementById('v_telefono').value : '';
-        
-        document.getElementById(statusId).innerHTML = '<span style="color:var(--muted);">🤖 IA leyendo comprobante...</span>';
         
         try {
             const base64 = await convertirABase64(blob);
             
             const reqIA = await fetch('/api/admin/procesar-ia', {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ imagenBase64: base64, contrasena: localStorage.getItem(STORAGE_KEY) })
+                body: JSON.stringify({ imagenBase64: base64, contrasena: localStorage.getItem(STORAGE_KEY), soloConsulta: true })
             });
             const resIA = await reqIA.json();
             
-            let datosParaBuscar = null;
+            // ── Helpers para los callbacks de aceptar/rechazar ──────────────
+            const aceptarTransferencia = (t, fotoFinal) => {
+                const dropEl2 = document.getElementById(dropElId);
+                if (dropEl2) {
+                    dropEl2.innerHTML = `
+                        <img src="${fotoFinal}" onclick="mostrarFoto('${fotoFinal}')"
+                             style="max-height:130px; max-width:100%; border-radius:8px; cursor:zoom-in; display:block; margin:0 auto; box-shadow:0 4px 16px rgba(0,0,0,0.15); border:2px solid var(--accent);">
+                        <span id="${statusId}" style="display:block; margin-top:8px; font-size:0.85rem; text-align:center;"></span>`;
+                }
+                seleccionarTransferencia(targetIdOculto, refId, montoId, metodoId, feedbackId, t.id, t.referencia, t.monto, t.plataforma, fotoFinal);
+                setStatus('<span style="color:var(--accent-2); font-weight:bold;">¡Pago enlazado y asegurado! ✅</span>');
+            };
 
-            if (resIA.status === 'ok') {
-                datosParaBuscar = resIA.datosExtraidos;
-                document.getElementById(statusId).innerHTML = '<span style="color:var(--ink-2);">🔍 IA leyó bien. Buscando en BD...</span>';
-            } else if (resIA.status === 'duplicado') {
-                // Mensaje amigable para cuando ya habías subido el pago por Carga IA
-                datosParaBuscar = resIA.clon;
-                document.getElementById(statusId).innerHTML = '<span style="color:#f57c00; font-weight:600;">⚠️ Pago detectado en el sistema. Verificando si está LIBRE...</span>';
+            const rechazarTransferencia = () => {
+                const dropEl2 = document.getElementById(dropElId);
+                if (dropEl2) {
+                    dropEl2.innerHTML = `<span id="${statusId}" style="display:block; text-align:center; font-size:0.9rem; color:var(--muted);">📋 Pega la imagen del comprobante aquí (Ctrl+V)</span>`;
+                }
+                setStatus('<span style="color:var(--danger);">Rechazado. Pega otra imagen para intentar de nuevo.</span>');
+            };
+
+            if (resIA.status === 'duplicado') {
+                // La transferencia existe en el sistema — buscar y mostrar sugerencia
+                setStatus('<span style="color:var(--ink-2);">🔍 Verificando que esté disponible...</span>');
+                const reqB = await fetch('/api/admin/buscar-transferencia-ia', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ datos_ia: resIA.clon, telefono_cliente: telefonoAUsar, contrasena: localStorage.getItem(STORAGE_KEY) })
+                });
+                const resB = await reqB.json();
+
+                if (resB.status === 'ok') {
+                    const t = resB.transferencia;
+                    const fotoFinal = (t.url_comprobante && t.url_comprobante !== 'null') ? t.url_comprobante : null;
+                    mostrarSugerencia(
+                        dropElId, statusId, t, fotoFinal,
+                        () => aceptarTransferencia(t, fotoFinal || localUrl),
+                        rechazarTransferencia
+                    );
+                } else {
+                    // No está LIBRE — usar el clon que ya identificó procesar-ia (es el correcto)
+                    const clon = resIA.clon;
+                    if (clon && clon.estado && clon.estado !== 'LIBRE') {
+                        const montoFmt = new Intl.NumberFormat('es-CO').format(clon.monto);
+                        setStatus(`<span style="color:var(--danger); font-weight:bold;">❌ Esta transferencia ($${montoFmt} · Ref: ${clon.referencia}) ya está ${clon.estado}. No puede reutilizarse.</span>`);
+                    } else {
+                        setStatus('<span style="color:var(--danger); font-weight:bold;">❌ ' + resB.mensaje + '</span>');
+                    }
+                }
+
+            } else if (resIA.status === 'no_encontrada') {
+                // Aunque procesar-ia no detectó duplicado, intentar buscar por hora+plataforma
+                // (cubre el caso Nequi -> Bancolombia donde la referencia guardada es el teléfono)
+                if (resIA.datosExtraidos && resIA.datosExtraidos.monto) {
+                    setStatus('<span style="color:var(--ink-2);">🔍 Buscando transferencia equivalente en el sistema...</span>');
+                    try {
+                        const reqB = await fetch('/api/admin/buscar-transferencia-ia', {
+                            method: 'POST', headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                datos_ia: resIA.datosExtraidos,
+                                telefono_cliente: telefonoAUsar,
+                                contrasena: localStorage.getItem(STORAGE_KEY)
+                            })
+                        });
+                        const resB = await reqB.json();
+
+                        if (resB.status === 'ok') {
+                            const t = resB.transferencia;
+                            const fotoFinal = (t.url_comprobante && t.url_comprobante !== 'null') ? t.url_comprobante : null;
+                            mostrarSugerencia(
+                                dropElId, statusId, t, fotoFinal,
+                                () => aceptarTransferencia(t, fotoFinal || localUrl),
+                                rechazarTransferencia
+                            );
+                        } else {
+                            setStatus(`<span style="color:var(--danger); font-weight:600;">❌ ${resIA.mensaje}</span>`);
+                        }
+                    } catch (errB) {
+                        setStatus(`<span style="color:var(--danger); font-weight:600;">❌ ${resIA.mensaje}</span>`);
+                    }
+                } else {
+                    setStatus(`<span style="color:var(--danger); font-weight:600;">❌ ${resIA.mensaje}</span>`);
+                }
+
             } else {
-                document.getElementById(statusId).innerHTML = '<span style="color:var(--danger); font-weight:bold;">❌ IA falló: ' + resIA.mensaje + '</span>';
-                return;
-            }
-
-            // Enviamos los datos a nuestro buscador para saber si está LIBRE o ASIGNADA
-            const reqBusqueda = await fetch('/api/admin/buscar-transferencia-ia', {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ 
-                    datos_ia: datosParaBuscar, 
-                    telefono_cliente: telefonoAUsar, 
-                    contrasena: localStorage.getItem(STORAGE_KEY) 
-                })
-            });
-            const resBusqueda = await reqBusqueda.json();
-
-            if (resBusqueda.status === 'ok') {
-                // SI ESTÁ LIBRE, SE PONE VERDE Y MUESTRA EL BOTÓN DE VER FOTO
-                const t = resBusqueda.transferencia;
-                seleccionarTransferencia(targetIdOculto, refId, montoId, metodoId, feedbackId, t.id, t.referencia, t.monto, t.plataforma, t.url_comprobante);
-                document.getElementById(statusId).innerHTML = '<span style="color:var(--accent-2); font-weight:bold;">¡Eureka! El pago está LIBRE y listo para usarse ✅</span>';
-            } else {
-                document.getElementById(statusId).innerHTML = '<span style="color:var(--danger); font-weight:bold;">❌ No se puede usar: ' + resBusqueda.mensaje + '</span>';
+                setStatus('<span style="color:var(--danger); font-weight:bold;">❌ IA falló: ' + resIA.mensaje + '</span>');
             }
             
         } catch (error) {
-            document.getElementById(statusId).innerHTML = '<span style="color:var(--danger);">Error en el proceso: ' + error.message + '</span>';
+            setStatus('<span style="color:var(--danger);">Error: ' + error.message + '</span>');
         }
+    }
+
+    function mostrarFoto(url) {
+        const modal = document.getElementById('fotoModal');
+        const img = document.getElementById('fotoModalImg');
+        img.src = url;
+        modal.style.display = 'flex';
+    }
+
+    function mostrarSugerencia(dropElId, statusId, t, fotoFinal, onAceptar, onRechazar) {
+        const dropEl = document.getElementById(dropElId);
+        if (!dropEl) return;
+        const montoFmt = new Intl.NumberFormat('es-CO').format(t.monto);
+        const fecha = t.fecha_pago + (t.hora_pago ? ' a las ' + t.hora_pago.substring(0,5) : '');
+
+        dropEl.innerHTML = `
+            <div style="display:grid; gap:8px; margin-top:4px;">
+                <div id="sugerCard_${dropElId}" style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--ring); padding:10px; border-radius:10px; cursor:pointer; background:#fff; text-align:left; transition:background 0.2s;">
+                    <div>
+                        <div style="font-weight:600; color:var(--ink-2); font-size:0.9rem;">${t.plataforma} - $${montoFmt}</div>
+                        <div style="font-size:0.8rem; color:var(--muted);">Ref: ${t.referencia} | Fecha: ${fecha}</div>
+                        <div style="font-size:0.75rem; color:var(--accent-2); font-weight:500; margin-top:4px;">LIBRE</div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+                        ${fotoFinal ? `<button id="sugerVerFoto_${dropElId}" style="background:var(--pill); color:var(--accent-2); border:1px solid var(--accent); padding:6px 12px; border-radius:8px; font-size:0.8rem; font-weight:600; cursor:pointer;">👁️ Ver Foto</button>` : ''}
+                    </div>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <button id="sugerBtnRechazar_${dropElId}" style="flex:1; padding:9px; border:1.5px solid #d95a53; background:#fff; color:#d95a53; border-radius:8px; font-size:0.85rem; font-weight:600; cursor:pointer;">✕ No es este</button>
+                    <button id="sugerBtnAceptar_${dropElId}" style="flex:2; padding:9px; border:none; background:#2d6b25; color:#fff; border-radius:8px; font-size:0.85rem; font-weight:700; cursor:pointer;">✓ Usar este pago</button>
+                </div>
+            </div>
+            <span id="${statusId}" style="display:none;"></span>`;
+
+        const btnA = document.getElementById(`sugerBtnAceptar_${dropElId}`);
+        const btnR = document.getElementById(`sugerBtnRechazar_${dropElId}`);
+        const btnFoto = document.getElementById(`sugerVerFoto_${dropElId}`);
+        const card = document.getElementById(`sugerCard_${dropElId}`);
+
+        if (btnA) btnA.onclick = onAceptar;
+        if (btnR) btnR.onclick = onRechazar;
+        if (btnFoto) btnFoto.onclick = (e) => { e.stopPropagation(); mostrarFoto(fotoFinal); };
+        if (card) card.onclick = onAceptar;
+        if (card) { card.onmouseover = () => card.style.background = 'var(--bg)'; card.onmouseout = () => card.style.background = '#fff'; }
     }
     
     // ==========================================
@@ -215,7 +355,7 @@ const $ = id => document.getElementById(id);
         let htmlFeedback = '<span style="color:var(--accent-2); font-weight:600; font-size: 0.9rem;">✅ Pago enlazado y asegurado. </span>';
         
         if (urlFoto && urlFoto !== 'null' && urlFoto !== 'undefined') {
-            htmlFeedback += `<a href="${urlFoto}" target="_blank" style="margin-left:10px; background:var(--pill); color:var(--accent-2); border:1px solid var(--accent); padding:4px 10px; border-radius:8px; font-size:0.8rem; text-decoration:none; font-weight:600; transition:0.2s;" onmouseover="this.style.background='var(--accent)'; this.style.color='#fff';" onmouseout="this.style.background='var(--pill)'; this.style.color='var(--accent-2)';">👁️ Ver Foto</a> `;
+            htmlFeedback += `<button onclick="mostrarFoto('${urlFoto}')" style="margin-left:10px; background:var(--pill); color:var(--accent-2); border:1px solid var(--accent); padding:4px 10px; border-radius:8px; font-size:0.8rem; font-weight:600; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='var(--accent)'; this.style.color='#fff';" onmouseout="this.style.background='var(--pill)'; this.style.color='var(--accent-2)';">👁️ Ver Foto</button> `;
         }
         
         htmlFeedback += '<span style="color:var(--danger); cursor:pointer; font-size:0.85rem; font-weight:500; text-decoration:underline; margin-left:15px;" onclick="desbloquearCampos(\''+targetIdTransferencia+'\', \'' + refId + '\', \'' + montoId + '\', \'' + metodoId + '\', \'' + feedbackId + '\')">Quitar</span>';
@@ -298,7 +438,7 @@ const $ = id => document.getElementById(id);
                         // Usamos event.stopPropagation() para que al dar clic al botón no se seleccione la transferencia por accidente
                         if (t.url_comprobante) {
                             html += '<div>';
-                            html += `<button onclick="event.stopPropagation(); window.open('${t.url_comprobante}', '_blank')" style="background:var(--pill); color:var(--accent-2); border:1px solid var(--accent); padding:6px 12px; border-radius:8px; font-size:0.8rem; font-weight:600; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='var(--accent)'; this.style.color='#fff';" onmouseout="this.style.background='var(--pill)'; this.style.color='var(--accent-2)';">👁️ Ver Foto</button>`;
+                            html += `<button onclick="event.stopPropagation(); mostrarFoto('${t.url_comprobante}')" style="background:var(--pill); color:var(--accent-2); border:1px solid var(--accent); padding:6px 12px; border-radius:8px; font-size:0.8rem; font-weight:600; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='var(--accent)'; this.style.color='#fff';" onmouseout="this.style.background='var(--pill)'; this.style.color='var(--accent-2)';">👁️ Ver Foto</button>`;
                             html += '</div>';
                         }
 
@@ -697,7 +837,9 @@ $('btnRegistrarVenta').onclick = async ()=>{
         const lblInfo = document.getElementById('infoDivisionAbono');
 
         if (checkboxes.length > 0) {
+            const yaVisible = zonaPagos.style.display === 'block';
             zonaPagos.style.display = 'block'; // Muestra la zona de pago
+            if (!yaVisible) resetOcrZone('ocrDropAbono', 'ocrStatusAbono'); // Limpia al abrir
             if (lblInfo) {
                 if(checkboxes.length === 1) {
                     lblInfo.innerHTML = 'El abono irá 100% a la boleta <b>' + checkboxes[0].value + '</b>.';
@@ -861,162 +1003,6 @@ async function confirmarLiberarBoleta(numero) {
         btn.disabled = false;
     }
     
-async function procesarCSVBancos() {
-    const fileInput = document.getElementById('fileBancos');
-    if (!fileInput.files.length) return alert("Por favor, selecciona al menos un archivo CSV o PDF.");
-    
-    const btn = document.getElementById('btnProcesarBancos');
-    const txtOriginal = btn.textContent;
-    btn.textContent = `Procesando ${fileInput.files.length} archivo(s)...`;
-    btn.disabled = true;
-
-    try {
-        let transferenciasNuevas = [];
-        const meses = {'ene': '01', 'feb': '02', 'mar': '03', 'abr': '04', 'may': '05', 'jun': '06', 'jul': '07', 'ago': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dic': '12'};
-
-        // Ciclo para procesar TODOS los archivos seleccionados
-        for (let f = 0; f < fileInput.files.length; f++) {
-            const file = fileInput.files[f];
-
-            if (file.name.toLowerCase().endsWith('.pdf')) {
-                // --- LÓGICA: EXTRAER DATOS DEL NUEVO PDF DE BANCOLOMBIA ---
-                const arrayBuffer = await file.arrayBuffer();
-                const pdfjsLib = window['pdfjs-dist/build/pdf'];
-                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
-                
-                const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-                let fullText = "";
-                
-                // Leemos el PDF respetando los saltos de línea (\n)
-                for (let i = 1; i <= pdf.numPages; i++) {
-                    const page = await pdf.getPage(i);
-                    const content = await page.getTextContent();
-                    fullText += content.items.map(item => item.str).join('\n') + "\n";
-                }
-
-                // 1. Extraer Referencia
-                let refMatch = fullText.match(/Referencia 1\s*\n(\d+)/);
-                let referencia = refMatch ? refMatch[1] : "Sin Ref";
-
-                // 2. Extraer Valor (Limpia formatos como "COP $ 20.000 ,00")
-                let valorMatch = fullText.match(/COP \$ ([\d\.,\s]+)/);
-                let monto = 0;
-                if (valorMatch) {
-                    let valorLimpio = valorMatch[1].replace(/\./g, '').replace(/\s/g, '').split(',')[0];
-                    monto = parseInt(valorLimpio) || 0;
-                }
-
-                // 3. Extraer Fecha y HORA
-                let fechaMatch = fullText.match(/Fecha de aplicación\s*\n(.*?)\n(\d{2}:\d{2}:\d{2})/);
-                let fecha_pago = new Date().toISOString().split('T')[0]; 
-                let hora_pago = null;
-
-                if(fechaMatch) {
-                    let partes = fechaMatch[1].trim().split(" ");
-                    if(partes.length >= 3) {
-                        let dia = partes[0].padStart(2, '0');
-                        let mes = meses[partes[1].toLowerCase()] || '01';
-                        let anio = partes[2];
-                        fecha_pago = `${anio}-${mes}-${dia}`;
-                    }
-                    hora_pago = fechaMatch[2]; // Ej: "19:04:56"
-                }
-
-                // 4. Plataforma
-                let descUpper = fullText.toUpperCase();
-                let plataforma = 'Bancolombia';
-                if (descUpper.includes('TRANSFERENCIA DESDE NEQUI') || descUpper.includes('TRANSFERENCIA NEQUI')) {
-                    plataforma = 'Nequi';
-                } else if (descUpper.includes('CORRESPONSAL')) {
-                    plataforma = 'Corresponsal';
-                }
-
-                if (monto > 0) {
-                    transferenciasNuevas.push({
-                        monto: monto,
-                        fecha_pago: fecha_pago,
-                        hora_pago: hora_pago, 
-                        plataforma: plataforma,
-                        referencia: referencia,
-                        estado: 'LIBRE'
-                    });
-                }
-
-            } else {
-                // --- LÓGICA ORIGINAL CSV (Se mantiene intacta) ---
-                const text = await new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => resolve(e.target.result);
-                    reader.readAsText(file);
-                });
-                const rows = text.split('\n');
-                for(let i = 0; i < rows.length; i++) {
-                    const row = rows[i].trim();
-                    if(!row) continue;
-                    const cols = row.split(',');
-                    if(cols.length < 12) continue; 
-
-                    let monto = parseFloat(cols[9]) || 0;
-                    if(monto <= 0) continue;
-
-                    let fechaRaw = cols[1]; 
-                    let soloFechaCSV = new Date().toISOString().split('T')[0]; 
-                    if(fechaRaw && fechaRaw.length === 8) {
-                        soloFechaCSV = `${fechaRaw.slice(4,8)}-${fechaRaw.slice(2,4)}-${fechaRaw.slice(0,2)}`;
-                    }
-                    
-                    let descUpper = (cols[10] || "").toUpperCase();
-                    let plataforma = 'Bancolombia'; 
-                    if (descUpper.includes('CORRESP')) {
-                        plataforma = 'Corresponsal';
-                    } else if (descUpper.includes('NEQUI')) {
-                        plataforma = 'Nequi';
-                    }
-
-                    let refCol = (cols[11] || "").replace(/"/g, ''); 
-
-                    transferenciasNuevas.push({
-                        monto: monto, 
-                        fecha_pago: soloFechaCSV, 
-                        hora_pago: null, 
-                        plataforma: plataforma, 
-                        referencia: refCol, 
-                        estado: 'LIBRE'
-                    });
-                }
-            }
-        } // Fin del ciclo de archivos
-
-        if(transferenciasNuevas.length === 0) {
-            throw new Error("No se encontraron transferencias válidas en los archivos.");
-        }
-
-        // Se envía a tu API api/admin/subir-bancos.js
-        const req = await fetch('/api/admin/subir-bancos', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                transferencias: transferenciasNuevas,
-                contrasena: localStorage.getItem(STORAGE_KEY)
-            })
-        });
-        const res = await req.json();
-
-        if(res.status === 'ok') {
-            showModal('Procesado', res.mensaje);
-            fileInput.value = ""; 
-        } else {
-            showModal('Error al subir', res.mensaje);
-        }
-
-    } catch(error) {
-        showModal('Error', error.message || 'No se pudo procesar el archivo.');
-    } finally {
-        btn.textContent = txtOriginal; 
-        btn.disabled = false;
-    }
-}
-
 // ==========================================
     // HISTORIAL GLOBAL DE ÚLTIMOS MOVIMIENTOS
     // ==========================================

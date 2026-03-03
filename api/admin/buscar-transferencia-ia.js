@@ -27,7 +27,53 @@ export default async function handler(req, res) {
 
     if (error) throw error;
     if (!candidatas || candidatas.length === 0) {
-      return res.status(404).json({ status: 'error', mensaje: `No hay pagos LIBRES de $${monto} el ${fecha_pago}. Si el comprobante es de HOY, sincroniza Bancolombia primero.` });
+      // Diagnóstico: buscar la misma transferencia en cualquier estado usando matching por hora
+      const { data: todas } = await supabase
+        .from('transferencias')
+        .select('id, monto, fecha_pago, hora_pago, referencia, plataforma, estado')
+        .eq('fecha_pago', fecha_pago)
+        .eq('monto', Number(monto));
+
+      if (todas && todas.length > 0) {
+        // Aplicar misma lógica de matching para encontrar la correcta (no una al azar)
+        let matchExacta = null;
+        if (referencia && referencia !== '0') {
+          const refLimpia = String(referencia).replace(/\D/g, '');
+          matchExacta = todas.find(c => String(c.referencia).includes(referencia) || (refLimpia.length > 4 && String(c.referencia).includes(refLimpia)));
+        }
+        if (!matchExacta && hora_pago) {
+          const horaMinuto = hora_pago.substring(0, 5);
+          matchExacta = todas.find(c => c.hora_pago && c.hora_pago.startsWith(horaMinuto));
+        }
+        const t = matchExacta || todas[0];
+        return res.status(404).json({
+          status: 'error',
+          mensaje: `La transferencia de $${monto} del ${fecha_pago} ya está en estado "${t.estado}" (Ref: ${t.referencia}). No puede reutilizarse.`
+        });
+      }
+
+      // ¿Existe con fecha cercana (±1 día)?
+      const fechaObj = new Date(fecha_pago + 'T12:00:00');
+      const fechaAntes = new Date(fechaObj); fechaAntes.setDate(fechaAntes.getDate() - 1);
+      const fechaDespues = new Date(fechaObj); fechaDespues.setDate(fechaDespues.getDate() + 1);
+      const fA = fechaAntes.toISOString().split('T')[0];
+      const fD = fechaDespues.toISOString().split('T')[0];
+
+      const { data: cercanas } = await supabase
+        .from('transferencias')
+        .select('id, monto, fecha_pago, hora_pago, referencia, plataforma, estado')
+        .in('fecha_pago', [fA, fD])
+        .eq('monto', Number(monto));
+
+      if (cercanas && cercanas.length > 0) {
+        const t = cercanas[0];
+        return res.status(404).json({
+          status: 'error',
+          mensaje: `Posible coincidencia: $${monto} encontrado el ${t.fecha_pago} (estado: ${t.estado}, ref: ${t.referencia}). La fecha del comprobante (${fecha_pago}) no coincide exactamente con la fecha guardada.`
+        });
+      }
+
+      return res.status(404).json({ status: 'error', mensaje: `No hay pagos de $${monto} el ${fecha_pago}. Verifica que esté cargada con Carga IA.` });
     }
 
     let match = null;
@@ -66,6 +112,14 @@ export default async function handler(req, res) {
         const diferencia = Math.abs(minTotalesIA - minTotalesBD);
         return diferencia <= 60; 
       });
+    }
+
+    // 🛡️ INTENTO 4: Hora exacta (mismo minuto) con cualquier plataforma
+    // Cubre el caso Nequi->Bancolombia cuando la plataforma guardada no es "Bancolombia"
+    // (p.ej. el extracto decía "Transferencia nequi bancolombi" y la IA lo clasificó como "Nequi")
+    if (!match && hora_pago) {
+      const horaMinuto = hora_pago.substring(0, 5);
+      match = candidatas.find(c => c.hora_pago && c.hora_pago.startsWith(horaMinuto));
     }
 
     if (match) {
