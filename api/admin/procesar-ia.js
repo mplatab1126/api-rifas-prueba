@@ -97,15 +97,22 @@ export default async function handler(req, res) {
                     coinciden = digitosNueva.slice(-4) === digitosExist.slice(-4);
                 }
             } else if (plataformaNueva.includes('bancolombia') || plataformaExist.includes('bancolombia')) {
-                // Bancolombia: las referencias entre la app del cliente y el extracto SVN son distintas
-                // (p.ej. "0000049000" vs "86096513013"), así que usamos la hora como criterio principal
+                // Bancolombia: las referencias entre la app del cliente y el extracto SVN pueden diferir
+                // (p.ej. "0000049000" vs "86096513013"), así que usamos la hora como criterio secundario.
+                // EXCEPCIÓN: si ambas referencias son numéricas largas (≥7 dígitos, ej: teléfonos Nequi)
+                // y son distintas, son pagadores diferentes — NO usar el minuto como criterio.
+                const refNueva = String(datos.referencia).replace(/\D/g, '');
+                const refExistente = String(tExist.referencia).replace(/\D/g, '');
                 const refExacta = String(datos.referencia).trim() === String(tExist.referencia).trim();
                 if (refExacta) {
                     coinciden = true;
                 } else if (datos.hora_pago && tExist.hora_pago) {
-                    // Mismo minuto exacto → misma transferencia aunque el número de comprobante difiera
-                    const mismoMinuto = datos.hora_pago.substring(0, 5) === tExist.hora_pago.substring(0, 5);
-                    coinciden = mismoMinuto;
+                    const ambasConReferencia = refNueva.length >= 7 && refExistente.length >= 7;
+                    if (!ambasConReferencia) {
+                        // Solo usar el minuto como criterio cuando no hay referencias únicas identificables
+                        const mismoMinuto = datos.hora_pago.substring(0, 5) === tExist.hora_pago.substring(0, 5);
+                        coinciden = mismoMinuto;
+                    }
                 }
             } else {
                 coinciden = String(datos.referencia).trim() === String(tExist.referencia).trim();

@@ -1754,11 +1754,267 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         }
     }
 
-    // Cierra el menú desplegable si hacen clic afuera para que no estorbe
+    // Cierra los menús desplegables de asesores si hacen clic afuera
     document.addEventListener('click', function(event) {
         const dropdown = document.getElementById('dropdown-asesores');
         const container = document.getElementById('asesor-dropdown-container');
         if (dropdown && container && !container.contains(event.target)) {
             dropdown.style.display = 'none';
         }
+
+        const lbDropdown = document.getElementById('lb-dropdown-asesores');
+        const lbContainer = document.getElementById('lb-asesor-dropdown-container');
+        if (lbDropdown && lbContainer && !lbContainer.contains(event.target)) {
+            lbDropdown.style.display = 'none';
+        }
     });
+
+    // ==========================================
+    // LISTA DE BOLETAS VENDIDAS
+    // ==========================================
+    let _listaBoletasCompleta = [];
+
+    async function cargarListaBoletas() {
+        const contenedor = document.getElementById('lb-tabla-render');
+        const contador = document.getElementById('lb-contador');
+        contenedor.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem; padding:30px 0;">Cargando...</p>';
+        contador.textContent = '';
+
+        const pwd = localStorage.getItem(STORAGE_KEY) || '';
+        try {
+            const res = await fetch('/api/admin/lista-boletas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contrasena: pwd })
+            });
+            const data = await res.json();
+            if (data.status !== 'ok') throw new Error(data.mensaje || 'Error desconocido');
+
+            _listaBoletasCompleta = data.lista;
+            poblarFiltroAsesorLB(data.lista);
+            filtrarListaBoletas();
+        } catch (e) {
+            contenedor.innerHTML = `<p style="text-align:center; color:var(--danger); font-size:0.85rem; padding:20px 0;">❌ ${e.message}</p>`;
+        }
+    }
+
+    function poblarFiltroAsesorLB(lista) {
+        const dropdown = document.getElementById('lb-dropdown-asesores');
+        const asesoresUnicos = [...new Set(lista.map(b => b.asesor).filter(a => a && a !== '—'))].sort();
+
+        let html = `<label style="display:flex; gap:8px; margin-bottom:8px; cursor:pointer; color:var(--ink); font-weight:600;">
+            <input type="checkbox" id="lb-chk-all" checked onchange="lbToggleAllAsesores(this)" style="accent-color:var(--accent);"> Seleccionar Todos
+        </label><hr style="border:0; border-top:1px solid var(--ring); margin:8px 0;">`;
+
+        asesoresUnicos.forEach(a => {
+            html += `<label style="display:flex; gap:8px; margin-bottom:6px; cursor:pointer; font-size:0.85rem; color:var(--ink-2);">
+                <input type="checkbox" value="${a}" class="lb-asesor-chk" checked onchange="lbVerificarAsesores()" style="accent-color:var(--accent);"> ${a}
+            </label>`;
+        });
+
+        dropdown.innerHTML = html;
+        lbActualizarLabel();
+    }
+
+    function lbToggleAllAsesores(source) {
+        document.querySelectorAll('.lb-asesor-chk').forEach(chk => chk.checked = source.checked);
+        lbActualizarLabel();
+        filtrarListaBoletas();
+    }
+
+    function lbVerificarAsesores() {
+        const todos = document.querySelectorAll('.lb-asesor-chk');
+        const todosChecked = Array.from(todos).every(c => c.checked);
+        const chkAll = document.getElementById('lb-chk-all');
+        if (chkAll) chkAll.checked = todosChecked;
+        lbActualizarLabel();
+        filtrarListaBoletas();
+    }
+
+    function lbActualizarLabel() {
+        const todos = document.querySelectorAll('.lb-asesor-chk');
+        const seleccionados = Array.from(todos).filter(c => c.checked).length;
+        const lbl = document.getElementById('lb-lbl-asesores');
+        if (!lbl) return;
+        if (seleccionados === todos.length) {
+            lbl.textContent = 'Todos los asesores ▼';
+        } else if (seleccionados === 0) {
+            lbl.textContent = 'Ninguno seleccionado ▼';
+        } else {
+            lbl.textContent = `${seleccionados} asesores ▼`;
+        }
+    }
+
+    function filtrarListaBoletas() {
+        const texto = (document.getElementById('lb-filtro-texto').value || '').toLowerCase().trim();
+        const tipo = document.getElementById('lb-filtro-tipo').value;
+        const chks = document.querySelectorAll('.lb-asesor-chk:checked');
+        const asesoresSeleccionados = Array.from(chks).map(c => c.value);
+
+        let filtrada = _listaBoletasCompleta;
+
+        if (tipo) filtrada = filtrada.filter(b => b.tipo === tipo);
+
+        if (asesoresSeleccionados.length > 0 && asesoresSeleccionados.length < document.querySelectorAll('.lb-asesor-chk').length) {
+            filtrada = filtrada.filter(b => asesoresSeleccionados.includes(b.asesor));
+        }
+
+        if (texto) {
+            filtrada = filtrada.filter(b =>
+                String(b.numero).includes(texto) ||
+                b.nombre.toLowerCase().includes(texto) ||
+                b.telefono.includes(texto) ||
+                (b.asesor || '').toLowerCase().includes(texto)
+            );
+        }
+
+        renderTablaListaBoletas(filtrada);
+    }
+
+    function lbFormatFecha(isoStr) {
+        if (!isoStr) return '—';
+        const d = new Date(isoStr);
+        const dia = String(d.getDate()).padStart(2,'0');
+        const mes = String(d.getMonth()+1).padStart(2,'0');
+        const anio = d.getFullYear();
+        const h = String(d.getHours()).padStart(2,'0');
+        const min = String(d.getMinutes()).padStart(2,'0');
+        return `${dia}/${mes}/${anio} ${h}:${min}`;
+    }
+
+    function renderTablaListaBoletas(lista) {
+        const contenedor = document.getElementById('lb-tabla-render');
+        const contador = document.getElementById('lb-contador');
+
+        if (!lista.length) {
+            contador.textContent = '';
+            contenedor.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem; padding:30px 0;">No hay boletas que coincidan con los filtros.</p>';
+            return;
+        }
+
+        // Agrupar por teléfono del cliente
+        const grupos = {};
+        lista.forEach(b => {
+            const key = b.telefono || `_sin_${b.numero}`;
+            if (!grupos[key]) {
+                grupos[key] = { telefono: b.telefono, nombre: b.nombre, boletas: [], fechaMasAntigua: null, asesores: new Set() };
+            }
+            grupos[key].boletas.push(b);
+            if (b.asesor && b.asesor !== '—') grupos[key].asesores.add(b.asesor);
+            if (b.fecha_venta) {
+                if (!grupos[key].fechaMasAntigua || new Date(b.fecha_venta) < new Date(grupos[key].fechaMasAntigua)) {
+                    grupos[key].fechaMasAntigua = b.fecha_venta;
+                }
+            }
+        });
+
+        // Ordenar grupos por la boleta más antigua del cliente
+        const gruposOrdenados = Object.values(grupos).sort((a, b) => {
+            if (!a.fechaMasAntigua) return 1;
+            if (!b.fechaMasAntigua) return -1;
+            return new Date(a.fechaMasAntigua) - new Date(b.fechaMasAntigua);
+        });
+
+        const totalClientes = gruposOrdenados.length;
+        contador.textContent = `${totalClientes} cliente${totalClientes !== 1 ? 's' : ''} · ${lista.length} boleta${lista.length !== 1 ? 's' : ''}`;
+
+        const tipoBadge = { grande: '🏠', diaria2: '🎯', diaria3: '🎯' };
+        const tipoColor = { grande: 'var(--pill)', diaria2: '#e8f5e9', diaria3: '#e3f2fd' };
+        const tipoTextColor = { grande: 'var(--ink-2)', diaria2: '#1b5e20', diaria3: '#0d47a1' };
+
+        let html = '<div style="overflow-x:auto;">';
+        html += '<table style="width:100%; border-collapse:collapse; font-size:0.85rem;">';
+        html += '<thead><tr style="border-bottom:2px solid var(--ring-strong); color:var(--muted); font-weight:600; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.04em;">';
+        html += '<th style="padding:8px 6px; text-align:center;">📞</th>';
+        html += '<th style="padding:8px 6px; text-align:left;">Boletas</th>';
+        html += '<th style="padding:8px 6px; text-align:left;">Nombre</th>';
+        html += '<th style="padding:8px 6px; text-align:left;">Teléfono</th>';
+        html += '<th style="padding:8px 6px; text-align:left;">Primera Compra</th>';
+        html += '<th style="padding:8px 6px; text-align:left;">Asesor(es)</th>';
+        html += '</tr></thead><tbody>';
+
+        gruposOrdenados.forEach((g, i) => {
+            // Un grupo se considera "llamado" si TODAS sus boletas tienen aviso
+            const todasLlamadas = g.boletas.every(b => b.llamada);
+            const algunaLlamada = g.boletas.some(b => b.llamada);
+            // Tooltip: quién llamó y cuándo (primera boleta con aviso)
+            const primeraConAviso = g.boletas.find(b => b.llamada);
+            const tooltipLlamada = primeraConAviso
+                ? `${primeraConAviso.llamada_asesor || '?'} · ${lbFormatFecha(primeraConAviso.llamada_fecha)}`
+                : '';
+            // Números de boletas para el toggle (todas del grupo)
+            const numerosGrupo = JSON.stringify(g.boletas.map(b => ({ numero: b.numero, telefono: b.telefono })));
+
+            const bgRow = todasLlamadas
+                ? '#f0fdf4'
+                : algunaLlamada
+                    ? '#fffbeb'
+                    : (i % 2 === 0 ? '#fff' : 'var(--bg)');
+
+            // Boletas ordenadas por fecha (más antigua primero) dentro del grupo
+            const boletasOrdenadas = [...g.boletas].sort((a, b) => {
+                if (!a.fecha_venta) return 1;
+                if (!b.fecha_venta) return -1;
+                return new Date(a.fecha_venta) - new Date(b.fecha_venta);
+            });
+
+            const boletasPills = boletasOrdenadas.map(b => {
+                const llamadaBorde = b.llamada ? `outline:2px solid #16a34a;` : '';
+                return `<span style="display:inline-block; font-weight:700; font-size:0.95rem; background:${tipoColor[b.tipo] || 'var(--pill)'}; color:${tipoTextColor[b.tipo] || 'var(--ink)'}; padding:2px 10px; border-radius:20px; margin:2px 2px; white-space:nowrap; ${llamadaBorde}">${b.numero} ${tipoBadge[b.tipo] || ''}</span>`;
+            }).join('');
+
+            const asesoresPills = [...g.asesores].map(a =>
+                `<span style="display:inline-block; font-size:0.78rem; background:#e8f5e9; color:#1b5e20; padding:2px 8px; border-radius:20px; margin:2px 2px; font-weight:500; white-space:nowrap;">${a}</span>`
+            ).join('') || '<span style="color:var(--muted)">—</span>';
+
+            // Botón de llamada: marca/desmarca todas las boletas del grupo
+            const btnLlamada = todasLlamadas
+                ? `<button onclick="lbToggleLlamada(this, ${numerosGrupo.replace(/"/g, '&quot;')}, false)" title="Desmarcar llamada\n${tooltipLlamada}" style="border:none; background:none; cursor:pointer; font-size:1.3rem; line-height:1;">✅</button>`
+                : `<button onclick="lbToggleLlamada(this, ${numerosGrupo.replace(/"/g, '&quot;')}, true)" title="Marcar como llamado" style="border:none; background:none; cursor:pointer; font-size:1.3rem; line-height:1; opacity:0.3;">☑️</button>`;
+
+            html += `<tr style="background:${bgRow}; border-bottom:1px solid var(--ring); transition:background 0.3s;">`;
+            html += `<td style="padding:9px 6px; text-align:center;">${btnLlamada}${tooltipLlamada ? `<div style="font-size:0.68rem; color:var(--muted); margin-top:2px; line-height:1.2;">${tooltipLlamada}</div>` : ''}</td>`;
+            html += `<td style="padding:9px 6px; min-width:120px;"><div style="display:flex; flex-wrap:wrap; gap:2px;">${boletasPills}</div></td>`;
+            html += `<td style="padding:9px 6px; font-weight:500; min-width:130px;">${g.nombre || '—'}</td>`;
+            html += `<td style="padding:9px 6px; color:var(--ink-2); white-space:nowrap;">${g.telefono || '—'}</td>`;
+            html += `<td style="padding:9px 6px; color:var(--ink-2); white-space:nowrap;">${lbFormatFecha(g.fechaMasAntigua)}</td>`;
+            html += `<td style="padding:9px 6px;"><div style="display:flex; flex-wrap:wrap; gap:2px;">${asesoresPills}</div></td>`;
+            html += '</tr>';
+        });
+
+        html += '</tbody></table></div>';
+        contenedor.innerHTML = html;
+    }
+
+    async function lbToggleLlamada(btn, boletas, marcar) {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+
+        const pwd = localStorage.getItem(STORAGE_KEY) || '';
+        const accion = marcar ? 'marcar' : 'desmarcar';
+
+        try {
+            // Marcar/desmarcar cada boleta del grupo en paralelo
+            await Promise.all(boletas.map(b =>
+                fetch('/api/admin/marcar-llamada', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contrasena: pwd, boleta: b.numero, telefono: b.telefono, accion })
+                })
+            ));
+
+            // Actualizar en _listaBoletasCompleta para no recargar toda la tabla
+            _listaBoletasCompleta.forEach(b => {
+                if (boletas.some(x => String(x.numero) === String(b.numero))) {
+                    b.llamada = marcar;
+                    b.llamada_asesor = marcar ? nombreAsesorActual : null;
+                    b.llamada_fecha = marcar ? new Date().toISOString() : null;
+                }
+            });
+
+            filtrarListaBoletas();
+        } catch (e) {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        }
+    }

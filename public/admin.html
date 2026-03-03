@@ -49,6 +49,7 @@
       <span class="nav-item" onclick="activateAppMode(); switchView('view-carga-masiva')">Carga IA</span>
       <span class="nav-item" onclick="window.location.href='/rendimiento'">Rendimiento</span>
       <span class="nav-item" onclick="activateAppMode(); switchView('view-movimientos'); cargarUltimosMovimientos();">Movimientos</span>
+      <span class="nav-item" onclick="activateAppMode(); switchView('view-lista-boletas'); cargarListaBoletas();">Lista Boletas</span>
       <span class="nav-item" onclick="window.location.href='/caja.html'">Cuadre de Caja</span>
       <span id="btnLogout" class="nav-item nav-salir">Salir</span>
     </div>
@@ -359,6 +360,39 @@
         </div>
       </div>
     </div>
+    <div id="view-lista-boletas" class="view-section">
+      <div class="section-card">
+        <div class="section-title">📋 Lista de Boletas Vendidas</div>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0;">Todas las boletas asignadas, ordenadas de la más antigua a la más reciente.</p>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px;">
+          <div class="field" style="flex:1; min-width:150px;">
+            <input type="text" id="lb-filtro-texto" class="pill" placeholder="Buscar nombre, teléfono, boleta..." oninput="filtrarListaBoletas()">
+          </div>
+          <div class="field" style="min-width:140px;">
+            <select id="lb-filtro-tipo" class="pill" onchange="filtrarListaBoletas()">
+              <option value="">Todos los tipos</option>
+              <option value="grande">Boletas grandes (4 cifras)</option>
+              <option value="diaria2">Diarias 2 cifras</option>
+              <option value="diaria3">Diarias 3 cifras</option>
+            </select>
+          </div>
+          <div id="lb-asesor-dropdown-container" style="min-width:180px; position:relative;">
+            <div class="field" style="cursor:pointer;" onclick="document.getElementById('lb-dropdown-asesores').style.display = document.getElementById('lb-dropdown-asesores').style.display === 'block' ? 'none' : 'block'">
+              <div class="pill" id="lb-lbl-asesores" style="user-select:none; font-size:0.85rem; padding:2px 0;">Todos los asesores ▼</div>
+            </div>
+            <div id="lb-dropdown-asesores" style="display:none; position:absolute; top:100%; left:0; width:220px; background:#fff; border:1px solid var(--ring-strong); border-radius:8px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 4px 12px rgba(0,0,0,0.15); padding:12px; margin-top:4px;"></div>
+          </div>
+          <button onclick="cargarListaBoletas()" style="height:44px; padding:0 16px; border-radius:10px; border:1px solid var(--ring-strong); background:#fff; cursor:pointer; font-family:inherit; font-size:0.85rem;">↻ Actualizar</button>
+        </div>
+
+        <div id="lb-contador" style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;"></div>
+        <div id="lb-tabla-render" style="margin-top:5px;">
+          <p style="text-align:center; color:var(--muted); font-size:0.85rem; padding:30px 0;">Presiona "Lista Boletas" para cargar.</p>
+        </div>
+      </div>
+    </div>
+
    </div>
   <div id="modalConfirmAction" class="modal-overlay">
     <div class="modal-card">
