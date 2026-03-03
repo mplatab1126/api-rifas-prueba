@@ -949,18 +949,68 @@
         body.appendChild(div);
         body.scrollTop = body.scrollHeight;
       }
-      function abrirOraculo() { document.getElementById('modal-oracle').style.display = 'flex'; document.getElementById('input-oracle-text').focus(); }
+      function abrirOraculo() {
+        document.getElementById('modal-oracle').style.display = 'flex';
+        document.getElementById('oracle-result').style.display = 'none';
+        document.getElementById('oracle-suggestions').innerHTML = '';
+        document.getElementById('oracle-msg').innerText = '';
+        document.getElementById('input-oracle-text').value = '';
+        document.getElementById('input-oracle-text').focus();
+      }
       function cerrarOraculo() { document.getElementById('modal-oracle').style.display = 'none'; }
-      function consultarGemini() {
+
+      async function consultarGemini() {
         const texto = document.getElementById('input-oracle-text').value.trim();
-        if(texto.length < 3) return alert("Por favor escribe un poco más sobre tu sueño o señal.");
-        document.getElementById('btn-ask-oracle').disabled = true;
+        if (texto.length < 3) return alert("Por favor escribe un poco más sobre tu sueño o señal.");
+
+        const btn = document.getElementById('btn-ask-oracle');
+        btn.disabled = true;
+        btn.textContent = '🔮 Consultando los astros...';
+
         document.getElementById('oracle-result').style.display = 'block';
-        document.getElementById('oracle-msg').innerText = "Conectando con los astros...";
-        setTimeout(() => {
-           document.getElementById('oracle-msg').innerText = "🔮 La IA está en mantenimiento, pero las estrellas dicen que debes elegir tu número favorito hoy.";
-           document.getElementById('btn-ask-oracle').disabled = false;
-        }, 1500);
+        document.getElementById('oracle-msg').innerText = '✨ Interpretando tu señal...';
+        document.getElementById('oracle-suggestions').innerHTML = '';
+
+        try {
+          const req = await fetch('/api/diarias/oraculo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ texto })
+          });
+          const res = await req.json();
+
+          if (res.status === 'ok') {
+            document.getElementById('oracle-msg').innerText = res.interpretacion;
+
+            const sugsDiv = document.getElementById('oracle-suggestions');
+            sugsDiv.innerHTML = '<p style="font-size:12px; color:#64748b; font-weight:700; margin:10px 0 8px 0; text-transform:uppercase; letter-spacing:0.5px;">Tus números de la suerte:</p>';
+            res.numeros.forEach(num => {
+              const numStr = String(num).padStart(2, '0');
+              const btnNum = document.createElement('button');
+              btnNum.className = 'btn-oracle-num';
+              btnNum.textContent = numStr;
+              btnNum.title = 'Toca para seleccionar este número';
+              btnNum.onclick = () => {
+                cerrarOraculo();
+                const btnGrid = document.getElementById('btn-' + numStr);
+                if (btnGrid && btnGrid.classList.contains('disponible')) {
+                  btnGrid.click();
+                  btnGrid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                  alert('El número ' + numStr + ' ya está ocupado. ¡Elige otro número de la suerte!');
+                }
+              };
+              sugsDiv.appendChild(btnNum);
+            });
+          } else {
+            document.getElementById('oracle-msg').innerText = res.mensaje || '🔮 Las estrellas están nubladas. Intenta de nuevo.';
+          }
+        } catch (e) {
+          document.getElementById('oracle-msg').innerText = '🔮 Error de conexión. Intenta de nuevo.';
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = '✨ Interpretar Señales';
       }
       /* --- JS COPIAR NÚMERO DE CUENTA --- */
       function copiarCuenta() {

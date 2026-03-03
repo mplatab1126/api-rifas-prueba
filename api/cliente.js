@@ -72,7 +72,7 @@ export default async function handler(req, res) {
 
     const resumen = boletas.map(b =>
       `🎟️ *Boleta ${b.numero}* → Restante: *${formatearPesos(b.saldo_restante)}*`
-    ).join('\n');
+    ).join('\n\n');
 
     // 8. Le respondemos a Chatea Pro con el paquete listo y valores COMPLETOS
     res.status(200).json({

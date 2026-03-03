@@ -23,9 +23,8 @@
       <p style="color:rgba(255,255,255,0.6); font-size:0.95rem; margin:14px 0 0 0; letter-spacing:0.18em; text-transform:uppercase; font-weight:400;">Escribe tu contraseña de asesor</p>
     </div>
     <div style="width:90%; max-width:580px; display:flex; flex-direction:column; align-items:center; gap:14px;">
-      <input id="loginPwd" type="password" placeholder="Contraseña..."
-        onkeydown="if(event.key==='Enter') document.getElementById('btnLogin').click()"
-        style="width:100%; box-sizing:border-box; padding:18px 24px; border-radius:100px; border:1.5px solid rgba(255,255,255,0.25); background:rgba(255,255,255,0.12); backdrop-filter:blur(8px); color:#fff; font-size:1.1rem; font-family:inherit; text-align:center; outline:none; letter-spacing:0.1em;">
+      <input id="loginPwd" type="password" placeholder="Escribe tu contraseña..."
+        onkeydown="if(event.key==='Enter') document.getElementById('btnLogin').click()">
       <button id="btnLogin"
         style="width:100%; padding:16px; border-radius:100px; border:none; background:rgba(255,255,255,0.18); backdrop-filter:blur(8px); color:#fff; font-size:1rem; font-weight:600; font-family:inherit; cursor:pointer; letter-spacing:0.05em; transition:background 0.2s;"
         onmouseover="this.style.background='rgba(255,255,255,0.28)'" onmouseout="this.style.background='rgba(255,255,255,0.18)'">
@@ -360,6 +359,16 @@
     </div>
   </div>
 
+
+  <!-- Badge nombre del asesor (fijo arriba a la izquierda) -->
+  <div id="nombreAsesorBadge" style="display:none;"></div>
+
+  <!-- Badge de saldo del asesor (fijo arriba a la derecha) -->
+  <div id="saldoAsesor" style="display:none;">
+    <span id="saldoIcono">💰</span>
+    <span id="saldoCantidad">$0</span>
+    <button id="btnOcultarSaldo" onclick="toggleSaldoVisibilidad()">👁 <span id="btnOcultarTexto">Ocultar</span></button>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
