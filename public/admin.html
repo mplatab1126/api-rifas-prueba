@@ -53,6 +53,14 @@
       <span id="btnLogout" class="nav-item nav-salir">Salir</span>
     </div>
     <div id="searchFeedback" class="hint" style="margin: 5px 0 0 0; font-size:0.8rem; min-height: 20px;"></div>
+    <div id="badgesRow">
+      <div id="nombreAsesorBadge"></div>
+      <div id="saldoAsesor">
+        <span id="saldoIcono">💰</span>
+        <span id="saldoCantidad">$0</span>
+        <button id="btnOcultarSaldo" onclick="toggleSaldoVisibilidad()">👁 <span id="btnOcultarTexto">Ocultar</span></button>
+      </div>
+    </div>
   </div>
 
   <div class="shell" id="appShell">
@@ -359,16 +367,6 @@
     </div>
   </div>
 
-
-  <!-- Badge nombre del asesor (fijo arriba a la izquierda) -->
-  <div id="nombreAsesorBadge" style="display:none;"></div>
-
-  <!-- Badge de saldo del asesor (fijo arriba a la derecha) -->
-  <div id="saldoAsesor" style="display:none;">
-    <span id="saldoIcono">💰</span>
-    <span id="saldoCantidad">$0</span>
-    <button id="btnOcultarSaldo" onclick="toggleSaldoVisibilidad()">👁 <span id="btnOcultarTexto">Ocultar</span></button>
-  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>

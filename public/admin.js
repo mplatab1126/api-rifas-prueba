@@ -49,12 +49,9 @@ const $ = id => document.getElementById(id);
         nombreAsesorActual = nombre;
         const saldo = parseInt(localStorage.getItem('saldo_asesor_' + nombre) || '0');
         actualizarDisplaySaldo(saldo);
-        const badge = document.getElementById('saldoAsesor');
-        if (badge) badge.style.display = 'flex';
         const nombreBadge = document.getElementById('nombreAsesorBadge');
         if (nombreBadge) {
             nombreBadge.innerHTML = '👤 ' + nombre;
-            nombreBadge.style.display = 'flex';
         }
     }
 
