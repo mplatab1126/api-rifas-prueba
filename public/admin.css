@@ -162,6 +162,17 @@
     .mode-switch { display: flex; background: #fff; border-radius: 12px; padding: 4px; margin-bottom: 20px; border: 1px solid var(--ring); box-shadow: var(--shadow); }
     .mode-btn { flex: 1; border: none; background: transparent; padding: 10px; border-radius: 8px; font-weight: 500; color: var(--muted); cursor: pointer; transition: all 0.2s; font-size: 0.9rem; font-family: inherit;}
     .mode-btn.active { background: var(--pill); color: var(--accent-2); border: 1px solid var(--ring-strong); font-weight: 600; }
+
+    /* Toggle modo distribución de abonos */
+    .abono-mode-switch { display: flex; background: var(--bg); border-radius: 10px; padding: 3px; border: 1px solid var(--ring-strong); gap: 3px; }
+    .abono-mode-btn { flex: 1; border: none; background: transparent; padding: 8px 10px; border-radius: 8px; font-weight: 500; color: var(--muted); cursor: pointer; transition: all 0.2s; font-size: 0.82rem; font-family: inherit; white-space: nowrap; }
+    .abono-mode-btn.active { background: #fff; color: var(--accent-2); border: 1px solid var(--ring-strong); font-weight: 600; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+
+    /* Resumen de validación de montos manuales */
+    .manual-resumen { font-size: 0.83rem; font-weight: 500; padding: 8px 12px; border-radius: 8px; margin-top: 4px; line-height: 1.4; }
+    .manual-resumen.ok  { background: #edfaf3; color: #2d6b25; border: 1px solid #b6e4c8; }
+    .manual-resumen.warn { background: #fff8e6; color: #8a5d00; border: 1px solid #f5d97a; }
+    .manual-resumen.err  { background: var(--danger-bg); color: var(--danger); border: 1px solid #f5b8b5; }
     
     .ocr-drop { border: 1px dashed var(--ring-strong); background: var(--bg); border-radius: 12px; padding: 16px; text-align: center; font-weight: 500; color: var(--muted); cursor: pointer; margin-bottom: 4px; font-size: 0.85rem; transition: 0.2s; }
     .ocr-drop:hover { border-color: var(--accent); background: var(--pill); color: var(--ink-2); }

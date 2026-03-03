@@ -323,9 +323,29 @@
         <div class="section-card">
             <div class="section-title">NUEVO ABONO</div>
             <div class="vertical-form">
-               <p id="infoDivisionAbono" style="font-size:0.85rem; margin-top:-10px; margin-bottom:5px;"></p>
-               
-               <div><label>Valor total a repartir</label><div class="field"><input type="number" id="a_monto" class="pill" placeholder="0"></div></div>
+               <p id="infoDivisionAbono" style="font-size:0.85rem; margin-top:-10px; margin-bottom:0;"></p>
+
+               <!-- Toggle modo de distribución (solo visible con 2+ boletas) -->
+               <div id="toggleModoAbono" style="display:none;">
+                 <div class="abono-mode-switch">
+                   <button id="btnModoUniforme" class="abono-mode-btn active" onclick="setModoAbono('uniforme')">⚖️ Dividir uniformemente</button>
+                   <button id="btnModoManual" class="abono-mode-btn" onclick="setModoAbono('manual')">✏️ Definir por boleta</button>
+                 </div>
+               </div>
+
+               <!-- Campo total: siempre visible (etiqueta cambia según modo) -->
+               <div>
+                 <label id="labelMontoAbono">Valor total a repartir</label>
+                 <div class="field"><input type="number" id="a_monto" class="pill" placeholder="0" oninput="actualizarTotalManual()"></div>
+               </div>
+
+               <!-- Modo manual: un campo por boleta + barra de validación -->
+               <div id="bloqueMontosManual" style="display:none;">
+                 <label>Monto por boleta</label>
+                 <div id="montosManualContainer"></div>
+                 <div id="totalManualResumen"></div>
+               </div>
+
                <div><label>Método de pago</label><div class="field"><input id="a_metodo" list="l_metodos" class="pill" type="text"></div></div>
                <div>
                  <label>Referencia</label>

@@ -727,7 +727,14 @@ $('btnRegistrarVenta').onclick = async ()=>{
 
        for (let i=0; i < nums.length; i++) {
            try {
-               const req = await fetch('/api/admin/venta', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({...baseData, numeroBoleta: nums[i]}) });
+               // Solo la primera boleta consume y valida la transferencia.
+               // Las siguientes omiten el ID para no chocar con la validación de "ya asignada".
+               const ventaPayload = {
+                   ...baseData,
+                   numeroBoleta: nums[i],
+                   idTransferencia: i === 0 ? baseData.idTransferencia : ''
+               };
+               const req = await fetch('/api/admin/venta', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(ventaPayload) });
                const res = await req.json();
                if(res.status === 'ok') { ok++; actualizarSaldoAsesor(800); } else { fails++; detalleErrores.push(`Boleta ${nums[i]}: ${res.mensaje}`); }
            } catch(e) { fails++; detalleErrores.push(`Boleta ${nums[i]}: Error de conexión`); }
@@ -763,32 +770,63 @@ $('btnRegistrarVenta').onclick = async ()=>{
         const checkboxes = document.querySelectorAll('.boleta-pay-checkbox:checked');
         const boletasTarget = Array.from(checkboxes).map(c => c.value);
         if(boletasTarget.length === 0) return alert("Selecciona al menos una boleta.");
-        
-        const montoTotal = Number(document.getElementById('a_monto').value); 
-        const ref = document.getElementById('a_ref').value; 
+
+        const ref = document.getElementById('a_ref').value;
         const metodo = document.getElementById('a_metodo').value;
-        
-        if(montoTotal <= 0) return alert("El monto debe ser mayor a 0.");
-        
-        const montoPorBoleta = Math.floor(montoTotal / boletasTarget.length);
+
+        // Construir mapa de montos según el modo
+        let montosPorBoleta = {};
+        if (modoDistribucionAbono === 'manual' && boletasTarget.length > 1) {
+            const inputs = document.querySelectorAll('.monto-manual-input');
+            const totalTransferencia = Number(document.getElementById('a_monto').value) || 0;
+            let distribuido = 0;
+            let algoCero = false;
+            inputs.forEach(inp => {
+                const val = Number(inp.value) || 0;
+                if (val <= 0) algoCero = true;
+                montosPorBoleta[inp.dataset.boleta] = val;
+                distribuido += val;
+            });
+            if (algoCero) return alert("Todos los montos deben ser mayores a 0.");
+            if (totalTransferencia > 0 && distribuido !== totalTransferencia) {
+                const fmt = n => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(Math.abs(n));
+                const diff = totalTransferencia - distribuido;
+                if (diff > 0) return alert(`⚠️ Faltan ${fmt(diff)} por asignar. El total distribuido (${fmt(distribuido)}) debe ser igual al total de la transferencia (${fmt(totalTransferencia)}).`);
+                else return alert(`🛑 Te pasaste por ${fmt(diff)}. El total distribuido (${fmt(distribuido)}) no puede superar la transferencia (${fmt(totalTransferencia)}).`);
+            }
+        } else {
+            const montoTotal = Number(document.getElementById('a_monto').value);
+            if (montoTotal <= 0) return alert("El monto debe ser mayor a 0.");
+            const montoPorBoleta = Math.floor(montoTotal / boletasTarget.length);
+            boletasTarget.forEach(b => montosPorBoleta[b] = montoPorBoleta);
+        }
+
         const textoOriginal = btn.textContent; btn.textContent = 'Procesando...'; btn.disabled = true;
 
-        const basePayload = { 
-            metodoPago: metodo, 
-            referencia: ref || 'efectivo', 
-            esPendiente: esAbonoPendiente, 
+        const basePayload = {
+            metodoPago: metodo,
+            referencia: ref || 'efectivo',
+            esPendiente: esAbonoPendiente,
             contrasena: localStorage.getItem(STORAGE_KEY),
-            idTransferencia: document.getElementById('a_idTransferencia').value // <-- ESTO ES LO NUEVO
+            idTransferencia: document.getElementById('a_idTransferencia').value
         };
-      
+
         let ok = 0; let fails = 0;
-        let detalleErrores = []; 
+        let detalleErrores = [];
 
         for (let i=0; i < boletasTarget.length; i++) {
             try {
-               const req = await fetch('/api/admin/abono', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ ...basePayload, numeroBoleta: boletasTarget[i], valorAbono: montoPorBoleta }) });
+               // Solo la primera boleta consume y valida la transferencia (la marca como ASIGNADA).
+               // Las siguientes llevan la referencia de texto pero no re-validan el ID para evitar el falso error de "ya asignada".
+               const payload = {
+                   ...basePayload,
+                   numeroBoleta: boletasTarget[i],
+                   valorAbono: montosPorBoleta[boletasTarget[i]],
+                   idTransferencia: i === 0 ? basePayload.idTransferencia : ''
+               };
+               const req = await fetch('/api/admin/abono', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
                const res = await req.json();
-               
+
                if(res.status === 'ok') { ok++; actualizarSaldoAsesor(400); } else { fails++; detalleErrores.push(`Boleta ${boletasTarget[i]}: ${res.mensaje}`); }
             } catch(e) { fails++; detalleErrores.push(`Boleta ${boletasTarget[i]}: Error de conexión del servidor`); }
         }
@@ -799,11 +837,18 @@ $('btnRegistrarVenta').onclick = async ()=>{
             showModal('Éxito', `Abono registrado correctamente.`);
             // LIMPIEZA DE DATOS PRINCIPALES
             document.getElementById('a_monto').value = ''; document.getElementById('a_ref').value = ''; document.getElementById('a_metodo').value = '';
-            
-            // 🌟 NUEVO: LIMPIEZA DE BÚSQUEDA INTELIGENTE Y OCR DE ABONOS
-            document.getElementById('t_ref_abono').value=''; 
-            document.getElementById('t_monto_abono').value=''; 
-            document.getElementById('t_fecha_abono').value=''; 
+            // Resetear modo de distribución
+            modoDistribucionAbono = 'uniforme';
+            if(document.getElementById('montosManualContainer')) document.getElementById('montosManualContainer').innerHTML = '';
+            if(document.getElementById('toggleModoAbono')) document.getElementById('toggleModoAbono').style.display = 'none';
+            if(document.getElementById('bloqueMontosManual')) document.getElementById('bloqueMontosManual').style.display = 'none';
+            if(document.getElementById('bloqueMontoUniforme')) document.getElementById('bloqueMontoUniforme').style.display = 'block';
+            if(document.getElementById('btnModoUniforme')) { document.getElementById('btnModoUniforme').classList.add('active'); document.getElementById('btnModoManual').classList.remove('active'); }
+
+            // LIMPIEZA DE BÚSQUEDA INTELIGENTE Y OCR DE ABONOS
+            document.getElementById('t_ref_abono').value='';
+            document.getElementById('t_monto_abono').value='';
+            document.getElementById('t_fecha_abono').value='';
             document.getElementById('t_hora_abono').value='';
             if(document.getElementById('ocrStatusAbono')) document.getElementById('ocrStatusAbono').textContent='';
 
@@ -910,26 +955,104 @@ $('btnRegistrarVenta').onclick = async ()=>{
        verificarSeleccionAbonos();
     }
 
+    let modoDistribucionAbono = 'uniforme'; // 'uniforme' | 'manual'
+
+    function setModoAbono(modo) {
+        modoDistribucionAbono = modo;
+        document.getElementById('btnModoUniforme').classList.toggle('active', modo === 'uniforme');
+        document.getElementById('btnModoManual').classList.toggle('active', modo === 'manual');
+        document.getElementById('bloqueMontosManual').style.display = modo === 'manual' ? 'block' : 'none';
+        const lbl = document.getElementById('labelMontoAbono');
+        if (lbl) lbl.textContent = modo === 'manual' ? 'Total de la transferencia (referencia)' : 'Valor total a repartir';
+        if (modo === 'manual') renderMontosManual();
+        else { const r = document.getElementById('totalManualResumen'); if(r) r.innerHTML = ''; }
+    }
+
+    function renderMontosManual() {
+        const checkboxes = document.querySelectorAll('.boleta-pay-checkbox:checked');
+        const container = document.getElementById('montosManualContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        Array.from(checkboxes).forEach(cb => {
+            const boleta = cb.value;
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex; align-items:center; gap:8px; margin-bottom:8px;';
+            row.innerHTML = `
+                <span style="min-width:72px; font-weight:600; color:var(--ink); font-size:0.9rem;">Boleta ${boleta}</span>
+                <div class="field" style="flex:1; margin:0;">
+                  <input type="number" class="pill monto-manual-input" data-boleta="${boleta}" placeholder="0" min="0"
+                    oninput="actualizarTotalManual()" style="font-size:0.95rem;">
+                </div>`;
+            container.appendChild(row);
+        });
+        actualizarTotalManual();
+    }
+
+    function actualizarTotalManual() {
+        if (modoDistribucionAbono !== 'manual') return;
+        const inputs = document.querySelectorAll('.monto-manual-input');
+        const distribuido = Array.from(inputs).reduce((sum, inp) => sum + (Number(inp.value) || 0), 0);
+        const totalTransferencia = Number(document.getElementById('a_monto').value) || 0;
+        const restante = totalTransferencia - distribuido;
+        const resumen = document.getElementById('totalManualResumen');
+        const btn = document.getElementById('btnRegistrarAbono');
+        if (!resumen) return;
+
+        const fmt = n => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(Math.abs(n));
+
+        if (totalTransferencia === 0) {
+            resumen.innerHTML = '';
+            if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+            return;
+        }
+
+        if (restante === 0) {
+            resumen.innerHTML = `<div class="manual-resumen ok">✅ Todo distribuido correctamente — ${fmt(distribuido)}</div>`;
+            if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+        } else if (restante > 0) {
+            resumen.innerHTML = `<div class="manual-resumen warn">⚠️ Faltan <b>${fmt(restante)}</b> por asignar — se perderían sin ir a ninguna boleta.</div>`;
+            if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+        } else {
+            resumen.innerHTML = `<div class="manual-resumen err">🛑 Te pasaste por <b>${fmt(restante)}</b> — el total distribuido supera la transferencia.</div>`;
+            if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+        }
+    }
+
     function verificarSeleccionAbonos() {
         const checkboxes = document.querySelectorAll('.boleta-pay-checkbox:checked');
         const zonaPagos = document.getElementById('zonaPagosAbono');
         const lblInfo = document.getElementById('infoDivisionAbono');
+        const toggleModo = document.getElementById('toggleModoAbono');
 
         if (checkboxes.length > 0) {
             const yaVisible = zonaPagos.style.display === 'block';
-            zonaPagos.style.display = 'block'; // Muestra la zona de pago
-            if (!yaVisible) resetOcrZone('ocrDropAbono', 'ocrStatusAbono'); // Limpia al abrir
+            zonaPagos.style.display = 'block';
+            if (!yaVisible) { resetOcrZone('ocrDropAbono', 'ocrStatusAbono'); modoDistribucionAbono = 'uniforme'; }
+
+            const esMultiple = checkboxes.length > 1;
+            if (toggleModo) toggleModo.style.display = esMultiple ? 'block' : 'none';
+
+            if (!esMultiple) {
+                // Una sola boleta: volver a modo uniforme silenciosamente
+                setModoAbono('uniforme');
+            } else if (modoDistribucionAbono === 'manual') {
+                renderMontosManual();
+            }
+
             if (lblInfo) {
-                if(checkboxes.length === 1) {
+                if (checkboxes.length === 1) {
                     lblInfo.innerHTML = 'El abono irá 100% a la boleta <b>' + checkboxes[0].value + '</b>.';
                     lblInfo.style.color = 'var(--accent-2)';
-                } else {
+                } else if (modoDistribucionAbono === 'uniforme') {
                     lblInfo.innerHTML = '⚠️ El dinero se dividirá uniformemente entre <b>' + checkboxes.length + '</b> boletas.';
                     lblInfo.style.color = 'var(--danger)';
+                } else {
+                    lblInfo.innerHTML = '✏️ Definiendo montos individuales para <b>' + checkboxes.length + '</b> boletas.';
+                    lblInfo.style.color = 'var(--ink-2)';
                 }
             }
         } else {
-            zonaPagos.style.display = 'none'; // Esconde si todo está desmarcado
+            zonaPagos.style.display = 'none';
         }
     }
 
