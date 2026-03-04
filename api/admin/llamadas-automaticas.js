@@ -58,7 +58,13 @@ function formatearTelefono(telefono) {
 }
 
 export default async function handler(req, res) {
-  // Solo GET o POST (el cron de Vercel usa GET)
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
   if (req.method !== 'GET' && req.method !== 'POST') {
     return res.status(405).json({ error: 'Método no permitido' });
   }
@@ -69,15 +75,51 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'No autorizado' });
   }
 
+  // Modo prueba: ?test=true&telefono=3001234567
+  // Solo llama al número indicado, sin tocar clientes reales
+  const modoTest = req.query.test === 'true';
+  const telefonoTest = req.query.telefono || null;
+
+  if (modoTest && !telefonoTest) {
+    return res.status(400).json({ error: 'En modo test debes enviar ?test=true&telefono=TU_NUMERO' });
+  }
+
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
   const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-  const appUrl = process.env.APP_URL; // ej: https://tu-app.vercel.app
+  const appUrl = process.env.APP_URL;
 
   if (!appUrl) {
     return res.status(500).json({ error: 'Falta la variable de entorno APP_URL' });
   }
 
   try {
+    // Modo test: llama solo al número indicado con datos de ejemplo
+    if (modoTest) {
+      const telefonoE164 = formatearTelefono(telefonoTest);
+      if (!telefonoE164) return res.status(400).json({ error: 'Número de teléfono inválido' });
+
+      const params = new URLSearchParams({
+        nombre: 'Cliente Prueba',
+        boletas: '9999',
+        total: 'cien mil'
+      });
+      const twimlUrl = `${appUrl}/api/twiml/cobro?${params.toString()}`;
+
+      const llamada = await twilioClient.calls.create({
+        to: telefonoE164,
+        from: process.env.TWILIO_PHONE_NUMBER,
+        url: twimlUrl,
+        method: 'GET'
+      });
+
+      return res.status(200).json({
+        status: 'ok',
+        modo: 'TEST',
+        mensaje: `Llamada de prueba enviada a ${telefonoE164}`,
+        sid: llamada.sid
+      });
+    }
+
     // 1. Consultar todas las boletas grandes con saldo pendiente y con cliente asignado
     const { data: boletas, error: errorBoletas } = await supabase
       .from('boletas')
