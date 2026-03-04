@@ -345,7 +345,7 @@
       <div class="hero-title-area">
         <h1 style="font-size: 32px;">RIFA DE BOLETAS</h1>
         <div class="info-sorteo-container">
-          <div class="badge-sorteo">📅 JUEGA HOY MARTES 3 DE MARZO CON CHONTICO DÍA</div>
+          <div class="badge-sorteo" id="badge-sorteo-info">📅 CARGANDO...</div>
         </div>
       </div>
 
@@ -656,12 +656,41 @@
       const PRECIO_BOLETA = 20000;
       let numerosSeleccionados = []; 
 
+      let horaCierreSorteo = { h: 11, m: 0 }; // Fallback por defecto
+
       window.onload = function() {
-        iniciarTemporizador();
+        cargarConfigYArrancar();
         iniciarNotificacionesEnVivo();
         observarTarjetaNumeros(); 
         cargarDatosDesdeVercel(); 
       };
+
+      async function cargarConfigYArrancar() {
+        try {
+          const res = await fetch('/api/admin/nueva-rifa?tipo=2cifras');
+          const data = await res.json();
+          if (data.status === 'ok' && data.config) {
+            const cfg = data.config;
+
+            const badge = document.getElementById('badge-sorteo-info');
+            if (cfg.fecha_sorteo && cfg.loteria) {
+              badge.textContent = `📅 JUEGA EL ${cfg.fecha_sorteo} CON ${cfg.loteria}`;
+            } else {
+              badge.textContent = '📅 SORTEO PRÓXIMAMENTE';
+            }
+
+            if (cfg.hora_cierre) {
+              const partes = cfg.hora_cierre.split(':');
+              horaCierreSorteo = { h: parseInt(partes[0]) || 11, m: parseInt(partes[1]) || 0 };
+            }
+          } else {
+            document.getElementById('badge-sorteo-info').textContent = '📅 SORTEO PRÓXIMAMENTE';
+          }
+        } catch (e) {
+          document.getElementById('badge-sorteo-info').textContent = '📅 SORTEO PRÓXIMAMENTE';
+        }
+        iniciarTemporizador();
+      }
 
       /* --- JS OBSERVADOR EFECTO POP --- */
       function observarTarjetaNumeros() {
@@ -871,7 +900,7 @@
       /* --- JS TEMPORIZADOR Y NOTIFICACIONES MANTENIDOS --- */
       function iniciarTemporizador() {
         let cierre = new Date();
-        cierre.setHours(11, 0, 0, 0);
+        cierre.setHours(horaCierreSorteo.h, horaCierreSorteo.m, 0, 0);
 
         setInterval(() => {
           let actual = new Date().getTime();
