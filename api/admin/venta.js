@@ -131,8 +131,8 @@ export default async function handler(req, res) {
         saldo_restante: saldoRestante
     };
 
+    updatePayload.asesor = nombreAsesor;
     if (!esDiaria) {
-        updatePayload.asesor = nombreAsesor;
         updatePayload.fecha_venta = fechaVentaColombia;
     }
 

@@ -125,13 +125,12 @@ export default async function handler(req, res) {
       const precioInicial = tipo === '3cifras' ? 5000 : 20000;
       const resetPayload = {
         estado:           'Disponible',
-        nombre_cliente:   null,
+        nombre_cliente:   '',
         telefono_cliente: null,
         total_abonado:    0,
         saldo_restante:   precioInicial,
+        asesor:           null,
       };
-      // La columna 'asesor' solo existe en boletas_diarias (2 cifras), no en 3cifras
-      if (tipo === '2cifras') resetPayload.asesor = null;
 
       const { error: resetError } = await supabase
         .from(tabla)

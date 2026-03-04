@@ -64,14 +64,17 @@ export default async function handler(req, res) {
       estadoOriginal = 'Disponible';
     }
 
+    const liberarPayload = {
+      telefono_cliente: null,
+      estado: estadoOriginal,
+      total_abonado: 0,
+      saldo_restante: precioOriginal
+    };
+    if (longitud === 2 || longitud === 3) liberarPayload.asesor = null;
+
     const { error: errBoleta } = await supabase
       .from(tabla)
-      .update({
-        telefono_cliente: null,
-        estado: estadoOriginal,
-        total_abonado: 0,
-        saldo_restante: precioOriginal
-      })
+      .update(liberarPayload)
       .eq('numero', numeroBoleta);
 
     if (errBoleta) throw errBoleta;

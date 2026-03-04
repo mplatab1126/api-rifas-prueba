@@ -90,7 +90,8 @@ export default async function handler(req, res) {
               ciudad: clienteDB?.ciudad || '',
               telefono: boleta.telefono_cliente,
               totalAbonos: boleta.total_abonado || 0,
-              restante: boleta.saldo_restante !== null && boleta.saldo_restante !== undefined ? boleta.saldo_restante : 20000
+              restante: boleta.saldo_restante !== null && boleta.saldo_restante !== undefined ? boleta.saldo_restante : 20000,
+              asesor: boleta.asesor || ''
             }
           }
         });
@@ -125,7 +126,8 @@ export default async function handler(req, res) {
               ciudad: clienteDB?.ciudad || '',
               telefono: boleta.telefono_cliente,
               totalAbonos: boleta.total_abonado || 0,
-              restante: boleta.saldo_restante !== null && boleta.saldo_restante !== undefined ? boleta.saldo_restante : 5000
+              restante: boleta.saldo_restante !== null && boleta.saldo_restante !== undefined ? boleta.saldo_restante : 5000,
+              asesor: boleta.asesor || ''
             }
           }
         });
@@ -188,7 +190,8 @@ export default async function handler(req, res) {
           ciudad: clienteDB?.ciudad || '',
           telefono: b.telefono_cliente,
           totalAbonos: b.total_abonado || 0,
-          restante: b.saldo_restante !== null && b.saldo_restante !== undefined ? b.saldo_restante : 20000
+          restante: b.saldo_restante !== null && b.saldo_restante !== undefined ? b.saldo_restante : 20000,
+          asesor: b.asesor || ''
         })));
       }
 
@@ -200,7 +203,8 @@ export default async function handler(req, res) {
           ciudad: clienteDB?.ciudad || '',
           telefono: b.telefono_cliente,
           totalAbonos: b.total_abonado || 0,
-          restante: b.saldo_restante !== null && b.saldo_restante !== undefined ? b.saldo_restante : 5000
+          restante: b.saldo_restante !== null && b.saldo_restante !== undefined ? b.saldo_restante : 5000,
+          asesor: b.asesor || ''
         })));
       }
 

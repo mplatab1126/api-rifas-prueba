@@ -127,7 +127,7 @@ export default async function handler(req, res) {
         saldo_restante: nuevoSaldoRestante,
         estado: estadoNuevo
     };
-    if (!esDiaria) updatePayload.asesor = nombreAsesor;
+    updatePayload.asesor = nombreAsesor;
 
     const { error: updateError } = await supabase.from(tabla).update(updatePayload).eq('numero', numeroLimpio);
     if (updateError) throw updateError;

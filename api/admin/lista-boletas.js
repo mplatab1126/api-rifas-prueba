@@ -47,7 +47,7 @@ export default async function handler(req, res) {
     // Boletas diarias 2 cifras: solo las separadas sin abono
     const { data: diarias2, error: errDiarias2 } = await supabase
       .from('boletas_diarias')
-      .select('numero, telefono_cliente, nombre_cliente')
+      .select('numero, telefono_cliente, nombre_cliente, asesor')
       .not('telefono_cliente', 'is', null)
       .eq('total_abonado', 0);
 
@@ -56,7 +56,7 @@ export default async function handler(req, res) {
     // Boletas diarias 3 cifras: solo las separadas sin abono
     const { data: diarias3, error: errDiarias3 } = await supabase
       .from('boletas_diarias_3cifras')
-      .select('numero, telefono_cliente, nombre_cliente')
+      .select('numero, telefono_cliente, nombre_cliente, asesor')
       .not('telefono_cliente', 'is', null)
       .eq('total_abonado', 0);
 
@@ -87,7 +87,7 @@ export default async function handler(req, res) {
         tipo: 'diaria2',
         nombre: b.nombre_cliente || 'Sin nombre',
         telefono: b.telefono_cliente || '',
-        asesor: mov?.asesor || '—',
+        asesor: b.asesor || mov?.asesor || '—',
         fecha_venta: mov?.created_at || null,
         llamada: avisosSet.has(num),
         llamada_asesor: avisosInfo[num]?.asesor || null,
@@ -103,7 +103,7 @@ export default async function handler(req, res) {
         tipo: 'diaria3',
         nombre: b.nombre_cliente || 'Sin nombre',
         telefono: b.telefono_cliente || '',
-        asesor: mov?.asesor || '—',
+        asesor: b.asesor || mov?.asesor || '—',
         fecha_venta: mov?.created_at || null,
         llamada: avisosSet.has(num),
         llamada_asesor: avisosInfo[num]?.asesor || null,
