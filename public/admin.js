@@ -498,28 +498,40 @@ const $ = id => document.getElementById(id);
                         var montoFmt = new Intl.NumberFormat('es-CO').format(t.monto);
                         var refSafe = t.referencia ? t.referencia.replace(/'/g, "\\'") : ''; 
                         var platSafe = t.plataforma ? t.plataforma.replace(/'/g, "\\'") : '';
-                        
-                        // Contenedor principal de la tarjeta (Flexbox para separar textos del botón)
-                        html += '<div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--ring); padding:10px; border-radius:10px; cursor:pointer; background:#fff; text-align:left; transition:background 0.2s;"';
-                        html += ' onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'#fff\'"';
+                        var esLibre = t.status === 'LIBRE';
                         let idOculto = targetRefId === 'v_referenciaAbono' ? 'v_idTransferencia' : 'a_idTransferencia'; 
                         let urlSegura = t.url_comprobante ? t.url_comprobante : '';
-                        html += ' onclick="seleccionarTransferencia(\'' + idOculto + '\', \'' + targetRefId + '\', \'' + targetMontoId + '\', \'' + targetMetodoId + '\', \'' + feedbackId + '\', \'' + t.id + '\', \'' + refSafe + '\', ' + t.monto + ', \'' + platSafe + '\', \'' + urlSegura + '\')">';
+                        
+                        if (esLibre) {
+                            // Tarjeta clickeable (transferencia disponible)
+                            html += '<div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--ring); padding:10px; border-radius:10px; cursor:pointer; background:#fff; text-align:left; transition:background 0.2s;"';
+                            html += ' onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'#fff\'"';
+                            html += ' onclick="seleccionarTransferencia(\'' + idOculto + '\', \'' + targetRefId + '\', \'' + targetMontoId + '\', \'' + targetMetodoId + '\', \'' + feedbackId + '\', \'' + t.id + '\', \'' + refSafe + '\', ' + t.monto + ', \'' + platSafe + '\', \'' + urlSegura + '\')">';
+                        } else {
+                            // Tarjeta bloqueada (transferencia ya asignada)
+                            html += '<div style="display:flex; justify-content:space-between; align-items:center; border:1px solid #e0e0e0; padding:10px; border-radius:10px; cursor:not-allowed; background:#f5f5f5; text-align:left; opacity:0.65;">';
+                        }
                         
                         // Lado izquierdo: Textos de la transferencia
                         html += '<div>';
-                        html += '<div style="font-weight:600; color:var(--ink-2); font-size:0.9rem;">' + t.plataforma + ' - $' + montoFmt + '</div>';
+                        html += '<div style="font-weight:600; color:' + (esLibre ? 'var(--ink-2)' : '#999') + '; font-size:0.9rem;">' + t.plataforma + ' - $' + montoFmt + '</div>';
                         html += '<div style="font-size:0.8rem; color:var(--muted);">Ref: ' + t.referencia + ' | Fecha: ' + t.fecha + '</div>';
-                        html += '<div style="font-size:0.75rem; color:var(--danger); font-weight:500; margin-top:4px;">' + (t.status || 'LIBRE') + '</div>';
+                        if (esLibre) {
+                            html += '<div style="font-size:0.75rem; color:var(--accent-2); font-weight:600; margin-top:4px;">LIBRE ✓</div>';
+                        } else {
+                            html += '<div style="font-size:0.75rem; color:var(--danger); font-weight:600; margin-top:4px;">🔒 ' + (t.status || 'ASIGNADA') + '</div>';
+                        }
                         html += '</div>';
 
-                        // Lado derecho: Botón de "Ver Foto" (Solo si existe la URL)
-                        // Usamos event.stopPropagation() para que al dar clic al botón no se seleccione la transferencia por accidente
-                        if (t.url_comprobante) {
-                            html += '<div>';
-                            html += `<button onclick="event.stopPropagation(); mostrarFoto('${t.url_comprobante}')" style="background:var(--pill); color:var(--accent-2); border:1px solid var(--accent); padding:6px 12px; border-radius:8px; font-size:0.8rem; font-weight:600; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='var(--accent)'; this.style.color='#fff';" onmouseout="this.style.background='var(--pill)'; this.style.color='var(--accent-2)';">👁️ Ver Foto</button>`;
-                            html += '</div>';
+                        // Lado derecho: Botón de "Ver Foto" o candado si asignada
+                        html += '<div style="display:flex; align-items:center; gap:8px;">';
+                        if (!esLibre) {
+                            html += '<span style="font-size:1.2rem; color:#bbb;" title="No disponible">🔒</span>';
                         }
+                        if (t.url_comprobante) {
+                            html += `<button onclick="event.stopPropagation(); mostrarFoto('${t.url_comprobante}')" style="background:var(--pill); color:var(--accent-2); border:1px solid var(--accent); padding:6px 12px; border-radius:8px; font-size:0.8rem; font-weight:600; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='var(--accent)'; this.style.color='#fff';" onmouseout="this.style.background='var(--pill)'; this.style.color='var(--accent-2)';">👁️ Ver Foto</button>`;
+                        }
+                        html += '</div>';
 
                         html += '</div>';
                     }

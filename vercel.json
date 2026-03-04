@@ -1,5 +1,11 @@
 {
   "cleanUrls": true,
+  "crons": [
+    {
+      "path": "/api/admin/llamadas-automaticas",
+      "schedule": "0 14 * * 1-5"
+    }
+  ],
   "rewrites": [
     {
       "source": "/boleta/:numero",
