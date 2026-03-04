@@ -1926,6 +1926,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         html += '<table style="width:100%; border-collapse:collapse; font-size:0.85rem;">';
         html += '<thead><tr style="border-bottom:2px solid var(--ring-strong); color:var(--muted); font-weight:600; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.04em;">';
         html += '<th style="padding:8px 6px; text-align:center;">📞</th>';
+        html += '<th style="padding:8px 6px; text-align:center;">💰</th>';
         html += '<th style="padding:8px 6px; text-align:left;">Boletas</th>';
         html += '<th style="padding:8px 6px; text-align:left;">Nombre</th>';
         html += '<th style="padding:8px 6px; text-align:left;">Teléfono</th>';
@@ -1944,6 +1945,14 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                 : '';
             // Números de boletas para el toggle (todas del grupo)
             const numerosGrupo = JSON.stringify(g.boletas.map(b => ({ numero: b.numero, telefono: b.telefono })));
+
+            // Estado cobro
+            const todasCobros = g.boletas.every(b => b.cobro);
+            const algunCobro = g.boletas.some(b => b.cobro);
+            const primeraConCobro = g.boletas.find(b => b.cobro);
+            const tooltipCobro = primeraConCobro
+                ? `${primeraConCobro.cobro_asesor || '?'} · ${lbFormatFecha(primeraConCobro.cobro_fecha)}`
+                : '';
 
             const bgRow = todasLlamadas
                 ? '#f0fdf4'
@@ -1972,8 +1981,14 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                 ? `<button onclick="lbToggleLlamada(this, ${numerosGrupo.replace(/"/g, '&quot;')}, false)" title="Desmarcar llamada\n${tooltipLlamada}" style="border:none; background:none; cursor:pointer; font-size:1.3rem; line-height:1;">✅</button>`
                 : `<button onclick="lbToggleLlamada(this, ${numerosGrupo.replace(/"/g, '&quot;')}, true)" title="Marcar como llamado" style="border:none; background:none; cursor:pointer; font-size:1.3rem; line-height:1; opacity:0.3;">☑️</button>`;
 
+            // Botón de cobro azul: marca/desmarca todas las boletas del grupo
+            const btnCobro = todasCobros
+                ? `<button onclick="lbToggleCobro(this, ${numerosGrupo.replace(/"/g, '&quot;')}, false)" title="Desmarcar cobro\n${tooltipCobro}" style="border:none; background:none; cursor:pointer; font-size:1.3rem; line-height:1; filter:hue-rotate(200deg);">✅</button>`
+                : `<button onclick="lbToggleCobro(this, ${numerosGrupo.replace(/"/g, '&quot;')}, true)" title="Marcar como cobrado" style="border:none; background:none; cursor:pointer; font-size:1.3rem; line-height:1; opacity:0.3; filter:hue-rotate(200deg);">☑️</button>`;
+
             html += `<tr style="background:${bgRow}; border-bottom:1px solid var(--ring); transition:background 0.3s;">`;
             html += `<td style="padding:9px 6px; text-align:center;">${btnLlamada}${tooltipLlamada ? `<div style="font-size:0.68rem; color:var(--muted); margin-top:2px; line-height:1.2;">${tooltipLlamada}</div>` : ''}</td>`;
+            html += `<td style="padding:9px 6px; text-align:center;">${btnCobro}${tooltipCobro ? `<div style="font-size:0.68rem; color:var(--muted); margin-top:2px; line-height:1.2;">${tooltipCobro}</div>` : ''}</td>`;
             html += `<td style="padding:9px 6px; min-width:120px;"><div style="display:flex; flex-wrap:wrap; gap:2px;">${boletasPills}</div></td>`;
             html += `<td style="padding:9px 6px; font-weight:500; min-width:130px;">${g.nombre || '—'}</td>`;
             html += `<td style="padding:9px 6px; color:var(--ink-2); white-space:nowrap;">${g.telefono || '—'}</td>`;
@@ -2009,6 +2024,37 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                     b.llamada = marcar;
                     b.llamada_asesor = marcar ? nombreAsesorActual : null;
                     b.llamada_fecha = marcar ? new Date().toISOString() : null;
+                }
+            });
+
+            filtrarListaBoletas();
+        } catch (e) {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        }
+    }
+
+    async function lbToggleCobro(btn, boletas, marcar) {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+
+        const pwd = localStorage.getItem(STORAGE_KEY) || '';
+        const accion = marcar ? 'marcar' : 'desmarcar';
+
+        try {
+            await Promise.all(boletas.map(b =>
+                fetch('/api/admin/marcar-cobro', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contrasena: pwd, boleta: b.numero, telefono: b.telefono, accion })
+                })
+            ));
+
+            _listaBoletasCompleta.forEach(b => {
+                if (boletas.some(x => String(x.numero) === String(b.numero))) {
+                    b.cobro = marcar;
+                    b.cobro_asesor = marcar ? nombreAsesorActual : null;
+                    b.cobro_fecha = marcar ? new Date().toISOString() : null;
                 }
             });
 

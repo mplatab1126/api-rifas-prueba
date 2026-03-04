@@ -19,18 +19,24 @@ export default async function handler(req, res) {
     const { data: movimientos } = await supabase
       .from('registro_movimientos')
       .select('boleta, asesor, accion, created_at')
-      .in('accion', ['Nueva Venta', 'Aviso Llamada'])
+      .in('accion', ['Nueva Venta', 'Aviso Llamada', 'Aviso Cobro'])
       .order('created_at', { ascending: true });
 
     const movMap = {};
     const avisosSet = new Set();
     const avisosInfo = {};
+    const cobrosSet = new Set();
+    const cobrosInfo = {};
 
     (movimientos || []).forEach(m => {
       if (m.accion === 'Nueva Venta' && m.boleta && !movMap[m.boleta]) movMap[m.boleta] = m;
       if (m.accion === 'Aviso Llamada' && m.boleta) {
         avisosSet.add(String(m.boleta));
         avisosInfo[String(m.boleta)] = { asesor: m.asesor, fecha: m.created_at };
+      }
+      if (m.accion === 'Aviso Cobro' && m.boleta) {
+        cobrosSet.add(String(m.boleta));
+        cobrosInfo[String(m.boleta)] = { asesor: m.asesor, fecha: m.created_at };
       }
     });
 
@@ -75,7 +81,10 @@ export default async function handler(req, res) {
         fecha_venta: b.fecha_venta || movMap[num]?.created_at || null,
         llamada: avisosSet.has(num),
         llamada_asesor: avisosInfo[num]?.asesor || null,
-        llamada_fecha: avisosInfo[num]?.fecha || null
+        llamada_fecha: avisosInfo[num]?.fecha || null,
+        cobro: cobrosSet.has(num),
+        cobro_asesor: cobrosInfo[num]?.asesor || null,
+        cobro_fecha: cobrosInfo[num]?.fecha || null
       });
     });
 
@@ -91,7 +100,10 @@ export default async function handler(req, res) {
         fecha_venta: mov?.created_at || null,
         llamada: avisosSet.has(num),
         llamada_asesor: avisosInfo[num]?.asesor || null,
-        llamada_fecha: avisosInfo[num]?.fecha || null
+        llamada_fecha: avisosInfo[num]?.fecha || null,
+        cobro: cobrosSet.has(num),
+        cobro_asesor: cobrosInfo[num]?.asesor || null,
+        cobro_fecha: cobrosInfo[num]?.fecha || null
       });
     });
 
@@ -107,7 +119,10 @@ export default async function handler(req, res) {
         fecha_venta: mov?.created_at || null,
         llamada: avisosSet.has(num),
         llamada_asesor: avisosInfo[num]?.asesor || null,
-        llamada_fecha: avisosInfo[num]?.fecha || null
+        llamada_fecha: avisosInfo[num]?.fecha || null,
+        cobro: cobrosSet.has(num),
+        cobro_asesor: cobrosInfo[num]?.asesor || null,
+        cobro_fecha: cobrosInfo[num]?.fecha || null
       });
     });
 
