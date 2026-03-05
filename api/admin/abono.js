@@ -10,6 +10,9 @@ export default async function handler(req, res) {
 
   const { numeroBoleta, valorAbono, metodoPago, referencia, contrasena, esPendiente, idTransferencia } = req.body;
 
+  const ASESORES_INDEPENDIENTES = ['alejandra plata', 'joaquín', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
+  const esIndependiente = (nombre) => nombre && ASESORES_INDEPENDIENTES.some(ind => nombre.toLowerCase().includes(ind));
+
   const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
   const nombreAsesor = asesores[contrasena];
 
@@ -48,7 +51,7 @@ export default async function handler(req, res) {
 
     const { data: boletaData, error: boletaError } = await supabase
       .from(tabla)
-      .select('saldo_restante, total_abonado, telefono_cliente')
+      .select('saldo_restante, total_abonado, telefono_cliente, asesor')
       .eq('numero', numeroLimpio)
       .single();
 
@@ -121,13 +124,25 @@ export default async function handler(req, res) {
         }).eq('telefono', boletaData.telefono_cliente);
     }
 
-    // 4. Actualizar la boleta
+    // 4. Validar que ambos asesores sean del mismo grupo antes de abonar
+    const asesorBoleta = boletaData.asesor || '';
+    if (asesorBoleta) {
+        const grupoQuieneAbona = esIndependiente(nombreAsesor) ? 'independiente' : 'regular';
+        const grupoBoleta = esIndependiente(asesorBoleta) ? 'independiente' : 'regular';
+        if (grupoQuieneAbona !== grupoBoleta) {
+            return res.status(400).json({
+                status: 'error',
+                mensaje: `🚫 Esta boleta pertenece al equipo "${grupoBoleta}". Tu equipo (${grupoQuieneAbona}) no puede registrar abonos en boletas de otro grupo.`
+            });
+        }
+    }
+
+    // 5. Actualizar la boleta (el campo asesor nunca se modifica en abonos)
     let updatePayload = {
         total_abonado: nuevoTotalAbonado,
         saldo_restante: nuevoSaldoRestante,
         estado: estadoNuevo
     };
-    updatePayload.asesor = nombreAsesor;
 
     const { error: updateError } = await supabase.from(tabla).update(updatePayload).eq('numero', numeroLimpio);
     if (updateError) throw updateError;

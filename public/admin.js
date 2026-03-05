@@ -45,6 +45,15 @@ const $ = id => document.getElementById(id);
     // ==========================================
     let nombreAsesorActual = '';
 
+    // Asesores cuyas ganancias son propias (independientes)
+    const ASESORES_INDEPENDIENTES = ['alejandra plata', 'joaquín', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
+
+    function esAsesorIndependiente(nombre) {
+        if (!nombre) return false;
+        const n = nombre.toLowerCase().trim();
+        return ASESORES_INDEPENDIENTES.some(ind => n.includes(ind));
+    }
+
     function cargarSaldoAsesor(nombre) {
         nombreAsesorActual = nombre;
         const saldo = parseInt(localStorage.getItem('saldo_asesor_' + nombre) || '0');
@@ -965,6 +974,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
        if(boletasStr.length > 0) cargarHistorialAbonos(boletasStr[0]);
        
        verificarSeleccionAbonos();
+       verificarReclamarBoleta(lista);
     }
 
     let modoDistribucionAbono = 'uniforme'; // 'uniforme' | 'manual'
@@ -1068,6 +1078,52 @@ $('btnRegistrarVenta').onclick = async ()=>{
         }
     }
 
+    function verificarReclamarBoleta(lista) {
+        if (!nombreAsesorActual || !lista || lista.length === 0) return;
+        const grupoActual = esAsesorIndependiente(nombreAsesorActual) ? 'independiente' : 'regular';
+
+        // Boletas cuyo asesor es de un grupo DIFERENTE al logueado
+        const boletasAReclamar = lista
+            .filter(b => {
+                if (!b.asesor) return false;
+                const grupoBoleta = esAsesorIndependiente(b.asesor) ? 'independiente' : 'regular';
+                return grupoBoleta !== grupoActual;
+            })
+            .map(b => b.numero);
+
+        if (boletasAReclamar.length === 0) return;
+
+        const modal = document.getElementById('modalReclamarBoleta');
+        modal.style.display = 'flex';
+
+        document.getElementById('btnReclamarCancelar').onclick = () => {
+            modal.style.display = 'none';
+        };
+        document.getElementById('btnReclamarSi').onclick = async () => {
+            modal.style.display = 'none';
+            await reclamarBoleta(boletasAReclamar);
+        };
+    }
+
+    async function reclamarBoleta(numeros) {
+        try {
+            const req = await fetch('/api/admin/reclamar-boleta', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contrasena: localStorage.getItem(STORAGE_KEY), numeros })
+            });
+            const res = await req.json();
+            if (res.status === 'ok') {
+                showModal('✅ Boleta reclamada', `La boleta ahora está asignada a ${nombreAsesorActual}.`);
+                runSearch();
+            } else {
+                showModal('Error', res.mensaje);
+            }
+        } catch (e) {
+            showModal('Error', 'No se pudo reclamar la boleta.');
+        }
+    }
+
     async function copiarLinkBoleta(numero) {
         var link = window.location.origin + '/boleta/' + numero;
         try { 
@@ -1105,12 +1161,15 @@ $('btnRegistrarVenta').onclick = async ()=>{
         lista.forEach(a => {
             const valFmt = new Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', minimumFractionDigits:0}).format(a.monto);
             const fechaLimpia = new Date(a.fecha_pago).toLocaleDateString('es-CO');
+            const urlFoto = a.url_comprobante && a.url_comprobante !== 'null' ? a.url_comprobante : null;
             
             html += `<tr style="border-bottom:1px solid var(--ring);">
                         <td style="padding:10px 4px; color:var(--ink-2);">${fechaLimpia}</td>
                         <td style="padding:10px 4px; font-weight:600; color:var(--ink);">${valFmt}</td>
                         <td style="padding:10px 4px; font-size:0.8rem; color:var(--muted); word-break: break-all;">${a.referencia_transferencia || '-'}</td>
-                        <td style="padding:10px 4px; text-align:right;">
+                        <td style="padding:10px 4px; text-align:right; white-space:nowrap;">
+                            ${urlFoto ? `<button style="background:transparent; border:none; color:var(--accent-2); font-size:0.8rem; cursor:pointer; font-weight:500; font-family:inherit; padding:0; margin-right:10px;" 
+                                onclick="mostrarFoto('${urlFoto}')">Ver foto</button>` : ''}
                             <button style="background:transparent; border:none; color:var(--danger); font-size:0.8rem; cursor:pointer; font-weight:500; font-family:inherit; padding:0;" 
                                 onclick="confirmarEliminarAbono('${a.id}', this)">Borrar</button>
                         </td>

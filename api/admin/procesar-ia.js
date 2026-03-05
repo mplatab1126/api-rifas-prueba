@@ -103,7 +103,8 @@ export default async function handler(req, res) {
                 // y son distintas, son pagadores diferentes — NO usar el minuto como criterio.
                 const refNueva = String(datos.referencia).replace(/\D/g, '');
                 const refExistente = String(tExist.referencia).replace(/\D/g, '');
-                const refExacta = String(datos.referencia).trim() === String(tExist.referencia).trim();
+                const refEsNula = refNueva === '0' || refNueva === '';
+                const refExacta = !refEsNula && String(datos.referencia).trim() === String(tExist.referencia).trim();
                 if (refExacta) {
                     coinciden = true;
                 } else if (datos.hora_pago && tExist.hora_pago) {

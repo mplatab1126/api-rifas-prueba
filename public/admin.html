@@ -413,6 +413,18 @@
     </div>
   </div>
 
+  <!-- Modal reclamar boleta -->
+  <div id="modalReclamarBoleta" class="modal-overlay" style="display:none;">
+    <div class="modal-card">
+      <h3 style="color:var(--danger); font-weight:700; font-size:1.1rem; margin:0 0 12px 0;">⚠️ Esta boleta no pertenece a tu equipo</h3>
+      <p style="color:var(--ink-2); font-size:0.88rem; margin-bottom:22px; line-height: 1.6;">Ve y revisa en la conversación si fue tu equipo la que le tomó los datos a este cliente para poder realizar el registro de la boleta. De ser así, reclama la boleta.</p>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button id="btnReclamarCancelar" class="cta" style="flex:1; background:transparent; border:1px solid var(--ring-strong); color:var(--ink-2);">Cancelar</button>
+        <button id="btnReclamarSi" class="cta" style="flex:1; background:var(--danger);">Sí, reclamar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal visor de comprobante simple -->
   <div id="fotoModal" onclick="this.style.display='none'" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.85); backdrop-filter:blur(4px); align-items:center; justify-content:center; cursor:zoom-out;">
     <div onclick="event.stopPropagation()" style="position:relative; max-width:92vw; max-height:92vh;">

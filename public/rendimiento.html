@@ -207,6 +207,11 @@
                 <div class="mega-kpi-value" id="kpi-gen-nuevas">0</div>
                 <span class="mega-kpi-sub">Nuevos números separados</span>
             </div>
+            <div class="mega-kpi kpi-green">
+                <div class="mega-kpi-title">💵 Boletas con Abono <span id="kpi-gen-con-abono-pct" style="font-size:0.75rem; font-weight:700; background:rgba(255,255,255,0.35); padding:2px 7px; border-radius:20px; margin-left:5px;">0%</span></div>
+                <div class="mega-kpi-value" id="kpi-gen-con-abono">0</div>
+                <span class="mega-kpi-sub">Boletas con al menos 1 pago</span>
+            </div>
         </div>
     </div>
 
@@ -877,10 +882,18 @@
         let tProm = tiempos.length > 0 ? (tiempos.reduce((a,b)=>a+b, 0) / tiempos.length) : 0;
 
         // Escribir KPIs Generales
+        const boletasVendidasSet = new Set(ventasF.map(v => v.boleta));
+        const boletasConAbono = [...boletasVendidasSet].filter(
+            num => globalAbonos.some(a => a.numero_boleta === num)
+        ).length;
+
         document.getElementById('kpi-gen-recaudo').textContent = formatoPlata.format(dineroRecaudado);
         document.getElementById('kpi-gen-ticket').textContent = formatoPlata.format(ticketProm);
         document.getElementById('kpi-gen-abonos').textContent = formatoNum.format(totalPagos);
         document.getElementById('kpi-gen-nuevas').textContent = formatoNum.format(totalNuevas);
+        const pctConAbono = totalNuevas > 0 ? ((boletasConAbono / totalNuevas) * 100).toFixed(1) : 0;
+        document.getElementById('kpi-gen-con-abono').textContent = formatoNum.format(boletasConAbono);
+        document.getElementById('kpi-gen-con-abono-pct').textContent = pctConAbono + '%';
 
         document.getElementById('kpi-inv-total').textContent = formatoNum.format(globalesAPI.total || 0);
         document.getElementById('kpi-inv-registradas').textContent = formatoNum.format(globalesAPI.registradas);

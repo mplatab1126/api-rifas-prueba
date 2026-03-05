@@ -71,6 +71,12 @@ export default async function handler(req, res) {
     let grandesCompradas = clienteActual?.boletas_grandes_compradas || 0;
 
     const precioTotal = esDiaria ? 20000 : (Number(boletaData.precio_total) || 200000);
+
+    const fmt = n => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
+    if (abonoNum > precioTotal) {
+      return res.status(400).json({ status: 'error', mensaje: `🚫 El abono de ${fmt(abonoNum)} supera el precio total de la boleta ${numeroLimpio} (${fmt(precioTotal)}). Ajusta el valor.` });
+    }
+
     const saldoRestante = precioTotal - abonoNum;
 
     // 3. Si con este abono inicial la boleta queda en cero, le sumamos +1 a su historial de boletas pagadas
