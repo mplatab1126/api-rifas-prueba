@@ -45,12 +45,12 @@ export default async function handler(req, res) {
     // 6. Si el cliente no tiene boletas (es un prospecto nuevo)
     if (!boletas || boletas.length === 0) {
       return res.status(200).json({
-        boletas_cliente: "Ninguna",
-        deuda_cliente: 0,
-        abonado_cliente: 0,
-        nombre_cliente: "No encontrado",
-        enlaces_boletas: "Ninguno",
-        resumen: "No tienes boletas registradas aún."
+        boletas_cliente: "",
+        deuda_cliente: "",
+        abonado_cliente: "",
+        nombre_cliente: "",
+        enlaces_boletas: "",
+        resumen: ""
       });
     }
 
