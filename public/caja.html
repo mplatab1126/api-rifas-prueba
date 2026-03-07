@@ -75,25 +75,28 @@
       <div class="kpi-card" style="border-left: 4px solid var(--muted);">
         <h3>💵 Base Fija Inicial</h3>
         <p id="lbl-base">$0</p>
-        <button onclick="abrirModalBase()" style="margin-top:10px; background:transparent; border:none; color:var(--accent-2); font-weight:600; cursor:pointer; font-size:0.8rem; padding:0;">✏️ Ajustar Base</button>
+        <button id="btnAjustarBase" onclick="abrirModalBase()" style="margin-top:10px; background:transparent; border:none; color:var(--accent-2); font-weight:600; cursor:pointer; font-size:0.8rem; padding:0; display:none;">✏️ Ajustar Base</button>
       </div>
       <div class="kpi-card" style="border-left: 4px solid var(--danger);">
         <h3>🚶‍♂️ Efectivo en la calle</h3>
         <p id="lbl-calle" style="color:var(--danger);">$0</p>
         <span style="font-size:0.75rem; color:var(--muted); font-weight:600;">(Dinero que tienen los asesores)</span>
       </div>
-      <div class="kpi-card" style="border-left: 4px solid var(--accent); background: #e8f5e9; position: relative;">
+      <div class="kpi-card" style="border-left: 4px solid var(--accent); background: #e8f5e9;">
         <h3>🏦 Efectivo Físico Esperado</h3>
         <p id="lbl-oficina" style="color:var(--accent-2);">$0</p>
         <span style="font-size:0.75rem; color:var(--ink-2); font-weight:600;">(Lo que debe haber en caja)</span>
-        <button onclick="abrirModalMovimiento()" style="margin-top:10px; background:#fff; border:1px solid var(--accent); color:var(--accent-2); font-weight:600; cursor:pointer; font-size:0.75rem; padding:4px 10px; border-radius: 8px; width: 100%;">💸 Registrar Ingreso / Salida</button>
       </div>
     </div>
+
+    <button onclick="abrirModalMovimiento()" style="width:100%; padding:16px; border-radius:14px; border:none; background:var(--ink); color:#fff; font-size:1rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:20px; font-family:inherit; box-shadow: 0 4px 14px rgba(0,0,0,0.12); transition: 0.2s;" onmouseover="this.style.background='var(--ink-2)'" onmouseout="this.style.background='var(--ink)'">
+      💸 Registrar Ingreso / Salida / Consignación
+    </button>
 
     <div class="section-card">
       <div class="section-title">Asesores con efectivo pendiente</div>
       <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0; margin-bottom: 15px;">
-        Este es el dinero que los asesores cobraron hoy en efectivo pero que aún no te han entregado físicamente.
+        Este es el dinero que los asesores han cobrado en efectivo y que aún no te han entregado físicamente. El saldo se acumula hasta que el asesor lo entregue.
       </p>
       
       <div id="lista-asesores">
@@ -257,6 +260,10 @@
           const badge = document.getElementById('badgeOwner');
           badge.style.display = 'inline-block';
           badge.textContent = `🟢 A cargo de: ${asesorActual}`;
+
+          if (asesorActual === 'Mateo') {
+            document.getElementById('btnAjustarBase').style.display = 'inline-block';
+          }
 
           cargarDatosCaja();
         } else {

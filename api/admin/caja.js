@@ -41,12 +41,10 @@ export default async function handler(req, res) {
 
       const baseFija = baseData?.monto || 0;
 
-      // 2. Abonos cobrados en efectivo hoy (referencia = 'efectivo')
+      // 2. Abonos cobrados en efectivo (SIN filtro de fecha — acumula todo lo histórico pendiente)
       const { data: abonosEfectivo } = await supabase
         .from('abonos')
         .select('asesor, monto')
-        .gte('fecha_pago', hoy + 'T00:00:00')
-        .lte('fecha_pago', hoy + 'T23:59:59')
         .eq('referencia_transferencia', 'efectivo');
 
       const cobradoPorAsesor = {};
@@ -54,7 +52,7 @@ export default async function handler(req, res) {
         cobradoPorAsesor[a.asesor] = (cobradoPorAsesor[a.asesor] || 0) + a.monto;
       }
 
-      // 3. Movimientos del día (recepciones, ingresos, salidas, consignaciones)
+      // 3. Movimientos del día (ingresos, salidas, consignaciones, recepciones de HOY para el efectivo esperado)
       const { data: movimientos } = await supabase
         .from('movimientos_caja')
         .select('*')
@@ -65,20 +63,29 @@ export default async function handler(req, res) {
       let totalIngresos = 0;
       let totalSalidas = 0;
       let totalConsignaciones = 0;
-      const recibidoPorAsesor = {};
+      let totalRecepciones = 0;
 
       for (const m of (movimientos || [])) {
         if (m.tipo === 'ingreso') totalIngresos += m.monto;
         else if (m.tipo === 'salida') totalSalidas += m.monto;
         else if (m.tipo === 'consignacion') totalConsignaciones += m.monto;
-        else if (m.tipo === 'recepcion' && m.asesor) {
-          recibidoPorAsesor[m.asesor] = (recibidoPorAsesor[m.asesor] || 0) + m.monto;
+        else if (m.tipo === 'recepcion') totalRecepciones += m.monto;
+      }
+
+      // 3b. Todas las recepciones históricas para calcular el pendiente real por asesor
+      const { data: todasRecepciones } = await supabase
+        .from('movimientos_caja')
+        .select('asesor, monto')
+        .eq('tipo', 'recepcion');
+
+      const recibidoPorAsesor = {};
+      for (const r of (todasRecepciones || [])) {
+        if (r.asesor) {
+          recibidoPorAsesor[r.asesor] = (recibidoPorAsesor[r.asesor] || 0) + r.monto;
         }
       }
 
-      const totalRecepciones = Object.values(recibidoPorAsesor).reduce((s, v) => s + v, 0);
-
-      // 4. Calcular pendiente por asesor (cobrado - recibido)
+      // 4. Calcular pendiente por asesor (cobrado histórico - recibido histórico)
       const asesoresEnCalle = [];
       for (const [asesor, cobrado] of Object.entries(cobradoPorAsesor)) {
         const recibido = recibidoPorAsesor[asesor] || 0;
@@ -112,6 +119,9 @@ export default async function handler(req, res) {
     // ACCIÓN: guardar_base — Ajustar base fija del día
     // ─────────────────────────────────────────────────────────
     if (accion === 'guardar_base') {
+      if (nombreAsesor !== 'Mateo') {
+        return res.status(403).json({ status: 'error', mensaje: 'Solo Mateo puede ajustar la base fija.' });
+      }
       const monto = Number(payload.monto);
       if (!monto || monto <= 0) return res.status(400).json({ status: 'error', mensaje: 'Monto inválido' });
 

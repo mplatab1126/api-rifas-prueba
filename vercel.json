@@ -27,6 +27,10 @@
     {
       "source": "/rendimiento",
       "destination": "/rendimiento.html"
+    },
+    {
+      "source": "/finanzas",
+      "destination": "/finanzas.html"
     }
   ]
 }

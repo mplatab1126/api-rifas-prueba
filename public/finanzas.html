@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <title>Centro Financiero — Los Plata</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #1a2520; --ink-2: #3d5047; --muted: #7a9a8d;
+      --bg: #f4fbf7; --card: #fff; --ring: #e2ede7; --ring-strong: #c8ddd2;
+      --pill: #eef7f1; --accent: #2ecc71; --accent-2: #27ae60;
+      --danger: #e74c3c; --warning: #f39c12; --blue: #3498db; --purple: #9b59b6;
+      --shadow: 0 4px 16px rgba(0,0,0,.04);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); font-family: 'Poppins', sans-serif; color: var(--ink); padding-bottom: 80px; min-height: 100vh; }
+
+    /* ── TOP BAR ── */
+    .top-bar { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,.98); backdrop-filter: blur(8px); border-bottom: 1px solid var(--ring); padding: 10px 20px; box-shadow: var(--shadow); }
+    .top-bar-inner { max-width: 1000px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .brand { font-size: 1.1rem; font-weight: 800; color: var(--ink); display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+    .badge-asesor { font-size: 0.72rem; background: var(--pill); color: var(--accent-2); padding: 3px 10px; border-radius: 20px; font-weight: 700; border: 1px solid var(--accent); }
+
+    /* ── TABS ── */
+    .tabs { display: flex; gap: 3px; background: var(--bg); border-radius: 12px; padding: 4px; border: 1px solid var(--ring); }
+    .tab { padding: 7px 16px; border-radius: 9px; border: none; background: transparent; font-family: inherit; font-size: 0.83rem; font-weight: 700; color: var(--muted); cursor: pointer; transition: all .2s; white-space: nowrap; }
+    .tab.active { background: #fff; color: var(--ink); box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+
+    /* ── SHELL ── */
+    .shell { max-width: 1000px; margin: 0 auto; padding: 24px 18px; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── CARDS ── */
+    .card { background: #fff; border: 1px solid var(--ring); border-radius: 16px; box-shadow: var(--shadow); padding: 22px; margin-bottom: 20px; }
+    .card-title { font-size: .95rem; font-weight: 800; color: var(--ink); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--ring); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+
+    /* ── KPI GRID ── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 22px; }
+    .kpi { background: #fff; border: 1px solid var(--ring-strong); border-radius: 16px; padding: 18px 20px; position: relative; overflow: hidden; }
+    .kpi::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; border-radius: 0 0 16px 16px; }
+    .kpi-income::after { background: var(--accent); }
+    .kpi-expense::after { background: var(--danger); }
+    .kpi-profit::after { background: var(--blue); }
+    .kpi-margin::after { background: var(--purple); }
+    .kpi h3 { font-size: .72rem; color: var(--muted); text-transform: uppercase; font-weight: 700; letter-spacing: .05em; margin-bottom: 8px; }
+    .kpi p { font-size: 1.6rem; font-weight: 800; color: var(--ink); line-height: 1.1; }
+    .kpi span { font-size: .78rem; color: var(--muted); font-weight: 500; margin-top: 4px; display: block; }
+
+    /* ── PERIOD BAR ── */
+    .period-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+    .period-btn { padding: 7px 14px; border-radius: 20px; border: 1px solid var(--ring-strong); background: #fff; font-family: inherit; font-size: .82rem; font-weight: 700; color: var(--ink-2); cursor: pointer; transition: all .2s; }
+    .period-btn.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .period-custom { display: none; gap: 8px; align-items: center; }
+    .period-custom.show { display: flex; }
+    .period-custom input { padding: 7px 12px; border: 1px solid var(--ring-strong); border-radius: 10px; font-family: inherit; font-size: .82rem; color: var(--ink); outline: none; }
+    .period-custom input:focus { border-color: var(--accent); }
+
+    /* ── P&L TABLE ── */
+    .pl-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; border-radius: 8px; font-size: .88rem; gap: 10px; }
+    .pl-row:hover { background: var(--bg); }
+    .pl-row.header { color: var(--muted); font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin-top: 16px; margin-bottom: 2px; padding-bottom: 4px; border-bottom: 1px solid var(--ring); }
+    .pl-row.category-row { font-weight: 700; font-size: .9rem; }
+    .pl-row.sub-row { color: var(--ink-2); padding-left: 24px; font-size: .82rem; }
+    .pl-row.separator { border-top: 2px solid var(--ring-strong); margin-top: 8px; padding-top: 10px; font-weight: 800; font-size: .95rem; }
+    .pl-row.net-row { font-weight: 800; font-size: 1.05rem; border-top: 2px dashed var(--ring-strong); margin-top: 10px; padding-top: 12px; }
+    .pl-label { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+    .pl-bar-wrap { flex: 1; max-width: 120px; display: flex; align-items: center; }
+    .pl-bar { height: 5px; border-radius: 3px; transition: width .5s ease; min-width: 2px; }
+    .pl-monto { font-weight: 700; white-space: nowrap; }
+    .cat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── GASTO LIST ── */
+    .gasto-item { display: flex; gap: 14px; padding: 13px 16px; border-bottom: 1px solid var(--ring); align-items: center; transition: background .15s; cursor: pointer; }
+    .gasto-item:hover { background: var(--bg); }
+    .gasto-item:last-child { border-bottom: none; }
+    .gasto-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+    .gasto-body { flex: 1; min-width: 0; }
+    .gasto-title { font-weight: 700; font-size: .88rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gasto-meta { font-size: .75rem; color: var(--muted); font-weight: 500; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gasto-right { text-align: right; flex-shrink: 0; }
+    .gasto-monto { font-weight: 800; font-size: .98rem; color: var(--danger); }
+    .gasto-fecha { font-size: .72rem; color: var(--muted); margin-top: 2px; }
+    .pill-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px; font-size: .72rem; font-weight: 700; }
+
+    /* ── CATEGORY ITEMS ── */
+    .cat-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 14px 16px; border-bottom: 1px solid var(--ring); gap: 12px; }
+    .cat-item:last-child { border-bottom: none; }
+    .cat-left { display: flex; align-items: flex-start; gap: 12px; flex: 1; min-width: 0; }
+    .cat-icon-box { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+    .cat-name { font-weight: 700; font-size: .9rem; color: var(--ink); }
+    .sub-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+    .sub-tag { background: var(--pill); border: 1px solid var(--ring-strong); padding: 2px 8px; border-radius: 6px; font-size: .7rem; font-weight: 600; color: var(--ink-2); }
+
+    /* ── FILTER BAR ── */
+    .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+    .filter-bar select, .filter-bar input[type="date"] { padding: 8px 12px; border: 1px solid var(--ring-strong); border-radius: 10px; font-family: inherit; font-size: .84rem; color: var(--ink); background: #fff; outline: none; }
+    .filter-bar select:focus, .filter-bar input:focus { border-color: var(--accent); }
+
+    /* ── BUTTONS ── */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 10px; border: none; font-family: inherit; font-size: .87rem; font-weight: 700; cursor: pointer; transition: all .2s; white-space: nowrap; }
+    .btn-primary { background: var(--ink); color: #fff; }
+    .btn-primary:hover { background: var(--ink-2); }
+    .btn-accent { background: var(--accent); color: #fff; }
+    .btn-accent:hover { background: var(--accent-2); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { opacity: .85; }
+    .btn-ghost { background: transparent; border: 1px solid var(--ring-strong); color: var(--ink); }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent-2); }
+    .btn-sm { padding: 6px 12px; font-size: .78rem; border-radius: 8px; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* ── MODALS ── */
+    .overlay { position: fixed; inset: 0; background: rgba(10,25,18,.45); backdrop-filter: blur(6px); z-index: 2000; display: none; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
+    .overlay.show { display: flex; }
+    .modal { background: #fff; width: 100%; max-width: 530px; border-radius: 20px; padding: 28px; box-shadow: 0 20px 60px rgba(0,0,0,.15); margin: auto; }
+    .modal-title { font-size: 1.05rem; font-weight: 800; color: var(--ink); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+
+    /* ── FORM ── */
+    .field { margin-bottom: 13px; }
+    .field label { display: block; font-size: .75rem; font-weight: 700; color: var(--ink-2); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .03em; }
+    .field input, .field select, .field textarea { width: 100%; border: 1px solid var(--ring-strong); border-radius: 10px; padding: 10px 13px; font-family: inherit; font-size: .9rem; color: var(--ink); background: #fff; outline: none; transition: border .2s; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+    .field textarea { resize: vertical; min-height: 65px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* ── OCR DROP ZONE ── */
+    .ocr-zone { border: 2px dashed var(--ring-strong); border-radius: 14px; padding: 18px; text-align: center; cursor: pointer; transition: all .2s; background: var(--bg); min-height: 90px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 5px; margin-bottom: 16px; position: relative; }
+    .ocr-zone:hover, .ocr-zone.drag-over { border-color: var(--accent); background: var(--pill); }
+    .ocr-zone-text { font-size: .85rem; color: var(--muted); font-weight: 600; pointer-events: none; }
+    .ocr-zone-sub { font-size: .73rem; color: var(--muted); pointer-events: none; }
+    #ocrInput { display: none; }
+
+    /* ── AI SUGGESTION BOX ── */
+    .ai-box { display: none; align-items: center; gap: 8px; background: #eef6ff; border: 1px solid #b8d9f8; border-radius: 10px; padding: 9px 13px; margin-top: 6px; font-size: .84rem; }
+    .ai-box.show { display: flex; }
+    .ai-badge { background: var(--blue); color: #fff; border-radius: 5px; padding: 2px 7px; font-size: .7rem; font-weight: 800; flex-shrink: 0; }
+    .ai-text { flex: 1; color: var(--ink-2); font-weight: 600; }
+    .ai-accept { padding: 4px 10px; background: var(--blue); color: #fff; border: none; border-radius: 6px; font-family: inherit; font-size: .75rem; font-weight: 700; cursor: pointer; }
+
+    /* ── SUBCATEGORY TAGS (in modal) ── */
+    .sub-input-wrap { display: flex; gap: 8px; }
+    .sub-input-wrap input { flex: 1; border: 1px solid var(--ring-strong); border-radius: 8px; padding: 8px 12px; font-family: inherit; font-size: .85rem; outline: none; }
+    .sub-input-wrap input:focus { border-color: var(--accent); }
+    .subs-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+    .sub-edit-tag { display: inline-flex; align-items: center; gap: 4px; background: var(--pill); border: 1px solid var(--ring-strong); padding: 3px 10px; border-radius: 6px; font-size: .76rem; font-weight: 700; color: var(--ink-2); }
+    .sub-remove { background: none; border: none; cursor: pointer; color: var(--muted); font-size: .85rem; line-height: 1; padding: 0; }
+    .sub-remove:hover { color: var(--danger); }
+
+    /* ── COLOR & ICON PICKER ── */
+    .color-swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+    .swatch { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all .15s; outline: none; }
+    .swatch.sel { border-color: var(--ink); transform: scale(1.2); }
+    .icon-options { display: flex; gap: 6px; flex-wrap: wrap; }
+    .icon-opt { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--ring); font-size: 1rem; transition: all .15s; }
+    .icon-opt.sel { border-color: var(--ink); background: var(--pill); }
+
+    /* ── PHOTO MODAL ── */
+    #fotoModal { position: fixed; inset: 0; background: rgba(0,0,0,.9); z-index: 5000; display: none; align-items: center; justify-content: center; cursor: zoom-out; }
+    #fotoModal.show { display: flex; }
+    #fotoModal img { max-width: 96vw; max-height: 96vh; border-radius: 10px; object-fit: contain; }
+
+    /* ── EMPTY STATE ── */
+    .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 10px; }
+    .empty p { font-weight: 600; font-size: .92rem; }
+
+    /* ── LOGIN ── */
+    #loginOverlay { position: fixed; inset: 0; background: linear-gradient(145deg, #111d16 0%, #1e3328 100%); z-index: 3000; display: flex; align-items: center; justify-content: center; }
+    .login-card { background: #fff; width: 90%; max-width: 340px; border-radius: 24px; padding: 34px; text-align: center; box-shadow: 0 24px 64px rgba(0,0,0,.35); }
+    .login-card h2 { font-size: 1.25rem; font-weight: 800; color: var(--ink); margin-bottom: 4px; }
+    .login-card p { color: var(--muted); font-size: .86rem; margin-bottom: 22px; line-height: 1.5; }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: var(--ring-strong); border-radius: 3px; }
+
+    @media (max-width: 600px) {
+      .kpi p { font-size: 1.35rem; }
+      .field-row { grid-template-columns: 1fr; }
+      .tabs .tab { padding: 6px 10px; font-size: .78rem; }
+      .pl-bar-wrap { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     LOGIN
+══════════════════════════════════════════════════════════════════════════ -->
+<div id="loginOverlay">
+  <div class="login-card">
+    <div style="font-size:2rem; margin-bottom:10px;">📊</div>
+    <h2>Centro Financiero</h2>
+    <p>Acceso exclusivo para el administrador de Los Plata.</p>
+    <div class="field" style="text-align:left; margin-bottom:18px;">
+      <label>Contraseña</label>
+      <input id="loginPwd" type="password" placeholder="Ingresa tu contraseña..." autocomplete="current-password">
+    </div>
+    <button id="btnLogin" class="btn btn-primary" style="width:100%; justify-content:center; padding:12px;">Entrar</button>
+    <p id="loginMsg" style="color:var(--danger); font-size:.83rem; font-weight:700; margin-top:12px; min-height:18px;"></p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     TOP BAR
+══════════════════════════════════════════════════════════════════════════ -->
+<div class="top-bar">
+  <div class="top-bar-inner">
+    <div class="brand">
+      📊 Centro Financiero
+      <span id="badgeAsesor" class="badge-asesor" style="display:none;"></span>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+      <div class="tabs">
+        <button class="tab active" onclick="cambiarVista('dashboard')">📈 Dashboard</button>
+        <button class="tab" onclick="cambiarVista('gastos')">💸 Gastos</button>
+        <button class="tab" onclick="cambiarVista('categorias')">🏷️ Categorías</button>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="window.location.href='/admin.html'">← Volver</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MAIN CONTENT
+══════════════════════════════════════════════════════════════════════════ -->
+<div class="shell">
+
+  <!-- ── DASHBOARD ── -->
+  <div id="view-dashboard" class="view active">
+    <div class="period-bar">
+      <button class="period-btn active" onclick="setPeriodo('mes_actual', this)">Este mes</button>
+      <button class="period-btn" onclick="setPeriodo('mes_anterior', this)">Mes anterior</button>
+      <button class="period-btn" onclick="setPeriodo('anio', this)">Este año</button>
+      <button class="period-btn" onclick="setPeriodo('personalizado', this)">Personalizado</button>
+      <div id="periodCustom" class="period-custom">
+        <input type="date" id="fechaDesde" onchange="cargarDashboard()">
+        <span style="color:var(--muted); font-weight:600;">a</span>
+        <input type="date" id="fechaHasta" onchange="cargarDashboard()">
+      </div>
+    </div>
+
+    <div id="kpiGrid" class="kpi-grid">
+      <div class="kpi kpi-income">
+        <h3>💰 Ingresos totales</h3>
+        <p id="kpiIngresos">—</p>
+        <span>Suma de abonos del período</span>
+      </div>
+      <div class="kpi kpi-expense">
+        <h3>💸 Gastos totales</h3>
+        <p id="kpiGastos">—</p>
+        <span>Banco + Caja física</span>
+      </div>
+      <div class="kpi kpi-profit">
+        <h3>📊 Utilidad neta</h3>
+        <p id="kpiUtilidad">—</p>
+        <span id="kpiUtilidadSub">Ingresos − Gastos</span>
+      </div>
+      <div class="kpi kpi-margin">
+        <h3>📐 Margen</h3>
+        <p id="kpiMargen">—</p>
+        <span>Utilidad / Ingresos</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Estado de Resultados</div>
+      <div id="plContainer">
+        <div class="empty"><div class="empty-icon">📋</div><p>Selecciona un período para ver el P&L.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── GASTOS ── -->
+  <div id="view-gastos" class="view">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+      <h2 style="font-size:1.1rem; font-weight:800;">Registro de Gastos</h2>
+      <button class="btn btn-primary" onclick="abrirModalGasto(null)">+ Nuevo Gasto</button>
+    </div>
+
+    <div class="filter-bar">
+      <input type="date" id="filtroDesde" onchange="cargarGastos()">
+      <span style="color:var(--muted); font-size:.85rem; font-weight:600;">a</span>
+      <input type="date" id="filtroHasta" onchange="cargarGastos()">
+      <select id="filtroCategoria" onchange="cargarGastos()">
+        <option value="">Todas las categorías</option>
+      </select>
+    </div>
+
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div id="gastosContainer">
+        <div class="empty"><div class="empty-icon">💸</div><p>Cargando gastos…</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CATEGORÍAS ── -->
+  <div id="view-categorias" class="view">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+      <h2 style="font-size:1.1rem; font-weight:800;">Gestión de Categorías</h2>
+      <button class="btn btn-primary" onclick="abrirModalCategoria(null)">+ Nueva Categoría</button>
+    </div>
+
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div id="catContainer">
+        <div class="empty"><div class="empty-icon">🏷️</div><p>Cargando categorías…</p></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /shell -->
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODAL: NUEVO / EDITAR GASTO
+══════════════════════════════════════════════════════════════════════════ -->
+<div id="modalGasto" class="overlay">
+  <div class="modal">
+    <div class="modal-title" id="modalGastoTitulo">💸 Nuevo Gasto</div>
+
+    <!-- OCR Zone -->
+    <div id="ocrZone" class="ocr-zone" onclick="document.getElementById('ocrInput').click()">
+      <div id="ocrPreview" style="width:100%;">
+        <div style="font-size:1.4rem;">📎</div>
+        <div class="ocr-zone-text">Pega el comprobante con Ctrl+V o haz clic aquí</div>
+        <div class="ocr-zone-sub">La IA extrae plataforma, monto y fecha automáticamente</div>
+      </div>
+      <div id="ocrStatus" style="font-size:.8rem; color:var(--muted); margin-top:5px; display:none;"></div>
+    </div>
+    <input type="file" id="ocrInput" accept="image/*" onchange="procesarArchivoGasto(this.files[0])">
+
+    <!-- Extracted data row -->
+    <div class="field-row">
+      <div class="field">
+        <label>Fecha *</label>
+        <input type="date" id="gFecha">
+      </div>
+      <div class="field">
+        <label>Monto (COP) *</label>
+        <input type="number" id="gMonto" placeholder="Ej: 3000000" oninput="pedirSugerenciaIA()">
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Plataforma / Banco</label>
+        <input type="text" id="gPlataforma" placeholder="Ej: Bancolombia, Nequi">
+      </div>
+      <div class="field">
+        <label>Referencia</label>
+        <input type="text" id="gReferencia" placeholder="Código del comprobante">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Descripción del gasto *</label>
+      <input type="text" id="gDescripcion" placeholder="¿En qué se gastó? Ej: Nómina semana 2 de marzo" oninput="pedirSugerenciaIA()">
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Categoría *</label>
+        <select id="gCategoria" onchange="onCategoriaChange()">
+          <option value="">Selecciona una categoría...</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Subcategoría</label>
+        <select id="gSubcategoria">
+          <option value="">Sin subcategoría</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- AI suggestion -->
+    <div id="aiBox" class="ai-box">
+      <span class="ai-badge">IA</span>
+      <span class="ai-text" id="aiText">Analizando…</span>
+      <button class="ai-accept" onclick="aceptarSugerencia()">Usar esta</button>
+    </div>
+
+    <div class="field-row" style="margin-top:4px;">
+      <div class="field">
+        <label>Reportado por</label>
+        <input type="text" id="gReportadoPor" placeholder="Ej: Federico, Papá">
+      </div>
+      <div class="field">
+        <label>Proyecto</label>
+        <input type="text" id="gProyecto" placeholder="Ej: Bloque A, Oficina">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Notas adicionales</label>
+      <textarea id="gNotas" placeholder="Observaciones extra..."></textarea>
+    </div>
+
+    <!-- Comprobante preview -->
+    <div id="gComprobanteWrap" style="display:none; margin-bottom:14px;">
+      <div style="font-size:.75rem; font-weight:700; color:var(--ink-2); text-transform:uppercase; margin-bottom:6px;">Comprobante adjunto</div>
+      <img id="gComprobanteImg" src="" onclick="mostrarFoto(this.src)" style="max-height:80px; border-radius:8px; border:1px solid var(--ring-strong); cursor:zoom-in;">
+    </div>
+    <input type="hidden" id="gUrlComprobante">
+    <input type="hidden" id="gGastoId">
+
+    <div style="display:flex; gap:10px; margin-top:6px;">
+      <button class="btn btn-ghost" style="flex:1; justify-content:center;" onclick="cerrarModalGasto()">Cancelar</button>
+      <button class="btn btn-primary" style="flex:2; justify-content:center;" id="btnGuardarGasto" onclick="guardarGasto()">Guardar Gasto</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODAL: NUEVA / EDITAR CATEGORÍA
+══════════════════════════════════════════════════════════════════════════ -->
+<div id="modalCategoria" class="overlay">
+  <div class="modal">
+    <div class="modal-title" id="modalCatTitulo">🏷️ Nueva Categoría</div>
+
+    <div class="field">
+      <label>Nombre de la categoría *</label>
+      <input type="text" id="catNombre" placeholder="Ej: Construcción, Operacional, Premio">
+    </div>
+
+    <div class="field">
+      <label>Icono</label>
+      <div class="icon-options" id="iconOptions">
+        <div class="icon-opt sel" data-icon="💰">💰</div>
+        <div class="icon-opt" data-icon="🏗️">🏗️</div>
+        <div class="icon-opt" data-icon="⚙️">⚙️</div>
+        <div class="icon-opt" data-icon="🏠">🏠</div>
+        <div class="icon-opt" data-icon="📣">📣</div>
+        <div class="icon-opt" data-icon="🧾">🧾</div>
+        <div class="icon-opt" data-icon="🚗">🚗</div>
+        <div class="icon-opt" data-icon="👷">👷</div>
+        <div class="icon-opt" data-icon="🔧">🔧</div>
+        <div class="icon-opt" data-icon="📦">📦</div>
+        <div class="icon-opt" data-icon="💊">💊</div>
+        <div class="icon-opt" data-icon="🎯">🎯</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Color</label>
+      <div class="color-swatches" id="colorSwatches">
+        <div class="swatch sel" data-color="#27ae60" style="background:#27ae60;"></div>
+        <div class="swatch" data-color="#e67e22" style="background:#e67e22;"></div>
+        <div class="swatch" data-color="#3498db" style="background:#3498db;"></div>
+        <div class="swatch" data-color="#9b59b6" style="background:#9b59b6;"></div>
+        <div class="swatch" data-color="#e74c3c" style="background:#e74c3c;"></div>
+        <div class="swatch" data-color="#1abc9c" style="background:#1abc9c;"></div>
+        <div class="swatch" data-color="#f39c12" style="background:#f39c12;"></div>
+        <div class="swatch" data-color="#2c3e50" style="background:#2c3e50;"></div>
+        <div class="swatch" data-color="#e91e63" style="background:#e91e63;"></div>
+        <div class="swatch" data-color="#607d8b" style="background:#607d8b;"></div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Subcategorías</label>
+      <div class="sub-input-wrap">
+        <input type="text" id="subInput" placeholder="Ej: Nómina obreros" onkeydown="if(event.key==='Enter'){event.preventDefault();agregarSub();}">
+        <button class="btn btn-ghost btn-sm" onclick="agregarSub()">+ Agregar</button>
+      </div>
+      <div id="subsList" class="subs-list"></div>
+    </div>
+
+    <input type="hidden" id="catId">
+
+    <div style="display:flex; gap:10px; margin-top:6px;">
+      <button class="btn btn-ghost" style="flex:1; justify-content:center;" onclick="cerrarModalCategoria()">Cancelar</button>
+      <button class="btn btn-primary" style="flex:2; justify-content:center;" id="btnGuardarCat" onclick="guardarCategoria()">Guardar Categoría</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODAL: VER FOTO COMPROBANTE
+══════════════════════════════════════════════════════════════════════════ -->
+<div id="fotoModal" onclick="this.classList.remove('show')">
+  <img id="fotoModalImg" src="" alt="Comprobante">
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+const STORAGE_KEY  = 'finanzas_pwd';
+const fmt = n => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
+const fmtDate = d => { if (!d) return '—'; const [y,m,day] = d.split('-'); return `${day}/${m}/${y}`; };
+
+let contrasena = '';
+let categorias = [];
+let subsActuales = [];       // subcategorías del modal de categoría
+let sugerenciaActual = '';   // última sugerencia de la IA
+let iaTimer = null;          // debounce para sugerir subcategoría
+
+// ─── Período actual del dashboard ───
+let periodoActual = { tipo: 'mes_actual', desde: '', hasta: '' };
+
+// ══════════════════════════════════════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) verificarLogin(saved, true);
+
+  document.getElementById('loginPwd').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('btnLogin').click();
+  });
+
+  // Inicializar fechas de filtro de gastos
+  const hoy = getHoy();
+  const primerDia = hoy.substring(0, 7) + '-01';
+  document.getElementById('filtroDesde').value = primerDia;
+  document.getElementById('filtroHasta').value = hoy;
+});
+
+document.getElementById('btnLogin').onclick = () => {
+  const pwd = document.getElementById('loginPwd').value.trim();
+  if (!pwd) return;
+  verificarLogin(pwd, false);
+};
+
+async function verificarLogin(pwd, auto) {
+  const btn = document.getElementById('btnLogin');
+  const msg = document.getElementById('loginMsg');
+  if (!auto) { btn.textContent = 'Verificando…'; btn.disabled = true; msg.textContent = ''; }
+
+  try {
+    const r = await fetch('/api/admin/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contrasena: pwd })
+    });
+    const data = await r.json();
+
+    if (data.status === 'ok') {
+      if (data.asesor !== 'Mateo') {
+        msg.textContent = '⛔ Solo el administrador tiene acceso al Centro Financiero.';
+        if (!auto) { btn.textContent = 'Entrar'; btn.disabled = false; }
+        localStorage.removeItem(STORAGE_KEY);
+        return;
+      }
+      contrasena = pwd;
+      localStorage.setItem(STORAGE_KEY, pwd);
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('badgeAsesor').style.display = 'inline-flex';
+      document.getElementById('badgeAsesor').textContent = '🟢 ' + data.asesor;
+      inicializar();
+    } else {
+      if (!auto) { msg.textContent = 'Contraseña incorrecta.'; btn.textContent = 'Entrar'; btn.disabled = false; }
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  } catch {
+    if (!auto) { msg.textContent = 'Error de conexión.'; btn.textContent = 'Entrar'; btn.disabled = false; }
+  }
+}
+
+async function inicializar() {
+  await cargarCategorias();
+  setPeriodo('mes_actual', document.querySelector('.period-btn.active'));
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// NAVEGACIÓN ENTRE VISTAS
+// ══════════════════════════════════════════════════════════════════════════
+function cambiarVista(vista) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + vista).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+
+  if (vista === 'gastos') cargarGastos();
+  if (vista === 'categorias') renderCategorias();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// HELPERS DE FECHA
+// ══════════════════════════════════════════════════════════════════════════
+function getHoy() {
+  const col = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+  return col.getFullYear() + '-' + String(col.getMonth()+1).padStart(2,'0') + '-' + String(col.getDate()).padStart(2,'0');
+}
+
+function getRangoPeriodo(tipo) {
+  const hoy = getHoy();
+  const [y, m] = hoy.split('-').map(Number);
+
+  if (tipo === 'mes_actual') {
+    return { desde: `${y}-${String(m).padStart(2,'0')}-01`, hasta: hoy };
+  }
+  if (tipo === 'mes_anterior') {
+    const prevM = m === 1 ? 12 : m - 1;
+    const prevY = m === 1 ? y - 1 : y;
+    const lastDay = new Date(y, m - 1, 0).getDate();
+    return { desde: `${prevY}-${String(prevM).padStart(2,'0')}-01`, hasta: `${prevY}-${String(prevM).padStart(2,'0')}-${lastDay}` };
+  }
+  if (tipo === 'anio') {
+    return { desde: `${y}-01-01`, hasta: hoy };
+  }
+  return null;
+}
+
+function setPeriodo(tipo, btn) {
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  periodoActual.tipo = tipo;
+
+  const custom = document.getElementById('periodCustom');
+
+  if (tipo === 'personalizado') {
+    custom.classList.add('show');
+    return;
+  }
+
+  custom.classList.remove('show');
+  const rango = getRangoPeriodo(tipo);
+  if (rango) {
+    periodoActual.desde = rango.desde;
+    periodoActual.hasta = rango.hasta;
+    cargarDashboard();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// DASHBOARD — P&L
+// ══════════════════════════════════════════════════════════════════════════
+async function cargarDashboard() {
+  let desde = periodoActual.desde;
+  let hasta = periodoActual.hasta;
+
+  if (periodoActual.tipo === 'personalizado') {
+    desde = document.getElementById('fechaDesde').value;
+    hasta = document.getElementById('fechaHasta').value;
+    if (!desde || !hasta) return;
+  }
+
+  document.getElementById('kpiIngresos').textContent = '…';
+  document.getElementById('kpiGastos').textContent = '…';
+  document.getElementById('kpiUtilidad').textContent = '…';
+  document.getElementById('kpiMargen').textContent = '…';
+  document.getElementById('plContainer').innerHTML = '<div style="padding:20px; text-align:center; color:var(--muted); font-weight:600;">Calculando estado de resultados…</div>';
+
+  try {
+    const r = await apiCall('dashboard', { fecha_desde: desde, fecha_hasta: hasta });
+
+    document.getElementById('kpiIngresos').textContent = fmt(r.totalIngresos);
+    document.getElementById('kpiGastos').textContent = fmt(r.totalGastos);
+
+    const util = r.utilidadNeta;
+    const utilEl = document.getElementById('kpiUtilidad');
+    utilEl.textContent = fmt(util);
+    utilEl.style.color = util >= 0 ? 'var(--accent-2)' : 'var(--danger)';
+
+    const margenEl = document.getElementById('kpiMargen');
+    margenEl.textContent = r.margen + '%';
+    margenEl.style.color = r.margen >= 0 ? 'var(--purple)' : 'var(--danger)';
+
+    document.getElementById('kpiUtilidadSub').textContent = util >= 0 ? '¡Operación rentable!' : 'Gastos superan ingresos';
+
+    renderPL(r);
+  } catch (e) {
+    document.getElementById('plContainer').innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><p>${e.message}</p></div>`;
+  }
+}
+
+function renderPL(data) {
+  const { totalIngresos, totalGastos, utilidadNeta, porCategoria } = data;
+  const maxVal = Math.max(totalIngresos, totalGastos, 1);
+
+  // Mapa de color por categoría: primero busca en categorias[], luego asigna color por defecto
+  const getColor = (nombre) => {
+    const cat = categorias.find(c => c.nombre === nombre);
+    if (cat) return cat.color;
+    if (nombre === 'Caja Física') return '#607d8b';
+    return '#95a5a6';
+  };
+
+  let html = '';
+
+  // INGRESOS
+  html += `<div class="pl-row header"><span>Ingresos</span><span>Monto</span></div>`;
+  html += `<div class="pl-row category-row" style="border-left:3px solid var(--accent); padding-left:10px;">
+    <div class="pl-label"><div class="cat-dot" style="background:var(--accent);"></div>Ventas de rifas</div>
+    <div class="pl-bar-wrap"><div class="pl-bar" style="width:${Math.round(totalIngresos/maxVal*100)}%; background:var(--accent);"></div></div>
+    <span class="pl-monto" style="color:var(--accent-2);">${fmt(totalIngresos)}</span>
+  </div>`;
+
+  html += `<div class="pl-row separator"><span>Total Ingresos</span><span style="color:var(--accent-2);">${fmt(totalIngresos)}</span></div>`;
+
+  // GASTOS
+  html += `<div class="pl-row header" style="margin-top:20px;"><span>Gastos</span><span>Monto</span></div>`;
+
+  let sumaGastos = 0;
+  for (const [cat, info] of Object.entries(porCategoria)) {
+    const color = getColor(cat);
+    sumaGastos += info.total;
+    const catIcon = (categorias.find(c => c.nombre === cat) || {}).icono || (cat === 'Caja Física' ? '🏦' : '💸');
+
+    html += `<div class="pl-row category-row" style="border-left:3px solid ${color}; padding-left:10px;">
+      <div class="pl-label"><div class="cat-dot" style="background:${color};"></div>${catIcon} ${cat}</div>
+      <div class="pl-bar-wrap"><div class="pl-bar" style="width:${Math.round(info.total/maxVal*100)}%; background:${color};"></div></div>
+      <span class="pl-monto" style="color:var(--danger);">-${fmt(info.total)}</span>
+    </div>`;
+
+    for (const [sub, subTotal] of Object.entries(info.subcategorias)) {
+      html += `<div class="pl-row sub-row">
+        <div class="pl-label" style="padding-left:8px;">↳ ${sub}</div>
+        <div class="pl-bar-wrap"><div class="pl-bar" style="width:${Math.round(subTotal/maxVal*100)}%; background:${color}; opacity:.5;"></div></div>
+        <span class="pl-monto" style="color:var(--muted);">${fmt(subTotal)}</span>
+      </div>`;
+    }
+  }
+
+  html += `<div class="pl-row separator"><span>Total Gastos</span><span style="color:var(--danger);">-${fmt(totalGastos)}</span></div>`;
+
+  // UTILIDAD NETA
+  const positiva = utilidadNeta >= 0;
+  html += `<div class="pl-row net-row" style="color:${positiva ? 'var(--accent-2)' : 'var(--danger)'};">
+    <span>${positiva ? '✅' : '⚠️'} UTILIDAD NETA</span>
+    <span>${positiva ? '' : '-'}${fmt(Math.abs(utilidadNeta))}</span>
+  </div>`;
+
+  document.getElementById('plContainer').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// GASTOS — Lista
+// ══════════════════════════════════════════════════════════════════════════
+async function cargarGastos() {
+  const desde = document.getElementById('filtroDesde').value;
+  const hasta = document.getElementById('filtroHasta').value;
+  const cat   = document.getElementById('filtroCategoria').value;
+
+  document.getElementById('gastosContainer').innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><p>Cargando…</p></div>';
+
+  try {
+    const r = await apiCall('listar_gastos', { fecha_desde: desde || undefined, fecha_hasta: hasta || undefined, categoria: cat || undefined });
+
+    if (!r.gastos.length) {
+      document.getElementById('gastosContainer').innerHTML = '<div class="empty"><div class="empty-icon">📭</div><p>No hay gastos en este período.</p></div>';
+      return;
+    }
+
+    document.getElementById('gastosContainer').innerHTML = r.gastos.map(g => {
+      const cat = categorias.find(c => c.nombre === g.categoria) || {};
+      const color = cat.color || '#95a5a6';
+      const icono = cat.icono || '💸';
+      return `<div class="gasto-item" onclick="abrirModalGasto(${JSON.stringify(g).replace(/"/g,'&quot;')})">
+        <div class="gasto-icon" style="background:${color}18;">${icono}</div>
+        <div class="gasto-body">
+          <div class="gasto-title">${g.descripcion || g.subcategoria || g.categoria}</div>
+          <div class="gasto-meta">
+            <span class="pill-tag" style="background:${color}18; color:${color};">${g.categoria}${g.subcategoria ? ' · ' + g.subcategoria : ''}</span>
+            ${g.plataforma ? ` · ${g.plataforma}` : ''}
+            ${g.reportado_por ? ` · ${g.reportado_por}` : ''}
+          </div>
+        </div>
+        <div class="gasto-right">
+          <div class="gasto-monto">${fmt(g.monto)}</div>
+          <div class="gasto-fecha">${fmtDate(g.fecha)}</div>
+          ${g.url_comprobante ? `<div style="margin-top:3px;"><span onclick="event.stopPropagation(); mostrarFoto('${g.url_comprobante}')" style="font-size:.7rem; color:var(--blue); cursor:pointer; font-weight:700;">📎 Ver</span></div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    document.getElementById('gastosContainer').innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><p>${e.message}</p></div>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// CATEGORÍAS
+// ══════════════════════════════════════════════════════════════════════════
+async function cargarCategorias() {
+  try {
+    const r = await apiCall('listar_categorias', {});
+    categorias = r.categorias || [];
+
+    // Actualizar selects de filtro y del modal
+    const filtroSelect = document.getElementById('filtroCategoria');
+    const valorActual = filtroSelect.value;
+    filtroSelect.innerHTML = '<option value="">Todas las categorías</option>' +
+      categorias.map(c => `<option value="${c.nombre}">${c.icono} ${c.nombre}</option>`).join('');
+    filtroSelect.value = valorActual;
+
+  } catch { }
+}
+
+function renderCategorias() {
+  if (!categorias.length) {
+    document.getElementById('catContainer').innerHTML = '<div class="empty"><div class="empty-icon">🏷️</div><p>Aún no hay categorías. Crea la primera.</p></div>';
+    return;
+  }
+
+  document.getElementById('catContainer').innerHTML = categorias.map(c => `
+    <div class="cat-item">
+      <div class="cat-left">
+        <div class="cat-icon-box" style="background:${c.color}18; font-size:1.2rem;">${c.icono}</div>
+        <div>
+          <div class="cat-name">${c.nombre}</div>
+          <div class="sub-tags">
+            ${(c.subcategorias || []).map(s => `<span class="sub-tag">${s}</span>`).join('') || '<span style="font-size:.75rem; color:var(--muted);">Sin subcategorías</span>'}
+          </div>
+        </div>
+      </div>
+      <div style="display:flex; gap:6px; flex-shrink:0;">
+        <button class="btn btn-ghost btn-sm" onclick="abrirModalCategoria(${JSON.stringify(c).replace(/"/g,'&quot;')})">✏️ Editar</button>
+        <button class="btn btn-sm" style="background:var(--danger); color:#fff;" onclick="eliminarCategoria('${c.id}', '${c.nombre}')">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// MODAL GASTO
+// ══════════════════════════════════════════════════════════════════════════
+function abrirModalGasto(gasto) {
+  const esEdicion = !!gasto;
+  document.getElementById('modalGastoTitulo').textContent = esEdicion ? '✏️ Editar Gasto' : '💸 Nuevo Gasto';
+  document.getElementById('btnGuardarGasto').textContent = esEdicion ? 'Actualizar Gasto' : 'Guardar Gasto';
+
+  // Limpiar
+  resetOcrZone();
+  document.getElementById('gFecha').value = '';
+  document.getElementById('gMonto').value = '';
+  document.getElementById('gPlataforma').value = '';
+  document.getElementById('gReferencia').value = '';
+  document.getElementById('gDescripcion').value = '';
+  document.getElementById('gReportadoPor').value = '';
+  document.getElementById('gProyecto').value = '';
+  document.getElementById('gNotas').value = '';
+  document.getElementById('gUrlComprobante').value = '';
+  document.getElementById('gGastoId').value = '';
+  document.getElementById('gComprobanteWrap').style.display = 'none';
+  document.getElementById('aiBox').classList.remove('show');
+
+  // Poblar categorías
+  const catSel = document.getElementById('gCategoria');
+  catSel.innerHTML = '<option value="">Selecciona una categoría...</option>' +
+    categorias.map(c => `<option value="${c.nombre}">${c.icono} ${c.nombre}</option>`).join('');
+  document.getElementById('gSubcategoria').innerHTML = '<option value="">Sin subcategoría</option>';
+
+  if (esEdicion) {
+    document.getElementById('gGastoId').value = gasto.id;
+    document.getElementById('gFecha').value = gasto.fecha || '';
+    document.getElementById('gMonto').value = gasto.monto || '';
+    document.getElementById('gPlataforma').value = gasto.plataforma || '';
+    document.getElementById('gReferencia').value = gasto.referencia || '';
+    document.getElementById('gDescripcion').value = gasto.descripcion || '';
+    document.getElementById('gReportadoPor').value = gasto.reportado_por || '';
+    document.getElementById('gProyecto').value = gasto.proyecto || '';
+    document.getElementById('gNotas').value = gasto.notas || '';
+    document.getElementById('gUrlComprobante').value = gasto.url_comprobante || '';
+    catSel.value = gasto.categoria || '';
+    onCategoriaChange();
+    setTimeout(() => { document.getElementById('gSubcategoria').value = gasto.subcategoria || ''; }, 50);
+
+    if (gasto.url_comprobante) {
+      document.getElementById('gComprobanteImg').src = gasto.url_comprobante;
+      document.getElementById('gComprobanteWrap').style.display = 'block';
+    }
+  } else {
+    document.getElementById('gFecha').value = getHoy();
+  }
+
+  document.getElementById('modalGasto').classList.add('show');
+}
+
+function cerrarModalGasto() {
+  document.getElementById('modalGasto').classList.remove('show');
+}
+
+function onCategoriaChange() {
+  const catNombre = document.getElementById('gCategoria').value;
+  const cat = categorias.find(c => c.nombre === catNombre);
+  const subSel = document.getElementById('gSubcategoria');
+  subSel.innerHTML = '<option value="">Sin subcategoría</option>';
+  if (cat && cat.subcategorias) {
+    cat.subcategorias.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s; opt.textContent = s;
+      subSel.appendChild(opt);
+    });
+  }
+  pedirSugerenciaIA();
+}
+
+// ── Sugerir subcategoría con debounce ──
+function pedirSugerenciaIA() {
+  clearTimeout(iaTimer);
+  iaTimer = setTimeout(async () => {
+    const cat = document.getElementById('gCategoria').value;
+    const desc = document.getElementById('gDescripcion').value.trim();
+    const monto = document.getElementById('gMonto').value;
+    if (!cat || (!desc && !monto)) return;
+
+    const catObj = categorias.find(c => c.nombre === cat);
+    const subs = catObj ? catObj.subcategorias : [];
+
+    document.getElementById('aiBox').classList.add('show');
+    document.getElementById('aiText').textContent = 'Analizando…';
+
+    try {
+      const r = await apiCall('sugerir_subcategoria', { descripcion: desc, monto, categoria: cat, subcategorias_existentes: subs });
+      if (r.sugerencia) {
+        sugerenciaActual = r.sugerencia;
+        document.getElementById('aiText').textContent = `Sugerencia: "${r.sugerencia}"`;
+      } else {
+        document.getElementById('aiBox').classList.remove('show');
+      }
+    } catch {
+      document.getElementById('aiBox').classList.remove('show');
+    }
+  }, 800);
+}
+
+function aceptarSugerencia() {
+  if (!sugerenciaActual) return;
+  const subSel = document.getElementById('gSubcategoria');
+  // Si ya existe en el select, la selecciona
+  let found = false;
+  for (const opt of subSel.options) {
+    if (opt.value === sugerenciaActual) { subSel.value = sugerenciaActual; found = true; break; }
+  }
+  // Si no existe, la agrega
+  if (!found) {
+    const opt = document.createElement('option');
+    opt.value = sugerenciaActual; opt.textContent = sugerenciaActual;
+    subSel.appendChild(opt);
+    subSel.value = sugerenciaActual;
+  }
+  document.getElementById('aiBox').classList.remove('show');
+}
+
+async function guardarGasto() {
+  const id       = document.getElementById('gGastoId').value;
+  const fecha    = document.getElementById('gFecha').value;
+  const monto    = document.getElementById('gMonto').value;
+  const cat      = document.getElementById('gCategoria').value;
+  const sub      = document.getElementById('gSubcategoria').value;
+  const desc     = document.getElementById('gDescripcion').value.trim();
+  const plat     = document.getElementById('gPlataforma').value.trim();
+  const ref      = document.getElementById('gReferencia').value.trim();
+  const rep      = document.getElementById('gReportadoPor').value.trim();
+  const proy     = document.getElementById('gProyecto').value.trim();
+  const notas    = document.getElementById('gNotas').value.trim();
+  const urlComp  = document.getElementById('gUrlComprobante').value;
+
+  if (!fecha || !monto || !cat) { alert('⚠️ Fecha, monto y categoría son obligatorios.'); return; }
+  if (Number(monto) <= 0) { alert('⚠️ El monto debe ser mayor a 0.'); return; }
+
+  const btn = document.getElementById('btnGuardarGasto');
+  btn.textContent = 'Guardando…'; btn.disabled = true;
+
+  const payload = { fecha, monto: Number(monto), categoria: cat, subcategoria: sub || null,
+    descripcion: desc || null, plataforma: plat || null, referencia: ref || null,
+    reportado_por: rep || null, proyecto: proy || null, notas: notas || null,
+    url_comprobante: urlComp || null };
+
+  try {
+    if (id) {
+      await apiCall('actualizar_gasto', { id, ...payload });
+    } else {
+      await apiCall('registrar_gasto', payload);
+    }
+    cerrarModalGasto();
+    cargarGastos();
+    cargarDashboard();
+    if (document.getElementById('view-categorias').classList.contains('active')) renderCategorias();
+  } catch (e) {
+    alert('Error: ' + e.message);
+  } finally {
+    btn.textContent = id ? 'Actualizar Gasto' : 'Guardar Gasto'; btn.disabled = false;
+  }
+}
+
+async function eliminarGasto(id) {
+  if (!confirm('¿Eliminar este gasto? Esta acción no se puede deshacer.')) return;
+  try {
+    await apiCall('eliminar_gasto', { id });
+    cargarGastos();
+    cargarDashboard();
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// OCR — PEGAR IMAGEN DE COMPROBANTE (Ctrl+V o drag)
+// ══════════════════════════════════════════════════════════════════════════
+document.addEventListener('paste', (e) => {
+  const modalVisible = document.getElementById('modalGasto').classList.contains('show');
+  if (!modalVisible) return;
+  const items = (e.clipboardData || window.clipboardData)?.items;
+  if (!items) return;
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].type.startsWith('image')) {
+      e.preventDefault();
+      procesarArchivoGasto(items[i].getAsFile());
+      return;
+    }
+  }
+});
+
+// Drag & drop sobre la zona OCR
+const ocrZoneEl = document.getElementById('ocrZone');
+ocrZoneEl.addEventListener('dragover', e => { e.preventDefault(); ocrZoneEl.classList.add('drag-over'); });
+ocrZoneEl.addEventListener('dragleave', () => ocrZoneEl.classList.remove('drag-over'));
+ocrZoneEl.addEventListener('drop', e => {
+  e.preventDefault(); ocrZoneEl.classList.remove('drag-over');
+  const file = e.dataTransfer?.files?.[0];
+  if (file && file.type.startsWith('image')) procesarArchivoGasto(file);
+});
+
+async function procesarArchivoGasto(blob) {
+  if (!blob) return;
+
+  const localUrl = URL.createObjectURL(blob);
+  document.getElementById('ocrZone').innerHTML = `
+    <img src="${localUrl}" onclick="mostrarFoto('${localUrl}')" style="max-height:100px; border-radius:8px; cursor:zoom-in; max-width:100%;">
+    <span id="ocrStatus" style="font-size:.8rem; color:var(--muted); margin-top:6px;">🤖 IA leyendo comprobante…</span>`;
+
+  try {
+    const base64 = await blobABase64(blob);
+
+    const r = await fetch('/api/admin/procesar-ia-gasto', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imagenBase64: base64, contrasena })
+    });
+    const data = await r.json();
+
+    if (data.status !== 'ok') throw new Error(data.mensaje);
+
+    const d = data.datosExtraidos;
+    if (d.fecha_pago) document.getElementById('gFecha').value = d.fecha_pago;
+    if (d.monto) document.getElementById('gMonto').value = d.monto;
+    if (d.plataforma) document.getElementById('gPlataforma').value = d.plataforma;
+    if (d.referencia && d.referencia !== '0') document.getElementById('gReferencia').value = d.referencia;
+
+    if (data.url_comprobante) {
+      document.getElementById('gUrlComprobante').value = data.url_comprobante;
+      document.getElementById('gComprobanteImg').src = data.url_comprobante;
+      document.getElementById('gComprobanteWrap').style.display = 'block';
+    }
+
+    const statusEl = document.getElementById('ocrStatus');
+    if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent-2); font-weight:700;">✅ Datos extraídos. Completa los demás campos.</span>';
+
+    pedirSugerenciaIA();
+
+  } catch (e) {
+    const statusEl = document.getElementById('ocrStatus');
+    if (statusEl) statusEl.innerHTML = `<span style="color:var(--danger); font-weight:700;">❌ ${e.message}</span>`;
+  }
+}
+
+function resetOcrZone() {
+  document.getElementById('ocrZone').innerHTML = `
+    <div id="ocrPreview" style="width:100%;">
+      <div style="font-size:1.4rem;">📎</div>
+      <div class="ocr-zone-text">Pega el comprobante con Ctrl+V o haz clic aquí</div>
+      <div class="ocr-zone-sub">La IA extrae plataforma, monto y fecha automáticamente</div>
+    </div>`;
+}
+
+function blobABase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// MODAL CATEGORÍA
+// ══════════════════════════════════════════════════════════════════════════
+function abrirModalCategoria(cat) {
+  const esEdicion = !!cat;
+  document.getElementById('modalCatTitulo').textContent = esEdicion ? '✏️ Editar Categoría' : '🏷️ Nueva Categoría';
+  document.getElementById('btnGuardarCat').textContent = esEdicion ? 'Actualizar' : 'Guardar Categoría';
+  document.getElementById('catId').value = esEdicion ? cat.id : '';
+  document.getElementById('catNombre').value = esEdicion ? cat.nombre : '';
+  document.getElementById('subInput').value = '';
+
+  subsActuales = esEdicion ? [...(cat.subcategorias || [])] : [];
+  renderSubsEdicion();
+
+  // Ícono
+  document.querySelectorAll('.icon-opt').forEach(el => {
+    el.classList.toggle('sel', el.dataset.icon === (esEdicion ? cat.icono : '💰'));
+  });
+
+  // Color
+  document.querySelectorAll('.swatch').forEach(el => {
+    el.classList.toggle('sel', el.dataset.color === (esEdicion ? cat.color : '#27ae60'));
+  });
+
+  document.getElementById('modalCategoria').classList.add('show');
+}
+
+function cerrarModalCategoria() {
+  document.getElementById('modalCategoria').classList.remove('show');
+}
+
+document.querySelectorAll('.icon-opt').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.icon-opt').forEach(e => e.classList.remove('sel'));
+    el.classList.add('sel');
+  });
+});
+
+document.querySelectorAll('.swatch').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.swatch').forEach(e => e.classList.remove('sel'));
+    el.classList.add('sel');
+  });
+});
+
+function agregarSub() {
+  const val = document.getElementById('subInput').value.trim();
+  if (!val || subsActuales.includes(val)) return;
+  subsActuales.push(val);
+  document.getElementById('subInput').value = '';
+  renderSubsEdicion();
+}
+
+function removerSub(idx) {
+  subsActuales.splice(idx, 1);
+  renderSubsEdicion();
+}
+
+function renderSubsEdicion() {
+  document.getElementById('subsList').innerHTML = subsActuales.map((s, i) =>
+    `<span class="sub-edit-tag">${s}<button class="sub-remove" onclick="removerSub(${i})">✕</button></span>`
+  ).join('');
+}
+
+async function guardarCategoria() {
+  const id     = document.getElementById('catId').value;
+  const nombre = document.getElementById('catNombre').value.trim();
+  const icono  = document.querySelector('.icon-opt.sel')?.dataset.icon || '💰';
+  const color  = document.querySelector('.swatch.sel')?.dataset.color || '#27ae60';
+
+  if (!nombre) { alert('El nombre de la categoría es obligatorio.'); return; }
+
+  const btn = document.getElementById('btnGuardarCat');
+  btn.textContent = 'Guardando…'; btn.disabled = true;
+
+  try {
+    if (id) {
+      await apiCall('actualizar_categoria', { id, nombre, icono, color, subcategorias: subsActuales });
+    } else {
+      await apiCall('crear_categoria', { nombre, icono, color, subcategorias: subsActuales });
+    }
+    cerrarModalCategoria();
+    await cargarCategorias();
+    renderCategorias();
+  } catch (e) {
+    alert('Error: ' + e.message);
+  } finally {
+    btn.textContent = id ? 'Actualizar' : 'Guardar Categoría'; btn.disabled = false;
+  }
+}
+
+async function eliminarCategoria(id, nombre) {
+  if (!confirm(`¿Eliminar la categoría "${nombre}"? Los gastos existentes de esta categoría no se borrarán, pero quedarán sin categoría activa.`)) return;
+  try {
+    await apiCall('eliminar_categoria', { id });
+    await cargarCategorias();
+    renderCategorias();
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// FOTO COMPROBANTE
+// ══════════════════════════════════════════════════════════════════════════
+function mostrarFoto(url) {
+  if (!url) return;
+  document.getElementById('fotoModalImg').src = url;
+  document.getElementById('fotoModal').classList.add('show');
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// API HELPER
+// ══════════════════════════════════════════════════════════════════════════
+async function apiCall(accion, payload) {
+  const r = await fetch('/api/admin/finanzas', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ accion, contrasena, ...payload })
+  });
+  const data = await r.json();
+  if (data.status !== 'ok') throw new Error(data.mensaje || 'Error desconocido');
+  return data;
+}
+</script>
+</body>
+</html>
