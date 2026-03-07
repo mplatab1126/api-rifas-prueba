@@ -290,15 +290,16 @@ const $ = id => document.getElementById(id);
             const resIA = await reqIA.json();
             
             // ── Helpers para los callbacks de aceptar/rechazar ──────────────
-            const aceptarTransferencia = (t, fotoFinal) => {
+            const aceptarTransferencia = (t, fotoDb, fotoLocal) => {
+                const fotoDisplay = fotoDb || fotoLocal;
                 const dropEl2 = document.getElementById(dropElId);
                 if (dropEl2) {
                     dropEl2.innerHTML = `
-                        <img src="${fotoFinal}" onclick="mostrarFoto('${fotoFinal}')"
+                        <img src="${fotoDisplay}" onclick="mostrarFoto('${fotoDisplay}')"
                              style="max-height:130px; max-width:100%; border-radius:8px; cursor:zoom-in; display:block; margin:0 auto; box-shadow:0 4px 16px rgba(0,0,0,0.15); border:2px solid var(--accent);">
                         <span id="${statusId}" style="display:block; margin-top:8px; font-size:0.85rem; text-align:center;"></span>`;
                 }
-                seleccionarTransferencia(targetIdOculto, refId, montoId, metodoId, feedbackId, t.id, t.referencia, t.monto, t.plataforma, fotoFinal);
+                seleccionarTransferencia(targetIdOculto, refId, montoId, metodoId, feedbackId, t.id, t.referencia, t.monto, t.plataforma, fotoDb);
                 setStatus('<span style="color:var(--accent-2); font-weight:bold;">¡Pago enlazado y asegurado! ✅</span>');
             };
 
@@ -324,7 +325,7 @@ const $ = id => document.getElementById(id);
                     const fotoFinal = (t.url_comprobante && t.url_comprobante !== 'null') ? t.url_comprobante : null;
                     mostrarSugerencia(
                         dropElId, statusId, t, fotoFinal,
-                        () => aceptarTransferencia(t, fotoFinal || localUrl),
+                        () => aceptarTransferencia(t, fotoFinal, localUrl),
                         rechazarTransferencia
                     );
                 } else {
@@ -359,7 +360,7 @@ const $ = id => document.getElementById(id);
                             const fotoFinal = (t.url_comprobante && t.url_comprobante !== 'null') ? t.url_comprobante : null;
                             mostrarSugerencia(
                                 dropElId, statusId, t, fotoFinal,
-                                () => aceptarTransferencia(t, fotoFinal || localUrl),
+                                () => aceptarTransferencia(t, fotoFinal, localUrl),
                                 rechazarTransferencia
                             );
                         } else {
