@@ -90,15 +90,12 @@ export default async function handler(req, res) {
         .from(tabla)
         .select('estado, total_abonado, telefono_cliente');
 
-      const { data: abonosActuales } = await supabase
-        .from('abonos')
-        .select('monto')
-        .like('numero_boleta', patron);
-
       const totalBoletas = boletasActuales?.length || 0;
       const vendidas     = boletasActuales?.filter(b => b.estado === 'Pagada').length || 0;
       const pagadas      = vendidas;
-      const recaudo      = abonosActuales?.reduce((s, a) => s + Number(a.monto), 0) || 0;
+      // Se usa total_abonado de cada boleta (se resetea a 0 al iniciar cada rifa),
+      // en lugar de sumar la tabla abonos que acumula histórico de todas las rifas.
+      const recaudo      = boletasActuales?.reduce((s, b) => s + Number(b.total_abonado || 0), 0) || 0;
 
       const nGanadores   = Number(ganadores)            || 0;
       const nPagado      = Number(totalPagadoGanadores) || 0;

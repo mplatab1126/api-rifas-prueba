@@ -697,7 +697,9 @@
         const asesoresSet = new Set();
         globalVentas.forEach(v => asesoresSet.add(v.asesor)); globalAbonos.forEach(a => asesoresSet.add(a.asesor)); globalChatea.forEach(c => asesoresSet.add(c.asesor));
         
-        let htmlCheckboxes = `<label style="display:flex; gap:8px; margin-bottom:8px; cursor:pointer; font-weight:800; color:var(--ink);"><input type="checkbox" id="chk-all-asesores" checked onchange="toggleAllAsesores(this)" style="accent-color: var(--accent); width:16px; height:16px;"> Seleccionar Todos</label><hr style="border:0; border-top:1px solid var(--ring); margin: 10px 0;">`;
+        let htmlCheckboxes = `
+          <button onclick="seleccionarMiEquipo()" style="width:100%; margin-bottom:10px; padding:7px 0; background:var(--accent); color:#fff; border:none; border-radius:8px; font-weight:800; font-size:0.88rem; cursor:pointer; letter-spacing:0.5px;">👥 Mi equipo</button>
+          <label style="display:flex; gap:8px; margin-bottom:8px; cursor:pointer; font-weight:800; color:var(--ink);"><input type="checkbox" id="chk-all-asesores" checked onchange="toggleAllAsesores(this)" style="accent-color: var(--accent); width:16px; height:16px;"> Seleccionar Todos</label><hr style="border:0; border-top:1px solid var(--ring); margin: 10px 0;">`;
         [...asesoresSet].sort().forEach(a => {
             if(a !== 'Sin Asesor') htmlCheckboxes += `<label style="display:flex; gap:8px; margin-bottom:8px; cursor:pointer; font-size:0.9rem; font-weight:600; color:var(--ink-2);"><input type="checkbox" value="${a}" class="asesor-chk" checked onchange="verificarAsesoresYFiltrar()" style="accent-color: var(--blue); width:16px; height:16px;"> ${a}</label>`;
         });
@@ -1118,6 +1120,13 @@
     }
 
     // Funciones de Checkbox y Limpieza
+    const EXCLUIDOS_MI_EQUIPO = ['alejandra plata', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
+    function seleccionarMiEquipo() {
+        document.querySelectorAll('.asesor-chk').forEach(chk => {
+            chk.checked = !EXCLUIDOS_MI_EQUIPO.includes(chk.value.toLowerCase().trim());
+        });
+        verificarAsesoresYFiltrar();
+    }
     function toggleAllAsesores(source) { document.querySelectorAll('.asesor-chk').forEach(chk => chk.checked = source.checked); verificarAsesoresYFiltrar(); }
     function verificarAsesoresYFiltrar() {
         const chks = document.querySelectorAll('.asesor-chk'); const allChecked = Array.from(chks).every(c => c.checked);

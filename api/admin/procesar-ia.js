@@ -71,7 +71,11 @@ export default async function handler(req, res) {
        return res.status(400).json({ status: 'error', mensaje: 'La imagen es borrosa o no es un comprobante válido.' });
     }
 
-    // 5. ESCUDO ANTI-CLONES (Con detector de detalles del clon)
+    // 5. ESCUDO ANTI-CLONES
+    // Busca transferencias con el mismo monto y fecha como filtro inicial (red amplia).
+    // Luego compara TODOS los campos disponibles: plataforma, referencia y hora (a nivel de minuto).
+    // Solo si todos coinciden se considera duplicado. Así, dos transferencias Nequi→Bancolombia
+    // con el mismo monto/referencia/fecha pero distinta hora se registran como pagos independientes.
     const { data: existentes, error: errExistentes } = await supabase
         .from('transferencias')
         .select('*')
@@ -81,44 +85,22 @@ export default async function handler(req, res) {
     if (errExistentes) throw errExistentes;
 
     let esDuplicado = false;
-    let transferenciaOriginal = null; // Aquí guardaremos la que ya existía
+    let transferenciaOriginal = null;
 
     if (existentes && existentes.length > 0) {
         esDuplicado = existentes.some(tExist => {
-            let coinciden = false;
-            const plataformaNueva = datos.plataforma.toLowerCase();
-            const plataformaExist = String(tExist.plataforma).toLowerCase();
+            // 1. Plataforma (sin distinción de mayúsculas)
+            const mismaPlatf = datos.plataforma.toLowerCase().trim() === String(tExist.plataforma).toLowerCase().trim();
 
-            if (plataformaNueva.includes('nequi') && plataformaExist.includes('nequi')) {
-                // Nequi→Nequi: comparar últimos 4 dígitos de la referencia
-                const digitosNueva = String(datos.referencia).replace(/\D/g, '');
-                const digitosExist = String(tExist.referencia).replace(/\D/g, '');
-                if (digitosNueva.length >= 4 && digitosExist.length >= 4) {
-                    coinciden = digitosNueva.slice(-4) === digitosExist.slice(-4);
-                }
-            } else if (plataformaNueva.includes('bancolombia') || plataformaExist.includes('bancolombia')) {
-                // Bancolombia: las referencias entre la app del cliente y el extracto SVN pueden diferir
-                // (p.ej. "0000049000" vs "86096513013"), así que usamos la hora como criterio secundario.
-                // EXCEPCIÓN: si ambas referencias son numéricas largas (≥7 dígitos, ej: teléfonos Nequi)
-                // y son distintas, son pagadores diferentes — NO usar el minuto como criterio.
-                const refNueva = String(datos.referencia).replace(/\D/g, '');
-                const refExistente = String(tExist.referencia).replace(/\D/g, '');
-                const refEsNula = refNueva === '0' || refNueva === '';
-                const refExacta = !refEsNula && String(datos.referencia).trim() === String(tExist.referencia).trim();
-                if (refExacta) {
-                    coinciden = true;
-                } else if (datos.hora_pago && tExist.hora_pago) {
-                    const ambasConReferencia = refNueva.length >= 7 && refExistente.length >= 7;
-                    if (!ambasConReferencia) {
-                        // Solo usar el minuto como criterio cuando no hay referencias únicas identificables
-                        const mismoMinuto = datos.hora_pago.substring(0, 5) === tExist.hora_pago.substring(0, 5);
-                        coinciden = mismoMinuto;
-                    }
-                }
-            } else {
-                coinciden = String(datos.referencia).trim() === String(tExist.referencia).trim();
-            }
+            // 2. Referencia exacta (sin distinción de mayúsculas ni espacios)
+            const mismaRef = String(datos.referencia).toLowerCase().trim() === String(tExist.referencia).toLowerCase().trim();
 
+            // 3. Hora a nivel de minuto (HH:MM) — los segundos pueden variar entre comprobantes
+            const horaNew  = (datos.hora_pago  || '').substring(0, 5);
+            const horaExist = (tExist.hora_pago || '').substring(0, 5);
+            const mismaHora = horaNew !== '' && horaExist !== '' && horaNew === horaExist;
+
+            const coinciden = mismaPlatf && mismaRef && mismaHora;
             if (coinciden) {
                 transferenciaOriginal = tExist;
                 return true;
