@@ -132,6 +132,11 @@
     .ocr-zone-sub { font-size: .73rem; color: var(--muted); pointer-events: none; }
     #ocrInput { display: none; }
 
+    /* ── AUTO BADGE ── */
+    .auto-badge { display: inline-flex; align-items: center; gap: 4px; background: #1877f2; color: #fff; padding: 2px 7px; border-radius: 5px; font-size: .68rem; font-weight: 800; margin-left: 6px; vertical-align: middle; }
+    .auto-badge-caja { background: #607d8b; }
+    .auto-badge-whatsapp { background: #25D366; }
+
     /* ── AI SUGGESTION BOX ── */
     .ai-box { display: none; align-items: center; gap: 8px; background: #eef6ff; border: 1px solid #b8d9f8; border-radius: 10px; padding: 9px 13px; margin-top: 6px; font-size: .84rem; }
     .ai-box.show { display: flex; }
@@ -171,6 +176,37 @@
     .login-card { background: #fff; width: 90%; max-width: 340px; border-radius: 24px; padding: 34px; text-align: center; box-shadow: 0 24px 64px rgba(0,0,0,.35); }
     .login-card h2 { font-size: 1.25rem; font-weight: 800; color: var(--ink); margin-bottom: 4px; }
     .login-card p { color: var(--muted); font-size: .86rem; margin-bottom: 22px; line-height: 1.5; }
+
+    /* ── PROGRESS BAR ── */
+    .progress-wrap { background: var(--ring); border-radius: 20px; height: 14px; overflow: hidden; margin: 10px 0 6px; }
+    .progress-bar { height: 100%; border-radius: 20px; transition: width .8s ease; background: linear-gradient(90deg, var(--accent-2), var(--accent)); }
+    .progress-bar.danger { background: linear-gradient(90deg, #c0392b, var(--danger)); }
+    .progress-bar.warning { background: linear-gradient(90deg, #d68910, var(--warning)); }
+
+    /* ── INVESTOR CARDS ── */
+    .inv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .inv-card { background: #fff; border: 1px solid var(--ring-strong); border-radius: 18px; padding: 22px; position: relative; overflow: hidden; }
+    .inv-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: 18px 18px 0 0; }
+    .inv-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .inv-avatar { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; color: #fff; flex-shrink: 0; }
+    .inv-name { font-size: 1rem; font-weight: 800; color: var(--ink); }
+    .inv-pct { font-size: .78rem; color: var(--muted); font-weight: 600; }
+    .inv-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--ring); font-size: .84rem; }
+    .inv-row:last-child { border-bottom: none; }
+    .inv-label { color: var(--muted); font-weight: 500; }
+    .inv-val { font-weight: 700; color: var(--ink); }
+    .inv-total-row { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 2px solid var(--ring-strong); }
+    .inv-total-label { font-size: .85rem; font-weight: 700; color: var(--ink-2); }
+    .inv-total-val { font-size: 1.1rem; font-weight: 800; }
+
+    /* ── CAPITAL RECOVERY BANNER ── */
+    .recovery-banner { background: linear-gradient(135deg, #1a2520 0%, #2d4a38 100%); border-radius: 18px; padding: 22px 24px; color: #fff; margin-bottom: 22px; }
+    .recovery-banner h3 { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: rgba(255,255,255,.6); margin-bottom: 4px; }
+    .recovery-banner .rec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 16px; }
+    .rec-stat p { font-size: 1.5rem; font-weight: 800; color: #fff; line-height: 1.1; }
+    .rec-stat span { font-size: .75rem; color: rgba(255,255,255,.6); font-weight: 500; }
+    .progress-wrap-dark { background: rgba(255,255,255,.15); border-radius: 20px; height: 12px; overflow: hidden; margin: 4px 0; }
+    .progress-bar-light { height: 100%; border-radius: 20px; background: linear-gradient(90deg, #2ecc71, #27ae60); transition: width .8s ease; }
 
     /* ── SCROLLBAR ── */
     ::-webkit-scrollbar { width: 5px; }
@@ -215,6 +251,7 @@
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
       <div class="tabs">
         <button class="tab active" onclick="cambiarVista('dashboard')">📈 Dashboard</button>
+        <button class="tab" onclick="cambiarVista('inversores')">🤝 Inversores</button>
         <button class="tab" onclick="cambiarVista('gastos')">💸 Gastos</button>
         <button class="tab" onclick="cambiarVista('categorias')">🏷️ Categorías</button>
       </div>
@@ -228,18 +265,84 @@
 ══════════════════════════════════════════════════════════════════════════ -->
 <div class="shell">
 
+  <!-- ── INVERSORES ── -->
+  <div id="view-inversores" class="view">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+      <h2 style="font-size:1.1rem; font-weight:800;">🤝 Inversores — Rifa 4 (Apartamento)</h2>
+      <button class="btn btn-primary" onclick="abrirModalInversor(null)">+ Nuevo Inversor</button>
+    </div>
+
+    <!-- Recuperación de capital -->
+    <div id="recoveryBanner" class="recovery-banner">
+      <div class="rec-grid">
+        <div class="rec-stat">
+          <h3>🏠 Capital del premio</h3>
+          <p id="recCapital">—</p>
+          <span>Inversión total del apartamento</span>
+        </div>
+        <div class="rec-stat">
+          <h3>💰 Recaudado</h3>
+          <p id="recRecaudo">—</p>
+          <span>Abonos desde 26 ene 2026</span>
+        </div>
+        <div class="rec-stat">
+          <h3>💸 Gastos operacionales</h3>
+          <p id="recGastos">—</p>
+          <span>Banco + Caja + Facebook + WhatsApp</span>
+        </div>
+        <div class="rec-stat">
+          <h3>📊 Utilidad neta actual</h3>
+          <p id="recUtilidad">—</p>
+          <span id="recUtilidadSub">Recaudo − Capital − Gastos</span>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex; justify-content:space-between; font-size:.8rem; color:rgba(255,255,255,.7); margin-bottom:4px;">
+          <span>Recuperación del capital</span>
+          <span id="recPct">0%</span>
+        </div>
+        <div class="progress-wrap-dark">
+          <div id="recProgressBar" class="progress-bar-light" style="width:0%;"></div>
+        </div>
+        <div id="recFalta" style="font-size:.78rem; color:rgba(255,255,255,.55); margin-top:5px;"></div>
+      </div>
+    </div>
+
+    <!-- Tarjetas por inversor -->
+    <div id="invGrid" class="inv-grid">
+      <div class="empty"><div class="empty-icon">⏳</div><p>Cargando inversores…</p></div>
+    </div>
+
+    <!-- Nota explicativa -->
+    <div class="card" style="background:var(--bg); border-style:dashed;">
+      <p style="font-size:.82rem; color:var(--muted); line-height:1.6;">
+        <strong style="color:var(--ink-2);">¿Cómo se calcula el cierre proyectado?</strong><br>
+        Para cada inversor: <em>Capital aportado + Saldo de rifas anteriores + (Utilidad neta × % distribución)</em>.<br>
+        La utilidad neta es: <em>Total recaudado − Capital del premio − Gastos operacionales</em>.<br>
+        Este valor cambia en tiempo real a medida que se registran más abonos y gastos.
+      </p>
+    </div>
+  </div>
+
   <!-- ── DASHBOARD ── -->
   <div id="view-dashboard" class="view active">
     <div class="period-bar">
       <button class="period-btn active" onclick="setPeriodo('mes_actual', this)">Este mes</button>
       <button class="period-btn" onclick="setPeriodo('mes_anterior', this)">Mes anterior</button>
       <button class="period-btn" onclick="setPeriodo('anio', this)">Este año</button>
+      <button class="period-btn" id="btnRifaActual" onclick="setPeriodo('rifa_actual', this)" style="background:var(--ink); color:#fff; border-color:var(--ink);">🏆 Rifa actual</button>
       <button class="period-btn" onclick="setPeriodo('personalizado', this)">Personalizado</button>
       <div id="periodCustom" class="period-custom">
         <input type="date" id="fechaDesde" onchange="cargarDashboard()">
         <span style="color:var(--muted); font-weight:600;">a</span>
         <input type="date" id="fechaHasta" onchange="cargarDashboard()">
       </div>
+    </div>
+    <div id="miEquipoBadge" style="display:none; margin-bottom:12px;">
+      <span style="display:inline-flex; align-items:center; gap:6px; background:#eef7f1; border:1px solid var(--accent); color:var(--accent-2); padding:5px 14px; border-radius:20px; font-size:.8rem; font-weight:700;">
+        👥 Solo Mi Equipo · 26 ene → 4 abr 2026
+        <button onclick="quitarFiltroEquipo()" style="background:none; border:none; cursor:pointer; color:var(--muted); font-size:.9rem; line-height:1; padding:0 0 0 4px;" title="Quitar filtro">✕</button>
+      </span>
     </div>
 
     <div id="kpiGrid" class="kpi-grid">
@@ -292,6 +395,25 @@
     <div class="card" style="padding:0; overflow:hidden;">
       <div id="gastosContainer">
         <div class="empty"><div class="empty-icon">💸</div><p>Cargando gastos…</p></div>
+      </div>
+    </div>
+
+    <!-- ── COSTOS WHATSAPP ── -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:28px; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+      <h2 style="font-size:1rem; font-weight:800; display:flex; align-items:center; gap:8px;">
+        <span style="background:#25D366; color:#fff; border-radius:8px; padding:4px 10px; font-size:.78rem;">💬 WhatsApp Business</span>
+        Costos de Plantillas
+      </h2>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="sincronizarWhatsApp(this)" title="Sincroniza desde Meta WABA API si tienes WABA_ID y WABA_TOKEN configurados">🔄 Sincronizar Meta</button>
+        <button class="btn btn-sm" style="background:#25D366; color:#fff;" onclick="abrirModalWhatsApp(null)">+ Registrar Costo</button>
+      </div>
+    </div>
+    <div id="waSyncMsg" style="display:none; margin-bottom:10px;"></div>
+
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div id="waContainer">
+        <div class="empty"><div class="empty-icon">💬</div><p>Cargando costos de WhatsApp…</p></div>
       </div>
     </div>
   </div>
@@ -479,6 +601,106 @@
 
 
 <!-- ══════════════════════════════════════════════════════════════════════════
+     MODAL: NUEVO / EDITAR INVERSOR
+══════════════════════════════════════════════════════════════════════════ -->
+<div id="modalInversor" class="overlay">
+  <div class="modal">
+    <div class="modal-title" id="modalInvTitulo">🤝 Nuevo Inversor</div>
+
+    <div class="field">
+      <label>Nombre *</label>
+      <input type="text" id="invNombre" placeholder="Ej: Papá, Mateo, Alejandro">
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Capital aportado (COP)</label>
+        <input type="number" id="invCapital" placeholder="Ej: 320000000">
+        <small style="color:var(--muted); font-size:.73rem;">Dinero que puso para comprar el premio</small>
+      </div>
+      <div class="field">
+        <label>% Distribución de utilidad</label>
+        <input type="number" id="invPct" placeholder="Ej: 45" min="0" max="100" step="0.5">
+        <small style="color:var(--muted); font-size:.73rem;">Su parte de la ganancia neta</small>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Saldo de rifas anteriores (COP)</label>
+      <input type="number" id="invSaldo" placeholder="Ej: 104273000">
+      <small style="color:var(--muted); font-size:.73rem; line-height:1.5; display:block; margin-top:3px;">
+        Positivo (+) = la empresa le debe dinero a esta persona (tiene crédito).<br>
+        Negativo (−) = esta persona le debe dinero a la empresa.
+      </small>
+    </div>
+
+    <div class="field">
+      <label>Notas</label>
+      <textarea id="invNotas" placeholder="Observaciones sobre este inversor..."></textarea>
+    </div>
+
+    <input type="hidden" id="invId">
+
+    <div style="display:flex; gap:10px; margin-top:6px;">
+      <button class="btn btn-ghost" style="flex:1; justify-content:center;" onclick="cerrarModalInversor()">Cancelar</button>
+      <button class="btn btn-primary" style="flex:2; justify-content:center;" id="btnGuardarInv" onclick="guardarInversor()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODAL: NUEVO / EDITAR COSTO WHATSAPP
+══════════════════════════════════════════════════════════════════════════ -->
+<div id="modalWhatsApp" class="overlay">
+  <div class="modal">
+    <div class="modal-title" id="modalWaTitulo">💬 Registrar Costo WhatsApp</div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Fecha *</label>
+        <input type="date" id="waFecha">
+      </div>
+      <div class="field">
+        <label>Costo (COP) *</label>
+        <input type="number" id="waCosto" placeholder="Ej: 45000" min="1">
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Tipo de plantilla</label>
+        <select id="waTipo">
+          <option value="marketing">Marketing</option>
+          <option value="utility">Utility (utilidad)</option>
+          <option value="authentication">Authentication</option>
+          <option value="service">Service</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Cantidad de mensajes</label>
+        <input type="number" id="waCantidad" placeholder="Ej: 150" min="0">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Descripción</label>
+      <input type="text" id="waDescripcion" placeholder="Ej: Envío masivo campaña rifa abril">
+    </div>
+
+    <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:10px; padding:10px 13px; font-size:.78rem; color:#166534; margin-bottom:14px; line-height:1.5;">
+      💡 <strong>¿Cómo saber el costo?</strong> Entra a <em>Meta Business Suite → Facturación → Historial de facturación</em> y filtra por WhatsApp para ver el monto cobrado.
+    </div>
+
+    <input type="hidden" id="waId">
+
+    <div style="display:flex; gap:10px; margin-top:6px;">
+      <button class="btn btn-ghost" style="flex:1; justify-content:center;" onclick="cerrarModalWhatsApp()">Cancelar</button>
+      <button class="btn btn-sm" id="btnGuardarWa" onclick="guardarCostoWhatsApp()" style="flex:2; justify-content:center; background:#25D366; color:#fff; border-radius:10px; border:none; font-family:inherit; font-size:.87rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; padding:9px 18px;">Guardar Costo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
      MODAL: VER FOTO COMPROBANTE
 ══════════════════════════════════════════════════════════════════════════ -->
 <div id="fotoModal" onclick="this.classList.remove('show')">
@@ -504,6 +726,7 @@ let iaTimer = null;          // debounce para sugerir subcategoría
 
 // ─── Período actual del dashboard ───
 let periodoActual = { tipo: 'mes_actual', desde: '', hasta: '' };
+let soloMiEquipo  = false;
 
 // ══════════════════════════════════════════════════════════════════════════
 // LOGIN
@@ -577,8 +800,9 @@ function cambiarVista(vista) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   event.target.classList.add('active');
 
-  if (vista === 'gastos') cargarGastos();
+  if (vista === 'gastos') { cargarGastos(); cargarCostosWhatsApp(); }
   if (vista === 'categorias') renderCategorias();
+  if (vista === 'inversores') cargarInversores();
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -609,11 +833,33 @@ function getRangoPeriodo(tipo) {
 }
 
 function setPeriodo(tipo, btn) {
-  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.period-btn').forEach(b => {
+    b.classList.remove('active');
+    if (b.id !== 'btnRifaActual') b.style.background = '';
+    if (b.id !== 'btnRifaActual') b.style.color = '';
+    if (b.id !== 'btnRifaActual') b.style.borderColor = '';
+  });
   btn.classList.add('active');
   periodoActual.tipo = tipo;
 
   const custom = document.getElementById('periodCustom');
+  const badge  = document.getElementById('miEquipoBadge');
+
+  if (tipo === 'rifa_actual') {
+    soloMiEquipo = true;
+    custom.classList.remove('show');
+    badge.style.display = 'block';
+    periodoActual.desde = '2026-01-26';
+    periodoActual.hasta = '2026-04-04';
+    btn.style.background = 'var(--accent-2)';
+    btn.style.borderColor = 'var(--accent-2)';
+    btn.style.color = '#fff';
+    cargarDashboard();
+    return;
+  }
+
+  soloMiEquipo = false;
+  badge.style.display = 'none';
 
   if (tipo === 'personalizado') {
     custom.classList.add('show');
@@ -627,6 +873,12 @@ function setPeriodo(tipo, btn) {
     periodoActual.hasta = rango.hasta;
     cargarDashboard();
   }
+}
+
+function quitarFiltroEquipo() {
+  const mesBtn = document.querySelector('.period-btn');
+  setPeriodo('mes_actual', mesBtn);
+  mesBtn.classList.add('active');
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -649,7 +901,7 @@ async function cargarDashboard() {
   document.getElementById('plContainer').innerHTML = '<div style="padding:20px; text-align:center; color:var(--muted); font-weight:600;">Calculando estado de resultados…</div>';
 
   try {
-    const r = await apiCall('dashboard', { fecha_desde: desde, fecha_hasta: hasta });
+    const r = await apiCall('dashboard', { fecha_desde: desde, fecha_hasta: hasta, solo_mi_equipo: soloMiEquipo });
 
     document.getElementById('kpiIngresos').textContent = fmt(r.totalIngresos);
     document.getElementById('kpiGastos').textContent = fmt(r.totalGastos);
@@ -698,14 +950,33 @@ function renderPL(data) {
   // GASTOS
   html += `<div class="pl-row header" style="margin-top:20px;"><span>Gastos</span><span>Monto</span></div>`;
 
-  let sumaGastos = 0;
   for (const [cat, info] of Object.entries(porCategoria)) {
-    const color = getColor(cat);
-    sumaGastos += info.total;
-    const catIcon = (categorias.find(c => c.nombre === cat) || {}).icono || (cat === 'Caja Física' ? '🏦' : '💸');
+    const esFacebook = info.fuente === 'facebook';
+    const esCaja     = info.fuente === 'caja';
+
+    let color, catIcon, badgeHtml = '';
+
+    const esWhatsApp = info.fuente === 'whatsapp';
+
+    if (esFacebook) {
+      color   = '#1877f2';
+      catIcon = '📣';
+      badgeHtml = `<span class="auto-badge">🔗 Facebook Ads</span>`;
+    } else if (esCaja) {
+      color   = '#607d8b';
+      catIcon = '🏦';
+      badgeHtml = `<span class="auto-badge auto-badge-caja">🏦 Caja</span>`;
+    } else if (esWhatsApp) {
+      color   = '#25D366';
+      catIcon = '💬';
+      badgeHtml = `<span class="auto-badge auto-badge-whatsapp">💬 WhatsApp</span>`;
+    } else {
+      color   = getColor(cat);
+      catIcon = (categorias.find(c => c.nombre === cat) || {}).icono || '💸';
+    }
 
     html += `<div class="pl-row category-row" style="border-left:3px solid ${color}; padding-left:10px;">
-      <div class="pl-label"><div class="cat-dot" style="background:${color};"></div>${catIcon} ${cat}</div>
+      <div class="pl-label"><div class="cat-dot" style="background:${color};"></div>${catIcon} ${cat}${badgeHtml}</div>
       <div class="pl-bar-wrap"><div class="pl-bar" style="width:${Math.round(info.total/maxVal*100)}%; background:${color};"></div></div>
       <span class="pl-monto" style="color:var(--danger);">-${fmt(info.total)}</span>
     </div>`;
@@ -1184,6 +1455,310 @@ function mostrarFoto(url) {
   if (!url) return;
   document.getElementById('fotoModalImg').src = url;
   document.getElementById('fotoModal').classList.add('show');
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// INVERSORES
+// ══════════════════════════════════════════════════════════════════════════
+
+// Colores fijos para los 3 socios habituales, aleatorio para los demás
+const COLORS_INV = { 'Papá': '#e67e22', 'Mateo': '#3498db', 'Alejandro': '#9b59b6' };
+function colorInv(nombre) {
+  if (COLORS_INV[nombre]) return COLORS_INV[nombre];
+  const palette = ['#1abc9c','#e74c3c','#2c3e50','#f39c12','#27ae60'];
+  let h = 0; for (let i = 0; i < nombre.length; i++) h = nombre.charCodeAt(i) + ((h << 5) - h);
+  return palette[Math.abs(h) % palette.length];
+}
+function inicialInv(nombre) { return nombre.substring(0, 2).toUpperCase(); }
+
+async function cargarInversores() {
+  try {
+    const r = await apiCall('datos_inversores', {});
+    renderInversores(r);
+  } catch (e) {
+    document.getElementById('invGrid').innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><p>${e.message}</p></div>`;
+  }
+}
+
+function renderInversores(data) {
+  const { inversores, totales } = data;
+
+  // Banner de recuperación
+  document.getElementById('recCapital').textContent  = fmt(totales.capitalTotal);
+  document.getElementById('recRecaudo').textContent  = fmt(totales.totalRecaudo);
+  document.getElementById('recGastos').textContent   = fmt(totales.totalGastos);
+
+  const util = totales.utilidadActual;
+  const utilEl = document.getElementById('recUtilidad');
+  utilEl.textContent = fmt(util);
+  utilEl.style.color = util >= 0 ? '#2ecc71' : '#e74c3c';
+  document.getElementById('recUtilidadSub').textContent = util >= 0 ? '¡Por encima del punto de equilibrio!' : 'Aún por debajo del punto de equilibrio';
+
+  const pct = Math.min(totales.pctRecuperacion, 100);
+  document.getElementById('recPct').textContent = pct + '%';
+  const bar = document.getElementById('recProgressBar');
+  bar.style.width = pct + '%';
+
+  const falta = totales.faltaParaBreakEven;
+  document.getElementById('recFalta').textContent = falta > 0
+    ? `Faltan ${fmt(falta)} para recuperar capital + gastos operacionales`
+    : '✅ El capital y los gastos ya están cubiertos por el recaudo';
+
+  // Tarjetas por inversor
+  if (!inversores || !inversores.length) {
+    document.getElementById('invGrid').innerHTML = '<div class="empty"><div class="empty-icon">👥</div><p>No hay inversores configurados. Agrega el primero.</p></div>';
+    return;
+  }
+
+  document.getElementById('invGrid').innerHTML = inversores.map(inv => {
+    const color = colorInv(inv.nombre);
+    const cap   = Number(inv.capital_aportado);
+    const saldo = Number(inv.saldo_rifas_anteriores);
+    const pct   = Number(inv.porcentaje_distribucion);
+    const util  = Number(inv.utilidad_asignada);
+    const cierre = Number(inv.total_al_cierre);
+    const cierrePositivo = cierre >= 0;
+
+    return `
+      <div class="inv-card">
+        <div style="position:absolute; top:0; left:0; right:0; height:4px; background:${color}; border-radius:18px 18px 0 0;"></div>
+        <div class="inv-header">
+          <div class="inv-avatar" style="background:${color};">${inicialInv(inv.nombre)}</div>
+          <div>
+            <div class="inv-name">${inv.nombre}</div>
+            <div class="inv-pct">${pct}% de la utilidad neta</div>
+          </div>
+          <button onclick="abrirModalInversor(${JSON.stringify(inv).replace(/"/g,'&quot;')})" style="margin-left:auto; background:none; border:1px solid var(--ring-strong); border-radius:8px; padding:5px 10px; cursor:pointer; font-size:.75rem; font-weight:700; color:var(--ink-2);">✏️</button>
+        </div>
+
+        <div class="inv-row">
+          <span class="inv-label">💼 Capital aportado</span>
+          <span class="inv-val">${fmt(cap)}</span>
+        </div>
+        <div class="inv-row">
+          <span class="inv-label">📋 Saldo rifas anteriores</span>
+          <span class="inv-val" style="color:${saldo >= 0 ? 'var(--accent-2)' : 'var(--danger)'};">${saldo >= 0 ? '+' : ''}${fmt(saldo)}</span>
+        </div>
+        <div class="inv-row">
+          <span class="inv-label">📈 Utilidad asignada (${pct}%)</span>
+          <span class="inv-val" style="color:${util >= 0 ? 'var(--accent-2)' : 'var(--danger)'};">${util >= 0 ? '+' : ''}${fmt(util)}</span>
+        </div>
+
+        <div class="inv-total-row">
+          <span class="inv-total-label">Al cierre proyectado:</span>
+          <span class="inv-total-val" style="color:${cierrePositivo ? 'var(--accent-2)' : 'var(--danger)'};">${cierrePositivo ? '' : ''}${fmt(cierre)}</span>
+        </div>
+
+        ${inv.notas ? `<p style="margin-top:10px; font-size:.75rem; color:var(--muted); font-style:italic;">${inv.notas}</p>` : ''}
+
+        <button onclick="eliminarInversor('${inv.id}','${inv.nombre}')" style="margin-top:10px; width:100%; background:none; border:1px solid var(--ring); border-radius:8px; padding:6px; cursor:pointer; font-size:.75rem; color:var(--muted); font-weight:600;">🗑️ Eliminar</button>
+      </div>`;
+  }).join('');
+}
+
+function abrirModalInversor(inv) {
+  const esEdicion = !!inv;
+  document.getElementById('modalInvTitulo').textContent = esEdicion ? '✏️ Editar Inversor' : '🤝 Nuevo Inversor';
+  document.getElementById('btnGuardarInv').textContent  = esEdicion ? 'Actualizar' : 'Guardar';
+  document.getElementById('invId').value      = esEdicion ? inv.id : '';
+  document.getElementById('invNombre').value  = esEdicion ? inv.nombre : '';
+  document.getElementById('invCapital').value = esEdicion ? inv.capital_aportado : '';
+  document.getElementById('invPct').value     = esEdicion ? inv.porcentaje_distribucion : '';
+  document.getElementById('invSaldo').value   = esEdicion ? inv.saldo_rifas_anteriores : '';
+  document.getElementById('invNotas').value   = esEdicion ? (inv.notas || '') : '';
+  document.getElementById('modalInversor').classList.add('show');
+}
+
+function cerrarModalInversor() {
+  document.getElementById('modalInversor').classList.remove('show');
+}
+
+async function guardarInversor() {
+  const id     = document.getElementById('invId').value;
+  const nombre = document.getElementById('invNombre').value.trim();
+  const capital = document.getElementById('invCapital').value;
+  const pct     = document.getElementById('invPct').value;
+  const saldo   = document.getElementById('invSaldo').value;
+  const notas   = document.getElementById('invNotas').value.trim();
+
+  if (!nombre) { alert('El nombre es obligatorio.'); return; }
+
+  const pctNum = Number(pct) || 0;
+  if (pctNum < 0 || pctNum > 100) { alert('El porcentaje debe estar entre 0 y 100.'); return; }
+
+  const btn = document.getElementById('btnGuardarInv');
+  btn.textContent = 'Guardando…'; btn.disabled = true;
+
+  try {
+    await apiCall('guardar_inversor', {
+      id: id || undefined,
+      nombre,
+      capital_aportado: Number(capital) || 0,
+      porcentaje_distribucion: pctNum,
+      saldo_rifas_anteriores: Number(saldo) || 0,
+      notas: notas || null
+    });
+    cerrarModalInversor();
+    cargarInversores();
+  } catch (e) {
+    alert('Error: ' + e.message);
+  } finally {
+    btn.textContent = id ? 'Actualizar' : 'Guardar'; btn.disabled = false;
+  }
+}
+
+async function eliminarInversor(id, nombre) {
+  if (!confirm(`¿Eliminar a "${nombre}" de los inversores? Esta acción no se puede deshacer.`)) return;
+  try {
+    await apiCall('eliminar_inversor', { id });
+    cargarInversores();
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// COSTOS WHATSAPP BUSINESS
+// ══════════════════════════════════════════════════════════════════════════
+async function cargarCostosWhatsApp() {
+  const desde = document.getElementById('filtroDesde').value;
+  const hasta = document.getElementById('filtroHasta').value;
+
+  document.getElementById('waContainer').innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><p>Cargando…</p></div>';
+
+  try {
+    const r = await apiCall('listar_costos_whatsapp', {
+      fecha_desde: desde || undefined,
+      fecha_hasta: hasta || undefined
+    });
+
+    if (!r.costos.length) {
+      document.getElementById('waContainer').innerHTML = `
+        <div class="empty">
+          <div class="empty-icon">💬</div>
+          <p>No hay costos de WhatsApp en este período.</p>
+          <p style="font-size:.8rem; margin-top:8px; color:var(--muted);">Registra manualmente o sincroniza desde Meta.</p>
+        </div>`;
+      return;
+    }
+
+    const totalWa = r.costos.reduce((s, c) => s + Number(c.costo), 0);
+
+    document.getElementById('waContainer').innerHTML = `
+      <div style="padding:12px 16px; background:#f0fdf4; border-bottom:1px solid #dcfce7; display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:.82rem; font-weight:700; color:#166534;">Total período: ${fmt(totalWa)}</span>
+        <span style="font-size:.75rem; color:var(--muted);">${r.costos.length} registro${r.costos.length !== 1 ? 's' : ''}</span>
+      </div>
+      ${r.costos.map(c => {
+        const tipoLabel = { marketing: 'Marketing', utility: 'Utility', authentication: 'Auth', service: 'Service' }[c.tipo_conversacion] || c.tipo_conversacion || 'General';
+        const fuenteTag = c.fuente === 'meta_api'
+          ? `<span style="background:#25D366; color:#fff; padding:1px 6px; border-radius:4px; font-size:.68rem; font-weight:800; margin-left:5px;">🔗 API</span>`
+          : `<span style="background:#607d8b; color:#fff; padding:1px 6px; border-radius:4px; font-size:.68rem; font-weight:800; margin-left:5px;">✍️ Manual</span>`;
+        return `<div class="gasto-item" onclick="abrirModalWhatsApp(${JSON.stringify(c).replace(/"/g,'&quot;')})">
+          <div class="gasto-icon" style="background:#25D36618;">💬</div>
+          <div class="gasto-body">
+            <div class="gasto-title">${c.descripcion || 'Plantillas ' + tipoLabel}${fuenteTag}</div>
+            <div class="gasto-meta">
+              <span class="pill-tag" style="background:#25D36618; color:#25D366;">${tipoLabel}</span>
+              ${c.cantidad_mensajes ? ` · ${c.cantidad_mensajes.toLocaleString('es-CO')} mensajes` : ''}
+            </div>
+          </div>
+          <div class="gasto-right">
+            <div class="gasto-monto">${fmt(c.costo)}</div>
+            <div class="gasto-fecha">${fmtDate(c.fecha)}</div>
+          </div>
+        </div>`;
+      }).join('')}`;
+  } catch (e) {
+    document.getElementById('waContainer').innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><p>${e.message}</p></div>`;
+  }
+}
+
+async function sincronizarWhatsApp(btn) {
+  const msgEl = document.getElementById('waSyncMsg');
+  btn.textContent = '⏳ Sincronizando…';
+  btn.disabled = true;
+  msgEl.style.display = 'none';
+
+  try {
+    const r = await fetch('/api/admin/sincronizar-whatsapp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contrasena })
+    });
+    const data = await r.json();
+
+    const ok = data.status === 'ok';
+    msgEl.innerHTML = `<div style="padding:10px 14px; border-radius:10px; font-size:.83rem; font-weight:700;
+      background:${ok ? '#f0fdf4' : '#fef2f2'}; border:1px solid ${ok ? '#86efac' : '#fca5a5'};
+      color:${ok ? '#166534' : '#991b1b'};">${data.mensaje}</div>`;
+    msgEl.style.display = 'block';
+
+    if (ok) {
+      await cargarCostosWhatsApp();
+      await cargarDashboard();
+    }
+  } catch (e) {
+    msgEl.innerHTML = `<div style="padding:10px 14px; border-radius:10px; font-size:.83rem; font-weight:700; background:#fef2f2; border:1px solid #fca5a5; color:#991b1b;">Error: ${e.message}</div>`;
+    msgEl.style.display = 'block';
+  } finally {
+    btn.textContent = '🔄 Sincronizar Meta';
+    btn.disabled = false;
+  }
+}
+
+function abrirModalWhatsApp(costo) {
+  const esEdicion = !!costo;
+  document.getElementById('modalWaTitulo').textContent = esEdicion ? '✏️ Editar Costo WhatsApp' : '💬 Registrar Costo WhatsApp';
+  document.getElementById('btnGuardarWa').textContent = esEdicion ? 'Actualizar' : 'Guardar Costo';
+  document.getElementById('waId').value       = esEdicion ? costo.id : '';
+  document.getElementById('waFecha').value    = esEdicion ? (costo.fecha || '') : getHoy();
+  document.getElementById('waCosto').value    = esEdicion ? (costo.costo || '') : '';
+  document.getElementById('waTipo').value     = esEdicion ? (costo.tipo_conversacion || 'marketing') : 'marketing';
+  document.getElementById('waCantidad').value = esEdicion ? (costo.cantidad_mensajes || '') : '';
+  document.getElementById('waDescripcion').value = esEdicion ? (costo.descripcion || '') : '';
+  document.getElementById('modalWhatsApp').classList.add('show');
+}
+
+function cerrarModalWhatsApp() {
+  document.getElementById('modalWhatsApp').classList.remove('show');
+}
+
+async function guardarCostoWhatsApp() {
+  const id       = document.getElementById('waId').value;
+  const fecha    = document.getElementById('waFecha').value;
+  const costo    = document.getElementById('waCosto').value;
+  const tipo     = document.getElementById('waTipo').value;
+  const cantidad = document.getElementById('waCantidad').value;
+  const desc     = document.getElementById('waDescripcion').value.trim();
+
+  if (!fecha || !costo) { alert('⚠️ Fecha y costo son obligatorios.'); return; }
+  if (Number(costo) <= 0) { alert('⚠️ El costo debe ser mayor a 0.'); return; }
+
+  const btn = document.getElementById('btnGuardarWa');
+  btn.textContent = 'Guardando…'; btn.disabled = true;
+
+  const payload = {
+    fecha,
+    costo:             Number(costo),
+    tipo_conversacion: tipo,
+    cantidad_mensajes: Number(cantidad) || 0,
+    descripcion:       desc || null
+  };
+
+  try {
+    if (id) {
+      await apiCall('actualizar_costo_whatsapp', { id, ...payload });
+    } else {
+      await apiCall('registrar_costo_whatsapp', payload);
+    }
+    cerrarModalWhatsApp();
+    await cargarCostosWhatsApp();
+    await cargarDashboard();
+  } catch (e) {
+    alert('Error: ' + e.message);
+  } finally {
+    btn.textContent = id ? 'Actualizar' : 'Guardar Costo';
+    btn.disabled = false;
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
