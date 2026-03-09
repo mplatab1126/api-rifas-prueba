@@ -62,12 +62,12 @@ export default async function handler(req, res) {
     const tiposConversacion = ['marketing', 'utility', 'authentication', 'service'];
 
     const url = new URL(`https://graph.facebook.com/v19.0/${wabaId}/conversation_analytics`);
-    url.searchParams.set('start',         startTs);
-    url.searchParams.set('end',           endTs);
-    url.searchParams.set('granularity',   'DAILY');
-    url.searchParams.set('metric_types',  JSON.stringify(['COST', 'SENT']));
-    url.searchParams.set('conversation_types', JSON.stringify(tiposConversacion));
-    url.searchParams.set('access_token',  wabaToken.trim());
+    url.searchParams.set('start',       startTs);
+    url.searchParams.set('end',         endTs);
+    url.searchParams.set('granularity', 'DAILY');
+    // Valores válidos: UNKNOWN, CONVERSATION, COST  (SENT no existe en esta API)
+    url.searchParams.set('metric_types', JSON.stringify(['COST', 'CONVERSATION']));
+    url.searchParams.set('access_token', wabaToken.trim());
 
     const apiRes  = await fetch(url.toString());
     const apiData = await apiRes.json();
@@ -79,31 +79,32 @@ export default async function handler(req, res) {
       });
     }
 
-    // Procesar los datos diarios por tipo de conversación
+    // La respuesta puede venir como apiData.data (array) o apiData.data.data_points
+    const rawData   = apiData?.data;
+    const dataPoints = Array.isArray(rawData)
+      ? rawData.flatMap(d => d.data_points || [])
+      : (rawData?.data_points || []);
+
     const registros = [];
-    const dataPoints = apiData?.data?.data_points || [];
 
     for (const point of dataPoints) {
-      // start es timestamp Unix en segundos
       const fecha = new Date(point.start * 1000).toISOString().split('T')[0];
 
-      const costoUsd = Number(point.cost) || 0;
-      const enviados = Number(point.sent) || 0;
-      const tipo     = point.conversation_type || 'general';
+      const costoUsd       = Number(point.cost)         || 0;
+      const conversaciones = Number(point.conversation) || 0;
+      const tipo           = point.conversation_type    || 'general';
 
-      if (costoUsd <= 0 && enviados === 0) continue;
+      if (costoUsd <= 0 && conversaciones === 0) continue;
 
-      // Convertir USD a COP usando tasa de cambio aproximada guardada como env var
-      // Si no hay tasa configurada, usamos 4300 como referencia
       const tasaCambio = Number(process.env.TASA_CAMBIO_USD_COP) || 4300;
       const costoCop   = Math.round(costoUsd * tasaCambio);
 
       registros.push({
         fecha,
         tipo_conversacion:  tipo,
-        cantidad_mensajes:  enviados,
+        cantidad_mensajes:  conversaciones,
         costo:              costoCop,
-        descripcion:        `WhatsApp ${tipo} · ${enviados} mensajes · $${costoUsd.toFixed(4)} USD`,
+        descripcion:        `WhatsApp ${tipo} · ${conversaciones} conversaciones · $${costoUsd.toFixed(4)} USD`,
         fuente:             'meta_api'
       });
     }
