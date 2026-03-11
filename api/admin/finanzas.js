@@ -630,12 +630,16 @@ Responde ÚNICAMENTE con el nombre de la subcategoría, sin explicación ni punt
         .lte('fecha', '2026-04-04');
       const totalWaR4 = (waR4 || []).reduce((s, r) => s + Number(r.costo), 0);
 
-      // Recaudo Rifa 4
+      // Recaudo Rifa 4 — solo mi equipo, dentro del período de la rifa
+      const EXCLUIDOS_EQUIPO = ['alejandra plata', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
       const { data: abonosR4 } = await supabase
         .from('abonos')
-        .select('monto')
-        .gte('fecha_pago', '2026-01-26');
-      const totalRecaudoR4 = (abonosR4 || []).reduce((s, a) => s + Number(a.monto), 0);
+        .select('monto, asesor')
+        .gte('fecha_pago', '2026-01-26')
+        .lte('fecha_pago', '2026-04-04');
+      const totalRecaudoR4 = (abonosR4 || [])
+        .filter(a => !EXCLUIDOS_EQUIPO.includes((a.asesor || '').toLowerCase().trim()))
+        .reduce((s, a) => s + Number(a.monto), 0);
 
       // Estructurar por rifa
       const rifas = {};
