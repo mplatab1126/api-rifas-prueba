@@ -578,6 +578,125 @@ Responde ÚNICAMENTE con el nombre de la subcategoría, sin explicación ni punt
       return res.status(200).json({ status: 'ok', mensaje: 'Costo de WhatsApp eliminado.' });
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // HISTORIAL DE RIFAS — capital, gastos y saldos acumulados
+    // ─────────────────────────────────────────────────────────────────────────
+    if (accion === 'datos_historial') {
+      // Capital aportado por rifa
+      const { data: capitalData, error: errCap } = await supabase
+        .from('capital_rifas')
+        .select('*')
+        .order('rifa')
+        .order('inversionista');
+      if (errCap) throw errCap;
+
+      // Gastos históricos Rifas 1-3
+      const { data: gastosHistData, error: errGH } = await supabase
+        .from('gastos_historicos')
+        .select('*')
+        .order('rifa')
+        .order('quien_pago');
+      if (errGH) throw errGH;
+
+      // Gastos operacionales Rifa 4 (tabla gastos actual)
+      const { data: gastosR4, error: errGR4 } = await supabase
+        .from('gastos')
+        .select('monto, descripcion, categoria, reportado_por')
+        .gte('fecha', '2026-01-26');
+      if (errGR4) throw errGR4;
+
+      const totalGastosR4 = (gastosR4 || []).reduce((s, g) => s + Number(g.monto), 0);
+
+      // Caja física Rifa 4
+      const { data: cajaR4 } = await supabase
+        .from('movimientos_caja')
+        .select('monto')
+        .eq('tipo', 'salida')
+        .gte('fecha', '2026-01-26');
+      const totalCajaR4 = (cajaR4 || []).reduce((s, m) => s + Number(m.monto), 0);
+
+      // Facebook + WhatsApp Rifa 4
+      const { data: fbR4 } = await supabase
+        .from('metricas_facebook')
+        .select('gasto')
+        .gte('fecha', '2026-01-26')
+        .lte('fecha', '2026-04-04');
+      const totalFbR4 = (fbR4 || []).reduce((s, r) => s + Number(r.gasto), 0);
+
+      const { data: waR4 } = await supabase
+        .from('costos_whatsapp')
+        .select('costo')
+        .gte('fecha', '2026-01-26')
+        .lte('fecha', '2026-04-04');
+      const totalWaR4 = (waR4 || []).reduce((s, r) => s + Number(r.costo), 0);
+
+      // Recaudo Rifa 4
+      const { data: abonosR4 } = await supabase
+        .from('abonos')
+        .select('monto')
+        .gte('fecha_pago', '2026-01-26');
+      const totalRecaudoR4 = (abonosR4 || []).reduce((s, a) => s + Number(a.monto), 0);
+
+      // Estructurar por rifa
+      const rifas = {};
+      for (let i = 1; i <= 4; i++) {
+        rifas[i] = { capital_items: [], capital_total: 0, gastos_items: [], gastos_total: 0 };
+      }
+
+      for (const c of (capitalData || [])) {
+        rifas[c.rifa].capital_items.push(c);
+        rifas[c.rifa].capital_total += Number(c.valor);
+      }
+
+      for (const g of (gastosHistData || [])) {
+        rifas[g.rifa].gastos_items.push(g);
+        rifas[g.rifa].gastos_total += Number(g.valor);
+      }
+
+      // Rifa 4: gastos de las tablas en vivo
+      rifas[4].gastos_total = totalGastosR4 + totalCajaR4 + totalFbR4 + totalWaR4;
+      rifas[4].gastos_rifa4_detalle = {
+        banco: totalGastosR4,
+        caja: totalCajaR4,
+        facebook: totalFbR4,
+        whatsapp: totalWaR4
+      };
+      rifas[4].recaudo = totalRecaudoR4;
+      rifas[4].utilidad = totalRecaudoR4 - rifas[4].capital_total - rifas[4].gastos_total;
+
+      // Saldos acumulados históricos entre socios (del Excel, estáticos)
+      const saldosAcumulados = [
+        { rifa: 1, label: '1ª Rifa',  mateo:    11750000, alejandro:  30750000 },
+        { rifa: 2, label: '2ª Rifa',  mateo:   -9532000,  alejandro:  31450000 },
+        { rifa: 3, label: '3ª Rifa',  mateo:  -94741000,  alejandro: -87159000 },
+        { rifa: 4, label: '4ª Rifa',  mateo: -104273000,  alejandro: -55709000 }
+      ];
+
+      // Capital físico representado (activos actuales)
+      const capitalFisico = [
+        { concepto: 'Apartamento',                   valor: 320000000 },
+        { concepto: 'LPN',                           valor: 117000000 },
+        { concepto: 'Adelanto casa Santa Teresita',  valor: 100000000 },
+        { concepto: 'Perla Roja',                    valor: 146000000 },
+        { concepto: 'Recompra N-Max',                valor:  16400000 }
+      ];
+
+      // Propietarios del capital acumulado (del Excel)
+      const propietarios = [
+        { nombre: 'Mateo',    rifa1: 105000000, rifa2: null,     saldos_acum: 94741000,  rifa4: null,      total: 199741000 },
+        { nombre: 'Papá',     rifa1:  43500000, rifa2: 49000000, saldos_acum: null,       rifa4: 320000000, total: 412500000 },
+        { nombre: 'Alejandro',rifa1:  null,     rifa2: null,     saldos_acum: 87159000,  rifa4: null,      total:  87159000 }
+      ];
+
+      return res.status(200).json({
+        status: 'ok',
+        rifas,
+        saldosAcumulados,
+        capitalFisico,
+        propietarios
+      });
+    }
+
     return res.status(400).json({ status: 'error', mensaje: 'Acción no reconocida.' });
 
   } catch (error) {

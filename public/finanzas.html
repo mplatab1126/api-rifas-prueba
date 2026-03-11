@@ -208,6 +208,43 @@
     .progress-wrap-dark { background: rgba(255,255,255,.15); border-radius: 20px; height: 12px; overflow: hidden; margin: 4px 0; }
     .progress-bar-light { height: 100%; border-radius: 20px; background: linear-gradient(90deg, #2ecc71, #27ae60); transition: width .8s ease; }
 
+    /* ── HISTORIAL DE RIFAS ── */
+    .rifa-card { background: #fff; border: 1px solid var(--ring-strong); border-radius: 18px; overflow: hidden; margin-bottom: 20px; }
+    .rifa-header { padding: 16px 20px; display: flex; align-items: center; gap: 14px; cursor: pointer; user-select: none; }
+    .rifa-header:hover { background: var(--bg); }
+    .rifa-num { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 800; color: #fff; flex-shrink: 0; }
+    .rifa-title { flex: 1; }
+    .rifa-title h3 { font-size: .95rem; font-weight: 800; color: var(--ink); }
+    .rifa-title p { font-size: .78rem; color: var(--muted); font-weight: 500; margin-top: 2px; }
+    .rifa-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+    .rifa-pill { padding: 4px 12px; border-radius: 20px; font-size: .75rem; font-weight: 700; white-space: nowrap; }
+    .rifa-pill.capital { background: #eef7f1; color: var(--accent-2); border: 1px solid var(--accent); }
+    .rifa-pill.gastos { background: #fef2f2; color: var(--danger); border: 1px solid #fca5a5; }
+    .rifa-pill.recaudo { background: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; }
+    .rifa-body { display: none; border-top: 1px solid var(--ring); }
+    .rifa-body.open { display: block; }
+    .rifa-section { padding: 16px 20px; border-bottom: 1px solid var(--ring); }
+    .rifa-section:last-child { border-bottom: none; }
+    .rifa-section-title { font-size: .75rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px; }
+    .hist-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; font-size: .84rem; border-bottom: 1px solid var(--ring); }
+    .hist-row:last-child { border-bottom: none; }
+    .hist-row .label { color: var(--ink-2); font-weight: 500; }
+    .hist-row .val { font-weight: 700; }
+    .hist-row.total-row { font-weight: 800; font-size: .9rem; margin-top: 6px; padding-top: 8px; border-top: 2px solid var(--ring-strong); border-bottom: none; }
+    .gasto-hist-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; border-radius: 6px; font-size: .8rem; gap: 12px; }
+    .gasto-hist-item:hover { background: var(--bg); }
+    .gasto-hist-quien { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 5px; font-size: .68rem; font-weight: 800; white-space: nowrap; flex-shrink: 0; }
+    /* Tabla de saldos acumulados */
+    .saldo-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+    .saldo-table th { background: var(--bg); padding: 8px 12px; font-size: .72rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; text-align: left; border-bottom: 2px solid var(--ring-strong); }
+    .saldo-table td { padding: 10px 12px; border-bottom: 1px solid var(--ring); vertical-align: middle; }
+    .saldo-table tr:last-child td { border-bottom: none; font-weight: 800; background: var(--bg); }
+    .saldo-positive { color: var(--accent-2); font-weight: 700; }
+    .saldo-negative { color: var(--danger); font-weight: 700; }
+    /* Capital físico */
+    .activo-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--ring); }
+    .activo-item:last-child { border-bottom: none; font-weight: 800; background: var(--bg); border-radius: 0 0 16px 16px; }
+
     /* ── SCROLLBAR ── */
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-thumb { background: var(--ring-strong); border-radius: 3px; }
@@ -254,6 +291,7 @@
         <button class="tab" onclick="cambiarVista('inversores')">🤝 Inversores</button>
         <button class="tab" onclick="cambiarVista('gastos')">💸 Gastos</button>
         <button class="tab" onclick="cambiarVista('categorias')">🏷️ Categorías</button>
+        <button class="tab" onclick="cambiarVista('historial')">📚 Historial</button>
       </div>
       <button class="btn btn-ghost btn-sm" onclick="window.location.href='/admin.html'">← Volver</button>
     </div>
@@ -428,6 +466,47 @@
     <div class="card" style="padding:0; overflow:hidden;">
       <div id="catContainer">
         <div class="empty"><div class="empty-icon">🏷️</div><p>Cargando categorías…</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HISTORIAL DE RIFAS ── -->
+  <div id="view-historial" class="view">
+    <div style="margin-bottom:20px;">
+      <h2 style="font-size:1.1rem; font-weight:800;">📚 Historial de Rifas</h2>
+      <p style="font-size:.82rem; color:var(--muted); margin-top:4px;">Capital invertido, gastos operacionales y saldos acumulados entre socios.</p>
+    </div>
+
+    <!-- Tarjetas por rifa -->
+    <div id="histRifasContainer">
+      <div class="empty"><div class="empty-icon">⏳</div><p>Cargando historial…</p></div>
+    </div>
+
+    <!-- Tabla de saldos acumulados entre socios -->
+    <div class="card" style="margin-top:8px;">
+      <div class="card-title">📊 Evolución de saldos entre socios (Mateo & Alejandro)</div>
+      <p style="font-size:.78rem; color:var(--muted); margin-bottom:14px; line-height:1.5;">
+        Los saldos <span style="color:var(--danger); font-weight:700;">negativos</span> representan valores <strong>a favor del inversionista</strong> (la empresa les debe).
+        Los <span style="color:var(--accent-2); font-weight:700;">positivos</span> representan deudas del inversionista con la empresa.
+      </p>
+      <div id="histSaldosContainer">
+        <div class="empty"><div class="empty-icon">⏳</div><p>Cargando…</p></div>
+      </div>
+    </div>
+
+    <!-- Propietarios del capital acumulado -->
+    <div class="card">
+      <div class="card-title">👥 Propietarios del capital acumulado</div>
+      <div id="histPropietariosContainer">
+        <div class="empty"><div class="empty-icon">⏳</div><p>Cargando…</p></div>
+      </div>
+    </div>
+
+    <!-- Capital físico representado -->
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div class="card-title" style="padding:16px 20px; margin:0; border-radius:0;">🏠 Capital físico representado (activos actuales)</div>
+      <div id="histCapitalFisico">
+        <div class="empty"><div class="empty-icon">⏳</div><p>Cargando…</p></div>
       </div>
     </div>
   </div>
@@ -803,6 +882,7 @@ function cambiarVista(vista) {
   if (vista === 'gastos') { cargarGastos(); cargarCostosWhatsApp(); }
   if (vista === 'categorias') renderCategorias();
   if (vista === 'inversores') cargarInversores();
+  if (vista === 'historial') cargarHistorial();
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -1759,6 +1839,205 @@ async function guardarCostoWhatsApp() {
     btn.textContent = id ? 'Actualizar' : 'Guardar Costo';
     btn.disabled = false;
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// API HELPER
+// ══════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════
+// HISTORIAL DE RIFAS
+// ══════════════════════════════════════════════════════════════════════════
+
+const RIFA_COLORES   = { 1: '#e67e22', 2: '#3498db', 3: '#9b59b6', 4: '#27ae60' };
+const RIFA_EMOJIS    = { 1: '🚗', 2: '🚙', 3: '🏎️', 4: '🏠' };
+const RIFA_NOMBRES   = { 1: '1ª Rifa', 2: '2ª Rifa', 3: '3ª Rifa', 4: '4ª Rifa (Actual)' };
+const RIFA_PREMIOS   = { 1: 'Camioneta platón', 2: 'Camioneta LPN', 3: 'Camioneta estacas', 4: 'Apartamento' };
+
+async function cargarHistorial() {
+  try {
+    const r = await apiCall('datos_historial', {});
+    renderHistorial(r);
+  } catch (e) {
+    document.getElementById('histRifasContainer').innerHTML =
+      `<div class="empty"><div class="empty-icon">⚠️</div><p>${e.message}</p></div>`;
+  }
+}
+
+function renderHistorial(data) {
+  const { rifas, saldosAcumulados, capitalFisico, propietarios } = data;
+
+  // ── Tarjetas por rifa ──
+  let html = '';
+  for (let n = 1; n <= 4; n++) {
+    const r       = rifas[n] || { capital_total: 0, gastos_total: 0, capital_items: [], gastos_items: [] };
+    const color   = RIFA_COLORES[n];
+    const emoji   = RIFA_EMOJIS[n];
+    const nombre  = RIFA_NOMBRES[n];
+    const premio  = RIFA_PREMIOS[n];
+    const esActual = n === 4;
+
+    let pillsHtml = `
+      <span class="rifa-pill capital">💼 ${fmt(r.capital_total)}</span>
+      <span class="rifa-pill gastos">💸 ${fmt(r.gastos_total)}</span>`;
+    if (esActual && r.recaudo != null) {
+      pillsHtml += `<span class="rifa-pill recaudo">💰 ${fmt(r.recaudo)} recaudado</span>`;
+    }
+
+    // Capital items
+    let capitalHtml = (r.capital_items || []).map(c => {
+      const colorInv = { 'Mateo': '#3498db', 'Alejandro': '#9b59b6', 'Papá': '#e67e22' }[c.inversionista] || '#607d8b';
+      return `<div class="hist-row">
+        <span class="label" style="display:flex; align-items:center; gap:8px;">
+          <span style="background:${colorInv}22; color:${colorInv}; padding:1px 7px; border-radius:5px; font-size:.72rem; font-weight:800;">${c.inversionista}</span>
+          ${c.concepto}
+          ${c.requiere_recapitalizacion ? '' : ' <span style="font-size:.68rem; color:var(--muted);">(CDT/no recapitalizable)</span>'}
+        </span>
+        <span class="val">${fmt(c.valor)}</span>
+      </div>`;
+    }).join('');
+    capitalHtml += `<div class="hist-row total-row"><span>Total capital</span><span style="color:var(--accent-2);">${fmt(r.capital_total)}</span></div>`;
+
+    // Gastos items
+    let gastosHtml = '';
+    if (esActual) {
+      const d = r.gastos_rifa4_detalle || {};
+      if (d.banco)    gastosHtml += `<div class="hist-row"><span class="label">🏦 Gastos bancarios</span><span class="val">${fmt(d.banco)}</span></div>`;
+      if (d.caja)     gastosHtml += `<div class="hist-row"><span class="label">💵 Caja física</span><span class="val">${fmt(d.caja)}</span></div>`;
+      if (d.facebook) gastosHtml += `<div class="hist-row"><span class="label">📣 Facebook Ads</span><span class="val">${fmt(d.facebook)}</span></div>`;
+      if (d.whatsapp) gastosHtml += `<div class="hist-row"><span class="label">💬 WhatsApp Business</span><span class="val">${fmt(d.whatsapp)}</span></div>`;
+      if (!gastosHtml) gastosHtml = `<p style="font-size:.82rem; color:var(--muted); text-align:center; padding:10px 0;">Sin gastos registrados aún.</p>`;
+    } else {
+      const porPersona = {};
+      for (const g of (r.gastos_items || [])) {
+        if (!porPersona[g.quien_pago]) porPersona[g.quien_pago] = [];
+        porPersona[g.quien_pago].push(g);
+      }
+      for (const [persona, items] of Object.entries(porPersona)) {
+        const colorP = { 'Mateo': '#3498db', 'Alejandro': '#9b59b6', 'Papá': '#e67e22' }[persona] || '#607d8b';
+        const totalP = items.reduce((s, g) => s + Number(g.valor), 0);
+        gastosHtml += `
+          <div style="margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="background:${colorP}22; color:${colorP}; padding:2px 9px; border-radius:6px; font-size:.76rem; font-weight:800;">${persona}</span>
+              <span style="font-size:.8rem; font-weight:700; color:var(--ink-2);">${fmt(totalP)}</span>
+            </div>
+            ${items.map(g => `
+              <div class="gasto-hist-item">
+                <span style="color:var(--ink-2); flex:1;">${g.descripcion}</span>
+                <span style="font-weight:700; color:${Number(g.valor) < 0 ? 'var(--accent-2)' : 'var(--muted)'}; white-space:nowrap;">${Number(g.valor) < 0 ? '+' : ''}${fmt(Math.abs(g.valor))}</span>
+              </div>`).join('')}
+          </div>`;
+      }
+      if (!gastosHtml) gastosHtml = `<p style="font-size:.82rem; color:var(--muted); text-align:center; padding:10px 0;">Sin gastos registrados.</p>`;
+    }
+    gastosHtml += `<div class="hist-row total-row"><span>Total gastos</span><span style="color:var(--danger);">-${fmt(r.gastos_total)}</span></div>`;
+
+    const bodyId = `rifaBody${n}`;
+    html += `
+      <div class="rifa-card">
+        <div class="rifa-header" onclick="toggleRifaBody('${bodyId}')">
+          <div class="rifa-num" style="background:${color};">${emoji}</div>
+          <div class="rifa-title">
+            <h3>${nombre} — Premio: ${premio}</h3>
+            <p>Capital: ${fmt(r.capital_total)} · Gastos: ${fmt(r.gastos_total)}${esActual && r.recaudo != null ? ' · Recaudo: ' + fmt(r.recaudo) : ''}</p>
+          </div>
+          <div class="rifa-pills" style="margin-left:auto;">${pillsHtml}</div>
+          <span id="${bodyId}Arrow" style="font-size:1.1rem; color:var(--muted); margin-left:8px; flex-shrink:0; transition:transform .2s;">▶</span>
+        </div>
+        <div id="${bodyId}" class="rifa-body">
+          <div class="rifa-section">
+            <div class="rifa-section-title">💼 Aportes de capital</div>
+            ${capitalHtml}
+          </div>
+          <div class="rifa-section">
+            <div class="rifa-section-title">💸 Gastos de operación</div>
+            ${gastosHtml}
+          </div>
+          ${esActual && r.recaudo != null ? `
+          <div class="rifa-section">
+            <div class="rifa-section-title">📊 Resultados actuales</div>
+            <div class="hist-row"><span class="label">💰 Recaudo total</span><span class="val" style="color:var(--accent-2);">${fmt(r.recaudo)}</span></div>
+            <div class="hist-row"><span class="label">💼 Capital invertido</span><span class="val" style="color:var(--danger);">-${fmt(r.capital_total)}</span></div>
+            <div class="hist-row"><span class="label">💸 Gastos operacionales</span><span class="val" style="color:var(--danger);">-${fmt(r.gastos_total)}</span></div>
+            <div class="hist-row total-row">
+              <span>${r.utilidad >= 0 ? '✅ Utilidad neta' : '⚠️ Déficit actual'}</span>
+              <span style="color:${r.utilidad >= 0 ? 'var(--accent-2)' : 'var(--danger)'};">${r.utilidad >= 0 ? '+' : ''}${fmt(r.utilidad)}</span>
+            </div>
+          </div>` : ''}
+        </div>
+      </div>`;
+  }
+  document.getElementById('histRifasContainer').innerHTML = html;
+
+  // ── Tabla de saldos acumulados ──
+  let saldoHtml = `<table class="saldo-table">
+    <thead><tr>
+      <th>Rifa</th>
+      <th style="color:#3498db;">Mateo</th>
+      <th style="color:#9b59b6;">Alejandro</th>
+    </tr></thead><tbody>`;
+
+  for (const s of (saldosAcumulados || [])) {
+    const mClass = s.mateo < 0 ? 'saldo-negative' : 'saldo-positive';
+    const aClass = s.alejandro < 0 ? 'saldo-negative' : 'saldo-positive';
+    const mSign  = s.mateo < 0 ? '' : '+';
+    const aSign  = s.alejandro < 0 ? '' : '+';
+    saldoHtml += `<tr>
+      <td style="font-weight:700;">${RIFA_EMOJIS[s.rifa]} ${s.label}</td>
+      <td class="${mClass}">${mSign}${fmt(s.mateo)}</td>
+      <td class="${aClass}">${aSign}${fmt(s.alejandro)}</td>
+    </tr>`;
+  }
+  saldoHtml += '</tbody></table>';
+  document.getElementById('histSaldosContainer').innerHTML = saldoHtml;
+
+  // ── Propietarios del capital acumulado ──
+  let propHtml = `<div style="overflow-x:auto;"><table class="saldo-table">
+    <thead><tr>
+      <th>Inversionista</th>
+      <th>Capital Rifas 1-2</th>
+      <th>Saldos acumulados</th>
+      <th>Capital Rifa 4</th>
+      <th>Total capital</th>
+    </tr></thead><tbody>`;
+
+  for (const p of (propietarios || [])) {
+    const colorP = { 'Mateo': '#3498db', 'Alejandro': '#9b59b6', 'Papá': '#e67e22' }[p.nombre] || '#607d8b';
+    propHtml += `<tr>
+      <td><span style="background:${colorP}22; color:${colorP}; padding:2px 9px; border-radius:6px; font-size:.8rem; font-weight:800;">${p.nombre}</span></td>
+      <td>${p.rifa1 || p.rifa2 ? fmt((p.rifa1 || 0) + (p.rifa2 || 0)) : '—'}</td>
+      <td>${p.saldos_acum ? fmt(p.saldos_acum) : '—'}</td>
+      <td>${p.rifa4 ? fmt(p.rifa4) : '—'}</td>
+      <td style="font-weight:800; color:var(--accent-2);">${fmt(p.total)}</td>
+    </tr>`;
+  }
+  const totalProp = (propietarios || []).reduce((s, p) => s + (p.total || 0), 0);
+  propHtml += `<tr>
+    <td>TOTAL</td><td></td><td></td><td></td>
+    <td>${fmt(totalProp)}</td>
+  </tr></tbody></table></div>`;
+  document.getElementById('histPropietariosContainer').innerHTML = propHtml;
+
+  // ── Capital físico ──
+  let fisHtml = (capitalFisico || []).map(a =>
+    `<div class="activo-item">
+      <span style="font-weight:600; color:var(--ink-2);">🏷️ ${a.concepto}</span>
+      <span style="font-weight:700;">${fmt(a.valor)}</span>
+    </div>`
+  ).join('');
+  const totalFisico = (capitalFisico || []).reduce((s, a) => s + a.valor, 0);
+  fisHtml += `<div class="activo-item">
+    <span>TOTAL CAPITAL FÍSICO</span>
+    <span style="color:var(--accent-2);">${fmt(totalFisico)}</span>
+  </div>`;
+  document.getElementById('histCapitalFisico').innerHTML = fisHtml;
+}
+
+function toggleRifaBody(id) {
+  const el    = document.getElementById(id);
+  const arrow = document.getElementById(id + 'Arrow');
+  const open  = el.classList.toggle('open');
+  if (arrow) arrow.style.transform = open ? 'rotate(90deg)' : 'rotate(0deg)';
 }
 
 // ══════════════════════════════════════════════════════════════════════════
