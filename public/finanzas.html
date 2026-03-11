@@ -416,9 +416,18 @@
 
   <!-- ── GASTOS ── -->
   <div id="view-gastos" class="view">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
       <h2 style="font-size:1.1rem; font-weight:800;">Registro de Gastos</h2>
       <button class="btn btn-primary" onclick="abrirModalGasto(null)">+ Nuevo Gasto</button>
+    </div>
+
+    <!-- Filtros rápidos de período -->
+    <div class="period-bar" style="margin-bottom:12px;">
+      <button class="period-btn" id="gPeriodMesActual"   onclick="setGastoPeriodo('mes_actual', this)">Este mes</button>
+      <button class="period-btn" id="gPeriodMesAnterior" onclick="setGastoPeriodo('mes_anterior', this)">Mes anterior</button>
+      <button class="period-btn" id="gPeriodAnio"        onclick="setGastoPeriodo('anio', this)">Este año</button>
+      <button class="period-btn active" id="gPeriodRifa" onclick="setGastoPeriodo('rifa_actual', this)" style="background:var(--ink); color:#fff; border-color:var(--ink);">🏆 Rifa actual</button>
+      <button class="period-btn" id="gPeriodPersonalizado" onclick="setGastoPeriodo('personalizado', this)">Personalizado</button>
     </div>
 
     <div class="filter-bar">
@@ -818,11 +827,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Enter') document.getElementById('btnLogin').click();
   });
 
-  // Inicializar fechas de filtro de gastos
-  const hoy = getHoy();
-  const primerDia = hoy.substring(0, 7) + '-01';
-  document.getElementById('filtroDesde').value = primerDia;
-  document.getElementById('filtroHasta').value = hoy;
+  // Inicializar filtro de gastos en "Rifa actual" por defecto
+  document.getElementById('filtroDesde').value = '2026-01-26';
+  document.getElementById('filtroHasta').value = '2026-04-04';
 });
 
 document.getElementById('btnLogin').onclick = () => {
@@ -879,7 +886,18 @@ function cambiarVista(vista) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   event.target.classList.add('active');
 
-  if (vista === 'gastos') { cargarGastos(); cargarCostosWhatsApp(); }
+  if (vista === 'gastos') {
+    // Asegurar que "Rifa actual" esté activo y las fechas correctas
+    document.querySelectorAll('#view-gastos .period-btn').forEach(b => {
+      b.classList.remove('active'); b.style.background = ''; b.style.color = ''; b.style.borderColor = '';
+    });
+    const rifaBtn = document.getElementById('gPeriodRifa');
+    if (rifaBtn) { rifaBtn.classList.add('active'); rifaBtn.style.background = 'var(--ink)'; rifaBtn.style.color = '#fff'; rifaBtn.style.borderColor = 'var(--ink)'; }
+    document.getElementById('filtroDesde').value = '2026-01-26';
+    document.getElementById('filtroHasta').value = '2026-04-04';
+    cargarGastos();
+    cargarCostosWhatsApp();
+  }
   if (vista === 'categorias') renderCategorias();
   if (vista === 'inversores') cargarInversores();
   if (vista === 'historial') cargarHistorial();
@@ -952,6 +970,42 @@ function setPeriodo(tipo, btn) {
     periodoActual.desde = rango.desde;
     periodoActual.hasta = rango.hasta;
     cargarDashboard();
+  }
+}
+
+function setGastoPeriodo(tipo, btn) {
+  const RIFA_INICIO = '2026-01-26';
+  const RIFA_FIN    = '2026-04-04';
+
+  // Resetear estilos de todos los botones del filtro de gastos
+  document.querySelectorAll('#view-gastos .period-btn').forEach(b => {
+    b.classList.remove('active');
+    b.style.background = '';
+    b.style.color      = '';
+    b.style.borderColor = '';
+  });
+  btn.classList.add('active');
+
+  if (tipo === 'rifa_actual') {
+    btn.style.background   = 'var(--ink)';
+    btn.style.color        = '#fff';
+    btn.style.borderColor  = 'var(--ink)';
+    document.getElementById('filtroDesde').value = RIFA_INICIO;
+    document.getElementById('filtroHasta').value = RIFA_FIN;
+    cargarGastos();
+    return;
+  }
+
+  if (tipo === 'personalizado') {
+    // Solo habilitar edición manual de las fechas, no recargar
+    return;
+  }
+
+  const rango = getRangoPeriodo(tipo);
+  if (rango) {
+    document.getElementById('filtroDesde').value = rango.desde;
+    document.getElementById('filtroHasta').value = rango.hasta;
+    cargarGastos();
   }
 }
 
