@@ -5,12 +5,7 @@
       "maxDuration": 60
     }
   },
-  "crons": [
-    {
-      "path": "/api/admin/llamadas-automaticas",
-      "schedule": "0 14 * * 1-5"
-    }
-  ],
+  "crons": [],
   "rewrites": [
     {
       "source": "/boleta/:numero",

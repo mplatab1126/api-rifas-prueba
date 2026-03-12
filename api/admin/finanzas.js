@@ -13,8 +13,17 @@ export default async function handler(req, res) {
   const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
   const nombreAsesor = asesores[contrasena];
 
-  if (!nombreAsesor || nombreAsesor !== 'Mateo') {
+  const accionesAsesores = ['registrar_gasto', 'listar_categorias'];
+  const puedeRegistrarGastos = ['Mateo', 'Juan Pablo'];
+
+  if (!nombreAsesor) {
     return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido. Solo el administrador puede acceder al Centro Financiero.' });
+  }
+  if (nombreAsesor !== 'Mateo' && !accionesAsesores.includes(accion)) {
+    return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido. Solo el administrador puede acceder al Centro Financiero.' });
+  }
+  if (accionesAsesores.includes(accion) && !puedeRegistrarGastos.includes(nombreAsesor)) {
+    return res.status(401).json({ status: 'error', mensaje: 'Acceso denegado. Solo Mateo o Juan Pablo pueden registrar gastos.' });
   }
 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
@@ -52,7 +61,7 @@ export default async function handler(req, res) {
       // 2. Gastos bancarios: tabla gastos
       const { data: gastosData, error: errGastos } = await supabase
         .from('gastos')
-        .select('monto, categoria, subcategoria, descripcion')
+        .select('monto, categoria, subcategoria, descripcion, proyecto')
         .gte('fecha', fecha_desde)
         .lte('fecha', fecha_hasta);
 
@@ -68,8 +77,15 @@ export default async function handler(req, res) {
 
       if (errCaja) throw errCaja;
 
-      // Agrupar gastos bancarios por categoría → subcategoría
+      // Agrupar gastos bancarios por categoría → subcategoría (vista global)
       const porCategoria = {};
+
+      // Agrupar gastos por proyecto → categoría → subcategoría (vista por proyecto)
+      const PROYECTOS_FIJOS = ['Rifa de apartamento', 'Rifa de camioneta', 'Construcción de apartamentos', 'Operacional'];
+      const porProyecto = {};
+      for (const p of PROYECTOS_FIJOS) {
+        porProyecto[p] = { total: 0, porCategoria: {} };
+      }
 
       for (const g of (gastosData || [])) {
         if (!porCategoria[g.categoria]) {
@@ -79,6 +95,15 @@ export default async function handler(req, res) {
         const sub = g.subcategoria || 'Sin subcategoría';
         porCategoria[g.categoria].subcategorias[sub] =
           (porCategoria[g.categoria].subcategorias[sub] || 0) + Number(g.monto);
+
+        // Agrupar también por proyecto
+        if (g.proyecto && PROYECTOS_FIJOS.includes(g.proyecto)) {
+          const pc = porProyecto[g.proyecto].porCategoria;
+          porProyecto[g.proyecto].total += Number(g.monto);
+          if (!pc[g.categoria]) pc[g.categoria] = { total: 0, subcategorias: {} };
+          pc[g.categoria].total += Number(g.monto);
+          pc[g.categoria].subcategorias[sub] = (pc[g.categoria].subcategorias[sub] || 0) + Number(g.monto);
+        }
       }
 
       // Agregar gastos de caja como categoría especial
@@ -164,7 +189,8 @@ export default async function handler(req, res) {
         totalGastos,
         utilidadNeta,
         margen,
-        porCategoria
+        porCategoria,
+        porProyecto
       });
     }
 
@@ -172,7 +198,7 @@ export default async function handler(req, res) {
     // LISTAR GASTOS — con filtros opcionales
     // ─────────────────────────────────────────────────────────────────────────
     if (accion === 'listar_gastos') {
-      const { fecha_desde, fecha_hasta, categoria } = payload;
+      const { fecha_desde, fecha_hasta, categoria, proyecto } = payload;
 
       let query = supabase
         .from('gastos')
@@ -183,6 +209,7 @@ export default async function handler(req, res) {
       if (fecha_desde) query = query.gte('fecha', fecha_desde);
       if (fecha_hasta) query = query.lte('fecha', fecha_hasta);
       if (categoria) query = query.eq('categoria', categoria);
+      if (proyecto)  query = query.eq('proyecto', proyecto);
 
       const { data, error } = await query.limit(300);
       if (error) throw error;
@@ -379,6 +406,8 @@ Responde ÚNICAMENTE con el nombre de la subcategoría, sin explicación ni punt
     if (accion === 'datos_inversores') {
       const RIFA_INICIO = '2026-01-26';
       const RIFA_FIN    = '2026-04-04';
+      const { solo_mi_equipo } = payload;
+      const EXCLUIDOS_MI_EQUIPO = ['alejandra plata', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
 
       // 1. Inversores configurados
       const { data: inversores, error: errInv } = await supabase
@@ -387,17 +416,23 @@ Responde ÚNICAMENTE con el nombre de la subcategoría, sin explicación ni punt
         .order('nombre');
       if (errInv) throw errInv;
 
-      // 2. Total recaudado desde inicio de la rifa 4
+      // 2. Total recaudado dentro del período de la rifa, filtrado por equipo
       const { data: abonosData } = await supabase
         .from('abonos')
-        .select('monto')
-        .gte('fecha_pago', RIFA_INICIO);
-      const totalRecaudo = (abonosData || []).reduce((s, a) => s + Number(a.monto), 0);
+        .select('monto, asesor')
+        .gte('fecha_pago', RIFA_INICIO)
+        .lte('fecha_pago', RIFA_FIN);
 
-      // 3. Total gastos operacionales (banco)
+      const abonosFiltrados = solo_mi_equipo
+        ? (abonosData || []).filter(a => !EXCLUIDOS_MI_EQUIPO.includes((a.asesor || '').toLowerCase().trim()))
+        : (abonosData || []);
+      const totalRecaudo = abonosFiltrados.reduce((s, a) => s + Number(a.monto), 0);
+
+      // 3. Total gastos operacionales (banco) — solo proyectos de la rifa y operacional
       const { data: gastosData } = await supabase
         .from('gastos')
-        .select('monto');
+        .select('monto')
+        .in('proyecto', ['Rifa de apartamento', 'Operacional']);
       const totalGastosOp = (gastosData || []).reduce((s, g) => s + Number(g.monto), 0);
 
       // 4. Gastos caja física (desde inicio de rifa)
@@ -598,11 +633,12 @@ Responde ÚNICAMENTE con el nombre de la subcategoría, sin explicación ni punt
         .order('quien_pago');
       if (errGH) throw errGH;
 
-      // Gastos operacionales Rifa 4 (tabla gastos actual)
+      // Gastos operacionales Rifa 4 — solo proyectos de la rifa y operacional
       const { data: gastosR4, error: errGR4 } = await supabase
         .from('gastos')
         .select('monto, descripcion, categoria, reportado_por')
-        .gte('fecha', '2026-01-26');
+        .gte('fecha', '2026-01-26')
+        .in('proyecto', ['Rifa de apartamento', 'Operacional']);
       if (errGR4) throw errGR4;
 
       const totalGastosR4 = (gastosR4 || []).reduce((s, g) => s + Number(g.monto), 0);

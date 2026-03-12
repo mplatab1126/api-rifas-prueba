@@ -23,17 +23,24 @@ export default async function handler(req, res) {
 
   try {
     const prompt = `
-      Eres un asistente bancario experto. Analiza este comprobante de transferencia y extrae los datos.
+      Eres un asistente bancario experto. Analiza este comprobante bancario y extrae los datos TAL CUAL aparecen, sin interpretar ni cambiar nada.
       Devuelve ÚNICAMENTE un objeto JSON válido (sin formato Markdown, sin comillas invertidas, solo llaves y texto).
       Reemplaza comas por puntos en los decimales si aplica, pero devuelve enteros si no hay centavos.
-      
+
+      REGLA CRÍTICA para identificar el tipo:
+      - Si el valor/monto aparece en ROJO o tiene un signo NEGATIVO (-) delante → tipo "egreso" (dinero que salió)
+      - Si el valor/monto aparece en VERDE o es positivo (sin signo negativo) → tipo "ingreso" (dinero que entró)
+      - También considera la descripción: palabras como "Retiro", "Pago a", "Débito", "Salida", "Cargo" → "egreso".
+        Palabras como "Consignación", "Transferencia recibida", "Crédito", "Abono", "Entrada" → "ingreso".
+
       Formato exacto esperado:
       {
-        "plataforma": "Nombre del banco o app (Ej: Nequi, Bancolombia, Daviplata)",
-        "monto": "Solo el número sin símbolos (Ej: 20000)",
+        "tipo": "ingreso" o "egreso" según las reglas anteriores,
+        "plataforma": "Nombre del banco o app exactamente como aparece (Ej: Bancolombia, Nequi, Daviplata)",
+        "monto": "Solo el número absoluto sin símbolos ni signos (Ej: 3000000). NUNCA incluyas el signo negativo.",
         "referencia": "Código de comprobante o referencia. Si no hay, pon '0'",
         "fecha_pago": "La fecha exacta en formato YYYY-MM-DD",
-        "hora_pago": "La hora en formato HH:MM:00 (Formato 24h. Obligatorio poner los segundos)"
+        "hora_pago": "La hora en formato HH:MM:00 (Formato 24h. Obligatorio poner los segundos). Si no hay hora, pon '12:00:00'"
       }
     `;
 
@@ -69,6 +76,22 @@ export default async function handler(req, res) {
 
     if (!datos.monto || !datos.referencia || !datos.fecha_pago) {
        return res.status(400).json({ status: 'error', mensaje: 'La imagen es borrosa o no es un comprobante válido.' });
+    }
+
+    // Si la IA detectó que es un EGRESO (valor negativo / rojo / retiro), no lo guardamos
+    // como transferencia libre — lo devolvemos para que el asesor lo justifique.
+    if (datos.tipo === 'egreso') {
+      return res.status(200).json({
+        status: 'es_egreso',
+        mensaje: 'Detectado como egreso (valor negativo o retiro).',
+        datosExtraidos: {
+          plataforma: datos.plataforma,
+          monto: datos.monto,
+          referencia: datos.referencia,
+          fecha_pago: datos.fecha_pago,
+          hora_pago: datos.hora_pago
+        }
+      });
     }
 
     // 5. ESCUDO ANTI-CLONES

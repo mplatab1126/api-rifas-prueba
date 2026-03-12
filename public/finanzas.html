@@ -256,6 +256,7 @@
       .pl-bar-wrap { display: none; }
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
 
@@ -365,10 +366,10 @@
   <!-- ── DASHBOARD ── -->
   <div id="view-dashboard" class="view active">
     <div class="period-bar">
-      <button class="period-btn active" onclick="setPeriodo('mes_actual', this)">Este mes</button>
+      <button class="period-btn" onclick="setPeriodo('mes_actual', this)">Este mes</button>
       <button class="period-btn" onclick="setPeriodo('mes_anterior', this)">Mes anterior</button>
       <button class="period-btn" onclick="setPeriodo('anio', this)">Este año</button>
-      <button class="period-btn" id="btnRifaActual" onclick="setPeriodo('rifa_actual', this)" style="background:var(--ink); color:#fff; border-color:var(--ink);">🏆 Rifa actual</button>
+      <button class="period-btn" id="btnRifaActual" onclick="setPeriodo('rifa_actual', this)">🏆 Rifa actual</button>
       <button class="period-btn" onclick="setPeriodo('personalizado', this)">Personalizado</button>
       <div id="periodCustom" class="period-custom">
         <input type="date" id="fechaDesde" onchange="cargarDashboard()">
@@ -434,6 +435,13 @@
       <input type="date" id="filtroDesde" onchange="cargarGastos()">
       <span style="color:var(--muted); font-size:.85rem; font-weight:600;">a</span>
       <input type="date" id="filtroHasta" onchange="cargarGastos()">
+      <select id="filtroProyecto" onchange="cargarGastos()" style="font-weight:700;">
+        <option value="">🗂️ Todos los proyectos</option>
+        <option value="Rifa de apartamento">🏠 Rifa de apartamento</option>
+        <option value="Rifa de camioneta">🚛 Rifa de camioneta</option>
+        <option value="Construcción de apartamentos">🏗️ Construcción de apartamentos</option>
+        <option value="Operacional">⚙️ Operacional</option>
+      </select>
       <select id="filtroCategoria" onchange="cargarGastos()">
         <option value="">Todas las categorías</option>
       </select>
@@ -539,7 +547,7 @@
       </div>
       <div id="ocrStatus" style="font-size:.8rem; color:var(--muted); margin-top:5px; display:none;"></div>
     </div>
-    <input type="file" id="ocrInput" accept="image/*" onchange="procesarArchivoGasto(this.files[0])">
+    <input type="file" id="ocrInput" accept="image/*,application/pdf" onchange="procesarArchivoGasto(this.files[0])">
 
     <!-- Extracted data row -->
     <div class="field-row">
@@ -591,14 +599,21 @@
       <button class="ai-accept" onclick="aceptarSugerencia()">Usar esta</button>
     </div>
 
+    <div class="field" style="margin-top:4px;">
+      <label>Proyecto / Bolsa de gastos *</label>
+      <select id="gProyecto">
+        <option value="">— Selecciona el proyecto —</option>
+        <option value="Rifa de apartamento">🏠 Rifa de apartamento</option>
+        <option value="Rifa de camioneta">🚛 Rifa de camioneta</option>
+        <option value="Construcción de apartamentos">🏗️ Construcción de apartamentos</option>
+        <option value="Operacional">⚙️ Operacional</option>
+      </select>
+    </div>
+
     <div class="field-row" style="margin-top:4px;">
       <div class="field">
         <label>Reportado por</label>
         <input type="text" id="gReportadoPor" placeholder="Ej: Federico, Papá">
-      </div>
-      <div class="field">
-        <label>Proyecto</label>
-        <input type="text" id="gProyecto" placeholder="Ej: Bloque A, Oficina">
       </div>
     </div>
 
@@ -874,7 +889,7 @@ async function verificarLogin(pwd, auto) {
 
 async function inicializar() {
   await cargarCategorias();
-  setPeriodo('mes_actual', document.querySelector('.period-btn.active'));
+  setPeriodo('rifa_actual', document.getElementById('btnRifaActual'));
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -1058,10 +1073,9 @@ async function cargarDashboard() {
 }
 
 function renderPL(data) {
-  const { totalIngresos, totalGastos, utilidadNeta, porCategoria } = data;
+  const { totalIngresos, totalGastos, utilidadNeta, porCategoria, porProyecto } = data;
   const maxVal = Math.max(totalIngresos, totalGastos, 1);
 
-  // Mapa de color por categoría: primero busca en categorias[], luego asigna color por defecto
   const getColor = (nombre) => {
     const cat = categorias.find(c => c.nombre === nombre);
     if (cat) return cat.color;
@@ -1069,64 +1083,122 @@ function renderPL(data) {
     return '#95a5a6';
   };
 
+  const getCatIcon = (nombre) => (categorias.find(c => c.nombre === nombre) || {}).icono || '💸';
+
+  // Renderiza las filas de categorías de un bloque de gastos
+  const renderCatRows = (catMap, maxV) => {
+    let h = '';
+    for (const [cat, info] of Object.entries(catMap)) {
+      const color = getColor(cat);
+      const icon  = getCatIcon(cat);
+      h += `<div class="pl-row category-row" style="border-left:3px solid ${color}; padding-left:10px;">
+        <div class="pl-label"><div class="cat-dot" style="background:${color};"></div>${icon} ${cat}</div>
+        <div class="pl-bar-wrap"><div class="pl-bar" style="width:${Math.round(info.total/maxV*100)}%; background:${color};"></div></div>
+        <span class="pl-monto" style="color:var(--danger);">-${fmt(info.total)}</span>
+      </div>`;
+      for (const [sub, subTotal] of Object.entries(info.subcategorias)) {
+        h += `<div class="pl-row sub-row">
+          <div class="pl-label" style="padding-left:8px;">↳ ${sub}</div>
+          <div class="pl-bar-wrap"><div class="pl-bar" style="width:${Math.round(subTotal/maxV*100)}%; background:${color}; opacity:.5;"></div></div>
+          <span class="pl-monto" style="color:var(--muted);">${fmt(subTotal)}</span>
+        </div>`;
+      }
+    }
+    return h;
+  };
+
+  const PROYECTOS_CONFIG = {
+    'Rifa de apartamento': { icon: '🏠', color: '#2e7d32', bg: '#e8f5e9' },
+  };
+
   let html = '';
 
-  // INGRESOS
+  // ── INGRESOS ──────────────────────────────────────────────────────────────
   html += `<div class="pl-row header"><span>Ingresos</span><span>Monto</span></div>`;
   html += `<div class="pl-row category-row" style="border-left:3px solid var(--accent); padding-left:10px;">
     <div class="pl-label"><div class="cat-dot" style="background:var(--accent);"></div>Ventas de rifas</div>
     <div class="pl-bar-wrap"><div class="pl-bar" style="width:${Math.round(totalIngresos/maxVal*100)}%; background:var(--accent);"></div></div>
     <span class="pl-monto" style="color:var(--accent-2);">${fmt(totalIngresos)}</span>
   </div>`;
-
   html += `<div class="pl-row separator"><span>Total Ingresos</span><span style="color:var(--accent-2);">${fmt(totalIngresos)}</span></div>`;
 
-  // GASTOS
-  html += `<div class="pl-row header" style="margin-top:20px;"><span>Gastos</span><span>Monto</span></div>`;
-
-  for (const [cat, info] of Object.entries(porCategoria)) {
-    const esFacebook = info.fuente === 'facebook';
-    const esCaja     = info.fuente === 'caja';
-
-    let color, catIcon, badgeHtml = '';
-
-    const esWhatsApp = info.fuente === 'whatsapp';
-
-    if (esFacebook) {
-      color   = '#1877f2';
-      catIcon = '📣';
-      badgeHtml = `<span class="auto-badge">🔗 Facebook Ads</span>`;
-    } else if (esCaja) {
-      color   = '#607d8b';
-      catIcon = '🏦';
-      badgeHtml = `<span class="auto-badge auto-badge-caja">🏦 Caja</span>`;
-    } else if (esWhatsApp) {
-      color   = '#25D366';
-      catIcon = '💬';
-      badgeHtml = `<span class="auto-badge auto-badge-whatsapp">💬 WhatsApp</span>`;
-    } else {
-      color   = getColor(cat);
-      catIcon = (categorias.find(c => c.nombre === cat) || {}).icono || '💸';
-    }
-
-    html += `<div class="pl-row category-row" style="border-left:3px solid ${color}; padding-left:10px;">
-      <div class="pl-label"><div class="cat-dot" style="background:${color};"></div>${catIcon} ${cat}${badgeHtml}</div>
-      <div class="pl-bar-wrap"><div class="pl-bar" style="width:${Math.round(info.total/maxVal*100)}%; background:${color};"></div></div>
-      <span class="pl-monto" style="color:var(--danger);">-${fmt(info.total)}</span>
+  // Helper: construye una tarjeta cerrada por proyecto/sección
+  const renderTarjetaProyecto = (titulo, colorBorde, colorBg, colorTexto, totalProy, catRows) => {
+    const tieneDatos = totalProy > 0;
+    return `
+    <div style="border:1.5px solid ${colorBorde}; border-radius:14px; overflow:hidden; margin-bottom:14px;">
+      <div style="background:${colorBg}; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:${tieneDatos ? '1px solid ' + colorBorde + '40' : 'none'};">
+        <span style="font-weight:800; font-size:.95rem; color:${colorTexto};">${titulo}</span>
+        <span style="font-weight:800; font-size:.95rem; color:${tieneDatos ? 'var(--danger)' : 'var(--muted)'};">
+          ${tieneDatos ? '-' + fmt(totalProy) : 'Sin gastos registrados'}
+        </span>
+      </div>
+      ${tieneDatos ? `<div style="padding:4px 0;">${catRows}</div>` : ''}
     </div>`;
+  };
 
-    for (const [sub, subTotal] of Object.entries(info.subcategorias)) {
-      html += `<div class="pl-row sub-row">
-        <div class="pl-label" style="padding-left:8px;">↳ ${sub}</div>
-        <div class="pl-bar-wrap"><div class="pl-bar" style="width:${Math.round(subTotal/maxVal*100)}%; background:${color}; opacity:.5;"></div></div>
-        <span class="pl-monto" style="color:var(--muted);">${fmt(subTotal)}</span>
-      </div>`;
-    }
+  // ── GASTOS POR PROYECTO ───────────────────────────────────────────────────
+  html += `<div style="font-size:.75rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin:24px 0 12px 2px;">Gastos de la Rifa</div>`;
+
+  const proyData = porProyecto || {};
+  for (const [nombre, cfg] of Object.entries(PROYECTOS_CONFIG)) {
+    const proy = proyData[nombre] || { total: 0, porCategoria: {} };
+    const catRows = proy.total > 0 ? renderCatRows(proy.porCategoria, maxVal) : '';
+    html += renderTarjetaProyecto(`${cfg.icon} ${nombre}`, cfg.color, cfg.bg, cfg.color, proy.total, catRows);
   }
 
-  html += `<div class="pl-row separator"><span>Total Gastos</span><span style="color:var(--danger);">-${fmt(totalGastos)}</span></div>`;
+  // ── OPERACIONAL (banco proyecto='Operacional' + Caja + Facebook + WhatsApp) ─
+  const otrosFuentes = ['caja', 'facebook', 'whatsapp'];
+  const otrosCats = Object.entries(porCategoria).filter(([, v]) => otrosFuentes.includes(v.fuente));
+  const opBanco = proyData['Operacional'] || { total: 0, porCategoria: {} };
+  const totalOtros = otrosCats.reduce((s, [, v]) => s + v.total, 0) + opBanco.total;
 
-  // UTILIDAD NETA
+  if (totalOtros > 0) {
+    let otrasRows = '';
+
+    // Gastos bancarios con proyecto='Operacional' (agrupados por categoría)
+    for (const [cat, info] of Object.entries(opBanco.porCategoria)) {
+      const color = '#607d8b';
+      otrasRows += `<div class="pl-row category-row" style="border-left:3px solid ${color}; padding-left:10px;">
+        <div class="pl-label"><div class="cat-dot" style="background:${color};"></div>💸 ${cat}</div>
+        <div class="pl-bar-wrap"><div class="pl-bar" style="width:${Math.round(info.total/maxVal*100)}%; background:${color};"></div></div>
+        <span class="pl-monto" style="color:var(--danger);">-${fmt(info.total)}</span>
+      </div>`;
+      for (const [sub, subTotal] of Object.entries(info.subcategorias)) {
+        otrasRows += `<div class="pl-row sub-row">
+          <div class="pl-label" style="padding-left:8px;">↳ ${sub}</div>
+          <div class="pl-bar-wrap"><div class="pl-bar" style="width:${Math.round(subTotal/maxVal*100)}%; background:${color}; opacity:.5;"></div></div>
+          <span class="pl-monto" style="color:var(--muted);">${fmt(subTotal)}</span>
+        </div>`;
+      }
+    }
+
+    // Auto-agregados: Caja, Facebook, WhatsApp
+    for (const [cat, info] of otrosCats) {
+      let color = '#607d8b', catIcon = '💸', badgeHtml = '';
+      if (info.fuente === 'facebook')  { color = '#1877f2'; catIcon = '📣'; badgeHtml = `<span class="auto-badge">🔗 Meta</span>`; }
+      else if (info.fuente === 'caja') { color = '#607d8b'; catIcon = '🏦'; badgeHtml = `<span class="auto-badge auto-badge-caja">🏦 Caja</span>`; }
+      else if (info.fuente === 'whatsapp') { color = '#25D366'; catIcon = '💬'; badgeHtml = `<span class="auto-badge auto-badge-whatsapp">💬 WhatsApp</span>`; }
+
+      otrasRows += `<div class="pl-row category-row" style="border-left:3px solid ${color}; padding-left:10px;">
+        <div class="pl-label"><div class="cat-dot" style="background:${color};"></div>${catIcon} ${cat}${badgeHtml}</div>
+        <div class="pl-bar-wrap"><div class="pl-bar" style="width:${Math.round(info.total/maxVal*100)}%; background:${color};"></div></div>
+        <span class="pl-monto" style="color:var(--danger);">-${fmt(info.total)}</span>
+      </div>`;
+      for (const [sub, subTotal] of Object.entries(info.subcategorias)) {
+        otrasRows += `<div class="pl-row sub-row">
+          <div class="pl-label" style="padding-left:8px;">↳ ${sub}</div>
+          <div class="pl-bar-wrap"><div class="pl-bar" style="width:${Math.round(subTotal/maxVal*100)}%; background:#607d8b; opacity:.5;"></div></div>
+          <span class="pl-monto" style="color:var(--muted);">${fmt(subTotal)}</span>
+        </div>`;
+      }
+    }
+    html += renderTarjetaProyecto('⚙️ Operacional', '#607d8b', '#f5f5f5', '#607d8b', totalOtros, otrasRows);
+  }
+
+  // ── TOTALES Y UTILIDAD ────────────────────────────────────────────────────
+  html += `<div class="pl-row separator" style="margin-top:8px;"><span>Total Gastos</span><span style="color:var(--danger);">-${fmt(totalGastos)}</span></div>`;
+
   const positiva = utilidadNeta >= 0;
   html += `<div class="pl-row net-row" style="color:${positiva ? 'var(--accent-2)' : 'var(--danger)'};">
     <span>${positiva ? '✅' : '⚠️'} UTILIDAD NETA</span>
@@ -1147,22 +1219,32 @@ async function cargarGastos() {
   document.getElementById('gastosContainer').innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><p>Cargando…</p></div>';
 
   try {
-    const r = await apiCall('listar_gastos', { fecha_desde: desde || undefined, fecha_hasta: hasta || undefined, categoria: cat || undefined });
+    const proy = document.getElementById('filtroProyecto').value;
+    const r = await apiCall('listar_gastos', { fecha_desde: desde || undefined, fecha_hasta: hasta || undefined, categoria: cat || undefined, proyecto: proy || undefined });
 
     if (!r.gastos.length) {
       document.getElementById('gastosContainer').innerHTML = '<div class="empty"><div class="empty-icon">📭</div><p>No hay gastos en este período.</p></div>';
       return;
     }
 
+    const PROYECTO_BADGE = {
+      'Rifa de apartamento':          { icon: '🏠', bg: '#e8f5e9', color: '#2e7d32' },
+      'Rifa de camioneta':            { icon: '🚛', bg: '#fff3e0', color: '#e65100' },
+      'Construcción de apartamentos': { icon: '🏗️', bg: '#e3f2fd', color: '#1565c0' },
+      'Operacional':                  { icon: '⚙️', bg: '#f5f5f5', color: '#607d8b' },
+    };
     document.getElementById('gastosContainer').innerHTML = r.gastos.map(g => {
       const cat = categorias.find(c => c.nombre === g.categoria) || {};
       const color = cat.color || '#95a5a6';
       const icono = cat.icono || '💸';
+      const pb = g.proyecto ? (PROYECTO_BADGE[g.proyecto] || { icon: '📁', bg: '#f5f5f5', color: '#555' }) : null;
+      const proyBadge = pb ? `<span class="pill-tag" style="background:${pb.bg}; color:${pb.color}; font-weight:700;">${pb.icon} ${g.proyecto}</span>` : '';
       return `<div class="gasto-item" onclick="abrirModalGasto(${JSON.stringify(g).replace(/"/g,'&quot;')})">
         <div class="gasto-icon" style="background:${color}18;">${icono}</div>
         <div class="gasto-body">
           <div class="gasto-title">${g.descripcion || g.subcategoria || g.categoria}</div>
           <div class="gasto-meta">
+            ${proyBadge}
             <span class="pill-tag" style="background:${color}18; color:${color};">${g.categoria}${g.subcategoria ? ' · ' + g.subcategoria : ''}</span>
             ${g.plataforma ? ` · ${g.plataforma}` : ''}
             ${g.reportado_por ? ` · ${g.reportado_por}` : ''}
@@ -1359,6 +1441,7 @@ async function guardarGasto() {
   const urlComp  = document.getElementById('gUrlComprobante').value;
 
   if (!fecha || !monto || !cat) { alert('⚠️ Fecha, monto y categoría son obligatorios.'); return; }
+  if (!proy) { alert('⚠️ Debes seleccionar el proyecto / bolsa de gastos.'); return; }
   if (Number(monto) <= 0) { alert('⚠️ El monto debe ser mayor a 0.'); return; }
 
   const btn = document.getElementById('btnGuardarGasto');
@@ -1396,15 +1479,19 @@ async function eliminarGasto(id) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// OCR — PEGAR IMAGEN DE COMPROBANTE (Ctrl+V o drag)
+// OCR — PEGAR IMAGEN O PDF DE COMPROBANTE (Ctrl+V o drag)
 // ══════════════════════════════════════════════════════════════════════════
+function esArchivoValido(tipo) {
+  return tipo.startsWith('image') || tipo === 'application/pdf';
+}
+
 document.addEventListener('paste', (e) => {
   const modalVisible = document.getElementById('modalGasto').classList.contains('show');
   if (!modalVisible) return;
   const items = (e.clipboardData || window.clipboardData)?.items;
   if (!items) return;
   for (let i = 0; i < items.length; i++) {
-    if (items[i].type.startsWith('image')) {
+    if (esArchivoValido(items[i].type)) {
       e.preventDefault();
       procesarArchivoGasto(items[i].getAsFile());
       return;
@@ -1419,16 +1506,48 @@ ocrZoneEl.addEventListener('dragleave', () => ocrZoneEl.classList.remove('drag-o
 ocrZoneEl.addEventListener('drop', e => {
   e.preventDefault(); ocrZoneEl.classList.remove('drag-over');
   const file = e.dataTransfer?.files?.[0];
-  if (file && file.type.startsWith('image')) procesarArchivoGasto(file);
+  if (file && esArchivoValido(file.type)) procesarArchivoGasto(file);
 });
+
+async function pdfPrimeraPaginaABlob(file) {
+  if (typeof pdfjsLib === 'undefined') throw new Error('pdf.js no cargó correctamente.');
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const page = await pdf.getPage(1);
+  const viewport = page.getViewport({ scale: 2.0 });
+  const canvas = document.createElement('canvas');
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+  return new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+}
 
 async function procesarArchivoGasto(blob) {
   if (!blob) return;
 
-  const localUrl = URL.createObjectURL(blob);
+  let imagenBlob = blob;
+  const esPdf = blob.type === 'application/pdf';
+
+  if (esPdf) {
+    document.getElementById('ocrZone').innerHTML = `
+      <div style="font-size:1.4rem;">📄</div>
+      <span id="ocrStatus" style="font-size:.8rem; color:var(--muted); margin-top:6px;">Convirtiendo PDF… espera un momento.</span>`;
+    try {
+      imagenBlob = await pdfPrimeraPaginaABlob(blob);
+    } catch (err) {
+      document.getElementById('ocrZone').innerHTML = `
+        <span style="font-size:.8rem; color:var(--danger); font-weight:700;">❌ No se pudo leer el PDF: ${err.message}</span>`;
+      return;
+    }
+  }
+
+  const localUrl = URL.createObjectURL(imagenBlob);
   document.getElementById('ocrZone').innerHTML = `
     <img src="${localUrl}" onclick="mostrarFoto('${localUrl}')" style="max-height:100px; border-radius:8px; cursor:zoom-in; max-width:100%;">
     <span id="ocrStatus" style="font-size:.8rem; color:var(--muted); margin-top:6px;">🤖 IA leyendo comprobante…</span>`;
+
+  blob = imagenBlob;
 
   try {
     const base64 = await blobABase64(blob);
@@ -1607,7 +1726,7 @@ function inicialInv(nombre) { return nombre.substring(0, 2).toUpperCase(); }
 
 async function cargarInversores() {
   try {
-    const r = await apiCall('datos_inversores', {});
+    const r = await apiCall('datos_inversores', { solo_mi_equipo: soloMiEquipo });
     renderInversores(r);
   } catch (e) {
     document.getElementById('invGrid').innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><p>${e.message}</p></div>`;
@@ -1821,9 +1940,26 @@ async function sincronizarWhatsApp(btn) {
     const data = await r.json();
 
     const ok = data.status === 'ok';
+    const sinDatos = data.status === 'sin_datos';
+
+    let diagHtml = '';
+    if ((sinDatos || !ok) && data.diagnostico) {
+      const d = data.diagnostico;
+      const filas = Object.entries(d).map(([k, v]) =>
+        `<tr><td style="padding:3px 8px; color:#92400e; font-weight:700; white-space:nowrap;">${k}</td><td style="padding:3px 8px; word-break:break-all;">${typeof v === 'object' ? JSON.stringify(v) : v}</td></tr>`
+      ).join('');
+      diagHtml = `<details style="margin-top:8px; font-size:.78rem; font-weight:400; color:#555;">
+        <summary style="cursor:pointer; font-weight:700; color:#92400e;">🔍 Ver diagnóstico técnico</summary>
+        <table style="margin-top:6px; background:#fff7ed; border-radius:6px; padding:6px; width:100%; border-collapse:collapse; font-size:.77rem;">${filas}</table>
+      </details>`;
+    }
+
     msgEl.innerHTML = `<div style="padding:10px 14px; border-radius:10px; font-size:.83rem; font-weight:700;
-      background:${ok ? '#f0fdf4' : '#fef2f2'}; border:1px solid ${ok ? '#86efac' : '#fca5a5'};
-      color:${ok ? '#166534' : '#991b1b'};">${data.mensaje}</div>`;
+      background:${ok ? '#f0fdf4' : sinDatos ? '#fffbeb' : '#fef2f2'};
+      border:1px solid ${ok ? '#86efac' : sinDatos ? '#fcd34d' : '#fca5a5'};
+      color:${ok ? '#166534' : sinDatos ? '#92400e' : '#991b1b'};">
+      ${data.mensaje}${diagHtml}
+    </div>`;
     msgEl.style.display = 'block';
 
     if (ok) {
@@ -2049,26 +2185,32 @@ function renderHistorial(data) {
   let propHtml = `<div style="overflow-x:auto;"><table class="saldo-table">
     <thead><tr>
       <th>Inversionista</th>
-      <th>Capital Rifas 1-2</th>
-      <th>Saldos acumulados</th>
-      <th>Capital Rifa 4</th>
-      <th>Total capital</th>
+      <th>Capital 1ª Rifa</th>
+      <th>Capital 2ª Rifa</th>
+      <th>Saldos rifas ant.</th>
+      <th>Apartamento (Rifa 4)</th>
+      <th style="color:var(--accent-2);">Total capital</th>
     </tr></thead><tbody>`;
 
   for (const p of (propietarios || [])) {
     const colorP = { 'Mateo': '#3498db', 'Alejandro': '#9b59b6', 'Papá': '#e67e22' }[p.nombre] || '#607d8b';
     propHtml += `<tr>
       <td><span style="background:${colorP}22; color:${colorP}; padding:2px 9px; border-radius:6px; font-size:.8rem; font-weight:800;">${p.nombre}</span></td>
-      <td>${p.rifa1 || p.rifa2 ? fmt((p.rifa1 || 0) + (p.rifa2 || 0)) : '—'}</td>
-      <td>${p.saldos_acum ? fmt(p.saldos_acum) : '—'}</td>
+      <td>${p.rifa1 ? fmt(p.rifa1) : '—'}</td>
+      <td>${p.rifa2 ? fmt(p.rifa2) : '—'}</td>
+      <td title="Saldo a favor acumulado de rifas anteriores">${p.saldos_acum ? fmt(p.saldos_acum) : '—'}</td>
       <td>${p.rifa4 ? fmt(p.rifa4) : '—'}</td>
       <td style="font-weight:800; color:var(--accent-2);">${fmt(p.total)}</td>
     </tr>`;
   }
   const totalProp = (propietarios || []).reduce((s, p) => s + (p.total || 0), 0);
-  propHtml += `<tr>
-    <td>TOTAL</td><td></td><td></td><td></td>
-    <td>${fmt(totalProp)}</td>
+  propHtml += `<tr style="font-weight:700; border-top:2px solid var(--ring-strong);">
+    <td>TOTAL</td>
+    <td>${fmt((propietarios||[]).reduce((s,p)=>s+(p.rifa1||0),0))}</td>
+    <td>${fmt((propietarios||[]).reduce((s,p)=>s+(p.rifa2||0),0))}</td>
+    <td>${fmt((propietarios||[]).reduce((s,p)=>s+(p.saldos_acum||0),0))}</td>
+    <td>${fmt((propietarios||[]).reduce((s,p)=>s+(p.rifa4||0),0))}</td>
+    <td style="color:var(--accent-2);">${fmt(totalProp)}</td>
   </tr></tbody></table></div>`;
   document.getElementById('histPropietariosContainer').innerHTML = propHtml;
 

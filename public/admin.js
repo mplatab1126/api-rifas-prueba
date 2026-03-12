@@ -152,6 +152,7 @@ const $ = id => document.getElementById(id);
               $('smartInput').focus();
               cargarPlataformas(); // <--- Hace que la lista se llene sola
               cargarSaldoAsesor(res.asesor);
+              if (res.asesor === 'Mateo') $('btnFinanzas').style.display = '';
           } else {
               if(!auto) msg.textContent = 'Contraseña incorrecta';
               localStorage.removeItem(STORAGE_KEY);
@@ -1614,29 +1615,31 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
     });
 
     // ==========================================
-    // LÓGICA DE CARGA MASIVA CON INTELIGENCIA ARTIFICIAL
+    // CARGA MASIVA UNIFICADA CON INTELIGENCIA ARTIFICIAL
+    // El asesor sube todo junto; la IA clasifica ingresos vs egresos.
     // ==========================================
     let filaArchivosIA = [];
+    let categoriasEgreso = [];
 
-    // 1. Manejar cuando el asesor selecciona archivos
+    // 1. Selección de archivos
     function manejarSeleccionArchivosIA(event) {
         const files = event.target.files;
         if (!files || files.length === 0) return;
-
         for (let i = 0; i < files.length; i++) {
             filaArchivosIA.push({
-                id: Date.now() + i, // ID único para cada archivo
+                id: Date.now() + i,
                 file: files[i],
-                status: 'pendiente', // Estados: pendiente, procesando, exito, duplicado, error
-                mensaje: 'Esperando en fila...'
+                status: 'pendiente',
+                mensaje: 'Esperando en fila...',
+                datos: null,
+                urlComprobante: null
             });
         }
-        
-        document.getElementById('fileInputIA').value = ""; // Limpiamos el input
+        document.getElementById('fileInputIA').value = '';
         actualizarUIIA();
     }
 
-    // 2. Permitir Arrastrar y Soltar (Drag & Drop)
+    // 2. Drag & Drop
     const dropZone = document.getElementById('dropZoneIA');
     if (dropZone) {
         dropZone.addEventListener('dragover', (e) => {
@@ -1644,8 +1647,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
             dropZone.style.background = 'var(--pill)';
             dropZone.style.borderColor = 'var(--accent-2)';
         });
-        dropZone.addEventListener('dragleave', (e) => {
-            e.preventDefault();
+        dropZone.addEventListener('dragleave', () => {
             dropZone.style.background = 'var(--bg)';
             dropZone.style.borderColor = 'var(--accent)';
         });
@@ -1659,90 +1661,187 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         });
     }
 
-    // 3. Dibujar la lista de progreso en la pantalla
+    // 3. Cargar categorías de gastos (para el formulario de justificación)
+    async function cargarCategoriasEgreso() {
+        try {
+            const pwd = localStorage.getItem(STORAGE_KEY) || '';
+            const res = await fetch('/api/admin/finanzas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ accion: 'listar_categorias', contrasena: pwd })
+            });
+            const data = await res.json();
+            categoriasEgreso = data.categorias || [];
+        } catch (_) { categoriasEgreso = []; }
+    }
+
+    function opcionesCategorias() {
+        return categoriasEgreso.map(c =>
+            `<option value="${c.nombre}">${c.icono || ''} ${c.nombre}</option>`
+        ).join('');
+    }
+
+    function opcionesSubcategorias(nombreCategoria) {
+        const cat = categoriasEgreso.find(c => c.nombre === nombreCategoria);
+        if (!cat || !cat.subcategorias || !cat.subcategorias.length) return '';
+        return cat.subcategorias.map(s => `<option value="${s}">${s}</option>`).join('');
+    }
+
+    function actualizarSubcatEgreso(id) {
+        const catSelect = document.getElementById(`cat_${id}`);
+        const subcatSelect = document.getElementById(`subcat_${id}`);
+        if (!catSelect || !subcatSelect) return;
+        subcatSelect.innerHTML = '<option value="">Sin subcategoría</option>' + opcionesSubcategorias(catSelect.value);
+    }
+
+    // 4. Dibujar la lista de progreso
     function actualizarUIIA() {
         const listaDiv = document.getElementById('listaProgresoIA');
         const btnIniciar = document.getElementById('btnIniciarIA');
         const contador = document.getElementById('statusContadorIA');
 
         if (filaArchivosIA.length === 0) {
-            listaDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--muted); font-size: 0.85rem; border: 1px dashed var(--ring); border-radius: 8px;">Aún no hay archivos en la fila.</div>';
+            listaDiv.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted); font-size:0.85rem; border:1px dashed var(--ring); border-radius:8px;">Aún no hay archivos en la fila de procesamiento.</div>';
             btnIniciar.style.display = 'none';
             contador.textContent = '0 archivos listos';
             return;
         }
 
         const pendientes = filaArchivosIA.filter(f => f.status === 'pendiente').length;
-        contador.textContent = `${filaArchivosIA.length} archivos totales (${pendientes} pendientes)`;
+        const necesitanJustificacion = filaArchivosIA.filter(f => f.status === 'pendiente_justificacion').length;
+        contador.textContent = `${filaArchivosIA.length} archivos` +
+            (pendientes > 0 ? ` · ${pendientes} pendientes` : '') +
+            (necesitanJustificacion > 0 ? ` · ✏️ ${necesitanJustificacion} por justificar` : '');
         btnIniciar.style.display = pendientes > 0 ? 'block' : 'none';
 
         let html = '';
         filaArchivosIA.forEach(item => {
-            let icono = '⏳';
-            let color = 'var(--muted)';
-            if (item.status === 'procesando') { icono = '⚙️'; color = '#ff9800'; }
-            if (item.status === 'exito') { icono = '✅'; color = 'var(--accent-2)'; }
-            if (item.status === 'duplicado') { icono = '⚠️'; color = '#f57c00'; }
-            if (item.status === 'error') { icono = '❌'; color = 'var(--danger)'; }
+            // Tarjeta de justificación para egresos detectados
+            if (item.status === 'pendiente_justificacion' && item.datos) {
+                const d = item.datos;
+                html += `
+                <div data-id="${item.id}" style="border:2px solid #1565c0; border-radius:12px; padding:14px; background:#f0f4ff;">
+                  <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+                    <span style="font-size:1.1rem;">✏️</span>
+                    <span style="font-weight:700; font-size:0.82rem; color:#1565c0; background:#dce8ff; padding:3px 8px; border-radius:6px;">EGRESO — JUSTIFICACIÓN REQUERIDA</span>
+                    <span style="font-size:0.85rem; font-weight:700; color:#1565c0; margin-left:auto; white-space:nowrap;">$${Number(d.monto || 0).toLocaleString('es-CO')}</span>
+                  </div>
+                  <div style="font-size:0.78rem; color:var(--muted); margin-bottom:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.file.name}</div>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.82rem; color:var(--ink-2); margin-bottom:12px; background:#fff; border-radius:8px; padding:8px;">
+                    <div>📅 <b>${d.fecha_pago || '—'}</b></div>
+                    <div>🏦 <b>${d.plataforma || '—'}</b></div>
+                    <div>🔖 Ref: <b>${d.referencia || '—'}</b></div>
+                    <div>🕐 <b>${(d.hora_pago || '').slice(0,5) || '—'}</b></div>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:8px;">
+                    <input id="desc_${item.id}" type="text" placeholder="¿En qué se gastó? (obligatorio)" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1.5px solid var(--ring-strong); font-size:0.85rem; font-family:inherit;">
+                    <select id="cat_${item.id}" onchange="actualizarSubcatEgreso(${item.id})" style="width:100%; padding:9px 8px; border-radius:8px; border:1.5px solid #e53935; font-size:0.82rem; font-family:inherit; font-weight:700;">
+                      <option value="">— Categoría del gasto * —</option>
+                      ${opcionesCategorias()}
+                    </select>
+                    <select id="subcat_${item.id}" style="width:100%; padding:9px 8px; border-radius:8px; border:1.5px solid var(--ring-strong); font-size:0.82rem; font-family:inherit;">
+                      <option value="">Sin subcategoría</option>
+                    </select>
+                    <input id="notas_${item.id}" type="text" placeholder="Notas adicionales (opcional)" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1.5px solid var(--ring-strong); font-size:0.85rem; font-family:inherit;">
+                    <button onclick="guardarEgreso(${item.id})" style="width:100%; padding:10px; border-radius:8px; border:none; background:#1565c0; color:#fff; font-weight:700; font-size:0.88rem; cursor:pointer; font-family:inherit;">💾 Confirmar y Guardar Gasto</button>
+                  </div>
+                </div>`;
+                return;
+            }
+
+            // Tarjeta simple para todos los demás estados
+            let icono = '⏳', colorBorde = 'var(--ring)', colorTexto = 'var(--muted)', etiqueta = '';
+            if (item.status === 'procesando')  { icono = '⚙️'; colorBorde = '#ff9800'; colorTexto = '#ff9800'; }
+            if (item.status === 'exito')        { icono = '✅'; colorBorde = 'var(--accent-2)'; colorTexto = 'var(--accent-2)'; etiqueta = '<span style="font-size:0.7rem; background:#e8f5e9; color:#2e7d32; padding:2px 6px; border-radius:4px; font-weight:700;">INGRESO</span> '; }
+            if (item.status === 'duplicado')    { icono = '⚠️'; colorBorde = '#f57c00'; colorTexto = '#f57c00'; etiqueta = '<span style="font-size:0.7rem; background:#fff3e0; color:#e65100; padding:2px 6px; border-radius:4px; font-weight:700;">DUPLICADO</span> '; }
+            if (item.status === 'guardado')     { icono = '✅'; colorBorde = '#1565c0'; colorTexto = '#1565c0'; etiqueta = '<span style="font-size:0.7rem; background:#e3f2fd; color:#1565c0; padding:2px 6px; border-radius:4px; font-weight:700;">EGRESO</span> '; }
+            if (item.status === 'error')        { icono = '❌'; colorBorde = 'var(--danger)'; colorTexto = 'var(--danger)'; }
 
             html += `
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; border: 1px solid var(--ring); border-radius: 8px; background: #fff;">
-                <div style="display: flex; align-items: center; gap: 10px; overflow: hidden; max-width: 50%;">
-                    <span style="font-size: 1.2rem;">${icono}</span>
-                    <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.85rem; font-weight: 500;">
-                        ${item.file.name}
-                    </div>
-                </div>
-                <div style="font-size: 0.75rem; color: ${color}; font-weight: 600; text-align: right; max-width: 55%;">
-                    ${item.mensaje}
-                </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border:1px solid ${colorBorde}; border-radius:8px; background:#fff; gap:10px;">
+              <div style="display:flex; align-items:center; gap:8px; overflow:hidden; flex:1; min-width:0;">
+                <span style="font-size:1.1rem; flex-shrink:0;">${icono}</span>
+                <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:0.84rem; font-weight:500;">${item.file.name}</div>
+              </div>
+              <div style="font-size:0.75rem; color:${colorTexto}; font-weight:600; text-align:right; white-space:nowrap; flex-shrink:0;">${etiqueta}${item.mensaje}</div>
             </div>`;
         });
+
         listaDiv.innerHTML = html;
-        listaDiv.scrollTop = listaDiv.scrollHeight; // Auto-scroll hacia abajo
+        listaDiv.scrollTop = listaDiv.scrollHeight;
     }
 
-    // 4. Iniciar el procesamiento (UNO POR UNO para no saturar)
+    // 5. Procesamiento unificado: intenta ingreso → si falla, trata como egreso
     async function iniciarProcesamientoMasivoIA() {
         document.getElementById('btnIniciarIA').style.display = 'none';
-        
+        if (!categoriasEgreso.length) await cargarCategoriasEgreso();
+        const pwd = localStorage.getItem(STORAGE_KEY) || '';
+
         for (let i = 0; i < filaArchivosIA.length; i++) {
-            let item = filaArchivosIA[i];
-            
+            const item = filaArchivosIA[i];
             if (item.status !== 'pendiente') continue;
 
             item.status = 'procesando';
-            item.mensaje = 'Extrayendo datos con IA...';
+            item.mensaje = 'Clasificando con IA...';
             actualizarUIIA();
 
             try {
-                // Si es PDF, lo convierte a imagen mágicamente
-                let base64 = await convertirABase64(item.file);
-                
-                // Envía la imagen a nuestra nueva API en Vercel
-                const req = await fetch('/api/admin/procesar-ia', {
+                const base64 = await convertirABase64(item.file);
+
+                // Intento 1: tratar como INGRESO
+                const reqIngreso = await fetch('/api/admin/procesar-ia', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        imagenBase64: base64,
-                        contrasena: localStorage.getItem(STORAGE_KEY) 
-                    })
+                    body: JSON.stringify({ imagenBase64: base64, contrasena: pwd })
                 });
-                
-                const res = await req.json();
+                const resIngreso = await reqIngreso.json();
 
-                if (res.status === 'ok') {
+                if (resIngreso.status === 'ok') {
                     item.status = 'exito';
-                    item.mensaje = res.mensaje;
-                } else if (res.status === 'duplicado') {
+                    item.mensaje = resIngreso.mensaje || 'Ingreso guardado';
+                    actualizarUIIA();
+                    continue;
+                }
+
+                if (resIngreso.status === 'duplicado') {
                     item.status = 'duplicado';
-                    // Aquí mostramos el detalle exacto de la transferencia con la que chocó
-                    item.mensaje = `⚠️ Choca con Ref: <b>${res.clon.referencia}</b><br><span style="font-size:0.7rem; color:#888;">${res.mensaje} (${res.clon.estado})</span>`;
+                    item.mensaje = `Choca con Ref: ${resIngreso.clon?.referencia || '—'} (${resIngreso.clon?.estado || ''})`;
+                    actualizarUIIA();
+                    continue;
+                }
+
+                // La IA detectó que es un egreso (valor negativo / en rojo / retiro)
+                if (resIngreso.status === 'es_egreso') {
+                    item.status = 'pendiente_justificacion';
+                    item.mensaje = 'Egreso detectado — requiere justificación';
+                    item.datos = resIngreso.datosExtraidos;
+                    item.urlComprobante = null;
+                    actualizarUIIA();
+                    continue;
+                }
+
+                // Si la IA no pudo clasificarlo como ingreso ni egreso, intentar extracción de egreso como fallback
+                item.mensaje = 'Clasificando como egreso...';
+                actualizarUIIA();
+
+                const reqEgreso = await fetch('/api/admin/procesar-ia-gasto', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ imagenBase64: base64, contrasena: pwd, soloExtraer: true })
+                });
+                const resEgreso = await reqEgreso.json();
+
+                if (resEgreso.status === 'ok' || resEgreso.status === 'extraido') {
+                    item.status = 'pendiente_justificacion';
+                    item.mensaje = 'Requiere justificación';
+                    item.datos = resEgreso.datosExtraidos;
+                    item.urlComprobante = resEgreso.url_comprobante || null;
                 } else {
                     item.status = 'error';
-                    item.mensaje = res.mensaje || 'Error desconocido';
+                    item.mensaje = resEgreso.mensaje || resIngreso.mensaje || 'No se pudo procesar';
                 }
-            } catch (error) {
+
+            } catch (_) {
                 item.status = 'error';
                 item.mensaje = 'Fallo de conexión';
             }
@@ -1751,7 +1850,67 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         }
     }
 
-    // 5. Motor conversor (Imágenes pasan directo, PDFs se renderizan)
+    // 6. Guardar egreso una vez el asesor llena la justificación
+    async function guardarEgreso(id) {
+        const item = filaArchivosIA.find(f => f.id === id);
+        if (!item) return;
+
+        const descripcion  = document.getElementById(`desc_${id}`)?.value?.trim();
+        const categoria    = document.getElementById(`cat_${id}`)?.value;
+        const subcategoria = document.getElementById(`subcat_${id}`)?.value;
+        const notas        = document.getElementById(`notas_${id}`)?.value?.trim();
+        const proyecto     = categoria; // categoría y proyecto son el mismo valor
+
+        if (!descripcion) { alert('La descripción es obligatoria.'); return; }
+        if (!categoria)   { alert('Debes seleccionar la categoría del gasto.'); return; }
+
+        const btn = document.querySelector(`[data-id="${id}"] button`);
+        if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
+
+        try {
+            const pwd = localStorage.getItem(STORAGE_KEY) || '';
+            const d = item.datos;
+            const req = await fetch('/api/admin/finanzas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    accion: 'registrar_gasto',
+                    contrasena: pwd,
+                    fecha: d.fecha_pago,
+                    hora: d.hora_pago || null,
+                    monto: d.monto,
+                    plataforma: d.plataforma || null,
+                    referencia: d.referencia !== '0' ? d.referencia : null,
+                    descripcion,
+                    proyecto,
+                    categoria,
+                    subcategoria: subcategoria || null,
+                    notas: notas || null,
+                    url_comprobante: item.urlComprobante || null,
+                    reportado_por: nombreAsesorActual || null,
+                    fuente: 'banco'
+                })
+            });
+            const res = await req.json();
+
+            if (res.status === 'ok') {
+                item.status = 'guardado';
+                item.mensaje = `Egreso guardado · $${Number(d.monto).toLocaleString('es-CO')} · ${proyecto}`;
+            } else {
+                item.status = 'pendiente_justificacion';
+                item.mensaje = res.mensaje || 'Error al guardar';
+                if (btn) { btn.disabled = false; btn.textContent = '💾 Confirmar y Guardar Gasto'; }
+            }
+        } catch (_) {
+            item.status = 'pendiente_justificacion';
+            item.mensaje = 'Fallo de conexión al guardar';
+            if (btn) { btn.disabled = false; btn.textContent = '💾 Confirmar y Guardar Gasto'; }
+        }
+
+        actualizarUIIA();
+    }
+
+    // 7. Conversor de archivos a base64 (imágenes directas, PDFs renderizados)
     async function convertirABase64(file) {
         return new Promise(async (resolve, reject) => {
             if (file.type.startsWith('image/')) {
@@ -1764,22 +1923,16 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                     const arrayBuffer = await file.arrayBuffer();
                     const pdfjsLib = window['pdfjs-dist/build/pdf'];
                     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
-                    
                     const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-                    const page = await pdf.getPage(1); // Tomamos solo la primera página del PDF
-                    
-                    const viewport = page.getViewport({ scale: 1.5 }); // Buena calidad para que la IA lo lea perfecto
+                    const page = await pdf.getPage(1);
+                    const viewport = page.getViewport({ scale: 1.5 });
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
                     canvas.width = viewport.width;
                     canvas.height = viewport.height;
-
                     await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-                    
-                    resolve(canvas.toDataURL('image/jpeg', 0.8)); // Convertimos a Base64
-                } catch (e) {
-                    reject(e);
-                }
+                    resolve(canvas.toDataURL('image/jpeg', 0.8));
+                } catch (e) { reject(e); }
             } else {
                 reject(new Error('El archivo no es una imagen ni un PDF'));
             }

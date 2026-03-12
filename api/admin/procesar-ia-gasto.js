@@ -13,8 +13,9 @@ export default async function handler(req, res) {
   const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
   const nombreAsesor = asesores[contrasena];
 
-  if (!nombreAsesor || nombreAsesor !== 'Mateo') {
-    return res.status(401).json({ status: 'error', mensaje: 'Acceso denegado. Solo el administrador puede registrar gastos.' });
+  const puedeRegistrarGastos = ['Mateo', 'Juan Pablo'];
+  if (!nombreAsesor || !puedeRegistrarGastos.includes(nombreAsesor)) {
+    return res.status(401).json({ status: 'error', mensaje: 'Acceso denegado. Solo Mateo o Juan Pablo pueden registrar gastos.' });
   }
   if (!imagenBase64) {
     return res.status(400).json({ status: 'error', mensaje: 'No se envió ninguna imagen.' });
