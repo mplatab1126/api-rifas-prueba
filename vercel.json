@@ -26,6 +26,14 @@
     {
       "source": "/finanzas",
       "destination": "/finanzas.html"
+    },
+    {
+      "source": "/calendario",
+      "destination": "/calendario.html"
+    },
+    {
+      "source": "/admin-horarios",
+      "destination": "/admin-horarios.html"
     }
   ]
 }

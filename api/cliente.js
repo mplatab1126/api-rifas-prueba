@@ -57,9 +57,9 @@ export default async function handler(req, res) {
     // 7. EMPACAMOS LOS DATOS
     const listaNumeros = boletas.map(b => b.numero).join(', ');
     
-    // Sumamos la deuda y lo abonado (sin divisiones, valor completo)
+    // Sumamos la deuda total y tomamos el mínimo abonado entre todas las boletas
     const deudaTotal = boletas.reduce((suma, b) => suma + Number(b.saldo_restante), 0);
-    const abonadoTotal = boletas.reduce((suma, b) => suma + Number(b.total_abonado), 0);
+    const abonadoTotal = Math.min(...boletas.map(b => Number(b.total_abonado)));
     
     const nombre = boletas[0].clientes?.nombre || "Cliente";
     

@@ -1810,6 +1810,14 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                     continue;
                 }
 
+                // Egreso ya existe en el sistema (detectado por ruta principal)
+                if (resIngreso.status === 'duplicado_egreso') {
+                    item.status = 'duplicado';
+                    item.mensaje = `Egreso ya registrado — $${Number(resIngreso.clon?.monto || 0).toLocaleString('es-CO')} · ${resIngreso.clon?.categoria || 'Sin categoría'} · ${resIngreso.clon?.fecha || '—'}`;
+                    actualizarUIIA();
+                    continue;
+                }
+
                 // La IA detectó que es un egreso (valor negativo / en rojo / retiro)
                 if (resIngreso.status === 'es_egreso') {
                     item.status = 'pendiente_justificacion';
@@ -1831,7 +1839,10 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                 });
                 const resEgreso = await reqEgreso.json();
 
-                if (resEgreso.status === 'ok' || resEgreso.status === 'extraido') {
+                if (resEgreso.status === 'duplicado_egreso') {
+                    item.status = 'duplicado';
+                    item.mensaje = `Egreso ya registrado — $${Number(resEgreso.clon?.monto || 0).toLocaleString('es-CO')} · ${resEgreso.clon?.categoria || 'Sin categoría'} · ${resEgreso.clon?.fecha || '—'}`;
+                } else if (resEgreso.status === 'ok' || resEgreso.status === 'extraido') {
                     item.status = 'pendiente_justificacion';
                     item.mensaje = 'Requiere justificación';
                     item.datos = resEgreso.datosExtraidos;

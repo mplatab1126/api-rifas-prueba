@@ -79,8 +79,35 @@ export default async function handler(req, res) {
     }
 
     // Si la IA detectó que es un EGRESO (valor negativo / rojo / retiro), no lo guardamos
-    // como transferencia libre — lo devolvemos para que el asesor lo justifique.
+    // como transferencia libre — primero verificamos duplicados en gastos, luego lo devolvemos
+    // para que el asesor lo justifique.
     if (datos.tipo === 'egreso') {
+      // ESCUDO ANTI-CLONES para egresos: misma lógica que ingresos pero contra tabla 'gastos'
+      const { data: gastosExistentes } = await supabase
+        .from('gastos')
+        .select('id, fecha, hora, monto, plataforma, referencia, categoria, descripcion')
+        .eq('monto', Number(datos.monto))
+        .eq('fecha', datos.fecha_pago);
+
+      if (gastosExistentes && gastosExistentes.length > 0) {
+        const gastoDuplicado = gastosExistentes.find(g => {
+          const mismaRef   = String(datos.referencia).toLowerCase().trim() === String(g.referencia || '').toLowerCase().trim();
+          const mismaPlatf = datos.plataforma.toLowerCase().trim() === String(g.plataforma || '').toLowerCase().trim();
+          const horaNew    = (datos.hora_pago || '').substring(0, 5);
+          const horaExist  = (g.hora || '').substring(0, 5);
+          const mismaHora  = horaNew !== '' && horaExist !== '' && horaNew === horaExist;
+          return mismaRef && mismaPlatf && mismaHora;
+        });
+
+        if (gastoDuplicado) {
+          return res.status(200).json({
+            status: 'duplicado_egreso',
+            mensaje: `Este egreso ya fue registrado el ${gastoDuplicado.fecha}`,
+            clon: gastoDuplicado
+          });
+        }
+      }
+
       return res.status(200).json({
         status: 'es_egreso',
         mensaje: 'Detectado como egreso (valor negativo o retiro).',

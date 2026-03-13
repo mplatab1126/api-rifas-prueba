@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <title>Calendario de Horarios — Los Plata</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #2b3a35;
+      --ink-2: #52665e;
+      --muted: #8ba89d;
+      --bg: #f7fcf9;
+      --card: #ffffff;
+      --ring: #e6eee9;
+      --ring-strong: #d1e3da;
+      --pill: #f0f7f3;
+      --accent: #4eb082;
+      --accent-2: #3a946a;
+      --danger: #d95a53;
+      --shadow: 0 4px 12px rgba(0,0,0,.05);
+      --green-bg: linear-gradient(160deg, #0f2010 0%, #1e4a1a 40%, #2d6b25 70%, #1a3a14 100%);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body { height: 100%; }
+
+    body {
+      font-family: 'Poppins', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    /* ── Header ── */
+    .page-header {
+      background: var(--green-bg);
+      padding: 20px 20px 28px;
+      text-align: center;
+      position: relative;
+    }
+    .page-header img {
+      height: 70px;
+      width: auto;
+      display: block;
+      margin: 0 auto 10px;
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));
+    }
+    .page-header h1 {
+      color: #fff;
+      font-size: 1.3rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .page-header p {
+      color: rgba(255,255,255,0.65);
+      font-size: 0.82rem;
+      margin-top: 4px;
+    }
+    .btn-back {
+      position: absolute;
+      top: 18px;
+      left: 16px;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: #fff;
+      border-radius: 50px;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+    .btn-back:hover { background: rgba(255,255,255,0.25); }
+
+    /* ── Semana nav ── */
+    .week-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 16px;
+      background: #fff;
+      border-bottom: 1px solid var(--ring);
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .week-nav button {
+      background: var(--pill);
+      border: 1px solid var(--ring-strong);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      color: var(--ink-2);
+    }
+    .week-nav button:hover { background: var(--ring-strong); }
+    .week-nav .week-label {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--ink);
+      min-width: 180px;
+      text-align: center;
+    }
+    .btn-hoy {
+      background: var(--accent) !important;
+      color: #fff !important;
+      border-radius: 50px !important;
+      width: auto !important;
+      padding: 0 14px !important;
+      font-size: 0.8rem !important;
+      font-weight: 600 !important;
+      font-family: inherit;
+      height: 36px !important;
+      border-color: transparent !important;
+    }
+    .btn-hoy:hover { background: var(--accent-2) !important; }
+
+    /* ── Contenedor principal ── */
+    .main-wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px 16px 60px;
+    }
+
+    /* ── Vista de lista por asesor (móvil) ── */
+    .asesor-card {
+      background: #fff;
+      border: 1px solid var(--ring);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .asesor-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--ring);
+    }
+    .asesor-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .asesor-nombre {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--ink);
+    }
+    .asesor-horas-semana {
+      margin-left: auto;
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .dias-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+    }
+    .dia-col {
+      border-right: 1px solid var(--ring);
+      padding: 10px 6px;
+      text-align: center;
+    }
+    .dia-col:last-child { border-right: none; }
+    .dia-nombre {
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+    .dia-nombre.hoy { color: var(--accent-2); }
+    .dia-fecha {
+      font-size: 0.75rem;
+      color: var(--ink-2);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+    .dia-fecha.hoy {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 6px;
+      font-size: 0.72rem;
+    }
+
+    .turno-bloque {
+      border-radius: 8px;
+      padding: 5px 4px;
+      margin-top: 4px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+    .turno-libre {
+      color: var(--muted);
+      font-size: 0.65rem;
+      font-weight: 400;
+      margin-top: 4px;
+    }
+
+    /* ── Vista de tabla grande (desktop) ── */
+    .tabla-horario {
+      display: none;
+      background: #fff;
+      border: 1px solid var(--ring);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    @media (min-width: 700px) {
+      .tabla-horario { display: block; }
+      .cards-view    { display: none; }
+    }
+
+    .tabla-horario table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .tabla-horario thead th {
+      background: var(--pill);
+      padding: 12px 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--ink-2);
+      border-bottom: 1px solid var(--ring-strong);
+      text-align: center;
+    }
+    .tabla-horario thead th.th-asesor {
+      text-align: left;
+      padding-left: 16px;
+    }
+    .tabla-horario tbody tr:not(:last-child) td {
+      border-bottom: 1px solid var(--ring);
+    }
+    .tabla-horario tbody td {
+      padding: 10px 6px;
+      vertical-align: middle;
+      text-align: center;
+    }
+    .tabla-horario tbody td.td-asesor {
+      text-align: left;
+      padding-left: 16px;
+      min-width: 130px;
+    }
+    .td-asesor-inner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .td-bloque {
+      border-radius: 8px;
+      padding: 5px 6px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+    .td-libre {
+      font-size: 0.68rem;
+      color: var(--muted);
+    }
+    .th-dia-hoy {
+      color: var(--accent-2) !important;
+      position: relative;
+    }
+    .th-dia-hoy::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    /* ── Estado vacío ── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+    .empty-state p { font-size: 0.95rem; margin-top: 10px; }
+
+    /* ── Leyenda ── */
+    .leyenda {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding: 14px 16px;
+      background: #fff;
+      border: 1px solid var(--ring);
+      border-radius: 12px;
+    }
+    .leyenda-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.8rem;
+      color: var(--ink-2);
+      font-weight: 500;
+    }
+    .leyenda-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    /* ── Spinner ── */
+    .spinner {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .spin {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--ring-strong);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-bottom: 10px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Nota de notas ── */
+    .nota-badge {
+      display: inline-block;
+      background: #fff8e6;
+      color: #8a5d00;
+      border: 1px solid #f5d97a;
+      border-radius: 6px;
+      font-size: 0.65rem;
+      padding: 2px 5px;
+      margin-top: 3px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-header">
+    <a href="/admin" class="btn-back">← Inicio</a>
+    <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata S.A.S.">
+    <h1>📅 Calendario de Horarios</h1>
+    <p id="semanaTexto">Cargando semana actual...</p>
+  </div>
+
+  <div class="week-nav">
+    <button id="btnPrev" title="Semana anterior">‹</button>
+    <span class="week-label" id="weekLabel">—</span>
+    <button id="btnNext" title="Semana siguiente">›</button>
+    <button class="btn-hoy" onclick="irAHoy()">Hoy</button>
+  </div>
+
+  <div class="main-wrap">
+    <div id="contenido">
+      <div class="spinner">
+        <div class="spin"></div>
+        <p>Cargando horarios...</p>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  const DIAS_FULL = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  let horariosTodos = [];
+  let offsetSemana = 0;
+
+  function toISO(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  function getLunesDeSemana(offset = 0) {
+    const hoy = new Date();
+    const diaSemana = hoy.getDay(); // 0=Dom
+    const diasHastaLunes = diaSemana === 0 ? -6 : 1 - diaSemana;
+    const lunes = new Date(hoy);
+    lunes.setDate(hoy.getDate() + diasHastaLunes + offset * 7);
+    lunes.setHours(0,0,0,0);
+    return lunes;
+  }
+
+  function getDiasDeSemana(offset = 0) {
+    const lunes = getLunesDeSemana(offset);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(lunes);
+      d.setDate(lunes.getDate() + i);
+      return d;
+    });
+  }
+
+  function formatFecha(d) {
+    return `${d.getDate()} ${MESES[d.getMonth()].slice(0,3)}`;
+  }
+
+  function esHoy(d) {
+    const hoy = new Date();
+    return d.getDate() === hoy.getDate() &&
+           d.getMonth() === hoy.getMonth() &&
+           d.getFullYear() === hoy.getFullYear();
+  }
+
+  function colorTexto(hexColor) {
+    const r = parseInt(hexColor.slice(1,3),16);
+    const g = parseInt(hexColor.slice(3,5),16);
+    const b = parseInt(hexColor.slice(5,7),16);
+    const lum = (0.299*r + 0.587*g + 0.114*b) / 255;
+    return lum > 0.55 ? '#2b3a35' : '#ffffff';
+  }
+
+  function calcularHorasSemana(filas) {
+    return filas.reduce((acc, f) => {
+      if (!f.trabaja || !f.hora_inicio || !f.hora_fin) return acc;
+      const [h1, m1] = f.hora_inicio.split(':').map(Number);
+      const [h2, m2] = f.hora_fin.split(':').map(Number);
+      return acc + (h2 * 60 + m2 - h1 * 60 - m1) / 60;
+    }, 0);
+  }
+
+  function renderCalendario() {
+    const dias = getDiasDeSemana(offsetSemana);
+    // Lunes a Domingo (índices JS: 1-0 → reordenados como L-D)
+    // dias[0]=Lun, dias[1]=Mar, ..., dias[6]=Dom
+    const lunes = dias[0];
+    const domingo = dias[6];
+
+    // Actualizar labels
+    document.getElementById('weekLabel').textContent =
+      `${formatFecha(lunes)} — ${formatFecha(domingo)} ${domingo.getFullYear()}`;
+    document.getElementById('semanaTexto').textContent =
+      `Semana del ${formatFecha(lunes)} al ${formatFecha(domingo)} de ${domingo.getFullYear()}`;
+
+    // Agrupar horarios por asesor
+    const porAsesor = {};
+    horariosTodos.forEach(h => {
+      if (!porAsesor[h.asesor_nombre]) porAsesor[h.asesor_nombre] = [];
+      porAsesor[h.asesor_nombre].push(h);
+    });
+
+    const asesores = Object.keys(porAsesor).sort();
+
+    if (!asesores.length) {
+      document.getElementById('contenido').innerHTML = `
+        <div class="empty-state">
+          <div style="font-size:3rem;">📅</div>
+          <p>No hay horarios configurados aún.</p>
+          <p style="font-size:0.8rem; margin-top:6px; color:#aaa;">El administrador debe agregar horarios desde el panel de gestión.</p>
+        </div>`;
+      return;
+    }
+
+    // Leyenda de asesores con colores
+    const colores = {};
+    asesores.forEach(a => {
+      const filas = porAsesor[a];
+      const fila = filas.find(f => f.color) || filas[0];
+      colores[a] = fila?.color || '#4eb082';
+    });
+
+    const leyendaHTML = asesores.map(a => `
+      <div class="leyenda-item">
+        <div class="leyenda-dot" style="background:${colores[a]}"></div>
+        ${a}
+      </div>`).join('');
+
+    // — Encabezados de día para la tabla —
+    // dias está ordenado Lun(índice JS 1)...Dom(0) pero los dias[] array va de [0]=Lun a [6]=Dom
+    // El dia_semana en BD: 0=Dom,1=Lun...6=Sáb
+    const indicesBD = [1,2,3,4,5,6,0]; // L,M,X,J,V,S,D en orden de la semana
+
+    const thDias = dias.map((d, i) => {
+      const hoyFlag = esHoy(d);
+      return `<th class="${hoyFlag ? 'th-dia-hoy' : ''}">
+        ${DIAS[d.getDay()]}<br>
+        <span style="font-size:0.7rem;font-weight:400;">${d.getDate()}</span>
+      </th>`;
+    }).join('');
+
+    // Filas de tabla (desktop)
+    const filasTabla = asesores.map(a => {
+      const filas = porAsesor[a];
+      const color = colores[a];
+      const txtColor = colorTexto(color);
+      const totalH = calcularHorasSemana(filas);
+
+      const celdas = dias.map((d, i) => {
+        const diaBD = indicesBD[i];
+        const h = filas.find(f => f.dia_semana === diaBD);
+        if (h && h.trabaja && h.hora_inicio) {
+          return `<td>
+            <div class="td-bloque" style="background:${color};color:${txtColor};">
+              ${h.hora_inicio}<br>${h.hora_fin}
+            </div>
+            ${h.notas ? `<div class="nota-badge" title="${h.notas}">📝 nota</div>` : ''}
+          </td>`;
+        }
+        return `<td><span class="td-libre">—</span></td>`;
+      }).join('');
+
+      const inicial = a.trim().charAt(0).toUpperCase();
+      return `<tr>
+        <td class="td-asesor">
+          <div class="td-asesor-inner">
+            <div class="asesor-avatar" style="background:${color};color:${txtColor};">${inicial}</div>
+            <div>
+              <div style="font-weight:600;font-size:0.85rem;">${a}</div>
+              <div style="font-size:0.7rem;color:var(--muted);">${totalH.toFixed(1)} h/sem</div>
+            </div>
+          </div>
+        </td>
+        ${celdas}
+      </tr>`;
+    }).join('');
+
+    // Cards móvil
+    const cardsHTML = asesores.map(a => {
+      const filas = porAsesor[a];
+      const color = colores[a];
+      const txtColor = colorTexto(color);
+      const totalH = calcularHorasSemana(filas);
+      const inicial = a.trim().charAt(0).toUpperCase();
+
+      const diasHTML = dias.map((d, i) => {
+        const diaBD = indicesBD[i];
+        const h = filas.find(f => f.dia_semana === diaBD);
+        const hoyFlag = esHoy(d);
+        const fechaEl = hoyFlag
+          ? `<div class="dia-fecha hoy">${d.getDate()}</div>`
+          : `<div class="dia-fecha">${d.getDate()}</div>`;
+
+        return `<div class="dia-col">
+          <div class="dia-nombre ${hoyFlag ? 'hoy' : ''}">${DIAS[d.getDay()]}</div>
+          ${fechaEl}
+          ${h && h.trabaja && h.hora_inicio
+            ? `<div class="turno-bloque" style="background:${color};color:${txtColor};">
+                ${h.hora_inicio}<br>${h.hora_fin}
+              </div>
+              ${h.notas ? `<div class="nota-badge" title="${h.notas}">📝</div>` : ''}`
+            : `<div class="turno-libre">Libre</div>`
+          }
+        </div>`;
+      }).join('');
+
+      return `<div class="asesor-card">
+        <div class="asesor-header">
+          <div class="asesor-avatar" style="background:${color};color:${txtColor};">${inicial}</div>
+          <div class="asesor-nombre">${a}</div>
+          <div class="asesor-horas-semana">${totalH.toFixed(1)} h esta semana</div>
+        </div>
+        <div class="dias-grid">${diasHTML}</div>
+      </div>`;
+    }).join('');
+
+    document.getElementById('contenido').innerHTML = `
+      <div class="leyenda">${leyendaHTML}</div>
+
+      <!-- Vista desktop -->
+      <div class="tabla-horario">
+        <table>
+          <thead>
+            <tr>
+              <th class="th-asesor">Asesor</th>
+              ${thDias}
+            </tr>
+          </thead>
+          <tbody>${filasTabla}</tbody>
+        </table>
+      </div>
+
+      <!-- Vista móvil -->
+      <div class="cards-view">${cardsHTML}</div>
+    `;
+  }
+
+  async function cargarHorarios() {
+    const lunes = getLunesDeSemana(offsetSemana);
+    try {
+      const r = await fetch(`/api/admin/horarios?semana=${toISO(lunes)}`);
+      const json = await r.json();
+      horariosTodos = json.horarios || [];
+      renderCalendario();
+    } catch(e) {
+      document.getElementById('contenido').innerHTML = `
+        <div class="empty-state">
+          <div style="font-size:2.5rem;">⚠️</div>
+          <p>No se pudieron cargar los horarios.</p>
+          <p style="font-size:0.8rem;color:#aaa;margin-top:4px;">Verifica tu conexión e intenta de nuevo.</p>
+          <button onclick="location.reload()" style="margin-top:16px;padding:10px 20px;border-radius:50px;border:none;background:var(--accent);color:#fff;font-family:inherit;font-weight:600;cursor:pointer;">Reintentar</button>
+        </div>`;
+    }
+  }
+
+  function irAHoy() { offsetSemana = 0; renderCalendario(); }
+
+  document.getElementById('btnPrev').onclick = () => { offsetSemana--; cargarHorarios(); };
+  document.getElementById('btnNext').onclick = () => { offsetSemana++; cargarHorarios(); };
+
+  cargarHorarios();
+</script>
+</body>
+</html>

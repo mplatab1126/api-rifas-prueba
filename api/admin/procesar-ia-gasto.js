@@ -70,6 +70,32 @@ export default async function handler(req, res) {
       return res.status(400).json({ status: 'error', mensaje: 'La imagen es borrosa o no contiene datos bancarios reconocibles.' });
     }
 
+    // ESCUDO ANTI-CLONES para egresos: verificar contra tabla 'gastos' antes de subir la imagen
+    const { data: gastosExistentes } = await supabase
+      .from('gastos')
+      .select('id, fecha, hora, monto, plataforma, referencia, categoria, descripcion')
+      .eq('monto', Number(datos.monto))
+      .eq('fecha', datos.fecha_pago);
+
+    if (gastosExistentes && gastosExistentes.length > 0) {
+      const gastoDuplicado = gastosExistentes.find(g => {
+        const mismaRef   = String(datos.referencia || '').toLowerCase().trim() === String(g.referencia || '').toLowerCase().trim();
+        const mismaPlatf = String(datos.plataforma || '').toLowerCase().trim() === String(g.plataforma || '').toLowerCase().trim();
+        const horaNew    = (datos.hora_pago || '').substring(0, 5);
+        const horaExist  = (g.hora || '').substring(0, 5);
+        const mismaHora  = horaNew !== '' && horaExist !== '' && horaNew === horaExist;
+        return mismaRef && mismaPlatf && mismaHora;
+      });
+
+      if (gastoDuplicado) {
+        return res.status(200).json({
+          status: 'duplicado_egreso',
+          mensaje: `Este egreso ya fue registrado el ${gastoDuplicado.fecha}`,
+          clon: gastoDuplicado
+        });
+      }
+    }
+
     // Subir imagen a Supabase Storage
     const base64Data = imagenBase64.replace(/^data:image\/\w+;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
