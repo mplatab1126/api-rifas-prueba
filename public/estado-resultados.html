@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <title>Estado de Resultados — Centro Financiero</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink:          #1a2820;
+      --ink-2:        #435c52;
+      --muted:        #8ba89d;
+      --bg:           #f5faf7;
+      --card:         #ffffff;
+      --ring:         #e4ede8;
+      --ring-strong:  #cdddd5;
+      --accent:       #3a9e6b;
+      --accent-2:     #2e8058;
+      --accent-light: #edf7f2;
+      --danger:       #d64f48;
+      --danger-bg:    #fdf2f2;
+      --warning:      #d97706;
+      --warning-bg:   #fffbeb;
+      --shadow-sm:    0 1px 4px rgba(0,0,0,.05);
+      --shadow:       0 4px 16px rgba(0,0,0,.07);
+      --shadow-lg:    0 8px 32px rgba(0,0,0,.10);
+      --radius:       16px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Poppins', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      padding-bottom: 60px;
+    }
+
+    /* ── Login ─────────────────────────────────────────────────────────── */
+    #loginScreen {
+      position: fixed; inset: 0; z-index: 2000;
+      background: linear-gradient(155deg, #0d1f16 0%, #183d26 45%, #26633a 80%, #122a1c 100%);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    #loginScreen img { height: 140px; width: auto; filter: drop-shadow(0 8px 24px rgba(0,0,0,.5)); margin-bottom: 24px; }
+    #loginScreen p  { color: rgba(255,255,255,.55); font-size: .9rem; letter-spacing: .15em; text-transform: uppercase; margin-bottom: 24px; }
+    #loginWrap { width: 90%; max-width: 380px; display: flex; flex-direction: column; gap: 12px; }
+    #loginPwd {
+      width: 100%; padding: 16px 24px; border-radius: 50px;
+      border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.1);
+      color: #fff; font-size: 1rem; font-family: inherit; text-align: center; outline: none;
+    }
+    #loginPwd:focus { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.4); }
+    #loginBtn {
+      width: 100%; padding: 15px; border-radius: 50px; border: none;
+      background: rgba(255,255,255,.16); color: #fff; font-size: .95rem;
+      font-weight: 600; font-family: inherit; cursor: pointer; transition: background .2s;
+    }
+    #loginBtn:hover { background: rgba(255,255,255,.26); }
+    #loginErr { color: rgba(255,120,110,.9); font-size: .85rem; text-align: center; min-height: 18px; }
+
+    /* ── Top bar ────────────────────────────────────────────────────────── */
+    #topBar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255,255,255,.97); backdrop-filter: blur(6px);
+      border-bottom: 1px solid var(--ring);
+      padding: 0 24px;
+      display: none; align-items: center; gap: 16px; height: 56px;
+    }
+    #topBar .logo { font-size: .95rem; font-weight: 800; color: var(--ink); display: flex; align-items: center; gap: 8px; }
+    #topBar nav { display: flex; gap: 4px; margin-left: auto; align-items: center; }
+    #topBar nav a, #topBar nav button {
+      background: none; border: none; cursor: pointer; font-family: inherit;
+      color: var(--ink-2); font-size: .8rem; font-weight: 600;
+      padding: 6px 12px; border-radius: 8px; text-decoration: none; transition: background .15s;
+    }
+    #topBar nav a:hover, #topBar nav button:hover { background: var(--ring); }
+    #topBar nav a.active { background: var(--accent-light); color: var(--accent-2); }
+    #topBar .asesor-badge {
+      background: var(--accent-light); color: var(--accent-2);
+      font-size: .75rem; font-weight: 700; padding: 4px 12px; border-radius: 20px;
+    }
+
+    /* ── App container ──────────────────────────────────────────────────── */
+    #app { max-width: 980px; margin: 0 auto; padding: 28px 20px; display: none; }
+
+    /* ── Page header ────────────────────────────────────────────────────── */
+    .page-header { margin-bottom: 24px; }
+    .page-title { font-size: 1.4rem; font-weight: 800; color: var(--ink); }
+    .page-sub   { font-size: .83rem; color: var(--muted); margin-top: 3px; }
+
+    /* ── Filtros ────────────────────────────────────────────────────────── */
+    .filtros-card {
+      background: var(--card); border: 1px solid var(--ring-strong);
+      border-radius: var(--radius); padding: 16px 20px;
+      margin-bottom: 24px; box-shadow: var(--shadow-sm);
+    }
+    .filtros-title { font-size: .75rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--muted); margin-bottom: 12px; }
+    .filtros-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+    .filtro-field { display: flex; flex-direction: column; gap: 4px; }
+    .filtro-field label { font-size: .73rem; font-weight: 700; color: var(--ink-2); }
+    .filtro-field input[type="date"] {
+      padding: 8px 12px; border: 1px solid var(--ring-strong);
+      border-radius: 9px; font-family: inherit; font-size: .83rem;
+      color: var(--ink); background: var(--bg); outline: none;
+    }
+    .filtro-field input[type="date"]:focus { border-color: var(--accent); background: #fff; }
+    .btn-filtro {
+      padding: 8px 16px; border-radius: 9px; border: none; cursor: pointer;
+      font-family: inherit; font-size: .82rem; font-weight: 700; transition: opacity .15s;
+    }
+    .btn-filtro-primary { background: var(--accent); color: #fff; }
+    .btn-filtro-primary:hover { opacity: .88; }
+    .btn-filtro-ghost { background: var(--card); color: var(--ink-2); border: 1px solid var(--ring-strong); }
+    .btn-filtro-ghost:hover { background: var(--bg); }
+
+    /* Asesores toggle */
+    .asesores-toggle { margin-top: 12px; border-top: 1px solid var(--ring); padding-top: 12px; }
+    .asesores-toggle-header {
+      display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none;
+    }
+    .asesores-toggle-header span { font-size: .8rem; font-weight: 700; color: var(--ink-2); }
+    .asesores-toggle-header .chevron { font-size: .75rem; color: var(--muted); transition: transform .2s; }
+    .asesores-toggle-header .chevron.open { transform: rotate(180deg); }
+    .asesores-chips {
+      display: none; flex-wrap: wrap; gap: 6px; margin-top: 10px;
+    }
+    .asesores-chips.visible { display: flex; }
+    .asesor-chip {
+      display: flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 20px;
+      background: var(--bg); border: 1px solid var(--ring-strong);
+      font-size: .75rem; cursor: pointer; transition: all .15s;
+    }
+    .asesor-chip.activo { background: var(--accent-light); border-color: var(--accent); color: var(--accent-2); font-weight: 700; }
+    .asesor-chip input { display: none; }
+    .chips-actions { display: flex; gap: 6px; margin-top: 8px; }
+
+    /* ── Secciones del estado de resultados ─────────────────────────────── */
+    .er-section {
+      background: var(--card); border: 1px solid var(--ring-strong);
+      border-radius: var(--radius); overflow: hidden;
+      box-shadow: var(--shadow-sm); margin-bottom: 16px;
+    }
+    .er-section-header {
+      padding: 14px 20px; border-bottom: 1px solid var(--ring);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .er-section-icon { font-size: 1.2rem; }
+    .er-section-title { font-size: .95rem; font-weight: 800; color: var(--ink); }
+    .er-section-total {
+      margin-left: auto; font-size: 1.1rem; font-weight: 800;
+    }
+    .er-section-total.ingreso { color: var(--accent-2); }
+    .er-section-total.egreso  { color: var(--danger); }
+    .er-section-body { padding: 0; }
+
+    /* ── Tabla de asesores ──────────────────────────────────────────────── */
+    .er-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
+    .er-table th {
+      text-align: left; padding: 9px 20px;
+      font-size: .7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .05em; color: var(--muted);
+      background: var(--bg); border-bottom: 1px solid var(--ring);
+    }
+    .er-table th:not(:first-child) { text-align: right; }
+    .er-table td { padding: 10px 20px; border-bottom: 1px solid var(--ring); color: var(--ink); }
+    .er-table td:not(:first-child) { text-align: right; }
+    .er-table tr:last-child td { border-bottom: none; }
+    .er-table .row-total td {
+      background: var(--accent-light); font-weight: 800;
+      color: var(--accent-2); border-top: 2px solid var(--ring-strong); border-bottom: none;
+    }
+    .er-table .row-total-egreso td {
+      background: var(--danger-bg); font-weight: 800;
+      color: var(--danger); border-top: 2px solid #f5c6c5; border-bottom: none;
+    }
+    .er-bar {
+      display: inline-block; height: 6px; border-radius: 3px;
+      background: var(--accent-light); vertical-align: middle; margin-right: 8px;
+    }
+
+    /* ── KPI de utilidad ────────────────────────────────────────────────── */
+    .utilidad-card {
+      border-radius: var(--radius); padding: 24px 28px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+    }
+    .utilidad-card.positiva { background: var(--accent-light); border: 1.5px solid #a7e3c4; }
+    .utilidad-card.negativa { background: var(--danger-bg);    border: 1.5px solid #f5c6c5; }
+    .utilidad-card.neutro   { background: var(--bg);           border: 1.5px solid var(--ring-strong); }
+    .utilidad-label { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+    .utilidad-label.positiva { color: var(--accent-2); }
+    .utilidad-label.negativa { color: var(--danger); }
+    .utilidad-label.neutro   { color: var(--muted); }
+    .utilidad-valor { font-size: 2rem; font-weight: 800; line-height: 1.1; }
+    .utilidad-valor.positiva { color: var(--accent-2); }
+    .utilidad-valor.negativa { color: var(--danger); }
+    .utilidad-valor.neutro   { color: var(--muted); }
+    .utilidad-formula {
+      font-size: .78rem; color: var(--muted); font-weight: 500; line-height: 1.6;
+    }
+
+    /* ── Sub-items de egresos ───────────────────────────────────────────── */
+    .egreso-item {
+      display: flex; align-items: baseline; justify-content: space-between;
+      padding: 10px 20px; border-bottom: 1px solid var(--ring);
+    }
+    .egreso-item:last-child { border-bottom: none; }
+    .egreso-nombre { font-size: .85rem; font-weight: 600; color: var(--ink); }
+    .egreso-sub    { font-size: .72rem; color: var(--muted); margin-top: 2px; }
+    .egreso-valor  { font-size: .9rem; font-weight: 700; color: var(--danger); white-space: nowrap; }
+
+    /* ── Premio desglose ────────────────────────────────────────────────── */
+    .premio-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 20px; font-size: .82rem;
+      border-bottom: 1px solid var(--ring);
+    }
+    .premio-item:last-child { border-bottom: none; }
+    .premio-nombre { color: var(--ink-2); }
+    .premio-aportante { font-size: .7rem; color: var(--muted); margin-top: 1px; }
+    .premio-valor  { font-weight: 700; color: var(--danger); }
+
+    /* ── Estado vacío / loading ─────────────────────────────────────────── */
+    .loading-state { text-align: center; padding: 40px; color: var(--muted); font-size: .85rem; }
+    .empty-state   { text-align: center; padding: 32px; color: var(--muted); font-size: .85rem; }
+
+    /* ── Toast ──────────────────────────────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--ink); color: #fff; padding: 10px 22px; border-radius: 50px;
+      font-size: .83rem; font-weight: 600; opacity: 0; transition: opacity .25s;
+      pointer-events: none; z-index: 9999; white-space: nowrap;
+    }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<!-- ══ LOGIN ════════════════════════════════════════════════════════════ -->
+<div id="loginScreen">
+  <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata S.A.S.">
+  <p>Centro Financiero</p>
+  <div id="loginWrap">
+    <input id="loginPwd" type="password" placeholder="Contraseña de asesor"
+      onkeydown="if(event.key==='Enter') doLogin()">
+    <button id="loginBtn" onclick="doLogin()">Ingresar</button>
+    <div id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ══ TOP BAR ══════════════════════════════════════════════════════════ -->
+<div id="topBar">
+  <div class="logo"><span>💼</span> Centro Financiero</div>
+  <nav>
+    <span id="topAsesor" class="asesor-badge">—</span>
+    <a href="/rifas">🎰 Rifas</a>
+    <a href="/estado-resultados" class="active">📊 Estado de Resultados</a>
+    <a href="/admin">← Volver</a>
+    <button onclick="doLogout()">Salir</button>
+  </nav>
+</div>
+
+<!-- ══ APP ═══════════════════════════════════════════════════════════════ -->
+<div id="app">
+  <div class="page-header">
+    <div class="page-title">📊 Estado de Resultados</div>
+    <div class="page-sub" id="pageSubtitulo">Cargando…</div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filtros-card">
+    <div class="filtros-title">Filtros</div>
+    <div class="filtros-row">
+      <div class="filtro-field">
+        <label>Desde</label>
+        <input type="date" id="fDesde" value="2026-01-26">
+      </div>
+      <div class="filtro-field">
+        <label>Hasta</label>
+        <input type="date" id="fHasta" value="2026-04-04">
+      </div>
+      <button class="btn-filtro btn-filtro-primary" onclick="aplicarFiltros()">Aplicar</button>
+      <button class="btn-filtro btn-filtro-ghost" onclick="resetFiltros()">Restablecer</button>
+    </div>
+
+    <div class="asesores-toggle">
+      <div class="asesores-toggle-header" onclick="toggleAsesores()">
+        <span id="asesoresLabel">👥 Mi equipo (<span id="asesoresCount">—</span> asesores)</span>
+        <span class="chevron" id="asesoresChevron">▼</span>
+      </div>
+      <div class="chips-actions" id="chipsActions" style="display:none;">
+        <button class="btn-filtro btn-filtro-ghost" style="font-size:.72rem; padding:4px 10px;" onclick="seleccionarMiEquipo()">👥 Mi equipo</button>
+        <button class="btn-filtro btn-filtro-ghost" style="font-size:.72rem; padding:4px 10px;" onclick="seleccionarTodos()">Todos</button>
+        <button class="btn-filtro btn-filtro-ghost" style="font-size:.72rem; padding:4px 10px;" onclick="deseleccionarTodos()">Ninguno</button>
+      </div>
+      <div class="asesores-chips" id="asesoresChips"></div>
+    </div>
+  </div>
+
+  <!-- Contenido del estado de resultados -->
+  <div id="erContent">
+    <div class="loading-state">⏳ Cargando datos…</div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── Constantes ────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'asesor_pwd';
+const EXCLUIDOS_MI_EQUIPO = ['alejandra plata', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
+const FECHA_DESDE_DEFAULT = '2026-01-26';
+const FECHA_HASTA_DEFAULT = '2026-04-04';
+
+// ── Estado global ─────────────────────────────────────────────────────────
+let contrasena      = '';
+let asesorNombre    = '';
+let globalAbonos    = [];
+let globalFb        = [];
+let globalRifas     = [];
+let asesoresVisibl  = [];
+let asesoresPanel   = false;
+
+// ── Utilidades ────────────────────────────────────────────────────────────
+const fmt  = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-CO');
+const fmtK = n => { n = Math.round(Number(n) || 0); if (Math.abs(n) >= 1e9) return '$' + (n/1e9).toFixed(1) + 'B'; if (Math.abs(n) >= 1e6) return '$' + (n/1e6).toFixed(1) + 'M'; return fmt(n); };
+
+function normFecha(s) {
+  if (!s) return '';
+  if (s.includes('T')) return s.split('T')[0];
+  return s.substring(0, 10);
+}
+
+function toast(msg, ms = 2800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), ms);
+}
+
+// ── Login ─────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const pwd    = document.getElementById('loginPwd').value.trim();
+  const errEl  = document.getElementById('loginErr');
+  if (!pwd) return;
+  const btn    = document.getElementById('loginBtn');
+  btn.textContent = 'Verificando…'; btn.disabled = true;
+  try {
+    const res  = await fetch('/api/admin/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contrasena: pwd })
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      if (data.asesor !== 'Mateo') {
+        errEl.textContent = 'Solo Mateo tiene acceso al Centro Financiero.';
+        btn.textContent = 'Ingresar'; btn.disabled = false;
+        return;
+      }
+      contrasena   = pwd;
+      asesorNombre = data.asesor;
+      localStorage.setItem(STORAGE_KEY, pwd);
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('topBar').style.display      = 'flex';
+      document.getElementById('app').style.display         = 'block';
+      document.getElementById('topAsesor').textContent     = asesorNombre;
+      cargarTodo();
+    } else {
+      errEl.textContent = data.mensaje || 'Contraseña incorrecta';
+    }
+  } catch (e) {
+    errEl.textContent = 'Error de conexión.';
+  } finally {
+    btn.textContent = 'Ingresar'; btn.disabled = false;
+  }
+}
+
+function doLogout() {
+  contrasena = ''; asesorNombre = '';
+  document.getElementById('loginPwd').value = '';
+  document.getElementById('loginErr').textContent = '';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('topBar').style.display      = 'none';
+  document.getElementById('app').style.display         = 'none';
+}
+
+// Auto-login si hay contraseña guardada
+window.addEventListener('DOMContentLoaded', () => {
+  const pwd = localStorage.getItem(STORAGE_KEY);
+  if (pwd) { document.getElementById('loginPwd').value = pwd; doLogin(); }
+});
+
+// ── Carga de datos ────────────────────────────────────────────────────────
+async function cargarTodo() {
+  try {
+    const [resStats, resRifas] = await Promise.all([
+      fetch('/api/admin/estadisticas', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contrasena, tipo: '4cifras' })
+      }),
+      fetch('/api/admin/rifas', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contrasena, accion: 'listar_rifas' })
+      })
+    ]);
+
+    const dataStats = await resStats.json();
+    const dataRifas = await resRifas.json();
+
+    if (dataStats.status !== 'ok') throw new Error(dataStats.mensaje);
+    if (dataRifas.status !== 'ok') throw new Error(dataRifas.mensaje);
+
+    globalAbonos = dataStats.abonos  || [];
+    globalFb     = dataStats.fb      || [];
+    globalRifas  = dataRifas.rifas   || [];
+
+    // Construir lista de asesores únicos desde los abonos
+    const setAsesores = new Set(globalAbonos.map(a => a.asesor || 'Sin Asesor').filter(Boolean));
+    asesoresVisibl = [...setAsesores].sort((a, b) => a.localeCompare(b, 'es'));
+    renderAsesoresChips();
+    seleccionarMiEquipo();   // auto-aplica "mi equipo"
+    aplicarFiltros();
+
+  } catch (e) {
+    document.getElementById('erContent').innerHTML =
+      `<div class="empty-state">⚠️ ${e.message}</div>`;
+  }
+}
+
+// ── Asesores ──────────────────────────────────────────────────────────────
+function renderAsesoresChips() {
+  const container = document.getElementById('asesoresChips');
+  container.innerHTML = asesoresVisibl.map(a => `
+    <label class="asesor-chip activo" id="chip-${CSS.escape(a)}" onclick="toggleChip(this,'${a.replace(/'/g,"\\'")}')">
+      <input type="checkbox" class="asesor-chk" value="${a}" checked>
+      ${a}
+    </label>`).join('');
+}
+
+function toggleChip(label, val) {
+  const chk = label.querySelector('input');
+  chk.checked = !chk.checked;
+  label.classList.toggle('activo', chk.checked);
+  actualizarContador();
+}
+
+function seleccionarMiEquipo() {
+  document.querySelectorAll('.asesor-chk').forEach(chk => {
+    const activo = !EXCLUIDOS_MI_EQUIPO.includes(chk.value.toLowerCase().trim());
+    chk.checked = activo;
+    const label = chk.closest('.asesor-chip');
+    if (label) label.classList.toggle('activo', activo);
+  });
+  actualizarContador();
+}
+
+function seleccionarTodos() {
+  document.querySelectorAll('.asesor-chk').forEach(chk => {
+    chk.checked = true;
+    chk.closest('.asesor-chip')?.classList.add('activo');
+  });
+  actualizarContador();
+}
+
+function deseleccionarTodos() {
+  document.querySelectorAll('.asesor-chk').forEach(chk => {
+    chk.checked = false;
+    chk.closest('.asesor-chip')?.classList.remove('activo');
+  });
+  actualizarContador();
+}
+
+function actualizarContador() {
+  const sel = Array.from(document.querySelectorAll('.asesor-chk:checked')).length;
+  document.getElementById('asesoresCount').textContent = sel;
+}
+
+function toggleAsesores() {
+  asesoresPanel = !asesoresPanel;
+  const chips  = document.getElementById('asesoresChips');
+  const chev   = document.getElementById('asesoresChevron');
+  const acciones = document.getElementById('chipsActions');
+  chips.classList.toggle('visible', asesoresPanel);
+  chev.classList.toggle('open', asesoresPanel);
+  acciones.style.display = asesoresPanel ? 'flex' : 'none';
+}
+
+function resetFiltros() {
+  document.getElementById('fDesde').value = FECHA_DESDE_DEFAULT;
+  document.getElementById('fHasta').value = FECHA_HASTA_DEFAULT;
+  seleccionarMiEquipo();
+  aplicarFiltros();
+}
+
+// ── Filtrado y render ─────────────────────────────────────────────────────
+function aplicarFiltros() {
+  const desde    = document.getElementById('fDesde').value;
+  const hasta    = document.getElementById('fHasta').value;
+  const asesores = Array.from(document.querySelectorAll('.asesor-chk:checked')).map(c => c.value);
+
+  // Abonos filtrados
+  const abonos = globalAbonos.filter(a => {
+    const f = normFecha(a.fecha_pago);
+    return (!desde || f >= desde) && (!hasta || f <= hasta) && asesores.includes(a.asesor || 'Sin Asesor');
+  });
+
+  // Meta Ads filtrado
+  const fb = globalFb.filter(f => {
+    const d = normFecha(f.fecha);
+    return (!desde || d >= desde) && (!hasta || d <= hasta);
+  });
+
+  // Rifa empresa activa (o la primera empresa rifa encontrada)
+  const rifaEmpresa = globalRifas.find(r => r.es_empresa && r.estado === 'activa')
+                   || globalRifas.find(r => r.es_empresa);
+
+  // Actualizar subtítulo
+  const desdeLeg = desde ? new Date(desde + 'T12:00:00').toLocaleDateString('es-CO', { day:'2-digit', month:'short', year:'numeric' }) : '—';
+  const hastaLeg = hasta ? new Date(hasta + 'T12:00:00').toLocaleDateString('es-CO', { day:'2-digit', month:'short', year:'numeric' }) : '—';
+  document.getElementById('pageSubtitulo').textContent =
+    `${rifaEmpresa ? rifaEmpresa.nombre + ' · ' : ''}${desdeLeg} → ${hastaLeg} · ${asesores.length} asesores`;
+
+  renderEstado(abonos, fb, rifaEmpresa);
+  actualizarContador();
+}
+
+// ── Renderizado principal ─────────────────────────────────────────────────
+function renderEstado(abonos, fb, rifaEmpresa) {
+  // ── INGRESOS ──────────────────────────────────────────────────────────
+  const totalIngresos = abonos.reduce((s, a) => s + Number(a.monto || 0), 0);
+
+  // Agrupar por asesor
+  const porAsesor = {};
+  abonos.forEach(a => {
+    const k = a.asesor || 'Sin Asesor';
+    if (!porAsesor[k]) porAsesor[k] = { total: 0, count: 0 };
+    porAsesor[k].total += Number(a.monto || 0);
+    porAsesor[k].count++;
+  });
+  const filasAsesores = Object.entries(porAsesor)
+    .sort((a, b) => b[1].total - a[1].total);
+  const maxAsesor = filasAsesores.length > 0 ? filasAsesores[0][1].total : 1;
+
+  const tablaAsesores = filasAsesores.length
+    ? `<table class="er-table">
+        <thead><tr>
+          <th>Asesor</th><th>Abonos</th><th>Total recaudado</th>
+        </tr></thead>
+        <tbody>
+          ${filasAsesores.map(([asesor, d]) => `
+            <tr>
+              <td>
+                <span class="er-bar" style="width:${Math.round((d.total/maxAsesor)*80)+20}px; background:var(--accent);opacity:.25;"></span>
+                ${asesor}
+              </td>
+              <td>${d.count.toLocaleString('es-CO')}</td>
+              <td><strong>${fmt(d.total)}</strong></td>
+            </tr>`).join('')}
+        </tbody>
+        <tfoot><tr class="row-total">
+          <td>TOTAL</td>
+          <td>${abonos.length.toLocaleString('es-CO')} abonos</td>
+          <td>${fmt(totalIngresos)}</td>
+        </tr></tfoot>
+      </table>`
+    : `<div class="empty-state">Sin abonos en el período seleccionado.</div>`;
+
+  // ── EGRESOS — Premio ───────────────────────────────────────────────────
+  let costoPremio   = 0;
+  let filasPromio   = '';
+  let nombreRifa    = 'Sin rifa activa';
+
+  if (rifaEmpresa) {
+    nombreRifa = rifaEmpresa.nombre;
+    const premiosCosto = (rifaEmpresa.premios || [])
+      .filter(p => p.requiere_recapitalizacion && !p.es_para_recapitalizar);
+
+    costoPremio = premiosCosto.reduce((s, p) => s + Number(p.valor || 0), 0);
+
+    filasPromio = premiosCosto.length
+      ? premiosCosto.map(p => `
+          <div class="premio-item">
+            <div>
+              <div class="premio-nombre">${p.nombre}</div>
+              <div class="premio-aportante">Aportado por: ${p.aportante || '—'}</div>
+            </div>
+            <div class="premio-valor">${fmt(p.valor)}</div>
+          </div>`).join('')
+      : `<div class="empty-state">Sin premios registrados con "Genera obligación" en esta rifa.</div>`;
+  } else {
+    filasPromio = `<div class="empty-state">No se encontró una rifa de empresa activa.</div>`;
+  }
+
+  // ── EGRESOS — Meta Ads ─────────────────────────────────────────────────
+  const totalMeta = fb.reduce((s, f) => s + Number(f.gasto || 0), 0);
+
+  // Agrupar Meta por campaña
+  const porCampana = {};
+  fb.forEach(f => {
+    const k = f.nombre_campana || 'Sin campaña';
+    porCampana[k] = (porCampana[k] || 0) + Number(f.gasto || 0);
+  });
+  const filasMeta = Object.entries(porCampana)
+    .filter(([, v]) => v > 0)
+    .sort((a, b) => b[1] - a[1])
+    .map(([camp, gasto]) => `
+      <div class="premio-item">
+        <div class="premio-nombre">${camp}</div>
+        <div class="premio-valor">${fmt(gasto)}</div>
+      </div>`).join('');
+
+  // ── UTILIDAD ───────────────────────────────────────────────────────────
+  const totalEgresos = costoPremio + totalMeta;
+  const utilidad     = totalIngresos - totalEgresos;
+  const tipoUtil     = utilidad > 0 ? 'positiva' : utilidad < 0 ? 'negativa' : 'neutro';
+  const signoUtil    = utilidad > 0 ? '+' : '';
+
+  // ── HTML ───────────────────────────────────────────────────────────────
+  document.getElementById('erContent').innerHTML = `
+
+    <!-- INGRESOS -->
+    <div class="er-section">
+      <div class="er-section-header">
+        <span class="er-section-icon">💰</span>
+        <span class="er-section-title">Ingresos — Abonos recibidos</span>
+        <span class="er-section-total ingreso">${fmt(totalIngresos)}</span>
+      </div>
+      <div class="er-section-body">${tablaAsesores}</div>
+    </div>
+
+    <!-- EGRESOS -->
+    <div class="er-section">
+      <div class="er-section-header">
+        <span class="er-section-icon">💸</span>
+        <span class="er-section-title">Egresos</span>
+        <span class="er-section-total egreso">${fmt(totalEgresos)}</span>
+      </div>
+      <div class="er-section-body">
+
+        <!-- Premio -->
+        <div class="egreso-item" style="background:var(--danger-bg); flex-direction:column; align-items:flex-start; gap:0;">
+          <div style="display:flex; width:100%; justify-content:space-between; align-items:center;">
+            <div>
+              <div class="egreso-nombre">🏆 Costo del premio</div>
+              <div class="egreso-sub">${nombreRifa} — aportes que generan obligación</div>
+            </div>
+            <div class="egreso-valor">${fmt(costoPremio)}</div>
+          </div>
+          <div style="width:100%; margin-top:8px; padding-top:8px; border-top:1px solid #f5c6c5;">
+            ${filasPromio}
+          </div>
+        </div>
+
+        <!-- Meta Ads -->
+        <div class="egreso-item" style="flex-direction:column; align-items:flex-start; gap:0;">
+          <div style="display:flex; width:100%; justify-content:space-between; align-items:center;">
+            <div>
+              <div class="egreso-nombre">📢 Publicidad Meta Ads</div>
+              <div class="egreso-sub">${fb.length > 0 ? fb.length + ' registros en el período' : 'Sin datos de Meta en este período — sincroniza desde Rendimiento'}</div>
+            </div>
+            <div class="egreso-valor">${fmt(totalMeta)}</div>
+          </div>
+          ${filasMeta ? `<div style="width:100%; margin-top:8px; padding-top:8px; border-top:1px solid var(--ring);">${filasMeta}</div>` : ''}
+        </div>
+
+        <!-- Total egresos -->
+        <table class="er-table">
+          <tfoot><tr class="row-total-egreso">
+            <td>TOTAL EGRESOS</td>
+            <td>${fmt(totalEgresos)}</td>
+          </tr></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- UTILIDAD -->
+    <div class="utilidad-card ${tipoUtil}">
+      <div>
+        <div class="utilidad-label ${tipoUtil}">
+          ${utilidad > 0 ? '🟢 Utilidad bruta' : utilidad < 0 ? '🔴 Pérdida bruta' : '⚪ Sin resultado'}
+        </div>
+        <div class="utilidad-formula">
+          ${fmt(totalIngresos)} ingresos − ${fmt(totalEgresos)} egresos
+        </div>
+      </div>
+      <div class="utilidad-valor ${tipoUtil}">${signoUtil}${fmt(utilidad)}</div>
+    </div>
+
+    <!-- Margen -->
+    ${totalIngresos > 0 ? `
+    <div style="text-align:right; font-size:.78rem; color:var(--muted); margin-top:-8px; margin-bottom:12px;">
+      Margen bruto: <strong style="color:${utilidad >= 0 ? 'var(--accent-2)' : 'var(--danger)'};">
+        ${(utilidad / totalIngresos * 100).toFixed(1)}%
+      </strong>
+    </div>` : ''}
+  `;
+}
+</script>
+</body>
+</html>

@@ -28,6 +28,10 @@
       "destination": "/rifas.html"
     },
     {
+      "source": "/estado-resultados",
+      "destination": "/estado-resultados.html"
+    },
+    {
       "source": "/calendario",
       "destination": "/calendario.html"
     },

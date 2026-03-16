@@ -370,7 +370,7 @@
     }
     .capital-table th:first-child { text-align: left; }
     .capital-table td {
-      padding: 13px 16px; border-bottom: 1px solid var(--ring);
+      padding: 10px 16px; border-bottom: 1px solid var(--ring);
       text-align: right; color: var(--ink);
     }
     .capital-table td:first-child { text-align: left; }
@@ -499,16 +499,28 @@
       .desktop-left .rifas-list { gap: 10px; }
 
       /* Capital table: primera columna fija */
-      .capital-table th:first-child,
+      .capital-table th:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 3;
+        background: var(--bg);
+        border-right: 1px solid var(--ring-strong);
+      }
       .capital-table td:first-child {
         position: sticky;
         left: 0;
         z-index: 2;
-        background: inherit;
+        background: var(--card);
         border-right: 1px solid var(--ring-strong);
       }
       .capital-table .row-inv-total td:first-child { background: var(--bg); }
-      .capital-table tfoot td:first-child { background: var(--accent-light); }
+      .capital-table tfoot td:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background: var(--accent-light);
+        border-right: 1px solid var(--ring-strong);
+      }
 
       /* Visor inline (panel derecho) */
       .visor-shell-inline {
@@ -607,6 +619,8 @@
   <div class="logo"><span>💼</span> Centro Financiero</div>
   <nav>
     <span id="topAsesor" class="asesor-badge">—</span>
+    <a href="/rifas" style="font-weight:700;">🎰 Rifas</a>
+    <a href="/estado-resultados">📊 Estado de Resultados</a>
     <a href="/admin">← Volver</a>
     <button onclick="doLogout()">Salir</button>
   </nav>
@@ -1056,27 +1070,31 @@ function renderCapitalPorInversor() {
   // Rifas ordenadas por created_at
   const rifas = rifasData.map(r => ({ id: r.id, nombre: r.nombre }));
 
-  // Calcular capital por inversor × rifa
   // capitalMap[inversor][rifa_id] = total
-  const capitalMap = {};
+  // detalleMap[inversor][rifa_id] = [{nombre, valor}]
+  const capitalMap  = {};
+  const detalleMap  = {};
   inversores.forEach(inv => {
     capitalMap[inv] = {};
-    rifas.forEach(r => { capitalMap[inv][r.id] = 0; });
+    detalleMap[inv] = {};
+    rifas.forEach(r => { capitalMap[inv][r.id] = 0; detalleMap[inv][r.id] = []; });
   });
 
   todosLosPremios.forEach(p => {
     if (!p.aportante || !capitalMap[p.aportante]) return;
-    if (p.es_para_recapitalizar) return; // pagos de deuda no cuentan como capital
+    if (p.es_para_recapitalizar) return;
     capitalMap[p.aportante][p.rifa_id] = (capitalMap[p.aportante][p.rifa_id] || 0) + Number(p.valor);
+    detalleMap[p.aportante][p.rifa_id].push({ nombre: p.nombre, valor: Number(p.valor) });
   });
 
-  // Agregar exceso de recapitalización como capital (si pagaron más de lo que debían)
+  // Capital ganado por pagar más de lo que se debía (incluye rifas de empresa)
   rifasData.forEach(rifa => {
     ['Mateo', 'Alejandro'].forEach(hermano => {
-      const key = hermano.toLowerCase();
-      const dif = rifa[`recap_diferencia_${key}`];
-      if (dif > 0 && capitalMap[hermano]) {
-        capitalMap[hermano][rifa.id] = (capitalMap[hermano][rifa.id] || 0) + dif;
+      const key  = hermano.toLowerCase();
+      const gain = rifa[`recap_capital_gain_${key}`];
+      if (gain > 0 && capitalMap[hermano]) {
+        capitalMap[hermano][rifa.id] = (capitalMap[hermano][rifa.id] || 0) + gain;
+        detalleMap[hermano][rifa.id].push({ nombre: 'Saldo a favor recap.', valor: gain, esExceso: true });
       }
     });
   });
@@ -1115,10 +1133,18 @@ function renderCapitalPorInversor() {
                 <strong>${inv}</strong>
               </td>
               ${rifas.map(r => {
-                const val = capitalMap[inv][r.id] || 0;
-                return val > 0
-                  ? `<td class="capital-val">${fmt(val)}</td>`
-                  : `<td class="capital-val-zero">—</td>`;
+                const val     = capitalMap[inv][r.id] || 0;
+                const items   = detalleMap[inv][r.id] || [];
+                if (!val) return `<td class="capital-val-zero">—</td>`;
+
+                const detalle = items.map(d =>
+                  `<span style="display:block; font-size:.7rem; color:${d.esExceso ? 'var(--accent-2)' : 'var(--muted)'}; font-weight:${d.esExceso ? '700' : '500'}; white-space:nowrap;">${d.nombre}: ${fmt(d.valor)}</span>`
+                ).join('');
+
+                return `<td class="capital-val" style="vertical-align:top;">
+                  <strong>${fmt(val)}</strong>
+                  <div style="margin-top:4px;">${detalle}</div>
+                </td>`;
               }).join('')}
               <td class="capital-total-val">${totalPorInv[inv] > 0 ? fmt(totalPorInv[inv]) : '<span class="capital-val-zero">—</span>'}</td>
             </tr>`;

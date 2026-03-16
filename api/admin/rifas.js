@@ -81,36 +81,35 @@ export default async function handler(req, res) {
       const primeraRifaId = rifasCompletas.length ? rifasCompletas[0].id : null;
 
       rifasCompletas.forEach(rifa => {
-        if (rifa.es_empresa) return; // rifas 4+ son de empresa y no afectan el saldo personal de los hermanos
-
         const esPrimeraRifa = rifa.id === primeraRifaId;
 
         HERMANOS.forEach(h => {
-          // Solo cuentan como pago de recapitalización los aportes que tienen
-          // es_para_recapitalizar = true Y no son de la primera rifa.
-          // Los CDTs u otros activos que van al banco no pagan la deuda aunque
-          // el aportante sea un hermano.
+          // En rifas de empresa la obligación personal es 0 (ya unieron la empresa),
+          // pero los pagos que hagan como es_para_recapitalizar SÍ cuentan para
+          // saldar la deuda acumulada de las rifas anteriores.
           const aportado = esPrimeraRifa ? 0 :
             rifa.premios
               .filter(p => p.aportante === h && p.es_para_recapitalizar === true)
               .reduce((s, p) => s + Number(p.valor), 0);
 
-          const obligacion = rifa.recapitalizacion_por_hermano;
+          const obligacion        = rifa.es_empresa ? 0 : rifa.recapitalizacion_por_hermano;
           const diferencia        = aportado - obligacion;
-          const saldoAntes        = saldoAcum[h];             // deuda acumulada antes de este ciclo
-          const saldoTrasAportado = saldoAntes + aportado;    // después del pago, antes de nueva obligación
+          const saldoAntes        = saldoAcum[h];
+          const saldoTrasAportado = saldoAntes + aportado;
           saldoAcum[h] += diferencia;
+
+          // Capital ganado = cuánto pasó a territorio positivo con este pago
+          // Ej: saldoAntes=-119M, aportado=206M, obligacion=0 → saldoAcum=+87M → capitalGain=87M
+          const capitalGain = Math.max(0, saldoAcum[h]) - Math.max(0, saldoAntes);
+          if (capitalGain > 0) rifa.capital_total += capitalGain;
 
           const key = h.toLowerCase();
           rifa[`recap_aportado_${key}`]        = aportado;
           rifa[`recap_obligacion_${key}`]      = obligacion;
           rifa[`recap_diferencia_${key}`]      = diferencia;
-          rifa[`recap_saldo_tras_pago_${key}`] = saldoTrasAportado; // deuda arrastrada pendiente tras el pago
+          rifa[`recap_saldo_tras_pago_${key}`] = saldoTrasAportado;
           rifa[`recap_saldo_acum_${key}`]      = saldoAcum[h];
-
-          // Si el hermano pagó más de lo que debía, el exceso es capital real
-          const exceso = Math.max(0, diferencia);
-          if (exceso > 0) rifa.capital_total += exceso;
+          rifa[`recap_capital_gain_${key}`]    = capitalGain;
         });
       });
 
