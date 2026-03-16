@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <title>Admin Los Plata</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+  <div id="heroBg" style="
+    position: fixed; inset: 0; z-index: 0;
+    background: linear-gradient(160deg, #0f2010 0%, #1e4a1a 40%, #2d6b25 70%, #1a3a14 100%);
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+  "></div>
+
+  <div id="loginOverlay" style="position:fixed; inset:0; z-index:1500; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; background:linear-gradient(160deg, #0f2010 0%, #1e4a1a 40%, #2d6b25 70%, #1a3a14 100%);">
+    <div style="text-align:center; margin-bottom:32px;">
+      <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata S.A.S." style="height:180px; width:auto; display:block; margin:0 auto; filter:drop-shadow(0 8px 24px rgba(0,0,0,0.45));">
+      <p style="color:rgba(255,255,255,0.6); font-size:0.95rem; margin:14px 0 0 0; letter-spacing:0.18em; text-transform:uppercase; font-weight:400;">Escribe tu contraseña de asesor</p>
+    </div>
+    <div style="width:90%; max-width:580px; display:flex; flex-direction:column; align-items:center; gap:14px;">
+      <input id="loginPwd" type="password" placeholder="Escribe tu contraseña..."
+        onkeydown="if(event.key==='Enter') document.getElementById('btnLogin').click()">
+      <button id="btnLogin"
+        style="width:100%; padding:16px; border-radius:100px; border:none; background:rgba(255,255,255,0.18); backdrop-filter:blur(8px); color:#fff; font-size:1rem; font-weight:600; font-family:inherit; cursor:pointer; letter-spacing:0.05em; transition:background 0.2s;"
+        onmouseover="this.style.background='rgba(255,255,255,0.28)'" onmouseout="this.style.background='rgba(255,255,255,0.18)'">
+        Ingresar
+      </button>
+      <div id="loginMsg" style="color:rgba(255,120,120,0.9); font-size:0.9rem; min-height:20px;"></div>
+    </div>
+  </div>
+
+  <div class="top-search-bar hero-mode" id="topBar" style="display:none">
+    <div class="hero-welcome-text">
+        <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata S.A.S." style="height: 180px; width: auto; display: block; margin: 0 auto; filter: drop-shadow(0 8px 24px rgba(0,0,0,0.45));">
+        <p style="color: rgba(255,255,255,0.6); font-size: 0.95rem; margin: 14px 0 0 0; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 400;">Busca boleta, teléfono o pega datos</p>
+    </div>
+    <div class="search-container">
+      <input type="text" id="smartInput" class="main-input" placeholder="Escribe para buscar o pegar..." autocomplete="off">
+      <button id="btnSearch" class="search-btn">Buscar</button>
+    </div>
+    <div class="user-info-bar">
+      <span id="asesorDisplay" class="nav-item nav-name">Hola</span>
+      <span class="nav-item" onclick="activateAppMode(); switchView('view-referencias')">Referencia</span>
+      <span class="nav-item" onclick="activateAppMode(); switchView('view-carga-masiva')">Carga IA</span>
+      <span class="nav-item" onclick="window.location.href='/rendimiento'">Rendimiento</span>
+      <span class="nav-item" onclick="activateAppMode(); switchView('view-movimientos'); cargarUltimosMovimientos();">Movimientos</span>
+      <span class="nav-item" onclick="activateAppMode(); switchView('view-lista-boletas'); cargarListaBoletas();">Lista Boletas</span>
+      <span class="nav-item" onclick="window.location.href='/caja.html'">Cuadre de Caja</span>
+      <span class="nav-item" onclick="window.location.href='/calendario'">Calendario</span>
+      <span id="btnFinanzas" class="nav-item" onclick="window.location.href='/rifas'" style="display:none;">Centro Financiero</span>
+      <span id="btnLogout" class="nav-item nav-salir">Salir</span>
+    </div>
+    <div id="searchFeedback" class="hint" style="margin: 5px 0 0 0; font-size:0.8rem; min-height: 20px;"></div>
+    <div id="badgesRow">
+      <div id="nombreAsesorBadge"></div>
+      <div id="saldoAsesor">
+        <span id="saldoIcono">💰</span>
+        <span id="saldoCantidad">$0</span>
+        <button id="btnOcultarSaldo" onclick="toggleSaldoVisibilidad()">👁 <span id="btnOcultarTexto">Ocultar</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="shell" id="appShell">
+
+    <div id="view-referencias" class="view-section">
+      <div class="section-card">
+        <div class="section-title">Buscar Referencia Específica</div>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0;">Ingresa el número de referencia exacto para ver su estado actual y la boleta vinculada.</p>
+        
+        <div class="vertical-form">
+          <div class="field" style="background:var(--bg);">
+            <input type="text" id="inputBuscarRef" class="pill" placeholder="Escribe la referencia... (Ej: M093...)">
+          </div>
+          <button id="btnBuscarRef" class="cta" onclick="buscarReferenciaEspecifica()" style="margin-top:5px; background:var(--ink);">Buscar Referencia</button>
+        </div>
+        <div id="resultadoReferencia" style="margin-top: 20px;"></div>
+      </div>
+    </div>
+
+    <div id="view-carga-masiva" class="view-section">
+      <div class="section-card">
+        <div class="section-title">🤖 Carga Masiva Inteligente (OpenAI)</div>
+
+        <!-- Panel único unificado: ingresos y egresos juntos -->
+        <div id="panelIngreso">
+          <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0; line-height: 1.5;">
+            Sube <b>todos los pantallazos juntos</b> — ingresos y egresos mezclados. La IA clasifica cada uno: los ingresos se guardan automáticamente y los egresos los marca para que los <b>justifiques</b>.
+          </p>
+          <div class="vertical-form">
+            <div id="dropZoneIA" style="border: 2px dashed var(--accent); border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; background: var(--bg); transition: 0.3s;" onmouseover="this.style.background='var(--pill)'" onmouseout="this.style.background='var(--bg)'" onclick="document.getElementById('fileInputIA').click()">
+              <span style="font-size: 2.5rem; display: block; margin-bottom: 10px;">📁</span>
+              <p style="margin: 0; font-weight: 600; color: var(--ink); font-size: 1.1rem;">Haz clic aquí o arrastra tus archivos</p>
+              <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: var(--muted);">(Admite capturas PNG/JPG y documentos PDF)</p>
+              <input type="file" id="fileInputIA" multiple accept="image/*,application/pdf" style="display: none;" onchange="manejarSeleccionArchivosIA(event)">
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 10px; background: #fff; border: 1px solid var(--ring-strong); border-radius: 12px;">
+              <span id="statusContadorIA" style="font-weight: 600; font-size: 0.9rem; color: var(--ink-2);">0 archivos listos</span>
+              <button id="btnIniciarIA" class="cta" style="width: auto; margin: 0; padding: 8px 20px; display: none;" onclick="iniciarProcesamientoMasivoIA()">🚀 Procesar con IA</button>
+            </div>
+            <div id="listaProgresoIA" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px; max-height: 600px; overflow-y: auto; padding-right: 5px;">
+              <div style="text-align: center; padding: 20px; color: var(--muted); font-size: 0.85rem; border: 1px dashed var(--ring); border-radius: 8px;">
+                Aún no hay archivos en la fila de procesamiento.
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+    <div id="view-estadisticas" class="view-section">
+      <div class="section-card" style="background: transparent; box-shadow: none; border: none; padding: 0;">
+        
+        <div class="section-card">
+            <div class="section-title">🌍 Inventario Global (Apartamento)</div>
+            <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0; margin-bottom:15px;">Cantidades totales de toda la operación (No cambian con los filtros).</p>
+            <div class="dashboard-grid">
+              <div class="kpi-card" style="border-left: 4px solid var(--ink);"><h3>🎟️ Total Registradas</h3><p id="kpi-global-registradas">0</p></div>
+              <div class="kpi-card" style="border-left: 4px solid var(--danger);"><h3>⚠️ Separadas con $0</h3><p id="kpi-global-cero" style="color:var(--danger);">0</p></div>
+              <div class="kpi-card" style="border-left: 4px solid var(--accent-2);"><h3>✅ Total Libres</h3><p id="kpi-global-libres">0</p></div>
+            </div>
+        </div>
+
+        <div class="section-card" style="background: #fdfdfd;">
+            <div style="display:flex; gap:10px; flex-wrap: wrap; align-items:flex-end;">
+               <div style="flex:1; min-width:130px;">
+                  <label style="font-size:0.8rem; color:var(--ink-2); font-weight:600;">Desde (Fecha)</label>
+                  <div class="field"><input type="date" id="filt-desde" class="pill" onchange="aplicarFiltrosEstadisticas()"></div>
+               </div>
+               <div style="flex:1; min-width:130px;">
+                  <label style="font-size:0.8rem; color:var(--ink-2); font-weight:600;">Hasta (Fecha)</label>
+                  <div class="field"><input type="date" id="filt-hasta" class="pill" onchange="aplicarFiltrosEstadisticas()"></div>
+               </div>
+               <div id="asesor-dropdown-container" style="flex:1; min-width:180px; position: relative;">
+                  <label style="font-size:0.8rem; color:var(--ink-2); font-weight:600;">Asesores</label>
+                  <div class="field" style="cursor: pointer;" onclick="document.getElementById('dropdown-asesores').style.display = document.getElementById('dropdown-asesores').style.display === 'block' ? 'none' : 'block'">
+                     <div class="pill" id="lbl-asesores-seleccionados" style="user-select: none; font-size: 0.85rem; padding: 2px 0;">Todos los asesores ▼</div>
+                  </div>
+                  <div id="dropdown-asesores" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; background: #fff; border: 1px solid var(--ring-strong); border-radius: 8px; max-height: 250px; overflow-y: auto; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 12px; margin-top: 4px;">
+                     </div>
+               </div>
+               <div style="flex:0;">
+                   <button onclick="limpiarFiltrosRendimiento()" style="height:44px; padding:0 15px; border-radius:10px; border:1px solid var(--ring-strong); background:#fff; cursor:pointer;">Limpiar</button>
+               </div>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <div class="section-title">📈 Rendimiento Filtrado</div>
+            
+            <div class="dashboard-grid">
+              <div class="kpi-card"><h3>📝 Boletas Nuevas</h3><p id="kpi-filt-nuevas">0</p></div>
+              <div class="kpi-card"><h3>💸 Boletas con Abono</h3><p id="kpi-filt-con-abono">0</p></div>
+              <div class="kpi-card"><h3>💳 Cantidad Abonos</h3><p id="kpi-filt-abonos">0</p></div>
+              <div class="kpi-card" style="background:#e8f5e9;"><h3>💰 Recaudo Total</h3><p id="kpi-filt-recaudo" style="color:#1b5e20;">$0</p></div>
+            </div>
+
+            <div class="charts-grid">
+              <div class="chart-container"><h4 style="font-size:0.9rem; text-align:center; margin:0 0 15px;">Ingresos en el tiempo</h4><canvas id="chartIngresos"></canvas></div>
+              <div class="chart-container"><h4 style="font-size:0.9rem; text-align:center; margin:0 0 15px;">Recaudo por Asesor</h4><canvas id="chartAsesores"></canvas></div>
+            </div>
+            
+            <div id="tablaEstadisticasRender"><p style="text-align:center; color:var(--muted); font-size:0.85rem;">Cargando tabla de rendimiento...</p></div>
+        </div>
+      </div>
+    </div>
+  
+    <div id="view-movimientos" class="view-section">
+      <div class="section-card">
+        <div class="section-title">Últimos Movimientos Registrados</div>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0;">Aquí puedes revisar tus últimas ventas y abonos. Si te equivocaste en uno, presiona "Deshacer".</p>
+        
+        <div id="tablaMovimientosRender" style="margin-top: 15px;">
+          <p style="text-align:center; color:var(--muted); font-size:0.85rem;">Cargando...</p>
+        </div>
+      </div>
+    </div>
+    
+    <div id="view-venta" class="view-section">
+      <div class="section-card">
+        <div class="section-title"><span>Boletas a separar</span><button id="btnAddNum" class="btn-add">Agregar</button></div>
+        <div id="numList" class="num-wrap"></div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-title">Datos del Cliente</div>
+        <div class="vertical-form">
+          <div><label>Nombre</label><div class="field"><input id="v_nombre" class="pill" type="text"></div></div>
+          <div><label>Apellido</label><div class="field"><input id="v_apellido" class="pill" type="text"></div></div>
+          <div><label>Teléfono celular</label><div class="field"><input id="v_telefono" class="pill" type="tel"></div></div>
+          <div><label>Ciudad</label><div class="field"><input id="v_ciudad" class="pill" type="text"></div></div>
+        </div>
+      </div>
+
+      <div class="mode-switch">
+        <button id="btnModeAbono" class="mode-btn" onclick="setMode('abono')">Con Abono</button>
+        <button id="btnModeSeparar" class="mode-btn active" onclick="setMode('separar')">Solo Separar ($0)</button>
+      </div>
+
+      <div id="paymentSections" style="display: none;">
+        <div class="section-card">
+          <div class="section-title">BUSCAR PAGO INTELIGENTE</div>
+          <div class="vertical-form">
+            <div id="ocrDrop" class="ocr-drop" tabindex="0" onclick="this.focus()" title="Haz clic aquí y luego Ctrl+V para pegar la imagen">
+               📋 Pega la imagen del comprobante aquí (Ctrl+V)<br>
+               <span id="ocrStatus" style="color:var(--accent-2); font-weight:normal; margin-top: 4px; display: block;"></span>
+            </div>
+
+            <p style="font-size: 0.8rem; color: var(--muted); margin-top: -10px;">Llena al menos uno de estos datos para buscar en bancos:</p>
+            <div style="display: flex; gap: 10px;">
+              <div style="flex: 1;">
+                <label>Ref/Celular</label>
+                <div class="field"><input id="t_ref" class="pill" type="text" placeholder="Ej: 311..."></div>
+              </div>
+              <div style="flex: 1;">
+                <label>Valor</label>
+                <div class="field"><input id="t_monto" class="pill" type="number" placeholder="Ej: 5000"></div>
+              </div>
+              <div style="flex: 1;">
+                <label>Plataforma</label>
+                <div class="field"><input id="t_plataforma" list="l_metodos" class="pill" type="text" placeholder="Nequi..."></div>
+              </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+              <div style="flex: 1;">
+                <label>Fecha de la transferencia</label>
+                <div class="field"><input id="t_fecha" class="pill" type="date"></div>
+              </div>
+              <div style="flex: 1;">
+                <label>Hora</label>
+                <div class="field"><input id="t_hora" class="pill" type="time"></div>
+              </div>
+              <div style="flex: 1;">
+                <label>Estado</label>
+                <div class="field">
+                  <select id="t_estado" class="pill">
+                    <option value="">Todas</option>
+                    <option value="LIBRE">Solo Libres</option>
+                    <option value="ASIGNADA">Solo Asignadas</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            
+            <button id="btnBuscarInteligente" type="button" class="cta" style="margin-top:5px; background:var(--ink);" onclick="buscarTransferenciasUI('btnBuscarInteligente', 't_fecha', 't_hora', 't_monto', 't_ref', 't_plataforma', 't_estado', 'feedbackTransfer', 'v_referenciaAbono', 'v_primerAbono', 'v_metodoPago')">Buscar transferencia</button>
+          </div>
+          <div id="feedbackTransfer" class="hint"></div>
+        </div>
+
+        <div class="section-card">
+          <div class="section-title">Detalle del Pago</div>
+          <div class="vertical-form">
+            <div><label>Valor a Abonar</label><div class="field"><input id="v_primerAbono" class="pill" type="number" min="0" value="0"></div></div>
+            <div>
+              <label>Método / Plataforma</label>
+              <div class="field">
+                <input id="v_metodoPago" list="l_metodos" class="pill" type="text" placeholder="Ej: Nequi, Bancolombia">
+                <datalist id="l_metodos"><option value="Nequi"></option><option value="Bancolombia"></option><option value="Efectivo"></option></datalist>
+              </div>
+            </div>
+            <div>
+              <label>Referencia</label>
+              <div style="display:flex; gap:8px;">
+                <div class="field" style="flex:1"><input id="v_referenciaAbono" class="pill" type="text"></div>
+                <button id="btnForzarPendiente" type="button" style="border:none; border-radius:10px; padding:0 15px; background:var(--pill); color:var(--ink); font-weight:500; cursor:pointer; font-family:inherit; font-size: 0.85rem;">Pendiente</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button id="btnRegistrarVenta" class="cta" style="margin-top:10px; height:48px; font-size:1rem; background: var(--accent-2);">Confirmar Separado ($0)</button>
+      <input id="v_contrasena" type="hidden">
+      <input id="v_idTransferencia" type="hidden">
+      <input id="a_idTransferencia" type="hidden">
+    </div>
+
+    <div id="view-cliente" class="view-section">
+      <div class="section-card">
+        <div class="section-title" style="margin-bottom: 16px;">CLIENTE ENCONTRADO</div>
+        <div id="cliente-info-render"></div>
+      </div>
+
+      <div id="zonaPagosAbono" style="display: none;">
+        <div class="section-card">
+           <div class="section-title">BUSCAR PAGO INTELIGENTE</div>
+           <div class="vertical-form">
+              <div id="ocrDropAbono" class="ocr-drop" tabindex="0" onclick="this.focus()" title="Haz clic aquí y luego Ctrl+V para pegar la imagen">
+                 📋 Pega la imagen del comprobante aquí (Ctrl+V)<br>
+                 <span id="ocrStatusAbono" style="color:var(--accent-2); font-weight:normal; margin-top: 4px; display: block;"></span>
+              </div>
+
+              <div style="display: flex; gap: 10px;">
+                <div style="flex: 1;"><label>Referencia</label><div class="field"><input id="t_ref_abono" class="pill" type="text"></div></div>
+                <div style="flex: 1;"><label>Valor</label><div class="field"><input id="t_monto_abono" class="pill" type="number"></div></div>
+                <div style="flex: 1;"><label>Plataforma</label><div class="field"><input id="t_plataforma_abono" list="l_metodos" class="pill" type="text" placeholder="Nequi..."></div></div>
+              </div>
+              
+              <div style="display: flex; gap: 10px;">
+                <div style="flex: 1;"><label>Fecha (Transferencia)</label><div class="field"><input id="t_fecha_abono" class="pill" type="date"></div></div>
+                <div style="flex: 1;"><label>Hora</label><div class="field"><input id="t_hora_abono" class="pill" type="time"></div></div>
+                <div style="flex: 1;">
+                  <label>Estado</label>
+                  <div class="field">
+                    <select id="t_estado_abono" class="pill">
+                      <option value="">Todas</option>
+                      <option value="LIBRE">Solo Libres</option>
+                      <option value="ASIGNADA">Solo Asignadas</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              
+              <button id="btnBuscarInteligenteAbono" type="button" class="cta" style="margin-top:5px; background:var(--ink);" onclick="buscarTransferenciasUI('btnBuscarInteligenteAbono', 't_fecha_abono', 't_hora_abono', 't_monto_abono', 't_ref_abono', 't_plataforma_abono', 't_estado_abono', 'feedbackTransferAbono', 'a_ref', 'a_monto', 'a_metodo')">Buscar transferencia</button>
+           </div>
+           <div id="feedbackTransferAbono" class="hint"></div>
+        </div>
+
+        <div class="section-card">
+            <div class="section-title">NUEVO ABONO</div>
+            <div class="vertical-form">
+               <p id="infoDivisionAbono" style="font-size:0.85rem; margin-top:-10px; margin-bottom:0;"></p>
+
+               <!-- Toggle modo de distribución (solo visible con 2+ boletas) -->
+               <div id="toggleModoAbono" style="display:none;">
+                 <div class="abono-mode-switch">
+                   <button id="btnModoUniforme" class="abono-mode-btn active" onclick="setModoAbono('uniforme')">⚖️ Dividir uniformemente</button>
+                   <button id="btnModoManual" class="abono-mode-btn" onclick="setModoAbono('manual')">✏️ Definir por boleta</button>
+                 </div>
+               </div>
+
+               <!-- Campo total: siempre visible (etiqueta cambia según modo) -->
+               <div>
+                 <label id="labelMontoAbono">Valor total a repartir</label>
+                 <div class="field"><input type="number" id="a_monto" class="pill" placeholder="0" oninput="actualizarTotalManual()"></div>
+               </div>
+
+               <!-- Modo manual: un campo por boleta + barra de validación -->
+               <div id="bloqueMontosManual" style="display:none;">
+                 <label>Monto por boleta</label>
+                 <div id="montosManualContainer"></div>
+                 <div id="totalManualResumen"></div>
+               </div>
+
+               <div><label>Método de pago</label><div class="field"><input id="a_metodo" list="l_metodos" class="pill" type="text"></div></div>
+               <div>
+                 <label>Referencia</label>
+                 <div style="display:flex; gap:8px;">
+                   <div class="field" style="flex:1"><input type="text" id="a_ref" class="pill"></div>
+                   <button id="btnForzarPendienteAbono" type="button" style="border:none; border-radius:10px; padding:0 15px; background:var(--pill); color:var(--ink); font-weight:500; cursor:pointer; font-family:inherit; font-size: 0.85rem;">Pendiente</button>
+                 </div>
+               </div>
+            </div>
+            <button id="btnRegistrarAbono" class="cta" onclick="registrarAbono()" style="margin-top:20px;">Registrar Abono</button>
+        </div>
+      </div>
+    </div>
+    <div id="view-lista-boletas" class="view-section">
+      <div class="section-card">
+        <div class="section-title">📋 Lista de Boletas Vendidas</div>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0;">Todas las boletas asignadas, ordenadas de la más antigua a la más reciente.</p>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px;">
+          <div class="field" style="flex:1; min-width:150px;">
+            <input type="text" id="lb-filtro-texto" class="pill" placeholder="Buscar nombre, teléfono, boleta..." oninput="filtrarListaBoletas()">
+          </div>
+          <div class="field" style="min-width:140px;">
+            <select id="lb-filtro-tipo" class="pill" onchange="filtrarListaBoletas()">
+              <option value="">Todos los tipos</option>
+              <option value="grande">Boletas grandes (4 cifras)</option>
+              <option value="diaria2">Diarias 2 cifras</option>
+              <option value="diaria3">Diarias 3 cifras</option>
+            </select>
+          </div>
+          <div id="lb-asesor-dropdown-container" style="min-width:180px; position:relative;">
+            <div class="field" style="cursor:pointer;" onclick="document.getElementById('lb-dropdown-asesores').style.display = document.getElementById('lb-dropdown-asesores').style.display === 'block' ? 'none' : 'block'">
+              <div class="pill" id="lb-lbl-asesores" style="user-select:none; font-size:0.85rem; padding:2px 0;">Todos los asesores ▼</div>
+            </div>
+            <div id="lb-dropdown-asesores" style="display:none; position:absolute; top:100%; left:0; width:220px; background:#fff; border:1px solid var(--ring-strong); border-radius:8px; max-height:260px; overflow-y:auto; z-index:200; box-shadow:0 4px 12px rgba(0,0,0,0.15); padding:12px; margin-top:4px;"></div>
+          </div>
+          <button onclick="cargarListaBoletas()" style="height:44px; padding:0 16px; border-radius:10px; border:1px solid var(--ring-strong); background:#fff; cursor:pointer; font-family:inherit; font-size:0.85rem;">↻ Actualizar</button>
+        </div>
+
+        <div id="lb-contador" style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;"></div>
+        <div id="lb-tabla-render" style="margin-top:5px;">
+          <p style="text-align:center; color:var(--muted); font-size:0.85rem; padding:30px 0;">Presiona "Lista Boletas" para cargar.</p>
+        </div>
+      </div>
+    </div>
+
+   </div>
+  <div id="modalConfirmAction" class="modal-overlay">
+    <div class="modal-card">
+      <h3 style="color:var(--ink); font-weight:600; font-size:1.2rem; margin:0 0 10px 0;">Aviso de Cliente</h3>
+      <p id="mcMsg" style="color:var(--ink-2); font-size:0.9rem; margin-bottom:24px; line-height: 1.5;"></p>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button id="mcBtnCancel" class="cta" style="flex:1; background: transparent; border: 1px solid var(--ring-strong); color: var(--ink-2);">Cancelar</button>
+        <button id="mcBtnOk" class="cta" style="flex:1; background: var(--ink);">Sí, agregar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalResult" class="modal-overlay">
+    <div class="modal-card">
+      <h3 id="mTitle" style="color:var(--ink); font-weight:600; font-size:1.2rem; margin:0 0 10px 0;">Título</h3>
+      <p id="mMsg" style="color:var(--ink-2); font-size:0.9rem; margin-bottom:24px; line-height: 1.5; white-space: pre-line;">Mensaje</p>
+      <button id="mBtn" class="cta" style="width: auto; padding: 10px 30px; margin: 0 auto; display:inline-block;">Aceptar</button>
+    </div>
+  </div>
+
+  <!-- Modal reclamar boleta -->
+  <div id="modalReclamarBoleta" class="modal-overlay" style="display:none;">
+    <div class="modal-card">
+      <h3 style="color:var(--danger); font-weight:700; font-size:1.1rem; margin:0 0 12px 0;">⚠️ Esta boleta no pertenece a tu equipo</h3>
+      <p style="color:var(--ink-2); font-size:0.88rem; margin-bottom:22px; line-height: 1.6;">Ve y revisa en la conversación si fue tu equipo la que le tomó los datos a este cliente para poder realizar el registro de la boleta. De ser así, reclama la boleta.</p>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button id="btnReclamarCancelar" class="cta" style="flex:1; background:transparent; border:1px solid var(--ring-strong); color:var(--ink-2);">Cancelar</button>
+        <button id="btnReclamarSi" class="cta" style="flex:1; background:var(--danger);">Sí, reclamar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal visor de comprobante simple -->
+  <div id="fotoModal" onclick="this.style.display='none'" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.85); backdrop-filter:blur(4px); align-items:center; justify-content:center; cursor:zoom-out;">
+    <div onclick="event.stopPropagation()" style="position:relative; max-width:92vw; max-height:92vh;">
+      <img id="fotoModalImg" src="" alt="Comprobante" style="max-width:100%; max-height:88vh; border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,0.6); display:block;">
+      <button onclick="document.getElementById('fotoModal').style.display='none'" style="position:absolute; top:-14px; right:-14px; background:#fff; border:none; border-radius:50%; width:32px; height:32px; font-size:1.1rem; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center; font-weight:700; color:#333;">✕</button>
+    </div>
+  </div>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

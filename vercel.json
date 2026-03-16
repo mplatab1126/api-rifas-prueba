@@ -1,0 +1,39 @@
+{
+  "cleanUrls": true,
+  "functions": {
+    "api/admin/llamadas-automaticas.js": {
+      "maxDuration": 60
+    }
+  },
+  "crons": [],
+  "rewrites": [
+    {
+      "source": "/boleta/:numero",
+      "destination": "/boleta"
+    },
+    {
+      "source": "/diarias",
+      "destination": "/diarias.html"
+    },
+    {
+      "source": "/diarias3",
+      "destination": "/diarias3.html"
+    },
+    {
+      "source": "/rendimiento",
+      "destination": "/rendimiento.html"
+    },
+    {
+      "source": "/rifas",
+      "destination": "/rifas.html"
+    },
+    {
+      "source": "/calendario",
+      "destination": "/calendario.html"
+    },
+    {
+      "source": "/admin-horarios",
+      "destination": "/admin-horarios.html"
+    }
+  ]
+}

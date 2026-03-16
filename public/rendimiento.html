@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <title>BI Dashboard PRO - Los Plata</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    /* ========================================================= */
+    /* VARIABLES DE DISEÑO PREMIUM (SaaS)                        */
+    /* ========================================================= */
+    :root{
+      --bg: #f1f5f9; --card: #ffffff; --ink: #0f172a; --ink-2: #334155; --muted: #64748b; 
+      --ring: #e2e8f0; --ring-strong: #cbd5e1; 
+      --primary: #0f172a; --accent: #10b981; --accent-hover: #059669; 
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+    }
+    *{box-sizing:border-box}
+    body{ margin:0; background: var(--bg); font-family: 'Inter', sans-serif; color: var(--ink); padding-bottom: 80px; }
+    
+    /* ========================================================= */
+    /* BARRA SUPERIOR Y CONTENEDOR                               */
+    /* ========================================================= */
+    .top-bar { position: sticky; top: 0; z-index: 100; background: var(--primary); color: white; padding: 14px 24px; box-shadow: var(--shadow-md); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;}
+    .top-bar-title { font-weight: 900; font-size: 1.4rem; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px;}
+    .top-bar-title span { background: var(--accent); color: white; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; text-transform: uppercase; font-weight: 900; letter-spacing: 1px;}
+    
+    .shell { max-width: 1500px; margin: 30px auto; padding: 0 20px; display: none; }
+    .row { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px; }
+    .col-100 { width: 100%; } .col-60 { flex: 1 1 58%; min-width: 300px; } .col-40 { flex: 1 1 38%; min-width: 300px; }
+
+    /* ========================================================= */
+    /* SEPARADORES DE SECCIÓN Y TARJETAS                         */
+    /* ========================================================= */
+    .saas-divider { display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 900; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; margin: 50px 0 25px 0; gap: 15px; position: relative; }
+    .saas-divider::before, .saas-divider::after { content: ""; flex: 1; height: 2px; background: var(--ring-strong); border-radius: 2px;}
+    
+    .card { background: var(--card); border: 1px solid var(--ring); border-radius: 16px; box-shadow: var(--shadow-sm); padding: 24px; transition: box-shadow 0.3s; height: 100%;}
+    .card:hover { box-shadow: var(--shadow-md); }
+    .card-title { font-size: 1.1rem; font-weight: 800; color: var(--ink); margin: 0 0 16px 0; padding-bottom: 12px; border-bottom: 1px solid var(--ring); display: flex; align-items: center; justify-content: space-between; text-transform: uppercase;}
+    
+    /* ========================================================= */
+    /* ZONAS DE FILTROS                                          */
+    /* ========================================================= */
+    .filter-zone { background: white; padding: 20px 24px; border-radius: 16px; border: 1px solid var(--ring); margin-bottom: 30px; display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; box-shadow: var(--shadow-sm);}
+    .quick-filters { display: flex; gap: 8px; margin-bottom: 15px; width: 100%; border-bottom: 1px dashed var(--ring); padding-bottom: 15px; flex-wrap: wrap;}
+    .btn-quick { background: var(--bg); border: 1px solid var(--ring-strong); color: var(--ink-2); padding: 8px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: 0.2s; }
+    .btn-quick:hover { background: var(--ring); color: var(--ink); }
+    
+    .input-group { flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 6px; }
+    .input-group label { font-size: 0.75rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px;}
+    .field-input { width: 100%; border: 1px solid var(--ring-strong); border-radius: 10px; padding: 10px 12px; font-family: inherit; font-size: 0.95rem; font-weight: 600; outline: none; background: #fff; color: var(--ink);}
+    .field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
+
+    .ads-filters { display: flex; gap: 15px; background: #f8fafc; padding: 20px; border-radius: 16px; border: 1px dashed var(--ring-strong); margin-bottom: 20px; flex-wrap: wrap;}
+
+    /* ========================================================= */
+    /* MEGA KPIs (COLORES)                                       */
+    /* ========================================================= */
+    .mega-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; }
+    .mega-kpi { padding: 20px; border-radius: 16px; position: relative; overflow: hidden; border: 1px solid var(--ring); display: flex; flex-direction: column; justify-content: center;}
+    .mega-kpi-title { font-size: 0.8rem; font-weight: 800; text-transform: uppercase; margin-bottom: 5px; display: flex; align-items: center; gap: 6px; letter-spacing: 0.5px;}
+    .mega-kpi-value { font-size: 2.2rem; font-weight: 900; margin: 0; line-height: 1.1; letter-spacing: -1px;}
+    .mega-kpi-sub { font-size: 0.8rem; font-weight: 700; margin-top: 8px; display: block; opacity: 0.8;}
+    
+    .kpi-green { background: linear-gradient(135deg, #ecfdf5 0%, #fff 100%); border-color: #a7f3d0; } .kpi-green .mega-kpi-value { color: #15803d; } .kpi-green .mega-kpi-title { color: #166534; }
+    .kpi-blue { background: linear-gradient(135deg, #eff6ff 0%, #fff 100%); border-color: #bfdbfe; } .kpi-blue .mega-kpi-value { color: #1d4ed8; } .kpi-blue .mega-kpi-title { color: #1e3a8a; }
+    .kpi-purple { background: linear-gradient(135deg, #f5f3ff 0%, #fff 100%); border-color: #ddd6fe; } .kpi-purple .mega-kpi-value { color: #6d28d9; } .kpi-purple .mega-kpi-title { color: #4c1d95; }
+    .kpi-orange { background: linear-gradient(135deg, #fffbeb 0%, #fff 100%); border-color: #fde68a; } .kpi-orange .mega-kpi-value { color: #b45309; } .kpi-orange .mega-kpi-title { color: #78350f; }
+    .kpi-red { background: linear-gradient(135deg, #fef2f2 0%, #fff 100%); border-color: #fecaca; } .kpi-red .mega-kpi-value { color: #b91c1c; } .kpi-red .mega-kpi-title { color: #7f1d1d; }
+    .kpi-dark { background: linear-gradient(135deg, #f8fafc 0%, #fff 100%); border-color: #cbd5e1; } .kpi-dark .mega-kpi-value { color: #0f172a; } .kpi-dark .mega-kpi-title { color: #334155; }
+
+    /* ========================================================= */
+    /* TABLAS PREMIUM                                            */
+    /* ========================================================= */
+    .table-container { overflow-x: auto; width: 100%; border-radius: 12px; border: 1px solid var(--ring); }
+    .premium-table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
+    .premium-table th { background: #f8fafc; padding: 14px 12px; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-weight: 800; border-bottom: 2px solid var(--ring); letter-spacing: 0.5px;}
+    .premium-table td { padding: 16px 12px; font-size: 0.9rem; color: var(--ink); font-weight: 600; border-bottom: 1px solid var(--ring); }
+    .premium-table tr:hover td { background-color: var(--bg); }
+    
+    .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; }
+    .badge-green { background: #dcfce7; color: #15803d; }
+    .badge-blue { background: #dbeafe; color: #1d4ed8; }
+
+    /* BOTONES Y MODALES */
+    .btn { border: none; border-radius: 10px; padding: 10px 20px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: 0.2s; font-family: inherit;}
+    .btn-primary { background: var(--accent); color: white; } .btn-primary:hover { background: var(--accent-hover); }
+    .btn-outline { background: transparent; border: 1px solid var(--ring-strong); color: var(--ink); }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(5px); z-index: 2000; display: none; align-items: center; justify-content: center; }
+    .modal-card { background: #fff; width: 90%; max-width: 400px; border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+
+    /* SELECTOR DE RIFA */
+    #selectorRifa { position: fixed; inset: 0; background: #0f172a; z-index: 150; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
+    .selector-titulo { font-size: 1.1rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
+    .selector-subtitulo { font-size: 2rem; font-weight: 900; color: #fff; margin: 0 0 40px 0; letter-spacing: -1px; text-align: center; }
+    .selector-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; width: 100%; max-width: 780px; }
+    .selector-card { background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 32px 24px; cursor: pointer; transition: all 0.2s; text-align: center; }
+    .selector-card:hover { background: rgba(255,255,255,0.1); border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+    .selector-card-icon { font-size: 3rem; margin-bottom: 12px; display: block; }
+    .selector-card-title { font-size: 1.3rem; font-weight: 900; color: #fff; margin-bottom: 6px; }
+    .selector-card-sub { font-size: 0.85rem; font-weight: 600; color: #64748b; }
+    .selector-card-badge { display: inline-block; margin-top: 14px; padding: 5px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; }
+    .badge-diaria { background: #1e3a5f; color: #60a5fa; }
+    .badge-grande { background: #14532d; color: #4ade80; }
+  </style>
+</head>
+<body>
+
+  <div id="loginOverlay" class="modal-overlay" style="display: flex;">
+    <div class="modal-card">
+      <h2 style="margin: 0 0 8px; color: var(--ink); font-weight: 900; font-size: 1.6rem;">BI Dashboard PRO</h2>
+      <p style="color:var(--muted); font-size: 0.9rem; margin-bottom: 24px; font-weight: 500;">Centro de inteligencia de Los Plata</p>
+      <div class="input-group" style="margin-bottom:24px;">
+        <input id="loginPwd" type="password" class="field-input" placeholder="Clave de gerencia..." style="text-align:center; font-size: 1.1rem; padding: 14px;">
+      </div>
+      <button id="btnLogin" class="btn btn-primary" style="width: 100%; font-size: 1rem; padding: 14px;" onclick="verificarLogin()">Acceder a la Data</button>
+      <p id="loginMsg" style="color:var(--danger); font-size:0.85rem; font-weight:700; margin-top:12px;"></p>
+    </div>
+  </div>
+
+  <div id="selectorRifa">
+    <p class="selector-titulo">BI Analytics PRO · Los Plata</p>
+    <h2 class="selector-subtitulo">¿Qué rendimiento quieres ver?</h2>
+    <div class="selector-grid">
+      <div class="selector-card" onclick="seleccionarRifa('2cifras')">
+        <span class="selector-card-icon">🎟️</span>
+        <div class="selector-card-title">Rifas 2 Cifras</div>
+        <div class="selector-card-sub">Boletas del 01 al 99</div>
+        <span class="selector-card-badge badge-diaria">Rifa Diaria · $20.000</span>
+      </div>
+      <div class="selector-card" onclick="seleccionarRifa('3cifras')">
+        <span class="selector-card-icon">🏷️</span>
+        <div class="selector-card-title">Rifas 3 Cifras</div>
+        <div class="selector-card-sub">Boletas del 001 al 999</div>
+        <span class="selector-card-badge badge-diaria">Rifa Diaria · $20.000</span>
+      </div>
+      <div class="selector-card" onclick="seleccionarRifa('4cifras')">
+        <span class="selector-card-icon">🏢</span>
+        <div class="selector-card-title">El Apartamento</div>
+        <div class="selector-card-sub">Boletas del 0001 al 9999</div>
+        <span class="selector-card-badge badge-grande">Rifa Grande · $200.000</span>
+      </div>
+    </div>
+    <button onclick="window.location.href='/admin.html'" style="margin-top: 40px; background: transparent; border: 1px solid rgba(255,255,255,0.15); color: #64748b; border-radius: 10px; padding: 10px 20px; font-family: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer;">🔙 Volver al Panel</button>
+  </div>
+
+  <div class="top-bar" id="topBar" style="display:none;">
+    <div class="top-bar-title">LOS PLATA <span id="badgeRifa">BI Analytics PRO</span></div>
+    <div style="display:flex; gap:10px; align-items: center; flex-wrap: wrap;">
+      <span style="font-size: 0.8rem; color: #94a3b8; margin-right: 10px; font-weight: 600;" id="lastSyncTime">Corte: -</span>
+      <button class="btn" style="background: rgba(255,255,255,0.08); color: #94a3b8; border: 1px solid rgba(255,255,255,0.12); font-size:0.8rem;" onclick="volverAlSelector()">🔄 Cambiar Rifa</button>
+      <button class="btn btn-sync-avanzado" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); display:none;" onclick="sincronizarChateaPro(this)">🔄 Sync ChateaPro</button>
+      <button class="btn btn-sync-avanzado" style="background: #3b82f6; color: white; display:none;" onclick="sincronizarFacebook(this)">📊 Sync Meta Ads</button>
+      <button class="btn" style="background: white; color: var(--primary);" onclick="window.location.href='/admin.html'">🔙 Volver</button>
+    </div>
+  </div>
+
+  <div class="shell" id="mainDashboard">
+    
+    <div class="filter-zone">
+        <div class="quick-filters col-100">
+            <span style="font-size: 0.85rem; font-weight: 800; color: var(--ink-2); margin-right: 10px; text-transform: uppercase;">⏱️ Tiempos:</span>
+            <button class="btn-quick" onclick="setRangoFecha('hoy')">Hoy</button>
+            <button class="btn-quick" onclick="setRangoFecha('ayer')">Ayer</button>
+            <button class="btn-quick" onclick="setRangoFecha('semana')">Últimos 7 días</button>
+            <button class="btn-quick" onclick="setRangoFecha('mes')">Este Mes</button>
+            <button class="btn-quick" onclick="setRangoFecha('todo')">Histórico Total</button>
+        </div>
+        <div class="input-group"><label>Desde</label><input type="date" id="filt-desde" class="field-input" onchange="aplicarFiltrosEstadisticas()"></div>
+        <div class="input-group"><label>Hasta</label><input type="date" id="filt-hasta" class="field-input" onchange="aplicarFiltrosEstadisticas()"></div>
+        
+        <div class="input-group" id="asesor-dropdown-container" style="position: relative;">
+            <label>👤 Filtro de Asesores</label>
+            <div class="field-input" style="cursor: pointer; display: flex; justify-content: space-between;" onclick="document.getElementById('dropdown-asesores').style.display = document.getElementById('dropdown-asesores').style.display === 'block' ? 'none' : 'block'">
+                <span id="lbl-asesores-seleccionados" style="user-select: none;">Todos ▼</span>
+            </div>
+            <div id="dropdown-asesores" style="display: none; position: absolute; top: 100%; left: 0; width: 100%; background: #fff; border: 1px solid var(--ring-strong); border-radius: 12px; max-height: 250px; overflow-y: auto; z-index: 100; box-shadow: var(--shadow-lg); padding: 15px; margin-top: 5px;"></div>
+        </div>
+        <button class="btn btn-outline" style="height: 42px;" onclick="limpiarFiltrosRendimiento()">Limpiar Filtros</button>
+    </div>
+
+    <div class="saas-divider"><span>🌍 1. RENDIMIENTO GENERAL DE LA OPERACIÓN</span></div>
+    
+    <div class="row">
+        <div class="col-100 mega-kpi-grid">
+            <div class="mega-kpi kpi-green">
+                <div class="mega-kpi-title">💰 Recaudo Real</div>
+                <div class="mega-kpi-value" id="kpi-gen-recaudo">$0</div>
+                <span class="mega-kpi-sub">Dinero ingresado en bancos</span>
+            </div>
+            <div class="mega-kpi kpi-purple">
+                <div class="mega-kpi-title">🎟️ Ticket Promedio</div>
+                <div class="mega-kpi-value" id="kpi-gen-ticket">$0</div>
+                <span class="mega-kpi-sub">Recaudo / Cantidad Abonos</span>
+            </div>
+            <div class="mega-kpi kpi-blue">
+                <div class="mega-kpi-title">💳 Abonos Recibidos</div>
+                <div class="mega-kpi-value" id="kpi-gen-abonos">0</div>
+                <span class="mega-kpi-sub">Transacciones exitosas</span>
+            </div>
+            <div class="mega-kpi kpi-orange">
+                <div class="mega-kpi-title">📝 Boletas Vendidas</div>
+                <div class="mega-kpi-value" id="kpi-gen-nuevas">0</div>
+                <span class="mega-kpi-sub">Nuevos números separados</span>
+            </div>
+            <div class="mega-kpi kpi-green">
+                <div class="mega-kpi-title">💵 Boletas con Abono <span id="kpi-gen-con-abono-pct" style="font-size:0.75rem; font-weight:700; background:rgba(255,255,255,0.35); padding:2px 7px; border-radius:20px; margin-left:5px;">0%</span></div>
+                <div class="mega-kpi-value" id="kpi-gen-con-abono">0</div>
+                <span class="mega-kpi-sub">Boletas con al menos 1 pago</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-100">
+            <div class="card" style="height: auto;">
+                <h3 class="card-title">🎟️ INVENTARIO DE BOLETAS</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <div class="mega-kpi kpi-dark" style="padding: 18px;">
+                        <div class="mega-kpi-title">📦 Total Boletas</div>
+                        <div class="mega-kpi-value" id="kpi-inv-total" style="font-size: 1.8rem;">0</div>
+                        <span class="mega-kpi-sub">En la rifa</span>
+                    </div>
+                    <div class="mega-kpi kpi-blue" style="padding: 18px;">
+                        <div class="mega-kpi-title">🧾 Vendidas</div>
+                        <div class="mega-kpi-value" id="kpi-inv-registradas" style="font-size: 1.8rem;">0</div>
+                        <span class="mega-kpi-sub">Con cliente asignado</span>
+                    </div>
+                    <div class="mega-kpi kpi-green" style="padding: 18px;">
+                        <div class="mega-kpi-title">✅ Pagadas completo</div>
+                        <div class="mega-kpi-value" id="kpi-inv-pagadas" style="font-size: 1.8rem;">0</div>
+                        <span class="mega-kpi-sub">Sin saldo pendiente</span>
+                    </div>
+                    <div class="mega-kpi kpi-red" style="padding: 18px;">
+                        <div class="mega-kpi-title">⚠️ Sin abono inicial</div>
+                        <div class="mega-kpi-value" id="kpi-inv-cero" style="font-size: 1.8rem;">0</div>
+                        <span class="mega-kpi-sub">Separadas con $0</span>
+                    </div>
+                    <div class="mega-kpi kpi-green" style="padding: 18px; background: linear-gradient(135deg,#f0fdf4,#fff);">
+                        <div class="mega-kpi-title">🟢 Disponibles</div>
+                        <div class="mega-kpi-value" id="kpi-inv-libres" style="font-size: 1.8rem;">0</div>
+                        <span class="mega-kpi-sub">Boletas 100% libres</span>
+                    </div>
+                </div>
+                <div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--muted);">Ocupación de la rifa</span>
+                        <span style="font-size: 0.8rem; font-weight: 800; color: var(--ink);" id="kpi-inv-pct">0%</span>
+                    </div>
+                    <div style="background: var(--ring); border-radius: 99px; height: 10px; overflow: hidden;">
+                        <div id="kpi-inv-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #10b981, #3b82f6); border-radius: 99px; transition: width 0.6s ease;"></div>
+                    </div>
+                    <div style="display: flex; gap: 20px; margin-top: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 0.75rem; color: var(--muted); font-weight: 600;">🔵 Vendidas <strong id="kpi-inv-bar-v" style="color: var(--ink);">0</strong></span>
+                        <span style="font-size: 0.75rem; color: var(--muted); font-weight: 600;">🟢 Disponibles <strong id="kpi-inv-bar-l" style="color: var(--ink);">0</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-100">
+            <div class="card" style="height: 350px;">
+                <h3 class="card-title">📈 Evolución del Recaudo Diario</h3>
+                <canvas id="chartEvolucion"></canvas>
+            </div>
+        </div>
+    </div>
+
+  <!-- Zona administración: solo visible para rifas diarias -->
+  <div id="zonaAdminRifa" style="display:none; max-width:1500px; margin: 0 auto; padding: 0 20px;">
+
+    <!-- Historial de ganancias -->
+    <div class="saas-divider" style="margin-top: 40px;"><span>📆 HISTORIAL DE RIFAS ANTERIORES</span></div>
+
+    <!-- KPIs resumen del historial -->
+    <div class="row" style="margin-bottom: 20px;">
+      <div class="col-100 mega-kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+        <div class="mega-kpi kpi-green" style="padding:18px;">
+          <div class="mega-kpi-title">💰 Ganancia Total</div>
+          <div class="mega-kpi-value" id="hist-ganancia-total" style="font-size:1.8rem;">$0</div>
+          <span class="mega-kpi-sub">Suma de todas las rifas</span>
+        </div>
+        <div class="mega-kpi kpi-blue" style="padding:18px;">
+          <div class="mega-kpi-title">📋 Rifas Jugadas</div>
+          <div class="mega-kpi-value" id="hist-total-rifas" style="font-size:1.8rem;">0</div>
+          <span class="mega-kpi-sub">Total en historial</span>
+        </div>
+        <div class="mega-kpi kpi-purple" style="padding:18px;">
+          <div class="mega-kpi-title">📈 Ganancia Promedio</div>
+          <div class="mega-kpi-value" id="hist-ganancia-prom" style="font-size:1.8rem;">$0</div>
+          <span class="mega-kpi-sub">Por rifa</span>
+        </div>
+        <div class="mega-kpi kpi-orange" style="padding:18px;">
+          <div class="mega-kpi-title">🏆 Mejor Rifa</div>
+          <div class="mega-kpi-value" id="hist-mejor" style="font-size:1.8rem;">$0</div>
+          <span class="mega-kpi-sub">Ganancia máxima</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráfica de barras -->
+    <div class="row" style="margin-bottom: 20px;">
+      <div class="col-100">
+        <div class="card" style="height: 360px;">
+          <h3 class="card-title">💰 Ganancia Neta por Rifa
+            <span id="hist-sin-datos" style="font-size:0.8rem; font-weight:600; color:var(--muted); text-transform:none; letter-spacing:0;">Sin datos aún</span>
+          </h3>
+          <canvas id="chartHistorial"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla detalle -->
+    <div class="row" style="margin-bottom: 30px;">
+      <div class="col-100">
+        <div class="card" style="height: auto;">
+          <h3 class="card-title">📋 Detalle por Rifa</h3>
+          <div class="table-container" id="tablaHistorial">
+            <p style="text-align:center; color:var(--muted); padding:20px; font-weight:600;">Cargando historial...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Zona peligro: iniciar nueva rifa -->
+    <div style="background: #fff8f8; border: 2px dashed #fecaca; border-radius: 16px; padding: 24px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+      <div>
+        <div style="font-size: 1rem; font-weight: 800; color: #7f1d1d;">🔁 Administración de la Rifa</div>
+        <div style="font-size: 0.85rem; color: #b91c1c; font-weight: 500; margin-top: 4px;">Guarda el historial del sorteo actual y habilita uno nuevo. Esta acción limpia todas las boletas.</div>
+      </div>
+      <button class="btn" style="background: #dc2626; color: white; font-size: 0.95rem; padding: 12px 24px; white-space: nowrap;" onclick="abrirModalNuevaRifa()">🆕 Empezar Nueva Rifa</button>
+    </div>
+  </div>
+
+  <div id="seccionesAvanzadas" style="display:none;">
+
+    <div class="saas-divider"><span>👥 2. RENDIMIENTO POR ASESOR</span></div>
+    
+    <div class="row">
+        <div class="col-100 mega-kpi-grid">
+            <div class="mega-kpi kpi-blue">
+                <div class="mega-kpi-title">👥 Tráfico (Chats)</div>
+                <div class="mega-kpi-value" id="kpi-ase-chats">0</div>
+                <span class="mega-kpi-sub">Conversaciones asignadas</span>
+            </div>
+            <div class="mega-kpi kpi-purple">
+                <div class="mega-kpi-title">🎯 Tasa de Conversión</div>
+                <div class="mega-kpi-value" id="kpi-ase-conv">0%</div>
+                <span class="mega-kpi-sub">Ventas Nuevas / Chats</span>
+            </div>
+            <div class="mega-kpi kpi-green">
+                <div class="mega-kpi-title">💵 Ingreso x Chat (IPC)</div>
+                <div class="mega-kpi-value" id="kpi-ase-ipc">$0</div>
+                <span class="mega-kpi-sub">Recaudo / Chats</span>
+            </div>
+            <div class="mega-kpi kpi-orange">
+                <div class="mega-kpi-title">⏱️ Eficiencia Media</div>
+                <div class="mega-kpi-value" id="kpi-ase-tiempo">-</div>
+                <span class="mega-kpi-sub">Tiempo de primera respuesta</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-100">
+            <div class="card" style="height: 400px; display: flex; flex-direction: column;">
+                <h3 class="card-title">🏆 Ranking Oficial (Leaderboard)</h3>
+                <div class="table-container" id="leaderboardRender" style="flex: 1; overflow-y: auto;">
+                    <p style="text-align:center; color:var(--muted); padding: 20px;">Calculando ranking...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="saas-divider"><span>📢 3. ANÁLISIS DE META ADS</span><span id="meta-ultima-fecha-badge" style="display:none; font-size:0.7rem; font-weight:700; background:#fef3c7; color:#92400e; border:1px solid #fde68a; padding:4px 12px; border-radius:20px; text-transform:none; letter-spacing:0;">Cargando...</span></div>
+    
+    <div class="ads-filters">
+        <div class="input-group" id="fb-cuenta-wrap" style="position:relative;">
+            <label>🏦 Cuenta Publicitaria</label>
+            <div class="field-input" style="cursor:pointer;display:flex;justify-content:space-between;" onclick="toggleFbDrop('fb-cuenta-drop')">
+                <span id="fb-cuenta-label" style="user-select:none;">Todas las Cuentas ▼</span>
+            </div>
+            <div id="fb-cuenta-drop" style="display:none;position:absolute;top:100%;left:0;width:100%;min-width:220px;background:#fff;border:1px solid var(--ring-strong);border-radius:12px;max-height:250px;overflow-y:auto;z-index:300;box-shadow:var(--shadow-lg);padding:15px;margin-top:5px;"></div>
+        </div>
+        <div class="input-group" id="fb-campana-wrap" style="position:relative;">
+            <label>🎯 Campaña</label>
+            <div class="field-input" style="cursor:pointer;display:flex;justify-content:space-between;" onclick="toggleFbDrop('fb-campana-drop')">
+                <span id="fb-campana-label" style="user-select:none;">Todas las Campañas ▼</span>
+            </div>
+            <div id="fb-campana-drop" style="display:none;position:absolute;top:100%;left:0;width:100%;min-width:300px;background:#fff;border:1px solid var(--ring-strong);border-radius:12px;max-height:300px;overflow-y:auto;z-index:300;box-shadow:var(--shadow-lg);padding:15px;margin-top:5px;"></div>
+        </div>
+        <div class="input-group" id="fb-adset-wrap" style="position:relative;">
+            <label>📂 Conjunto de Anuncios</label>
+            <div class="field-input" style="cursor:pointer;display:flex;justify-content:space-between;" onclick="toggleFbDrop('fb-adset-drop')">
+                <span id="fb-adset-label" style="user-select:none;">Todos los Conjuntos ▼</span>
+            </div>
+            <div id="fb-adset-drop" style="display:none;position:absolute;top:100%;left:0;width:100%;min-width:300px;background:#fff;border:1px solid var(--ring-strong);border-radius:12px;max-height:300px;overflow-y:auto;z-index:300;box-shadow:var(--shadow-lg);padding:15px;margin-top:5px;"></div>
+        </div>
+        <div class="input-group" id="fb-ad-wrap" style="position:relative;">
+            <label>🖼️ Anuncio Específico</label>
+            <div class="field-input" style="cursor:pointer;display:flex;justify-content:space-between;" onclick="toggleFbDrop('fb-ad-drop')">
+                <span id="fb-ad-label" style="user-select:none;">Todos los Anuncios ▼</span>
+            </div>
+            <div id="fb-ad-drop" style="display:none;position:absolute;top:100%;left:0;width:100%;min-width:300px;background:#fff;border:1px solid var(--ring-strong);border-radius:12px;max-height:300px;overflow-y:auto;z-index:300;box-shadow:var(--shadow-lg);padding:15px;margin-top:5px;"></div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-100 mega-kpi-grid">
+            <div class="mega-kpi kpi-red">
+                <div class="mega-kpi-title">📢 Gasto Meta Ads</div>
+                <div class="mega-kpi-value" id="kpi-fb-gasto">$0</div>
+                <span class="mega-kpi-sub">Presupuesto consumido</span>
+            </div>
+            <div class="mega-kpi kpi-green">
+                <div class="mega-kpi-title">🚀 Retorno (ROAS)</div>
+                <div class="mega-kpi-value" id="kpi-fb-roas">0x</div>
+                <span class="mega-kpi-sub">Recaudo / Gasto Ads</span>
+            </div>
+            <div class="mega-kpi kpi-purple">
+                <div class="mega-kpi-title">🛍️ Costo x Venta (CPA)</div>
+                <div class="mega-kpi-value" id="kpi-fb-cpa">$0</div>
+                <span class="mega-kpi-sub" id="kpi-fb-compras-sub">0 ventas trackeadas</span>
+            </div>
+            <div class="mega-kpi kpi-orange">
+                <div class="mega-kpi-title">💬 Costo por Chat</div>
+                <div class="mega-kpi-value" id="kpi-fb-costochat">$0</div>
+                <span class="mega-kpi-sub" id="kpi-fb-chats-sub">0 chats generados</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-100 mega-kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+            <div class="mega-kpi kpi-dark" style="padding: 15px;">
+                <div class="mega-kpi-title" style="font-size:0.7rem;">🖱️ CPC (Clic)</div>
+                <div class="mega-kpi-value" id="kpi-fb-cpc" style="font-size:1.5rem;">$0</div>
+            </div>
+            <div class="mega-kpi kpi-blue" style="padding: 15px;">
+                <div class="mega-kpi-title" style="font-size:0.7rem;">🎯 CTR</div>
+                <div class="mega-kpi-value" id="kpi-fb-ctr" style="font-size:1.5rem;">0%</div>
+            </div>
+            <div class="mega-kpi kpi-dark" style="padding: 15px;">
+                <div class="mega-kpi-title" style="font-size:0.7rem;">👆 Clics</div>
+                <div class="mega-kpi-value" id="kpi-fb-clics" style="font-size:1.5rem;">0</div>
+            </div>
+            <div class="mega-kpi kpi-dark" style="padding: 15px;">
+                <div class="mega-kpi-title" style="font-size:0.7rem;">👀 Impresiones</div>
+                <div class="mega-kpi-value" id="kpi-fb-impr" style="font-size:1.5rem;">0</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-100">
+            <div class="card" style="height: 400px;">
+                <h3 class="card-title">⚖️ Relación Gasto vs Recaudo (Diario)</h3>
+                <canvas id="chartGastoIngreso"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div id="fb-table-render" style="display:none;"></div>
+
+    <div class="saas-divider"><span>🧠 4. INTELIGENCIA ARTIFICIAL GERENCIAL</span></div>
+    
+    <div class="row">
+        <div class="col-100">
+            <div class="card" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; display: flex; justify-content: space-between; align-items: center; padding: 30px; flex-wrap: wrap; gap: 20px; height: auto;">
+                <div style="flex: 1; min-width: 300px;">
+                    <h3 style="margin: 0 0 8px 0; font-size: 1.5rem; color: white; font-weight: 900;">Analista de Datos Autónomo</h3>
+                    <p style="margin: 0; font-size: 0.95rem; color: #94a3b8; line-height: 1.5;">La IA cruzará las ventas, abonos, Facebook Ads y el rendimiento individual de los asesores para extraer conclusiones y darte recomendaciones estratégicas para mañana.</p>
+                </div>
+                <button id="btnIA" class="btn" style="background: linear-gradient(90deg, #6a11cb, #2575fc); color: white; font-size: 1.1rem; padding: 14px 28px; box-shadow: 0 4px 15px rgba(37,117,252,0.4);" onclick="generarReporteIA()">✨ Generar Reporte Ejecutivo</button>
+            </div>
+            
+            <div class="card" id="ai-card" style="display: none; margin-top: 20px; border: 2px solid #8b5cf6; box-shadow: 0 10px 25px rgba(139, 92, 246, 0.15); height: auto;">
+                <div class="card-title" style="color: #8b5cf6; border-bottom-color: #ede9fe; font-size: 1.2rem;">🤖 Resultados del Análisis Predictivo</div>
+                <div id="ai-content" style="line-height: 1.7; font-size: 0.95rem; color: #334155;"></div>
+            </div>
+        </div>
+    </div>
+
+  </div><!-- fin seccionesAvanzadas -->
+
+  </div><!-- fin mainDashboard -->
+
+  <!-- Modal Nueva Rifa -->
+  <div id="modalNuevaRifa" class="modal-overlay">
+    <div class="modal-card" style="max-width: 460px; text-align: left;">
+      <div id="nrPaso1">
+        <h3 style="color: #dc2626; font-weight: 900; margin: 0 0 6px 0; font-size: 1.4rem;">🆕 Empezar Nueva Rifa</h3>
+        <p style="color: var(--ink-2); font-size: 0.9rem; margin-bottom: 20px; line-height: 1.5;">
+          Se <strong>guardará un snapshot</strong> del estado actual (boletas vendidas, recaudo, etc.) y luego <strong>todas las boletas quedarán disponibles</strong> para la nueva rifa.
+        </p>
+        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 14px; margin-bottom: 20px; font-size: 0.85rem; color: #b91c1c; font-weight: 600; line-height: 1.5;">
+          ⚠️ Esta acción es <strong>irreversible</strong>. Asegúrate de que el sorteo de hoy ya haya jugado antes de continuar.
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 22px;">
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 6px;">📅 ¿Cuándo juega el próximo sorteo?</label>
+            <input type="text" id="nrFecha" class="field-input" placeholder="Ej: 15 MAR, MARTES 18 MAR..." style="width:100%; box-sizing:border-box;">
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 6px;">⏰ ¿A qué hora cierra la venta? (para el temporizador)</label>
+            <input type="time" id="nrHora" class="field-input" value="11:00" style="width:100%; box-sizing:border-box;">
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 6px;">🎱 ¿Con qué lotería juega?</label>
+            <input type="text" id="nrLoteria" class="field-input" placeholder="Ej: CHONTICO DÍA, MARDE BOGOTÁ..." style="width:100%; box-sizing:border-box; text-transform: uppercase;">
+          </div>
+          <div style="border-top: 1px dashed var(--ring-strong); padding-top: 14px; margin-top: 4px;">
+            <p style="font-size: 0.8rem; font-weight: 800; color: var(--ink-2); text-transform: uppercase; margin: 0 0 12px 0;">📊 Resultados de la rifa que termina</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div>
+                <label style="font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 6px;">🏆 Nº de ganadores</label>
+                <input type="number" id="nrGanadores" class="field-input" placeholder="Ej: 3" min="0" style="width:100%; box-sizing:border-box;">
+              </div>
+              <div>
+                <label style="font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 6px;">💸 Total pagado</label>
+                <input type="number" id="nrPagado" class="field-input" placeholder="Ej: 2400000" min="0" style="width:100%; box-sizing:border-box;">
+              </div>
+            </div>
+          </div>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 16px; font-weight: 600;" id="nrRifaLabel">Rifa: —</p>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-outline" style="flex:1;" onclick="document.getElementById('modalNuevaRifa').style.display='none'">Cancelar</button>
+          <button class="btn" style="flex:1; background:#dc2626; color:white;" onclick="pasarAConfirmacion()">Continuar →</button>
+        </div>
+      </div>
+
+      <div id="nrPaso2" style="display:none;">
+        <h3 style="color: #dc2626; font-weight: 900; margin: 0 0 12px 0;">⚠️ Confirmar acción</h3>
+        <div style="background: var(--bg); border: 1px solid var(--ring); border-radius: 12px; padding: 16px; margin-bottom: 20px; font-size: 0.9rem; line-height: 1.8;">
+          <div>📅 Juega el: <strong id="nrResumenFecha">—</strong></div>
+          <div>⏰ Cierre venta: <strong id="nrResumenHora">—</strong></div>
+          <div>🎱 Lotería: <strong id="nrResumenLoteria">—</strong></div>
+          <div>🏆 Ganadores rifa anterior: <strong id="nrResumenGanadores">—</strong></div>
+          <div>💸 Total pagado a ganadores: <strong id="nrResumenPagado">—</strong></div>
+        </div>
+        <p style="font-size: 0.9rem; color: #b91c1c; font-weight: 700; margin-bottom: 20px;">¿Confirmas que el sorteo anterior ya jugó y quieres reiniciar la rifa?</p>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-outline" style="flex:1;" onclick="volverAPaso1()">← Atrás</button>
+          <button class="btn" id="btnConfirmarNuevaRifa" style="flex:2; background:#dc2626; color:white;" onclick="confirmarNuevaRifa()">🔁 Sí, reiniciar rifa</button>
+        </div>
+        <p id="nrMsg" style="margin-top:12px; font-size:0.85rem; font-weight:700; text-align:center;"></p>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalResult" class="modal-overlay">
+    <div class="modal-card">
+      <h3 id="mTitle" style="color:var(--ink); font-weight:900; margin:0 0 10px 0; font-size: 1.4rem;">Título</h3>
+      <p id="mMsg" style="color:var(--ink-2); font-size:0.95rem; margin-bottom:24px; white-space: pre-line; line-height: 1.5;"></p>
+      <button class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 1rem;" onclick="document.getElementById('modalResult').style.display='none'">Aceptar</button>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'asesor_pwd';
+    let globalAbonos = []; let globalVentas = []; let globalChatea = []; let globalFb = []; let globalesAPI = {};
+    let globalEstadoFb = {}; // { nombre → effective_status } obtenido directamente de Facebook
+    let chartLinea = null; let chartMix = null;
+    let tipoRifaActual = null; // '2cifras' | '3cifras' | '4cifras'
+    
+    window.globalStatsIA = {};
+    window.rankArrayIA = [];
+
+    const LABELS_RIFA = {
+      '2cifras': { badge: '🎟️ Rifas 2 Cifras',  titulo: '2 Cifras · Diaria $20K' },
+      '3cifras': { badge: '🏷️ Rifas 3 Cifras',  titulo: '3 Cifras · Diaria $20K' },
+      '4cifras': { badge: '🏢 El Apartamento', titulo: '4 Cifras · $200K' }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const pwd = localStorage.getItem(STORAGE_KEY);
+      if (pwd) verificarLogin(pwd, true);
+      document.getElementById('loginPwd').addEventListener('keyup', e => { if (e.key === 'Enter') verificarLogin(); });
+      document.getElementById('lastSyncTime').textContent = "Último acceso: " + new Date().toLocaleTimeString('es-CO', {hour: '2-digit', minute:'2-digit'});
+    });
+
+    async function verificarLogin(pwdAuto = null, auto = false) {
+      const pwd = pwdAuto || document.getElementById('loginPwd').value;
+      if(!pwd) return alert("Por favor ingresa la contraseña."); 
+      const btn = document.getElementById('btnLogin'); const msg = document.getElementById('loginMsg');
+      if(!auto) { btn.textContent = 'Verificando...'; btn.disabled = true; msg.textContent = ''; }
+      try {
+          const req = await fetch('/api/admin/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contrasena: pwd }) });
+          const res = await req.json();
+          if(!auto) { btn.textContent = 'Acceder a la Data'; btn.disabled = false; }
+          if(res.status === 'ok' && (res.asesor === 'Mateo' || res.asesor === 'Alejo P' || res.asesor === 'Alejo Plata')) {
+              localStorage.setItem(STORAGE_KEY, pwd);
+              document.getElementById('loginOverlay').style.display = 'none';
+              mostrarSelectorRifa();
+          } else {
+              if(!auto) msg.textContent = 'Acceso denegado. Solo gerencia.';
+              localStorage.removeItem(STORAGE_KEY);
+          }
+      } catch (error) { if(!auto) { btn.textContent = 'Acceder a la Data'; btn.disabled = false; msg.textContent = 'Error de conexión'; } }
+    }
+
+    function mostrarSelectorRifa() {
+      document.getElementById('selectorRifa').style.display = 'flex';
+      document.getElementById('topBar').style.display = 'none';
+      document.getElementById('mainDashboard').style.display = 'none';
+    }
+
+    function seleccionarRifa(tipo) {
+      tipoRifaActual = tipo;
+      document.getElementById('selectorRifa').style.display = 'none';
+      document.getElementById('topBar').style.display = 'flex';
+      document.getElementById('mainDashboard').style.display = 'block';
+      document.getElementById('badgeRifa').textContent = LABELS_RIFA[tipo]?.titulo || 'BI Analytics PRO';
+
+      // Secciones 2, 3 y 4 solo para la rifa de 4 cifras
+      const soloGrande = tipo === '4cifras';
+      document.getElementById('seccionesAvanzadas').style.display = soloGrande ? 'block' : 'none';
+
+      // Zona administración: solo para rifas diarias
+      document.getElementById('zonaAdminRifa').style.display = soloGrande ? 'none' : 'block';
+
+      // Botones de Sync en el top bar: solo relevantes para 4 cifras
+      document.querySelectorAll('.btn-sync-avanzado').forEach(b => {
+        b.style.display = soloGrande ? 'inline-flex' : 'none';
+      });
+
+      cargarEstadisticas();
+      if (soloGrande) cargarEstadoFacebook();
+      if (!soloGrande) cargarHistorialRifas();
+    }
+
+    function volverAlSelector() {
+      tipoRifaActual = null;
+      mostrarSelectorRifa();
+    }
+
+    function setRangoFecha(rango) {
+        const inputDesde = document.getElementById('filt-desde'); 
+        const inputHasta = document.getElementById('filt-hasta');
+        const hoy = new Date(); 
+        
+        // 👇 CORRECCIÓN MAGICA DE ZONA HORARIA PARA COLOMBIA 👇
+        const getFormat = (d) => {
+            const offset = d.getTimezoneOffset() * 60000;
+            return new Date(d.getTime() - offset).toISOString().split('T')[0];
+        };
+
+        if (rango === 'hoy') { inputDesde.value = getFormat(hoy); inputHasta.value = getFormat(hoy); } 
+        else if (rango === 'ayer') { const ayer = new Date(hoy); ayer.setDate(ayer.getDate() - 1); inputDesde.value = getFormat(ayer); inputHasta.value = getFormat(ayer); } 
+        else if (rango === 'semana') { const semana = new Date(hoy); semana.setDate(semana.getDate() - 6); inputDesde.value = getFormat(semana); inputHasta.value = getFormat(hoy); } 
+        else if (rango === 'mes') { const primeroMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1); inputDesde.value = getFormat(primeroMes); inputHasta.value = getFormat(hoy); } 
+        else if (rango === 'todo') { inputDesde.value = ''; inputHasta.value = ''; }
+        
+        aplicarFiltrosEstadisticas();
+    }
+
+    async function cargarEstadisticas() {
+        const div = document.getElementById('leaderboardRender');
+        div.innerHTML = '<p style="text-align:center; color:var(--muted); padding:30px; font-weight:600;">Descargando Big Data...</p>';
+        try {
+            const req = await fetch('/api/admin/estadisticas', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({ contrasena: localStorage.getItem(STORAGE_KEY), tipo: tipoRifaActual || '4cifras' })
+            });
+            const res = await req.json();
+            if (res.status === 'ok') prepararDashboard(res.abonos, res.ventas, res.globales, res.chatea, res.fb);
+            else div.innerHTML = `<p style="text-align:center; color:var(--danger);">${res.mensaje}</p>`;
+        } catch(e) { div.innerHTML = '<p style="text-align:center; color:var(--danger);">Error de conexión con la base de datos.</p>'; }
+    }
+
+    function prepararDashboard(abonos, ventas, globales, chatea, fb) {
+        const mapaNombres = {
+            "Luisa Arias": "Arias", "luisa arias": "Arias", 
+            "Manuela Rojas": "Manu R", "manuela rojas": "Manu R",
+            "Alejandra Valencia": "Aleja Valencia", "Aleja Valencia": "Aleja Valencia",     
+            "jennifer": "Jenifer", "Jennifer": "Jenifer",
+            "Alejandra Rodriguez": "Aleja Rodriguez", "Manuela Saldarriaga": "Saldarriaga",
+            "Mateo Plata Buitrago": "Mateo", "Anyeli Zuleta": "Anyeli", "Carlos Flores": "Carlos",
+            "Stiven ramirez": "Stiven", "Valeria Velez": "Valeria", "Alejandro": "Alejo Plata"
+        };
+
+        globalVentas = ventas.map(v => ({ ...v, asesor: mapaNombres[v.asesor?.trim()] || v.asesor?.trim() || 'Sin Asesor' }));
+        globalAbonos = abonos.map(a => ({ ...a, asesor: mapaNombres[a.asesor?.trim()] || a.asesor?.trim() || 'Sin Asesor' }));
+        globalChatea = (chatea || []).map(c => ({ ...c, asesor: mapaNombres[c.asesor?.trim()] || c.asesor?.trim() || 'Sin Asesor' })); 
+        globalFb = fb || [];
+        globalesAPI = globales || { registradas: 0, separadas_cero: 0, libres: 0, pagadas: 0, total: 0 };
+
+        // Llenar check de Asesores
+        const asesoresSet = new Set();
+        globalVentas.forEach(v => asesoresSet.add(v.asesor)); globalAbonos.forEach(a => asesoresSet.add(a.asesor)); globalChatea.forEach(c => asesoresSet.add(c.asesor));
+        
+        let htmlCheckboxes = `
+          <button onclick="seleccionarMiEquipo()" style="width:100%; margin-bottom:10px; padding:7px 0; background:var(--accent); color:#fff; border:none; border-radius:8px; font-weight:800; font-size:0.88rem; cursor:pointer; letter-spacing:0.5px;">👥 Mi equipo</button>
+          <label style="display:flex; gap:8px; margin-bottom:8px; cursor:pointer; font-weight:800; color:var(--ink);"><input type="checkbox" id="chk-all-asesores" checked onchange="toggleAllAsesores(this)" style="accent-color: var(--accent); width:16px; height:16px;"> Seleccionar Todos</label><hr style="border:0; border-top:1px solid var(--ring); margin: 10px 0;">`;
+        [...asesoresSet].sort().forEach(a => {
+            if(a !== 'Sin Asesor') htmlCheckboxes += `<label style="display:flex; gap:8px; margin-bottom:8px; cursor:pointer; font-size:0.9rem; font-weight:600; color:var(--ink-2);"><input type="checkbox" value="${a}" class="asesor-chk" checked onchange="verificarAsesoresYFiltrar()" style="accent-color: var(--blue); width:16px; height:16px;"> ${a}</label>`;
+        });
+        document.getElementById('dropdown-asesores').innerHTML = htmlCheckboxes;
+        
+        actualizarDropdownsFB();
+        setRangoFecha('semana');
+    }
+
+// Función global y segura para normalizar cualquier fecha a YYYY-MM-DD
+    function normalizarFecha(isoString) {
+        if (!isoString) return '';
+        let f = String(isoString).trim();
+        // Si ya viene en formato corto perfecto, no lo tocamos
+        if (/^\d{4}-\d{2}-\d{2}$/.test(f.substring(0, 10))) {
+            return f.substring(0, 10);
+        }
+        // Si viene con horas (ej: de la base de datos) lo ajustamos
+        if (!f.includes('Z') && !f.includes('+')) f += 'Z';
+        const d = new Date(f);
+        if (isNaN(d.getTime())) return f.substring(0, 10);
+        return (new Date(d.getTime() - d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    }
+
+    // ── SISTEMA MULTI-SELECT META ADS ────────────────────────────────────────
+
+    // Devuelve un mapa { nombre → effective_status } para el campo dado.
+    // Usa el estado real de Facebook si ya cargó; mientras tanto deja null (sin badge).
+    function getStatusMapFb(campo) {
+        const nombres = [...new Set(globalFb.map(f => f[campo]))].filter(Boolean);
+        const map = {};
+        nombres.forEach(n => { map[n] = globalEstadoFb[n] || null; });
+        return map;
+    }
+
+    // Genera el HTML del badge según el effective_status de Facebook
+    function getBadgeFb(status) {
+        if (!status) return ''; // Aún cargando, no mostrar nada
+        const cfg = {
+            'ACTIVE':          { bg: '#dcfce7', color: '#15803d', border: '#86efac', txt: '● Activa'         },
+            'PAUSED':          { bg: '#fef9c3', color: '#854d0e', border: '#fde047', txt: '● Pausada'        },
+            'CAMPAIGN_PAUSED': { bg: '#fef9c3', color: '#854d0e', border: '#fde047', txt: '● Camp. pausada'  },
+            'ADSET_PAUSED':    { bg: '#fef9c3', color: '#854d0e', border: '#fde047', txt: '● Conj. pausado'  },
+            'WITH_ISSUES':     { bg: '#fee2e2', color: '#b91c1c', border: '#fca5a5', txt: '● Con errores'    },
+            'DISAPPROVED':     { bg: '#fee2e2', color: '#b91c1c', border: '#fca5a5', txt: '● Rechazado'      },
+            'ARCHIVED':        { bg: '#f1f5f9', color: '#94a3b8', border: '#e2e8f0', txt: '● Archivada'      },
+            'DELETED':         { bg: '#f1f5f9', color: '#94a3b8', border: '#e2e8f0', txt: '● Eliminada'      },
+        };
+        const c = cfg[status] || { bg: '#f1f5f9', color: '#64748b', border: '#e2e8f0', txt: `● ${status}` };
+        return `<span style="flex-shrink:0;background:${c.bg};color:${c.color};border:1px solid ${c.border};padding:2px 9px;border-radius:20px;font-size:0.68rem;font-weight:800;letter-spacing:0.3px;">${c.txt}</span>`;
+    }
+
+    function toggleFbDrop(id) {
+        const todos = ['fb-cuenta-drop','fb-campana-drop','fb-adset-drop','fb-ad-drop'];
+        todos.forEach(d => { if (d !== id) document.getElementById(d).style.display = 'none'; });
+        const el = document.getElementById(id);
+        el.style.display = el.style.display === 'block' ? 'none' : 'block';
+    }
+
+    // Devuelve [] si "todos" están marcados (= sin filtro), o el array de marcados.
+    function getSelFb(prefix) {
+        const allChk = document.getElementById(`${prefix}-all`);
+        if (!allChk || allChk.checked) return [];
+        return Array.from(document.querySelectorAll(`.${prefix}-chk:checked`)).map(c => c.value);
+    }
+
+    function actualizarLabelFb(prefix, todosTxt) {
+        const chks = document.querySelectorAll(`.${prefix}-chk`);
+        const sel = Array.from(chks).filter(c => c.checked).length;
+        const lbl = document.getElementById(`${prefix}-label`);
+        if (lbl) lbl.textContent = (sel === chks.length || sel === 0) ? `${todosTxt} ▼` : `${sel} seleccionados ▼`;
+    }
+
+    function poblarCheckboxesFb(dropId, prefix, opciones, todosTxt, statusMap = null) {
+        const drop = document.getElementById(dropId);
+        if (!drop) return;
+        const prevChecked = new Set(Array.from(document.querySelectorAll(`.${prefix}-chk:checked`)).map(c => c.value));
+        const allWasChecked = document.getElementById(`${prefix}-all`)?.checked !== false;
+
+        // Ordenar: Activas primero, luego el resto
+        const sorted = statusMap
+            ? [...opciones].sort((a, b) => {
+                const sa = statusMap[a] === 'ACTIVE' ? 0 : 1;
+                const sb = statusMap[b] === 'ACTIVE' ? 0 : 1;
+                return sa - sb || a.localeCompare(b);
+              })
+            : opciones;
+
+        let html = `<label style="display:flex;gap:8px;margin-bottom:8px;cursor:pointer;font-weight:800;color:var(--ink);align-items:center;">
+            <input type="checkbox" id="${prefix}-all" ${allWasChecked ? 'checked' : ''} onchange="toggleAllFbGroup('${prefix}','${todosTxt}')" style="accent-color:var(--accent);width:16px;height:16px;flex-shrink:0;"> Seleccionar Todos
+        </label><hr style="border:0;border-top:1px solid var(--ring);margin:10px 0;">`;
+        sorted.forEach(op => {
+            const checked = allWasChecked || prevChecked.has(op) ? 'checked' : '';
+            const safe = op.replace(/"/g, '&quot;');
+            const badge = statusMap ? getBadgeFb(statusMap[op]) : '';
+            html += `<label style="display:flex;gap:8px;margin-bottom:8px;cursor:pointer;font-size:0.88rem;font-weight:600;color:var(--ink-2);align-items:center;">
+                <input type="checkbox" value="${safe}" class="${prefix}-chk" ${checked} onchange="verificarFbGrupo('${prefix}','${todosTxt}')" style="accent-color:#3b82f6;width:16px;height:16px;flex-shrink:0;">
+                <span style="flex:1;line-height:1.3;">${op}</span>
+                ${badge}
+            </label>`;
+        });
+        drop.innerHTML = html;
+        actualizarLabelFb(prefix, todosTxt);
+    }
+
+    function toggleAllFbGroup(prefix, todosTxt) {
+        const allChk = document.getElementById(`${prefix}-all`);
+        document.querySelectorAll(`.${prefix}-chk`).forEach(c => c.checked = allChk.checked);
+        actualizarLabelFb(prefix, todosTxt);
+        fbCascadeDesde(prefix);
+    }
+
+    function verificarFbGrupo(prefix, todosTxt) {
+        const chks = document.querySelectorAll(`.${prefix}-chk`);
+        document.getElementById(`${prefix}-all`).checked = Array.from(chks).every(c => c.checked);
+        actualizarLabelFb(prefix, todosTxt);
+        fbCascadeDesde(prefix);
+    }
+
+    // Cuando cambia un nivel, reconstruye los niveles inferiores en cascada y recalcula KPIs.
+    function fbCascadeDesde(prefix) {
+        const cuentasSel  = getSelFb('fb-cuenta');
+        const campanasSel = getSelFb('fb-campana');
+        const adsetsSel   = getSelFb('fb-adset');
+
+        const byC  = cuentasSel.length  > 0 ? globalFb.filter(f => cuentasSel.includes(f.nombre_cuenta))  : globalFb;
+        const byCP = campanasSel.length > 0 ? byC.filter(f => campanasSel.includes(f.nombre_campana))      : byC;
+        const byA  = adsetsSel.length   > 0 ? byCP.filter(f => adsetsSel.includes(f.nombre_adset))         : byCP;
+
+        if (prefix === 'fb-cuenta') {
+            poblarCheckboxesFb('fb-campana-drop', 'fb-campana', [...new Set(byC.map(f=>f.nombre_campana))].filter(Boolean).sort(), 'Todas las Campañas',  getStatusMapFb('nombre_campana'));
+            const cp2 = getSelFb('fb-campana');
+            const byCP2 = cp2.length > 0 ? byC.filter(f => cp2.includes(f.nombre_campana)) : byC;
+            poblarCheckboxesFb('fb-adset-drop',   'fb-adset',   [...new Set(byCP2.map(f=>f.nombre_adset))].filter(Boolean).sort(), 'Todos los Conjuntos', getStatusMapFb('nombre_adset'));
+            const a2 = getSelFb('fb-adset');
+            const byA2 = a2.length > 0 ? byCP2.filter(f => a2.includes(f.nombre_adset)) : byCP2;
+            poblarCheckboxesFb('fb-ad-drop',      'fb-ad',      [...new Set(byA2.map(f=>f.nombre_ad))].filter(Boolean).sort(),     'Todos los Anuncios',  getStatusMapFb('nombre_ad'));
+        } else if (prefix === 'fb-campana') {
+            poblarCheckboxesFb('fb-adset-drop',   'fb-adset',   [...new Set(byCP.map(f=>f.nombre_adset))].filter(Boolean).sort(),  'Todos los Conjuntos', getStatusMapFb('nombre_adset'));
+            const a2 = getSelFb('fb-adset');
+            const byA2 = a2.length > 0 ? byCP.filter(f => a2.includes(f.nombre_adset)) : byCP;
+            poblarCheckboxesFb('fb-ad-drop',      'fb-ad',      [...new Set(byA2.map(f=>f.nombre_ad))].filter(Boolean).sort(),     'Todos los Anuncios',  getStatusMapFb('nombre_ad'));
+        } else if (prefix === 'fb-adset') {
+            poblarCheckboxesFb('fb-ad-drop',      'fb-ad',      [...new Set(byA.map(f=>f.nombre_ad))].filter(Boolean).sort(),      'Todos los Anuncios',  getStatusMapFb('nombre_ad'));
+        }
+        aplicarFiltrosEstadisticas();
+    }
+
+    // Carga inicial de los 4 dropdowns (llamado cuando llegan los datos o cuando actualiza el estado)
+    function actualizarDropdownsFB() {
+        poblarCheckboxesFb('fb-cuenta-drop',  'fb-cuenta',  [...new Set(globalFb.map(f=>f.nombre_cuenta))].filter(Boolean).sort(),  'Todas las Cuentas',   getStatusMapFb('nombre_cuenta'));
+        poblarCheckboxesFb('fb-campana-drop', 'fb-campana', [...new Set(globalFb.map(f=>f.nombre_campana))].filter(Boolean).sort(), 'Todas las Campañas',  getStatusMapFb('nombre_campana'));
+        poblarCheckboxesFb('fb-adset-drop',   'fb-adset',   [...new Set(globalFb.map(f=>f.nombre_adset))].filter(Boolean).sort(),   'Todos los Conjuntos', getStatusMapFb('nombre_adset'));
+        poblarCheckboxesFb('fb-ad-drop',      'fb-ad',      [...new Set(globalFb.map(f=>f.nombre_ad))].filter(Boolean).sort(),      'Todos los Anuncios',  getStatusMapFb('nombre_ad'));
+    }
+
+    function aplicarFiltrosEstadisticas() {
+        const fDesde = document.getElementById('filt-desde').value; 
+        const fHasta = document.getElementById('filt-hasta').value;
+        const asesoresSeleccionados = Array.from(document.querySelectorAll('.asesor-chk:checked')).map(chk => chk.value);
+
+        const formatoPlata = new Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', minimumFractionDigits:0});
+        const formatoNum = new Intl.NumberFormat('es-CO');
+
+        // ============================================
+        // 1. RENDIMIENTO GENERAL Y ASESORES
+        // ============================================
+        const ventasF = globalVentas.filter(v => { const f = normalizarFecha(v.created_at); return (!fDesde || f >= fDesde) && (!fHasta || f <= fHasta) && asesoresSeleccionados.includes(v.asesor || 'Sin Asesor'); });
+        const abonosF = globalAbonos.filter(a => { const f = normalizarFecha(a.fecha_pago); return (!fDesde || f >= fDesde) && (!fHasta || f <= fHasta) && asesoresSeleccionados.includes(a.asesor || 'Sin Asesor'); });
+        const chateaF = globalChatea.filter(c => { const f = normalizarFecha(c.fecha); return (!fDesde || f >= fDesde) && (!fHasta || f <= fHasta) && asesoresSeleccionados.includes(c.asesor || 'Sin Asesor'); });
+
+        let totalNuevas = ventasF.length;
+        let dineroRecaudado = abonosF.reduce((acc, curr) => acc + Number(curr.monto), 0);
+        let totalPagos = abonosF.length;
+        let ticketProm = totalPagos > 0 ? (dineroRecaudado / totalPagos) : 0;
+
+        let totalAsignadas = 0, tiempos = [];
+        chateaF.forEach(c => { totalAsignadas += (c.conversaciones_asignadas || 0); if (c.tiempo_respuesta_segundos > 0) tiempos.push(c.tiempo_respuesta_segundos); });
+
+        let ipc = totalAsignadas > 0 ? (dineroRecaudado / totalAsignadas) : 0;
+        let convProm = totalAsignadas > 0 ? ((totalNuevas / totalAsignadas) * 100).toFixed(1) : 0;
+        let tProm = tiempos.length > 0 ? (tiempos.reduce((a,b)=>a+b, 0) / tiempos.length) : 0;
+
+        // Escribir KPIs Generales
+        const boletasVendidasSet = new Set(ventasF.map(v => v.boleta));
+        const boletasConAbono = [...boletasVendidasSet].filter(
+            num => globalAbonos.some(a => a.numero_boleta === num)
+        ).length;
+
+        document.getElementById('kpi-gen-recaudo').textContent = formatoPlata.format(dineroRecaudado);
+        document.getElementById('kpi-gen-ticket').textContent = formatoPlata.format(ticketProm);
+        document.getElementById('kpi-gen-abonos').textContent = formatoNum.format(totalPagos);
+        document.getElementById('kpi-gen-nuevas').textContent = formatoNum.format(totalNuevas);
+        const pctConAbono = totalNuevas > 0 ? ((boletasConAbono / totalNuevas) * 100).toFixed(1) : 0;
+        document.getElementById('kpi-gen-con-abono').textContent = formatoNum.format(boletasConAbono);
+        document.getElementById('kpi-gen-con-abono-pct').textContent = pctConAbono + '%';
+
+        document.getElementById('kpi-inv-total').textContent = formatoNum.format(globalesAPI.total || 0);
+        document.getElementById('kpi-inv-registradas').textContent = formatoNum.format(globalesAPI.registradas);
+        document.getElementById('kpi-inv-pagadas').textContent = formatoNum.format(globalesAPI.pagadas || 0);
+        document.getElementById('kpi-inv-cero').textContent = formatoNum.format(globalesAPI.separadas_cero);
+        document.getElementById('kpi-inv-libres').textContent = formatoNum.format(globalesAPI.libres);
+
+        // Barra de progreso de ocupación
+        const pctOcup = globalesAPI.total > 0 ? ((globalesAPI.registradas / globalesAPI.total) * 100) : 0;
+        document.getElementById('kpi-inv-pct').textContent = pctOcup.toFixed(1) + '%';
+        document.getElementById('kpi-inv-bar').style.width = pctOcup.toFixed(1) + '%';
+        document.getElementById('kpi-inv-bar-v').textContent = formatoNum.format(globalesAPI.registradas);
+        document.getElementById('kpi-inv-bar-l').textContent = formatoNum.format(globalesAPI.libres);
+
+        // Escribir KPIs Asesores
+        document.getElementById('kpi-ase-chats').textContent = formatoNum.format(totalAsignadas);
+        document.getElementById('kpi-ase-ipc').textContent = formatoPlata.format(ipc);
+        document.getElementById('kpi-ase-conv').textContent = convProm + '%';
+        document.getElementById('kpi-ase-tiempo').textContent = tProm > 0 ? (tProm < 60 ? Math.floor(tProm) + "s" : Math.floor(tProm/60) + "m " + Math.floor(tProm%60) + "s") : "-";
+
+        let recaudoPorDia = {}, statsAsesor = {};
+        asesoresSeleccionados.forEach(a => statsAsesor[a] = { recaudo: 0, nuevas: 0, cantAbonos: 0, chats: 0, tiempos: [] });
+
+        ventasF.forEach(v => { const a = v.asesor || 'Sin Asesor'; if(statsAsesor[a]) statsAsesor[a].nuevas++; });
+        abonosF.forEach(a => { 
+            const as = a.asesor || 'Sin Asesor'; const m = Number(a.monto); const f = normalizarFecha(a.fecha_pago);
+            recaudoPorDia[f] = (recaudoPorDia[f] || 0) + m;
+            if(statsAsesor[as]) { statsAsesor[as].recaudo += m; statsAsesor[as].cantAbonos++; }
+        });
+        chateaF.forEach(c => { const as = c.asesor || 'Sin Asesor'; if(statsAsesor[as]) { statsAsesor[as].chats += (c.conversaciones_asignadas || 0); } });
+
+        // Leaderboard
+        const rankArray = [];
+        Object.keys(statsAsesor).forEach(as => {
+            const d = statsAsesor[as];
+            if (d.recaudo > 0 || d.nuevas > 0 || d.chats > 0 || d.cantAbonos > 0) {
+                let conv = d.chats > 0 ? ((d.nuevas / d.chats) * 100) : 0;
+                let ipcAs = d.chats > 0 ? (d.recaudo / d.chats) : 0;
+                rankArray.push({ asesor: as, recaudo: d.recaudo, nuevas: d.nuevas, cantAbonos: d.cantAbonos, chats: d.chats, conversion: conv, ipc: ipcAs });
+            }
+        });
+        rankArray.sort((a, b) => b.recaudo - a.recaudo); 
+
+        const leadDiv = document.getElementById('leaderboardRender');
+        if(rankArray.length === 0) { leadDiv.innerHTML = '<p style="text-align:center; color:var(--muted); padding:20px;">No hay actividad en estas fechas.</p>'; } 
+        else {
+            let lHtml = '<table class="premium-table"><thead><tr><th>Rnk</th><th>Asesor</th><th style="text-align:right;">Recaudo</th><th>Ventas</th><th>Abonos</th><th>Chats</th><th>Conv %</th><th style="text-align:right;">IPC</th></tr></thead><tbody>';
+            rankArray.forEach((r, idx) => {
+                let medalla = `${idx + 1}°`;
+                if(idx === 0) medalla = '🥇 1°'; else if(idx === 1) medalla = '🥈 2°'; else if(idx === 2) medalla = '🥉 3°';
+                let convClass = r.conversion > 15 ? 'badge-green' : (r.conversion > 5 ? 'badge-blue' : '');
+                lHtml += `<tr style="${idx < 3 ? 'background-color:#f8fafc;' : ''}">
+                            <td style="font-weight:900; color:var(--ink-2);">${medalla}</td>
+                            <td style="font-weight:800;">👤 ${r.asesor}</td>
+                            <td style="text-align:right; font-weight:900; color:var(--accent-hover);">${formatoPlata.format(r.recaudo)}</td>
+                            <td>${r.nuevas}</td>
+                            <td style="color:var(--orange); font-weight:800;">${r.cantAbonos}</td>
+                            <td style="color:var(--blue); font-weight:800;">${r.chats > 0 ? r.chats : '-'}</td>
+                            <td><span class="badge ${convClass}">${r.conversion.toFixed(1)}%</span></td>
+                            <td style="text-align:right; font-weight:800; color:var(--ink-2);">${formatoPlata.format(r.ipc)}</td>
+                          </tr>`;
+            });
+            lHtml += '</tbody></table>';
+            leadDiv.innerHTML = lHtml;
+        }
+
+
+        // ============================================
+        // 2. RENDIMIENTO FACEBOOK ADS
+        // ============================================
+        const selCuentas  = getSelFb('fb-cuenta');
+        const selCampanas = getSelFb('fb-campana');
+        const selAdsets   = getSelFb('fb-adset');
+        const selAds      = getSelFb('fb-ad');
+
+        const fbF = globalFb.filter(f => {
+            const fDate    = normalizarFecha(f.fecha);
+            const dateOk   = (!fDesde || fDate >= fDesde) && (!fHasta || fDate <= fHasta);
+            const cuentaOk = selCuentas.length  === 0 || selCuentas.includes(f.nombre_cuenta);
+            const campOk   = selCampanas.length === 0 || selCampanas.includes(f.nombre_campana);
+            const adsetOk  = selAdsets.length   === 0 || selAdsets.includes(f.nombre_adset);
+            const adOk     = selAds.length      === 0 || selAds.includes(f.nombre_ad);
+            return dateOk && cuentaOk && campOk && adsetOk && adOk;
+        });
+
+        // Badge que muestra el último dato disponible de Meta
+        const metaBadge = document.getElementById('meta-ultima-fecha-badge');
+        if (globalFb.length > 0) {
+            const ultimaFechaDb = [...new Set(globalFb.map(f => normalizarFecha(f.fecha)))].filter(Boolean).sort().pop();
+            const fechaLeg = new Date(ultimaFechaDb + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
+            // Solo avisar si el último dato tiene más de 7 días (probable falta de sync)
+            const hace7DiasStr = (()=>{ const d=new Date(); d.setDate(d.getDate()-7); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().split('T')[0]; })();
+            let estadoBadge = `📅 Último dato Meta: ${fechaLeg}`;
+            if (ultimaFechaDb < hace7DiasStr) estadoBadge += ' — ⚠️ Sincroniza Meta Ads';
+            metaBadge.textContent = estadoBadge;
+            metaBadge.style.display = 'inline-block';
+        } else {
+            metaBadge.textContent = '⚠️ Sin datos de Meta — Haz clic en "Sync Meta Ads"';
+            metaBadge.style.display = 'inline-block';
+        }
+
+        let totalGasto = 0, totalClicks = 0, totalImpresiones = 0, totalChatsAds = 0, totalComprasAds = 0;
+        let fbRecaudoPorDia = {};
+        const agrupadoFB = {};
+
+        fbF.forEach(f => {
+            const fDate = normalizarFecha(f.fecha);
+            const gas = Number(f.gasto) || 0;
+            const imp = Number(f.impresiones) || 0;
+            const cli = Number(f.clics_enlace) || 0;
+            const cha = Number(f.conversaciones) || 0;
+            const com = Number(f.compras) || 0;
+
+            totalGasto += gas; totalImpresiones += imp; totalClicks += cli; totalChatsAds += cha; totalComprasAds += com;
+            fbRecaudoPorDia[fDate] = (fbRecaudoPorDia[fDate] || 0) + gas;
+
+            const key = f.ad_id || f.nombre_ad;
+            if(!agrupadoFB[key]) {
+                agrupadoFB[key] = { campana: f.nombre_campana, adset: f.nombre_adset, ad: f.nombre_ad, gasto: 0, impresiones: 0, clics: 0, conversaciones: 0, compras: 0 };
+            }
+            agrupadoFB[key].gasto += gas; agrupadoFB[key].impresiones += imp; agrupadoFB[key].clics += cli; agrupadoFB[key].conversaciones += cha; agrupadoFB[key].compras += com;
+        });
+
+        let cpc = totalClicks > 0 ? (totalGasto / totalClicks) : 0;
+        let ctr = totalImpresiones > 0 ? ((totalClicks / totalImpresiones) * 100).toFixed(2) : 0;
+        let costoChat = totalChatsAds > 0 ? (totalGasto / totalChatsAds) : 0;
+        let cpa = totalComprasAds > 0 ? (totalGasto / totalComprasAds) : 0;
+        let roas = totalGasto > 0 ? (dineroRecaudado / totalGasto).toFixed(2) : 0;
+
+        document.getElementById('kpi-fb-gasto').textContent = formatoPlata.format(totalGasto);
+        document.getElementById('kpi-fb-roas').textContent = roas + "x";
+        document.getElementById('kpi-fb-cpc').textContent = formatoPlata.format(cpc);
+        document.getElementById('kpi-fb-ctr').textContent = ctr + "%";
+        document.getElementById('kpi-fb-costochat').textContent = formatoPlata.format(costoChat);
+        document.getElementById('kpi-fb-chats-sub').textContent = formatoNum.format(totalChatsAds) + " chats generados";
+        document.getElementById('kpi-fb-cpa').textContent = formatoPlata.format(cpa);
+        document.getElementById('kpi-fb-compras-sub').textContent = formatoNum.format(totalComprasAds) + " compras en FB";
+        document.getElementById('kpi-fb-clics').textContent = formatoNum.format(totalClicks);
+        document.getElementById('kpi-fb-impr').textContent = formatoNum.format(totalImpresiones);
+
+        // Tabla Desglose FB
+        const filasFB = Object.values(agrupadoFB).sort((a,b) => b.gasto - a.gasto);
+        let tHtml = '<div class="table-container"><table class="premium-table"><thead><tr><th>Anuncio</th><th>Campaña</th><th>Gasto</th><th>Impresiones</th><th>Clics</th><th>Chats</th><th>Costo/Chat</th><th>Ventas</th><th>CPA</th></tr></thead><tbody>';
+        if (filasFB.length === 0) { tHtml = '<p style="text-align:center; color:var(--muted); padding: 30px; font-weight: 600;">No hay anuncios activos para estos filtros.</p>'; } 
+        else {
+            filasFB.forEach(r => {
+                let costoChatF = r.conversaciones > 0 ? (r.gasto / r.conversaciones) : 0;
+                let cpaF = r.compras > 0 ? (r.gasto / r.compras) : 0;
+                tHtml += `<tr>
+                    <td style="text-align:left; max-width: 250px; white-space: normal; line-height: 1.4;">
+                        <strong style="color:var(--ink);">${r.ad || 'Desconocido'}</strong><br>
+                        <span style="font-size:0.75rem; color:var(--muted);">${r.adset || ''}</span>
+                    </td>
+                    <td style="text-align:left; max-width: 150px; white-space: normal; color:var(--ink-2); font-size: 0.8rem; font-weight:700;">${r.campana || ''}</td>
+                    <td style="color: #be185d; font-weight: 900;">${formatoPlata.format(r.gasto)}</td>
+                    <td>${formatoNum.format(r.impresiones)}</td>
+                    <td>${formatoNum.format(r.clics)}</td>
+                    <td style="color: #1d4ed8; font-weight: 800;">${r.conversaciones}</td>
+                    <td style="color: #c2410c; font-weight: 800;">${formatoPlata.format(costoChatF)}</td>
+                    <td style="color: #15803d; font-weight: 900;">${r.compras}</td>
+                    <td style="color: #15803d; font-weight: 900;">${formatoPlata.format(cpaF)}</td>
+                </tr>`;
+            });
+            tHtml += '</tbody></table></div>';
+        }
+        document.getElementById('fb-table-render').innerHTML = tHtml;
+
+        // ============================================
+        // 3. GRÁFICAS Y ACTUALIZACIÓN IA
+        // ============================================
+        const todasLasFechas = [...new Set([...Object.keys(recaudoPorDia), ...Object.keys(fbRecaudoPorDia)])].sort();
+        
+        // Gráfica Lineal (Solo Recaudo)
+        if (chartLinea) chartLinea.destroy();
+        chartLinea = new Chart(document.getElementById('chartEvolucion').getContext('2d'), {
+            type: 'line', data: { labels: todasLasFechas.map(f => new Date(f + 'T12:00:00').toLocaleDateString('es-CO', {day:'2-digit', month:'short'})), datasets: [{ data: todasLasFechas.map(f => recaudoPorDia[f] || 0), borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 4, tension: 0.4, fill: true, pointBackgroundColor: '#0f172a', pointRadius: 4 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+        });
+
+        // Gráfica Mixta (Gasto vs Recaudo)
+        if (chartMix) chartMix.destroy();
+        chartMix = new Chart(document.getElementById('chartGastoIngreso').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: todasLasFechas.map(f => new Date(f + 'T12:00:00').toLocaleDateString('es-CO', {day:'2-digit', month:'short'})),
+                datasets: [
+                    { label: 'Gasto Meta Ads ($)', data: todasLasFechas.map(f => fbRecaudoPorDia[f] || 0), backgroundColor: '#ef4444', borderRadius: 4 },
+                    { label: 'Recaudo Real ($)', data: todasLasFechas.map(f => recaudoPorDia[f] || 0), backgroundColor: '#10b981', borderRadius: 4 }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
+        });
+
+        // Pasar todo a la IA
+        window.globalStatsIA = { 
+            recaudoTotal: dineroRecaudado, ticketPromedio: ticketProm, ventasNuevas: totalNuevas, cantidadAbonos: totalPagos, 
+            chatsTotales: totalAsignadas, conversionPromedio: convProm + '%', ingresoPorChatIPC: ipc,
+            gastoFacebook: totalGasto, roasFacebook: roas + 'x', costoPromedioPorChat: costoChat, costoDeAdquisicionCPA: cpa
+        };
+        window.rankArrayIA = rankArray;
+    }
+
+    async function generarReporteIA() {
+        const btn = document.getElementById('btnIA');
+        const card = document.getElementById('ai-card');
+        const content = document.getElementById('ai-content');
+        
+        btn.innerHTML = '⏳ Analizando con IA (Tomará 5 a 10 segundos)...'; btn.disabled = true; card.style.display = 'block';
+        content.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--muted); font-weight:600;"><div style="font-size: 2.5rem; margin-bottom: 10px;">🧠</div>Cruzando variables y escribiendo conclusiones ejecutivas...</div>';
+
+        const payload = { globales: window.globalStatsIA, stats: window.rankArrayIA, contrasena: localStorage.getItem(STORAGE_KEY) };
+
+        try {
+            const req = await fetch('/api/admin/analisis-ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const res = await req.json();
+            if (res.status === 'ok') content.innerHTML = res.html;
+            else content.innerHTML = `<p style="color:var(--danger); text-align:center; font-weight:800;"><b>Error de IA:</b> ${res.mensaje}</p>`;
+        } catch (e) {
+            content.innerHTML = `<p style="color:var(--danger); text-align:center; font-weight:800;">Error crítico de conexión con OpenAI.</p>`;
+        }
+        btn.innerHTML = '✨ Actualizar Reporte Ejecutivo'; btn.disabled = false;
+    }
+
+    // Funciones de Checkbox y Limpieza
+    const EXCLUIDOS_MI_EQUIPO = ['alejandra plata', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
+    function seleccionarMiEquipo() {
+        document.querySelectorAll('.asesor-chk').forEach(chk => {
+            chk.checked = !EXCLUIDOS_MI_EQUIPO.includes(chk.value.toLowerCase().trim());
+        });
+        verificarAsesoresYFiltrar();
+    }
+    function toggleAllAsesores(source) { document.querySelectorAll('.asesor-chk').forEach(chk => chk.checked = source.checked); verificarAsesoresYFiltrar(); }
+    function verificarAsesoresYFiltrar() {
+        const chks = document.querySelectorAll('.asesor-chk'); const allChecked = Array.from(chks).every(c => c.checked);
+        document.getElementById('chk-all-asesores').checked = allChecked;
+        const sel = Array.from(chks).filter(c => c.checked).length;
+        document.getElementById('lbl-asesores-seleccionados').textContent = allChecked ? 'Todos ▼' : (sel === 0 ? 'Ninguno ▼' : `${sel} filtrados ▼`);
+        aplicarFiltrosEstadisticas();
+    }
+    function limpiarFiltrosRendimiento() { 
+        setRangoFecha('todo'); 
+        const chkAll = document.getElementById('chk-all-asesores'); 
+        if (chkAll) { chkAll.checked = true; toggleAllAsesores(chkAll); }
+        // Resetear todos los multi-select de Meta a "Todos seleccionados"
+        [['fb-cuenta','Todas las Cuentas'],['fb-campana','Todas las Campañas'],['fb-adset','Todos los Conjuntos'],['fb-ad','Todos los Anuncios']].forEach(([prefix, txt]) => {
+            const allChk = document.getElementById(`${prefix}-all`);
+            if (allChk) { allChk.checked = true; document.querySelectorAll(`.${prefix}-chk`).forEach(c => c.checked = true); }
+            const lbl = document.getElementById(`${prefix}-label`);
+            if (lbl) lbl.textContent = `${txt} ▼`;
+        });
+        aplicarFiltrosEstadisticas();
+    }
+    // ── HISTORIAL DE RIFAS ────────────────────────────────────────────
+    let chartHistorial = null;
+
+    async function cargarHistorialRifas() {
+      document.getElementById('tablaHistorial').innerHTML =
+        '<p style="text-align:center; color:var(--muted); padding:20px; font-weight:600;">Cargando...</p>';
+
+      try {
+        const req = await fetch('/api/admin/nueva-rifa', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            accion: 'obtener_historial',
+            tipo:   tipoRifaActual
+          })
+        });
+        const res = await req.json();
+        if (res.status !== 'ok') throw new Error(res.mensaje);
+        renderHistorial(res.historial || []);
+      } catch (e) {
+        document.getElementById('tablaHistorial').innerHTML =
+          `<p style="text-align:center; color:var(--danger); padding:20px;">${e.message}</p>`;
+      }
+    }
+
+    function renderHistorial(data) {
+      const fmtCOP = (n) => new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 }).format(n || 0);
+      const fmtNum = (n) => new Intl.NumberFormat('es-CO').format(n || 0);
+
+      const sinDatos = document.getElementById('hist-sin-datos');
+
+      if (data.length === 0) {
+        sinDatos.style.display = 'inline';
+        document.getElementById('tablaHistorial').innerHTML =
+          '<p style="text-align:center; color:var(--muted); padding:30px; font-weight:600;">Aún no hay rifas guardadas en el historial.</p>';
+        return;
+      }
+      sinDatos.style.display = 'none';
+
+      // KPIs resumen
+      const totalGanancia  = data.reduce((s, r) => s + Number(r.ganancia_neta || 0), 0);
+      const totalRifas     = data.length;
+      const promGanancia   = totalRifas > 0 ? totalGanancia / totalRifas : 0;
+      const mejorGanancia  = Math.max(...data.map(r => Number(r.ganancia_neta || 0)));
+
+      document.getElementById('hist-ganancia-total').textContent = fmtCOP(totalGanancia);
+      document.getElementById('hist-total-rifas').textContent    = totalRifas;
+      document.getElementById('hist-ganancia-prom').textContent  = fmtCOP(promGanancia);
+      document.getElementById('hist-mejor').textContent          = fmtCOP(mejorGanancia);
+
+      // Gráfica de barras
+      const labels  = data.map(r => {
+        const d = new Date(r.fecha_guardado + 'T12:00:00');
+        return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' });
+      });
+      const ganancias = data.map(r => Number(r.ganancia_neta || 0));
+      const colores   = ganancias.map(g => g >= 0 ? '#10b981' : '#ef4444');
+
+      if (chartHistorial) chartHistorial.destroy();
+      chartHistorial = new Chart(document.getElementById('chartHistorial').getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Ganancia neta ($)',
+            data: ganancias,
+            backgroundColor: colores,
+            borderRadius: 8,
+            borderSkipped: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => ' ' + fmtCOP(ctx.raw)
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: v => fmtCOP(v)
+              }
+            }
+          }
+        }
+      });
+
+      // Tabla detalle (más reciente primero)
+      const dataSorted = [...data].reverse();
+      let html = `<table class="premium-table">
+        <thead><tr>
+          <th>Fecha</th><th>Lotería</th><th>Vendidas</th>
+          <th style="text-align:right;">Recaudo</th>
+          <th>Ganadores</th>
+          <th style="text-align:right;">Pagado</th>
+          <th style="text-align:right;">Ganancia</th>
+        </tr></thead><tbody>`;
+
+      dataSorted.forEach(r => {
+        const ganancia = Number(r.ganancia_neta || 0);
+        const colorG   = ganancia >= 0 ? '#15803d' : '#b91c1c';
+        const badgeG   = ganancia >= 0
+          ? `<span style="background:#dcfce7; color:#15803d; padding:3px 8px; border-radius:6px; font-size:0.8rem; font-weight:800;">${fmtCOP(ganancia)}</span>`
+          : `<span style="background:#fee2e2; color:#b91c1c; padding:3px 8px; border-radius:6px; font-size:0.8rem; font-weight:800;">${fmtCOP(ganancia)}</span>`;
+
+        const fecha = new Date(r.fecha_guardado + 'T12:00:00').toLocaleDateString('es-CO', { weekday:'short', day:'2-digit', month:'short' });
+
+        html += `<tr>
+          <td style="font-weight:700;">${fecha}</td>
+          <td style="color:var(--ink-2);">${r.loteria || '—'}</td>
+          <td>${fmtNum(r.vendidas)} <span style="color:var(--muted); font-size:0.8rem;">/ ${fmtNum(r.total_boletas)}</span></td>
+          <td style="text-align:right; font-weight:800; color:var(--accent-hover);">${fmtCOP(r.recaudo_total)}</td>
+          <td style="text-align:center;">${fmtNum(r.ganadores)}</td>
+          <td style="text-align:right; color:var(--danger); font-weight:700;">${fmtCOP(r.total_pagado_ganadores)}</td>
+          <td style="text-align:right;">${badgeG}</td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      document.getElementById('tablaHistorial').innerHTML = html;
+    }
+
+    // ── NUEVA RIFA ────────────────────────────────────────────────────
+    function abrirModalNuevaRifa() {
+      document.getElementById('nrPaso1').style.display = 'block';
+      document.getElementById('nrPaso2').style.display = 'none';
+      document.getElementById('nrMsg').textContent = '';
+      document.getElementById('nrRifaLabel').textContent = `Rifa: ${LABELS_RIFA[tipoRifaActual]?.badge || tipoRifaActual}`;
+      document.getElementById('modalNuevaRifa').style.display = 'flex';
+    }
+
+    function pasarAConfirmacion() {
+      const fecha     = document.getElementById('nrFecha').value.trim().toUpperCase();
+      const hora      = document.getElementById('nrHora').value;
+      const loteria   = document.getElementById('nrLoteria').value.trim().toUpperCase();
+      const ganadores = document.getElementById('nrGanadores').value;
+      const pagado    = document.getElementById('nrPagado').value;
+      if (!fecha || !hora || !loteria) return alert('Por favor completa fecha, hora y lotería.');
+
+      const fmtCOP = (n) => '$' + Number(n || 0).toLocaleString('es-CO');
+      document.getElementById('nrResumenFecha').textContent     = fecha;
+      document.getElementById('nrResumenHora').textContent      = hora;
+      document.getElementById('nrResumenLoteria').textContent   = loteria;
+      document.getElementById('nrResumenGanadores').textContent = ganadores || '0';
+      document.getElementById('nrResumenPagado').textContent    = fmtCOP(pagado);
+      document.getElementById('nrPaso1').style.display = 'none';
+      document.getElementById('nrPaso2').style.display = 'block';
+    }
+
+    function volverAPaso1() {
+      document.getElementById('nrPaso1').style.display = 'block';
+      document.getElementById('nrPaso2').style.display = 'none';
+    }
+
+    async function confirmarNuevaRifa() {
+      const fecha     = document.getElementById('nrFecha').value.trim().toUpperCase();
+      const hora      = document.getElementById('nrHora').value;
+      const loteria   = document.getElementById('nrLoteria').value.trim().toUpperCase();
+      const ganadores = Number(document.getElementById('nrGanadores').value) || 0;
+      const pagado    = Number(document.getElementById('nrPagado').value)    || 0;
+      const btn       = document.getElementById('btnConfirmarNuevaRifa');
+      const msg       = document.getElementById('nrMsg');
+
+      btn.textContent = '⏳ Procesando...'; btn.disabled = true;
+      msg.style.color = 'var(--muted)'; msg.textContent = 'Guardando historial y reiniciando boletas...';
+
+      try {
+        const req = await fetch('/api/admin/nueva-rifa', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            accion:              'guardar_y_reiniciar',
+            contrasena:          localStorage.getItem(STORAGE_KEY),
+            tipo:                tipoRifaActual,
+            fechaSorteo:         fecha,
+            horaCierre:          hora,
+            loteria,
+            ganadores,
+            totalPagadoGanadores: pagado
+          })
+        });
+        const res = await req.json();
+
+        if (res.status === 'ok') {
+          const snap    = res.snapshot;
+          const fmtCOP  = (n) => '$' + Number(n || 0).toLocaleString('es-CO');
+          const ganancia = snap.recaudo - pagado;
+          document.getElementById('modalNuevaRifa').style.display = 'none';
+          showModal('✅ ¡Rifa reiniciada!',
+            `📊 Resumen de la rifa anterior:\n` +
+            `• Boletas vendidas: ${snap.vendidas} de ${snap.totalBoletas}\n` +
+            `• Recaudo total: ${fmtCOP(snap.recaudo)}\n` +
+            `• Ganadores: ${ganadores} — Total pagado: ${fmtCOP(pagado)}\n` +
+            `• 💰 GANANCIA NETA: ${fmtCOP(ganancia)}\n\n` +
+            `Todas las boletas están disponibles para la nueva rifa. 🎉`
+          );
+          cargarEstadisticas();
+          cargarHistorialRifas();
+        } else {
+          msg.style.color = '#dc2626'; msg.textContent = 'Error: ' + res.mensaje;
+        }
+      } catch (e) {
+        msg.style.color = '#dc2626'; msg.textContent = 'Error de conexión.';
+      }
+      btn.textContent = '🔁 Sí, reiniciar rifa'; btn.disabled = false;
+    }
+
+    document.addEventListener('click', e => {
+        // Cerrar dropdown de asesores
+        const da = document.getElementById('dropdown-asesores'); const ca = document.getElementById('asesor-dropdown-container');
+        if (da && ca && !ca.contains(e.target)) da.style.display = 'none';
+        // Cerrar dropdowns de Meta Ads
+        ['fb-cuenta','fb-campana','fb-adset','fb-ad'].forEach(prefix => {
+            const wrap = document.getElementById(`${prefix}-wrap`);
+            const drop = document.getElementById(`${prefix}-drop`);
+            if (wrap && drop && !wrap.contains(e.target)) drop.style.display = 'none';
+        });
+    });
+
+    // Carga el estado real (ACTIVE/PAUSED/etc.) de campañas, conjuntos y anuncios desde Facebook
+    async function cargarEstadoFacebook() {
+        try {
+            const req = await fetch('/api/admin/estado-facebook', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contrasena: localStorage.getItem(STORAGE_KEY) })
+            });
+            const res = await req.json();
+            if (res.status === 'ok') {
+                globalEstadoFb = res.estados;
+                actualizarDropdownsFB(); // Reconstruir dropdowns con status real
+            }
+        } catch(e) { /* silencioso, los badges simplemente no aparecen */ }
+    }
+
+    // Botones de Sincronización
+    function showModal(title, msg) { document.getElementById('mTitle').textContent = title; document.getElementById('mMsg').textContent = msg; document.getElementById('modalResult').style.display = 'flex'; }
+
+    async function sincronizarChateaPro(btn) {
+        const orig = btn.innerHTML; btn.innerHTML = '⏳ Syncing...'; btn.style.pointerEvents = 'none';
+        try {
+            const req = await fetch('/api/admin/sincronizar-agentes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contrasena: localStorage.getItem(STORAGE_KEY) }) });
+            const res = await req.json();
+            showModal(res.status === 'ok' ? 'Éxito' : 'Atención', res.mensaje);
+            if (res.status === 'ok') { document.getElementById('lastSyncTime').textContent = "Corte: " + new Date().toLocaleTimeString('es-CO', {hour: '2-digit', minute:'2-digit'}); setTimeout(() => cargarEstadisticas(), 1500); }
+        } catch (e) { showModal('Error', 'Fallo conexión con el servidor.'); } 
+        finally { btn.innerHTML = orig; btn.style.pointerEvents = 'auto'; }
+    }
+
+    async function sincronizarFacebook(btn) {
+        const orig = btn.innerHTML; btn.innerHTML = '⏳ Conectando...'; btn.style.pointerEvents = 'none';
+        try {
+            const req = await fetch('/api/admin/sincronizar-facebook', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contrasena: localStorage.getItem(STORAGE_KEY) }) });
+            const res = await req.json();
+            showModal(res.status === 'ok' ? 'Éxito' : 'Atención', res.mensaje);
+            if (res.status === 'ok') { setTimeout(() => cargarEstadisticas(), 1500); setTimeout(() => cargarEstadoFacebook(), 2000); }
+        } catch (e) { showModal('Error', 'Fallo conexión con Meta.'); } 
+        finally { btn.innerHTML = orig; btn.style.pointerEvents = 'auto'; }
+    }
+  </script>
+</body>
+</html>

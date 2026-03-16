@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <title>Gestión de Horarios — Los Plata</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #2b3a35;
+      --ink-2: #52665e;
+      --muted: #8ba89d;
+      --bg: #f7fcf9;
+      --card: #ffffff;
+      --ring: #e6eee9;
+      --ring-strong: #d1e3da;
+      --pill: #f0f7f3;
+      --accent: #4eb082;
+      --accent-2: #3a946a;
+      --danger: #d95a53;
+      --danger-bg: #fcf2f2;
+      --shadow: 0 4px 12px rgba(0,0,0,.05);
+      --green-bg: linear-gradient(160deg, #0f2010 0%, #1e4a1a 40%, #2d6b25 70%, #1a3a14 100%);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Poppins', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    /* ── Login overlay ── */
+    #loginOverlay {
+      position: fixed; inset: 0; z-index: 2000;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 0;
+      background: var(--green-bg);
+    }
+    #loginPwd {
+      width: 100%; padding: 18px 28px; border-radius: 50px;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(16px);
+      color: #fff; font-size: 1.05rem; font-family: inherit;
+      text-align: center; outline: none; -webkit-text-fill-color: #fff;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    #loginPwd::placeholder { color: rgba(255,255,255,0.5); }
+    #loginMsg { color: rgba(255,120,120,0.9); font-size: 0.9rem; min-height: 20px; text-align: center; }
+
+    /* ── Header ── */
+    .page-header {
+      background: var(--green-bg);
+      padding: 18px 20px 24px;
+      text-align: center;
+      position: relative;
+    }
+    .page-header img { height: 64px; display: block; margin: 0 auto 10px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4)); }
+    .page-header h1 { color: #fff; font-size: 1.2rem; font-weight: 700; }
+    .page-header p { color: rgba(255,255,255,0.6); font-size: 0.8rem; margin-top: 4px; }
+    .btn-back {
+      position: absolute; top: 16px; left: 16px;
+      background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+      color: #fff; border-radius: 50px; padding: 6px 14px;
+      font-size: 0.8rem; font-weight: 500; font-family: inherit;
+      cursor: pointer; backdrop-filter: blur(8px);
+      text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+      transition: background 0.2s;
+    }
+    .btn-back:hover { background: rgba(255,255,255,0.25); }
+    .btn-ver-cal {
+      position: absolute; top: 16px; right: 16px;
+      background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+      color: #fff; border-radius: 50px; padding: 6px 14px;
+      font-size: 0.8rem; font-weight: 500; font-family: inherit;
+      cursor: pointer; backdrop-filter: blur(8px);
+      text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+      transition: background 0.2s;
+    }
+    .btn-ver-cal:hover { background: rgba(255,255,255,0.25); }
+
+    /* ── Wrap ── */
+    .main-wrap { max-width: 780px; margin: 0 auto; padding: 24px 16px 80px; }
+
+    /* ── Cards ── */
+    .section-card {
+      background: #fff; border: 1px solid var(--ring);
+      border-radius: 16px; box-shadow: var(--shadow);
+      padding: 22px; margin-bottom: 20px;
+    }
+    .section-title {
+      font-size: 1rem; font-weight: 600; color: var(--ink);
+      margin: 0 0 16px; padding-bottom: 10px;
+      border-bottom: 1px solid var(--ring);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    /* ── Formulario nuevo asesor ── */
+    .form-row {
+      display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 14px;
+    }
+    .form-row .field-group { flex: 1; min-width: 140px; }
+    label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--ink-2); margin-bottom: 4px; }
+    .inp {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--ring-strong);
+      border-radius: 10px; font-size: 0.9rem; font-family: inherit;
+      color: var(--ink); outline: none; background: #fff; transition: border 0.2s;
+    }
+    .inp:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(78,176,130,0.1); }
+    .color-inp { width: 48px; height: 40px; border: 1px solid var(--ring-strong); border-radius: 10px; padding: 4px; cursor: pointer; }
+
+    .btn-primary {
+      background: var(--accent); color: #fff; border: none;
+      border-radius: 10px; padding: 10px 18px; font-size: 0.9rem;
+      font-weight: 600; font-family: inherit; cursor: pointer; transition: background 0.2s;
+      white-space: nowrap;
+    }
+    .btn-primary:hover { background: var(--accent-2); }
+    .btn-danger {
+      background: var(--danger-bg); color: var(--danger); border: 1px solid #f5b8b5;
+      border-radius: 8px; padding: 6px 12px; font-size: 0.8rem;
+      font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-danger:hover { background: var(--danger); color: #fff; }
+    .btn-sec {
+      background: var(--pill); color: var(--ink-2); border: 1px solid var(--ring-strong);
+      border-radius: 8px; padding: 6px 14px; font-size: 0.82rem;
+      font-weight: 500; font-family: inherit; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-sec:hover { background: var(--ring-strong); }
+
+    /* ── Lista de asesores con sus horarios ── */
+    .asesor-bloque {
+      background: #fff; border: 1px solid var(--ring);
+      border-radius: 14px; box-shadow: var(--shadow); margin-bottom: 16px; overflow: hidden;
+    }
+    .asesor-bloque-header {
+      display: flex; align-items: center; gap: 10px; padding: 14px 16px;
+      background: var(--pill); border-bottom: 1px solid var(--ring); cursor: pointer;
+      user-select: none; transition: background 0.15s;
+    }
+    .asesor-bloque-header:hover { background: var(--ring-strong); }
+    .asesor-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.88rem; color: #fff; flex-shrink: 0;
+    }
+    .asesor-bloque-nombre { font-weight: 600; font-size: 0.92rem; color: var(--ink); }
+    .asesor-bloque-horas { margin-left: auto; font-size: 0.75rem; color: var(--muted); }
+    .chevron { font-size: 0.8rem; color: var(--muted); margin-left: 6px; transition: transform 0.2s; }
+    .asesor-bloque.open .chevron { transform: rotate(180deg); }
+
+    .asesor-bloque-body { display: none; padding: 16px; }
+    .asesor-bloque.open .asesor-bloque-body { display: block; }
+
+    /* ── Grid de días ── */
+    .dias-edit-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px;
+    }
+    .dia-edit-card {
+      border: 1px solid var(--ring); border-radius: 10px; padding: 12px;
+      background: var(--bg); transition: border-color 0.2s;
+    }
+    .dia-edit-card.activo { border-color: var(--accent); background: #f0fff8; }
+    .dia-edit-label {
+      font-size: 0.82rem; font-weight: 600; color: var(--ink-2); margin-bottom: 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .toggle-dia {
+      position: relative; width: 38px; height: 22px; flex-shrink: 0;
+    }
+    .toggle-dia input { opacity: 0; width: 0; height: 0; }
+    .toggle-dia .slider {
+      position: absolute; inset: 0; background: var(--ring-strong);
+      border-radius: 22px; cursor: pointer; transition: background 0.2s;
+    }
+    .toggle-dia .slider::before {
+      content: ''; position: absolute; width: 16px; height: 16px;
+      left: 3px; top: 3px; background: #fff; border-radius: 50%;
+      transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .toggle-dia input:checked + .slider { background: var(--accent); }
+    .toggle-dia input:checked + .slider::before { transform: translateX(16px); }
+
+    .time-row {
+      display: flex; gap: 6px; align-items: center; margin-top: 8px;
+    }
+    .time-inp {
+      flex: 1; padding: 7px 8px; border: 1px solid var(--ring-strong);
+      border-radius: 8px; font-size: 0.82rem; font-family: inherit;
+      color: var(--ink); outline: none; background: #fff; min-width: 0;
+    }
+    .time-inp:focus { border-color: var(--accent); }
+    .time-sep { font-size: 0.8rem; color: var(--muted); flex-shrink: 0; }
+    .notas-inp {
+      width: 100%; margin-top: 8px; padding: 7px 8px;
+      border: 1px solid var(--ring-strong); border-radius: 8px;
+      font-size: 0.78rem; font-family: inherit; color: var(--ink);
+      outline: none; background: #fff; resize: none;
+    }
+    .notas-inp:focus { border-color: var(--accent); }
+
+    .actions-row {
+      display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; align-items: center;
+    }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px);
+      background: #2b3a35; color: #fff; padding: 12px 22px;
+      border-radius: 50px; font-size: 0.88rem; font-weight: 500;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2); z-index: 3000;
+      transition: transform 0.3s ease; pointer-events: none; white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast.ok { background: #2d6b25; }
+    #toast.err { background: var(--danger); }
+
+    /* ── Spinner ── */
+    .spinner-small {
+      display: inline-block; width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff;
+      border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Selector de semana ── */
+    .week-nav {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .btn-week {
+      background: var(--pill); color: var(--ink-2); border: 1px solid var(--ring-strong);
+      border-radius: 50px; padding: 8px 16px; font-size: 0.85rem;
+      font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.2s;
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .btn-week:hover { background: var(--ring-strong); }
+    .week-center { text-align: center; flex: 1; min-width: 0; }
+    .week-label-text {
+      font-size: 0.95rem; font-weight: 600; color: var(--ink); display: block;
+    }
+    .week-badge {
+      display: inline-block; margin-top: 4px; padding: 2px 10px;
+      border-radius: 50px; font-size: 0.72rem; font-weight: 600;
+      background: var(--accent); color: #fff;
+    }
+    .week-badge.pasada { background: var(--muted); }
+    .week-badge.futura { background: #5b8af5; }
+  </style>
+</head>
+<body>
+
+<!-- ── Login ── -->
+<div id="loginOverlay">
+  <div style="text-align:center; margin-bottom:28px;">
+    <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata" style="height:160px;display:block;margin:0 auto;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.45));">
+    <p style="color:rgba(255,255,255,0.6);font-size:0.88rem;margin-top:12px;letter-spacing:0.12em;text-transform:uppercase;">Gestión de Horarios · Solo Administradores</p>
+  </div>
+  <div style="width:90%;max-width:420px;display:flex;flex-direction:column;align-items:center;gap:12px;">
+    <input id="loginPwd" type="password" placeholder="Contraseña de administrador..."
+      onkeydown="if(event.key==='Enter') doLogin()">
+    <button onclick="doLogin()" style="width:100%;padding:14px;border-radius:100px;border:none;background:rgba(255,255,255,0.18);backdrop-filter:blur(8px);color:#fff;font-size:1rem;font-weight:600;font-family:inherit;cursor:pointer;letter-spacing:0.04em;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.28)'" onmouseout="this.style.background='rgba(255,255,255,0.18)'">Ingresar</button>
+    <div id="loginMsg"></div>
+  </div>
+</div>
+
+<!-- ── Página principal ── -->
+<div id="mainContent" style="display:none;">
+
+  <div class="page-header">
+    <a href="/admin" class="btn-back">← Inicio</a>
+    <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata S.A.S.">
+    <h1>🗓️ Gestión de Horarios</h1>
+    <p id="adminLabel">Administrador</p>
+    <a href="/calendario" class="btn-ver-cal" target="_blank">Ver Calendario →</a>
+  </div>
+
+  <div class="main-wrap">
+
+    <!-- Selector de semana -->
+    <div class="section-card" style="margin-bottom:20px;">
+      <div class="week-nav">
+        <button class="btn-week" onclick="cambiarSemana(-1)">← Anterior</button>
+        <div class="week-center">
+          <span class="week-label-text" id="weekLabel">—</span>
+          <span class="week-badge" id="weekBadge">Esta semana</span>
+        </div>
+        <button class="btn-week" onclick="cambiarSemana(1)">Siguiente →</button>
+      </div>
+      <div style="text-align:center; margin-top:12px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+        <button class="btn-sec" onclick="irSemanaActual()">📅 Semana actual</button>
+        <button class="btn-sec" onclick="copiarSemanaAnterior()">📋 Copiar semana anterior</button>
+      </div>
+    </div>
+
+    <!-- Nuevo asesor -->
+    <div class="section-card">
+      <div class="section-title">Agregar Nuevo Asesor</div>
+      <div class="form-row">
+        <div class="field-group" style="flex:2;">
+          <label>Nombre del asesor</label>
+          <input id="nuevoNombre" class="inp" type="text" placeholder="Ej: María González">
+        </div>
+        <div class="field-group" style="flex:0;">
+          <label>Color</label>
+          <input id="nuevoColor" class="color-inp" type="color" value="#4eb082">
+        </div>
+        <div class="field-group" style="flex:0;">
+          <label>&nbsp;</label>
+          <button class="btn-primary" onclick="agregarAsesor()">+ Agregar</button>
+        </div>
+      </div>
+      <p style="font-size:0.78rem;color:var(--muted);margin-top:4px;">Elige un color distinto para cada asesor. Aparecerá así en el calendario.</p>
+    </div>
+
+    <!-- Lista de asesores -->
+    <div id="listaAsesores">
+      <div style="text-align:center;padding:40px;color:var(--muted);font-size:0.9rem;">
+        <div style="display:inline-block;width:28px;height:28px;border:3px solid var(--ring-strong);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;margin-bottom:10px;"></div>
+        <p>Cargando asesores...</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const DIAS_SEMANA = [
+    { id: 1, nombre: 'Lunes' },
+    { id: 2, nombre: 'Martes' },
+    { id: 3, nombre: 'Miércoles' },
+    { id: 4, nombre: 'Jueves' },
+    { id: 5, nombre: 'Viernes' },
+    { id: 6, nombre: 'Sábado' },
+    { id: 0, nombre: 'Domingo' },
+  ];
+
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio',
+                 'julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+  // ── Utilidades de semana ──
+  function getMonday(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  function toISO(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  function formatSemana(monday) {
+    const domingo = new Date(monday);
+    domingo.setDate(domingo.getDate() + 6);
+    if (monday.getMonth() === domingo.getMonth()) {
+      return `${monday.getDate()} al ${domingo.getDate()} de ${MESES[monday.getMonth()]} ${monday.getFullYear()}`;
+    }
+    return `${monday.getDate()} de ${MESES[monday.getMonth()]} al ${domingo.getDate()} de ${MESES[domingo.getMonth()]} ${domingo.getFullYear()}`;
+  }
+
+  function esSemanaActual(monday) {
+    return toISO(monday) === toISO(getMonday(new Date()));
+  }
+
+  let pwdAdmin = '';
+  let horariosTodos = [];
+  let semanaActual = getMonday(new Date());
+
+  // ── Login ──
+  async function doLogin() {
+    const pwd = document.getElementById('loginPwd').value.trim();
+    if (!pwd) return;
+    const msg = document.getElementById('loginMsg');
+    msg.textContent = 'Verificando...';
+    try {
+      const r = await fetch('/api/admin/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contrasena: pwd })
+      });
+      const json = await r.json();
+      if (json.status === 'ok') {
+        const admins = ['mateo', 'alejo p', 'alejo plata'];
+        if (!admins.includes(json.asesor.toLowerCase())) {
+          msg.textContent = 'Solo administradores pueden acceder a esta sección.';
+          return;
+        }
+        pwdAdmin = pwd;
+        document.getElementById('adminLabel').textContent = 'Admin: ' + json.asesor;
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('mainContent').style.display = 'block';
+        actualizarHeaderSemana();
+        cargarHorarios();
+      } else {
+        msg.textContent = json.mensaje || 'Contraseña incorrecta';
+      }
+    } catch(e) {
+      msg.textContent = 'Error de conexión. Intenta de nuevo.';
+    }
+  }
+
+  // ── Toast ──
+  let toastTimer;
+  function toast(msg, tipo = 'ok') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `show ${tipo}`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.className = ''; }, 3000);
+  }
+
+  // ── Actualizar header de semana ──
+  function actualizarHeaderSemana() {
+    document.getElementById('weekLabel').textContent = 'Semana del ' + formatSemana(semanaActual);
+    const badge = document.getElementById('weekBadge');
+    const hoy = getMonday(new Date());
+    const diff = (semanaActual - hoy) / (7 * 24 * 3600 * 1000);
+    if (diff === 0) {
+      badge.textContent = 'Esta semana'; badge.className = 'week-badge';
+    } else if (diff > 0) {
+      badge.textContent = `En ${Math.round(diff)} semana${Math.round(diff) > 1 ? 's' : ''}`; badge.className = 'week-badge futura';
+    } else {
+      badge.textContent = `Hace ${Math.abs(Math.round(diff))} semana${Math.abs(Math.round(diff)) > 1 ? 's' : ''}`; badge.className = 'week-badge pasada';
+    }
+  }
+
+  // ── Cambiar semana ──
+  function cambiarSemana(delta) {
+    semanaActual = new Date(semanaActual);
+    semanaActual.setDate(semanaActual.getDate() + delta * 7);
+    actualizarHeaderSemana();
+    cargarHorarios();
+  }
+
+  function irSemanaActual() {
+    semanaActual = getMonday(new Date());
+    actualizarHeaderSemana();
+    cargarHorarios();
+  }
+
+  // ── Copiar semana anterior a la semana actual ──
+  async function copiarSemanaAnterior() {
+    const semAnterior = new Date(semanaActual);
+    semAnterior.setDate(semAnterior.getDate() - 7);
+    const etiqueta = 'Semana del ' + formatSemana(semAnterior);
+    if (!confirm(`¿Copiar los horarios de "${etiqueta}" a la semana actual?\n\nEsto sobrescribirá los horarios ya guardados para esta semana.`)) return;
+    try {
+      const r = await fetch('/api/admin/horarios', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contrasena: pwdAdmin,
+          accion: 'copiar_semana',
+          semana_origen:  toISO(semAnterior),
+          semana_destino: toISO(semanaActual)
+        })
+      });
+      const json = await r.json();
+      if (json.status === 'ok') {
+        toast(`✅ Horarios copiados (${json.copiados} bloques)`);
+        await cargarHorarios();
+      } else {
+        toast(json.mensaje || 'Error al copiar', 'err');
+      }
+    } catch(e) { toast('Error de conexión', 'err'); }
+  }
+
+  // ── Cargar horarios desde la API ──
+  async function cargarHorarios() {
+    const r = await fetch(`/api/admin/horarios?semana=${toISO(semanaActual)}`);
+    const json = await r.json();
+    horariosTodos = json.horarios || [];
+    renderLista();
+  }
+
+  // ── Colores auxiliares ──
+  function colorTexto(hex) {
+    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return (0.299*r + 0.587*g + 0.114*b) / 255 > 0.55 ? '#2b3a35' : '#ffffff';
+  }
+
+  function calcH(filas) {
+    return filas.reduce((acc, f) => {
+      if (!f.trabaja || !f.hora_inicio || !f.hora_fin) return acc;
+      const [h1,m1]=f.hora_inicio.split(':').map(Number), [h2,m2]=f.hora_fin.split(':').map(Number);
+      return acc + (h2*60+m2-h1*60-m1)/60;
+    }, 0);
+  }
+
+  // ── Render lista de asesores ──
+  function renderLista() {
+    const porAsesor = {};
+    horariosTodos.forEach(h => {
+      if (!porAsesor[h.asesor_nombre]) porAsesor[h.asesor_nombre] = [];
+      porAsesor[h.asesor_nombre].push(h);
+    });
+
+    const asesores = Object.keys(porAsesor).sort();
+    const contenedor = document.getElementById('listaAsesores');
+
+    if (!asesores.length) {
+      contenedor.innerHTML = `<div style="text-align:center;padding:40px;color:var(--muted);font-size:0.88rem;">
+        <p>No hay asesores aún. Agrega el primero arriba ↑</p></div>`;
+      return;
+    }
+
+    contenedor.innerHTML = asesores.map(a => {
+      const filas = porAsesor[a];
+      const color = (filas.find(f=>f.color)||{color:'#4eb082'}).color;
+      const txt = colorTexto(color);
+      const inicial = a.trim().charAt(0).toUpperCase();
+      const totalH = calcH(filas).toFixed(1);
+
+      const diasHTML = DIAS_SEMANA.map(d => {
+        const h = filas.find(f => f.dia_semana === d.id) || {};
+        const activo = h.trabaja || false;
+        const inicio = h.hora_inicio || '08:00';
+        const fin = h.hora_fin || '17:00';
+        const notas = h.notas || '';
+        const key = `${a.replace(/\s/g,'_')}_${d.id}`;
+
+        return `<div class="dia-edit-card ${activo ? 'activo' : ''}" id="dcard_${key}">
+          <div class="dia-edit-label">
+            <label class="toggle-dia">
+              <input type="checkbox" id="chk_${key}" ${activo ? 'checked' : ''}
+                onchange="toggleDia('${a}', ${d.id}, '${key}')">
+              <span class="slider"></span>
+            </label>
+            <span style="font-size:0.82rem;font-weight:600;color:var(--ink-2);">${d.nombre}</span>
+          </div>
+          <div id="times_${key}" style="display:${activo ? 'block' : 'none'};">
+            <div class="time-row">
+              <input type="time" id="ini_${key}" class="time-inp" value="${inicio}">
+              <span class="time-sep">—</span>
+              <input type="time" id="fin_${key}" class="time-inp" value="${fin}">
+            </div>
+            <textarea id="nota_${key}" class="notas-inp" rows="1" placeholder="Nota opcional...">${notas}</textarea>
+          </div>
+        </div>`;
+      }).join('');
+
+      return `<div class="asesor-bloque" id="bloque_${a.replace(/\s/g,'_')}">
+        <div class="asesor-bloque-header" onclick="toggleBloque('${a.replace(/\s/g,'_')}')">
+          <div class="asesor-avatar" style="background:${color};color:${txt};">${inicial}</div>
+          <div>
+            <div class="asesor-bloque-nombre">${a}</div>
+          </div>
+          <div class="asesor-bloque-horas">${totalH} h/semana</div>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="asesor-bloque-body">
+          <div class="dias-edit-grid">${diasHTML}</div>
+          <div class="actions-row">
+            <button class="btn-primary" onclick="guardarSemana('${a}')">
+              💾 Guardar Horario
+            </button>
+            <button class="btn-sec" onclick="aplicarColorMasivo('${a}')">
+              🎨 Cambiar color
+            </button>
+            <button class="btn-danger" onclick="confirmarEliminar('${a}')">
+              🗑 Eliminar asesor
+            </button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Toggle bloque acordeón ──
+  function toggleBloque(id) {
+    const el = document.getElementById('bloque_' + id);
+    el.classList.toggle('open');
+  }
+
+  // ── Toggle día activo ──
+  function toggleDia(asesor, dia, key) {
+    const chk = document.getElementById('chk_' + key);
+    const times = document.getElementById('times_' + key);
+    const card = document.getElementById('dcard_' + key);
+    if (chk.checked) {
+      times.style.display = 'block';
+      card.classList.add('activo');
+    } else {
+      times.style.display = 'none';
+      card.classList.remove('activo');
+    }
+  }
+
+  // ── Guardar horario completo de un asesor ──
+  async function guardarSemana(asesor) {
+    const key_prefix = asesor.replace(/\s/g,'_');
+    const color = obtenerColorAsesor(asesor);
+    const horarios = DIAS_SEMANA.map(d => {
+      const key = `${key_prefix}_${d.id}`;
+      const trabaja = document.getElementById('chk_' + key)?.checked || false;
+      const hora_inicio = document.getElementById('ini_' + key)?.value || '08:00';
+      const hora_fin = document.getElementById('fin_' + key)?.value || '17:00';
+      const notas = document.getElementById('nota_' + key)?.value || '';
+      return { asesor_nombre: asesor, semana_inicio: toISO(semanaActual), dia_semana: d.id, trabaja, hora_inicio, hora_fin, notas, color };
+    });
+
+    try {
+      const r = await fetch('/api/admin/horarios', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contrasena: pwdAdmin, accion: 'guardar_semana', horarios })
+      });
+      const json = await r.json();
+      if (json.status === 'ok') {
+        toast(`✅ Horario de ${asesor} guardado`);
+        await cargarHorarios();
+      } else {
+        toast(json.mensaje || 'Error al guardar', 'err');
+      }
+    } catch(e) {
+      toast('Error de conexión', 'err');
+    }
+  }
+
+  // ── Obtener color actual del asesor ──
+  function obtenerColorAsesor(asesor) {
+    const h = horariosTodos.find(f => f.asesor_nombre === asesor && f.color);
+    return h?.color || '#4eb082';
+  }
+
+  // ── Cambiar color masivo ──
+  async function aplicarColorMasivo(asesor) {
+    const colorActual = obtenerColorAsesor(asesor);
+    const nuevo = prompt(`Color actual para ${asesor}: ${colorActual}\nIngresa el nuevo color en formato hex (#RRGGBB):`, colorActual);
+    if (!nuevo || !/^#[0-9a-fA-F]{6}$/.test(nuevo)) {
+      if (nuevo !== null) alert('Formato incorrecto. Usa algo como #4eb082');
+      return;
+    }
+    const key_prefix = asesor.replace(/\s/g,'_');
+    const horarios = DIAS_SEMANA.map(d => {
+      const key = `${key_prefix}_${d.id}`;
+      const trabaja = document.getElementById('chk_' + key)?.checked || false;
+      const hora_inicio = document.getElementById('ini_' + key)?.value || '08:00';
+      const hora_fin = document.getElementById('fin_' + key)?.value || '17:00';
+      const notas = document.getElementById('nota_' + key)?.value || '';
+      return { asesor_nombre: asesor, semana_inicio: toISO(semanaActual), dia_semana: d.id, trabaja, hora_inicio, hora_fin, notas, color: nuevo };
+    });
+    try {
+      const r = await fetch('/api/admin/horarios', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contrasena: pwdAdmin, accion: 'guardar_semana', horarios })
+      });
+      const json = await r.json();
+      if (json.status === 'ok') { toast('🎨 Color actualizado'); await cargarHorarios(); }
+      else toast(json.mensaje || 'Error', 'err');
+    } catch(e) { toast('Error de conexión', 'err'); }
+  }
+
+  // ── Eliminar asesor ──
+  async function confirmarEliminar(asesor) {
+    const semLabel = 'Semana del ' + formatSemana(semanaActual);
+    if (!confirm(`¿Eliminar el horario de "${asesor}" para "${semLabel}"?\n\nEsta acción no se puede deshacer.`)) return;
+    try {
+      const r = await fetch('/api/admin/horarios', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contrasena: pwdAdmin, accion: 'eliminar_asesor', asesor_nombre: asesor, semana_inicio: toISO(semanaActual) })
+      });
+      const json = await r.json();
+      if (json.status === 'ok') { toast(`🗑 ${asesor} eliminado`); await cargarHorarios(); }
+      else toast(json.mensaje || 'Error', 'err');
+    } catch(e) { toast('Error de conexión', 'err'); }
+  }
+
+  // ── Agregar nuevo asesor ──
+  async function agregarAsesor() {
+    const nombre = document.getElementById('nuevoNombre').value.trim();
+    const color  = document.getElementById('nuevoColor').value;
+    if (!nombre) { toast('Escribe el nombre del asesor', 'err'); return; }
+
+    const horarios = DIAS_SEMANA.map(d => ({
+      asesor_nombre: nombre,
+      semana_inicio: toISO(semanaActual),
+      dia_semana: d.id,
+      trabaja: d.id >= 1 && d.id <= 5, // L-V por defecto
+      hora_inicio: '08:00',
+      hora_fin: '17:00',
+      notas: '',
+      color
+    }));
+
+    try {
+      const r = await fetch('/api/admin/horarios', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contrasena: pwdAdmin, accion: 'guardar_semana', horarios })
+      });
+      const json = await r.json();
+      if (json.status === 'ok') {
+        toast(`✅ ${nombre} agregado`);
+        document.getElementById('nuevoNombre').value = '';
+        await cargarHorarios();
+      } else {
+        toast(json.mensaje || 'Error al agregar', 'err');
+      }
+    } catch(e) { toast('Error de conexión', 'err'); }
+  }
+</script>
+</body>
+</html>

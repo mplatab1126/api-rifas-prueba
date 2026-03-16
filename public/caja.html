@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <title>Cuadre de Caja - Los Plata</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* Diseño minimalista y elegante */
+    :root{
+      --ink: #2b3a35; --ink-2: #52665e; --muted: #8ba89d; --bg: #f7fcf9; 
+      --card: #ffffff; --ring: #e6eee9; --ring-strong: #d1e3da; --pill: #f0f7f3; 
+      --accent: #4eb082; --accent-2: #3a946a; --danger: #d95a53; --danger-bg: #fcf2f2; 
+      --shadow: 0 4px 12px rgba(0,0,0,.03);
+    }
+    *{box-sizing:border-box}
+    body{ margin:0; background: var(--bg); font-family: 'Poppins', sans-serif; color: var(--ink); padding-bottom: 80px; }
+    
+    .top-bar { position: sticky; top: 0; z-index: 100; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(5px); border-bottom: 1px solid var(--ring); padding: 15px 20px; box-shadow: var(--shadow); display: flex; justify-content: space-between; align-items: center;}
+    .shell { max-width: 800px; margin: 30px auto; padding: 0 18px; }
+    
+    .section-card { background: #fff; border: 1px solid var(--ring); border-radius: 16px; box-shadow: var(--shadow); padding: 24px; margin-bottom: 20px; }
+    .section-title { font-size: 1.1rem; font-weight: 700; color: var(--ink); margin: 0 0 16px 0; padding-bottom: 10px; border-bottom: 1px solid var(--ring); display: flex; align-items: center; justify-content: space-between; }
+    
+    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .kpi-card { background: #fff; border: 1px solid var(--ring-strong); padding: 20px; border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+    .kpi-card h3 { margin: 0 0 8px 0; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; font-weight: 700;}
+    .kpi-card p { margin: 0; font-size: 1.8rem; font-weight: 800; color: var(--ink); line-height: 1; }
+    
+    .asesor-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 1px solid var(--ring-strong); border-radius: 12px; margin-bottom: 10px; background: var(--bg); }
+    .asesor-info { display: flex; flex-direction: column; }
+    .asesor-name { font-weight: 700; color: var(--ink); font-size: 1rem; }
+    .asesor-deuda { font-weight: 800; color: var(--danger); font-size: 1.2rem; }
+    
+    .cta { border: none; border-radius: 10px; padding: 10px 20px; font-weight: 600; font-size: 0.9rem; background: var(--accent); color: #fff; cursor: pointer; transition: 0.2s; font-family: inherit;}
+    .cta:hover { background: var(--accent-2); }
+    .cta-outline { background: transparent; color: var(--ink); border: 1px solid var(--ring-strong); }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(247, 252, 249, 0.8); backdrop-filter: blur(4px); z-index: 2000; display: none; align-items: center; justify-content: center; }
+    .modal-card { background: #fff; width: 90%; max-width: 420px; border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.08); border: 1px solid var(--ring); }
+    
+    .field input, .field select { width: 100%; border: 1px solid var(--ring-strong); border-radius: 10px; padding: 12px; font-size: 1.1rem; font-weight: 700; text-align: center; outline: none; color: var(--ink); font-family: inherit; background: #fff;}
+    .field input:focus, .field select:focus { border-color: var(--accent); }
+
+    .badge-owner { font-size: 0.7rem; background: var(--pill); color: var(--accent-2); padding: 4px 10px; border-radius: 50px; font-weight: 700; border: 1px solid var(--accent); display: none; }
+  </style>
+</head>
+<body>
+
+  <div id="loginOverlay" class="modal-overlay" style="display: flex;">
+    <div class="modal-card" style="max-width: 360px;">
+      <h2 style="margin: 0 0 8px; color: var(--ink); font-weight: 700;">Control de Caja</h2>
+      <p style="color:var(--muted); font-size: 0.9rem; margin-bottom: 20px;">Solo 1 asesor puede tener la caja al día.</p>
+      <div class="field" style="margin-bottom:20px;">
+        <input id="loginPwd" type="password" placeholder="Contraseña...">
+      </div>
+      <button id="btnLogin" class="cta" style="width: 100%;">Acceder a la Caja</button>
+      <p id="loginMsg" style="color:var(--danger); font-size:0.85rem; font-weight:600; margin-top:10px; line-height:1.4;"></p>
+    </div>
+  </div>
+
+  <div class="top-bar">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="font-weight: 800; font-size: 1.2rem;">💰 Caja Física</span>
+      <span id="badgeOwner" class="badge-owner">🟢 A cargo de: ...</span>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="cta" style="background: var(--danger);" onclick="abrirModalCierre()">🔒 Cerrar Caja</button>
+      <button class="cta cta-outline" onclick="window.location.href='/admin.html'">🔙 Volver</button>
+    </div>
+  </div>
+
+  <div class="shell" id="mainDashboard" style="display: none;">
+    <div class="dashboard-grid">
+      <div class="kpi-card" style="border-left: 4px solid var(--muted);">
+        <h3>💵 Base Fija Inicial</h3>
+        <p id="lbl-base">$0</p>
+        <button id="btnAjustarBase" onclick="abrirModalBase()" style="margin-top:10px; background:transparent; border:none; color:var(--accent-2); font-weight:600; cursor:pointer; font-size:0.8rem; padding:0; display:none;">✏️ Ajustar Base</button>
+      </div>
+      <div class="kpi-card" style="border-left: 4px solid var(--danger);">
+        <h3>🚶‍♂️ Efectivo en la calle</h3>
+        <p id="lbl-calle" style="color:var(--danger);">$0</p>
+        <span style="font-size:0.75rem; color:var(--muted); font-weight:600;">(Dinero que tienen los asesores)</span>
+      </div>
+      <div class="kpi-card" style="border-left: 4px solid var(--accent); background: #e8f5e9;">
+        <h3>🏦 Efectivo Físico Esperado</h3>
+        <p id="lbl-oficina" style="color:var(--accent-2);">$0</p>
+        <span style="font-size:0.75rem; color:var(--ink-2); font-weight:600;">(Lo que debe haber en caja)</span>
+      </div>
+    </div>
+
+    <button onclick="abrirModalMovimiento()" style="width:100%; padding:16px; border-radius:14px; border:none; background:var(--ink); color:#fff; font-size:1rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:20px; font-family:inherit; box-shadow: 0 4px 14px rgba(0,0,0,0.12); transition: 0.2s;" onmouseover="this.style.background='var(--ink-2)'" onmouseout="this.style.background='var(--ink)'">
+      💸 Registrar Ingreso / Salida / Consignación
+    </button>
+
+    <div class="section-card">
+      <div class="section-title">Asesores con efectivo pendiente</div>
+      <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0; margin-bottom: 15px;">
+        Este es el dinero que los asesores han cobrado en efectivo y que aún no te han entregado físicamente. El saldo se acumula hasta que el asesor lo entregue.
+      </p>
+      
+      <div id="lista-asesores">
+        <p style="text-align:center; color:var(--muted); font-weight:500;">Cargando datos de hoy...</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalRecibir" class="modal-overlay">
+    <div class="modal-card" style="max-width: 360px;">
+      <h3 style="margin: 0 0 5px; color: var(--ink);">Recibir Efectivo</h3>
+      <p style="color:var(--muted); font-size: 0.9rem; margin-bottom: 20px;">
+        Asesor: <strong id="modalAsesorNombre" style="color:var(--ink);">---</strong>
+      </p>
+      <div class="field" style="margin-bottom:15px;">
+        <label style="display:block; text-align:left; font-size:0.8rem; font-weight:600; color:var(--ink-2); margin-bottom:5px;">Monto a entregar a la caja:</label>
+        <input type="number" id="montoRecibir" placeholder="Ej: 50000">
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="cta cta-outline" style="flex:1;" onclick="document.getElementById('modalRecibir').style.display='none'">Cancelar</button>
+        <button class="cta" style="flex:1;" onclick="confirmarRecepcionDinero()">✅ Recibir</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalBase" class="modal-overlay">
+    <div class="modal-card" style="max-width: 360px;">
+      <h3 style="margin: 0 0 5px; color: var(--ink);">Ajustar Base Fija</h3>
+      <p style="color:var(--muted); font-size: 0.85rem; margin-bottom: 20px;">¿Con cuánto dinero amaneció la caja hoy para dar vueltos?</p>
+      <div class="field" style="margin-bottom:15px;">
+        <input type="number" id="montoBase" placeholder="Ej: 200000">
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="cta cta-outline" style="flex:1;" onclick="document.getElementById('modalBase').style.display='none'">Cancelar</button>
+        <button class="cta" style="flex:1; background:var(--ink);" onclick="guardarBase()">Guardar Base</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalMovimiento" class="modal-overlay">
+    <div class="modal-card" style="max-width: 380px;">
+      <h3 style="margin: 0 0 5px; color: var(--ink);">💸 Ingreso o Salida</h3>
+      <p style="color:var(--muted); font-size: 0.85rem; margin-bottom: 15px;">Registra un movimiento manual de la caja.</p>
+      
+      <div class="field" style="margin-bottom:10px;">
+        <select id="movTipo" style="font-size: 0.95rem;">
+          <option value="salida">🔴 Salida (Ej: Pago internet, tintos)</option>
+          <option value="ingreso">🟢 Ingreso Extra (Ej: Más sencillo)</option>
+          <option value="consignacion">🔵 Traslado a Banco (Consignación)</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:10px;">
+        <input type="number" id="movMonto" placeholder="Valor Ej: 50000">
+      </div>
+      <div class="field" style="margin-bottom:15px;">
+        <input type="text" id="movDetalle" placeholder="¿De qué es? (Ej: Recibo de luz)" style="font-size: 0.9rem; font-weight: normal; text-align: left;">
+      </div>
+
+      <div style="display:flex; gap:10px;">
+        <button class="cta cta-outline" style="flex:1;" onclick="document.getElementById('modalMovimiento').style.display='none'">Cancelar</button>
+        <button class="cta" style="flex:1;" onclick="confirmarMovimiento()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalCierre" class="modal-overlay">
+    <div class="modal-card"> 
+      <h3 style="margin: 0 0 5px; color: var(--ink);">🔒 Arqueo y Cierre</h3>
+      <p style="color:var(--muted); font-size: 0.85rem; margin-bottom: 15px;">Revisa tu efectivo antes de cerrar el turno.</p>
+      
+      <div style="background: var(--bg); border: 1px solid var(--ring); border-radius: 12px; padding: 15px; text-align: left; margin-bottom: 15px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+              <span style="color:var(--muted); font-size:0.85rem;">💵 Base Fija:</span>
+              <strong id="cierreBase" style="color:var(--ink); font-size:0.9rem;">$0</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+              <span style="color:var(--muted); font-size:0.85rem;">📥 Recaudo Ventas:</span>
+              <strong id="cierreRecaudo" style="color:var(--accent-2); font-size:0.9rem;">$0</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+              <span style="color:var(--muted); font-size:0.85rem;">🟢 Ingresos Extra:</span>
+              <strong id="cierreIngresos" style="color:var(--accent-2); font-size:0.9rem;">$0</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+              <span style="color:var(--muted); font-size:0.85rem;">🔴 Salidas/Gastos:</span>
+              <strong id="cierreSalidas" style="color:var(--danger); font-size:0.9rem;">$0</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+              <span style="color:var(--muted); font-size:0.85rem;">🔵 Consignado al Banco:</span>
+              <strong id="cierreConsignaciones" style="color:var(--accent); font-size:0.9rem;">$0</strong>
+          </div>
+          <hr style="border:0; border-top:1px dashed var(--ring-strong); margin: 10px 0;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="color:var(--ink); font-weight:700; font-size:1rem;">Total Esperado en Caja:</span>
+              <strong id="cierreTotal" style="color:var(--ink); font-size:1.2rem;">$0</strong>
+          </div>
+      </div>
+
+      <div style="background: #fff; border: 2px solid var(--ring-strong); border-radius: 12px; padding: 15px; margin-bottom: 20px;">
+          <label style="display:block; text-align:left; font-size:0.85rem; font-weight:700; color:var(--ink); margin-bottom:8px;">¿Cuánto dinero físico contaste en total?</label>
+          <input type="number" id="montoContado" placeholder="Escribe el valor aquí..." oninput="calcularCuadre()" style="width: 100%; border: 1px solid var(--ring-strong); border-radius: 8px; padding: 10px; font-size: 1.2rem; font-weight: 700; text-align: center; outline: none; color: var(--ink); font-family: inherit;">
+          <div id="resultadoCuadre" style="margin-top: 10px; font-size: 0.9rem; font-weight: 700; text-align: center;"></div>
+      </div>
+
+      <div style="text-align: left; margin-bottom: 20px;">
+          <h4 style="font-size: 0.85rem; margin: 0 0 8px 0; color: var(--ink-2); display: flex; justify-content: space-between;">
+            <span>📋 Detalle de Movimientos de Hoy</span>
+          </h4>
+          <div id="listaMovimientosCierre" style="max-height: 120px; overflow-y: auto; border: 1px solid var(--ring); border-radius: 8px; padding: 10px; font-size: 0.8rem; background: #fff;">
+              <p style="text-align:center; color:var(--muted); margin:0;">Cargando movimientos...</p>
+          </div>
+      </div>
+
+      <div style="display:flex; gap:10px;">
+        <button class="cta cta-outline" style="flex:1;" onclick="document.getElementById('modalCierre').style.display='none'">Cancelar</button>
+        <button id="btnConfirmarCierre" class="cta" style="flex:1; background:var(--danger);" onclick="confirmarCierre()" disabled>Confirmar Cierre</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'asesor_pwd';
+    let contrasenaActual = '';
+    let asesorActual = '';
+    let datosCaja = null;
+    let valorEsperadoCaja = 0;
+    let asesorRecibiendoNombre = '';
+
+    const fmt = (n) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
+
+    // --- 1. LOGIN ---
+    document.addEventListener('DOMContentLoaded', () => {
+      const pwd = localStorage.getItem(STORAGE_KEY);
+      if (pwd) verificarLogin(pwd, true);
+    });
+
+    document.getElementById('btnLogin').onclick = () => {
+      const pwd = document.getElementById('loginPwd').value;
+      if (pwd) verificarLogin(pwd, false);
+    };
+
+    async function verificarLogin(pwd, auto) {
+      const btn = document.getElementById('btnLogin');
+      const msg = document.getElementById('loginMsg');
+      if (!auto) { btn.textContent = 'Verificando...'; btn.disabled = true; msg.textContent = ''; }
+
+      try {
+        const req = await fetch('/api/admin/login', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contrasena: pwd })
+        });
+        const res = await req.json();
+
+        if (res.status === 'ok') {
+          contrasenaActual = pwd;
+          asesorActual = res.asesor;
+
+          localStorage.setItem(STORAGE_KEY, pwd);
+          document.getElementById('loginOverlay').style.display = 'none';
+          document.getElementById('mainDashboard').style.display = 'block';
+
+          const badge = document.getElementById('badgeOwner');
+          badge.style.display = 'inline-block';
+          badge.textContent = `🟢 A cargo de: ${asesorActual}`;
+
+          if (asesorActual === 'Mateo') {
+            document.getElementById('btnAjustarBase').style.display = 'inline-block';
+          }
+
+          cargarDatosCaja();
+        } else {
+          if (!auto) msg.textContent = 'Contraseña incorrecta';
+          localStorage.removeItem(STORAGE_KEY);
+          btn.textContent = 'Acceder a la Caja'; btn.disabled = false;
+        }
+      } catch (error) {
+        if (!auto) { btn.textContent = 'Acceder a la Caja'; btn.disabled = false; msg.textContent = 'Error de conexión'; }
+      }
+    }
+
+    // --- 2. CARGAR DATOS REALES ---
+    async function cargarDatosCaja() {
+      document.getElementById('lista-asesores').innerHTML = '<p style="text-align:center; color:var(--muted); font-weight:500;">Cargando datos de hoy...</p>';
+
+      try {
+        const req = await fetch('/api/admin/caja', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accion: 'datos', contrasena: contrasenaActual })
+        });
+        const res = await req.json();
+
+        if (res.status !== 'ok') {
+          document.getElementById('lista-asesores').innerHTML = `<p style="text-align:center; color:var(--danger);">Error al cargar: ${res.mensaje}</p>`;
+          return;
+        }
+
+        datosCaja = res;
+
+        document.getElementById('lbl-base').textContent = fmt(res.baseFija);
+        document.getElementById('lbl-calle').textContent = fmt(res.totalEnCalle);
+        document.getElementById('lbl-oficina').textContent = fmt(res.efectivoFisicoEsperado);
+
+        if (res.asesoresEnCalle.length === 0) {
+          document.getElementById('lista-asesores').innerHTML = '<p style="text-align:center; color:var(--muted); font-weight:500; padding:20px 0;">✅ Ningún asesor tiene efectivo pendiente por entregar.</p>';
+        } else {
+          document.getElementById('lista-asesores').innerHTML = res.asesoresEnCalle.map(a => `
+            <div class="asesor-row">
+              <div class="asesor-info">
+                <span class="asesor-name">👤 ${a.asesor}</span>
+                <span style="font-size:0.8rem; color:var(--muted);">Debe entregar a caja:</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:15px;">
+                <span class="asesor-deuda">${fmt(a.pendiente)}</span>
+                <button class="cta" onclick="abrirModalRecibir('${a.asesor}', ${a.pendiente})">📥 Recibir</button>
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (error) {
+        document.getElementById('lista-asesores').innerHTML = `<p style="text-align:center; color:var(--danger);">Error de conexión al cargar los datos.</p>`;
+      }
+    }
+
+    // --- 3. ABRIR MODALES ---
+    function abrirModalRecibir(asesor, montoAdeudado) {
+      asesorRecibiendoNombre = asesor;
+      document.getElementById('modalAsesorNombre').textContent = asesor;
+      document.getElementById('montoRecibir').value = montoAdeudado;
+      document.getElementById('modalRecibir').style.display = 'flex';
+    }
+
+    function abrirModalBase() {
+      document.getElementById('montoBase').value = datosCaja?.baseFija || '';
+      document.getElementById('modalBase').style.display = 'flex';
+      document.getElementById('montoBase').focus();
+    }
+
+    function abrirModalMovimiento() {
+      document.getElementById('movMonto').value = '';
+      document.getElementById('movDetalle').value = '';
+      document.getElementById('modalMovimiento').style.display = 'flex';
+      document.getElementById('movMonto').focus();
+    }
+
+    function abrirModalCierre() {
+      if (!datosCaja) return alert('Primero espera a que carguen los datos.');
+
+      const base = datosCaja.baseFija;
+      const recaudo = datosCaja.totalRecepciones;
+      const ingresosExtra = datosCaja.totalIngresos;
+      const salidasGastos = datosCaja.totalSalidas;
+      const consignaciones = datosCaja.totalConsignaciones;
+
+      valorEsperadoCaja = base + recaudo + ingresosExtra - salidasGastos - consignaciones;
+
+      document.getElementById('cierreBase').textContent = fmt(base);
+      document.getElementById('cierreRecaudo').textContent = fmt(recaudo);
+      document.getElementById('cierreIngresos').textContent = fmt(ingresosExtra);
+      document.getElementById('cierreSalidas').textContent = '-' + fmt(salidasGastos);
+      document.getElementById('cierreConsignaciones').textContent = '-' + fmt(consignaciones);
+      document.getElementById('cierreTotal').textContent = fmt(valorEsperadoCaja);
+
+      document.getElementById('montoContado').value = '';
+      document.getElementById('resultadoCuadre').innerHTML = '';
+      const btnConfirmar = document.getElementById('btnConfirmarCierre');
+      btnConfirmar.disabled = true;
+      btnConfirmar.style.opacity = '0.5';
+
+      // Historial de movimientos del día
+      const movs = datosCaja.movimientos || [];
+      const tipoLabel = { ingreso: '🟢 Ingreso', salida: '🔴 Gasto', consignacion: '🔵 Consignación', recepcion: '📥 Recibido' };
+      const tipoColor = { ingreso: 'var(--accent-2)', salida: 'var(--danger)', consignacion: 'var(--accent)', recepcion: 'var(--accent-2)' };
+
+      if (movs.length === 0) {
+        document.getElementById('listaMovimientosCierre').innerHTML = '<p style="text-align:center; color:var(--muted); margin:0;">Sin movimientos registrados hoy.</p>';
+      } else {
+        document.getElementById('listaMovimientosCierre').innerHTML = movs.map(m => {
+          const hora = new Date(m.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' });
+          const signo = (m.tipo === 'salida' || m.tipo === 'consignacion') ? '-' : '+';
+          return `
+            <div style="display:flex; justify-content:space-between; border-bottom: 1px solid var(--ring); padding: 6px 0;">
+              <span style="color:var(--muted);">${hora} - ${tipoLabel[m.tipo] || m.tipo}: ${m.descripcion}</span>
+              <strong style="color:${tipoColor[m.tipo] || 'var(--ink)'};">${signo}${fmt(m.monto)}</strong>
+            </div>
+          `;
+        }).join('');
+      }
+
+      document.getElementById('modalCierre').style.display = 'flex';
+    }
+
+    // --- ARQUEO CIEGO ---
+    function calcularCuadre() {
+      const contadoInput = document.getElementById('montoContado').value;
+      const contado = Number(contadoInput) || 0;
+      const diferencia = contado - valorEsperadoCaja;
+      const resultadoDiv = document.getElementById('resultadoCuadre');
+      const btnConfirmar = document.getElementById('btnConfirmarCierre');
+
+      if (contadoInput === '') {
+        resultadoDiv.innerHTML = '';
+        btnConfirmar.disabled = true;
+        btnConfirmar.style.opacity = '0.5';
+        return;
+      }
+
+      btnConfirmar.disabled = false;
+      btnConfirmar.style.opacity = '1';
+
+      if (diferencia === 0) {
+        resultadoDiv.innerHTML = '<span style="color:var(--accent-2);">✅ ¡Caja cuadrada perfectamente! ($0)</span>';
+      } else if (diferencia > 0) {
+        resultadoDiv.innerHTML = `<span style="color:#f57c00;">⚠️ Te sobran ${fmt(diferencia)} físicos</span>`;
+      } else {
+        resultadoDiv.innerHTML = `<span style="color:var(--danger);">❌ Te faltan ${fmt(Math.abs(diferencia))} físicos</span>`;
+      }
+    }
+
+    // --- 4. ACCIONES CON LA API ---
+    async function confirmarRecepcionDinero() {
+      const monto = Number(document.getElementById('montoRecibir').value);
+      if (!monto || monto <= 0) return alert('Ingresa un monto válido.');
+
+      const btn = document.querySelector('#modalRecibir .cta:not(.cta-outline)');
+      btn.textContent = 'Guardando...'; btn.disabled = true;
+
+      try {
+        const req = await fetch('/api/admin/caja', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accion: 'recibir_dinero', contrasena: contrasenaActual, asesor: asesorRecibiendoNombre, monto })
+        });
+        const res = await req.json();
+
+        if (res.status === 'ok') {
+          document.getElementById('modalRecibir').style.display = 'none';
+          cargarDatosCaja();
+        } else {
+          alert('Error: ' + res.mensaje);
+        }
+      } catch (e) {
+        alert('Error de conexión');
+      }
+
+      btn.textContent = '✅ Recibir'; btn.disabled = false;
+    }
+
+    async function confirmarMovimiento() {
+      const tipo = document.getElementById('movTipo').value;
+      const monto = Number(document.getElementById('movMonto').value);
+      const descripcion = document.getElementById('movDetalle').value;
+
+      if (!monto || monto <= 0) return alert('Ingresa un monto válido.');
+      if (!descripcion) return alert('Ingresa una descripción del movimiento.');
+
+      const btn = document.querySelector('#modalMovimiento .cta:not(.cta-outline)');
+      btn.textContent = 'Guardando...'; btn.disabled = true;
+
+      try {
+        const req = await fetch('/api/admin/caja', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accion: 'registrar_movimiento', contrasena: contrasenaActual, tipo, monto, descripcion })
+        });
+        const res = await req.json();
+
+        if (res.status === 'ok') {
+          document.getElementById('modalMovimiento').style.display = 'none';
+          cargarDatosCaja();
+        } else {
+          alert('Error: ' + res.mensaje);
+        }
+      } catch (e) {
+        alert('Error de conexión');
+      }
+
+      btn.textContent = 'Guardar'; btn.disabled = false;
+    }
+
+    async function guardarBase() {
+      const monto = Number(document.getElementById('montoBase').value);
+      if (!monto || monto <= 0) return alert('Ingresa un monto válido.');
+
+      const btn = document.querySelector('#modalBase .cta:not(.cta-outline)');
+      btn.textContent = 'Guardando...'; btn.disabled = true;
+
+      try {
+        const req = await fetch('/api/admin/caja', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accion: 'guardar_base', contrasena: contrasenaActual, monto })
+        });
+        const res = await req.json();
+
+        if (res.status === 'ok') {
+          document.getElementById('modalBase').style.display = 'none';
+          cargarDatosCaja();
+        } else {
+          alert('Error: ' + res.mensaje);
+        }
+      } catch (e) {
+        alert('Error de conexión');
+      }
+
+      btn.textContent = 'Guardar Base'; btn.disabled = false;
+    }
+
+    async function confirmarCierre() {
+      const montoContado = Number(document.getElementById('montoContado').value) || 0;
+      const btnConfirmar = document.getElementById('btnConfirmarCierre');
+      btnConfirmar.textContent = 'Cerrando...'; btnConfirmar.disabled = true;
+
+      try {
+        const req = await fetch('/api/admin/caja', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accion: 'cerrar_caja', contrasena: contrasenaActual, montoContado, totalEsperado: valorEsperadoCaja })
+        });
+        const res = await req.json();
+
+        document.getElementById('modalCierre').style.display = 'none';
+
+        if (res.status === 'ok') {
+          alert('✅ ¡Caja cerrada y arqueo guardado!');
+          localStorage.removeItem(STORAGE_KEY);
+          window.location.href = '/admin.html';
+        } else {
+          alert('Error al cerrar caja: ' + res.mensaje);
+        }
+      } catch (e) {
+        alert('Error de conexión');
+        btnConfirmar.textContent = 'Confirmar Cierre'; btnConfirmar.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
