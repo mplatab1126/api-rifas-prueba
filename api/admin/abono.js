@@ -51,7 +51,7 @@ export default async function handler(req, res) {
 
     const { data: boletaData, error: boletaError } = await supabase
       .from(tabla)
-      .select('saldo_restante, total_abonado, telefono_cliente, asesor, nombre_cliente')
+      .select('saldo_restante, total_abonado, telefono_cliente, asesor')
       .eq('numero', numeroLimpio)
       .single();
 
