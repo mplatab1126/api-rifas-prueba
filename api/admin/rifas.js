@@ -55,13 +55,15 @@ export default async function handler(req, res) {
           .filter(p => p.requiere_recapitalizacion)
           .reduce((s, p) => s + Number(p.valor), 0);
 
+        const esEmpresa = rifa.numero_rifa != null && rifa.numero_rifa >= 4;
+
         return {
           ...rifa,
-          premios,            // se filtra abajo
           premios:             premiosRifa,
           capital_total:       capitalTotal,
           total_recapitalizar: totalRecapitalizar,
-          recapitalizacion_por_hermano: Math.round(totalRecapitalizar / 2)
+          es_empresa:          esEmpresa,
+          recapitalizacion_por_hermano: esEmpresa ? 0 : Math.round(totalRecapitalizar / 2)
         };
       });
 
@@ -77,6 +79,8 @@ export default async function handler(req, res) {
       const primeraRifaId = rifasCompletas.length ? rifasCompletas[0].id : null;
 
       rifasCompletas.forEach(rifa => {
+        if (rifa.es_empresa) return; // rifas 4+ son de empresa y no afectan el saldo personal de los hermanos
+
         const esPrimeraRifa = rifa.id === primeraRifaId;
 
         HERMANOS.forEach(h => {

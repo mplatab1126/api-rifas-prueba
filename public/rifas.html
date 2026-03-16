@@ -88,7 +88,7 @@
     }
 
     /* ── Layout principal ────────────────────────────────────────────────── */
-    #app { max-width: 900px; margin: 0 auto; padding: 28px 20px; display: none; }
+    #app { max-width: 1400px; margin: 0 auto; padding: 28px 20px; display: none; }
 
     /* ── Página header ───────────────────────────────────────────────────── */
     .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
@@ -467,6 +467,121 @@
       #topBar nav { gap: 2px; }
       #topBar nav a, #topBar nav button { padding: 5px 8px; font-size: .75rem; }
     }
+
+    /* ── Layout de escritorio (dos columnas) ─────────────────────────────── */
+    @media (min-width: 1100px) {
+      .desktop-grid {
+        display: grid;
+        grid-template-columns: minmax(260px, 320px) 1fr;
+        gap: 20px;
+        align-items: start;
+        min-width: 0;
+      }
+      .desktop-left {
+        position: sticky;
+        top: 68px;
+        max-height: calc(100vh - 84px);
+        overflow-y: auto;
+        padding-right: 2px;
+        min-width: 0;
+      }
+      .desktop-left .rifa-kpis { display: none; }
+      .desktop-left .rifa-card-header { padding: 12px 16px; }
+      .desktop-left .rifa-name { font-size: .9rem; }
+      .desktop-left .rifa-card.selected {
+        background: var(--accent-light);
+        border-color: var(--accent) !important;
+        box-shadow: 0 0 0 1px var(--accent);
+      }
+      .desktop-left .recap-resumen-section { margin-bottom: 16px; }
+      .desktop-left .recap-resumen-body { grid-template-columns: 1fr 1fr; }
+      .desktop-left .recap-hermano-saldo { font-size: 1.1rem; }
+      .desktop-left .rifas-list { gap: 10px; }
+
+      /* Capital table: primera columna fija */
+      .capital-table th:first-child,
+      .capital-table td:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background: inherit;
+        border-right: 1px solid var(--ring-strong);
+      }
+      .capital-table .row-inv-total td:first-child { background: var(--bg); }
+      .capital-table tfoot td:first-child { background: var(--accent-light); }
+
+      /* Visor inline (panel derecho) */
+      .visor-shell-inline {
+        background: var(--card);
+        border: 1px solid var(--ring-strong);
+        border-radius: var(--radius);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+      }
+      .visor-shell-inline .visor-header {
+        border-bottom: 1px solid var(--ring);
+      }
+      .visor-shell-inline .visor-body-panel {
+        padding: 0 20px 20px;
+        overflow-y: auto;
+        max-height: calc(100vh - 280px);
+      }
+      .desktop-right { min-width: 0; overflow: hidden; }
+      .visor-shell-inline .visor-kpis-panel {
+        padding: 12px 20px;
+        border-bottom: 1px solid var(--ring);
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+      }
+
+      /* Tarjetas compactas del sidebar */
+      .sidebar-card .sidebar-inner {
+        display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+      }
+      .sidebar-icon {
+        width: 34px; height: 34px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1rem; flex-shrink: 0;
+      }
+      .sidebar-info { flex: 1; min-width: 0; }
+      .sidebar-name {
+        font-size: .88rem; font-weight: 700; color: var(--ink);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .sidebar-meta {
+        display: flex; align-items: center; gap: 6px; margin-top: 5px;
+        flex-wrap: nowrap; overflow: hidden;
+      }
+      .sidebar-date {
+        font-size: .72rem; color: var(--muted); white-space: nowrap;
+        overflow: hidden; text-overflow: ellipsis;
+      }
+      .sidebar-actions {
+        display: flex; gap: 3px; flex-shrink: 0;
+        opacity: 0; transition: opacity .15s;
+      }
+      .sidebar-card:hover .sidebar-actions,
+      .sidebar-card.selected .sidebar-actions { opacity: 1; }
+
+      /* Placeholder cuando no hay rifa seleccionada */
+      .detail-placeholder {
+        background: var(--card);
+        border: 2px dashed var(--ring-strong);
+        border-radius: var(--radius);
+        padding: 60px 20px;
+        text-align: center;
+        color: var(--muted);
+        font-size: .9rem;
+        line-height: 1.6;
+      }
+      .detail-placeholder .placeholder-icon { font-size: 2.5rem; margin-bottom: 12px; }
+    }
+
+    @media (max-width: 1099px) {
+      .desktop-grid { display: block; }
+      #rifaDetailPanel { display: none; }
+    }
   </style>
 </head>
 <body>
@@ -509,34 +624,53 @@
     <button class="btn btn-primary" onclick="abrirModalRifa(null)">+ Nueva Rifa</button>
   </div>
 
-  <!-- Resumen saldo de recapitalización -->
-  <div id="recapResumenSection" class="recap-resumen-section" style="display:none;">
-    <div class="recap-resumen-header" onclick="toggleRecapResumen()">
-      <div class="recap-resumen-title">
-        <span>⚖️</span> Saldo de recapitalización
-      </div>
-      <div id="recapResumenToggle" style="color:var(--muted); transition:transform .25s;">▼</div>
-    </div>
-    <div id="recapResumenBody" class="recap-resumen-body"></div>
-  </div>
+  <div class="desktop-grid">
 
-  <!-- Resumen de capital por inversor -->
-  <div id="capitalSection" class="capital-section" style="display:none;">
-    <div class="capital-header" onclick="toggleCapital()">
-      <div class="capital-header-left">
-        <span style="font-size:1.2rem;">👥</span>
-        <div>
-          <div class="capital-header-title">Capital por inversor</div>
-          <div class="capital-header-sub">Suma de todos los aportes y premios registrados</div>
+    <!-- Columna izquierda: saldo de recapitalización + lista de rifas -->
+    <div class="desktop-left">
+
+      <div id="recapResumenSection" class="recap-resumen-section" style="display:none;">
+        <div class="recap-resumen-header" onclick="toggleRecapResumen()">
+          <div class="recap-resumen-title">
+            <span>⚖️</span> Saldo de recapitalización
+          </div>
+          <div id="recapResumenToggle" style="color:var(--muted); transition:transform .25s;">▼</div>
+        </div>
+        <div id="recapResumenBody" class="recap-resumen-body"></div>
+      </div>
+
+      <div id="rifasList" class="rifas-list">
+        <div class="empty-state"><div class="empty-icon">⏳</div><p>Cargando rifas…</p></div>
+      </div>
+
+    </div>
+
+    <!-- Columna derecha: capital por inversor + detalle de rifa seleccionada -->
+    <div class="desktop-right">
+
+      <div id="capitalSection" class="capital-section" style="display:none;">
+        <div class="capital-header" onclick="toggleCapital()">
+          <div class="capital-header-left">
+            <span style="font-size:1.2rem;">👥</span>
+            <div>
+              <div class="capital-header-title">Capital por inversor</div>
+              <div class="capital-header-sub">Suma de todos los aportes y premios registrados</div>
+            </div>
+          </div>
+          <div id="capitalToggleIcon" style="color:var(--muted); transition:transform .25s;">▼</div>
+        </div>
+        <div id="capitalBody"></div>
+      </div>
+
+      <div id="rifaDetailPanel">
+        <div class="detail-placeholder">
+          <div class="placeholder-icon">👈</div>
+          <p>Selecciona una rifa de la lista<br>para ver su detalle aquí</p>
         </div>
       </div>
-      <div id="capitalToggleIcon" style="color:var(--muted); transition:transform .25s;">▼</div>
-    </div>
-    <div id="capitalBody"></div>
-  </div>
 
-  <div id="rifasList" class="rifas-list">
-    <div class="empty-state"><div class="empty-icon">⏳</div><p>Cargando rifas…</p></div>
+    </div>
+
   </div>
 </div>
 
@@ -722,6 +856,7 @@ let recapResumenVisible = true;
 
 // ── Utilidades ─────────────────────────────────────────────────────────────
 const fmt = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-CO');
+function isDesktop() { return window.innerWidth >= 1100; }
 
 function toast(msg, ms = 2800) {
   const t = document.getElementById('toast');
@@ -828,12 +963,24 @@ function renderRifas() {
         <p>No hay rifas creadas todavía.<br>Crea la primera con el botón <strong>+ Nueva Rifa</strong>.</p>
       </div>`;
     document.getElementById('capitalSection').style.display = 'none';
+    document.getElementById('rifaDetailPanel').innerHTML = `
+      <div class="detail-placeholder">
+        <div class="placeholder-icon">👈</div>
+        <p>Selecciona una rifa de la lista<br>para ver su detalle aquí</p>
+      </div>`;
     return;
   }
 
-  list.innerHTML = rifasData.map(rifa => renderRifaCard(rifa)).join('');
+  list.innerHTML = rifasData.map(rifa => isDesktop() ? renderSidebarCard(rifa) : renderRifaCard(rifa)).join('');
   renderRecapResumen();
   renderCapitalPorInversor();
+
+  // En desktop: re-abrir la rifa que estaba seleccionada, o la primera disponible
+  if (isDesktop() && rifasData.length > 0) {
+    const lista     = rifasOrdenadosParaVisor();
+    const reabrir   = lista.find(r => r.id === _visorRifaId) || lista[0];
+    if (reabrir) renderDesktopPanel(reabrir.id);
+  }
 }
 
 // ── Saldo recapitalización — resumen ───────────────────────────────────────
@@ -992,6 +1139,46 @@ function estadoColor(estado) {
   return { activa: '#3a9e6b', planificada: '#3b5bdb', finalizada: '#8ba89d' }[estado] || '#8ba89d';
 }
 
+function renderSidebarCard(rifa) {
+  const color      = estadoColor(rifa.estado);
+  const colorLight = color + '18';
+
+  // Fecha corta: solo mes+año
+  const meses = [rifa.fecha_inicio, rifa.fecha_fin]
+    .filter(Boolean)
+    .map(f => new Date(f + 'T00:00:00').toLocaleDateString('es-CO', { month: 'short', year: 'numeric' }));
+  const fechaCorta = meses.length === 2 && meses[0] !== meses[1]
+    ? `${meses[0]} → ${meses[1]}`
+    : meses[0] || '';
+
+  const numTag = rifa.numero_rifa
+    ? `<span style="font-size:.65rem;font-weight:700;background:${colorLight};color:${color};padding:1px 6px;border-radius:20px;flex-shrink:0;">Rifa ${rifa.numero_rifa}</span>`
+    : '';
+
+  const estadoIcono = { activa: '🟢', planificada: '🔵', finalizada: '⚫' }[rifa.estado] || '⚫';
+
+  return `
+    <div class="rifa-card sidebar-card" id="card-${rifa.id}"
+         style="border-left:4px solid ${color}; cursor:pointer;"
+         onclick="abrirVisor('${rifa.id}')">
+      <div class="sidebar-inner">
+        <div class="sidebar-icon" style="background:${colorLight}; font-size:1.1rem;">🎰</div>
+        <div class="sidebar-info">
+          <div class="sidebar-name" title="${rifa.nombre}">${rifa.nombre}</div>
+          <div class="sidebar-meta">
+            <span style="font-size:.72rem;">${estadoIcono}</span>
+            ${numTag}
+            ${fechaCorta ? `<span class="sidebar-date">${fechaCorta}</span>` : ''}
+          </div>
+        </div>
+        <div class="sidebar-actions" onclick="event.stopPropagation()">
+          <button class="btn btn-ghost btn-sm" title="Editar" onclick="abrirModalRifa(${JSON.stringify(rifa).replace(/"/g,'&quot;')})">✏️</button>
+          <button class="btn btn-danger btn-sm" title="Eliminar" onclick="eliminarRifa('${rifa.id}','${rifa.nombre.replace(/'/g,"\\'")}')">🗑️</button>
+        </div>
+      </div>
+    </div>`;
+}
+
 function renderRifaCard(rifa) {
   const color        = estadoColor(rifa.estado);
   const colorLight   = color + '15';
@@ -1087,7 +1274,13 @@ function renderDetallePremios(rifa) {
           </table>
         </div>
 
-        ${totalRecapitalizar > 0 ? `
+        ${rifa.es_empresa ? `
+        <div class="recap-box" style="background:#f0fdf4; border-color:#a7e3c4;">
+          <div class="recap-box-title" style="color:#1e7a45;">🏢 Rifa de empresa</div>
+          <div class="recap-box-row" style="border-bottom:none;">
+            <span style="color:#1e7a45;">Los premios de esta rifa son financiados por la empresa. Mateo y Alejandro no tienen obligación personal de reintegro.</span>
+          </div>
+        </div>` : totalRecapitalizar > 0 ? `
         <div class="recap-box">
           <div class="recap-box-title">⚖️ Recapitalización — lo que debe devolver cada hermano</div>
           <div class="recap-box-row">
@@ -1117,6 +1310,7 @@ function renderDetallePremios(rifa) {
 
 // ── Detalle recapitalización por rifa ──────────────────────────────────────
 function renderDetalleRecap(rifa) {
+  if (rifa.es_empresa) return ''; // rifas de empresa no tienen obligación personal de recapitalización
   if (!rifa.total_recapitalizar && !rifa.recap_obligacion_mateo && !rifa.recap_obligacion_alejandro) return '';
 
   const hermanos = [
@@ -1373,6 +1567,10 @@ function rifasOrdenadosParaVisor() {
 }
 
 function abrirVisor(rifaId) {
+  if (isDesktop()) {
+    renderDesktopPanel(rifaId);
+    return;
+  }
   _visorRifaId = rifaId;
   renderVisor();
   document.getElementById('modalRifaVisor').classList.add('show');
@@ -1383,6 +1581,90 @@ function cerrarVisor() {
   document.getElementById('modalRifaVisor').classList.remove('show');
   document.body.style.overflow = '';
   _visorRifaId = null;
+}
+
+// ── Panel de detalle (escritorio) ──────────────────────────────────────────
+function renderDesktopPanel(rifaId) {
+  const lista = rifasOrdenadosParaVisor();
+  const idx   = lista.findIndex(r => r.id === rifaId);
+  const rifa  = lista[idx];
+  if (!rifa) return;
+
+  _visorRifaId = rifaId;
+
+  // Destacar la tarjeta seleccionada en la barra lateral
+  document.querySelectorAll('.rifa-card').forEach(c => c.classList.remove('selected'));
+  const card = document.getElementById('card-' + rifaId);
+  if (card) { card.classList.add('selected'); card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+
+  const color  = estadoColor(rifa.estado);
+  const fechas = [rifa.fecha_inicio, rifa.fecha_fin]
+    .filter(Boolean)
+    .map(f => new Date(f + 'T00:00:00').toLocaleDateString('es-CO', { day:'2-digit', month:'short', year:'numeric' }))
+    .join(' → ');
+
+  document.getElementById('rifaDetailPanel').innerHTML = `
+    <div class="visor-shell-inline">
+      <div class="visor-header">
+        <button class="visor-nav-btn" onclick="navegarVisorDesktop(-1)" ${idx === 0 ? 'disabled' : ''} title="Rifa anterior">←</button>
+        <div class="visor-header-center">
+          <div class="visor-rifa-name">${rifa.nombre}</div>
+          <div class="visor-rifa-meta">
+            ${estadoBadge(rifa.estado)}
+            ${fechas ? `<span style="color:var(--muted);">${fechas}</span>` : ''}
+            <span class="visor-counter">${idx + 1} de ${lista.length}</span>
+          </div>
+        </div>
+        <div class="visor-actions">
+          <button class="btn btn-ghost btn-sm" onclick="abrirModalRifa(${JSON.stringify(rifa).replace(/"/g,'&quot;')})">✏️ Editar</button>
+          <button class="btn btn-danger btn-sm" onclick="eliminarRifaDesktop()">🗑️</button>
+        </div>
+        <button class="visor-nav-btn" onclick="navegarVisorDesktop(1)" ${idx === lista.length - 1 ? 'disabled' : ''} title="Rifa siguiente">→</button>
+      </div>
+      <div class="visor-kpis-panel">
+        <div>
+          <div class="visor-kpi-label">Capital total</div>
+          <div class="visor-kpi-val" style="color:${color};">${rifa.capital_total > 0 ? fmt(rifa.capital_total) : '—'}</div>
+        </div>
+        <div>
+          <div class="visor-kpi-label">Aportes registrados</div>
+          <div class="visor-kpi-val">${(rifa.premios || []).length}</div>
+        </div>
+        ${rifa.total_recapitalizar > 0 && !rifa.es_empresa ? `
+        <div>
+          <div class="visor-kpi-label">A recapitalizar</div>
+          <div class="visor-kpi-val" style="color:#b45309;">${fmt(rifa.total_recapitalizar)}</div>
+        </div>` : ''}
+        ${rifa.es_empresa ? `
+        <div>
+          <div class="visor-kpi-label">Tipo</div>
+          <div class="visor-kpi-val" style="color:#1e7a45;">🏢 Empresa</div>
+        </div>` : ''}
+        ${rifa.numero_rifa ? `
+        <div>
+          <div class="visor-kpi-label">N° de rifa</div>
+          <div class="visor-kpi-val">${rifa.numero_rifa}</div>
+        </div>` : ''}
+      </div>
+      <div class="visor-body-panel">
+        ${renderDetallePremios(rifa)}
+        ${renderDetalleRecap(rifa)}
+        ${rifa.notas ? `<div class="detail-section"><div class="notas-box">📝 ${rifa.notas}</div></div>` : ''}
+      </div>
+    </div>`;
+}
+
+function navegarVisorDesktop(dir) {
+  const lista = rifasOrdenadosParaVisor();
+  const idx   = lista.findIndex(r => r.id === _visorRifaId);
+  const nuevo = lista[idx + dir];
+  if (nuevo) renderDesktopPanel(nuevo.id);
+}
+
+function eliminarRifaDesktop() {
+  if (!_visorRifaId) return;
+  const r = rifasData.find(x => x.id === _visorRifaId);
+  if (r) eliminarRifa(r.id, r.nombre);
 }
 
 function navegarVisor(dir) {
@@ -1532,6 +1814,11 @@ document.addEventListener('keydown', e => {
     if (e.key === 'ArrowLeft')  navegarVisor(-1);
     if (e.key === 'ArrowRight') navegarVisor(1);
   }
+  // En desktop, flechas navegan por el panel
+  if (isDesktop() && _visorRifaId && !document.querySelector('.overlay.show')) {
+    if (e.key === 'ArrowUp')   { e.preventDefault(); navegarVisorDesktop(-1); }
+    if (e.key === 'ArrowDown') { e.preventDefault(); navegarVisorDesktop(1);  }
+  }
 });
 
 // Cerrar visor al hacer clic en el fondo
@@ -1544,6 +1831,24 @@ document.getElementById('modalRifaVisor').addEventListener('click', function(e) 
   document.getElementById(id).addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('show');
   });
+});
+
+// Adaptar el panel al redimensionar la ventana
+let _resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => {
+    if (!rifasData.length) return;
+    // Re-renderizar la lista con el tipo correcto de tarjeta
+    const list = document.getElementById('rifasList');
+    list.innerHTML = rifasData.map(rifa => isDesktop() ? renderSidebarCard(rifa) : renderRifaCard(rifa)).join('');
+    if (isDesktop()) {
+      const lista   = rifasOrdenadosParaVisor();
+      const toOpen  = lista.find(r => r.id === _visorRifaId) || lista[0];
+      if (toOpen) renderDesktopPanel(toOpen.id);
+      if (document.getElementById('modalRifaVisor').classList.contains('show')) cerrarVisor();
+    }
+  }, 200);
 });
 </script>
 </body>

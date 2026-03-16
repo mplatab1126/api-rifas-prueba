@@ -31,9 +31,22 @@ const $ = id => document.getElementById(id);
     function makeNumPill(value=''){
       const wrap = document.createElement('div'); wrap.className='num-pill';
       const inp = document.createElement('input'); inp.type='text'; inp.maxLength=4; inp.value=value;
+      inp.placeholder='0000';
+
+      // Indicador del tipo de boleta según longitud
+      const tag = document.createElement('span'); tag.className='pill-type-tag';
+      function actualizarTag(){
+        const len = inp.value.length;
+        if (len === 3){ tag.textContent='3 cifras'; tag.style.cssText='color:#2563eb;font-size:.65rem;font-weight:700;'; }
+        else if (len === 4){ tag.textContent='4 cifras'; tag.style.cssText='color:#059669;font-size:.65rem;font-weight:700;'; }
+        else { tag.textContent=''; }
+      }
+      inp.oninput = actualizarTag;
+      if (value) actualizarTag();
+
       const del = document.createElement('button'); del.className='chip-del'; del.textContent='✕';
       del.onclick = ()=>{ wrap.remove(); if(!numList.children.length) addDefaultPill(); };
-      wrap.append(inp, del); return wrap;
+      wrap.append(inp, tag, del); return wrap;
     }
     function addDefaultPill(){ numList.appendChild(makeNumPill()); }
     $('btnAddNum').onclick = ()=> numList.appendChild(makeNumPill());
@@ -723,8 +736,8 @@ const $ = id => document.getElementById(id);
     }
 
 $('btnRegistrarVenta').onclick = async ()=>{
-       const nums = Array.from(numList.querySelectorAll('input')).map(i=>i.value).filter(v=>v.length===4);
-       if(!nums.length) return alert('Falta boleta válida');
+       const nums = Array.from(numList.querySelectorAll('input')).map(i=>i.value).filter(v=>v.length===3||v.length===4);
+       if(!nums.length) return alert('Agrega al menos una boleta válida (3 o 4 dígitos)');
        $('btnRegistrarVenta').textContent='Procesando...'; $('btnRegistrarVenta').disabled=true;
        
        let totalMoney=0, ref='', metodo='';

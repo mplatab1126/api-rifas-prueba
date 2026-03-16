@@ -142,8 +142,9 @@
     .pill { flex: 1; border: 0; outline: 0; font-size: 0.95rem; background: transparent; color: var(--ink); width: 100%; font-family: inherit;}
     
     .num-wrap { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    .num-pill { background: var(--pill); border: 1px solid var(--ring-strong); border-radius: 10px; padding: 6px 10px; display: flex; gap: 8px; align-items: center; width: fit-content; }
+    .num-pill { background: var(--pill); border: 1px solid var(--ring-strong); border-radius: 10px; padding: 6px 10px; display: flex; gap: 6px; align-items: center; width: fit-content; }
     .num-pill input { width: 50px; border: 0; outline: 0; background: transparent; font-size: 1rem; font-weight: 600; color: var(--ink); text-align: center; font-family: inherit;}
+    .pill-type-tag { min-width: 42px; font-size: .65rem; font-weight: 700; line-height: 1; text-align: center; }
     .chip-del { border: none; background: transparent; color: var(--muted); font-weight: 500; border-radius: 6px; width: 20px; height: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;}
     .chip-del:hover { background: var(--danger-bg); color: var(--danger); }
     .btn-add { border: 1px dashed var(--accent); background: transparent; color: var(--accent-2); border-radius: 8px; padding: 6px 12px; font-weight: 500; font-size: 0.8rem; cursor: pointer; transition: all .2s; }
