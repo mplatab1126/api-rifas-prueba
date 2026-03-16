@@ -1066,7 +1066,19 @@ function renderCapitalPorInversor() {
 
   todosLosPremios.forEach(p => {
     if (!p.aportante || !capitalMap[p.aportante]) return;
+    if (p.es_para_recapitalizar) return; // pagos de deuda no cuentan como capital
     capitalMap[p.aportante][p.rifa_id] = (capitalMap[p.aportante][p.rifa_id] || 0) + Number(p.valor);
+  });
+
+  // Agregar exceso de recapitalización como capital (si pagaron más de lo que debían)
+  rifasData.forEach(rifa => {
+    ['Mateo', 'Alejandro'].forEach(hermano => {
+      const key = hermano.toLowerCase();
+      const dif = rifa[`recap_diferencia_${key}`];
+      if (dif > 0 && capitalMap[hermano]) {
+        capitalMap[hermano][rifa.id] = (capitalMap[hermano][rifa.id] || 0) + dif;
+      }
+    });
   });
 
   // Totales por inversor

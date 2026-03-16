@@ -50,7 +50,9 @@ export default async function handler(req, res) {
       // ── Paso 1: construir datos base por rifa ──────────────────────────
       const rifasCompletas = (rifas || []).map(rifa => {
         const premiosRifa        = (premios || []).filter(p => p.rifa_id === rifa.id);
-        const capitalTotal       = premiosRifa.reduce((s, p) => s + Number(p.valor), 0);
+        const capitalTotal       = premiosRifa
+          .filter(p => !p.es_para_recapitalizar)
+          .reduce((s, p) => s + Number(p.valor), 0);
         const totalRecapitalizar = premiosRifa
           .filter(p => p.requiere_recapitalizacion)
           .reduce((s, p) => s + Number(p.valor), 0);
@@ -105,6 +107,10 @@ export default async function handler(req, res) {
           rifa[`recap_diferencia_${key}`]      = diferencia;
           rifa[`recap_saldo_tras_pago_${key}`] = saldoTrasAportado; // deuda arrastrada pendiente tras el pago
           rifa[`recap_saldo_acum_${key}`]      = saldoAcum[h];
+
+          // Si el hermano pagó más de lo que debía, el exceso es capital real
+          const exceso = Math.max(0, diferencia);
+          if (exceso > 0) rifa.capital_total += exceso;
         });
       });
 
