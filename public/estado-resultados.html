@@ -888,7 +888,7 @@ function renderEstado(abonos, fb, rifaEmpresa, gastos, retiros) {
       </div>`).join('');
 
   // ── EGRESOS — Gastos Rifa Apartamento ─────────────────────────────────
-  const gastosRifa = (gastos || []).filter(g => g.categoria === 'Gastos Rifa Apartamento');
+  const gastosRifa = (gastos || []).filter(g => g.categoria === 'Gastos Rifa Apartamento' && g.subcategoria !== 'Devoluciones a Clientes');
   const totalGastosRifa = gastosRifa.reduce((s, g) => s + Number(g.monto || 0), 0);
 
   const porSubcatRifa = {};
@@ -1116,7 +1116,7 @@ function renderRetiros(retiros) {
 // ── Registro de gastos históricos ──────────────────────────────────────────
 const SUBCATEGORIAS = {
   operacionales:    ['Publicidad Meta', 'Nómina', 'ChateaPro / WhatsApp', 'Impuestos', 'Comisiones', 'Arriendo', 'Servicios públicos', 'Herramientas y software', 'Transporte', 'Papelería', 'Alimentación', 'Otros'],
-  rifa_apartamento: ['Adecuación', 'Muebles', 'Pintura', 'Electrodomésticos', 'Acabados', 'Publicidad rifa', 'Premios', 'Otros'],
+  rifa_apartamento: ['Adecuación', 'Muebles', 'Pintura', 'Electrodomésticos', 'Acabados', 'Publicidad rifa', 'Premios', 'Devoluciones a Clientes', 'Otros'],
   construccion:     ['Materiales', 'Mano de obra', 'Hierro', 'Cemento', 'Acabados', 'Transporte material', 'Otros'],
   rifa_camioneta:   ['Publicidad', 'Premios', 'Preparación', 'Otros'],
   retiro_ganancia:  ['Papá', 'Mateo', 'Alejandro']
