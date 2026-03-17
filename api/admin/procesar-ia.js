@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
   if (!imagenBase64) return res.status(400).json({ status: 'error', mensaje: 'No se envió ninguna imagen' });
 
-  const openAiKey = process.env.OPENAI_API_KEY; 
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
@@ -40,37 +40,41 @@ export default async function handler(req, res) {
         "monto": "Solo el número absoluto sin símbolos ni signos (Ej: 3000000). NUNCA incluyas el signo negativo.",
         "referencia": "Código de comprobante o referencia. Si no hay, pon '0'",
         "fecha_pago": "La fecha exacta en formato YYYY-MM-DD",
-        "hora_pago": "La hora en formato HH:MM:00 (Formato 24h. Obligatorio poner los segundos). Si no hay hora, pon '12:00:00'"
+        "hora_pago": "La hora en formato HH:MM:00 (Formato 24h. Obligatorio poner los segundos). Si no hay hora, pon '12:00:00'",
+        "descripcion_movimiento": "El campo 'Descripción' del comprobante bancario, TAL CUAL aparece (Ej: 'Valor iva', 'Compra POS', 'Transferencia a terceros'). Si no hay, pon ''"
       }
     `;
 
-    // 4. Llamada a la API de OpenAI (Modelo GPT-4o Vision)
-    const responseAI = await fetch('https://api.openai.com/v1/chat/completions', {
+    // 4. Llamada a Claude Sonnet 4 (Anthropic Vision)
+    const base64SinPrefijo = imagenBase64.replace(/^data:image\/\w+;base64,/, '');
+    const mediaType = imagenBase64.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
+
+    const responseAI = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openAiKey}`
+        'x-api-key': anthropicKey,
+        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 400,
         messages: [
           {
             role: 'user',
             content: [
-              { type: 'text', text: prompt },
-              { type: 'image_url', image_url: { url: imagenBase64 } }
+              { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64SinPrefijo } },
+              { type: 'text', text: prompt }
             ]
           }
-        ],
-        max_tokens: 300,
-        temperature: 0.0
+        ]
       })
     });
 
     const dataAI = await responseAI.json();
-    if (dataAI.error) throw new Error("Error en OpenAI: " + dataAI.error.message);
+    if (dataAI.error) throw new Error("Error en Claude: " + (dataAI.error.message || JSON.stringify(dataAI.error)));
 
-    const respuestaTexto = dataAI.choices[0].message.content.trim();
+    const respuestaTexto = (dataAI.content && dataAI.content[0] ? dataAI.content[0].text : '').trim();
     const jsonLimpio = respuestaTexto.replace(/```json/g, '').replace(/```/g, '').trim();
     const datos = JSON.parse(jsonLimpio);
 
@@ -108,6 +112,18 @@ export default async function handler(req, res) {
         }
       }
 
+      let urlComprobanteEgreso = null;
+      try {
+        const base64Data = imagenBase64.replace(/^data:image\/\w+;base64,/, "");
+        const buffer = Buffer.from(base64Data, 'base64');
+        const fileName = `gasto_${Date.now()}_${Math.floor(Math.random() * 1000)}.jpg`;
+        const { error: upErr } = await supabase.storage.from('comprobantes').upload(fileName, buffer, { contentType: 'image/jpeg' });
+        if (!upErr) {
+          const { data: pubUrl } = supabase.storage.from('comprobantes').getPublicUrl(fileName);
+          urlComprobanteEgreso = pubUrl.publicUrl;
+        }
+      } catch (_) {}
+
       return res.status(200).json({
         status: 'es_egreso',
         mensaje: 'Detectado como egreso (valor negativo o retiro).',
@@ -116,8 +132,10 @@ export default async function handler(req, res) {
           monto: datos.monto,
           referencia: datos.referencia,
           fecha_pago: datos.fecha_pago,
-          hora_pago: datos.hora_pago
-        }
+          hora_pago: datos.hora_pago,
+          descripcion_movimiento: datos.descripcion_movimiento || ''
+        },
+        url_comprobante: urlComprobanteEgreso
       });
     }
 

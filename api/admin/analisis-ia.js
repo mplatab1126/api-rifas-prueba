@@ -15,9 +15,8 @@ export default async function handler(req, res) {
   const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
   if (!asesores[contrasena]) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
 
-  // Llave de OpenAI (Asegúrate de tener OPENAI_API_KEY en tu Vercel)
-  const openAiKey = process.env.OPENAI_API_KEY; 
-  if (!openAiKey) return res.status(500).json({ status: 'error', mensaje: 'Falta la API Key de OpenAI en el servidor' });
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  if (!anthropicKey) return res.status(500).json({ status: 'error', mensaje: 'Falta la API Key de Anthropic en el servidor' });
 
   try {
     // 🧠 EL PROMPT MAESTRO PARA LA IA
@@ -50,26 +49,24 @@ export default async function handler(req, res) {
       No incluyas saludos genéricos, ni comillas invertidas de markdown (\`\`\`). Entrega directamente el HTML puro. Sé incisivo, analítico, crítico y constructivo. Usa emojis de forma profesional.
     `;
 
-    // Llamada a OpenAI (Usamos gpt-4o-mini para que Vercel no se sature por tiempo)
-    const responseAI = await fetch('https://api.openai.com/v1/chat/completions', {
+    const responseAI = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openAiKey}`
+        'x-api-key': anthropicKey,
+        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini', 
-        messages: [{ role: 'system', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 1500
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }]
       })
     });
 
     const dataAI = await responseAI.json();
-    if (dataAI.error) throw new Error(dataAI.error.message);
+    if (dataAI.error) throw new Error(dataAI.error.message || JSON.stringify(dataAI.error));
 
-    // Limpiamos el texto por si OpenAI manda bloques de markdown
-    const htmlReport = dataAI.choices[0].message.content.trim().replace(/```html/g, '').replace(/```/g, '');
+    const htmlReport = (dataAI.content?.[0]?.text || '').trim().replace(/```html/g, '').replace(/```/g, '');
 
     return res.status(200).json({ status: 'ok', html: htmlReport });
 

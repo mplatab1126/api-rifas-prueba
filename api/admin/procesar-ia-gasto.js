@@ -21,7 +21,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ status: 'error', mensaje: 'No se envió ninguna imagen.' });
   }
 
-  const openAiKey = process.env.OPENAI_API_KEY;
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
@@ -39,30 +39,33 @@ export default async function handler(req, res) {
       }
     `;
 
-    const responseAI = await fetch('https://api.openai.com/v1/chat/completions', {
+    const base64SinPrefijo = imagenBase64.replace(/^data:image\/\w+;base64,/, '');
+    const mediaType = imagenBase64.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
+
+    const responseAI = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openAiKey}`
+        'x-api-key': anthropicKey,
+        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 400,
         messages: [{
           role: 'user',
           content: [
-            { type: 'text', text: prompt },
-            { type: 'image_url', image_url: { url: imagenBase64 } }
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64SinPrefijo } },
+            { type: 'text', text: prompt }
           ]
-        }],
-        max_tokens: 300,
-        temperature: 0.0
+        }]
       })
     });
 
     const dataAI = await responseAI.json();
-    if (dataAI.error) throw new Error('Error en OpenAI: ' + dataAI.error.message);
+    if (dataAI.error) throw new Error('Error en Claude: ' + (dataAI.error.message || JSON.stringify(dataAI.error)));
 
-    const texto = dataAI.choices[0].message.content.trim();
+    const texto = (dataAI.content && dataAI.content[0] ? dataAI.content[0].text : '').trim();
     const jsonLimpio = texto.replace(/```json/g, '').replace(/```/g, '').trim();
     const datos = JSON.parse(jsonLimpio);
 

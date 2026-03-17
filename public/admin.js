@@ -1745,18 +1745,21 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                     <div>🏦 <b>${d.plataforma || '—'}</b></div>
                     <div>🔖 Ref: <b>${d.referencia || '—'}</b></div>
                     <div>🕐 <b>${(d.hora_pago || '').slice(0,5) || '—'}</b></div>
+                    ${d.descripcion_movimiento ? `<div style="grid-column:1/-1; border-top:1px solid #e0e0e0; padding-top:6px; margin-top:2px;">📝 Banco dice: <b>${d.descripcion_movimiento}</b></div>` : ''}
                   </div>
                   <div style="display:flex; flex-direction:column; gap:8px;">
-                    <input id="desc_${item.id}" type="text" placeholder="¿En qué se gastó? (obligatorio)" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1.5px solid var(--ring-strong); font-size:0.85rem; font-family:inherit;">
-                    <select id="cat_${item.id}" onchange="actualizarSubcatEgreso(${item.id})" style="width:100%; padding:9px 8px; border-radius:8px; border:1.5px solid #e53935; font-size:0.82rem; font-family:inherit; font-weight:700;">
+                    <input id="desc_${item.id}" type="text" value="${(d.descripcion_movimiento || '').replace(/"/g, '&quot;')}" placeholder="¿En qué se gastó? (obligatorio)" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1.5px solid var(--ring-strong); font-size:0.85rem; font-family:inherit;">
+                    <select id="cat_${item.id}" onchange="actualizarSubcatsEgreso(${item.id})" style="width:100%; padding:9px 8px; border-radius:8px; border:1.5px solid #e53935; font-size:0.82rem; font-family:inherit; font-weight:700;">
                       <option value="">— Categoría del gasto * —</option>
-                      ${opcionesCategorias()}
+                      <option value="operacionales">⚙️ Gastos Operacionales</option>
+                      <option value="rifa_apartamento">🏠 Gastos Rifa Apartamento</option>
+                      <option value="construccion">🏗️ Construcción Apartamento</option>
+                      <option value="rifa_camioneta">🚗 Rifa Camioneta</option>
                     </select>
                     <select id="subcat_${item.id}" style="width:100%; padding:9px 8px; border-radius:8px; border:1.5px solid var(--ring-strong); font-size:0.82rem; font-family:inherit;">
-                      <option value="">Sin subcategoría</option>
+                      <option value="">— Primero elige una categoría —</option>
                     </select>
-                    <input id="notas_${item.id}" type="text" placeholder="Notas adicionales (opcional)" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1.5px solid var(--ring-strong); font-size:0.85rem; font-family:inherit;">
-                    <button onclick="guardarEgreso(${item.id})" style="width:100%; padding:10px; border-radius:8px; border:none; background:#1565c0; color:#fff; font-weight:700; font-size:0.88rem; cursor:pointer; font-family:inherit;">💾 Confirmar y Guardar Gasto</button>
+                    <button id="btnGuardar_${item.id}" onclick="guardarEgreso(${item.id})" style="width:100%; padding:10px; border-radius:8px; border:none; background:#1565c0; color:#fff; font-weight:700; font-size:0.88rem; cursor:pointer; font-family:inherit; transition:background .2s;">💾 Confirmar y Guardar Gasto</button>
                   </div>
                 </div>`;
                 return;
@@ -1833,10 +1836,25 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
 
                 // La IA detectó que es un egreso (valor negativo / en rojo / retiro)
                 if (resIngreso.status === 'es_egreso') {
+                    const de = resIngreso.datosExtraidos;
+                    const yaEnCarga = filaArchivosIA.some(other =>
+                        other.id !== item.id &&
+                        (other.status === 'pendiente_justificacion' || other.status === 'guardado') &&
+                        other.datos &&
+                        Number(other.datos.monto) === Number(de.monto) &&
+                        other.datos.fecha_pago === de.fecha_pago &&
+                        String(other.datos.plataforma || '').toLowerCase() === String(de.plataforma || '').toLowerCase()
+                    );
+                    if (yaEnCarga) {
+                        item.status = 'duplicado';
+                        item.mensaje = `Egreso repetido en esta carga — $${Number(de.monto).toLocaleString('es-CO')}`;
+                        actualizarUIIA();
+                        continue;
+                    }
                     item.status = 'pendiente_justificacion';
                     item.mensaje = 'Egreso detectado — requiere justificación';
-                    item.datos = resIngreso.datosExtraidos;
-                    item.urlComprobante = null;
+                    item.datos = de;
+                    item.urlComprobante = resIngreso.url_comprobante || null;
                     actualizarUIIA();
                     continue;
                 }
@@ -1874,7 +1892,25 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         }
     }
 
-    // 6. Guardar egreso una vez el asesor llena la justificación
+    // 6. Subcategorías por categoría
+    const SUBCATEGORIAS = {
+        operacionales: ['Publicidad Meta', 'Nómina', 'ChateaPro / WhatsApp', 'Impuestos', 'Comisiones', 'Arriendo', 'Servicios públicos', 'Herramientas y software', 'Transporte', 'Papelería', 'Alimentación', 'Otros'],
+        rifa_apartamento: ['Adecuación', 'Muebles', 'Pintura', 'Electrodomésticos', 'Acabados', 'Publicidad rifa', 'Premios', 'Otros'],
+        construccion: ['Materiales', 'Mano de obra', 'Hierro', 'Cemento', 'Acabados', 'Transporte material', 'Otros'],
+        rifa_camioneta: ['Publicidad', 'Premios', 'Preparación', 'Otros']
+    };
+
+    function actualizarSubcatsEgreso(id) {
+        const cat = document.getElementById(`cat_${id}`)?.value;
+        const subcatSelect = document.getElementById(`subcat_${id}`);
+        if (!subcatSelect) return;
+        const opciones = SUBCATEGORIAS[cat] || [];
+        subcatSelect.innerHTML = opciones.length
+            ? '<option value="">— Subcategoría —</option>' + opciones.map(s => `<option value="${s}">${s}</option>`).join('')
+            : '<option value="">— Primero elige una categoría —</option>';
+    }
+
+    // 7. Guardar egreso una vez el asesor llena la justificación
     async function guardarEgreso(id) {
         const item = filaArchivosIA.find(f => f.id === id);
         if (!item) return;
@@ -1883,12 +1919,13 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         const categoria    = document.getElementById(`cat_${id}`)?.value;
         const subcategoria = document.getElementById(`subcat_${id}`)?.value;
         const notas        = document.getElementById(`notas_${id}`)?.value?.trim();
-        const proyecto     = categoria; // categoría y proyecto son el mismo valor
+        const nombresCat = { operacionales: 'Operacionales', rifa_apartamento: 'Rifa Apartamento', construccion: 'Construcción', rifa_camioneta: 'Rifa Camioneta' };
+        const proyecto     = nombresCat[categoria] || categoria;
 
         if (!descripcion) { alert('La descripción es obligatoria.'); return; }
         if (!categoria)   { alert('Debes seleccionar la categoría del gasto.'); return; }
 
-        const btn = document.querySelector(`[data-id="${id}"] button`);
+        const btn = document.getElementById(`btnGuardar_${id}`);
         if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
 
         try {
@@ -1920,18 +1957,23 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
             if (res.status === 'ok') {
                 item.status = 'guardado';
                 item.mensaje = `Egreso guardado · $${Number(d.monto).toLocaleString('es-CO')} · ${proyecto}`;
+                actualizarUIIA();
             } else {
-                item.status = 'pendiente_justificacion';
-                item.mensaje = res.mensaje || 'Error al guardar';
-                if (btn) { btn.disabled = false; btn.textContent = '💾 Confirmar y Guardar Gasto'; }
+                if (btn) {
+                    btn.disabled = false;
+                    btn.style.background = '#c62828';
+                    btn.textContent = '❌ ' + (res.mensaje || 'Error al guardar');
+                    setTimeout(() => { btn.style.background = '#1565c0'; btn.textContent = '💾 Confirmar y Guardar Gasto'; }, 6000);
+                }
             }
         } catch (_) {
-            item.status = 'pendiente_justificacion';
-            item.mensaje = 'Fallo de conexión al guardar';
-            if (btn) { btn.disabled = false; btn.textContent = '💾 Confirmar y Guardar Gasto'; }
+            if (btn) {
+                btn.disabled = false;
+                btn.style.background = '#c62828';
+                btn.textContent = '❌ Fallo de conexión';
+                setTimeout(() => { btn.style.background = '#1565c0'; btn.textContent = '💾 Confirmar y Guardar Gasto'; }, 6000);
+            }
         }
-
-        actualizarUIIA();
     }
 
     // 7. Conversor de archivos a base64 (imágenes directas, PDFs renderizados)

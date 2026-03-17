@@ -11,8 +11,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ status: 'error', mensaje: 'Cuéntame más sobre tu sueño o señal.' });
   }
 
-  const openAiKey = process.env.OPENAI_API_KEY;
-  if (!openAiKey) return res.status(500).json({ status: 'error', mensaje: 'El Oráculo no está disponible en este momento.' });
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  if (!anthropicKey) return res.status(500).json({ status: 'error', mensaje: 'El Oráculo no está disponible en este momento.' });
 
   try {
     const prompt = `Eres el Oráculo de la Suerte de "Los Plata", una rifa colombiana. Tu misión es interpretar sueños y señales del día para sugerir números de la suerte en la lotería diaria (números del 01 al 99, de 2 cifras).
@@ -27,22 +27,22 @@ Responde en este JSON exacto (sin markdown, sin explicaciones extra):
 
 Los números deben ser enteros entre 1 y 99, elegidos con lógica simbólica relacionada al sueño (ej: un gato → 17 por la tradición de la charada, un perro → 07, etc.). Devuelve exactamente 3 números distintos.`;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openAiKey}`
+        'x-api-key': anthropicKey,
+        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.85,
-        max_tokens: 200
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 300,
+        messages: [{ role: 'user', content: prompt }]
       })
     });
 
     const data = await response.json();
-    const raw = data.choices?.[0]?.message?.content?.trim();
+    const raw = data.content?.[0]?.text?.trim();
     if (!raw) throw new Error('Sin respuesta de la IA');
 
     const parsed = JSON.parse(raw);
