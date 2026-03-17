@@ -142,7 +142,7 @@
       <p style="color:var(--muted); font-size: 0.85rem; margin-bottom: 15px;">Registra un movimiento manual de la caja.</p>
       
       <div class="field" style="margin-bottom:10px;">
-        <select id="movTipo" style="font-size: 0.95rem;">
+        <select id="movTipo" onchange="toggleCamposSalida()" style="font-size: 0.95rem;">
           <option value="salida">🔴 Salida (Ej: Pago internet, tintos)</option>
           <option value="ingreso">🟢 Ingreso Extra (Ej: Más sencillo)</option>
           <option value="consignacion">🔵 Traslado a Banco (Consignación)</option>
@@ -151,8 +151,27 @@
       <div class="field" style="margin-bottom:10px;">
         <input type="number" id="movMonto" placeholder="Valor Ej: 50000">
       </div>
-      <div class="field" style="margin-bottom:15px;">
+      <div class="field" style="margin-bottom:10px;">
         <input type="text" id="movDetalle" placeholder="¿De qué es? (Ej: Recibo de luz)" style="font-size: 0.9rem; font-weight: normal; text-align: left;">
+      </div>
+
+      <div id="camposSalida">
+        <div class="field" style="margin-bottom:10px;">
+          <select id="movCategoria" onchange="actualizarSubcatsCaja()" style="font-size:0.9rem; font-weight:700; border-color:#e53935;">
+            <option value="">— Categoría del gasto * —</option>
+            <option value="operacionales">⚙️ Gastos Operacionales</option>
+            <option value="rifa_apartamento">🏠 Gastos Rifa Apartamento</option>
+            <option value="construccion">🏗️ Construcción Apartamento</option>
+            <option value="rifa_camioneta">🚗 Rifa Camioneta</option>
+            <option value="retiro_ganancia">💸 Retiro de Ganancia</option>
+            <option value="pagos_diarias">🎯 Pagos Rifas Diarias</option>
+          </select>
+        </div>
+        <div class="field" style="margin-bottom:15px;">
+          <select id="movSubcategoria" style="font-size:0.9rem;">
+            <option value="">— Primero elige categoría —</option>
+          </select>
+        </div>
       </div>
 
       <div style="display:flex; gap:10px;">
@@ -226,6 +245,29 @@
     let asesorRecibiendoNombre = '';
 
     const fmt = (n) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
+
+    const SUBCATEGORIAS_CAJA = {
+      operacionales:    ['Publicidad Meta', 'Nómina', 'Plataformas', 'Impuestos', 'Comisiones', 'Arriendo', 'Servicios públicos', 'Transporte', 'Papelería', 'Alimentación', 'Otros'],
+      rifa_apartamento: ['Adecuación', 'Muebles', 'Pintura', 'Electrodomésticos', 'Acabados', 'Publicidad rifa', 'Premios', 'Devoluciones a Clientes', 'Otros'],
+      construccion:     ['Materiales', 'Mano de obra', 'Hierro', 'Cemento', 'Acabados', 'Transporte material', 'Otros'],
+      rifa_camioneta:   ['Publicidad', 'Premios', 'Preparación', 'Otros'],
+      retiro_ganancia:  ['Papá', 'Mateo', 'Alejandro'],
+      pagos_diarias:    ['Rifa de 2 cifras', 'Rifa de 3 cifras']
+    };
+
+    function toggleCamposSalida() {
+      const tipo = document.getElementById('movTipo').value;
+      document.getElementById('camposSalida').style.display = tipo === 'salida' ? 'block' : 'none';
+    }
+
+    function actualizarSubcatsCaja() {
+      const cat = document.getElementById('movCategoria').value;
+      const sel = document.getElementById('movSubcategoria');
+      const opciones = SUBCATEGORIAS_CAJA[cat] || [];
+      sel.innerHTML = opciones.length
+        ? '<option value="">— Subcategoría —</option>' + opciones.map(s => `<option value="${s}">${s}</option>`).join('')
+        : '<option value="">— Primero elige categoría —</option>';
+    }
 
     // --- 1. LOGIN ---
     document.addEventListener('DOMContentLoaded', () => {
@@ -337,6 +379,9 @@
     function abrirModalMovimiento() {
       document.getElementById('movMonto').value = '';
       document.getElementById('movDetalle').value = '';
+      document.getElementById('movCategoria').value = '';
+      document.getElementById('movSubcategoria').innerHTML = '<option value="">— Primero elige categoría —</option>';
+      toggleCamposSalida();
       document.getElementById('modalMovimiento').style.display = 'flex';
       document.getElementById('movMonto').focus();
     }
@@ -452,6 +497,15 @@
       if (!monto || monto <= 0) return alert('Ingresa un monto válido.');
       if (!descripcion) return alert('Ingresa una descripción del movimiento.');
 
+      let categoria = null;
+      let subcategoria = null;
+
+      if (tipo === 'salida') {
+        categoria = document.getElementById('movCategoria').value;
+        subcategoria = document.getElementById('movSubcategoria').value;
+        if (!categoria) return alert('Debes seleccionar la categoría del gasto.');
+      }
+
       const btn = document.querySelector('#modalMovimiento .cta:not(.cta-outline)');
       btn.textContent = 'Guardando...'; btn.disabled = true;
 
@@ -459,7 +513,12 @@
         const req = await fetch('/api/admin/caja', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ accion: 'registrar_movimiento', contrasena: contrasenaActual, tipo, monto, descripcion })
+          body: JSON.stringify({
+            accion: 'registrar_movimiento', contrasena: contrasenaActual,
+            tipo, monto, descripcion,
+            categoria: categoria || null,
+            subcategoria: subcategoria || null
+          })
         });
         const res = await req.json();
 

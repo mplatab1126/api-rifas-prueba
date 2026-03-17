@@ -144,7 +144,7 @@ export default async function handler(req, res) {
     // ACCIÓN: registrar_movimiento — Ingreso, salida o consignación manual
     // ─────────────────────────────────────────────────────────
     if (accion === 'registrar_movimiento') {
-      const { tipo, descripcion } = payload;
+      const { tipo, descripcion, categoria, subcategoria } = payload;
       const monto = Number(payload.monto);
 
       if (!['ingreso', 'salida', 'consignacion'].includes(tipo)) {
@@ -161,6 +161,31 @@ export default async function handler(req, res) {
         creado_por: nombreAsesor
       });
       if (error) throw error;
+
+      // Si es salida con categoría, también registrar en tabla de gastos
+      if (tipo === 'salida' && categoria) {
+        const CATS = {
+          operacionales:    'Gastos Operacionales',
+          rifa_apartamento: 'Gastos Rifa Apartamento',
+          construccion:     'Construcción Apartamento',
+          rifa_camioneta:   'Rifa Camioneta',
+          retiro_ganancia:  'Retiro de Ganancia',
+          pagos_diarias:    'Pagos Rifas Diarias'
+        };
+        const catNombre = CATS[categoria];
+        if (catNombre) {
+          await supabase.from('gastos').insert({
+            fecha: hoy,
+            monto: Math.round(monto),
+            plataforma: 'Efectivo Caja',
+            descripcion: descripcion.trim(),
+            categoria: catNombre,
+            subcategoria: subcategoria || null,
+            reportado_por: nombreAsesor,
+            categorizado_por: nombreAsesor
+          });
+        }
+      }
 
       return res.status(200).json({ status: 'ok', mensaje: 'Movimiento guardado' });
     }
