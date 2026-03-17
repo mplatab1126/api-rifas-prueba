@@ -37,13 +37,22 @@ export default async function handler(req, res) {
     const tipoConsulta = tipo || '3cifras';
     const { data, error } = await supabase
       .from('historial_rifas')
-      .select('fecha_guardado, loteria, vendidas, total_boletas, recaudo_total, ganadores, total_pagado_ganadores, ganancia_neta')
+      .select('id, fecha_guardado, loteria, vendidas, total_boletas, recaudo_total, ganadores, total_pagado_ganadores, ganancia_neta')
       .eq('tipo', tipoConsulta)
-      .order('fecha_guardado', { ascending: true })
+      .order('id', { ascending: true })
       .limit(60);
 
     if (error) return res.status(500).json({ status: 'error', mensaje: error.message });
-    return res.status(200).json({ status: 'ok', historial: data || [] });
+
+    const { data: config } = await supabase
+      .from('config_rifa_diaria')
+      .select('*')
+      .eq('tipo', tipoConsulta)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    return res.status(200).json({ status: 'ok', historial: data || [], config: config || null });
   }
 
   // ─────────────────────────────────────────────────────────────────────
@@ -103,7 +112,7 @@ export default async function handler(req, res) {
 
       const { error: historialError } = await supabase.from('historial_rifas').insert({
         tipo,
-        fecha_guardado:       new Date().toISOString().split('T')[0],
+        fecha_guardado:       new Date().toISOString(),
         total_boletas:        totalBoletas,
         vendidas,
         pagadas,

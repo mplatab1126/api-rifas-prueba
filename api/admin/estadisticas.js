@@ -50,7 +50,7 @@ export default async function handler(req, res) {
     // 3. Traemos el resumen global de la tabla de boletas correspondiente
     const { data: boletasGlobal, error: errBoletas } = await supabase
       .from(tablaBoletas)
-      .select('estado, total_abonado, telefono_cliente')
+      .select('estado, total_abonado, telefono_cliente, asesor')
       .limit(100000); 
     if (errBoletas) throw errBoletas;
 
@@ -61,28 +61,51 @@ export default async function handler(req, res) {
       .limit(10000);
     if (errChatea) throw errChatea;
 
-    // 🌟 5. LO NUEVO: Traemos el rendimiento de Facebook Ads 🌟
+    // 5. Rendimiento de Facebook Ads
     const { data: fbData, error: errFb } = await supabase
       .from('metricas_facebook')
       .select('*')
       .limit(10000);
     if (errFb) throw errFb;
 
+    // 6. Gastos que afectan el estado de resultados
+    const { data: gastosData, error: errGastos } = await supabase
+      .from('gastos')
+      .select('id, fecha, monto, descripcion, categoria, subcategoria')
+      .in('categoria', ['Gastos Operacionales', 'Gastos Rifa Apartamento'])
+      .limit(10000);
+    if (errGastos) throw errGastos;
+
+    // 7. Retiros de ganancia
+    const { data: retirosData, error: errRetiros } = await supabase
+      .from('gastos')
+      .select('id, fecha, monto, descripcion, subcategoria')
+      .eq('categoria', 'Retiro de Ganancia')
+      .limit(10000);
+    if (errRetiros) throw errRetiros;
+
     let registradas = 0;
     let separadas_cero = 0;
     let libres = 0;
     let pagadas = 0;
+    let recaudo_boletas = 0;
+    const recaudo_por_asesor = {};
     const total = boletasGlobal.length;
 
-    // Calculamos el inventario global
     boletasGlobal.forEach(b => {
+        const abonado = Number(b.total_abonado || 0);
+        recaudo_boletas += abonado;
+
         if (!b.telefono_cliente || b.estado === 'LIBRE') {
             libres++;
         } else {
             registradas++;
             if (b.estado === 'Pagada') pagadas++;
-            if (!b.total_abonado || Number(b.total_abonado) === 0) {
+            if (!b.total_abonado || abonado === 0) {
                 separadas_cero++;
+            }
+            if (abonado > 0 && b.asesor) {
+                recaudo_por_asesor[b.asesor] = (recaudo_por_asesor[b.asesor] || 0) + abonado;
             }
         }
     });
@@ -91,9 +114,11 @@ export default async function handler(req, res) {
         status: 'ok', 
         abonos: abonos, 
         ventas: ventas,
-        globales: { registradas, separadas_cero, libres, pagadas, total },
+        globales: { registradas, separadas_cero, libres, pagadas, total, recaudo_boletas, recaudo_por_asesor },
         chatea: chateaData,
-        fb: fbData
+        fb: fbData,
+        gastos: gastosData,
+        retiros: retirosData
     });
   } catch (error) {
     return res.status(500).json({ status: 'error', mensaje: error.message });

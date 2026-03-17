@@ -1897,7 +1897,8 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         operacionales: ['Publicidad Meta', 'Nómina', 'ChateaPro / WhatsApp', 'Impuestos', 'Comisiones', 'Arriendo', 'Servicios públicos', 'Herramientas y software', 'Transporte', 'Papelería', 'Alimentación', 'Otros'],
         rifa_apartamento: ['Adecuación', 'Muebles', 'Pintura', 'Electrodomésticos', 'Acabados', 'Publicidad rifa', 'Premios', 'Otros'],
         construccion: ['Materiales', 'Mano de obra', 'Hierro', 'Cemento', 'Acabados', 'Transporte material', 'Otros'],
-        rifa_camioneta: ['Publicidad', 'Premios', 'Preparación', 'Otros']
+        rifa_camioneta: ['Publicidad', 'Premios', 'Preparación', 'Otros'],
+        retiro_ganancia: ['Papá', 'Mateo', 'Alejandro']
     };
 
     function actualizarSubcatsEgreso(id) {

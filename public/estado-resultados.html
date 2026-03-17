@@ -253,6 +253,136 @@
       align-items: center; border-bottom: 1px solid var(--ring);
     }
     .er-summary-stat { font-size: .82rem; color: var(--muted); }
+
+    /* ── Modal de gasto histórico ─────────────────────────────────────── */
+    .gasto-overlay {
+      position: fixed; inset: 0; z-index: 500;
+      background: rgba(10,20,15,.55); backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center; padding: 16px;
+    }
+    .gasto-overlay.show { display: flex; }
+    .gasto-modal {
+      background: var(--card); border-radius: 20px;
+      padding: 28px 26px; width: 100%; max-width: 480px;
+      max-height: 92vh; overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+    }
+    .gasto-modal-title {
+      font-size: 1rem; font-weight: 800; color: var(--ink); margin-bottom: 6px;
+    }
+    .gasto-modal-sub {
+      font-size: .78rem; color: var(--muted); margin-bottom: 20px; line-height: 1.5;
+    }
+    .gasto-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    .gasto-field label { font-size: .78rem; font-weight: 700; color: var(--ink-2); }
+    .gasto-field input, .gasto-field select, .gasto-field textarea {
+      padding: 10px 14px; border: 1px solid var(--ring-strong);
+      border-radius: 10px; font-family: inherit; font-size: .85rem;
+      color: var(--ink); background: var(--bg); outline: none;
+      transition: border-color .15s;
+    }
+    .gasto-field input:focus, .gasto-field select:focus, .gasto-field textarea:focus {
+      border-color: var(--accent); background: #fff;
+    }
+    .gasto-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .gasto-footer { display: flex; gap: 10px; margin-top: 20px; }
+    .gasto-footer button { flex: 1; justify-content: center; }
+    .gasto-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      padding: 10px 18px; border-radius: 10px; border: none;
+      font-family: inherit; font-size: .83rem; font-weight: 700;
+      cursor: pointer; transition: opacity .15s;
+    }
+    .gasto-btn:active { transform: scale(.97); }
+    .gasto-btn-primary { background: var(--accent); color: #fff; }
+    .gasto-btn-primary:hover { opacity: .88; }
+    .gasto-btn-ghost { background: var(--card); color: var(--ink-2); border: 1px solid var(--ring-strong); }
+    .gasto-btn-ghost:hover { background: var(--bg); }
+
+    .gasto-banner {
+      background: var(--warning-bg); border: 1px solid #fde68a;
+      border-radius: 10px; padding: 10px 14px;
+      font-size: .78rem; color: #92400e; line-height: 1.5;
+      margin-bottom: 20px; display: flex; align-items: flex-start; gap: 8px;
+    }
+    .gasto-banner span { font-size: 1.1rem; flex-shrink: 0; }
+
+    /* Botón flotante de agregar gasto */
+    .btn-agregar-gasto {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: 9px; border: 1px dashed var(--ring-strong);
+      background: var(--bg); color: var(--ink-2);
+      font-family: inherit; font-size: .78rem; font-weight: 700;
+      cursor: pointer; transition: all .15s;
+    }
+    .btn-agregar-gasto:hover { background: var(--warning-bg); border-color: #fde68a; color: #92400e; }
+
+    /* Lista de gastos recientes en el modal */
+    .gastos-recientes { margin-top: 16px; border-top: 1px solid var(--ring); padding-top: 12px; }
+    .gastos-recientes-title {
+      font-size: .72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--muted); margin-bottom: 8px;
+    }
+    .gasto-reciente-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0; border-bottom: 1px solid var(--ring); font-size: .8rem;
+    }
+    .gasto-reciente-item:last-child { border-bottom: none; }
+    .gasto-reciente-desc { color: var(--ink); font-weight: 600; }
+    .gasto-reciente-meta { font-size: .72rem; color: var(--muted); margin-top: 2px; }
+    .gasto-reciente-monto { font-weight: 700; color: var(--danger); white-space: nowrap; }
+
+    /* ── Cuadrito de retiros de ganancia ──────────────────────────────── */
+    .retiros-card {
+      background: var(--card); border: 1px solid var(--ring-strong);
+      border-radius: var(--radius); overflow: hidden;
+      box-shadow: var(--shadow-sm); margin-top: 20px;
+    }
+    .retiros-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px; border-bottom: 1px solid var(--ring);
+    }
+    .retiros-header-left {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .retiros-header-icon { font-size: 1.2rem; }
+    .retiros-header-title { font-size: .9rem; font-weight: 800; color: var(--ink); }
+    .retiros-header-total {
+      font-size: 1rem; font-weight: 800; color: #b45309;
+    }
+    .retiros-body {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px; padding: 16px 20px;
+    }
+    .retiro-persona {
+      border-radius: 12px; padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .retiro-persona.tiene { background: #fffbeb; border: 1px solid #fde68a; }
+    .retiro-persona.vacio { background: var(--bg); border: 1px solid var(--ring); }
+    .retiro-persona-nombre {
+      font-size: .75rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .retiro-persona-nombre.tiene { color: #92400e; }
+    .retiro-persona-nombre.vacio { color: var(--muted); }
+    .retiro-persona-monto { font-size: 1.2rem; font-weight: 800; line-height: 1.1; }
+    .retiro-persona-monto.tiene { color: #b45309; }
+    .retiro-persona-monto.vacio { color: var(--ring-strong); }
+    .retiro-persona-count {
+      font-size: .7rem; font-weight: 500; margin-top: 2px;
+    }
+    .retiro-persona-count.tiene { color: #d97706; }
+    .retiro-persona-count.vacio { color: var(--muted); }
+    .retiros-detalle { padding: 0 20px 16px; }
+    .retiro-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0; border-bottom: 1px solid var(--ring); font-size: .82rem;
+    }
+    .retiro-item:last-child { border-bottom: none; }
+    .retiro-item-desc { color: var(--ink); font-weight: 600; }
+    .retiro-item-meta { font-size: .7rem; color: var(--muted); margin-top: 2px; }
+    .retiro-item-monto { font-weight: 700; color: #b45309; white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -324,6 +454,85 @@
   </div>
 </div>
 
+<!-- ══ MODAL: REGISTRAR GASTO HISTÓRICO ═════════════════════════════════ -->
+<div id="modalGasto" class="gasto-overlay">
+  <div class="gasto-modal">
+    <div class="gasto-modal-title">📝 Registrar gasto histórico</div>
+    <div class="gasto-modal-sub">Para gastos que ya ocurrieron antes de hoy y no fueron registrados por el sistema.</div>
+
+    <div class="gasto-banner">
+      <span>⚠️</span>
+      <div>Este formulario es <strong>temporal</strong>. Los gastos nuevos se registrarán automáticamente a través de la carga IA en el panel de administración.</div>
+    </div>
+
+    <div class="gasto-field-row">
+      <div class="gasto-field">
+        <label>Fecha del gasto *</label>
+        <input type="date" id="gastoFecha">
+      </div>
+      <div class="gasto-field">
+        <label>Monto (COP) *</label>
+        <input type="number" id="gastoMonto" placeholder="Ej: 150000" min="1">
+      </div>
+    </div>
+
+    <div class="gasto-field-row">
+      <div class="gasto-field">
+        <label>Categoría *</label>
+        <select id="gastoCategoria" onchange="actualizarSubcategorias()">
+          <option value="">— Selecciona —</option>
+          <option value="operacionales">⚙️ Gastos Operacionales</option>
+          <option value="rifa_apartamento">🏠 Gastos Rifa Apartamento</option>
+          <option value="construccion">🏗️ Construcción Apartamento</option>
+          <option value="rifa_camioneta">🚗 Rifa Camioneta</option>
+          <option value="retiro_ganancia">💸 Retiro de Ganancia</option>
+        </select>
+      </div>
+      <div class="gasto-field">
+        <label>Subcategoría</label>
+        <select id="gastoSubcategoria">
+          <option value="">— Primero elige categoría —</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="gasto-field">
+      <label>Descripción *</label>
+      <input type="text" id="gastoDescripcion" placeholder="Ej: Pago arriendo oficina febrero">
+    </div>
+
+    <div class="gasto-field-row">
+      <div class="gasto-field">
+        <label>Plataforma de pago</label>
+        <select id="gastoPlataforma">
+          <option value="">— Opcional —</option>
+          <option value="Bancolombia">Bancolombia</option>
+          <option value="Nequi">Nequi</option>
+          <option value="Daviplata">Daviplata</option>
+          <option value="Efectivo">Efectivo</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+      <div class="gasto-field">
+        <label>Referencia / N° transacción</label>
+        <input type="text" id="gastoReferencia" placeholder="Opcional">
+      </div>
+    </div>
+
+    <div class="gasto-field">
+      <label>Notas adicionales</label>
+      <textarea id="gastoNotas" rows="2" placeholder="Opcional — detalles extra…"></textarea>
+    </div>
+
+    <div class="gasto-footer">
+      <button class="gasto-btn gasto-btn-ghost" onclick="cerrarModalGasto()">Cancelar</button>
+      <button class="gasto-btn gasto-btn-primary" id="btnGuardarGasto" onclick="guardarGastoHistorico()">Registrar gasto</button>
+    </div>
+
+    <div id="gastosRecientesBox"></div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -339,6 +548,8 @@ let asesorNombre    = '';
 let globalAbonos    = [];
 let globalFb        = [];
 let globalRifas     = [];
+let globalGastos    = [];
+let globalRetiros   = [];
 let asesoresVisibl  = [];
 let asesoresPanel   = false;
 
@@ -431,9 +642,11 @@ async function cargarTodo() {
     if (dataStats.status !== 'ok') throw new Error(dataStats.mensaje);
     if (dataRifas.status !== 'ok') throw new Error(dataRifas.mensaje);
 
-    globalAbonos = dataStats.abonos  || [];
-    globalFb     = dataStats.fb      || [];
-    globalRifas  = dataRifas.rifas   || [];
+    globalAbonos  = dataStats.abonos  || [];
+    globalFb      = dataStats.fb      || [];
+    globalGastos  = dataStats.gastos  || [];
+    globalRetiros = dataStats.retiros || [];
+    globalRifas   = dataRifas.rifas   || [];
 
     // Construir lista de asesores únicos desde los abonos
     const setAsesores = new Set(globalAbonos.map(a => a.asesor || 'Sin Asesor').filter(Boolean));
@@ -531,6 +744,18 @@ function aplicarFiltros() {
     return (!desde || d >= desde) && (!hasta || d <= hasta);
   });
 
+  // Gastos filtrados por fecha
+  const gastos = globalGastos.filter(g => {
+    const d = normFecha(g.fecha);
+    return (!desde || d >= desde) && (!hasta || d <= hasta);
+  });
+
+  // Retiros de ganancia filtrados por fecha
+  const retiros = globalRetiros.filter(r => {
+    const d = normFecha(r.fecha);
+    return (!desde || d >= desde) && (!hasta || d <= hasta);
+  });
+
   // Rifa empresa activa (o la primera empresa rifa encontrada)
   const rifaEmpresa = globalRifas.find(r => r.es_empresa && r.estado === 'activa')
                    || globalRifas.find(r => r.es_empresa);
@@ -541,7 +766,7 @@ function aplicarFiltros() {
   document.getElementById('pageSubtitulo').textContent =
     `${rifaEmpresa ? rifaEmpresa.nombre + ' · ' : ''}${desdeLeg} → ${hastaLeg} · ${asesores.length} asesores`;
 
-  renderEstado(abonos, fb, rifaEmpresa);
+  renderEstado(abonos, fb, rifaEmpresa, gastos, retiros);
   actualizarContador();
 }
 
@@ -556,7 +781,7 @@ function toggleDetail(id) {
 }
 
 // ── Renderizado principal ─────────────────────────────────────────────────
-function renderEstado(abonos, fb, rifaEmpresa) {
+function renderEstado(abonos, fb, rifaEmpresa, gastos, retiros) {
   // ── INGRESOS ──────────────────────────────────────────────────────────
   const totalIngresos = abonos.reduce((s, a) => s + Number(a.monto || 0), 0);
 
@@ -640,8 +865,52 @@ function renderEstado(abonos, fb, rifaEmpresa) {
         <div class="premio-valor">${fmt(gasto)}</div>
       </div>`).join('');
 
+  // ── EGRESOS — Gastos Operacionales ──────────────────────────────────────
+  const gastosOp = (gastos || []).filter(g => g.categoria === 'Gastos Operacionales');
+  const totalGastosOp = gastosOp.reduce((s, g) => s + Number(g.monto || 0), 0);
+
+  const porSubcatOp = {};
+  gastosOp.forEach(g => {
+    const k = g.subcategoria || g.descripcion || 'Sin subcategoría';
+    if (!porSubcatOp[k]) porSubcatOp[k] = { total: 0, items: [] };
+    porSubcatOp[k].total += Number(g.monto || 0);
+    porSubcatOp[k].items.push(g);
+  });
+  const filasGastosOp = Object.entries(porSubcatOp)
+    .sort((a, b) => b[1].total - a[1].total)
+    .map(([sub, d]) => `
+      <div class="premio-item">
+        <div>
+          <div class="premio-nombre">${sub}</div>
+          <div class="premio-aportante">${d.items.length} registro${d.items.length > 1 ? 's' : ''}</div>
+        </div>
+        <div class="premio-valor">${fmt(d.total)}</div>
+      </div>`).join('');
+
+  // ── EGRESOS — Gastos Rifa Apartamento ─────────────────────────────────
+  const gastosRifa = (gastos || []).filter(g => g.categoria === 'Gastos Rifa Apartamento');
+  const totalGastosRifa = gastosRifa.reduce((s, g) => s + Number(g.monto || 0), 0);
+
+  const porSubcatRifa = {};
+  gastosRifa.forEach(g => {
+    const k = g.subcategoria || g.descripcion || 'Sin subcategoría';
+    if (!porSubcatRifa[k]) porSubcatRifa[k] = { total: 0, items: [] };
+    porSubcatRifa[k].total += Number(g.monto || 0);
+    porSubcatRifa[k].items.push(g);
+  });
+  const filasGastosRifa = Object.entries(porSubcatRifa)
+    .sort((a, b) => b[1].total - a[1].total)
+    .map(([sub, d]) => `
+      <div class="premio-item">
+        <div>
+          <div class="premio-nombre">${sub}</div>
+          <div class="premio-aportante">${d.items.length} registro${d.items.length > 1 ? 's' : ''}</div>
+        </div>
+        <div class="premio-valor">${fmt(d.total)}</div>
+      </div>`).join('');
+
   // ── UTILIDAD ───────────────────────────────────────────────────────────
-  const totalEgresos = costoPremio + totalMeta;
+  const totalEgresos = costoPremio + totalMeta + totalGastosOp + totalGastosRifa;
   const utilidad     = totalIngresos - totalEgresos;
   const tipoUtil     = utilidad > 0 ? 'positiva' : utilidad < 0 ? 'negativa' : 'neutro';
   const signoUtil    = utilidad > 0 ? '+' : '';
@@ -672,6 +941,7 @@ function renderEstado(abonos, fb, rifaEmpresa) {
       <div class="er-section-header">
         <span class="er-section-icon">💸</span>
         <span class="er-section-title">Egresos</span>
+        <button class="btn-agregar-gasto" onclick="abrirModalGasto()">+ Registrar gasto</button>
         <span class="er-section-total egreso">${fmt(totalEgresos)}</span>
       </div>
       <div class="er-section-body">
@@ -710,6 +980,36 @@ function renderEstado(abonos, fb, rifaEmpresa) {
           ${filasMeta ? `<div class="er-collapsible" id="detMeta" style="width:100%; margin-top:8px; padding-top:8px; border-top:1px solid var(--ring);">${filasMeta}</div>` : ''}
         </div>
 
+        <!-- Gastos Operacionales -->
+        <div class="egreso-item" style="flex-direction:column; align-items:flex-start; gap:0;">
+          <div style="display:flex; width:100%; justify-content:space-between; align-items:center;">
+            <div>
+              <div class="egreso-nombre">⚙️ Gastos Operacionales</div>
+              <div class="egreso-sub">${gastosOp.length > 0 ? gastosOp.length + ' gasto' + (gastosOp.length > 1 ? 's' : '') + ' registrado' + (gastosOp.length > 1 ? 's' : '') : 'Sin gastos operacionales en este período'}</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div class="egreso-valor">${fmt(totalGastosOp)}</div>
+              ${filasGastosOp ? `<button class="er-toggle-btn" onclick="toggleDetail('detGastosOp')">Detalle <span class="er-toggle-chevron" id="detGastosOp-chevron">▼</span></button>` : ''}
+            </div>
+          </div>
+          ${filasGastosOp ? `<div class="er-collapsible" id="detGastosOp" style="width:100%; margin-top:8px; padding-top:8px; border-top:1px solid var(--ring);">${filasGastosOp}</div>` : ''}
+        </div>
+
+        <!-- Gastos Rifa Apartamento -->
+        <div class="egreso-item" style="flex-direction:column; align-items:flex-start; gap:0;">
+          <div style="display:flex; width:100%; justify-content:space-between; align-items:center;">
+            <div>
+              <div class="egreso-nombre">🏠 Gastos Rifa Apartamento</div>
+              <div class="egreso-sub">${gastosRifa.length > 0 ? gastosRifa.length + ' gasto' + (gastosRifa.length > 1 ? 's' : '') + ' registrado' + (gastosRifa.length > 1 ? 's' : '') : 'Sin gastos de rifa apartamento en este período'}</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div class="egreso-valor">${fmt(totalGastosRifa)}</div>
+              ${filasGastosRifa ? `<button class="er-toggle-btn" onclick="toggleDetail('detGastosRifa')">Detalle <span class="er-toggle-chevron" id="detGastosRifa-chevron">▼</span></button>` : ''}
+            </div>
+          </div>
+          ${filasGastosRifa ? `<div class="er-collapsible" id="detGastosRifa" style="width:100%; margin-top:8px; padding-top:8px; border-top:1px solid var(--ring);">${filasGastosRifa}</div>` : ''}
+        </div>
+
         <!-- Total egresos -->
         <table class="er-table">
           <tfoot><tr class="row-total-egreso">
@@ -740,8 +1040,241 @@ function renderEstado(abonos, fb, rifaEmpresa) {
         ${(utilidad / totalIngresos * 100).toFixed(1)}%
       </strong>
     </div>` : ''}
+
+    <!-- RETIROS DE GANANCIA -->
+    ${renderRetiros(retiros || [])}
   `;
 }
+
+// ── Retiros de ganancia ────────────────────────────────────────────────────
+function renderRetiros(retiros) {
+  const PERSONAS = ['Papá', 'Mateo', 'Alejandro'];
+
+  const porPersona = {};
+  PERSONAS.forEach(p => { porPersona[p] = { total: 0, count: 0, items: [] }; });
+
+  retiros.forEach(r => {
+    const quien = r.subcategoria || 'Sin asignar';
+    if (!porPersona[quien]) porPersona[quien] = { total: 0, count: 0, items: [] };
+    porPersona[quien].total += Number(r.monto || 0);
+    porPersona[quien].count++;
+    porPersona[quien].items.push(r);
+  });
+
+  const totalRetiros = retiros.reduce((s, r) => s + Number(r.monto || 0), 0);
+
+  const sinAsignar = porPersona['Sin asignar'];
+  const personas = [...PERSONAS];
+  if (sinAsignar && sinAsignar.count > 0) personas.push('Sin asignar');
+
+  const tarjetas = personas.map(nombre => {
+    const d = porPersona[nombre] || { total: 0, count: 0 };
+    const tiene = d.total > 0;
+    const tipo = tiene ? 'tiene' : 'vacio';
+    return `
+      <div class="retiro-persona ${tipo}">
+        <div class="retiro-persona-nombre ${tipo}">${nombre}</div>
+        <div class="retiro-persona-monto ${tipo}">${tiene ? fmt(d.total) : '$0'}</div>
+        <div class="retiro-persona-count ${tipo}">${tiene ? d.count + ' retiro' + (d.count > 1 ? 's' : '') : 'Sin retiros'}</div>
+      </div>`;
+  }).join('');
+
+  const detalle = retiros.length
+    ? retiros
+        .sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''))
+        .map(r => `
+          <div class="retiro-item">
+            <div>
+              <div class="retiro-item-desc">${r.descripcion || 'Sin descripción'}</div>
+              <div class="retiro-item-meta">${r.fecha || '—'} · ${r.subcategoria || 'Sin asignar'}</div>
+            </div>
+            <div class="retiro-item-monto">${fmt(r.monto)}</div>
+          </div>`).join('')
+    : '';
+
+  return `
+    <div class="retiros-card">
+      <div class="retiros-header">
+        <div class="retiros-header-left">
+          <span class="retiros-header-icon">💸</span>
+          <span class="retiros-header-title">Retiros de Ganancia</span>
+        </div>
+        <span class="retiros-header-total">${totalRetiros > 0 ? fmt(totalRetiros) : '$0'}</span>
+      </div>
+      <div class="retiros-body">${tarjetas}</div>
+      ${detalle ? `
+        <div style="padding:0 20px 4px;">
+          <button class="er-toggle-btn" onclick="toggleDetail('detRetiros')">
+            Ver detalle <span class="er-toggle-chevron" id="detRetiros-chevron">▼</span>
+          </button>
+        </div>
+        <div class="er-collapsible retiros-detalle" id="detRetiros">${detalle}</div>
+      ` : ''}
+    </div>`;
+}
+
+// ── Registro de gastos históricos ──────────────────────────────────────────
+const SUBCATEGORIAS = {
+  operacionales:    ['Publicidad Meta', 'Nómina', 'ChateaPro / WhatsApp', 'Impuestos', 'Comisiones', 'Arriendo', 'Servicios públicos', 'Herramientas y software', 'Transporte', 'Papelería', 'Alimentación', 'Otros'],
+  rifa_apartamento: ['Adecuación', 'Muebles', 'Pintura', 'Electrodomésticos', 'Acabados', 'Publicidad rifa', 'Premios', 'Otros'],
+  construccion:     ['Materiales', 'Mano de obra', 'Hierro', 'Cemento', 'Acabados', 'Transporte material', 'Otros'],
+  rifa_camioneta:   ['Publicidad', 'Premios', 'Preparación', 'Otros'],
+  retiro_ganancia:  ['Papá', 'Mateo', 'Alejandro']
+};
+
+let gastosRegistradosSesion = [];
+
+function actualizarSubcategorias() {
+  const cat = document.getElementById('gastoCategoria').value;
+  const sel = document.getElementById('gastoSubcategoria');
+  const opciones = SUBCATEGORIAS[cat] || [];
+  sel.innerHTML = opciones.length
+    ? '<option value="">— Selecciona —</option>' + opciones.map(s => `<option value="${s}">${s}</option>`).join('')
+    : '<option value="">— Primero elige categoría —</option>';
+}
+
+function abrirModalGasto() {
+  document.getElementById('gastoFecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('gastoMonto').value = '';
+  document.getElementById('gastoCategoria').value = '';
+  document.getElementById('gastoSubcategoria').innerHTML = '<option value="">— Primero elige categoría —</option>';
+  document.getElementById('gastoDescripcion').value = '';
+  document.getElementById('gastoPlataforma').value = '';
+  document.getElementById('gastoReferencia').value = '';
+  document.getElementById('gastoNotas').value = '';
+  renderGastosRecientes();
+  document.getElementById('modalGasto').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function cerrarModalGasto() {
+  document.getElementById('modalGasto').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function renderGastosRecientes() {
+  const box = document.getElementById('gastosRecientesBox');
+  if (!gastosRegistradosSesion.length) { box.innerHTML = ''; return; }
+  box.innerHTML = `
+    <div class="gastos-recientes">
+      <div class="gastos-recientes-title">Registrados en esta sesión (${gastosRegistradosSesion.length})</div>
+      ${gastosRegistradosSesion.map(g => `
+        <div class="gasto-reciente-item">
+          <div>
+            <div class="gasto-reciente-desc">${g.descripcion}</div>
+            <div class="gasto-reciente-meta">${g.fecha} · ${g.categoria} ${g.subcategoria ? '· ' + g.subcategoria : ''}</div>
+          </div>
+          <div class="gasto-reciente-monto">${fmt(g.monto)}</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+async function guardarGastoHistorico() {
+  const fecha        = document.getElementById('gastoFecha').value;
+  const monto        = document.getElementById('gastoMonto').value;
+  const categoria    = document.getElementById('gastoCategoria').value;
+  const subcategoria = document.getElementById('gastoSubcategoria').value;
+  const descripcion  = document.getElementById('gastoDescripcion').value.trim();
+  const plataforma   = document.getElementById('gastoPlataforma').value;
+  const referencia   = document.getElementById('gastoReferencia').value.trim();
+  const notas        = document.getElementById('gastoNotas').value.trim();
+
+  if (!fecha) { toast('⚠️ Selecciona la fecha del gasto.'); return; }
+  if (!monto || Number(monto) <= 0) { toast('⚠️ El monto debe ser mayor a 0.'); return; }
+  if (!categoria) { toast('⚠️ Selecciona una categoría.'); return; }
+  if (!descripcion) { toast('⚠️ Escribe una descripción del gasto.'); return; }
+
+  const btn = document.getElementById('btnGuardarGasto');
+  btn.textContent = 'Guardando…'; btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/admin/finanzas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contrasena,
+        accion: 'registrar_gasto',
+        fecha,
+        monto: Number(monto),
+        categoria,
+        subcategoria: subcategoria || null,
+        descripcion,
+        plataforma: plataforma || null,
+        referencia: referencia || null,
+        notas: notas || null,
+        reportado_por: asesorNombre
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.status === 'duplicado') {
+      toast('⚠️ ' + data.mensaje);
+      btn.textContent = 'Registrar gasto'; btn.disabled = false;
+      return;
+    }
+
+    if (data.status !== 'ok') throw new Error(data.mensaje);
+
+    const nombresCat = {
+      operacionales: 'Gastos Operacionales',
+      rifa_apartamento: 'Gastos Rifa Apartamento',
+      construccion: 'Construcción Apartamento',
+      rifa_camioneta: 'Rifa Camioneta',
+      retiro_ganancia: 'Retiro de Ganancia'
+    };
+
+    gastosRegistradosSesion.unshift({
+      fecha, monto: Number(monto),
+      categoria: nombresCat[categoria] || categoria,
+      subcategoria, descripcion
+    });
+
+    toast('✅ ' + data.mensaje);
+
+    // Limpiar campos para registrar otro rápidamente
+    document.getElementById('gastoMonto').value = '';
+    document.getElementById('gastoDescripcion').value = '';
+    document.getElementById('gastoReferencia').value = '';
+    document.getElementById('gastoNotas').value = '';
+    renderGastosRecientes();
+
+    // Recargar datos para que el estado de resultados se actualice
+    await recargarGastos();
+
+  } catch (e) {
+    toast('⚠️ ' + e.message);
+  } finally {
+    btn.textContent = 'Registrar gasto'; btn.disabled = false;
+  }
+}
+
+async function recargarGastos() {
+  try {
+    const res = await fetch('/api/admin/estadisticas', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contrasena, tipo: '4cifras' })
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      globalGastos  = data.gastos  || [];
+      globalRetiros = data.retiros || [];
+      aplicarFiltros();
+    }
+  } catch (_) {}
+}
+
+// Cerrar modal con Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('modalGasto').classList.contains('show')) {
+    cerrarModalGasto();
+  }
+});
+
+// Cerrar modal al hacer clic fuera
+document.getElementById('modalGasto').addEventListener('click', function(e) {
+  if (e.target === this) cerrarModalGasto();
+});
 </script>
 </body>
 </html>

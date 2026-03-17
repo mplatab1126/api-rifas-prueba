@@ -160,8 +160,24 @@
   </div>
 
   <div class="shell" id="mainDashboard">
-    
-    <div class="filter-zone">
+
+    <!-- Selector de rifa (solo visible para diarias 2 y 3 cifras) -->
+    <div id="selectorRifaDiaria" style="display:none; margin-bottom: 15px;">
+      <div class="filter-zone" style="margin-bottom: 0; align-items: center;">
+        <div class="input-group" style="min-width: 280px; flex: 2;">
+          <label>🎯 Seleccionar Rifa</label>
+          <select id="select-rifa-diaria" class="field-input" onchange="cambiarRifaSeleccionada()" style="font-weight: 700; cursor: pointer;">
+            <option value="actual">🟢 Rifa Actual</option>
+          </select>
+        </div>
+        <div id="rifa-info-badge" style="flex: 1; min-width: 200px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 12px 16px; display: none;">
+          <div style="font-size: 0.75rem; font-weight: 800; color: #166534; text-transform: uppercase;">Rifa en curso</div>
+          <div id="rifa-info-text" style="font-size: 0.9rem; font-weight: 700; color: #15803d; margin-top: 2px;">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-zone" id="filtrosGenerales">
         <div class="quick-filters col-100">
             <span style="font-size: 0.85rem; font-weight: 800; color: var(--ink-2); margin-right: 10px; text-transform: uppercase;">⏱️ Tiempos:</span>
             <button class="btn-quick" onclick="setRangoFecha('hoy')">Hoy</button>
@@ -566,9 +582,14 @@
   <script>
     const STORAGE_KEY = 'asesor_pwd';
     let globalAbonos = []; let globalVentas = []; let globalChatea = []; let globalFb = []; let globalesAPI = {};
-    let globalEstadoFb = {}; // { nombre → effective_status } obtenido directamente de Facebook
+    let globalEstadoFb = {};
     let chartLinea = null; let chartMix = null;
     let tipoRifaActual = null; // '2cifras' | '3cifras' | '4cifras'
+    
+    let rifaInicioTimestamp = null;
+    let rifaSeleccionadaId = 'actual';
+    let historialCompleto = [];
+    let configRifaActual = null;
     
     window.globalStatsIA = {};
     window.rankArrayIA = [];
@@ -619,21 +640,24 @@
       document.getElementById('mainDashboard').style.display = 'block';
       document.getElementById('badgeRifa').textContent = LABELS_RIFA[tipo]?.titulo || 'BI Analytics PRO';
 
-      // Secciones 2, 3 y 4 solo para la rifa de 4 cifras
       const soloGrande = tipo === '4cifras';
+      const esDiaria = !soloGrande;
       document.getElementById('seccionesAvanzadas').style.display = soloGrande ? 'block' : 'none';
+      document.getElementById('zonaAdminRifa').style.display = esDiaria ? 'block' : 'none';
+      document.getElementById('selectorRifaDiaria').style.display = esDiaria ? 'block' : 'none';
 
-      // Zona administración: solo para rifas diarias
-      document.getElementById('zonaAdminRifa').style.display = soloGrande ? 'none' : 'block';
-
-      // Botones de Sync en el top bar: solo relevantes para 4 cifras
       document.querySelectorAll('.btn-sync-avanzado').forEach(b => {
         b.style.display = soloGrande ? 'inline-flex' : 'none';
       });
 
+      rifaSeleccionadaId = 'actual';
+      rifaInicioTimestamp = null;
+      configRifaActual = null;
+      historialCompleto = [];
+
       cargarEstadisticas();
       if (soloGrande) cargarEstadoFacebook();
-      if (!soloGrande) cargarHistorialRifas();
+      if (esDiaria) cargarHistorialRifas();
     }
 
     function volverAlSelector() {
@@ -706,7 +730,7 @@
         document.getElementById('dropdown-asesores').innerHTML = htmlCheckboxes;
         
         actualizarDropdownsFB();
-        setRangoFecha('semana');
+        setRangoFecha(tipoRifaActual !== '4cifras' ? 'todo' : 'semana');
     }
 
 // Función global y segura para normalizar cualquier fecha a YYYY-MM-DD
@@ -856,6 +880,14 @@
         poblarCheckboxesFb('fb-ad-drop',      'fb-ad',      [...new Set(globalFb.map(f=>f.nombre_ad))].filter(Boolean).sort(),      'Todos los Anuncios',  getStatusMapFb('nombre_ad'));
     }
 
+    function esFechaDespuesDeInicio(fechaISO, inicioTimestamp) {
+        if (!fechaISO || !inicioTimestamp) return true;
+        const d = new Date(fechaISO);
+        const inicio = new Date(inicioTimestamp);
+        if (isNaN(d.getTime()) || isNaN(inicio.getTime())) return true;
+        return d >= inicio;
+    }
+
     function aplicarFiltrosEstadisticas() {
         const fDesde = document.getElementById('filt-desde').value; 
         const fHasta = document.getElementById('filt-hasta').value;
@@ -872,24 +904,28 @@
         const chateaF = globalChatea.filter(c => { const f = normalizarFecha(c.fecha); return (!fDesde || f >= fDesde) && (!fHasta || f <= fHasta) && asesoresSeleccionados.includes(c.asesor || 'Sin Asesor'); });
 
         let totalNuevas = ventasF.length;
-        let dineroRecaudado = abonosF.reduce((acc, curr) => acc + Number(curr.monto), 0);
+        let dineroRecaudadoAbonos = abonosF.reduce((acc, curr) => acc + Number(curr.monto), 0);
         let totalPagos = abonosF.length;
-        let ticketProm = totalPagos > 0 ? (dineroRecaudado / totalPagos) : 0;
+
+        const esDiariaActual = tipoRifaActual !== '4cifras' && rifaSeleccionadaId === 'actual';
+        const recaudoReal = esDiariaActual ? (globalesAPI.recaudo_boletas || 0) : dineroRecaudadoAbonos;
+        let dineroRecaudado = recaudoReal;
+
+        let ticketProm = totalPagos > 0 ? (dineroRecaudadoAbonos / totalPagos) : 0;
 
         let totalAsignadas = 0, tiempos = [];
         chateaF.forEach(c => { totalAsignadas += (c.conversaciones_asignadas || 0); if (c.tiempo_respuesta_segundos > 0) tiempos.push(c.tiempo_respuesta_segundos); });
 
-        let ipc = totalAsignadas > 0 ? (dineroRecaudado / totalAsignadas) : 0;
+        let ipc = totalAsignadas > 0 ? (recaudoReal / totalAsignadas) : 0;
         let convProm = totalAsignadas > 0 ? ((totalNuevas / totalAsignadas) * 100).toFixed(1) : 0;
         let tProm = tiempos.length > 0 ? (tiempos.reduce((a,b)=>a+b, 0) / tiempos.length) : 0;
 
-        // Escribir KPIs Generales
         const boletasVendidasSet = new Set(ventasF.map(v => v.boleta));
         const boletasConAbono = [...boletasVendidasSet].filter(
             num => globalAbonos.some(a => a.numero_boleta === num)
         ).length;
 
-        document.getElementById('kpi-gen-recaudo').textContent = formatoPlata.format(dineroRecaudado);
+        document.getElementById('kpi-gen-recaudo').textContent = formatoPlata.format(recaudoReal);
         document.getElementById('kpi-gen-ticket').textContent = formatoPlata.format(ticketProm);
         document.getElementById('kpi-gen-abonos').textContent = formatoNum.format(totalPagos);
         document.getElementById('kpi-gen-nuevas').textContent = formatoNum.format(totalNuevas);
@@ -1166,10 +1202,85 @@
         });
         const res = await req.json();
         if (res.status !== 'ok') throw new Error(res.mensaje);
-        renderHistorial(res.historial || []);
+
+        historialCompleto = res.historial || [];
+        configRifaActual = res.config || null;
+        rifaInicioTimestamp = configRifaActual?.updated_at || null;
+
+        construirSelectorRifas();
+        renderHistorial(historialCompleto);
+
+        if (rifaInicioTimestamp) aplicarFiltrosEstadisticas();
       } catch (e) {
         document.getElementById('tablaHistorial').innerHTML =
           `<p style="text-align:center; color:var(--danger); padding:20px;">${e.message}</p>`;
+      }
+    }
+
+    function construirSelectorRifas() {
+      const select = document.getElementById('select-rifa-diaria');
+      const infoBadge = document.getElementById('rifa-info-badge');
+      const infoText = document.getElementById('rifa-info-text');
+
+      let opciones = '<option value="actual">🟢 Rifa Actual</option>';
+
+      [...historialCompleto].reverse().forEach(r => {
+        const fechaRaw = r.fecha_guardado || '';
+        const fecha = fechaRaw.includes('T')
+          ? new Date(fechaRaw).toLocaleDateString('es-CO', { weekday:'short', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })
+          : new Date(fechaRaw + 'T12:00:00').toLocaleDateString('es-CO', { weekday:'short', day:'2-digit', month:'short' });
+        const fmtCOP = n => '$' + Number(n || 0).toLocaleString('es-CO');
+        opciones += `<option value="${r.id}">📋 ${fecha} · ${r.loteria || '—'} · Recaudo: ${fmtCOP(r.recaudo_total)}</option>`;
+      });
+
+      select.innerHTML = opciones;
+      select.value = 'actual';
+
+      if (configRifaActual) {
+        infoBadge.style.display = 'block';
+        infoText.textContent = `Juega: ${configRifaActual.fecha_sorteo || '—'} · ${configRifaActual.loteria || '—'}`;
+      } else {
+        infoBadge.style.display = 'none';
+      }
+    }
+
+    function cambiarRifaSeleccionada() {
+      const valor = document.getElementById('select-rifa-diaria').value;
+      rifaSeleccionadaId = valor;
+
+      const filtros = document.getElementById('filtrosGenerales');
+      const infoBadge = document.getElementById('rifa-info-badge');
+      const seccionKPIs = document.querySelector('.saas-divider');
+
+      if (valor === 'actual') {
+        filtros.style.display = 'flex';
+        if (configRifaActual) {
+          infoBadge.style.display = 'block';
+          infoBadge.style.background = '#f0fdf4';
+          infoBadge.style.borderColor = '#bbf7d0';
+          infoBadge.querySelector('div:first-child').textContent = 'Rifa en curso';
+          infoBadge.querySelector('div:first-child').style.color = '#166534';
+          document.getElementById('rifa-info-text').style.color = '#15803d';
+          document.getElementById('rifa-info-text').textContent = `Juega: ${configRifaActual.fecha_sorteo || '—'} · ${configRifaActual.loteria || '—'}`;
+        }
+        setRangoFecha('todo');
+      } else {
+        const rifaId = Number(valor);
+        const rifa = historialCompleto.find(r => r.id === rifaId);
+        if (rifa) {
+          filtros.style.display = 'none';
+          infoBadge.style.display = 'block';
+          infoBadge.style.background = '#eff6ff';
+          infoBadge.style.borderColor = '#bfdbfe';
+          infoBadge.querySelector('div:first-child').textContent = 'Rifa finalizada';
+          infoBadge.querySelector('div:first-child').style.color = '#1e3a8a';
+          document.getElementById('rifa-info-text').style.color = '#1d4ed8';
+          const fechaLabel = (rifa.fecha_guardado || '').includes('T')
+            ? new Date(rifa.fecha_guardado).toLocaleDateString('es-CO', { weekday:'long', day:'2-digit', month:'long' })
+            : rifa.fecha_guardado;
+          document.getElementById('rifa-info-text').textContent = `${fechaLabel} · ${rifa.loteria || '—'}`;
+          mostrarRifaHistorica(rifa);
+        }
       }
     }
 
@@ -1200,7 +1311,8 @@
 
       // Gráfica de barras
       const labels  = data.map(r => {
-        const d = new Date(r.fecha_guardado + 'T12:00:00');
+        const fg = r.fecha_guardado || '';
+        const d = new Date(fg.includes('T') ? fg : fg + 'T12:00:00');
         return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' });
       });
       const ganancias = data.map(r => Number(r.ganancia_neta || 0));
@@ -1259,7 +1371,8 @@
           ? `<span style="background:#dcfce7; color:#15803d; padding:3px 8px; border-radius:6px; font-size:0.8rem; font-weight:800;">${fmtCOP(ganancia)}</span>`
           : `<span style="background:#fee2e2; color:#b91c1c; padding:3px 8px; border-radius:6px; font-size:0.8rem; font-weight:800;">${fmtCOP(ganancia)}</span>`;
 
-        const fecha = new Date(r.fecha_guardado + 'T12:00:00').toLocaleDateString('es-CO', { weekday:'short', day:'2-digit', month:'short' });
+        const fgH = r.fecha_guardado || '';
+        const fecha = new Date(fgH.includes('T') ? fgH : fgH + 'T12:00:00').toLocaleDateString('es-CO', { weekday:'short', day:'2-digit', month:'short' });
 
         html += `<tr>
           <td style="font-weight:700;">${fecha}</td>
@@ -1273,6 +1386,59 @@
       });
       html += '</tbody></table>';
       document.getElementById('tablaHistorial').innerHTML = html;
+    }
+
+    function mostrarRifaHistorica(rifa) {
+      const formatoPlata = new Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', minimumFractionDigits:0});
+      const formatoNum = new Intl.NumberFormat('es-CO');
+
+      const recaudo   = Number(rifa.recaudo_total || 0);
+      const vendidas  = Number(rifa.vendidas || 0);
+      const totalBol  = Number(rifa.total_boletas || 0);
+      const pagadas   = Number(rifa.pagadas || 0);
+      const ganadores = Number(rifa.ganadores || 0);
+      const pagadoGan = Number(rifa.total_pagado_ganadores || 0);
+      const ganancia  = Number(rifa.ganancia_neta || 0);
+      const libres    = totalBol - vendidas;
+      const ticketProm = vendidas > 0 ? recaudo / vendidas : 0;
+
+      document.getElementById('kpi-gen-recaudo').textContent = formatoPlata.format(recaudo);
+      document.getElementById('kpi-gen-ticket').textContent = formatoPlata.format(ticketProm);
+      document.getElementById('kpi-gen-abonos').textContent = '—';
+      document.getElementById('kpi-gen-nuevas').textContent = formatoNum.format(vendidas);
+      document.getElementById('kpi-gen-con-abono').textContent = formatoNum.format(pagadas);
+      const pctPag = vendidas > 0 ? ((pagadas / vendidas) * 100).toFixed(1) : 0;
+      document.getElementById('kpi-gen-con-abono-pct').textContent = pctPag + '%';
+
+      document.getElementById('kpi-inv-total').textContent = formatoNum.format(totalBol);
+      document.getElementById('kpi-inv-registradas').textContent = formatoNum.format(vendidas);
+      document.getElementById('kpi-inv-pagadas').textContent = formatoNum.format(pagadas);
+      document.getElementById('kpi-inv-cero').textContent = '—';
+      document.getElementById('kpi-inv-libres').textContent = formatoNum.format(libres);
+
+      const pctOcup = totalBol > 0 ? ((vendidas / totalBol) * 100) : 0;
+      document.getElementById('kpi-inv-pct').textContent = pctOcup.toFixed(1) + '%';
+      document.getElementById('kpi-inv-bar').style.width = pctOcup.toFixed(1) + '%';
+      document.getElementById('kpi-inv-bar-v').textContent = formatoNum.format(vendidas);
+      document.getElementById('kpi-inv-bar-l').textContent = formatoNum.format(libres);
+
+      if (chartLinea) chartLinea.destroy();
+      chartLinea = new Chart(document.getElementById('chartEvolucion').getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: ['Recaudo', 'Pagado a Ganadores', 'Ganancia Neta'],
+          datasets: [{
+            data: [recaudo, pagadoGan, ganancia],
+            backgroundColor: [recaudo > 0 ? '#10b981' : '#94a3b8', '#ef4444', ganancia >= 0 ? '#3b82f6' : '#ef4444'],
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + formatoPlata.format(ctx.raw) } } },
+          scales: { y: { beginAtZero: true, ticks: { callback: v => formatoPlata.format(v) } } }
+        }
+      });
     }
 
     // ── NUEVA RIFA ────────────────────────────────────────────────────
@@ -1349,6 +1515,8 @@
             `• 💰 GANANCIA NETA: ${fmtCOP(ganancia)}\n\n` +
             `Todas las boletas están disponibles para la nueva rifa. 🎉`
           );
+          rifaSeleccionadaId = 'actual';
+          document.getElementById('filtrosGenerales').style.display = 'flex';
           cargarEstadisticas();
           cargarHistorialRifas();
         } else {
