@@ -17,6 +17,7 @@ export default async function handler(req, res) {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   const EXCLUIDOS_CAJA = ['alejandra plata', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
+  const FECHA_CORTE_CAJA = '2026-03-17';
 
   // Fecha de hoy en zona horaria Colombia
   const fechaCol = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
@@ -43,11 +44,12 @@ export default async function handler(req, res) {
 
       const baseFija = baseData?.monto || 0;
 
-      // 2. Abonos cobrados en efectivo (SIN filtro de fecha — acumula todo lo histórico pendiente)
+      // 2. Abonos cobrados en efectivo (desde la fecha de corte en adelante)
       const { data: abonosEfectivo } = await supabase
         .from('abonos')
-        .select('asesor, monto')
-        .eq('referencia_transferencia', 'efectivo');
+        .select('asesor, monto, fecha_pago')
+        .eq('referencia_transferencia', 'efectivo')
+        .gte('fecha_pago', FECHA_CORTE_CAJA);
 
       const cobradoPorAsesor = {};
       for (const a of (abonosEfectivo || [])) {
@@ -74,11 +76,12 @@ export default async function handler(req, res) {
         else if (m.tipo === 'recepcion') totalRecepciones += m.monto;
       }
 
-      // 3b. Todas las recepciones históricas para calcular el pendiente real por asesor
+      // 3b. Recepciones desde la fecha de corte para calcular el pendiente real por asesor
       const { data: todasRecepciones } = await supabase
         .from('movimientos_caja')
         .select('asesor, monto')
-        .eq('tipo', 'recepcion');
+        .eq('tipo', 'recepcion')
+        .gte('fecha', FECHA_CORTE_CAJA);
 
       const recibidoPorAsesor = {};
       for (const r of (todasRecepciones || [])) {
