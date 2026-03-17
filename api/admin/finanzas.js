@@ -29,11 +29,89 @@ export default async function handler(req, res) {
       return res.status(200).json({ status: 'ok', categorias: CATEGORIAS });
     }
 
+    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+
+    // ── Guardar egreso pendiente (cualquier asesor) ──────────────────────
+    if (accion === 'guardar_pendiente') {
+      const { fecha, hora, monto, plataforma, referencia, descripcion,
+              url_comprobante, reportado_por } = payload;
+
+      if (!monto || Number(monto) <= 0) return res.status(400).json({ status: 'error', mensaje: 'El monto es obligatorio.' });
+
+      const fechaGasto = fecha || new Date().toISOString().split('T')[0];
+      const montoGasto = Math.round(Number(monto));
+
+      const { data: existentes } = await supabase
+        .from('gastos')
+        .select('id, fecha, monto, plataforma, referencia')
+        .eq('monto', montoGasto)
+        .eq('fecha', fechaGasto);
+
+      if (existentes && existentes.length > 0) {
+        const duplicado = existentes.find(g => {
+          const mismaRef   = String(referencia || '').toLowerCase().trim() === String(g.referencia || '').toLowerCase().trim();
+          const mismaPlatf = String(plataforma || '').toLowerCase().trim() === String(g.plataforma || '').toLowerCase().trim();
+          return mismaRef && mismaPlatf;
+        });
+        if (duplicado) {
+          return res.status(200).json({ status: 'duplicado', mensaje: `Este movimiento ya fue registrado ($${montoGasto.toLocaleString('es-CO')} del ${fechaGasto}).` });
+        }
+      }
+
+      const { error } = await supabase.from('gastos').insert({
+        fecha: fechaGasto, hora: hora || null,
+        monto: montoGasto,
+        plataforma:       plataforma || null,
+        referencia:       referencia || null,
+        descripcion:      (descripcion || 'Pendiente de justificar').trim(),
+        categoria:        'Pendiente',
+        url_comprobante:  url_comprobante || null,
+        reportado_por:    reportado_por || nombreAsesor,
+        categorizado_por: null
+      });
+      if (error) throw error;
+
+      return res.status(200).json({ status: 'ok', mensaje: `Egreso de $${montoGasto.toLocaleString('es-CO')} guardado como pendiente.` });
+    }
+
+    // ── Listar egresos pendientes (cualquier asesor) ─────────────────────
+    if (accion === 'listar_pendientes') {
+      const { data, error } = await supabase
+        .from('gastos')
+        .select('id, fecha, hora, monto, plataforma, referencia, descripcion, url_comprobante, reportado_por, created_at')
+        .eq('categoria', 'Pendiente')
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return res.status(200).json({ status: 'ok', pendientes: data || [] });
+    }
+
+    // ── Justificar egreso pendiente (cualquier asesor) ───────────────────
+    if (accion === 'justificar_pendiente') {
+      const { id, descripcion, categoria, subcategoria, plataforma, notas } = payload;
+
+      if (!id) return res.status(400).json({ status: 'error', mensaje: 'Falta el ID del gasto.' });
+      if (!descripcion || !descripcion.trim()) return res.status(400).json({ status: 'error', mensaje: 'La descripción es obligatoria.' });
+      if (!categoria) return res.status(400).json({ status: 'error', mensaje: 'Selecciona una categoría.' });
+
+      const catObj = CATEGORIAS.find(c => c.id === categoria);
+      if (!catObj) return res.status(400).json({ status: 'error', mensaje: `Categoría "${categoria}" no válida.` });
+
+      const { error } = await supabase.from('gastos').update({
+        descripcion:      descripcion.trim(),
+        categoria:        catObj.nombre,
+        subcategoria:     subcategoria || null,
+        plataforma:       plataforma || null,
+        categorizado_por: nombreAsesor
+      }).eq('id', id).eq('categoria', 'Pendiente');
+
+      if (error) throw error;
+      return res.status(200).json({ status: 'ok', mensaje: `Gasto justificado en "${catObj.nombre}".` });
+    }
+
     if (nombreAsesor !== 'Mateo') {
       return res.status(403).json({ status: 'error', mensaje: 'Solo Mateo puede registrar gastos.' });
     }
-
-    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
     // ── Registrar gasto ─────────────────────────────────────────────────
     if (accion === 'registrar_gasto') {

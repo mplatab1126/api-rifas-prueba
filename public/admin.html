@@ -46,7 +46,7 @@
     <div class="user-info-bar">
       <span id="asesorDisplay" class="nav-item nav-name">Hola</span>
       <span class="nav-item" onclick="activateAppMode(); switchView('view-referencias')">Referencia</span>
-      <span class="nav-item" onclick="activateAppMode(); switchView('view-carga-masiva')">Carga IA</span>
+      <span class="nav-item" onclick="activateAppMode(); switchView('view-carga-masiva'); cargarPendientes();">Carga IA</span>
       <span class="nav-item" onclick="window.location.href='/rendimiento'">Rendimiento</span>
       <span class="nav-item" onclick="activateAppMode(); switchView('view-movimientos'); cargarUltimosMovimientos();">Movimientos</span>
       <span class="nav-item" onclick="activateAppMode(); switchView('view-lista-boletas'); cargarListaBoletas();">Lista Boletas</span>
@@ -107,6 +107,15 @@
               <div style="text-align: center; padding: 20px; color: var(--muted); font-size: 0.85rem; border: 1px dashed var(--ring); border-radius: 8px;">
                 Aún no hay archivos en la fila de procesamiento.
               </div>
+            </div>
+
+            <!-- Egresos pendientes de justificar -->
+            <div style="margin-top: 16px; display: flex; align-items: center; gap: 10px;">
+              <span id="badgePendientes" onclick="togglePendientes()" style="display:none; align-items:center; gap:6px; padding:6px 14px; border-radius:20px; background:#fff3e0; border:1.5px solid #f57c00; color:#e65100; font-size:0.82rem; font-weight:700; cursor:pointer; transition:background .15s;">⏸️ 0 pendientes</span>
+            </div>
+            <div id="seccionPendientes" style="display:none; margin-top:12px;">
+              <div style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#e65100; margin-bottom:10px;">Egresos pendientes de justificar</div>
+              <div id="listaPendientes"></div>
             </div>
           </div>
         </div>

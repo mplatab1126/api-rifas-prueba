@@ -1761,7 +1761,16 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                     <select id="subcat_${item.id}" style="width:100%; padding:9px 8px; border-radius:8px; border:1.5px solid var(--ring-strong); font-size:0.82rem; font-family:inherit;">
                       <option value="">— Primero elige una categoría —</option>
                     </select>
-                    <button id="btnGuardar_${item.id}" onclick="guardarEgreso(${item.id})" style="width:100%; padding:10px; border-radius:8px; border:none; background:#1565c0; color:#fff; font-weight:700; font-size:0.88rem; cursor:pointer; font-family:inherit; transition:background .2s;">💾 Confirmar y Guardar Gasto</button>
+                    <select id="cuenta_${item.id}" style="width:100%; padding:9px 8px; border-radius:8px; border:1.5px solid #f57c00; font-size:0.82rem; font-family:inherit; font-weight:700;">
+                      <option value="">— ¿De qué cuenta salió? * —</option>
+                      <option value="Nequi Alejandro">📱 Nequi Alejandro</option>
+                      <option value="Nequi Mateo">📱 Nequi Mateo</option>
+                      <option value="Bancolombia Empresa">🏦 Bancolombia Empresa</option>
+                    </select>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                      <button id="btnPendiente_${item.id}" onclick="guardarPendiente(${item.id})" style="padding:10px; border-radius:8px; border:2px solid #f57c00; background:#fff8e1; color:#e65100; font-weight:700; font-size:0.82rem; cursor:pointer; font-family:inherit; transition:background .2s;">⏸️ Dejar pendiente</button>
+                      <button id="btnGuardar_${item.id}" onclick="guardarEgreso(${item.id})" style="padding:10px; border-radius:8px; border:none; background:#1565c0; color:#fff; font-weight:700; font-size:0.82rem; cursor:pointer; font-family:inherit; transition:background .2s;">💾 Guardar gasto</button>
+                    </div>
                   </div>
                 </div>`;
                 return;
@@ -1896,7 +1905,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
 
     // 6. Subcategorías por categoría
     const SUBCATEGORIAS = {
-        operacionales: ['Publicidad Meta', 'Nómina', 'ChateaPro / WhatsApp', 'Impuestos', 'Comisiones', 'Arriendo', 'Servicios públicos', 'Herramientas y software', 'Transporte', 'Papelería', 'Alimentación', 'Otros'],
+        operacionales: ['Publicidad Meta', 'Nómina', 'Plataformas', 'Impuestos', 'Comisiones', 'Arriendo', 'Servicios públicos', 'Transporte', 'Papelería', 'Alimentación', 'Otros'],
         rifa_apartamento: ['Adecuación', 'Muebles', 'Pintura', 'Electrodomésticos', 'Acabados', 'Publicidad rifa', 'Premios', 'Devoluciones a Clientes', 'Otros'],
         construccion: ['Materiales', 'Mano de obra', 'Hierro', 'Cemento', 'Acabados', 'Transporte material', 'Otros'],
         rifa_camioneta: ['Publicidad', 'Premios', 'Preparación', 'Otros'],
@@ -1922,12 +1931,14 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         const descripcion  = document.getElementById(`desc_${id}`)?.value?.trim();
         const categoria    = document.getElementById(`cat_${id}`)?.value;
         const subcategoria = document.getElementById(`subcat_${id}`)?.value;
+        const cuentaOrigen = document.getElementById(`cuenta_${id}`)?.value;
         const notas        = document.getElementById(`notas_${id}`)?.value?.trim();
         const nombresCat = { operacionales: 'Operacionales', rifa_apartamento: 'Rifa Apartamento', construccion: 'Construcción', rifa_camioneta: 'Rifa Camioneta', retiro_ganancia: 'Retiro de Ganancia', pagos_diarias: 'Pagos Rifas Diarias' };
         const proyecto     = nombresCat[categoria] || categoria;
 
         if (!descripcion) { alert('La descripción es obligatoria.'); return; }
         if (!categoria)   { alert('Debes seleccionar la categoría del gasto.'); return; }
+        if (!cuentaOrigen) { alert('Debes indicar de qué cuenta salió el dinero.'); return; }
 
         const btn = document.getElementById(`btnGuardar_${id}`);
         if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
@@ -1944,7 +1955,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                     fecha: d.fecha_pago,
                     hora: d.hora_pago || null,
                     monto: d.monto,
-                    plataforma: d.plataforma || null,
+                    plataforma: cuentaOrigen || d.plataforma || null,
                     referencia: d.referencia !== '0' ? d.referencia : null,
                     descripcion,
                     proyecto,
@@ -1980,7 +1991,185 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         }
     }
 
-    // 7. Conversor de archivos a base64 (imágenes directas, PDFs renderizados)
+    // 7b. Guardar egreso como pendiente
+    async function guardarPendiente(id) {
+        const item = filaArchivosIA.find(f => f.id === id);
+        if (!item || !item.datos) return;
+
+        const btn = document.getElementById(`btnPendiente_${id}`);
+        if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+
+        try {
+            const pwd = localStorage.getItem(STORAGE_KEY) || '';
+            const d = item.datos;
+            const req = await fetch('/api/admin/finanzas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    accion: 'guardar_pendiente',
+                    contrasena: pwd,
+                    fecha: d.fecha_pago,
+                    hora: d.hora_pago || null,
+                    monto: d.monto,
+                    plataforma: d.plataforma || null,
+                    referencia: d.referencia !== '0' ? d.referencia : null,
+                    descripcion: d.descripcion_movimiento || null,
+                    url_comprobante: item.urlComprobante || null,
+                    reportado_por: nombreAsesorActual || null
+                })
+            });
+            const res = await req.json();
+
+            if (res.status === 'ok') {
+                item.status = 'guardado';
+                item.mensaje = `⏸️ Pendiente · $${Number(d.monto).toLocaleString('es-CO')}`;
+                actualizarUIIA();
+                cargarPendientes();
+            } else if (res.status === 'duplicado') {
+                item.status = 'duplicado';
+                item.mensaje = res.mensaje;
+                actualizarUIIA();
+            } else {
+                if (btn) { btn.disabled = false; btn.textContent = '⏸️ Dejar pendiente'; }
+                alert(res.mensaje || 'Error al guardar');
+            }
+        } catch (_) {
+            if (btn) { btn.disabled = false; btn.textContent = '⏸️ Dejar pendiente'; }
+        }
+    }
+
+    // 7c. Sistema de egresos pendientes por justificar
+    let pendientesData = [];
+
+    async function cargarPendientes() {
+        try {
+            const pwd = localStorage.getItem(STORAGE_KEY) || '';
+            const req = await fetch('/api/admin/finanzas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ accion: 'listar_pendientes', contrasena: pwd })
+            });
+            const res = await req.json();
+            pendientesData = (res.status === 'ok') ? (res.pendientes || []) : [];
+            renderBadgePendientes();
+            renderPendientes();
+        } catch (_) { pendientesData = []; }
+    }
+
+    function renderBadgePendientes() {
+        const badge = document.getElementById('badgePendientes');
+        if (!badge) return;
+        if (pendientesData.length > 0) {
+            badge.textContent = `⏸️ ${pendientesData.length} egreso${pendientesData.length > 1 ? 's' : ''} pendiente${pendientesData.length > 1 ? 's' : ''}`;
+            badge.style.display = 'inline-flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    function togglePendientes() {
+        const sec = document.getElementById('seccionPendientes');
+        if (!sec) return;
+        sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function renderPendientes() {
+        const container = document.getElementById('listaPendientes');
+        if (!container) return;
+        if (!pendientesData.length) {
+            container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted); font-size:0.85rem;">✅ No hay egresos pendientes por justificar.</div>';
+            return;
+        }
+
+        container.innerHTML = pendientesData.map(g => `
+            <div style="border:2px solid #f57c00; border-radius:12px; padding:14px; background:#fff8e1; margin-bottom:10px;">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+                <span style="font-size:1.1rem;">⏸️</span>
+                <span style="font-weight:700; font-size:0.82rem; color:#e65100; background:#ffe0b2; padding:3px 8px; border-radius:6px;">PENDIENTE DE JUSTIFICAR</span>
+                <span style="font-size:0.85rem; font-weight:700; color:#e65100; margin-left:auto;">$${Number(g.monto || 0).toLocaleString('es-CO')}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.82rem; color:var(--ink-2); margin-bottom:12px; background:#fff; border-radius:8px; padding:8px;">
+                <div>📅 <b>${g.fecha || '—'}</b></div>
+                <div>🏦 <b>${g.plataforma || '—'}</b></div>
+                <div>🔖 Ref: <b>${g.referencia || '—'}</b></div>
+                <div>🕐 <b>${(g.hora || '').slice(0,5) || '—'}</b></div>
+                ${g.descripcion && g.descripcion !== 'Pendiente de justificar' ? `<div style="grid-column:1/-1; border-top:1px solid #e0e0e0; padding-top:6px; margin-top:2px;">📝 <b>${g.descripcion}</b></div>` : ''}
+              </div>
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <input id="pdesc_${g.id}" type="text" value="${(g.descripcion && g.descripcion !== 'Pendiente de justificar' ? g.descripcion : '').replace(/"/g, '&quot;')}" placeholder="¿En qué se gastó? (obligatorio)" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1.5px solid var(--ring-strong); font-size:0.85rem; font-family:inherit;">
+                <select id="pcat_${g.id}" onchange="actualizarSubcatsPendiente('${g.id}')" style="width:100%; padding:9px 8px; border-radius:8px; border:1.5px solid #e53935; font-size:0.82rem; font-family:inherit; font-weight:700;">
+                  <option value="">— Categoría del gasto * —</option>
+                  <option value="operacionales">⚙️ Gastos Operacionales</option>
+                  <option value="rifa_apartamento">🏠 Gastos Rifa Apartamento</option>
+                  <option value="construccion">🏗️ Construcción Apartamento</option>
+                  <option value="rifa_camioneta">🚗 Rifa Camioneta</option>
+                  <option value="retiro_ganancia">💸 Retiro de Ganancia</option>
+                  <option value="pagos_diarias">🎯 Pagos Rifas Diarias</option>
+                </select>
+                <select id="psubcat_${g.id}" style="width:100%; padding:9px 8px; border-radius:8px; border:1.5px solid var(--ring-strong); font-size:0.82rem; font-family:inherit;">
+                  <option value="">— Primero elige una categoría —</option>
+                </select>
+                <select id="pcuenta_${g.id}" style="width:100%; padding:9px 8px; border-radius:8px; border:1.5px solid #f57c00; font-size:0.82rem; font-family:inherit; font-weight:700;">
+                  <option value="">— ¿De qué cuenta salió? * —</option>
+                  <option value="Nequi Alejandro">📱 Nequi Alejandro</option>
+                  <option value="Nequi Mateo">📱 Nequi Mateo</option>
+                  <option value="Bancolombia Empresa">🏦 Bancolombia Empresa</option>
+                </select>
+                <button id="btnJustificar_${g.id}" onclick="justificarPendiente('${g.id}')" style="width:100%; padding:10px; border-radius:8px; border:none; background:#e65100; color:#fff; font-weight:700; font-size:0.88rem; cursor:pointer; font-family:inherit;">✅ Justificar y Guardar</button>
+              </div>
+            </div>`).join('');
+    }
+
+    function actualizarSubcatsPendiente(id) {
+        const cat = document.getElementById(`pcat_${id}`)?.value;
+        const subcatSelect = document.getElementById(`psubcat_${id}`);
+        if (!subcatSelect) return;
+        const opciones = SUBCATEGORIAS[cat] || [];
+        subcatSelect.innerHTML = opciones.length
+            ? '<option value="">— Subcategoría —</option>' + opciones.map(s => `<option value="${s}">${s}</option>`).join('')
+            : '<option value="">— Primero elige una categoría —</option>';
+    }
+
+    async function justificarPendiente(id) {
+        const descripcion  = document.getElementById(`pdesc_${id}`)?.value?.trim();
+        const categoria    = document.getElementById(`pcat_${id}`)?.value;
+        const subcategoria = document.getElementById(`psubcat_${id}`)?.value;
+        const cuentaOrigen = document.getElementById(`pcuenta_${id}`)?.value;
+
+        if (!descripcion) { alert('La descripción es obligatoria.'); return; }
+        if (!categoria)   { alert('Debes seleccionar la categoría del gasto.'); return; }
+        if (!cuentaOrigen) { alert('Debes indicar de qué cuenta salió el dinero.'); return; }
+
+        const btn = document.getElementById(`btnJustificar_${id}`);
+        if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+
+        try {
+            const pwd = localStorage.getItem(STORAGE_KEY) || '';
+            const req = await fetch('/api/admin/finanzas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    accion: 'justificar_pendiente',
+                    contrasena: pwd,
+                    id, descripcion, categoria,
+                    subcategoria: subcategoria || null,
+                    plataforma: cuentaOrigen
+                })
+            });
+            const res = await req.json();
+
+            if (res.status === 'ok') {
+                await cargarPendientes();
+            } else {
+                alert(res.mensaje || 'Error al justificar');
+                if (btn) { btn.disabled = false; btn.textContent = '✅ Justificar y Guardar'; }
+            }
+        } catch (_) {
+            if (btn) { btn.disabled = false; btn.textContent = '✅ Justificar y Guardar'; }
+        }
+    }
+
+    // 8. Conversor de archivos a base64 (imágenes directas, PDFs renderizados)
     async function convertirABase64(file) {
         return new Promise(async (resolve, reject) => {
             if (file.type.startsWith('image/')) {
