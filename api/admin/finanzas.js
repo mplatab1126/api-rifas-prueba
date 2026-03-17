@@ -5,7 +5,8 @@ const CATEGORIAS = [
   { id: 'rifa_apartamento', nombre: 'Gastos Rifa Apartamento',   icono: '🏠', afecta_er: true  },
   { id: 'construccion',     nombre: 'Construcción Apartamento',  icono: '🏗️', afecta_er: false },
   { id: 'rifa_camioneta',   nombre: 'Rifa Camioneta',            icono: '🚗', afecta_er: false },
-  { id: 'retiro_ganancia',  nombre: 'Retiro de Ganancia',        icono: '💸', afecta_er: false }
+  { id: 'retiro_ganancia',  nombre: 'Retiro de Ganancia',        icono: '💸', afecta_er: false },
+  { id: 'pagos_diarias',    nombre: 'Pagos Rifas Diarias',       icono: '🎯', afecta_er: false }
 ];
 
 export default async function handler(req, res) {

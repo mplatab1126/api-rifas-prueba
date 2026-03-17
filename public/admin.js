@@ -1756,6 +1756,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                       <option value="construccion">🏗️ Construcción Apartamento</option>
                       <option value="rifa_camioneta">🚗 Rifa Camioneta</option>
                       <option value="retiro_ganancia">💸 Retiro de Ganancia</option>
+                      <option value="pagos_diarias">🎯 Pagos Rifas Diarias</option>
                     </select>
                     <select id="subcat_${item.id}" style="width:100%; padding:9px 8px; border-radius:8px; border:1.5px solid var(--ring-strong); font-size:0.82rem; font-family:inherit;">
                       <option value="">— Primero elige una categoría —</option>
@@ -1899,7 +1900,8 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         rifa_apartamento: ['Adecuación', 'Muebles', 'Pintura', 'Electrodomésticos', 'Acabados', 'Publicidad rifa', 'Premios', 'Devoluciones a Clientes', 'Otros'],
         construccion: ['Materiales', 'Mano de obra', 'Hierro', 'Cemento', 'Acabados', 'Transporte material', 'Otros'],
         rifa_camioneta: ['Publicidad', 'Premios', 'Preparación', 'Otros'],
-        retiro_ganancia: ['Papá', 'Mateo', 'Alejandro']
+        retiro_ganancia: ['Papá', 'Mateo', 'Alejandro'],
+        pagos_diarias:  ['Rifa de 2 cifras', 'Rifa de 3 cifras']
     };
 
     function actualizarSubcatsEgreso(id) {
@@ -1921,7 +1923,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         const categoria    = document.getElementById(`cat_${id}`)?.value;
         const subcategoria = document.getElementById(`subcat_${id}`)?.value;
         const notas        = document.getElementById(`notas_${id}`)?.value?.trim();
-        const nombresCat = { operacionales: 'Operacionales', rifa_apartamento: 'Rifa Apartamento', construccion: 'Construcción', rifa_camioneta: 'Rifa Camioneta', retiro_ganancia: 'Retiro de Ganancia' };
+        const nombresCat = { operacionales: 'Operacionales', rifa_apartamento: 'Rifa Apartamento', construccion: 'Construcción', rifa_camioneta: 'Rifa Camioneta', retiro_ganancia: 'Retiro de Ganancia', pagos_diarias: 'Pagos Rifas Diarias' };
         const proyecto     = nombresCat[categoria] || categoria;
 
         if (!descripcion) { alert('La descripción es obligatoria.'); return; }

@@ -486,6 +486,7 @@
           <option value="construccion">🏗️ Construcción Apartamento</option>
           <option value="rifa_camioneta">🚗 Rifa Camioneta</option>
           <option value="retiro_ganancia">💸 Retiro de Ganancia</option>
+          <option value="pagos_diarias">🎯 Pagos Rifas Diarias</option>
         </select>
       </div>
       <div class="gasto-field">
@@ -1119,7 +1120,8 @@ const SUBCATEGORIAS = {
   rifa_apartamento: ['Adecuación', 'Muebles', 'Pintura', 'Electrodomésticos', 'Acabados', 'Publicidad rifa', 'Premios', 'Devoluciones a Clientes', 'Otros'],
   construccion:     ['Materiales', 'Mano de obra', 'Hierro', 'Cemento', 'Acabados', 'Transporte material', 'Otros'],
   rifa_camioneta:   ['Publicidad', 'Premios', 'Preparación', 'Otros'],
-  retiro_ganancia:  ['Papá', 'Mateo', 'Alejandro']
+  retiro_ganancia:  ['Papá', 'Mateo', 'Alejandro'],
+  pagos_diarias:   ['Rifa de 2 cifras', 'Rifa de 3 cifras']
 };
 
 let gastosRegistradosSesion = [];
@@ -1221,7 +1223,8 @@ async function guardarGastoHistorico() {
       rifa_apartamento: 'Gastos Rifa Apartamento',
       construccion: 'Construcción Apartamento',
       rifa_camioneta: 'Rifa Camioneta',
-      retiro_ganancia: 'Retiro de Ganancia'
+      retiro_ganancia: 'Retiro de Ganancia',
+      pagos_diarias: 'Pagos Rifas Diarias'
     };
 
     gastosRegistradosSesion.unshift({
