@@ -67,7 +67,7 @@ export default async function handler(req, res) {
         categoria:        'Pendiente',
         url_comprobante:  url_comprobante || null,
         reportado_por:    reportado_por || nombreAsesor,
-        categorizado_por: null
+        categorizado_por: nombreAsesor
       });
       if (error) throw error;
 
