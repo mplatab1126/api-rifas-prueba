@@ -16,6 +16,8 @@ export default async function handler(req, res) {
 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
+  const EXCLUIDOS_CAJA = ['alejandra plata', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
+
   // Fecha de hoy en zona horaria Colombia
   const fechaCol = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));
   const hoy = fechaCol.getFullYear() + '-' +
@@ -88,6 +90,7 @@ export default async function handler(req, res) {
       // 4. Calcular pendiente por asesor (cobrado histórico - recibido histórico)
       const asesoresEnCalle = [];
       for (const [asesor, cobrado] of Object.entries(cobradoPorAsesor)) {
+        if (EXCLUIDOS_CAJA.includes(asesor.toLowerCase().trim())) continue;
         const recibido = recibidoPorAsesor[asesor] || 0;
         const pendiente = cobrado - recibido;
         if (pendiente > 0) {
