@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-  // Twilio hace GET a este endpoint cuando el cliente contesta la llamada
   if (req.method !== 'GET' && req.method !== 'POST') {
     return res.status(405).end();
   }
@@ -10,7 +9,6 @@ export default async function handler(req, res) {
   const boletasTexto = boletas ? decodeURIComponent(boletas) : '';
   const totalTexto   = total   ? decodeURIComponent(total)   : '';
 
-  // Construir la parte del mensaje sobre las boletas
   let detalleBoletas = '';
   const listaNumeros = boletasTexto.split(',').filter(Boolean);
 
@@ -22,16 +20,19 @@ export default async function handler(req, res) {
   }
 
   const mensaje =
-    `Hola ${nombreCliente}, te llamamos de Rifas Colombia. ` +
+    `Hola ${nombreCliente}, te llamamos de Los Plata. ` +
     `Te informamos que tienes un saldo pendiente de ${totalTexto} pesos ` +
     `en ${detalleBoletas}. ` +
     `Por favor comunícate con nosotros para ponerte al día. ` +
     `¡Muchas gracias y que tengas un excelente día!`;
 
-  // TwiML: XML que le dice a Twilio qué voz usar y qué decir
+  const appUrl = process.env.APP_URL;
+  const textoEncoded = encodeURIComponent(mensaje);
+  const audioUrl = `${appUrl}/api/twiml/audio-elevenlabs?texto=${textoEncoded}`;
+
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="Polly.Lupe" language="es-MX">${mensaje}</Say>
+  <Play>${audioUrl}</Play>
 </Response>`;
 
   res.setHeader('Content-Type', 'text/xml');
