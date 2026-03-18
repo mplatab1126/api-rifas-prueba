@@ -99,6 +99,21 @@ export default async function handler(req, res) {
        return res.status(400).json({ status: 'error', mensaje: 'La imagen es borrosa o no es un comprobante válido.' });
     }
 
+    // Corrección automática: descripciones que SIEMPRE son ingresos en Bancolombia
+    const descLower = (datos.descripcion_movimiento || '').toLowerCase().trim();
+    const SIEMPRE_INGRESO = [
+      'transferencia nequi bancolombi',
+      'transferencia daviplata bancolombi',
+      'consignacion nacional cheque',
+      'consignacion nacional efectivo',
+      'abono traslado ahorro',
+      'abono intereses',
+      'transferencia recibida'
+    ];
+    if (datos.tipo === 'egreso' && SIEMPRE_INGRESO.some(p => descLower.includes(p))) {
+      datos.tipo = 'ingreso';
+    }
+
     // Si la IA detectó que es un EGRESO (valor negativo / rojo / retiro), no lo guardamos
     // como transferencia libre — primero verificamos duplicados en gastos, luego lo devolvemos
     // para que el asesor lo justifique.
