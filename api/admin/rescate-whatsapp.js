@@ -22,7 +22,7 @@ async function fetchSubscribersByTag(token, tagNs) {
   let page = 1;
   let hasMore = true;
   while (hasMore && page <= 20) {
-    const resp = await fetch(`https://chateapro.app/api/subscribers?has_tag_ns=${tagNs}&limit=50&page=${page}`, {
+    const resp = await fetch(`https://chateapro.app/api/subscribers?tag_ns=${tagNs}&limit=50&page=${page}`, {
       headers: { 'accept': 'application/json', 'Authorization': `Bearer ${token}` }
     }).then(r => r.json());
     if (resp.data && resp.data.length > 0) {
