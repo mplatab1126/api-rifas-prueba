@@ -166,6 +166,7 @@ const $ = id => document.getElementById(id);
               cargarPlataformas(); // <--- Hace que la lista se llene sola
               cargarSaldoAsesor(res.asesor);
               if (res.asesor === 'Mateo') $('btnFinanzas').style.display = '';
+              if (res.asesor === 'Mateo' || res.asesor === 'Alejo P' || res.asesor === 'Alejo Plata') $('btnLlamadas').style.display = '';
           } else {
               if(!auto) msg.textContent = 'Contraseña incorrecta';
               localStorage.removeItem(STORAGE_KEY);
@@ -745,6 +746,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
        else { totalMoney=Number($('v_primerAbono').value)||0; ref=$('v_referenciaAbono').value; metodo=$('v_metodoPago').value; }
 
        const perNum = Math.floor(totalMoney/nums.length);
+       const idTransVenta = $('v_idTransferencia').value;
        const baseData = { 
            nombre: $('v_nombre').value, 
            apellido: $('v_apellido').value, 
@@ -755,7 +757,8 @@ $('btnRegistrarVenta').onclick = async ()=>{
            metodoPago: metodo, 
            esPendiente: esVentaPendiente, 
            contrasena: localStorage.getItem(STORAGE_KEY),
-           idTransferencia: $('v_idTransferencia').value // <-- ESTO ES LO NUEVO
+           idTransferencia: idTransVenta,
+           esPagoInteligente: !!(idTransVenta && idTransVenta.trim() !== '')
        };
   
        let ok=0, fails=0;
@@ -839,12 +842,14 @@ $('btnRegistrarVenta').onclick = async ()=>{
 
         const textoOriginal = btn.textContent; btn.textContent = 'Procesando...'; btn.disabled = true;
 
+        const idTransOriginal = document.getElementById('a_idTransferencia').value;
         const basePayload = {
             metodoPago: metodo,
             referencia: ref || 'efectivo',
             esPendiente: esAbonoPendiente,
             contrasena: localStorage.getItem(STORAGE_KEY),
-            idTransferencia: document.getElementById('a_idTransferencia').value
+            idTransferencia: idTransOriginal,
+            esPagoInteligente: !!(idTransOriginal && idTransOriginal.trim() !== '')
         };
 
         let ok = 0; let fails = 0;

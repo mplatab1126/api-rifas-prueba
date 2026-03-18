@@ -3,6 +3,9 @@
   "functions": {
     "api/admin/llamadas-automaticas.js": {
       "maxDuration": 60
+    },
+    "api/admin/difusion-llamadas.js": {
+      "maxDuration": 60
     }
   },
   "crons": [],
@@ -38,6 +41,10 @@
     {
       "source": "/admin-horarios",
       "destination": "/admin-horarios.html"
+    },
+    {
+      "source": "/llamadas",
+      "destination": "/llamadas.html"
     }
   ]
 }

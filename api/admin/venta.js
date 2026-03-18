@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   const {
     numeroBoleta, nombre, apellido, ciudad, telefono,
     primerAbono, referenciaAbono, metodoPago, referencia,
-    contrasena, esPendiente, idTransferencia
+    contrasena, esPendiente, idTransferencia, esPagoInteligente
   } = req.body;
 
   const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
@@ -118,7 +118,7 @@ export default async function handler(req, res) {
           es_pendiente: !!esPendiente,
           asesor: nombreAsesor,
           tipo: tipoBoleta,
-          origen: (idTransferencia && idTransferencia.trim() !== '') ? 'pago_inteligente' : 'manual'
+          origen: (esPagoInteligente || (idTransferencia && idTransferencia.trim() !== '')) ? 'pago_inteligente' : 'manual'
       });
 
       // ASIGNACIÓN SEGURA AL ID DE LA BASE DE DATOS

@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  const { numeroBoleta, valorAbono, metodoPago, referencia, contrasena, esPendiente, idTransferencia } = req.body;
+  const { numeroBoleta, valorAbono, metodoPago, referencia, contrasena, esPendiente, idTransferencia, esPagoInteligente } = req.body;
 
   const ASESORES_INDEPENDIENTES = ['alejandra plata', 'joaquín', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
   const esIndependiente = (nombre) => nombre && ASESORES_INDEPENDIENTES.some(ind => nombre.toLowerCase().includes(ind));
@@ -137,7 +137,7 @@ export default async function handler(req, res) {
         es_pendiente: !!esPendiente,
         asesor: nombreAsesor,
         tipo: tipoBoleta,
-        origen: (idTransferencia && idTransferencia.trim() !== '') ? 'pago_inteligente' : 'manual'
+        origen: (esPagoInteligente || (idTransferencia && idTransferencia.trim() !== '')) ? 'pago_inteligente' : 'manual'
       });
     if (insertError) throw insertError;
     

@@ -21,24 +21,24 @@ export default async function handler(req, res) {
     });
   }
 
-  // Determinar tabla de boletas e identificador de cifras según el tipo seleccionado
+  // Determinar tabla de boletas según el tipo seleccionado
   const tablaBoletasMap = { '2cifras': 'boletas_diarias', '3cifras': 'boletas_diarias_3cifras', '4cifras': 'boletas' };
-  const patronLengthMap = { '2cifras': '__', '3cifras': '___', '4cifras': '____' };
   const tablaBoletas = tablaBoletasMap[tipo] || 'boletas';
-  const patronLength = patronLengthMap[tipo] || '____';
+  const patronLengthMap = { '2cifras': '__', '3cifras': '___', '4cifras': '____' };
 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
-    // 1. Traemos los Abonos filtrados por cifras del número de boleta
+    // 1. Traemos los Abonos filtrados por tipo de boleta
     const { data: abonos, error: errAbonos } = await supabase
       .from('abonos')
       .select('monto, fecha_pago, asesor, numero_boleta')
-      .like('numero_boleta', patronLength)
+      .eq('tipo', tipo)
       .limit(100000); 
     if (errAbonos) throw errAbonos;
 
     // 2. Traemos las Ventas filtradas por cifras del número de boleta
+    const patronLength = patronLengthMap[tipo] || '____';
     const { data: ventas, error: errVentas } = await supabase
       .from('registro_movimientos')
       .select('created_at, asesor, boleta, detalle')

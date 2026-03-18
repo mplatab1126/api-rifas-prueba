@@ -127,7 +127,15 @@ export default async function handler(req, res) {
       // Si no se puede guardar el historial, abortamos ANTES de reiniciar las boletas
       if (historialError) throw new Error('No se pudo guardar el historial: ' + historialError.message);
 
-      // 2. ─── Reiniciar todas las boletas ──────────────────────────────
+      // 2. ─── Eliminar abonos de la rifa que termina ────────────────
+      const { error: deleteAbonosError } = await supabase
+        .from('abonos')
+        .delete()
+        .eq('tipo', tipo);
+
+      if (deleteAbonosError) throw new Error('No se pudieron limpiar los abonos: ' + deleteAbonosError.message);
+
+      // 3. ─── Reiniciar todas las boletas ──────────────────────────────
       const precioInicial = tipo === '3cifras' ? 5000 : 20000;
       const resetPayload = {
         estado:           'Disponible',
@@ -141,11 +149,11 @@ export default async function handler(req, res) {
       const { error: resetError } = await supabase
         .from(tabla)
         .update(resetPayload)
-        .neq('numero', ''); // Aplica a todas las filas
+        .neq('numero', '');
 
       if (resetError) throw resetError;
 
-      // 3. ─── Guardar nueva configuración del sorteo ───────────────────
+      // 4. ─── Guardar nueva configuración del sorteo ───────────────────
       await supabase.from('config_rifa_diaria').delete().eq('tipo', tipo);
       const { error: configError } = await supabase.from('config_rifa_diaria').insert({
         tipo,
