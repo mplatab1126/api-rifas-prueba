@@ -27,38 +27,20 @@ export default async function handler(req, res) {
       Devuelve ÚNICAMENTE un objeto JSON válido (sin formato Markdown, sin comillas invertidas, solo llaves y texto).
       Reemplaza comas por puntos en los decimales si aplica, pero devuelve enteros si no hay centavos.
 
-      CONTEXTO DEL NEGOCIO: Este sistema es de una empresa de rifas. Los asesores suben pantallazos tomados directamente desde las cuentas bancarias del negocio (Bancolombia, Nequi, Daviplata). La GRAN MAYORÍA de comprobantes son pagos que CLIENTES enviaron al negocio, es decir INGRESOS. Los egresos reales son poco frecuentes.
+      CONTEXTO: Este sistema es de una empresa de rifas. Los asesores suben pantallazos desde las cuentas bancarias del negocio.
 
-      REGLA CRÍTICA para identificar el tipo (sigue este orden de prioridad):
-
-      PRIORIDAD 1 — SIGNO Y COLOR DEL VALOR (esto manda por encima de todo):
-      - Si el valor/monto tiene un signo NEGATIVO (-) delante o aparece en ROJO → tipo "egreso"
-      - Si el valor/monto NO tiene signo negativo y NO aparece en rojo → tipo "ingreso"
-
-      PRIORIDAD 2 — SOLO si no puedes determinar el signo/color, usa las palabras del ENCABEZADO o TÍTULO del comprobante (NO el mensaje/descripción del cliente):
-      - Palabras que indican EGRESO: "Enviaste", "Retiro", "Pago a", "Débito", "Salida", "Cargo", "Compra", "Transferencia a terceros", "Transferencia enviada"
-      - Palabras que indican INGRESO: "Te enviaron", "Recibiste", "Consignación", "Transferencia recibida", "Crédito", "Abono", "Entrada", "Depósito", "Transferencia nequi", "Transferencia daviplata"
-
-      ⚠️ REGLA SOBRE DESCRIPCIONES/MENSAJES (MUY IMPORTANTE):
-      El campo "descripción", "mensaje", "motivo" o "nota" que aparece en las transferencias es texto libre que escribió la persona que envió el dinero (el cliente). Palabras como "Ganador", "Rifa", "Premio", "Pago", "Cuota", "Abono rifa" en ese campo NO indican si es ingreso o egreso. IGNORA completamente el contenido de ese campo para decidir el tipo. Solo usa el signo/color del valor y las palabras del encabezado del comprobante.
-
-      CONTEXTO NEQUI: Cuando llega dinero a una cuenta Nequi, la app dice "Te enviaron" o muestra el monto sin signo negativo. Si el comprobante de Nequi muestra una transferencia recibida (sin signo negativo, sin rojo), SIEMPRE es ingreso. Solo clasifica como egreso un comprobante de Nequi si dice "Enviaste" o el monto aparece en rojo o con signo negativo.
-
-      CONTEXTO DAVIPLATA: En Daviplata, las transferencias recibidas muestran el monto positivo. Solo clasifica como egreso si el monto aparece negativo o en rojo.
-
-      CONTEXTO BANCOLOMBIA: En los "Detalle de Movimiento" de Bancolombia, las descripciones tipo "Transferencia nequi bancolombi", "Transferencia daviplata bancolombi" o similares son INGRESOS (dinero que entró a la cuenta desde Nequi/Daviplata). Si el valor es positivo (sin signo negativo), SIEMPRE es ingreso.
-
-      REGLA POR DEFECTO: Si tienes CUALQUIER duda y el valor NO tiene signo negativo ni aparece en rojo, clasifícalo como "ingreso". Es preferible clasificar erróneamente un egreso como ingreso a clasificar un ingreso como egreso.
+      Para el campo "tipo": clasifica como "egreso" SOLO si el valor tiene signo NEGATIVO (-) o aparece en color ROJO. Si no tiene signo negativo y no está en rojo, clasifica como "ingreso". En caso de duda, pon "ingreso".
 
       Formato exacto esperado:
       {
-        "tipo": "ingreso" o "egreso" según las reglas anteriores,
-        "plataforma": "Nombre del banco o app exactamente como aparece (Ej: Bancolombia, Nequi, Daviplata)",
+        "tipo": "ingreso" o "egreso",
+        "plataforma": "Nombre del banco o app (Ej: Bancolombia, Nequi, Daviplata)",
         "monto": "Solo el número absoluto sin símbolos ni signos (Ej: 3000000). NUNCA incluyas el signo negativo.",
         "referencia": "Código de comprobante o referencia. Si no hay, pon '0'",
         "fecha_pago": "La fecha exacta en formato YYYY-MM-DD",
         "hora_pago": "La hora en formato HH:MM:00 (Formato 24h. Obligatorio poner los segundos). Si no hay hora, pon '12:00:00'",
-        "descripcion_movimiento": "El campo 'Descripción' del comprobante bancario, TAL CUAL aparece (Ej: 'Valor iva', 'Compra POS', 'Transferencia a terceros'). Si no hay, pon ''"
+        "descripcion_movimiento": "El campo 'Descripción' del comprobante bancario, TAL CUAL aparece (Ej: 'Valor iva', 'Compra POS', 'Transferencia a terceros'). Si no hay, pon ''",
+        "valor_original": "El valor TAL CUAL aparece en el comprobante, con signos y símbolos incluidos (Ej: 'COP $ 180.000,00' o 'COP -$ 538,07' o '-21,478.00'). Cópialo exacto."
       }
     `;
 
@@ -99,21 +81,13 @@ export default async function handler(req, res) {
        return res.status(400).json({ status: 'error', mensaje: 'La imagen es borrosa o no es un comprobante válido.' });
     }
 
-    // Corrección automática de clasificación para Bancolombia.
-    // En Bancolombia hay pocas descripciones de egreso pero muchas de ingreso,
-    // así que es más seguro listar los egresos y tratar todo lo demás como ingreso.
-    const descLower = (datos.descripcion_movimiento || '').toLowerCase().trim();
-    const platLower = (datos.plataforma || '').toLowerCase().trim();
-
-    if (datos.tipo === 'egreso' && platLower.includes('bancolombia')) {
-      const BANCOLOMBIA_EGRESO_KEYWORDS = [
-        'compra', 'retiro', 'pago a', 'cargo', 'debito', 'débito',
-        'transferencia a terceros', 'comision', 'comisión', 'gravamen'
-      ];
-      const esRealmenteEgreso = BANCOLOMBIA_EGRESO_KEYWORDS.some(k => descLower.includes(k));
-      if (!esRealmenteEgreso) {
-        datos.tipo = 'ingreso';
-      }
+    // Clasificación definitiva basada en el signo del valor original.
+    // Si el valor tiene un "-" es egreso, si no tiene es ingreso.
+    // Esto es más confiable que la interpretación de la IA.
+    const valorOriginal = (datos.valor_original || '').trim();
+    if (valorOriginal) {
+      const tieneSignoNegativo = valorOriginal.includes('-');
+      datos.tipo = tieneSignoNegativo ? 'egreso' : 'ingreso';
     }
 
     // Si la IA detectó que es un EGRESO (valor negativo / rojo / retiro), no lo guardamos
