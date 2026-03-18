@@ -540,7 +540,9 @@
       btn.disabled = true;
       result.textContent = '';
 
-      const res = await apiCall('test', { telefono_test: tel });
+      const plantilla = document.getElementById('plantillaLlamada').value;
+      localStorage.setItem('plantilla_llamada', plantilla);
+      const res = await apiCall('test', { telefono_test: tel, plantilla });
 
       btn.textContent = 'Enviar prueba';
       btn.disabled = false;

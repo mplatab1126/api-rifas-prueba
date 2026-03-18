@@ -218,7 +218,7 @@ export default async function handler(req, res) {
   // ── TEST: llamada de prueba a un número específico ──
   if (accion === 'test') {
     try {
-      const { telefono_test } = payload;
+      const { telefono_test, plantilla } = payload;
       if (!telefono_test) return res.status(400).json({ status: 'error', mensaje: 'Falta el número de teléfono.' });
 
       const telefonoE164 = formatearTelefono(telefono_test);
@@ -234,6 +234,7 @@ export default async function handler(req, res) {
         boletas: '0000',
         total: 'cien mil'
       });
+      if (plantilla) params.set('plantilla', plantilla);
       const twimlUrl = `${appUrl}/api/twiml/cobro?${params.toString()}`;
 
       const llamada = await twilioClient.calls.create({
