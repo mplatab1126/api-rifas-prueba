@@ -99,19 +99,21 @@ export default async function handler(req, res) {
        return res.status(400).json({ status: 'error', mensaje: 'La imagen es borrosa o no es un comprobante válido.' });
     }
 
-    // Corrección automática: descripciones que SIEMPRE son ingresos en Bancolombia
+    // Corrección automática de clasificación para Bancolombia.
+    // En Bancolombia hay pocas descripciones de egreso pero muchas de ingreso,
+    // así que es más seguro listar los egresos y tratar todo lo demás como ingreso.
     const descLower = (datos.descripcion_movimiento || '').toLowerCase().trim();
-    const SIEMPRE_INGRESO = [
-      'transferencia nequi bancolombi',
-      'transferencia daviplata bancolombi',
-      'consignacion nacional cheque',
-      'consignacion nacional efectivo',
-      'abono traslado ahorro',
-      'abono intereses',
-      'transferencia recibida'
-    ];
-    if (datos.tipo === 'egreso' && SIEMPRE_INGRESO.some(p => descLower.includes(p))) {
-      datos.tipo = 'ingreso';
+    const platLower = (datos.plataforma || '').toLowerCase().trim();
+
+    if (datos.tipo === 'egreso' && platLower.includes('bancolombia')) {
+      const BANCOLOMBIA_EGRESO_KEYWORDS = [
+        'compra', 'retiro', 'pago a', 'cargo', 'debito', 'débito',
+        'transferencia a terceros', 'comision', 'comisión', 'gravamen'
+      ];
+      const esRealmenteEgreso = BANCOLOMBIA_EGRESO_KEYWORDS.some(k => descLower.includes(k));
+      if (!esRealmenteEgreso) {
+        datos.tipo = 'ingreso';
+      }
     }
 
     // Si la IA detectó que es un EGRESO (valor negativo / rojo / retiro), no lo guardamos
