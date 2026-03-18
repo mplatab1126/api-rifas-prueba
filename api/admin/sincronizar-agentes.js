@@ -13,9 +13,8 @@ export default async function handler(req, res) {
 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
   
-  // TUS TOKENS ACTUALES
-  const CHATEA_TOKEN_LINEA_1 = "B5SUQW1ZFq6DcEFd7ePPdfk7kRffZVKUt6rCLlxgL9R4CTcrsQ5epphoKfB1";
-  const CHATEA_TOKEN_LINEA_2 = "EUdxRa1afPfoUYf7ok9b36xga3XF0hdpnABkpJ4pr78jb61gM3OsfhIuinQp";
+  const CHATEA_TOKEN_LINEA_1 = process.env.CHATEA_TOKEN_LINEA_1;
+  const CHATEA_TOKEN_LINEA_2 = process.env.CHATEA_TOKEN_LINEA_2;
 
   try {
     const respuesta1 = await fetch('https://chateapro.app/api/flow-agent-summary?range=last_7_days', {
