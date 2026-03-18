@@ -117,7 +117,8 @@ export default async function handler(req, res) {
           metodo_pago: metodoPago || 'Efectivo',
           es_pendiente: !!esPendiente,
           asesor: nombreAsesor,
-          tipo: tipoBoleta
+          tipo: tipoBoleta,
+          origen: (idTransferencia && idTransferencia.trim() !== '') ? 'pago_inteligente' : 'manual'
       });
 
       // ASIGNACIÓN SEGURA AL ID DE LA BASE DE DATOS
