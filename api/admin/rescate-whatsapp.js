@@ -82,13 +82,24 @@ export default async function handler(req, res) {
   // ── PREVIEW: Busca suscriptores bloqueados y cruza con deudas en Supabase ──
   if (accion === 'preview') {
     try {
-      const { tag_ns } = payload;
-      if (!tag_ns) return res.status(400).json({ status: 'error', mensaje: 'Falta el tag.' });
+      const tagNsList = payload.tag_ns_list || (payload.tag_ns ? [payload.tag_ns] : []);
+      if (tagNsList.length === 0) return res.status(400).json({ status: 'error', mensaje: 'Falta el tag.' });
 
-      const token = tag_ns.startsWith('f166221') ? TOKEN_L2 : TOKEN_L1;
-      const subscribers = await fetchSubscribersByTag(token, tag_ns);
+      const allSubscribers = [];
+      const seen = new Set();
 
-      const withPhone = subscribers.filter(s => s.phone && s.channel === 'whatsapp_cloud');
+      for (const tagNs of tagNsList) {
+        const token = tagNs.startsWith('f166221') ? TOKEN_L2 : TOKEN_L1;
+        const subs = await fetchSubscribersByTag(token, tagNs);
+        for (const s of subs) {
+          if (!seen.has(s.user_ns)) {
+            seen.add(s.user_ns);
+            allSubscribers.push(s);
+          }
+        }
+      }
+
+      const withPhone = allSubscribers.filter(s => s.phone && s.channel === 'whatsapp_cloud');
 
       if (withPhone.length === 0) {
         return res.json({ status: 'ok', total_chateapro: 0, total_con_deuda: 0, total_saldo: 0, clientes: [] });

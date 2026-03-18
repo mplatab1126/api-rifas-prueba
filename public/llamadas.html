@@ -242,15 +242,13 @@
         Cuando haces una difusión en ChateaPro y Meta bloquea el envío a algunos clientes, aquí puedes llamarlos por Twilio.
         Selecciona el tag de la difusión que falló y el sistema buscará esos contactos.
       </p>
-      <div class="filter-row">
-        <div class="input-group" style="flex:2;">
-          <label>Difusión que falló</label>
-          <select id="tagRescate" class="field-input">
-            <option value="">Cargando tags...</option>
-          </select>
+      <div>
+        <label style="font-size:0.75rem; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:8px;">Difusiones que fallaron (selecciona una o varias)</label>
+        <div id="tagRescateList" style="max-height:220px; overflow-y:auto; border:1px solid var(--ring-strong); border-radius:10px; padding:8px; background:#fff;">
+          <p style="color:var(--muted); font-size:0.85rem; padding:8px;">Cargando tags...</p>
         </div>
-        <div class="input-group" style="flex:0; min-width:auto;">
-          <label>&nbsp;</label>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; flex-wrap:wrap; gap:10px;">
+          <span id="tagSelectCount" style="font-size:0.82rem; font-weight:700; color:var(--ink-2);">0 seleccionados</span>
           <button class="btn btn-primary" id="btnRescatePreview" onclick="cargarRescatePreview()" disabled>Buscar bloqueados</button>
         </div>
       </div>
@@ -733,28 +731,40 @@
     }
 
     async function cargarTagsRescate() {
-      const select = document.getElementById('tagRescate');
+      const container = document.getElementById('tagRescateList');
       const btn = document.getElementById('btnRescatePreview');
       const res = await rescateCall('tags');
       if (res.status === 'ok' && res.tags.length > 0) {
-        select.innerHTML = '<option value="">— Selecciona una difusión —</option>' +
-          res.tags.map(t => `<option value="${t.tag_ns}">[L${t.linea}] ${t.name}</option>`).join('');
+        container.innerHTML = res.tags.map(t =>
+          `<label style="display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.88rem; font-weight:600;" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
+            <input type="checkbox" class="chk-tag-rescate" value="${t.tag_ns}" style="accent-color:var(--accent); width:16px; height:16px;" onchange="updateTagSelectCount()">
+            <span style="color:${t.linea === 1 ? '#1d4ed8' : '#6d28d9'}; font-size:0.72rem; font-weight:800; min-width:24px;">L${t.linea}</span>
+            ${t.name}
+          </label>`
+        ).join('');
         btn.disabled = false;
       } else {
-        select.innerHTML = '<option value="">No se encontraron tags de difusiones fallidas</option>';
+        container.innerHTML = '<p style="color:var(--muted); font-size:0.85rem; padding:8px;">No se encontraron tags de difusiones fallidas</p>';
       }
     }
 
+    function updateTagSelectCount() {
+      const checked = document.querySelectorAll('.chk-tag-rescate:checked');
+      document.getElementById('tagSelectCount').textContent = `${checked.length} seleccionado${checked.length !== 1 ? 's' : ''}`;
+      document.getElementById('btnRescatePreview').disabled = checked.length === 0;
+    }
+
     async function cargarRescatePreview() {
-      const tagNs = document.getElementById('tagRescate').value;
-      if (!tagNs) { showBanner('Selecciona un tag primero', 'error'); return; }
+      const checked = document.querySelectorAll('.chk-tag-rescate:checked');
+      const tagNsList = Array.from(checked).map(ch => ch.value);
+      if (tagNsList.length === 0) { showBanner('Selecciona al menos un tag', 'error'); return; }
 
       const btn = document.getElementById('btnRescatePreview');
       btn.innerHTML = '<span class="loading"></span> Buscando en ChateaPro...';
       btn.disabled = true;
 
       try {
-        const res = await rescateCall('preview', { tag_ns: tagNs });
+        const res = await rescateCall('preview', { tag_ns_list: tagNsList });
         btn.innerHTML = 'Buscar bloqueados';
         btn.disabled = false;
 
