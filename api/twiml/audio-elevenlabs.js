@@ -12,19 +12,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=ulaw_8000`, {
       method: 'POST',
       headers: {
         'xi-api-key': apiKey,
-        'Content-Type': 'application/json',
-        'Accept': 'audio/mpeg'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         text: texto,
         model_id: 'eleven_multilingual_v2',
         voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.75,
+          stability: 0.6,
+          similarity_boost: 0.85,
           style: 0.0,
           use_speaker_boost: true
         }
@@ -38,7 +37,7 @@ export default async function handler(req, res) {
 
     const audioBuffer = await response.arrayBuffer();
 
-    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Content-Type', 'audio/basic');
     res.setHeader('Cache-Control', 'public, max-age=86400');
     return res.status(200).send(Buffer.from(audioBuffer));
   } catch (error) {
