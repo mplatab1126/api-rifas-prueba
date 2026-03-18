@@ -6,16 +6,20 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
   if (req.method !== 'POST') return res.status(405).json({ status: 'error' });
 
-  const { texto } = req.body;
+  const { texto, cifras } = req.body;
   if (!texto || texto.trim().length < 3) {
     return res.status(400).json({ status: 'error', mensaje: 'Cuéntame más sobre tu sueño o señal.' });
   }
+
+  const numCifras = cifras === 3 ? 3 : 2;
+  const rangoMax = numCifras === 3 ? 999 : 99;
+  const rangoDesc = numCifras === 3 ? 'del 001 al 999, de 3 cifras' : 'del 01 al 99, de 2 cifras';
 
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (!anthropicKey) return res.status(500).json({ status: 'error', mensaje: 'El Oráculo no está disponible en este momento.' });
 
   try {
-    const prompt = `Eres el Oráculo de la Suerte de "Los Plata", una rifa colombiana. Tu misión es interpretar sueños y señales del día para sugerir números de la suerte en la lotería diaria (números del 01 al 99, de 2 cifras).
+    const prompt = `Eres el Oráculo de la Suerte de "Los Plata", una rifa colombiana. Tu misión es interpretar sueños y señales del día para sugerir números de la suerte en la lotería diaria (números ${rangoDesc}).
 
 El cliente te dice: "${texto}"
 
@@ -25,7 +29,7 @@ Responde en este JSON exacto (sin markdown, sin explicaciones extra):
   "numeros": [número1, número2, número3]
 }
 
-Los números deben ser enteros entre 1 y 99, elegidos con lógica simbólica relacionada al sueño (ej: un gato → 17 por la tradición de la charada, un perro → 07, etc.). Devuelve exactamente 3 números distintos.`;
+Los números deben ser enteros entre 1 y ${rangoMax}, elegidos con lógica simbólica relacionada al sueño (ej: un gato → ${numCifras === 3 ? '170' : '17'} por la tradición de la charada, un perro → ${numCifras === 3 ? '070' : '07'}, etc.). Devuelve exactamente 3 números distintos.`;
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',

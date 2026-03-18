@@ -23,15 +23,23 @@ export default async function handler(req, res) {
 
   try {
     const prompt = `
-      Eres un asistente bancario experto. Analiza este comprobante bancario y extrae los datos TAL CUAL aparecen, sin interpretar ni cambiar nada.
+      Eres un asistente bancario experto en bancos colombianos (Bancolombia, Nequi, Daviplata). Analiza este comprobante bancario y extrae los datos TAL CUAL aparecen.
       Devuelve ÚNICAMENTE un objeto JSON válido (sin formato Markdown, sin comillas invertidas, solo llaves y texto).
       Reemplaza comas por puntos en los decimales si aplica, pero devuelve enteros si no hay centavos.
 
-      REGLA CRÍTICA para identificar el tipo:
-      - Si el valor/monto aparece en ROJO o tiene un signo NEGATIVO (-) delante → tipo "egreso" (dinero que salió)
-      - Si el valor/monto aparece en VERDE o es positivo (sin signo negativo) → tipo "ingreso" (dinero que entró)
-      - También considera la descripción: palabras como "Retiro", "Pago a", "Débito", "Salida", "Cargo" → "egreso".
-        Palabras como "Consignación", "Transferencia recibida", "Crédito", "Abono", "Entrada" → "ingreso".
+      REGLA CRÍTICA para identificar el tipo (sigue este orden de prioridad):
+
+      PRIORIDAD 1 — SIGNO Y COLOR DEL VALOR (esto manda por encima de todo):
+      - Si el valor/monto tiene un signo NEGATIVO (-) delante o aparece en ROJO → tipo "egreso"
+      - Si el valor/monto NO tiene signo negativo y NO aparece en rojo → tipo "ingreso"
+
+      PRIORIDAD 2 — SOLO si no puedes determinar el signo/color, usa la descripción como pista:
+      - Palabras que indican EGRESO: "Retiro", "Pago a", "Débito", "Salida", "Cargo", "Compra", "Transferencia a terceros"
+      - Palabras que indican INGRESO: "Consignación", "Transferencia recibida", "Crédito", "Abono", "Entrada", "Transferencia nequi", "Transferencia daviplata"
+
+      CONTEXTO BANCOLOMBIA: En los "Detalle de Movimiento" de Bancolombia, las descripciones tipo "Transferencia nequi bancolombi", "Transferencia daviplata bancolombi" o similares son INGRESOS (dinero que entró a la cuenta desde Nequi/Daviplata). Si el valor es positivo (sin signo negativo), SIEMPRE es ingreso.
+
+      REGLA POR DEFECTO: Si tienes dudas y el valor NO tiene signo negativo, clasifícalo como "ingreso".
 
       Formato exacto esperado:
       {

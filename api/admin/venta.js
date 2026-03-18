@@ -112,7 +112,8 @@ export default async function handler(req, res) {
           monto: abonoNum,
           fecha_pago: new Date().toISOString(),
           referencia_transferencia: referenciaAbono || 'Sin Ref',
-          nota: `Origen: ${metodoPago || 'Efectivo'}${esPendiente ? ' | PENDIENTE' : ''} | Venta: ${referencia || 'Directa'}`,
+          metodo_pago: metodoPago || 'Efectivo',
+          es_pendiente: !!esPendiente,
           asesor: nombreAsesor
       });
 

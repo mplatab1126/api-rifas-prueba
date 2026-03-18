@@ -109,8 +109,9 @@ export default async function handler(req, res) {
       return res.status(200).json({ status: 'ok', mensaje: `Gasto justificado en "${catObj.nombre}".` });
     }
 
-    if (nombreAsesor !== 'Mateo') {
-      return res.status(403).json({ status: 'error', mensaje: 'Solo Mateo puede registrar gastos.' });
+    const puedeRegistrarGastos = ['Mateo', 'Juan Pablo'];
+    if (!puedeRegistrarGastos.includes(nombreAsesor)) {
+      return res.status(403).json({ status: 'error', mensaje: 'Solo Mateo o Juan Pablo pueden registrar gastos.' });
     }
 
     // ── Registrar gasto ─────────────────────────────────────────────────
