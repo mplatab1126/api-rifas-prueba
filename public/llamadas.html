@@ -171,69 +171,6 @@
       </div>
     </div>
 
-    <!-- CREAR DIFUSIÓN -->
-    <div class="saas-divider">Crear Difusión</div>
-
-    <div class="filter-zone">
-      <div class="filter-row">
-        <div class="input-group">
-          <label>Máximo abonado por boleta (COP)</label>
-          <input type="number" id="filtroMaxAbonado" class="field-input" placeholder="Ej: 99000" value="">
-        </div>
-        <div class="input-group" style="flex:0; min-width:auto;">
-          <label>&nbsp;</label>
-          <button class="btn btn-primary" id="btnPreview" onclick="cargarPreview()">Previsualizar clientes</button>
-        </div>
-      </div>
-      <p style="font-size:0.82rem; color:var(--muted); font-weight:600; margin:12px 0 0;">
-        Muestra solo boletas donde el cliente ha abonado igual o menos a este valor. Si un cliente tiene varias boletas, aparece si al menos una cumple el filtro. Déjalo vacío para ver todos los clientes con saldo pendiente.
-      </p>
-    </div>
-
-    <!-- PREVIEW DE CLIENTES -->
-    <div id="previewSection" style="display:none;">
-      <div class="card">
-        <div class="card-title" id="previewTitle">Clientes que recibirán la llamada</div>
-
-        <div class="select-bar">
-          <div>
-            <label style="font-size:0.85rem; font-weight:700; cursor:pointer;">
-              <input type="checkbox" id="selectAll" checked style="accent-color:var(--accent); margin-right:6px;">
-              Seleccionar todos
-            </label>
-            <span class="select-info" id="selectCount"></span>
-          </div>
-          <button class="btn btn-danger" id="btnLanzar" onclick="confirmarLanzamiento()">
-            Lanzar llamadas
-          </button>
-        </div>
-
-        <div class="table-container">
-          <table class="premium-table" id="tablaPreview">
-            <thead>
-              <tr>
-                <th class="checkbox-cell"></th>
-                <th>Cliente</th>
-                <th>Teléfono</th>
-                <th>Boletas</th>
-                <th>Saldo pendiente</th>
-              </tr>
-            </thead>
-            <tbody id="previewBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- RESULTADOS DE LANZAMIENTO -->
-    <div id="resultadosSection" style="display:none;">
-      <div class="card">
-        <div class="card-title">Resultado de la difusión</div>
-        <div class="mega-kpi-grid" id="resultKpis"></div>
-        <div class="results-grid" id="resultGrid"></div>
-      </div>
-    </div>
-
     <!-- RESCATE WHATSAPP -->
     <div class="saas-divider">Rescate WhatsApp</div>
 
@@ -407,7 +344,6 @@
   <script>
     const STORAGE_KEY = 'llamadas_pwd';
     let savedPwd = '';
-    let clientesPreview = [];
 
     // ── LOGIN ──
     document.addEventListener('DOMContentLoaded', () => {
@@ -578,135 +514,8 @@
       }).join('');
     }
 
-    // ── PREVIEW ──
-    async function cargarPreview() {
-      const btn = document.getElementById('btnPreview');
-      btn.innerHTML = '<span class="loading"></span> Cargando...';
-      btn.disabled = true;
-
-      try {
-        const maxAbonado = document.getElementById('filtroMaxAbonado').value;
-        const params = {};
-        if (maxAbonado !== '') params.max_abonado = Number(maxAbonado);
-        const res = await apiCall('preview', params);
-
-        btn.innerHTML = 'Previsualizar clientes';
-        btn.disabled = false;
-
-        if (res.status !== 'ok') {
-          showBanner(res.mensaje || 'Error al cargar la vista previa', 'error');
-          return;
-        }
-
-      clientesPreview = res.clientes || [];
-      document.getElementById('previewSection').style.display = 'block';
-      document.getElementById('previewTitle').textContent =
-        `${clientesPreview.length} clientes encontrados (${res.total_boletas} boletas — ${formatMoney(res.total_saldo)} total)`;
-
-      document.getElementById('kpiClientesSaldo').textContent = clientesPreview.length;
-      document.getElementById('kpiSaldoTotal').textContent = formatMoney(res.total_saldo);
-
-      renderPreview();
-      updateSelectCount();
-      window.scrollTo({ top: document.getElementById('previewSection').offsetTop - 80, behavior: 'smooth' });
-      } catch (err) {
-        btn.innerHTML = 'Previsualizar clientes';
-        btn.disabled = false;
-        showBanner('Error de conexión al cargar la vista previa: ' + err.message, 'error');
-      }
-    }
-
-    function renderPreview() {
-      const body = document.getElementById('previewBody');
-      body.innerHTML = clientesPreview.map((c, i) => `
-        <tr>
-          <td class="checkbox-cell"><input type="checkbox" class="chk-cliente" data-idx="${i}" checked onchange="updateSelectCount()"></td>
-          <td style="font-weight:800">${c.nombre} ${c.apellido || ''}</td>
-          <td>${c.telefono}</td>
-          <td>${c.boletas.join(', ')}</td>
-          <td style="font-weight:800; color:#15803d;">${formatMoney(c.totalSaldo)}</td>
-        </tr>
-      `).join('');
-    }
-
-    function updateSelectCount() {
-      const checks = document.querySelectorAll('.chk-cliente:checked');
-      document.getElementById('selectCount').textContent = `(${checks.length} de ${clientesPreview.length} seleccionados)`;
-      document.getElementById('btnLanzar').disabled = checks.length === 0;
-    }
-
-    document.addEventListener('change', e => {
-      if (e.target.id === 'selectAll') {
-        const checked = e.target.checked;
-        document.querySelectorAll('.chk-cliente').forEach(ch => ch.checked = checked);
-        updateSelectCount();
-      }
-    });
-
-    // ── LANZAR LLAMADAS ──
-    function confirmarLanzamiento() {
-      const checks = document.querySelectorAll('.chk-cliente:checked');
-      if (checks.length === 0) return;
-      document.getElementById('modalMsg').textContent = `Se lanzarán ${checks.length} llamadas a clientes con saldo pendiente. Esta acción generará cargos en Twilio.`;
-      document.getElementById('modalConfirm').style.display = 'flex';
-      document.getElementById('btnConfirmLanzar').onclick = ejecutarLanzamiento;
-    }
-
     function cerrarModal() {
       document.getElementById('modalConfirm').style.display = 'none';
-    }
-
-    async function ejecutarLanzamiento() {
-      cerrarModal();
-      const btn = document.getElementById('btnLanzar');
-      btn.innerHTML = '<span class="loading"></span> Llamando...';
-      btn.disabled = true;
-
-      const checks = document.querySelectorAll('.chk-cliente:checked');
-      const seleccionados = Array.from(checks).map(ch => clientesPreview[ch.dataset.idx]);
-
-      const res = await apiCall('lanzar', { clientes_seleccionados: seleccionados });
-
-      btn.innerHTML = 'Lanzar llamadas';
-      btn.disabled = false;
-
-      if (res.status !== 'ok') {
-        showBanner(res.mensaje || 'Error al lanzar llamadas', 'error');
-        return;
-      }
-
-      showBanner(`Difusión completada: ${res.exitosas} exitosas, ${res.fallidas} fallidas, ${res.omitidas} omitidas`);
-
-      document.getElementById('resultadosSection').style.display = 'block';
-      document.getElementById('resultKpis').innerHTML = `
-        <div class="mega-kpi kpi-green">
-          <div class="mega-kpi-title">Exitosas</div>
-          <div class="mega-kpi-value">${res.exitosas}</div>
-        </div>
-        <div class="mega-kpi kpi-red">
-          <div class="mega-kpi-title">Fallidas</div>
-          <div class="mega-kpi-value">${res.fallidas}</div>
-        </div>
-        <div class="mega-kpi kpi-orange">
-          <div class="mega-kpi-title">Omitidas</div>
-          <div class="mega-kpi-value">${res.omitidas}</div>
-        </div>
-      `;
-
-      document.getElementById('resultGrid').innerHTML = (res.resultados || []).map(r => {
-        const statusBadge = r.status === 'ok' ? '<span class="badge badge-green">Exitosa</span>' :
-                            r.status === 'error' ? '<span class="badge badge-red">Error</span>' :
-                            '<span class="badge badge-gray">Omitida</span>';
-        return `<div class="result-item">
-          <div>
-            <div class="name">${r.nombre}</div>
-            <div class="phone">${r.telefono}${r.detalle ? ' — ' + r.detalle : ''}</div>
-          </div>
-          ${statusBadge}
-        </div>`;
-      }).join('');
-
-      cargarDashboard();
     }
 
     // ── LLAMADA DE PRUEBA ──
