@@ -86,6 +86,26 @@ export default async function handler(req, res) {
       return res.status(200).json({ status: 'ok', pendientes: data || [] });
     }
 
+    // ── Descartar egreso pendiente (no era un egreso real) ───────────────
+    if (accion === 'descartar_pendiente') {
+      const { id } = payload;
+      if (!id) return res.status(400).json({ status: 'error', mensaje: 'Falta el ID del gasto.' });
+
+      const { data: gasto } = await supabase
+        .from('gastos')
+        .select('id, categoria')
+        .eq('id', id)
+        .eq('categoria', 'Pendiente')
+        .single();
+
+      if (!gasto) return res.status(404).json({ status: 'error', mensaje: 'No se encontró el egreso pendiente o ya fue justificado.' });
+
+      const { error } = await supabase.from('gastos').delete().eq('id', id).eq('categoria', 'Pendiente');
+      if (error) throw error;
+
+      return res.status(200).json({ status: 'ok', mensaje: 'Egreso descartado. No era un gasto real.' });
+    }
+
     // ── Justificar egreso pendiente (cualquier asesor) ───────────────────
     if (accion === 'justificar_pendiente') {
       const { id, descripcion, categoria, subcategoria, plataforma, notas } = payload;

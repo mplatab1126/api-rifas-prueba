@@ -2116,6 +2116,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                   <option value="Bancolombia Empresa">🏦 Bancolombia Empresa</option>
                 </select>
                 <button id="btnJustificar_${g.id}" onclick="justificarPendiente('${g.id}')" style="width:100%; padding:10px; border-radius:8px; border:none; background:#e65100; color:#fff; font-weight:700; font-size:0.88rem; cursor:pointer; font-family:inherit;">✅ Justificar y Guardar</button>
+                <button id="btnDescartar_${g.id}" onclick="descartarPendiente('${g.id}')" style="width:100%; padding:8px; border-radius:8px; border:1.5px solid #b0bec5; background:#fff; color:#546e7a; font-weight:600; font-size:0.8rem; cursor:pointer; font-family:inherit; transition:background .2s;">🗑️ No es un egreso — Descartar</button>
               </div>
             </div>`).join('');
     }
@@ -2166,6 +2167,32 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
             }
         } catch (_) {
             if (btn) { btn.disabled = false; btn.textContent = '✅ Justificar y Guardar'; }
+        }
+    }
+
+    async function descartarPendiente(id) {
+        if (!confirm('¿Seguro que quieres descartar este egreso? Se eliminará de los pendientes porque no es un gasto real.')) return;
+
+        const btn = document.getElementById(`btnDescartar_${id}`);
+        if (btn) { btn.disabled = true; btn.textContent = 'Eliminando…'; }
+
+        try {
+            const pwd = localStorage.getItem(STORAGE_KEY) || '';
+            const req = await fetch('/api/admin/finanzas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ accion: 'descartar_pendiente', contrasena: pwd, id })
+            });
+            const res = await req.json();
+
+            if (res.status === 'ok') {
+                await cargarPendientes();
+            } else {
+                alert(res.mensaje || 'Error al descartar');
+                if (btn) { btn.disabled = false; btn.textContent = '🗑️ No es un egreso — Descartar'; }
+            }
+        } catch (_) {
+            if (btn) { btn.disabled = false; btn.textContent = '🗑️ No es un egreso — Descartar'; }
         }
     }
 
