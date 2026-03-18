@@ -109,8 +109,6 @@ export default async function handler(req, res) {
         monto: monto,
         fecha_pago: fechaPagoColombia,
         referencia_transferencia: referencia || 'Sin Ref',
-        metodo_pago: metodoPago || 'Efectivo',
-        es_pendiente: !!esPendiente,
         asesor: nombreAsesor
       });
     if (insertError) throw insertError;
