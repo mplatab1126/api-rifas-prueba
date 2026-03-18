@@ -237,11 +237,28 @@ export default async function handler(req, res) {
       if (plantilla) params.set('plantilla', plantilla);
       const twimlUrl = `${appUrl}/api/twiml/cobro?${params.toString()}`;
 
+      const statusCallbackUrl = `${appUrl}/api/twiml/estado-llamada`;
       const llamada = await twilioClient.calls.create({
         to: telefonoE164,
         from: process.env.TWILIO_PHONE_NUMBER,
         url: twimlUrl,
-        method: 'GET'
+        method: 'GET',
+        record: true,
+        recordingStatusCallback: statusCallbackUrl,
+        recordingStatusCallbackMethod: 'POST',
+        statusCallback: statusCallbackUrl,
+        statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
+        statusCallbackMethod: 'POST'
+      });
+
+      await supabase.from('llamadas_twilio').insert({
+        sid: llamada.sid,
+        telefono: telefono_test,
+        nombre_cliente: 'Llamada de prueba',
+        boletas: '0000',
+        saldo: 100000,
+        estado: 'iniciada',
+        lanzada_por: nombreAsesor
       });
 
       return res.status(200).json({
