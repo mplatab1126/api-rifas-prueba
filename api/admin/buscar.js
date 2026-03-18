@@ -84,7 +84,7 @@ export default async function handler(req, res) {
           tipo: 'BOLETA_OCUPADA',
           data: {
             infoVenta: {
-              numero: boleta.numero,
+              numero: String(boleta.numero).padStart(2, '0'),
               nombre: clienteDB?.nombre || boleta.nombre_cliente || '',
               apellido: clienteDB?.apellido || '',
               ciudad: clienteDB?.ciudad || '',
@@ -120,7 +120,7 @@ export default async function handler(req, res) {
           tipo: 'BOLETA_OCUPADA',
           data: {
             infoVenta: {
-              numero: boleta.numero,
+              numero: String(boleta.numero).padStart(3, '0'),
               nombre: clienteDB?.nombre || boleta.nombre_cliente || '',
               apellido: clienteDB?.apellido || '',
               ciudad: clienteDB?.ciudad || '',
@@ -184,7 +184,7 @@ export default async function handler(req, res) {
 
       if (clienteBoletasDiarias && clienteBoletasDiarias.length > 0) {
         lista.push(...clienteBoletasDiarias.map(b => ({
-          numero: b.numero,
+          numero: String(b.numero).padStart(2, '0'),
           nombre: clienteDB?.nombre || b.nombre_cliente || '',
           apellido: clienteDB?.apellido || '',
           ciudad: clienteDB?.ciudad || '',
@@ -197,7 +197,7 @@ export default async function handler(req, res) {
 
       if (clienteBoletas3Cifras && clienteBoletas3Cifras.length > 0) {
         lista.push(...clienteBoletas3Cifras.map(b => ({
-          numero: b.numero,
+          numero: String(b.numero).padStart(3, '0'),
           nombre: clienteDB?.nombre || b.nombre_cliente || '',
           apellido: clienteDB?.apellido || '',
           ciudad: clienteDB?.ciudad || '',

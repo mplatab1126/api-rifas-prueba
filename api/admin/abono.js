@@ -49,11 +49,33 @@ export default async function handler(req, res) {
       esDiaria = true; 
     }
 
-    const { data: boletaData, error: boletaError } = await supabase
+    let { data: boletaData, error: boletaError } = await supabase
       .from(tabla)
       .select('saldo_restante, total_abonado, telefono_cliente, asesor')
       .eq('numero', numeroLimpio)
       .single();
+
+    // Si no se encontró, buscar en las otras tablas (por si el número llegó sin ceros)
+    if ((boletaError || !boletaData) && numeroLimpio.length < 3) {
+      const padded3 = numeroLimpio.padStart(3, '0');
+      const { data: d3 } = await supabase.from('boletas_diarias_3cifras')
+        .select('saldo_restante, total_abonado, telefono_cliente, asesor')
+        .eq('numero', padded3).single();
+      if (d3 && d3.telefono_cliente) {
+        boletaData = d3; boletaError = null;
+        tabla = 'boletas_diarias_3cifras'; esDiaria = true;
+      }
+    }
+    if ((boletaError || !boletaData) && numeroLimpio.length < 2) {
+      const padded2 = numeroLimpio.padStart(2, '0');
+      const { data: d2 } = await supabase.from('boletas_diarias')
+        .select('saldo_restante, total_abonado, telefono_cliente, asesor')
+        .eq('numero', padded2).single();
+      if (d2 && d2.telefono_cliente) {
+        boletaData = d2; boletaError = null;
+        tabla = 'boletas_diarias'; esDiaria = true;
+      }
+    }
 
     if (boletaError || !boletaData) return res.status(404).json({ status: 'error', mensaje: 'La boleta no existe' });
     if (!boletaData.telefono_cliente) return res.status(400).json({ status: 'error', mensaje: 'Esta boleta está libre' });
@@ -102,6 +124,8 @@ export default async function handler(req, res) {
              String(fechaCol.getSeconds()).padStart(2, '0');
     
     // 4. Insertar el Abono (solo llega aquí si pasó TODAS las validaciones)
+    const tipoBoleta = tabla === 'boletas_diarias' ? '2cifras' : (tabla === 'boletas_diarias_3cifras' ? '3cifras' : '4cifras');
+
     const { error: insertError } = await supabase
       .from('abonos')
       .insert({
@@ -111,7 +135,8 @@ export default async function handler(req, res) {
         referencia_transferencia: referencia || 'Sin Ref',
         metodo_pago: metodoPago || 'Efectivo',
         es_pendiente: !!esPendiente,
-        asesor: nombreAsesor
+        asesor: nombreAsesor,
+        tipo: tipoBoleta
       });
     if (insertError) throw insertError;
     

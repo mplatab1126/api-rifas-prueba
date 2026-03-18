@@ -106,6 +106,8 @@ export default async function handler(req, res) {
     if (clienteError) throw clienteError;
 
     // 5. Registrar el abono
+    const tipoBoleta = tabla === 'boletas_diarias' ? '2cifras' : (tabla === 'boletas_diarias_3cifras' ? '3cifras' : '4cifras');
+
     if (abonoNum > 0) {
       const { error: abonoError } = await supabase.from('abonos').insert({
           numero_boleta: numeroLimpio,
@@ -114,7 +116,8 @@ export default async function handler(req, res) {
           referencia_transferencia: referenciaAbono || 'Sin Ref',
           metodo_pago: metodoPago || 'Efectivo',
           es_pendiente: !!esPendiente,
-          asesor: nombreAsesor
+          asesor: nombreAsesor,
+          tipo: tipoBoleta
       });
 
       // ASIGNACIÓN SEGURA AL ID DE LA BASE DE DATOS
