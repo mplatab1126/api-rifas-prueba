@@ -121,16 +121,19 @@ export default async function handler(req, res) {
       const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
       const last10List = Object.keys(phoneMap);
       const fechaCorte = payload.ultimo_abono_antes_de || null;
+      const maxAbonado = payload.max_abonado !== undefined && payload.max_abonado !== null ? Number(payload.max_abonado) : null;
 
       let allBoletas = [];
       const batchSize = 100;
       for (let i = 0; i < last10List.length; i += batchSize) {
         const batch = last10List.slice(i, i + batchSize);
-        const { data, error } = await supabase
+        let query = supabase
           .from('boletas')
           .select('numero, saldo_restante, total_abonado, telefono_cliente, clientes(nombre, apellido)')
           .in('telefono_cliente', batch)
           .gt('saldo_restante', 0);
+        if (maxAbonado !== null) query = query.lte('total_abonado', maxAbonado);
+        const { data, error } = await query;
         if (error) throw error;
         if (data) allBoletas.push(...data);
       }
