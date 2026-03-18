@@ -27,19 +27,28 @@ export default async function handler(req, res) {
       Devuelve ÚNICAMENTE un objeto JSON válido (sin formato Markdown, sin comillas invertidas, solo llaves y texto).
       Reemplaza comas por puntos en los decimales si aplica, pero devuelve enteros si no hay centavos.
 
+      CONTEXTO DEL NEGOCIO: Este sistema es de una empresa de rifas. Los asesores suben pantallazos tomados directamente desde las cuentas bancarias del negocio (Bancolombia, Nequi, Daviplata). La GRAN MAYORÍA de comprobantes son pagos que CLIENTES enviaron al negocio, es decir INGRESOS. Los egresos reales son poco frecuentes.
+
       REGLA CRÍTICA para identificar el tipo (sigue este orden de prioridad):
 
       PRIORIDAD 1 — SIGNO Y COLOR DEL VALOR (esto manda por encima de todo):
       - Si el valor/monto tiene un signo NEGATIVO (-) delante o aparece en ROJO → tipo "egreso"
       - Si el valor/monto NO tiene signo negativo y NO aparece en rojo → tipo "ingreso"
 
-      PRIORIDAD 2 — SOLO si no puedes determinar el signo/color, usa la descripción como pista:
-      - Palabras que indican EGRESO: "Retiro", "Pago a", "Débito", "Salida", "Cargo", "Compra", "Transferencia a terceros"
-      - Palabras que indican INGRESO: "Consignación", "Transferencia recibida", "Crédito", "Abono", "Entrada", "Transferencia nequi", "Transferencia daviplata"
+      PRIORIDAD 2 — SOLO si no puedes determinar el signo/color, usa las palabras del ENCABEZADO o TÍTULO del comprobante (NO el mensaje/descripción del cliente):
+      - Palabras que indican EGRESO: "Enviaste", "Retiro", "Pago a", "Débito", "Salida", "Cargo", "Compra", "Transferencia a terceros", "Transferencia enviada"
+      - Palabras que indican INGRESO: "Te enviaron", "Recibiste", "Consignación", "Transferencia recibida", "Crédito", "Abono", "Entrada", "Depósito", "Transferencia nequi", "Transferencia daviplata"
+
+      ⚠️ REGLA SOBRE DESCRIPCIONES/MENSAJES (MUY IMPORTANTE):
+      El campo "descripción", "mensaje", "motivo" o "nota" que aparece en las transferencias es texto libre que escribió la persona que envió el dinero (el cliente). Palabras como "Ganador", "Rifa", "Premio", "Pago", "Cuota", "Abono rifa" en ese campo NO indican si es ingreso o egreso. IGNORA completamente el contenido de ese campo para decidir el tipo. Solo usa el signo/color del valor y las palabras del encabezado del comprobante.
+
+      CONTEXTO NEQUI: Cuando llega dinero a una cuenta Nequi, la app dice "Te enviaron" o muestra el monto sin signo negativo. Si el comprobante de Nequi muestra una transferencia recibida (sin signo negativo, sin rojo), SIEMPRE es ingreso. Solo clasifica como egreso un comprobante de Nequi si dice "Enviaste" o el monto aparece en rojo o con signo negativo.
+
+      CONTEXTO DAVIPLATA: En Daviplata, las transferencias recibidas muestran el monto positivo. Solo clasifica como egreso si el monto aparece negativo o en rojo.
 
       CONTEXTO BANCOLOMBIA: En los "Detalle de Movimiento" de Bancolombia, las descripciones tipo "Transferencia nequi bancolombi", "Transferencia daviplata bancolombi" o similares son INGRESOS (dinero que entró a la cuenta desde Nequi/Daviplata). Si el valor es positivo (sin signo negativo), SIEMPRE es ingreso.
 
-      REGLA POR DEFECTO: Si tienes dudas y el valor NO tiene signo negativo, clasifícalo como "ingreso".
+      REGLA POR DEFECTO: Si tienes CUALQUIER duda y el valor NO tiene signo negativo ni aparece en rojo, clasifícalo como "ingreso". Es preferible clasificar erróneamente un egreso como ingreso a clasificar un ingreso como egreso.
 
       Formato exacto esperado:
       {
