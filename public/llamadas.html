@@ -735,13 +735,24 @@
       const btn = document.getElementById('btnRescatePreview');
       const res = await rescateCall('tags');
       if (res.status === 'ok' && res.tags.length > 0) {
-        container.innerHTML = res.tags.map(t =>
-          `<label style="display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.88rem; font-weight:600;" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
-            <input type="checkbox" class="chk-tag-rescate" value="${t.tag_ns}" style="accent-color:var(--accent); width:16px; height:16px;" onchange="updateTagSelectCount()">
-            <span style="color:${t.linea === 1 ? '#1d4ed8' : '#6d28d9'}; font-size:0.72rem; font-weight:800; min-width:24px;">L${t.linea}</span>
-            ${t.name}
-          </label>`
-        ).join('');
+        const grouped = {};
+        for (const t of res.tags) {
+          const key = t.name.trim().toLowerCase();
+          if (!grouped[key]) grouped[key] = { name: t.name, l1: null, l2: null };
+          if (t.linea === 1) grouped[key].l1 = t.tag_ns;
+          else grouped[key].l2 = t.tag_ns;
+        }
+        container.innerHTML = Object.values(grouped).map(g => {
+          const chkL1 = g.l1
+            ? `<label style="display:flex;align-items:center;gap:3px;cursor:pointer;" title="Línea 1"><input type="checkbox" class="chk-tag-rescate" value="${g.l1}" style="accent-color:#1d4ed8;width:16px;height:16px;" onchange="updateTagSelectCount()"><span style="color:#1d4ed8;font-size:0.7rem;font-weight:800;">L1</span></label>`
+            : '<span style="width:42px;display:inline-block;"></span>';
+          const chkL2 = g.l2
+            ? `<label style="display:flex;align-items:center;gap:3px;cursor:pointer;" title="Línea 2"><input type="checkbox" class="chk-tag-rescate" value="${g.l2}" style="accent-color:#6d28d9;width:16px;height:16px;" onchange="updateTagSelectCount()"><span style="color:#6d28d9;font-size:0.7rem;font-weight:800;">L2</span></label>`
+            : '<span style="width:42px;display:inline-block;"></span>';
+          return `<div style="display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:6px;font-size:0.88rem;font-weight:600;" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
+            ${chkL1}${chkL2}<span>${g.name}</span>
+          </div>`;
+        }).join('');
         btn.disabled = false;
       } else {
         container.innerHTML = '<p style="color:var(--muted); font-size:0.85rem; padding:8px;">No se encontraron tags de difusiones fallidas</p>';
