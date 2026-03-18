@@ -1,9 +1,11 @@
+const PLANTILLA_DEFAULT = 'Hola {nombre}, te llamamos de Los Plata. Te informamos que tienes un saldo pendiente de {total} pesos en {boletas}. Por favor comunícate con nosotros para ponerte al día. ¡Muchas gracias y que tengas un excelente día!';
+
 export default async function handler(req, res) {
   if (req.method !== 'GET' && req.method !== 'POST') {
     return res.status(405).end();
   }
 
-  const { nombre, boletas, total } = req.query;
+  const { nombre, boletas, total, plantilla } = req.query;
 
   const nombreCliente = nombre ? decodeURIComponent(nombre) : 'cliente';
   const boletasTexto = boletas ? decodeURIComponent(boletas) : '';
@@ -19,12 +21,11 @@ export default async function handler(req, res) {
     detalleBoletas = `tus boletas número ${listaNumeros.join(', ')} y ${ultimas}`;
   }
 
-  const mensaje =
-    `Hola ${nombreCliente}, te llamamos de Los Plata. ` +
-    `Te informamos que tienes un saldo pendiente de ${totalTexto} pesos ` +
-    `en ${detalleBoletas}. ` +
-    `Por favor comunícate con nosotros para ponerte al día. ` +
-    `¡Muchas gracias y que tengas un excelente día!`;
+  const template = plantilla ? decodeURIComponent(plantilla) : PLANTILLA_DEFAULT;
+  const mensaje = template
+    .replace(/\{nombre\}/g, nombreCliente)
+    .replace(/\{total\}/g, totalTexto)
+    .replace(/\{boletas\}/g, detalleBoletas);
 
   const appUrl = process.env.APP_URL;
   const textoEncoded = encodeURIComponent(mensaje);

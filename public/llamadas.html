@@ -208,6 +208,16 @@
             <b>Máximo abonado:</b> Solo muestra boletas donde el cliente ha abonado igual o menos a este valor. Déjalos vacíos para ver todos.
           </p>
         </div>
+        <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--ring);">
+          <label style="font-size:0.75rem; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:8px;">Mensaje de la llamada</label>
+          <textarea id="plantillaLlamada" class="field-input" rows="4" style="resize:vertical; line-height:1.5;">Hola {nombre}, te llamamos de Los Plata. Te informamos que tienes un saldo pendiente de {total} pesos en {boletas}. Por favor comunícate con nosotros para ponerte al día. ¡Muchas gracias y que tengas un excelente día!</textarea>
+          <p style="font-size:0.82rem; color:var(--muted); font-weight:600; margin:8px 0 0;">
+            Variables disponibles: <code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:800;">{nombre}</code> nombre del cliente,
+            <code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:800;">{total}</code> monto que debe,
+            <code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:800;">{boletas}</code> números de boleta.
+            Edita el texto como quieras, las variables se reemplazan automáticamente para cada cliente.
+          </p>
+        </div>
       </div>
     </div>
 
@@ -375,6 +385,8 @@
           document.getElementById('appShell').style.display = 'block';
           cargarDashboard();
           cargarTagsRescate();
+          const plantillaGuardada = localStorage.getItem('plantilla_llamada');
+          if (plantillaGuardada) document.getElementById('plantillaLlamada').value = plantillaGuardada;
         } else {
           if (!auto) msg.textContent = 'Acceso denegado. Solo gerencia.';
           localStorage.removeItem(STORAGE_KEY);
@@ -695,7 +707,10 @@
       const checks = document.querySelectorAll('.chk-rescate:checked');
       const seleccionados = Array.from(checks).map(ch => rescateClientes[ch.dataset.idx]);
 
-      const res = await apiCall('lanzar', { clientes_seleccionados: seleccionados });
+      const plantilla = document.getElementById('plantillaLlamada').value;
+      localStorage.setItem('plantilla_llamada', plantilla);
+
+      const res = await apiCall('lanzar', { clientes_seleccionados: seleccionados, plantilla });
 
       btn.innerHTML = 'Lanzar llamadas';
       btn.disabled = false;

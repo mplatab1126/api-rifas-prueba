@@ -113,7 +113,7 @@ export default async function handler(req, res) {
   // ── LANZAR: ejecuta las llamadas a los clientes seleccionados ──
   if (accion === 'lanzar') {
     try {
-      const { clientes_seleccionados } = payload;
+      const { clientes_seleccionados, plantilla } = payload;
       if (!clientes_seleccionados || clientes_seleccionados.length === 0) {
         return res.status(400).json({ status: 'error', mensaje: 'No seleccionaste ningún cliente.' });
       }
@@ -137,6 +137,7 @@ export default async function handler(req, res) {
           boletas: cliente.boletas.join(','),
           total: numeroAPalabras(cliente.totalSaldo)
         });
+        if (plantilla) params.set('plantilla', plantilla);
         const twimlUrl = `${appUrl}/api/twiml/cobro?${params.toString()}`;
 
         try {
