@@ -81,6 +81,12 @@ export default async function handler(req, res) {
        return res.status(400).json({ status: 'error', mensaje: 'La imagen es borrosa o no es un comprobante válido.' });
     }
 
+    // Corrección de plataforma: consignaciones corresponsal → "Corresponsal"
+    const descLower = (datos.descripcion_movimiento || '').toLowerCase();
+    if (descLower.includes('corresponsal')) {
+      datos.plataforma = 'Corresponsal';
+    }
+
     // Clasificación definitiva basada en el signo del valor original.
     // Si el valor tiene un "-" es egreso, si no tiene es ingreso.
     // Esto es más confiable que la interpretación de la IA.
