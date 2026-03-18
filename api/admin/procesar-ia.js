@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  const { imagenBase64, contrasena, soloConsulta } = req.body;
+  const { imagenBase64, contrasena, soloConsulta, forzarTipo } = req.body;
 
   // 2. Seguridad
   const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
@@ -87,13 +87,15 @@ export default async function handler(req, res) {
       datos.plataforma = 'Corresponsal';
     }
 
-    // Clasificación definitiva basada en el signo del valor original.
-    // Si el valor tiene un "-" es egreso, si no tiene es ingreso.
-    // Esto es más confiable que la interpretación de la IA.
-    const valorOriginal = (datos.valor_original || '').trim();
-    if (valorOriginal) {
-      const tieneSignoNegativo = valorOriginal.includes('-');
-      datos.tipo = tieneSignoNegativo ? 'egreso' : 'ingreso';
+    // El asesor elige manualmente si sube ingresos o egresos.
+    // Si viene forzarTipo, usamos ese valor. Si no, dejamos lo que dijo la IA como fallback.
+    if (forzarTipo === 'ingreso' || forzarTipo === 'egreso') {
+      datos.tipo = forzarTipo;
+    } else {
+      const valorOriginal = (datos.valor_original || '').trim();
+      if (valorOriginal) {
+        datos.tipo = valorOriginal.includes('-') ? 'egreso' : 'ingreso';
+      }
     }
 
     // Si la IA detectó que es un EGRESO (valor negativo / rojo / retiro), no lo guardamos

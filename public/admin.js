@@ -1638,6 +1638,26 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
     // ==========================================
     let filaArchivosIA = [];
     let categoriasEgreso = [];
+    let modoUploadIA = 'ingreso';
+
+    function cambiarModoUpload(modo) {
+        modoUploadIA = modo;
+        const btnIng = document.getElementById('btnModoIngreso');
+        const btnEgr = document.getElementById('btnModoEgreso');
+        const txtIng = document.getElementById('textoModoIngreso');
+        const txtEgr = document.getElementById('textoModoEgreso');
+        if (modo === 'ingreso') {
+            btnIng.style.background = 'var(--accent)'; btnIng.style.color = '#fff';
+            btnEgr.style.background = '#fff'; btnEgr.style.color = 'var(--ink-2)';
+            if (txtIng) txtIng.style.display = '';
+            if (txtEgr) txtEgr.style.display = 'none';
+        } else {
+            btnEgr.style.background = '#c62828'; btnEgr.style.color = '#fff';
+            btnIng.style.background = '#fff'; btnIng.style.color = 'var(--ink-2)';
+            if (txtIng) txtIng.style.display = 'none';
+            if (txtEgr) txtEgr.style.display = '';
+        }
+    }
 
     // 1. Selección de archivos
     function manejarSeleccionArchivosIA(event) {
@@ -1803,7 +1823,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         listaDiv.scrollTop = listaDiv.scrollHeight;
     }
 
-    // 5. Procesamiento unificado: intenta ingreso → si falla, trata como egreso
+    // 5. Procesamiento según el modo elegido (ingreso o egreso)
     async function iniciarProcesamientoMasivoIA() {
         document.getElementById('btnIniciarIA').style.display = 'none';
         if (!categoriasEgreso.length) await cargarCategoriasEgreso();
@@ -1814,45 +1834,42 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
             if (item.status !== 'pendiente') continue;
 
             item.status = 'procesando';
-            item.mensaje = 'Clasificando con IA...';
+            item.mensaje = modoUploadIA === 'ingreso' ? 'Procesando ingreso...' : 'Procesando egreso...';
             actualizarUIIA();
 
             try {
                 const base64 = await convertirABase64(item.file);
 
-                // Intento 1: tratar como INGRESO
-                const reqIngreso = await fetch('/api/admin/procesar-ia', {
+                const reqIA = await fetch('/api/admin/procesar-ia', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ imagenBase64: base64, contrasena: pwd })
+                    body: JSON.stringify({ imagenBase64: base64, contrasena: pwd, forzarTipo: modoUploadIA })
                 });
-                const resIngreso = await reqIngreso.json();
+                const resIA = await reqIA.json();
 
-                if (resIngreso.status === 'ok') {
+                if (resIA.status === 'ok') {
                     item.status = 'exito';
-                    item.mensaje = resIngreso.mensaje || 'Ingreso guardado';
+                    item.mensaje = resIA.mensaje || 'Ingreso guardado';
                     actualizarUIIA();
                     continue;
                 }
 
-                if (resIngreso.status === 'duplicado') {
+                if (resIA.status === 'duplicado') {
                     item.status = 'duplicado';
-                    item.mensaje = `Choca con Ref: ${resIngreso.clon?.referencia || '—'} (${resIngreso.clon?.estado || ''})`;
+                    item.mensaje = `Choca con Ref: ${resIA.clon?.referencia || '—'} (${resIA.clon?.estado || ''})`;
                     actualizarUIIA();
                     continue;
                 }
 
-                // Egreso ya existe en el sistema (detectado por ruta principal)
-                if (resIngreso.status === 'duplicado_egreso') {
+                if (resIA.status === 'duplicado_egreso') {
                     item.status = 'duplicado';
-                    item.mensaje = `Egreso ya registrado — $${Number(resIngreso.clon?.monto || 0).toLocaleString('es-CO')} · ${resIngreso.clon?.categoria || 'Sin categoría'} · ${resIngreso.clon?.fecha || '—'}`;
+                    item.mensaje = `Egreso ya registrado — $${Number(resIA.clon?.monto || 0).toLocaleString('es-CO')} · ${resIA.clon?.categoria || 'Sin categoría'} · ${resIA.clon?.fecha || '—'}`;
                     actualizarUIIA();
                     continue;
                 }
 
-                // La IA detectó que es un egreso (valor negativo / en rojo / retiro)
-                if (resIngreso.status === 'es_egreso') {
-                    const de = resIngreso.datosExtraidos;
+                if (resIA.status === 'es_egreso') {
+                    const de = resIA.datosExtraidos;
                     const yaEnCarga = filaArchivosIA.some(other =>
                         other.id !== item.id &&
                         (other.status === 'pendiente_justificacion' || other.status === 'guardado') &&
@@ -1868,36 +1885,15 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                         continue;
                     }
                     item.status = 'pendiente_justificacion';
-                    item.mensaje = 'Egreso detectado — requiere justificación';
+                    item.mensaje = 'Egreso — requiere justificación';
                     item.datos = de;
-                    item.urlComprobante = resIngreso.url_comprobante || null;
+                    item.urlComprobante = resIA.url_comprobante || null;
                     actualizarUIIA();
                     continue;
                 }
 
-                // Si la IA no pudo clasificarlo como ingreso ni egreso, intentar extracción de egreso como fallback
-                item.mensaje = 'Clasificando como egreso...';
-                actualizarUIIA();
-
-                const reqEgreso = await fetch('/api/admin/procesar-ia-gasto', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ imagenBase64: base64, contrasena: pwd, soloExtraer: true })
-                });
-                const resEgreso = await reqEgreso.json();
-
-                if (resEgreso.status === 'duplicado_egreso') {
-                    item.status = 'duplicado';
-                    item.mensaje = `Egreso ya registrado — $${Number(resEgreso.clon?.monto || 0).toLocaleString('es-CO')} · ${resEgreso.clon?.categoria || 'Sin categoría'} · ${resEgreso.clon?.fecha || '—'}`;
-                } else if (resEgreso.status === 'ok' || resEgreso.status === 'extraido') {
-                    item.status = 'pendiente_justificacion';
-                    item.mensaje = 'Requiere justificación';
-                    item.datos = resEgreso.datosExtraidos;
-                    item.urlComprobante = resEgreso.url_comprobante || null;
-                } else {
-                    item.status = 'error';
-                    item.mensaje = resEgreso.mensaje || resIngreso.mensaje || 'No se pudo procesar';
-                }
+                item.status = 'error';
+                item.mensaje = resIA.mensaje || 'No se pudo procesar';
 
             } catch (_) {
                 item.status = 'error';

@@ -90,8 +90,16 @@
 
         <!-- Panel único unificado: ingresos y egresos juntos -->
         <div id="panelIngreso">
-          <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0; line-height: 1.5;">
-            Sube <b>todos los pantallazos juntos</b> — ingresos y egresos mezclados. La IA clasifica cada uno: los ingresos se guardan automáticamente y los egresos los marca para que los <b>justifiques</b>.
+          <!-- Selector de modo: Ingresos o Egresos -->
+          <div style="display:flex; gap:0; margin-bottom:14px; border-radius:10px; overflow:hidden; border:2px solid var(--accent);">
+            <button id="btnModoIngreso" onclick="cambiarModoUpload('ingreso')" style="flex:1; padding:10px 16px; border:none; font-size:0.9rem; font-weight:700; cursor:pointer; font-family:inherit; transition:all .2s; background:var(--accent); color:#fff;">📥 Ingresos</button>
+            <button id="btnModoEgreso" onclick="cambiarModoUpload('egreso')" style="flex:1; padding:10px 16px; border:none; font-size:0.9rem; font-weight:700; cursor:pointer; font-family:inherit; transition:all .2s; background:#fff; color:var(--ink-2);">📤 Egresos</button>
+          </div>
+          <p id="textoModoIngreso" style="font-size: 0.85rem; color: var(--muted); margin-top: 0; line-height: 1.5;">
+            Sube los pantallazos de los <b>pagos recibidos</b>. Todo se guardará como <b>ingreso</b> automáticamente.
+          </p>
+          <p id="textoModoEgreso" style="font-size: 0.85rem; color: var(--muted); margin-top: 0; line-height: 1.5; display:none;">
+            Sube los pantallazos de los <b>gastos o retiros</b>. Todo se marcará como <b>egreso</b> y tendrás que <b>justificar</b> cada uno.
           </p>
           <div class="vertical-form">
             <div id="dropZoneIA" style="border: 2px dashed var(--accent); border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; background: var(--bg); transition: 0.3s;" onmouseover="this.style.background='var(--pill)'" onmouseout="this.style.background='var(--bg)'" onclick="document.getElementById('fileInputIA').click()">
