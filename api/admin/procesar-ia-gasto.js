@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
   const nombreAsesor = asesores[contrasena];
 
-  const puedeRegistrarGastos = ['Mateo', 'Juan Pablo'];
+  const puedeRegistrarGastos = ['Mateo', 'Juan Pablo', 'Juan Pablo Rojas'];
   if (!nombreAsesor || !puedeRegistrarGastos.includes(nombreAsesor)) {
     return res.status(401).json({ status: 'error', mensaje: 'Acceso denegado. Solo Mateo o Juan Pablo pueden registrar gastos.' });
   }
