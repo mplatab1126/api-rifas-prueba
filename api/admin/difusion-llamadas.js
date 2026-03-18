@@ -30,7 +30,7 @@ function numeroAPalabras(n) {
 function formatearTelefono(telefono) {
   const limpio = String(telefono).replace(/\D/g, '');
   if (limpio.length === 10) return `+57${limpio}`;
-  if (limpio.length === 12 && limpio.startsWith('57')) return `+${limpio}`;
+  if (limpio.length >= 11 && limpio.length <= 15) return `+${limpio}`;
   return null;
 }
 

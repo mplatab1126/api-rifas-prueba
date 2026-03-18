@@ -234,6 +234,96 @@
       </div>
     </div>
 
+    <!-- RESCATE WHATSAPP -->
+    <div class="saas-divider">Rescate WhatsApp</div>
+
+    <div class="filter-zone" id="rescateZone">
+      <p style="font-size:0.85rem; color:var(--muted); font-weight:600; margin:0 0 16px;">
+        Cuando haces una difusión en ChateaPro y Meta bloquea el envío a algunos clientes, aquí puedes llamarlos por Twilio.
+        Selecciona el tag de la difusión que falló y el sistema buscará esos contactos.
+      </p>
+      <div class="filter-row">
+        <div class="input-group" style="flex:2;">
+          <label>Difusión que falló</label>
+          <select id="tagRescate" class="field-input">
+            <option value="">Cargando tags...</option>
+          </select>
+        </div>
+        <div class="input-group" style="flex:0; min-width:auto;">
+          <label>&nbsp;</label>
+          <button class="btn btn-primary" id="btnRescatePreview" onclick="cargarRescatePreview()" disabled>Buscar bloqueados</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESCATE PREVIEW -->
+    <div id="rescatePreviewSection" style="display:none;">
+      <div class="mega-kpi-grid" style="margin-top:15px;">
+        <div class="mega-kpi kpi-red">
+          <div class="mega-kpi-title">Bloqueados por Meta</div>
+          <div class="mega-kpi-value" id="kpiRescateTotal">—</div>
+          <span class="mega-kpi-sub">Contactos con este tag</span>
+        </div>
+        <div class="mega-kpi kpi-green">
+          <div class="mega-kpi-title">Con deuda en el sistema</div>
+          <div class="mega-kpi-value" id="kpiRescateConDeuda">—</div>
+          <span class="mega-kpi-sub">Se les puede cobrar</span>
+        </div>
+        <div class="mega-kpi kpi-purple">
+          <div class="mega-kpi-title">Saldo recuperable</div>
+          <div class="mega-kpi-value" id="kpiRescateSaldo">—</div>
+          <span class="mega-kpi-sub">Total que deben estos clientes</span>
+        </div>
+        <div class="mega-kpi kpi-orange">
+          <div class="mega-kpi-title">Sin boleta</div>
+          <div class="mega-kpi-value" id="kpiRescateSinBoleta">—</div>
+          <span class="mega-kpi-sub">No tienen deuda registrada</span>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:15px;">
+        <div class="card-title" id="rescatePreviewTitle">Clientes bloqueados con deuda</div>
+        <div class="select-bar">
+          <div>
+            <label style="font-size:0.85rem; font-weight:700; cursor:pointer;">
+              <input type="checkbox" id="rescateSelectAll" checked style="accent-color:var(--accent); margin-right:6px;">
+              Seleccionar todos
+            </label>
+            <span class="select-info" id="rescateSelectCount"></span>
+          </div>
+          <button class="btn btn-danger" id="btnRescateLanzar" onclick="confirmarRescateLanzamiento()">
+            Lanzar llamadas
+          </button>
+        </div>
+        <div class="table-container">
+          <table class="premium-table">
+            <thead>
+              <tr>
+                <th class="checkbox-cell"></th>
+                <th>Cliente</th>
+                <th>Teléfono</th>
+                <th>Boletas</th>
+                <th>Saldo pendiente</th>
+              </tr>
+            </thead>
+            <tbody id="rescatePreviewBody"></tbody>
+          </table>
+        </div>
+        <div id="rescateEmpty" class="empty-state" style="display:none;">
+          <p>Ninguno de los contactos bloqueados tiene deuda registrada en el sistema.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTADOS RESCATE -->
+    <div id="rescateResultSection" style="display:none;">
+      <div class="card">
+        <div class="card-title">Resultado del rescate</div>
+        <div class="mega-kpi-grid" id="rescateResultKpis"></div>
+        <div class="results-grid" id="rescateResultGrid"></div>
+      </div>
+    </div>
+
     <!-- LLAMADA DE PRUEBA -->
     <div class="saas-divider">Llamada de Prueba</div>
     <div class="card">
@@ -329,6 +419,7 @@
           document.getElementById('topBar').style.display = 'flex';
           document.getElementById('appShell').style.display = 'block';
           cargarDashboard();
+          cargarTagsRescate();
         } else {
           if (!auto) msg.textContent = 'Acceso denegado. Solo gerencia.';
           localStorage.removeItem(STORAGE_KEY);
@@ -539,6 +630,7 @@
       if (checks.length === 0) return;
       document.getElementById('modalMsg').textContent = `Se lanzarán ${checks.length} llamadas a clientes con saldo pendiente. Esta acción generará cargos en Twilio.`;
       document.getElementById('modalConfirm').style.display = 'flex';
+      document.getElementById('btnConfirmLanzar').onclick = ejecutarLanzamiento;
     }
 
     function cerrarModal() {
@@ -620,6 +712,169 @@
         result.style.color = '#991b1b';
         result.textContent = res.mensaje || 'Error al enviar la llamada de prueba';
       }
+    }
+    // ══════════════════════════════════════════════════
+    // ══ RESCATE WHATSAPP ══
+    // ══════════════════════════════════════════════════
+
+    let rescateClientes = [];
+
+    async function rescateCall(accion, extra = {}) {
+      const resp = await fetch('/api/admin/rescate-whatsapp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contrasena: savedPwd, accion, ...extra })
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        return { status: 'error', mensaje: err.mensaje || `Error del servidor (${resp.status})` };
+      }
+      return resp.json();
+    }
+
+    async function cargarTagsRescate() {
+      const select = document.getElementById('tagRescate');
+      const btn = document.getElementById('btnRescatePreview');
+      const res = await rescateCall('tags');
+      if (res.status === 'ok' && res.tags.length > 0) {
+        select.innerHTML = '<option value="">— Selecciona una difusión —</option>' +
+          res.tags.map(t => `<option value="${t.tag_ns}">[L${t.linea}] ${t.name}</option>`).join('');
+        btn.disabled = false;
+      } else {
+        select.innerHTML = '<option value="">No se encontraron tags de difusiones fallidas</option>';
+      }
+    }
+
+    async function cargarRescatePreview() {
+      const tagNs = document.getElementById('tagRescate').value;
+      if (!tagNs) { showBanner('Selecciona un tag primero', 'error'); return; }
+
+      const btn = document.getElementById('btnRescatePreview');
+      btn.innerHTML = '<span class="loading"></span> Buscando en ChateaPro...';
+      btn.disabled = true;
+
+      try {
+        const res = await rescateCall('preview', { tag_ns: tagNs });
+        btn.innerHTML = 'Buscar bloqueados';
+        btn.disabled = false;
+
+        if (res.status !== 'ok') {
+          showBanner(res.mensaje || 'Error al buscar bloqueados', 'error');
+          return;
+        }
+
+        document.getElementById('kpiRescateTotal').textContent = res.total_chateapro;
+        document.getElementById('kpiRescateConDeuda').textContent = res.total_con_deuda;
+        document.getElementById('kpiRescateSaldo').textContent = formatMoney(res.total_saldo);
+        document.getElementById('kpiRescateSinBoleta').textContent = res.total_sin_boleta;
+
+        rescateClientes = res.clientes || [];
+        document.getElementById('rescatePreviewSection').style.display = 'block';
+        document.getElementById('rescateResultSection').style.display = 'none';
+
+        if (rescateClientes.length === 0) {
+          document.getElementById('rescateEmpty').style.display = 'block';
+          document.getElementById('rescatePreviewBody').innerHTML = '';
+          document.getElementById('btnRescateLanzar').disabled = true;
+        } else {
+          document.getElementById('rescateEmpty').style.display = 'none';
+          renderRescatePreview();
+          updateRescateSelectCount();
+        }
+
+        window.scrollTo({ top: document.getElementById('rescatePreviewSection').offsetTop - 80, behavior: 'smooth' });
+      } catch (err) {
+        btn.innerHTML = 'Buscar bloqueados';
+        btn.disabled = false;
+        showBanner('Error de conexión: ' + err.message, 'error');
+      }
+    }
+
+    function renderRescatePreview() {
+      document.getElementById('rescatePreviewBody').innerHTML = rescateClientes.map((c, i) => `
+        <tr>
+          <td class="checkbox-cell"><input type="checkbox" class="chk-rescate" data-idx="${i}" checked onchange="updateRescateSelectCount()"></td>
+          <td style="font-weight:800">${c.nombre} ${c.apellido || ''}</td>
+          <td>${c.telefono}</td>
+          <td>${c.boletas.join(', ')}</td>
+          <td style="font-weight:800; color:#15803d;">${formatMoney(c.totalSaldo)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function updateRescateSelectCount() {
+      const checks = document.querySelectorAll('.chk-rescate:checked');
+      document.getElementById('rescateSelectCount').textContent = `(${checks.length} de ${rescateClientes.length} seleccionados)`;
+      document.getElementById('btnRescateLanzar').disabled = checks.length === 0;
+    }
+
+    document.addEventListener('change', e => {
+      if (e.target.id === 'rescateSelectAll') {
+        const checked = e.target.checked;
+        document.querySelectorAll('.chk-rescate').forEach(ch => ch.checked = checked);
+        updateRescateSelectCount();
+      }
+    });
+
+    function confirmarRescateLanzamiento() {
+      const checks = document.querySelectorAll('.chk-rescate:checked');
+      if (checks.length === 0) return;
+      document.getElementById('modalMsg').textContent = `Se lanzarán ${checks.length} llamadas de RESCATE a clientes que Meta bloqueó. Esta acción generará cargos en Twilio.`;
+      document.getElementById('modalConfirm').style.display = 'flex';
+      document.getElementById('btnConfirmLanzar').onclick = ejecutarRescateLanzamiento;
+    }
+
+    async function ejecutarRescateLanzamiento() {
+      cerrarModal();
+      const btn = document.getElementById('btnRescateLanzar');
+      btn.innerHTML = '<span class="loading"></span> Llamando...';
+      btn.disabled = true;
+
+      const checks = document.querySelectorAll('.chk-rescate:checked');
+      const seleccionados = Array.from(checks).map(ch => rescateClientes[ch.dataset.idx]);
+
+      const res = await apiCall('lanzar', { clientes_seleccionados: seleccionados });
+
+      btn.innerHTML = 'Lanzar llamadas';
+      btn.disabled = false;
+
+      if (res.status !== 'ok') {
+        showBanner(res.mensaje || 'Error al lanzar llamadas', 'error');
+        return;
+      }
+
+      showBanner(`Rescate completado: ${res.exitosas} exitosas, ${res.fallidas} fallidas, ${res.omitidas} omitidas`);
+
+      document.getElementById('rescateResultSection').style.display = 'block';
+      document.getElementById('rescateResultKpis').innerHTML = `
+        <div class="mega-kpi kpi-green">
+          <div class="mega-kpi-title">Exitosas</div>
+          <div class="mega-kpi-value">${res.exitosas}</div>
+        </div>
+        <div class="mega-kpi kpi-red">
+          <div class="mega-kpi-title">Fallidas</div>
+          <div class="mega-kpi-value">${res.fallidas}</div>
+        </div>
+        <div class="mega-kpi kpi-orange">
+          <div class="mega-kpi-title">Omitidas</div>
+          <div class="mega-kpi-value">${res.omitidas}</div>
+        </div>
+      `;
+
+      document.getElementById('rescateResultGrid').innerHTML = (res.resultados || []).map(r => {
+        const statusBadge = r.status === 'ok' ? '<span class="badge badge-green">Exitosa</span>' :
+                            r.status === 'error' ? '<span class="badge badge-red">Error</span>' :
+                            '<span class="badge badge-gray">Omitida</span>';
+        return `<div class="result-item">
+          <div>
+            <div class="name">${r.nombre}</div>
+            <div class="phone">${r.telefono}${r.detalle ? ' — ' + r.detalle : ''}</div>
+          </div>
+          ${statusBadge}
+        </div>`;
+      }).join('');
+
+      cargarDashboard();
     }
   </script>
 </body>
