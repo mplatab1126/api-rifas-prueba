@@ -1,139 +1,167 @@
-# Plan de Mejoras — ChateaPro + Sistema Los Plata S.A.S.
+# Plan de Mejoras ChateaPro — Los Plata S.A.S.
 
-Fecha de creación: 18 de marzo de 2026
+Fecha: 18 de marzo de 2026
 
 ---
 
-## Datos clave del sistema (al momento de crear este plan)
+## Diagnóstico actual (datos reales del 17 de marzo)
 
-| Dato | Valor | Significado |
+| Dato | Valor | Qué significa |
 |---|---|---|
 | Total de contactos en WhatsApp | **48,926** | Gente que alguna vez escribió |
-| Activos por día | **~349** | Solo el 0.7% de los contactos están activos |
-| Nuevos por día | **~48** | Personas nuevas que llegan de Meta Ads |
-| Mensajes del bot por día | **~714** | Lo que responde la IA automáticamente |
-| Mensajes de asesores por día | **~977** | Lo que responden los asesores manualmente |
-| Tiempo promedio de respuesta | **~1 hora** | Tiempo que tardan los asesores en contestar |
-| Conversaciones abiertas | **48,620** | No se están cerrando conversaciones |
-| Conversaciones cerradas por día | **0** | Ninguna se marca como terminada |
-| Tags de difusión | **93** | Cada difusión tiene su tag de éxito y "FALLÓ" |
-| Plantillas de WhatsApp | **Múltiples** | Aprobadas por Meta para difusiones |
+| Activos ayer | **349** (0.7%) | Solo una fracción interactúa cada día |
+| Nuevos ayer (de Meta Ads) | **48** | Personas nuevas que llegaron |
+| Mensajes del bot | **714** | Lo que respondió la IA |
+| Mensajes de asesores | **977** | Lo que respondieron humanos (más que el bot) |
+| Tiempo promedio de respuesta | **~1 hora** | Los asesores tardan en contestar |
+| Conversaciones cerradas ayer | **0** | Nadie cerró conversaciones |
+| Conversaciones abiertas | **48,620** | Bandeja totalmente saturada |
+| Tags de "FALLÓ" | **20+ tags** | Difusiones que Meta bloqueó |
+| Plantillas de WhatsApp | **Múltiples** | Algunas aprobadas, algunas rechazadas |
 
 ---
 
 ## NIVEL 1 — Victorias rápidas
 
 ### 1. Rescate automático con Twilio cuando Meta bloquea
-- **Estado**: Pendiente
-- **Problema**: Cuando se hacen difusiones de cobro por WhatsApp, Meta bloquea muchos envíos. Esos clientes quedan con el tag "FALLÓ" y nadie los contacta después.
-- **Solución**: Crear un endpoint que:
-  1. Busque en ChateaPro todos los suscriptores que tienen tags "FALLÓ"
-  2. Cruce sus teléfonos con Supabase para saber cuánto deben
-  3. Programe automáticamente una llamada de Twilio para cobrarles
-- **Impacto**: Recuperar dinero de clientes que hoy se escapan porque Meta los bloquea.
-- **Archivos involucrados**: Nuevo endpoint en `/api/admin/`, reutiliza lógica de `difusion-llamadas.js`
+- **Estado**: ✅ COMPLETADO (18 marzo 2026)
+- **Problema**: Se hacen difusiones de cobro por WhatsApp, pero Meta bloquea muchos envíos. Esos clientes quedan con el tag "FALLÓ" y nadie los contacta.
+- **Lo que se construyó**:
+  - Sección "Rescate WhatsApp" en el Centro de Llamadas (`llamadas.html`)
+  - Endpoint `api/admin/rescate-whatsapp.js` que consulta ChateaPro y cruza con Supabase
+  - Checkboxes agrupados L1/L2 para seleccionar múltiples difusiones fallidas
+  - Filtro por fecha de último abono (para no llamar a quienes ya pagaron)
+  - Filtro por máximo abonado por boleta
+  - Mensaje personalizable con variables `{nombre}`, `{total}`, `{boletas}`
+  - Voz clonada de Alejandro (ElevenLabs) en vez de voz robótica
+  - Número colombiano de Medellín (+57 604 590 8967)
+  - Tracking de costos de Twilio y ElevenLabs en la página
+  - Llamadas de prueba con grabación y seguimiento de estado
+
+---
 
 ### 2. Alerta de plantillas bloqueadas
-- **Estado**: Pendiente
+- **Estado**: 🟡 Parcialmente resuelto
 - **Problema**: No hay forma rápida de saber cuántas plantillas fallan en cada difusión.
-- **Solución**: Un endpoint o sección en `rendimiento.html` que muestre:
-  - "De la última difusión, X enviadas, Y fallaron"
-  - Porcentaje de fallo por plantilla
-  - Tendencia (¿está empeorando?)
-- **Impacto**: Tomar decisiones rápidas (cambiar texto de plantilla, o pasar a Twilio).
-- **Datos disponibles**: Tags de ChateaPro con patrón `[APTO] Xto adicional` y `[APTO] Xto adicional FALLÓ`
+- **Lo que ya existe**: El Rescate WhatsApp muestra cuántos contactos tienen cada tag de "FALLÓ" cuando los seleccionas. Falta una vista consolidada en rendimiento.html con porcentajes de éxito.
+- **Pendiente**: Agregar sección en rendimiento.html con estadísticas de éxito/fallo por difusión.
+
+---
 
 ### 3. Cerrar conversaciones automáticamente
-- **Estado**: Pendiente
-- **Problema**: Hay 48,620 conversaciones abiertas y se cierran 0 por día. Eso satura la bandeja de los asesores.
-- **Solución**: Crear un cron job (tarea automática) que use la API de ChateaPro para cerrar conversaciones donde el cliente no ha respondido en X días (por ejemplo 7 días).
-- **Impacto**: Bandeja limpia = asesores más rápidos = mejor tiempo de respuesta.
-- **API necesaria**: `GET /subscribers` para filtrar por última interacción, luego cerrar con la API.
+- **Estado**: 🔲 Pendiente
+- **Problema**: 48,620 conversaciones abiertas y 0 cerradas ayer. La bandeja de asesores está saturada.
+- **Solución**: Crear un cron job (tarea automática que corre cada día) que use la API de ChateaPro para cerrar conversaciones donde:
+  - El cliente no ha respondido en 7+ días
+  - La conversación está en estado "open" sin agente asignado
+- **Impacto**: Bandeja limpia → asesores más rápidos → mejor tiempo de respuesta.
 
 ---
 
 ## NIVEL 2 — Mejoras de alto impacto
 
 ### 4. Dashboard de embudo de ventas (funnel)
-- **Estado**: Pendiente
-- **Problema**: Existen tags de conversión (ViewContent → LeadSubmitted → QualifiedLead → AddToCart → InitiateCheckout → Purchase) pero no se visualizan en ningún lado.
-- **Solución**: Agregar una sección en `rendimiento.html` que muestre cuántas personas hay en cada paso del embudo.
-- **Ejemplo visual**:
-  - 1,000 vieron el contenido (ViewContent)
-  - → 400 dieron sus datos (LeadSubmitted)
-  - → 200 separaron boleta (AddToCart)
-  - → 50 pagaron (Purchase)
-- **Impacto**: Ver EXACTAMENTE dónde se pierden los clientes y arreglar ese paso.
-- **Datos disponibles**: Custom events de ChateaPro (`Boleta vendida - Ventas/Interacción/Tráfico - ABO`, `Conversación iniciada`)
+- **Estado**: 🔲 Pendiente
+- **Problema**: Existen tags de conversión (ViewContent → LeadSubmitted → QualifiedLead → AddToCart → InitiateCheckout → Purchase) pero no se visualizan.
+- **Solución**: Agregar en rendimiento.html un embudo visual que muestre cuántas personas hay en cada paso. Ejemplo:
+  ```
+  ViewContent:       1,000 personas
+  LeadSubmitted:       400 (40% conversión)
+  QualifiedLead:       250 (63% conversión)
+  AddToCart:           200 (80% conversión)  ← separaron boleta
+  InitiateCheckout:    100 (50% conversión)  ← iniciaron pago
+  Purchase:             50 (50% conversión)  ← pagaron
+  ```
+- **Impacto**: Saber EXACTAMENTE dónde se pierden los clientes y arreglar ese paso.
+
+---
 
 ### 5. Despertar clientes dormidos inteligentemente
-- **Estado**: Pendiente
-- **Problema**: Hay ~48,577 contactos inactivos. Gente que alguna vez escribió pero ya no interactúa.
-- **Solución**: Crear segmentos inteligentes cruzando datos de ChateaPro con Supabase:
+- **Estado**: 🔲 Pendiente
+- **Problema**: 48,577 contactos inactivos. Gente que alguna vez escribió pero ya no interactúa.
+- **Solución**: Crear segmentos cruzando ChateaPro + Supabase:
   - "Separaron boleta + abonaron algo + les falta > $50,000 + no escriben hace 2 semanas"
-  - "Pidieron información + nunca separaron boleta + están en WhatsApp"
-  - Luego enviar difusión personalizada o programar llamada.
+  - "Pidieron información pero nunca separaron boleta + últimos 30 días"
+  - "Boleta pagada al 80%+ pero dejaron de pagar hace 1 mes"
+  Luego enviar difusión personalizada o programar llamada de Twilio según el segmento.
 - **Impacto**: Cada cliente dormido que se despierte es dinero que ya estaba casi cobrado.
 
+---
+
 ### 6. Monitoreo de calidad de asesores en tiempo real
-- **Estado**: Pendiente
-- **Problema**: El tiempo promedio de respuesta es de 1 hora. No se ve en tiempo real quién responde lento.
-- **Solución**: Alertas tipo "Carlos Flores lleva 30 min sin responder a 5 conversaciones asignadas". Se puede mostrar en `rendimiento.html` o enviar notificación.
-- **Impacto**: Reducir tiempo de respuesta = más ventas cerradas.
-- **API necesaria**: `/flow/agent-activity-log/data` y `/flow-agent-summary`
+- **Estado**: 🔲 Pendiente
+- **Problema**: Tiempo promedio de respuesta de 1 hora. Algunos asesores probablemente responden rápido y otros lento.
+- **Solución**: 
+  - Consultar la API de ChateaPro para obtener tiempos de respuesta por asesor
+  - Mostrar alertas: "Carlos Flores lleva 30 min sin responder a 5 conversaciones"
+  - Se puede agregar a rendimiento.html o enviarse como mensaje a Mateo por WhatsApp
+- **Impacto**: Reducir el tiempo de respuesta = más ventas cerradas.
 
 ---
 
 ## NIVEL 3 — Mejoras estratégicas
 
 ### 7. Actualizar el bot automáticamente desde Supabase
-- **Estado**: Pendiente
-- **Problema**: Cada vez que cambia un premio, precio o fecha, hay que actualizar los bot fields de ChateaPro manualmente.
-- **Solución**: Endpoint que lea la tabla `rifas` y `premios_rifa` de Supabase y actualice automáticamente los bot fields de ChateaPro (nombre de rifa, precio, premios, fechas).
-- **Impacto**: Cero errores humanos cuando se cambia de rifa. Todo consistente.
-- **API necesaria**: `PUT /flow/set-bot-field-by-name`
+- **Estado**: 🔲 Pendiente
+- **Problema**: Cada vez que cambia un premio, precio o fecha de sorteo, hay que actualizar los bot fields de ChateaPro manualmente.
+- **Solución**: Un endpoint que lea las tablas `rifas` y `premios_rifa` de Supabase y actualice los bot fields de ChateaPro automáticamente usando la API `PUT /flow/set-bot-field-by-name`.
+- **Impacto**: Cero errores humanos al cambiar de rifa. Todo consistente.
+
+---
 
 ### 8. Análisis de conversaciones con IA
-- **Estado**: Pendiente
+- **Estado**: 🔲 Pendiente
 - **Problema**: No se sabe por qué algunos clientes no compran. ¿El bot dijo algo raro? ¿El precio los asustó?
-- **Solución**: Leer las últimas X conversaciones donde el cliente NO compró, pasarlas por GPT-4o, y generar un resumen tipo: "El 30% preguntó por envíos y no supimos responder. El 20% dijo que era caro."
+- **Solución**: 
+  1. Usar `GET /subscriber/chat-messages` para traer las últimas conversaciones donde el cliente NO compró
+  2. Pasarlas por GPT-4o
+  3. Generar un resumen: "El 30% preguntó por envíos a otras ciudades y no les supimos responder"
 - **Impacto**: Mejorar los flujos basándose en datos reales, no en suposiciones.
-- **API necesaria**: `/subscriber/chat-messages`
+
+---
 
 ### 9. Score de probabilidad de pago por cliente
-- **Estado**: Pendiente
-- **Problema**: Se trata a todos los clientes igual. Misma difusión a alguien que lleva 3 meses sin pagar que a alguien que abonó ayer.
-- **Solución**: Cruzar datos de Supabase (cuánto lleva abonado, hace cuánto pagó, cuántas boletas tiene) con datos de ChateaPro (última interacción, plantillas fallidas, si está marcado como molesto) para un "score" de 1 a 10.
+- **Estado**: 🔲 Pendiente
+- **Problema**: Se trata a todos los clientes igual en las difusiones y llamadas.
+- **Solución**: Cruzar datos de Supabase (cuánto lleva abonado, hace cuánto pagó, cuántas boletas tiene) con datos de ChateaPro (última interacción, cuántas plantillas le fallaron, si está marcado como molesto) para dar un score de 1 a 10 a cada cliente. Los asesores se enfocan primero en los que más probabilidad tienen de pagar.
 - **Impacto**: Asesores más eficientes, más cobros por hora.
 
 ---
 
-## Orden recomendado de ejecución
+## Orden de ejecución recomendado
 
-| Prioridad | Mejora | Razón |
-|---|---|---|
-| 1ro | Rescate con Twilio cuando Meta bloquea | Dinero inmediato que se está perdiendo |
-| 2do | Cerrar conversaciones automáticamente | Desbloquea a los asesores |
-| 3ro | Dashboard de embudo de ventas | Muestra dónde se pierden clientes |
-| 4to | Alerta de plantillas bloqueadas | Mejores decisiones de difusión |
-| 5to | Despertar clientes dormidos | Base enorme sin explotar |
-| 6to+ | Los demás según necesidad | Monitoreo, IA, scores |
+| # | Mejora | Estado | Por qué en este orden |
+|---|---|---|---|
+| 1 | Rescate con Twilio cuando Meta bloquea | ✅ Hecho | Dinero inmediato que se estaba perdiendo |
+| 2 | Alerta de plantillas bloqueadas | 🟡 Parcial | Ya se ve en el rescate, falta vista consolidada |
+| 3 | Cerrar conversaciones automáticamente | 🔲 Siguiente | Desbloquea la bandeja de asesores |
+| 4 | Dashboard de embudo de ventas | 🔲 | Saber dónde se pierden los clientes |
+| 5 | Despertar clientes dormidos | 🔲 | Base enorme de 48,000+ sin explotar |
+| 6 | Monitoreo de calidad de asesores | 🔲 | Reducir tiempo de respuesta |
+| 7 | Actualizar bot desde Supabase | 🔲 | Eliminar errores manuales |
+| 8 | Análisis de conversaciones con IA | 🔲 | Optimizar flujos con datos |
+| 9 | Score de probabilidad de pago | 🔲 | Máxima eficiencia de cobro |
 
 ---
 
-## Notas técnicas importantes
+## Costos del sistema de llamadas
 
-### Formato de teléfonos (ya resuelto)
-- **Supabase**: Guarda los últimos 10 dígitos (ej: `3103874973`)
-- **ChateaPro**: Usa formato con código de país (ej: `+573103874973`)
-- **Twilio**: Necesita formato E.164 (ej: `+573103874973`)
-- La función `formatearTelefono()` ya maneja ambos formatos correctamente.
-- Para cruzar datos ChateaPro ↔ Supabase: tomar los últimos 10 dígitos del teléfono de ChateaPro.
+| Concepto | Costo |
+|---|---|
+| ElevenLabs (Plan Creator) | $22 USD/mes |
+| Número Twilio (Medellín) | $14 USD/mes |
+| Llamada a celular colombiano | ~$0.034 USD por llamada |
+| Llamada a fijo colombiano | ~$0.095 USD por llamada |
+| **Fijo mensual** | **$36 USD/mes (~$155,000 COP)** |
+| Capacidad ElevenLabs | ~550 llamadas/mes (110,000 caracteres) |
 
-### Tokens de ChateaPro
-- Línea 1: `process.env.CHATEA_TOKEN_LINEA_1` (flow_ns: f159929)
-- Línea 2: `process.env.CHATEA_TOKEN_LINEA_2` (flow_ns: f166221)
-- Ambos guardados como variables de entorno encriptadas en Vercel.
+---
 
-### Documentación completa de la API
-- Ver `.cursor/rules/chateapro.mdc` para referencia completa de endpoints, flujos, tags, campos y configuración.
+## Notas técnicas
+
+- **API de ChateaPro**: `https://chateapro.app/api` — Documentación completa en `.cursor/rules/chateapro.mdc`
+- **Tokens**: Guardados como variables de entorno en Vercel (`CHATEA_TOKEN_LINEA_1`, `CHATEA_TOKEN_LINEA_2`)
+- **ElevenLabs**: API key y Voice ID en Vercel (`ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`)
+- **Twilio**: Número colombiano `+576045908967` en Vercel (`TWILIO_PHONE_NUMBER`)
+- **Teléfonos**: ChateaPro guarda el número completo con indicativo de país. Supabase guarda solo los últimos 10 dígitos. Para funciones de Twilio que crucen con ChateaPro, usar el teléfono de ChateaPro.
+- **Archivos clave**: `api/admin/rescate-whatsapp.js`, `api/admin/difusion-llamadas.js`, `api/twiml/cobro.js`, `api/twiml/audio-elevenlabs.js`, `public/llamadas.html`
