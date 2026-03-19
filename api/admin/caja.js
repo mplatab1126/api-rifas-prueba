@@ -28,6 +28,60 @@ export default async function handler(req, res) {
   try {
 
     // ─────────────────────────────────────────────────────────
+    // ACCIÓN: estado_caja — ¿Quién tiene la caja abierta hoy?
+    // ─────────────────────────────────────────────────────────
+    if (accion === 'estado_caja') {
+      const { data: ultimo } = await supabase
+        .from('movimientos_caja')
+        .select('tipo, creado_por, created_at')
+        .eq('fecha', hoy)
+        .in('tipo', ['apertura', 'cierre'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (ultimo && ultimo.tipo === 'apertura') {
+        return res.status(200).json({ status: 'ok', abierta: true, operador: ultimo.creado_por });
+      }
+      return res.status(200).json({ status: 'ok', abierta: false, operador: null });
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // ACCIÓN: abrir_caja — Registrar quién abre la caja
+    // ─────────────────────────────────────────────────────────
+    if (accion === 'abrir_caja') {
+      // Verificar que no esté abierta por alguien más
+      const { data: ultimo } = await supabase
+        .from('movimientos_caja')
+        .select('tipo, creado_por')
+        .eq('fecha', hoy)
+        .in('tipo', ['apertura', 'cierre'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (ultimo && ultimo.tipo === 'apertura' && ultimo.creado_por !== nombreAsesor) {
+        return res.status(403).json({ status: 'error', mensaje: `La caja ya está abierta por ${ultimo.creado_por}. Debes esperar a que la cierre.` });
+      }
+
+      // Si ya está abierta por esta persona, no crear duplicado
+      if (ultimo && ultimo.tipo === 'apertura' && ultimo.creado_por === nombreAsesor) {
+        return res.status(200).json({ status: 'ok', mensaje: 'Caja ya estaba abierta por ti' });
+      }
+
+      const { error } = await supabase.from('movimientos_caja').insert({
+        fecha: hoy,
+        tipo: 'apertura',
+        monto: 0,
+        descripcion: `Caja abierta por ${nombreAsesor}`,
+        creado_por: nombreAsesor
+      });
+      if (error) throw error;
+
+      return res.status(200).json({ status: 'ok', mensaje: 'Caja abierta correctamente' });
+    }
+
+    // ─────────────────────────────────────────────────────────
     // ACCIÓN: datos — Cargar resumen completo de la caja de hoy
     // ─────────────────────────────────────────────────────────
     if (accion === 'datos') {

@@ -184,9 +184,10 @@
   <div id="modalModoCaja" class="modal-overlay">
     <div class="modal-card" style="max-width: 380px;">
       <h2 style="margin: 0 0 8px; color: var(--ink); font-weight: 700;">💰 ¿Qué quieres hacer?</h2>
-      <p style="color:var(--muted); font-size: 0.9rem; margin-bottom: 25px;">Si solo quieres revisar cómo va la caja, elige "Solo ver". Nada se te asignará.</p>
+      <p style="color:var(--muted); font-size: 0.9rem; margin-bottom: 10px;">Si solo quieres revisar cómo va la caja, elige "Solo ver". Nada se te asignará.</p>
+      <p id="infoEstadoCaja" style="font-size: 0.85rem; margin-bottom: 15px; padding: 10px; background: var(--danger-bg); border-radius: 10px; display: none;"></p>
       <div style="display:flex; flex-direction:column; gap:12px;">
-        <button class="cta" style="width:100%; padding:16px; font-size:1rem;" onclick="elegirModoCaja('operador')">🔓 Abrir Caja (operar)</button>
+        <button id="btnAbrirCaja" class="cta" style="width:100%; padding:16px; font-size:1rem;" onclick="elegirModoCaja('operador')">🔓 Abrir Caja (operar)</button>
         <button class="cta cta-outline" style="width:100%; padding:16px; font-size:1rem;" onclick="elegirModoCaja('visor')">👁️ Solo Ver</button>
       </div>
     </div>
@@ -308,12 +309,7 @@
           asesorActual = res.asesor;
           localStorage.setItem(STORAGE_KEY, pwd);
           document.getElementById('loginOverlay').style.display = 'none';
-
-          if (auto && localStorage.getItem('caja_modo')) {
-            elegirModoCaja(localStorage.getItem('caja_modo'));
-          } else {
-            document.getElementById('modalModoCaja').style.display = 'flex';
-          }
+          await mostrarPopupCaja(auto);
         } else {
           if (!auto) msg.textContent = 'Contraseña incorrecta';
           localStorage.removeItem(STORAGE_KEY);
@@ -324,10 +320,73 @@
       }
     }
 
-    function elegirModoCaja(modo) {
+    async function mostrarPopupCaja(auto) {
+      try {
+        const req = await fetch('/api/admin/caja', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accion: 'estado_caja', contrasena: contrasenaActual })
+        });
+        const estado = await req.json();
+
+        const btnAbrir = document.getElementById('btnAbrirCaja');
+        const infoModal = document.getElementById('infoEstadoCaja');
+
+        if (estado.abierta && estado.operador !== asesorActual) {
+          btnAbrir.disabled = true;
+          btnAbrir.style.opacity = '0.4';
+          btnAbrir.style.pointerEvents = 'none';
+          infoModal.innerHTML = `<span style="color:var(--danger); font-weight:700;">🔒 La caja está abierta por ${estado.operador}.</span><br>Solo puedes ver hasta que la cierre.`;
+          infoModal.style.display = 'block';
+
+          if (auto && localStorage.getItem('caja_modo') === 'visor') {
+            elegirModoCaja('visor');
+            return;
+          }
+        } else if (estado.abierta && estado.operador === asesorActual) {
+          elegirModoCaja('operador');
+          return;
+        } else {
+          btnAbrir.disabled = false;
+          btnAbrir.style.opacity = '1';
+          btnAbrir.style.pointerEvents = 'auto';
+          infoModal.style.display = 'none';
+
+          if (auto && localStorage.getItem('caja_modo')) {
+            elegirModoCaja(localStorage.getItem('caja_modo'));
+            return;
+          }
+        }
+
+        document.getElementById('modalModoCaja').style.display = 'flex';
+      } catch (e) {
+        document.getElementById('modalModoCaja').style.display = 'flex';
+      }
+    }
+
+    async function elegirModoCaja(modo) {
+      document.getElementById('modalModoCaja').style.display = 'none';
+
+      if (modo === 'operador') {
+        try {
+          const req = await fetch('/api/admin/caja', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accion: 'abrir_caja', contrasena: contrasenaActual })
+          });
+          const res = await req.json();
+          if (res.status !== 'ok') {
+            alert(res.mensaje || 'No se pudo abrir la caja.');
+            document.getElementById('modalModoCaja').style.display = 'flex';
+            return;
+          }
+        } catch (e) {
+          alert('Error de conexión al abrir la caja.');
+          document.getElementById('modalModoCaja').style.display = 'flex';
+          return;
+        }
+      }
+
       modoCaja = modo;
       localStorage.setItem('caja_modo', modo);
-      document.getElementById('modalModoCaja').style.display = 'none';
       document.getElementById('mainDashboard').style.display = 'block';
 
       const badge = document.getElementById('badgeOwner');
