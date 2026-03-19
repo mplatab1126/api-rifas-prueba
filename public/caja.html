@@ -181,6 +181,17 @@
     </div>
   </div>
 
+  <div id="modalModoCaja" class="modal-overlay">
+    <div class="modal-card" style="max-width: 380px;">
+      <h2 style="margin: 0 0 8px; color: var(--ink); font-weight: 700;">💰 ¿Qué quieres hacer?</h2>
+      <p style="color:var(--muted); font-size: 0.9rem; margin-bottom: 25px;">Si solo quieres revisar cómo va la caja, elige "Solo ver". Nada se te asignará.</p>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <button class="cta" style="width:100%; padding:16px; font-size:1rem;" onclick="elegirModoCaja('operador')">🔓 Abrir Caja (operar)</button>
+        <button class="cta cta-outline" style="width:100%; padding:16px; font-size:1rem;" onclick="elegirModoCaja('visor')">👁️ Solo Ver</button>
+      </div>
+    </div>
+  </div>
+
   <div id="modalCierre" class="modal-overlay">
     <div class="modal-card"> 
       <h3 style="margin: 0 0 5px; color: var(--ink);">🔒 Arqueo y Cierre</h3>
@@ -240,6 +251,7 @@
     const STORAGE_KEY = 'asesor_pwd';
     let contrasenaActual = '';
     let asesorActual = '';
+    let modoCaja = ''; // 'operador' | 'visor'
     let datosCaja = null;
     let valorEsperadoCaja = 0;
     let asesorRecibiendoNombre = '';
@@ -294,20 +306,14 @@
         if (res.status === 'ok') {
           contrasenaActual = pwd;
           asesorActual = res.asesor;
-
           localStorage.setItem(STORAGE_KEY, pwd);
           document.getElementById('loginOverlay').style.display = 'none';
-          document.getElementById('mainDashboard').style.display = 'block';
 
-          const badge = document.getElementById('badgeOwner');
-          badge.style.display = 'inline-block';
-          badge.textContent = `🟢 A cargo de: ${asesorActual}`;
-
-          if (asesorActual === 'Mateo') {
-            document.getElementById('btnAjustarBase').style.display = 'inline-block';
+          if (auto && localStorage.getItem('caja_modo')) {
+            elegirModoCaja(localStorage.getItem('caja_modo'));
+          } else {
+            document.getElementById('modalModoCaja').style.display = 'flex';
           }
-
-          cargarDatosCaja();
         } else {
           if (!auto) msg.textContent = 'Contraseña incorrecta';
           localStorage.removeItem(STORAGE_KEY);
@@ -315,6 +321,47 @@
         }
       } catch (error) {
         if (!auto) { btn.textContent = 'Acceder a la Caja'; btn.disabled = false; msg.textContent = 'Error de conexión'; }
+      }
+    }
+
+    function elegirModoCaja(modo) {
+      modoCaja = modo;
+      localStorage.setItem('caja_modo', modo);
+      document.getElementById('modalModoCaja').style.display = 'none';
+      document.getElementById('mainDashboard').style.display = 'block';
+
+      const badge = document.getElementById('badgeOwner');
+      badge.style.display = 'inline-block';
+
+      if (modo === 'operador') {
+        badge.textContent = `🟢 A cargo de: ${asesorActual}`;
+        badge.style.background = 'var(--pill)';
+        badge.style.color = 'var(--accent-2)';
+        if (asesorActual === 'Mateo') document.getElementById('btnAjustarBase').style.display = 'inline-block';
+      } else {
+        badge.textContent = `👁️ Solo viendo (${asesorActual})`;
+        badge.style.background = '#fff3e0';
+        badge.style.color = '#e65100';
+      }
+
+      aplicarPermisosModo();
+      cargarDatosCaja();
+    }
+
+    function aplicarPermisosModo() {
+      const soloVer = modoCaja === 'visor';
+      const btnCerrar = document.querySelector('.top-bar .cta[style*="danger"]');
+      const btnMovimiento = document.querySelector('.shell > button');
+
+      if (btnCerrar) {
+        btnCerrar.disabled = soloVer;
+        btnCerrar.style.opacity = soloVer ? '0.4' : '1';
+        btnCerrar.style.pointerEvents = soloVer ? 'none' : 'auto';
+      }
+      if (btnMovimiento) {
+        btnMovimiento.disabled = soloVer;
+        btnMovimiento.style.opacity = soloVer ? '0.4' : '1';
+        btnMovimiento.style.pointerEvents = soloVer ? 'none' : 'auto';
       }
     }
 
@@ -344,6 +391,7 @@
         if (res.asesoresEnCalle.length === 0) {
           document.getElementById('lista-asesores').innerHTML = '<p style="text-align:center; color:var(--muted); font-weight:500; padding:20px 0;">✅ Ningún asesor tiene efectivo pendiente por entregar.</p>';
         } else {
+          const soloVer = modoCaja === 'visor';
           document.getElementById('lista-asesores').innerHTML = res.asesoresEnCalle.map(a => `
             <div class="asesor-row">
               <div class="asesor-info">
@@ -352,7 +400,7 @@
               </div>
               <div style="display:flex; align-items:center; gap:15px;">
                 <span class="asesor-deuda">${fmt(a.pendiente)}</span>
-                <button class="cta" onclick="abrirModalRecibir('${a.asesor}', ${a.pendiente})">📥 Recibir</button>
+                <button class="cta" onclick="abrirModalRecibir('${a.asesor}', ${a.pendiente})" ${soloVer ? 'disabled style="opacity:0.4; pointer-events:none;"' : ''}>📥 Recibir</button>
               </div>
             </div>
           `).join('');
@@ -581,6 +629,7 @@
         if (res.status === 'ok') {
           alert('✅ ¡Caja cerrada y arqueo guardado!');
           localStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem('caja_modo');
           window.location.href = '/admin.html';
         } else {
           alert('Error al cerrar caja: ' + res.mensaje);

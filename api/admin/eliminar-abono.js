@@ -25,8 +25,17 @@ export default async function handler(req, res) {
     const { error: errDelete } = await supabase.from('abonos').delete().eq('id', id);
     if (errDelete) throw errDelete;
 
-    if (referencia_transferencia && referencia_transferencia !== 'Sin Ref' && referencia_transferencia !== 'efectivo') {
+    if (referencia_transferencia && referencia_transferencia !== 'Sin Ref' && referencia_transferencia !== 'efectivo' && referencia_transferencia !== 'efectivo_oficina') {
       await supabase.from('transferencias').update({ estado: 'LIBRE' }).eq('referencia', referencia_transferencia);
+    }
+
+    // Si era efectivo en oficina, eliminar el ingreso automático que se creó en caja
+    if (referencia_transferencia === 'efectivo_oficina') {
+      const descripcionCaja = `Efectivo en oficina - Boleta ${numeroLimpio} (${abono.asesor})`;
+      await supabase.from('movimientos_caja').delete()
+        .eq('tipo', 'ingreso')
+        .eq('monto', monto)
+        .eq('descripcion', descripcionCaja);
     }
 
     let tabla = 'boletas';

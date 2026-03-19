@@ -825,7 +825,11 @@ $('btnRegistrarVenta').onclick = async ()=>{
         if(boletasTarget.length === 0) return alert("Selecciona al menos una boleta.");
 
         const esEfectivo = modoAbonoPago === 'efectivo';
-        const ref = esEfectivo ? 'efectivo' : document.getElementById('a_ref').value;
+        const esMiEquipo = nombreAsesorActual && !esAsesorIndependiente(nombreAsesorActual);
+        if (esEfectivo && esMiEquipo && !ubicacionEfectivo) {
+            return alert("Selecciona si recibiste el efectivo en la oficina o en la calle.");
+        }
+        const ref = esEfectivo ? document.getElementById('a_ref').value : document.getElementById('a_ref').value;
         const metodo = esEfectivo ? 'Efectivo' : document.getElementById('a_metodo').value;
 
         // Construir mapa de montos según el modo
@@ -908,6 +912,8 @@ $('btnRegistrarVenta').onclick = async ()=>{
             document.getElementById('t_hora_abono').value='';
             if(document.getElementById('ocrStatusAbono')) document.getElementById('ocrStatusAbono').textContent='';
             modoAbonoPago = 'inteligente';
+            ubicacionEfectivo = '';
+            if (document.getElementById('toggleUbicacionEfectivo')) document.getElementById('toggleUbicacionEfectivo').style.display = 'none';
 
             desbloquearCampos('a_ref', 'a_monto', 'a_metodo', 'feedbackTransferAbono');
             activateHeroMode(); 
@@ -1015,14 +1021,18 @@ $('btnRegistrarVenta').onclick = async ()=>{
 
     let modoDistribucionAbono = 'uniforme'; // 'uniforme' | 'manual'
     let modoAbonoPago = 'inteligente'; // 'inteligente' | 'efectivo'
+    let ubicacionEfectivo = ''; // 'oficina' | 'calle' | '' (sin elegir)
 
     function setModoAbonoPago(modo) {
         modoAbonoPago = modo;
+        ubicacionEfectivo = '';
         document.getElementById('btnModoInteligente').classList.toggle('active', modo === 'inteligente');
         document.getElementById('btnModoEfectivo').classList.toggle('active', modo === 'efectivo');
         document.getElementById('seccionPagoInteligente').style.display = modo === 'inteligente' ? 'block' : 'none';
 
+        var toggleUbicacion = document.getElementById('toggleUbicacionEfectivo');
         var card = document.getElementById('cardDetalleAbono');
+
         if (modo === 'efectivo') {
             if (card) card.style.display = 'block';
             document.getElementById('camposPagoInteligente').style.display = 'none';
@@ -1030,12 +1040,42 @@ $('btnRegistrarVenta').onclick = async ()=>{
             document.getElementById('a_ref').value = 'efectivo';
             document.getElementById('a_idTransferencia').value = '';
             esAbonoPendiente = false;
+
+            // Solo mostrar oficina/calle para asesores de "mi equipo"
+            if (toggleUbicacion) {
+                var esMiEquipo = nombreAsesorActual && !esAsesorIndependiente(nombreAsesorActual);
+                toggleUbicacion.style.display = esMiEquipo ? 'block' : 'none';
+                if (esMiEquipo) {
+                    document.getElementById('btnEfectivoOficina').classList.remove('active');
+                    document.getElementById('btnEfectivoCalle').classList.remove('active');
+                    document.getElementById('infoUbicacionEfectivo').textContent = 'Selecciona dónde recibiste el efectivo';
+                    document.getElementById('infoUbicacionEfectivo').style.color = 'var(--danger)';
+                }
+            }
         } else {
             if (card) card.style.display = 'none';
             document.getElementById('camposPagoInteligente').style.display = 'none';
             document.getElementById('a_metodo').value = '';
             document.getElementById('a_ref').value = '';
             document.getElementById('a_idTransferencia').value = '';
+            if (toggleUbicacion) toggleUbicacion.style.display = 'none';
+        }
+    }
+
+    function setUbicacionEfectivo(ubicacion) {
+        ubicacionEfectivo = ubicacion;
+        document.getElementById('btnEfectivoOficina').classList.toggle('active', ubicacion === 'oficina');
+        document.getElementById('btnEfectivoCalle').classList.toggle('active', ubicacion === 'calle');
+
+        var info = document.getElementById('infoUbicacionEfectivo');
+        if (ubicacion === 'oficina') {
+            document.getElementById('a_ref').value = 'efectivo_oficina';
+            info.textContent = 'El dinero irá directo a caja, no se te cargará como pendiente';
+            info.style.color = 'var(--accent-2)';
+        } else {
+            document.getElementById('a_ref').value = 'efectivo';
+            info.textContent = 'El dinero se te cargará como pendiente para entregar en caja';
+            info.style.color = 'var(--muted)';
         }
     }
 

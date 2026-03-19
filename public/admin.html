@@ -314,6 +314,14 @@
           <button id="btnModoEfectivo" class="mode-btn" onclick="setModoAbonoPago('efectivo')">Efectivo</button>
         </div>
 
+        <div id="toggleUbicacionEfectivo" style="display:none;">
+          <div class="abono-mode-switch">
+            <button id="btnEfectivoOficina" class="abono-mode-btn" onclick="setUbicacionEfectivo('oficina')">🏢 En Oficina</button>
+            <button id="btnEfectivoCalle" class="abono-mode-btn" onclick="setUbicacionEfectivo('calle')">🚶 En la Calle</button>
+          </div>
+          <p id="infoUbicacionEfectivo" style="font-size:0.8rem; color:var(--muted); text-align:center; margin:6px 0 0;"></p>
+        </div>
+
         <div id="seccionPagoInteligente">
           <div class="section-card">
              <div class="section-title">BUSCAR TRANSFERENCIA REAL</div>

@@ -182,9 +182,21 @@ export default async function handler(req, res) {
     // 7. Amarrar la referencia a la boleta (ASIGNACIÓN SEGURA POR ID)
     if (idTransferencia && idTransferencia.trim() !== '') {
       await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('id', idTransferencia);
-    } else if (referencia && referencia !== 'Sin Ref' && referencia !== 'efectivo' && referencia !== '0') {
+    } else if (referencia && referencia !== 'Sin Ref' && referencia !== 'efectivo' && referencia !== 'efectivo_oficina' && referencia !== '0') {
       // Fallback a lógica vieja
       await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('referencia', referencia);
+    }
+
+    // 8. Si es efectivo en oficina, registrar ingreso directo a caja
+    if (referencia === 'efectivo_oficina') {
+      const fechaHoyCaja = fechaPagoColombia.split('T')[0];
+      await supabase.from('movimientos_caja').insert({
+        fecha: fechaHoyCaja,
+        tipo: 'ingreso',
+        monto: monto,
+        descripcion: `Efectivo en oficina - Boleta ${numeroLimpio} (${nombreAsesor})`,
+        creado_por: nombreAsesor
+      });
     }
 
     // GUARDAR EN LA BITÁCORA
