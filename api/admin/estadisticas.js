@@ -68,21 +68,21 @@ export default async function handler(req, res) {
       .limit(10000);
     if (errFb) throw errFb;
 
-    // 6. Gastos que afectan el estado de resultados
-    const { data: gastosData, error: errGastos } = await supabase
+    // 6. Todos los gastos (excepto Pendientes) con campos extendidos
+    const { data: todosGastosData, error: errGastos } = await supabase
       .from('gastos')
-      .select('id, fecha, monto, descripcion, categoria, subcategoria')
-      .in('categoria', ['Gastos Operacionales', 'Gastos Rifa Apartamento'])
-      .limit(10000);
+      .select('id, fecha, hora, monto, descripcion, categoria, subcategoria, plataforma, reportado_por, referencia, url_comprobante')
+      .neq('categoria', 'Pendiente')
+      .order('fecha', { ascending: false })
+      .limit(15000);
     if (errGastos) throw errGastos;
 
-    // 7. Retiros de ganancia
-    const { data: retirosData, error: errRetiros } = await supabase
-      .from('gastos')
-      .select('id, fecha, monto, descripcion, subcategoria')
-      .eq('categoria', 'Retiro de Ganancia')
-      .limit(10000);
-    if (errRetiros) throw errRetiros;
+    const gastosData = (todosGastosData || []).filter(g =>
+      ['Gastos Operacionales', 'Gastos Rifa Apartamento'].includes(g.categoria)
+    );
+    const retirosData = (todosGastosData || []).filter(g =>
+      g.categoria === 'Retiro de Ganancia'
+    );
 
     let registradas = 0;
     let separadas_cero = 0;
@@ -118,7 +118,8 @@ export default async function handler(req, res) {
         chatea: chateaData,
         fb: fbData,
         gastos: gastosData,
-        retiros: retirosData
+        retiros: retirosData,
+        todosGastos: todosGastosData || []
     });
   } catch (error) {
     return res.status(500).json({ status: 'error', mensaje: error.message });

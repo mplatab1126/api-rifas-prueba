@@ -383,6 +383,138 @@
     .retiro-item-desc { color: var(--ink); font-weight: 600; }
     .retiro-item-meta { font-size: .7rem; color: var(--muted); margin-top: 2px; }
     .retiro-item-monto { font-weight: 700; color: #b45309; white-space: nowrap; }
+
+    /* ── Pestañas ──────────────────────────────────────────────────────── */
+    .tabs-bar {
+      display: flex; gap: 4px; margin-bottom: 20px;
+      background: var(--card); border: 1px solid var(--ring-strong);
+      border-radius: 12px; padding: 4px; box-shadow: var(--shadow-sm);
+    }
+    .tab-btn {
+      flex: 1; padding: 10px 16px; border: none; border-radius: 9px;
+      background: transparent; color: var(--muted);
+      font-family: inherit; font-size: .83rem; font-weight: 700;
+      cursor: pointer; transition: all .2s;
+    }
+    .tab-btn:hover { color: var(--ink-2); background: var(--bg); }
+    .tab-btn.active {
+      background: var(--accent); color: #fff;
+      box-shadow: 0 2px 8px rgba(58,158,107,.25);
+    }
+
+    /* ── Detalle de gastos ─────────────────────────────────────────────── */
+    .detalle-resumen {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+      gap: 10px; margin-bottom: 20px;
+    }
+    .detalle-resumen-card {
+      background: var(--card); border: 1px solid var(--ring-strong);
+      border-radius: 12px; padding: 14px 16px;
+      box-shadow: var(--shadow-sm); cursor: pointer;
+      transition: all .15s; position: relative; overflow: hidden;
+    }
+    .detalle-resumen-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .detalle-resumen-card.activa { border-color: var(--accent); background: var(--accent-light); }
+    .detalle-resumen-card .dr-icon { font-size: 1.1rem; }
+    .detalle-resumen-card .dr-nombre {
+      font-size: .72rem; font-weight: 700; color: var(--ink-2);
+      margin-top: 6px; line-height: 1.3;
+    }
+    .detalle-resumen-card .dr-monto {
+      font-size: 1.05rem; font-weight: 800; color: var(--danger); margin-top: 4px;
+    }
+    .detalle-resumen-card .dr-count {
+      font-size: .68rem; color: var(--muted); margin-top: 2px;
+    }
+
+    .detalle-categoria {
+      background: var(--card); border: 1px solid var(--ring-strong);
+      border-radius: var(--radius); overflow: hidden;
+      box-shadow: var(--shadow-sm); margin-bottom: 16px;
+    }
+    .detalle-cat-header {
+      padding: 14px 20px; border-bottom: 1px solid var(--ring);
+      display: flex; align-items: center; gap: 10px;
+      cursor: pointer; user-select: none; transition: background .15s;
+    }
+    .detalle-cat-header:hover { background: var(--bg); }
+    .detalle-cat-icon { font-size: 1.1rem; }
+    .detalle-cat-nombre { font-size: .9rem; font-weight: 800; color: var(--ink); flex: 1; }
+    .detalle-cat-total { font-size: .95rem; font-weight: 800; color: var(--danger); }
+    .detalle-cat-count {
+      font-size: .72rem; font-weight: 600; color: var(--muted);
+      background: var(--bg); padding: 2px 10px; border-radius: 20px;
+    }
+    .detalle-cat-chevron {
+      font-size: .75rem; color: var(--muted); transition: transform .2s;
+    }
+    .detalle-cat-chevron.open { transform: rotate(180deg); }
+
+    .detalle-cat-body { display: none; }
+    .detalle-cat-body.open { display: block; }
+
+    .detalle-subcat-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 20px 11px 28px; border-bottom: 1px solid var(--ring);
+      cursor: pointer; transition: background .1s; user-select: none;
+    }
+    .detalle-subcat-row:last-child { border-bottom: none; }
+    .detalle-subcat-row:hover { background: var(--bg); }
+    .detalle-subcat-nombre { flex: 1; font-size: .84rem; font-weight: 600; color: var(--ink); }
+    .detalle-subcat-count {
+      font-size: .7rem; font-weight: 600; color: var(--muted);
+      background: var(--bg); padding: 2px 8px; border-radius: 12px;
+    }
+    .detalle-subcat-total { font-size: .85rem; font-weight: 700; color: var(--danger); white-space: nowrap; }
+    .detalle-subcat-chevron {
+      font-size: .7rem; color: var(--muted); transition: transform .2s; display: inline-block;
+    }
+    .detalle-subcat-chevron.open { transform: rotate(180deg); }
+
+    .detalle-subcat-body { display: none; background: #fafdfb; }
+    .detalle-subcat-body.open { display: block; }
+
+    .detalle-gasto-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 20px; border-bottom: 1px solid var(--ring);
+      font-size: .82rem; transition: background .1s;
+    }
+    .detalle-gasto-row:last-child { border-bottom: none; }
+    .detalle-gasto-row:hover { background: #fafdfb; }
+    .detalle-gasto-fecha {
+      font-size: .72rem; font-weight: 600; color: var(--muted);
+      white-space: nowrap; min-width: 70px;
+    }
+    .detalle-gasto-info { flex: 1; min-width: 0; }
+    .detalle-gasto-desc { font-weight: 600; color: var(--ink); }
+    .detalle-gasto-meta {
+      font-size: .7rem; color: var(--muted); margin-top: 2px;
+      display: flex; flex-wrap: wrap; gap: 6px;
+    }
+    .detalle-gasto-meta span { white-space: nowrap; }
+    .detalle-gasto-monto {
+      font-weight: 700; color: var(--danger); white-space: nowrap; font-size: .85rem;
+    }
+
+    .detalle-gran-total {
+      background: var(--danger-bg); border: 1.5px solid #f5c6c5;
+      border-radius: var(--radius); padding: 20px 24px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px;
+    }
+    .detalle-gran-total-label {
+      font-size: .8rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .05em; color: var(--danger);
+    }
+    .detalle-gran-total-valor {
+      font-size: 1.6rem; font-weight: 800; color: var(--danger);
+    }
+
+    @media (max-width: 600px) {
+      .detalle-resumen { grid-template-columns: repeat(2, 1fr); }
+      .detalle-gasto-row { flex-wrap: wrap; gap: 6px; }
+      .detalle-gasto-fecha { min-width: auto; }
+    }
   </style>
 </head>
 <body>
@@ -414,8 +546,14 @@
 <!-- ══ APP ═══════════════════════════════════════════════════════════════ -->
 <div id="app">
   <div class="page-header">
-    <div class="page-title">📊 Estado de Resultados</div>
+    <div class="page-title">📊 Centro Financiero</div>
     <div class="page-sub" id="pageSubtitulo">Cargando…</div>
+  </div>
+
+  <!-- Pestañas -->
+  <div class="tabs-bar">
+    <button class="tab-btn active" id="tabER" onclick="cambiarTab('er')">📊 Estado de Resultados</button>
+    <button class="tab-btn" id="tabDetalle" onclick="cambiarTab('detalle')">📋 Detalle de Gastos</button>
   </div>
 
   <!-- Filtros -->
@@ -450,6 +588,11 @@
 
   <!-- Contenido del estado de resultados -->
   <div id="erContent">
+    <div class="loading-state">⏳ Cargando datos…</div>
+  </div>
+
+  <!-- Contenido del detalle de gastos -->
+  <div id="detalleContent" style="display:none;">
     <div class="loading-state">⏳ Cargando datos…</div>
   </div>
 </div>
@@ -551,8 +694,10 @@ let globalFb        = [];
 let globalRifas     = [];
 let globalGastos    = [];
 let globalRetiros   = [];
+let globalTodosGastos = [];
 let asesoresVisibl  = [];
 let asesoresPanel   = false;
+let tabActual       = 'er';
 
 // ── Utilidades ────────────────────────────────────────────────────────────
 const fmt  = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-CO');
@@ -643,11 +788,12 @@ async function cargarTodo() {
     if (dataStats.status !== 'ok') throw new Error(dataStats.mensaje);
     if (dataRifas.status !== 'ok') throw new Error(dataRifas.mensaje);
 
-    globalAbonos  = dataStats.abonos  || [];
-    globalFb      = dataStats.fb      || [];
-    globalGastos  = dataStats.gastos  || [];
-    globalRetiros = dataStats.retiros || [];
-    globalRifas   = dataRifas.rifas   || [];
+    globalAbonos      = dataStats.abonos      || [];
+    globalFb          = dataStats.fb          || [];
+    globalGastos      = dataStats.gastos      || [];
+    globalRetiros     = dataStats.retiros     || [];
+    globalTodosGastos = dataStats.todosGastos || [];
+    globalRifas       = dataRifas.rifas       || [];
 
     // Construir lista de asesores únicos desde los abonos
     const setAsesores = new Set(globalAbonos.map(a => a.asesor || 'Sin Asesor').filter(Boolean));
@@ -767,7 +913,14 @@ function aplicarFiltros() {
   document.getElementById('pageSubtitulo').textContent =
     `${rifaEmpresa ? rifaEmpresa.nombre + ' · ' : ''}${desdeLeg} → ${hastaLeg} · ${asesores.length} asesores`;
 
+  // Todos los gastos filtrados por fecha (para pestaña detalle)
+  const todosGastosFiltrados = globalTodosGastos.filter(g => {
+    const d = normFecha(g.fecha);
+    return (!desde || d >= desde) && (!hasta || d <= hasta);
+  });
+
   renderEstado(abonos, fb, rifaEmpresa, gastos, retiros);
+  renderDetalleGastos(todosGastosFiltrados);
   actualizarContador();
 }
 
@@ -1116,11 +1269,11 @@ function renderRetiros(retiros) {
 
 // ── Registro de gastos históricos ──────────────────────────────────────────
 const SUBCATEGORIAS = {
-  operacionales:    ['Publicidad Meta', 'Nómina', 'Plataformas', 'Impuestos', 'Comisiones', 'Arriendo', 'Servicios públicos', 'Transporte', 'Papelería', 'Alimentación', 'Otros'],
+  operacionales:    ['Publicidad Meta', 'Nómina', 'Plataformas', 'Impuestos', 'Comisiones', 'Arriendo', 'Servicios públicos', 'Transporte', 'Papelería', 'Alimentación', 'Cursos', 'Otros'],
   rifa_apartamento: ['Adecuación', 'Muebles', 'Pintura', 'Electrodomésticos', 'Acabados', 'Publicidad rifa', 'Premios', 'Devoluciones a Clientes', 'Otros'],
   construccion:     ['Materiales', 'Mano de obra', 'Hierro', 'Cemento', 'Acabados', 'Transporte material', 'Otros'],
   rifa_camioneta:   ['Publicidad', 'Premios', 'Preparación', 'Otros'],
-  retiro_ganancia:  ['Papá', 'Mateo', 'Alejandro'],
+  retiro_ganancia:  ['Papá', 'Mateo', 'Alejandro', 'Alejandro y Mateo'],
   pagos_diarias:   ['Rifa de 2 cifras', 'Rifa de 3 cifras']
 };
 
@@ -1260,8 +1413,9 @@ async function recargarGastos() {
     });
     const data = await res.json();
     if (data.status === 'ok') {
-      globalGastos  = data.gastos  || [];
-      globalRetiros = data.retiros || [];
+      globalGastos      = data.gastos      || [];
+      globalRetiros     = data.retiros     || [];
+      globalTodosGastos = data.todosGastos || [];
       aplicarFiltros();
     }
   } catch (_) {}
@@ -1278,6 +1432,178 @@ document.addEventListener('keydown', e => {
 document.getElementById('modalGasto').addEventListener('click', function(e) {
   if (e.target === this) cerrarModalGasto();
 });
+
+// ── Pestañas ──────────────────────────────────────────────────────────────
+function cambiarTab(tab) {
+  tabActual = tab;
+  document.getElementById('tabER').classList.toggle('active', tab === 'er');
+  document.getElementById('tabDetalle').classList.toggle('active', tab === 'detalle');
+  document.getElementById('erContent').style.display = tab === 'er' ? 'block' : 'none';
+  document.getElementById('detalleContent').style.display = tab === 'detalle' ? 'block' : 'none';
+}
+
+// ── Detalle de gastos ─────────────────────────────────────────────────────
+const CATS_DETALLE = [
+  { id: 'Gastos Operacionales',      slug: 'operacionales',  icono: '⚙️'  },
+  { id: 'Gastos Rifa Apartamento',   slug: 'rifa-apto',      icono: '🏠' },
+  { id: 'Construcción Apartamento',  slug: 'construccion',   icono: '🏗️'  },
+  { id: 'Rifa Camioneta',            slug: 'camioneta',      icono: '🚗' },
+  { id: 'Retiro de Ganancia',        slug: 'retiros',        icono: '💸' },
+  { id: 'Pagos Rifas Diarias',       slug: 'diarias',        icono: '🎯' },
+];
+
+function slugCat(nombre) {
+  const found = CATS_DETALLE.find(c => c.id === nombre);
+  if (found) return found.slug;
+  return nombre.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
+function formatFechaCorta(f) {
+  if (!f) return '—';
+  const d = new Date(f + 'T12:00:00');
+  return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' });
+}
+
+function renderDetalleGastos(gastos) {
+  const container = document.getElementById('detalleContent');
+
+  if (!gastos || gastos.length === 0) {
+    container.innerHTML = '<div class="empty-state">No hay gastos registrados en el período seleccionado.</div>';
+    return;
+  }
+
+  // Agrupar: categoría → subcategoría → gastos individuales
+  const porCat = {};
+  let granTotal = 0;
+
+  gastos.forEach(g => {
+    const cat = g.categoria || 'Sin categoría';
+    if (!porCat[cat]) porCat[cat] = { total: 0, count: 0, subcats: {} };
+    porCat[cat].total += Number(g.monto || 0);
+    porCat[cat].count++;
+    granTotal += Number(g.monto || 0);
+
+    const sub = g.subcategoria || 'Sin subcategoría';
+    if (!porCat[cat].subcats[sub]) porCat[cat].subcats[sub] = { total: 0, items: [] };
+    porCat[cat].subcats[sub].total += Number(g.monto || 0);
+    porCat[cat].subcats[sub].items.push(g);
+  });
+
+  // Tarjetas resumen
+  let tarjetasHTML = '';
+  CATS_DETALLE.forEach(cat => {
+    const d = porCat[cat.id];
+    const total = d ? d.total : 0;
+    const count = d ? d.count : 0;
+    tarjetasHTML += `
+      <div class="detalle-resumen-card" onclick="scrollACat('${cat.slug}')">
+        <div class="dr-icon">${cat.icono}</div>
+        <div class="dr-nombre">${cat.id}</div>
+        <div class="dr-monto">${total > 0 ? fmt(total) : '$0'}</div>
+        <div class="dr-count">${count} gasto${count !== 1 ? 's' : ''}</div>
+      </div>`;
+  });
+
+  let html = `
+    <div class="detalle-gran-total">
+      <div class="detalle-gran-total-label">Total gastos del período</div>
+      <div class="detalle-gran-total-valor">${fmt(granTotal)}</div>
+    </div>
+    <div class="detalle-resumen">${tarjetasHTML}</div>`;
+
+  function buildCatSection(catName, catSlug, icono, d) {
+    // Subcategorías ordenadas por monto
+    const subcats = Object.entries(d.subcats).sort((a, b) => b[1].total - a[1].total);
+
+    const subcatsHTML = subcats.map(([subName, subData], idx) => {
+      const subSlug = catSlug + '-s' + idx;
+      const items = subData.items.sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+
+      const filasHTML = items.map(g => {
+        const metaParts = [];
+        if (g.plataforma)   metaParts.push(`<span>🏦 ${g.plataforma}</span>`);
+        if (g.reportado_por) metaParts.push(`<span>👤 ${g.reportado_por}</span>`);
+        if (g.referencia && g.referencia !== '0') metaParts.push(`<span># ${g.referencia}</span>`);
+
+        return `
+          <div class="detalle-gasto-row">
+            <div class="detalle-gasto-fecha">${formatFechaCorta(g.fecha)}</div>
+            <div class="detalle-gasto-info">
+              <div class="detalle-gasto-desc">${g.descripcion || 'Sin descripción'}</div>
+              ${metaParts.length ? `<div class="detalle-gasto-meta">${metaParts.join('')}</div>` : ''}
+            </div>
+            <div class="detalle-gasto-monto">${fmt(g.monto)}</div>
+          </div>`;
+      }).join('');
+
+      return `
+        <div class="detalle-subcat-row" onclick="toggleSubcat('${subSlug}')">
+          <span class="detalle-subcat-nombre">${subName}</span>
+          <span class="detalle-subcat-count">${subData.items.length}</span>
+          <span class="detalle-subcat-total">${fmt(subData.total)}</span>
+          <span class="detalle-subcat-chevron" id="schev-${subSlug}">▼</span>
+        </div>
+        <div class="detalle-subcat-body" id="sbody-${subSlug}">${filasHTML}</div>`;
+    }).join('');
+
+    return `
+      <div class="detalle-categoria" id="cat-${catSlug}">
+        <div class="detalle-cat-header" onclick="toggleCatDetalle('${catSlug}')">
+          <span class="detalle-cat-icon">${icono}</span>
+          <span class="detalle-cat-nombre">${catName}</span>
+          <span class="detalle-cat-count">${d.count} gasto${d.count !== 1 ? 's' : ''} · ${subcats.length} subcategoría${subcats.length !== 1 ? 's' : ''}</span>
+          <span class="detalle-cat-total">${fmt(d.total)}</span>
+          <span class="detalle-cat-chevron" id="chev-${catSlug}">▼</span>
+        </div>
+        <div class="detalle-cat-body" id="body-${catSlug}">${subcatsHTML}</div>
+      </div>`;
+  }
+
+  // Categorías conocidas
+  CATS_DETALLE.forEach(cat => {
+    const d = porCat[cat.id];
+    if (!d || d.count === 0) return;
+    html += buildCatSection(cat.id, cat.slug, cat.icono, d);
+  });
+
+  // Categorías no previstas
+  Object.entries(porCat).forEach(([catName, d]) => {
+    if (CATS_DETALLE.find(c => c.id === catName)) return;
+    html += buildCatSection(catName, slugCat(catName), '📁', d);
+  });
+
+  container.innerHTML = html;
+}
+
+function toggleCatDetalle(sl) {
+  const body = document.getElementById('body-' + sl);
+  const chev = document.getElementById('chev-' + sl);
+  if (!body) return;
+  const open = body.classList.contains('open');
+  body.classList.toggle('open', !open);
+  if (chev) chev.classList.toggle('open', !open);
+}
+
+function toggleSubcat(sl) {
+  const body = document.getElementById('sbody-' + sl);
+  const chev = document.getElementById('schev-' + sl);
+  if (!body) return;
+  const open = body.classList.contains('open');
+  body.classList.toggle('open', !open);
+  if (chev) chev.classList.toggle('open', !open);
+}
+
+function scrollACat(sl) {
+  cambiarTab('detalle');
+  setTimeout(() => {
+    const el = document.getElementById('cat-' + sl);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const body = document.getElementById('body-' + sl);
+      if (body && !body.classList.contains('open')) toggleCatDetalle(sl);
+    }
+  }, 100);
+}
 </script>
 </body>
 </html>

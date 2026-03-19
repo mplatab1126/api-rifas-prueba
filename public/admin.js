@@ -945,7 +945,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
                html += '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); copiarLinkBoleta(\'' + b.numero + '\');" style="background:#fff; border:1px solid var(--ring-strong); color:var(--ink-2); padding:4px 8px; border-radius:6px; font-size:0.75rem; font-weight:500; font-family:inherit; cursor:pointer; transition:0.2s;">Copiar Link</button>';
            }
            
-           html += '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); confirmarLiberarBoleta(\'' + b.numero + '\');" style="background:transparent; color:var(--danger); border:1px solid var(--danger); padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:500; font-family:inherit; cursor:pointer; transition: 0.2s;">Liberar</button>';
+           html += '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); confirmarLiberarBoleta(\'' + b.numero + '\', ' + (Number(b.totalAbonos) || 0) + ');" style="background:transparent; color:var(--danger); border:1px solid var(--danger); padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:500; font-family:inherit; cursor:pointer; transition: 0.2s;">Liberar</button>';
            html += '</div>';
            
            html += '</label>';
@@ -1267,8 +1267,16 @@ $('btnRegistrarVenta').onclick = async ()=>{
     document.addEventListener('DOMContentLoaded', function() { initLogin(); if(typeof addDefaultPill === 'function') addDefaultPill(); $('loginPwd').addEventListener('keyup', function(e) { if (e.key === 'Enter') verifyLogin(this.value); }); });
   
 
-async function confirmarLiberarBoleta(numero) {
-        if(!confirm(`ATENCIÓN: ¿Seguro que quieres LIBERAR la boleta ${numero}? \n\nSe borrará su historial de pagos, se liberarán transferencias asociadas y podrá ser vendida de nuevo.`)) return;
+async function confirmarLiberarBoleta(numero, totalAbonado) {
+        totalAbonado = totalAbonado || 0;
+        var fmt = function(n) { return new Intl.NumberFormat('es-CO').format(n); };
+
+        if (totalAbonado > 0) {
+            if(!confirm(`🚨 ¡CUIDADO! La boleta ${numero} ya tiene $${fmt(totalAbonado)} abonados.\n\nSi la liberas se PERDERÁ todo el historial de pagos y las transferencias asociadas.\n\n¿Estás SEGURO de que quieres liberarla?`)) return;
+            if(!confirm(`⚠️ SEGUNDA CONFIRMACIÓN\n\nVas a liberar la boleta ${numero} que tiene $${fmt(totalAbonado)} en abonos.\n\nEsta acción NO se puede deshacer. ¿Continuar?`)) return;
+        } else {
+            if(!confirm(`ATENCIÓN: ¿Seguro que quieres LIBERAR la boleta ${numero}?\n\nSe borrará su historial de pagos, se liberarán transferencias asociadas y podrá ser vendida de nuevo.`)) return;
+        }
         
         const btn = document.getElementById('btnRegistrarAbono'); 
         const originalText = btn.textContent;
@@ -1906,11 +1914,11 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
 
     // 6. Subcategorías por categoría
     const SUBCATEGORIAS = {
-        operacionales: ['Publicidad Meta', 'Nómina', 'Plataformas', 'Impuestos', 'Comisiones', 'Arriendo', 'Servicios públicos', 'Transporte', 'Papelería', 'Alimentación', 'Otros'],
+        operacionales: ['Publicidad Meta', 'Nómina', 'Plataformas', 'Impuestos', 'Comisiones', 'Arriendo', 'Servicios públicos', 'Transporte', 'Papelería', 'Alimentación', 'Cursos', 'Otros'],
         rifa_apartamento: ['Adecuación', 'Muebles', 'Pintura', 'Electrodomésticos', 'Acabados', 'Publicidad rifa', 'Premios', 'Devoluciones a Clientes', 'Otros'],
         construccion: ['Materiales', 'Mano de obra', 'Hierro', 'Cemento', 'Acabados', 'Transporte material', 'Otros'],
         rifa_camioneta: ['Publicidad', 'Premios', 'Preparación', 'Otros'],
-        retiro_ganancia: ['Papá', 'Mateo', 'Alejandro'],
+        retiro_ganancia: ['Papá', 'Mateo', 'Alejandro', 'Alejandro y Mateo'],
         pagos_diarias:  ['Rifa de 2 cifras', 'Rifa de 3 cifras']
     };
 
