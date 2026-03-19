@@ -313,6 +313,61 @@
       .chat-input-area button { background: #1b5e20; color: white; border: none; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;}
       .typing-bubble { font-style: italic; color: #64748b; font-size: 11px; margin-top: 2px;}
 
+      /* --- TOUR GUIADO INTERACTIVO --- */
+      .tour-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.72); backdrop-filter: blur(3px);
+        z-index: 1500; transition: opacity 0.4s; pointer-events: auto;
+      }
+      .tour-intro-card {
+        position: fixed; z-index: 1700; top: 50%; left: 50%;
+        transform: translate(-50%, -50%); background: white;
+        border-radius: 24px; padding: 30px 24px; text-align: center;
+        max-width: 340px; width: 88%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        animation: tourIntroIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+      @keyframes tourIntroIn { from { transform: translate(-50%,-50%) translateY(30px); opacity:0; } to { transform: translate(-50%,-50%); opacity:1; } }
+      .tour-tooltip {
+        position: fixed; z-index: 1700;
+        background: white; border-radius: 20px; padding: 22px;
+        max-width: 320px; width: 88%;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        animation: tourTipIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        left: 50%; transform: translateX(-50%);
+      }
+      @keyframes tourTipIn { from { opacity:0; transform: translateX(-50%) translateY(12px) scale(0.95); } to { opacity:1; transform: translateX(-50%) translateY(0) scale(1); } }
+      .tour-tooltip h3 { margin: 0 0 8px 0; font-size: 17px; font-weight: 900; color: #1b5e20; }
+      .tour-tooltip p { margin: 0 0 14px 0; font-size: 13px; color: #475569; line-height: 1.5; }
+      .tour-tooltip p strong { color: #1b5e20; }
+      .tour-step-badge { display: inline-block; font-size: 11px; font-weight: 700; color: #64748b; background: #f1f5f9; padding: 3px 10px; border-radius: 20px; margin-bottom: 10px; }
+      .tour-btn-next { background: #1b5e20; color: white; border: none; padding: 12px 24px; border-radius: 50px; font-weight: 700; font-size: 14px; cursor: pointer; font-family: 'Poppins', sans-serif; box-shadow: 0 4px 12px rgba(27,94,32,0.3); width: 100%; }
+      .tour-btn-next:active { transform: scale(0.95); }
+      .tour-btn-skip { background: none; border: none; color: #94a3b8; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; margin-top: 8px; width: 100%; text-align: center; display: block; }
+      .tour-highlight {
+        position: relative; z-index: 1600 !important;
+        box-shadow: 0 0 0 4px #ff9800, 0 0 30px rgba(255,152,0,0.35) !important;
+        transition: box-shadow 0.4s;
+      }
+      @keyframes tourSimTap {
+        0% { transform: scale(1); }
+        40% { transform: scale(0.88); }
+        100% { transform: scale(1.05); background-color: #ff9800; color: white; border-color: #f57c00; box-shadow: 0 4px 10px rgba(255,152,0,0.3); }
+      }
+      .tour-sim-select { animation: tourSimTap 0.45s forwards !important; }
+      .tour-pulse { animation: tourPulse 1.2s infinite; }
+      @keyframes tourPulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(27,94,32,0.5); }
+        50% { box-shadow: 0 0 0 14px rgba(27,94,32,0); }
+      }
+      .btn-help-float {
+        position: fixed; bottom: 85px; left: 20px; width: 42px; height: 42px;
+        background: linear-gradient(135deg, #1b5e20, #0a3d24); color: white; border-radius: 50%; border: 2px solid white;
+        font-size: 18px; font-weight: 900; cursor: pointer; z-index: 950;
+        box-shadow: 0 4px 15px rgba(27,94,32,0.4); display: flex; align-items: center;
+        justify-content: center; font-family: 'Poppins', sans-serif;
+      }
+      .btn-help-float:active { transform: scale(0.9); }
+
     </style>
   </head>
   <body>
@@ -652,6 +707,20 @@
       </div>
     </div>
 
+    <!-- TOUR GUIADO INTERACTIVO -->
+    <div id="tour-overlay" class="tour-overlay" style="display:none;" onclick="cerrarTour()"></div>
+    <div id="tour-intro" class="tour-intro-card" style="display:none;">
+      <div style="font-size:52px; margin-bottom:12px;">👋</div>
+      <h2 style="margin:0 0 6px 0; font-size:22px; font-weight:900; color:#1b5e20;">¿Primera vez aquí?</h2>
+      <p style="margin:0 0 6px 0; font-size:14px; color:#475569; line-height:1.5;">Te mostramos <strong style="color:#1b5e20;">paso a paso</strong> cómo separar tu boleta en la página.</p>
+      <p style="margin:0 0 20px 0; font-size:13px; color:#94a3b8;">Solo toma 30 segundos</p>
+      <button class="tour-btn-next" onclick="iniciarTour()">¡Mostrame cómo! →</button>
+      <button class="tour-btn-skip" onclick="cerrarTour()">Ya sé cómo funciona</button>
+    </div>
+    <div id="tour-tooltip" class="tour-tooltip" style="display:none;"></div>
+
+    <button class="btn-help-float" onclick="abrirTourIntro()" title="¿Cómo comprar?">?</button>
+
     <script>
       const PRECIO_BOLETA = 20000;
       let numerosSeleccionados = []; 
@@ -662,7 +731,8 @@
         cargarConfigYArrancar();
         iniciarNotificacionesEnVivo();
         observarTarjetaNumeros(); 
-        cargarDatosDesdeVercel(); 
+        cargarDatosDesdeVercel();
+        mostrarTutorialSiNecesario();
       };
 
       async function cargarConfigYArrancar() {
@@ -1045,6 +1115,200 @@
         }).catch(err => {
           alert("Error al copiar. La cuenta es: " + cuenta);
         });
+      }
+
+      /* --- TOUR GUIADO INTERACTIVO --- */
+      let tourPaso = 0;
+
+      function mostrarTutorialSiNecesario() {
+        if (!localStorage.getItem('tour_visto_2cifras')) {
+          setTimeout(abrirTourIntro, 1800);
+        }
+      }
+
+      function abrirTourIntro() {
+        document.getElementById('tour-overlay').style.display = 'block';
+        document.getElementById('tour-intro').style.display = 'block';
+      }
+
+      function cerrarTour() {
+        document.getElementById('tour-overlay').style.display = 'none';
+        document.getElementById('tour-intro').style.display = 'none';
+        document.getElementById('tour-tooltip').style.display = 'none';
+        localStorage.setItem('tour_visto_2cifras', 'true');
+        limpiarTour();
+      }
+
+      function limpiarTour() {
+        document.querySelectorAll('.tour-highlight').forEach(function(el) {
+          el.classList.remove('tour-highlight');
+          el.style.zIndex = '';
+        });
+        document.querySelectorAll('.tour-sim-select').forEach(function(el) { el.classList.remove('tour-sim-select'); });
+        document.querySelectorAll('.tour-pulse').forEach(function(el) { el.classList.remove('tour-pulse'); });
+        var demoBar = document.getElementById('tour-demo-bar');
+        if (demoBar) demoBar.remove();
+        var modal = document.getElementById('modal');
+        modal.style.display = 'none';
+        modal.style.zIndex = '';
+        modal.style.background = '';
+        var modalExito = document.getElementById('modal-exito');
+        modalExito.style.display = 'none';
+        modalExito.style.zIndex = '';
+        modalExito.style.background = '';
+      }
+
+      function iniciarTour() {
+        document.getElementById('tour-intro').style.display = 'none';
+        tourPaso = 0;
+        ejecutarPaso();
+      }
+
+      function ejecutarPaso() {
+        limpiarTour();
+        document.getElementById('tour-overlay').style.display = 'block';
+        document.getElementById('tour-tooltip').style.display = 'none';
+
+        if (tourPaso === 0) pasoNumeros();
+        else if (tourPaso === 1) pasoComprar();
+        else if (tourPaso === 2) pasoDatos();
+        else if (tourPaso === 3) pasoConfirmar();
+        else cerrarTour();
+      }
+
+      function ponerTooltip(html, pos) {
+        var tip = document.getElementById('tour-tooltip');
+        tip.innerHTML = html;
+        tip.style.display = 'block';
+        tip.style.left = '50%';
+        if (pos === 'top') {
+          tip.style.top = '70px'; tip.style.bottom = 'auto';
+          tip.style.transform = 'translateX(-50%)';
+        } else if (pos === 'center') {
+          tip.style.top = '50%'; tip.style.bottom = 'auto';
+          tip.style.transform = 'translate(-50%, -50%)';
+        } else {
+          tip.style.top = 'auto'; tip.style.bottom = '110px';
+          tip.style.transform = 'translateX(-50%)';
+        }
+      }
+
+      function pasoNumeros() {
+        var tarjeta = document.getElementById('tarjeta-numeros');
+        tarjeta.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        setTimeout(function() {
+          tarjeta.classList.add('tour-highlight');
+
+          var disponibles = document.querySelectorAll('.btn-numero.disponible');
+          var demo = [];
+          if (disponibles.length >= 2) {
+            demo.push(disponibles[0]);
+            demo.push(disponibles[Math.floor(disponibles.length / 2)]);
+          } else if (disponibles.length === 1) {
+            demo.push(disponibles[0]);
+          }
+
+          demo.forEach(function(btn, i) {
+            setTimeout(function() { btn.classList.add('tour-sim-select'); }, 500 + (i * 600));
+          });
+
+          setTimeout(function() {
+            ponerTooltip(
+              '<span class="tour-step-badge">Paso 1 de 4</span>' +
+              '<h3>👆 Selecciona tus números</h3>' +
+              '<p>Toca los puestos que quieras jugar. Se ponen <strong style="color:#ff9800">naranjas</strong> al tocarlos.</p>' +
+              '<p>Puedes elegir <strong>hasta 5 boletas</strong> por pedido.</p>' +
+              '<button class="tour-btn-next" onclick="tourPaso=1; ejecutarPaso();">Siguiente →</button>' +
+              '<button class="tour-btn-skip" onclick="cerrarTour()">Saltar tutorial</button>',
+              'top'
+            );
+          }, 500 + (demo.length * 600) + 400);
+        }, 700);
+      }
+
+      function pasoComprar() {
+        var bar = document.createElement('div');
+        bar.id = 'tour-demo-bar';
+        bar.style.cssText = 'position:fixed; bottom:0; left:0; width:100%; background:white; border-top:1px solid #ddd; padding:12px 20px 20px 20px; box-sizing:border-box; display:flex; justify-content:space-between; align-items:center; box-shadow:0 -5px 20px rgba(0,0,0,0.15); z-index:1600; animation: slideUp 0.4s ease;';
+        bar.innerHTML =
+          '<div style="font-size:14px; color:#555;">' +
+            '<span>2 puestos</span>' +
+            '<span style="font-size:20px; font-weight:800; color:#1b5e20; display:block;">$40.000</span>' +
+          '</div>' +
+          '<button class="tour-pulse" style="background-color:#1b5e20; color:white; padding:12px 25px; border:none; border-radius:50px; font-weight:bold; font-size:16px; cursor:default; box-shadow:0 4px 12px rgba(27,94,32,0.3);">Comprar</button>';
+        document.body.appendChild(bar);
+
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+
+        setTimeout(function() {
+          ponerTooltip(
+            '<span class="tour-step-badge">Paso 2 de 4</span>' +
+            '<h3>🛒 Toca "Comprar"</h3>' +
+            '<p>Cuando selecciones tus números, aparece esta barra verde abajo con el total.</p>' +
+            '<p><strong>Toca el botón "Comprar"</strong> para continuar.</p>' +
+            '<button class="tour-btn-next" onclick="tourPaso=2; ejecutarPaso();">Siguiente →</button>' +
+            '<button class="tour-btn-skip" onclick="cerrarTour()">Saltar tutorial</button>',
+            'center'
+          );
+        }, 700);
+      }
+
+      function pasoDatos() {
+        var modal = document.getElementById('modal');
+        modal.style.zIndex = '1600';
+        modal.style.background = 'transparent';
+        document.getElementById('num-modal').innerText = '12, 45';
+        modal.style.display = 'flex';
+
+        var content = document.querySelector('#modal .modal-content');
+        content.classList.add('tour-highlight');
+
+        setTimeout(function() {
+          ponerTooltip(
+            '<span class="tour-step-badge">Paso 3 de 4</span>' +
+            '<h3>📝 Llena tus datos</h3>' +
+            '<p>Escribe tu <strong>nombre, apellido, ciudad</strong> y <strong>celular de WhatsApp</strong>.</p>' +
+            '<p>Todos los campos son obligatorios.</p>' +
+            '<button class="tour-btn-next" onclick="tourPaso=3; ejecutarPaso();">Siguiente →</button>' +
+            '<button class="tour-btn-skip" onclick="cerrarTour()">Saltar tutorial</button>',
+            'top'
+          );
+        }, 500);
+      }
+
+      function pasoConfirmar() {
+        document.getElementById('exito-numeros').textContent = '12  ·  45';
+        document.getElementById('exito-total').textContent = 'Total a pagar: $40.000';
+        document.getElementById('btn-whatsapp-exito').href = '#';
+        document.getElementById('btn-whatsapp-exito').onclick = function(e) { e.preventDefault(); };
+
+        var modalExito = document.getElementById('modal-exito');
+        modalExito.style.zIndex = '1600';
+        modalExito.style.background = 'transparent';
+        modalExito.style.display = 'flex';
+
+        var exitoContent = modalExito.querySelector('.modal-content');
+        if (exitoContent) {
+          exitoContent.classList.add('tour-highlight');
+        }
+
+        setTimeout(function() {
+          ponerTooltip(
+            '<span class="tour-step-badge">Paso 4 de 4</span>' +
+            '<h3>✅ ¡Esta es la pantalla final!</h3>' +
+            '<p>Cuando completes <strong>todos los pasos anteriores</strong>, te va a aparecer esta pantalla con tus boletas separadas.</p>' +
+            '<p><strong>Solo cuando llegues aquí tu boleta queda reservada.</strong></p>' +
+            '<div style="background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:12px; padding:10px 14px; margin-bottom:12px;">' +
+              '<p style="margin:0; font-size:12px; font-weight:700; color:#166534; line-height:1.5;">Desde ahí podrás:<br>💳 Ver la cuenta de Bancolombia<br>📱 Enviar el comprobante por WhatsApp</p>' +
+            '</div>' +
+            '<div style="background:#fff7ed; border:1.5px solid #fed7aa; border-radius:10px; padding:8px 12px; margin-bottom:14px;">' +
+              '<p style="margin:0; font-size:11px; font-weight:700; color:#c2410c;">⚠️ Recuerda: boleta sin pagar NO juega</p>' +
+            '</div>' +
+            '<button class="tour-btn-next" onclick="cerrarTour()">¡Entendido, voy a comprar! ✓</button>',
+            'top'
+          );
+        }, 600);
       }
     </script>
   </body>
