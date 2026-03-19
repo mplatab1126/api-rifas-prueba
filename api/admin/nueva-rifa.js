@@ -28,7 +28,7 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  const { accion, tipo, contrasena, fechaSorteo, horaCierre, loteria, ganadores, totalPagadoGanadores } = req.body;
+  const { accion, tipo, contrasena, fechaSorteo, horaCierre, loteria, ganadores, totalPagadoGanadores, modoPremio } = req.body;
 
   // ─────────────────────────────────────────────────────────────────────
   // POST obtener_historial — historial de rifas por tipo
@@ -155,13 +155,17 @@ export default async function handler(req, res) {
 
       // 4. ─── Guardar nueva configuración del sorteo ───────────────────
       await supabase.from('config_rifa_diaria').delete().eq('tipo', tipo);
-      const { error: configError } = await supabase.from('config_rifa_diaria').insert({
+      const configPayload = {
         tipo,
         fecha_sorteo: fechaSorteo,
         hora_cierre:  horaCierre,
         loteria,
         updated_at:   new Date().toISOString()
-      });
+      };
+      if (tipo === '3cifras' && modoPremio) {
+        configPayload.modo_premio = modoPremio;
+      }
+      const { error: configError } = await supabase.from('config_rifa_diaria').insert(configPayload);
       if (configError) throw configError;
 
       return res.status(200).json({

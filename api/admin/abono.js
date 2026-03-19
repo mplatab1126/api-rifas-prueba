@@ -10,8 +10,6 @@ export default async function handler(req, res) {
 
   const { numeroBoleta, valorAbono, metodoPago, referencia, contrasena, esPendiente, idTransferencia, esPagoInteligente } = req.body;
 
-  console.log(`[ABONO DEBUG] boleta=${numeroBoleta} | esPagoInteligente=${esPagoInteligente} (tipo: ${typeof esPagoInteligente}) | idTransferencia="${idTransferencia}" | origen resultante: ${(esPagoInteligente || (idTransferencia && idTransferencia.trim() !== '')) ? 'pago_inteligente' : 'manual'}`);
-
   const ASESORES_INDEPENDIENTES = ['alejandra plata', 'joaquín', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
   const esIndependiente = (nombre) => nombre && ASESORES_INDEPENDIENTES.some(ind => nombre.toLowerCase().includes(ind));
 
@@ -139,7 +137,7 @@ export default async function handler(req, res) {
         es_pendiente: !!esPendiente,
         asesor: nombreAsesor,
         tipo: tipoBoleta,
-        origen: (esPagoInteligente || (idTransferencia && idTransferencia.trim() !== '')) ? 'pago_inteligente' : 'manual'
+        origen: (esPagoInteligente || (idTransferencia && idTransferencia.trim() !== '')) ? 'transferencia_real' : 'manual'
       });
     if (insertError) throw insertError;
     

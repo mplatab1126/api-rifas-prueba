@@ -531,6 +531,13 @@
             <label style="font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 6px;">🎱 ¿Con qué lotería juega?</label>
             <input type="text" id="nrLoteria" class="field-input" placeholder="Ej: CHONTICO DÍA, MARDE BOGOTÁ..." style="width:100%; box-sizing:border-box; text-transform: uppercase;">
           </div>
+          <div id="nrModoWrapper" style="display:none;">
+            <label style="font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 6px;">🎁 ¿Qué se premia en esta rifa?</label>
+            <select id="nrModoPremio" class="field-input" style="width:100%; box-sizing:border-box;">
+              <option value="boletas">🏢 Boletas del Apartamento (15 boletas)</option>
+              <option value="dinero">💰 Dinero en efectivo ($800.000 x premio)</option>
+            </select>
+          </div>
           <div style="border-top: 1px dashed var(--ring-strong); padding-top: 14px; margin-top: 4px;">
             <p style="font-size: 0.8rem; font-weight: 800; color: var(--ink-2); text-transform: uppercase; margin: 0 0 12px 0;">📊 Resultados de la rifa que termina</p>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -560,6 +567,7 @@
           <div>🎱 Lotería: <strong id="nrResumenLoteria">—</strong></div>
           <div>🏆 Ganadores rifa anterior: <strong id="nrResumenGanadores">—</strong></div>
           <div>💸 Total pagado a ganadores: <strong id="nrResumenPagado">—</strong></div>
+          <div id="nrResumenModoRow" style="display:none;">🎁 Modo de premio: <strong id="nrResumenModo">—</strong></div>
         </div>
         <p style="font-size: 0.9rem; color: #b91c1c; font-weight: 700; margin-bottom: 20px;">¿Confirmas que el sorteo anterior ya jugó y quieres reiniciar la rifa?</p>
         <div style="display: flex; gap: 10px;">
@@ -1447,6 +1455,7 @@
       document.getElementById('nrPaso2').style.display = 'none';
       document.getElementById('nrMsg').textContent = '';
       document.getElementById('nrRifaLabel').textContent = `Rifa: ${LABELS_RIFA[tipoRifaActual]?.badge || tipoRifaActual}`;
+      document.getElementById('nrModoWrapper').style.display = tipoRifaActual === '3cifras' ? 'block' : 'none';
       document.getElementById('modalNuevaRifa').style.display = 'flex';
     }
 
@@ -1464,6 +1473,15 @@
       document.getElementById('nrResumenLoteria').textContent   = loteria;
       document.getElementById('nrResumenGanadores').textContent = ganadores || '0';
       document.getElementById('nrResumenPagado').textContent    = fmtCOP(pagado);
+
+      if (tipoRifaActual === '3cifras') {
+        const modoPremio = document.getElementById('nrModoPremio').value;
+        document.getElementById('nrResumenModo').textContent = modoPremio === 'boletas' ? '🏢 Boletas del Apartamento' : '💰 Dinero en efectivo';
+        document.getElementById('nrResumenModoRow').style.display = 'block';
+      } else {
+        document.getElementById('nrResumenModoRow').style.display = 'none';
+      }
+
       document.getElementById('nrPaso1').style.display = 'none';
       document.getElementById('nrPaso2').style.display = 'block';
     }
@@ -1497,7 +1515,8 @@
             horaCierre:          hora,
             loteria,
             ganadores,
-            totalPagadoGanadores: pagado
+            totalPagadoGanadores: pagado,
+            modoPremio:          tipoRifaActual === '3cifras' ? document.getElementById('nrModoPremio').value : undefined
           })
         });
         const res = await req.json();

@@ -219,7 +219,7 @@ const $ = id => document.getElementById(id);
         if (paySection && paySection.style.display !== 'none') {
             e.preventDefault();
             handleOCR(e, 'ocrStatus', 'v_idTransferencia', 'v_referenciaAbono', 'v_primerAbono', 'v_metodoPago', 'feedbackTransfer');
-        } else if (abonoSection && abonoSection.style.display !== 'none') {
+        } else if (abonoSection && abonoSection.style.display !== 'none' && modoAbonoPago === 'inteligente') {
             e.preventDefault();
             handleOCR(e, 'ocrStatusAbono', 'a_idTransferencia', 'a_ref', 'a_monto', 'a_metodo', 'feedbackTransferAbono');
         }
@@ -454,6 +454,13 @@ const $ = id => document.getElementById(id);
         refInput.value = refVal; montoInput.value = montoVal; metodoInput.value = metodoVal;
         refInput.readOnly = true; montoInput.readOnly = true; metodoInput.readOnly = true;
         refInput.style.backgroundColor = "var(--pill)"; montoInput.style.backgroundColor = "var(--pill)"; metodoInput.style.backgroundColor = "var(--pill)";
+
+        if (targetIdTransferencia === 'a_idTransferencia') {
+            var card = document.getElementById('cardDetalleAbono');
+            if (card) card.style.display = 'block';
+            var campos = document.getElementById('camposPagoInteligente');
+            if (campos) campos.style.display = 'block';
+        }
         
         // Creamos el mensaje con el botón de la foto si existe
         let htmlFeedback = '<span style="color:var(--accent-2); font-weight:600; font-size: 0.9rem;">✅ Pago enlazado y asegurado. </span>';
@@ -475,6 +482,13 @@ const $ = id => document.getElementById(id);
         refInput.value = ""; montoInput.value = ""; metodoInput.value = "";
         refInput.style.backgroundColor = "transparent"; montoInput.style.backgroundColor = "transparent"; metodoInput.style.backgroundColor = "transparent";
         if(feedbackId) document.getElementById(feedbackId).innerHTML = '';
+
+        if (targetIdTransferencia === 'a_idTransferencia') {
+            var card = document.getElementById('cardDetalleAbono');
+            if (card) card.style.display = 'none';
+            var campos = document.getElementById('camposPagoInteligente');
+            if (campos) campos.style.display = 'none';
+        }
     }
 
     async function buscarTransferenciasUI(btnId, fechaId, horaId, montoIdFiltro, refIdFiltro, plataformaIdFiltro, estadoIdFiltro, feedbackId, targetRefId, targetMontoId, targetMetodoId) {
@@ -810,8 +824,9 @@ $('btnRegistrarVenta').onclick = async ()=>{
         const boletasTarget = Array.from(checkboxes).map(c => c.value);
         if(boletasTarget.length === 0) return alert("Selecciona al menos una boleta.");
 
-        const ref = document.getElementById('a_ref').value;
-        const metodo = document.getElementById('a_metodo').value;
+        const esEfectivo = modoAbonoPago === 'efectivo';
+        const ref = esEfectivo ? 'efectivo' : document.getElementById('a_ref').value;
+        const metodo = esEfectivo ? 'Efectivo' : document.getElementById('a_metodo').value;
 
         // Construir mapa de montos según el modo
         let montosPorBoleta = {};
@@ -842,14 +857,14 @@ $('btnRegistrarVenta').onclick = async ()=>{
 
         const textoOriginal = btn.textContent; btn.textContent = 'Procesando...'; btn.disabled = true;
 
-        const idTransOriginal = document.getElementById('a_idTransferencia').value;
+        const idTransOriginal = esEfectivo ? '' : document.getElementById('a_idTransferencia').value;
         const basePayload = {
             metodoPago: metodo,
             referencia: ref || 'efectivo',
-            esPendiente: esAbonoPendiente,
+            esPendiente: esEfectivo ? false : esAbonoPendiente,
             contrasena: localStorage.getItem(STORAGE_KEY),
             idTransferencia: idTransOriginal,
-            esPagoInteligente: !!(idTransOriginal && idTransOriginal.trim() !== '')
+            esPagoInteligente: !esEfectivo && !!(idTransOriginal && idTransOriginal.trim() !== '')
         };
 
         let ok = 0; let fails = 0;
@@ -892,6 +907,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
             document.getElementById('t_fecha_abono').value='';
             document.getElementById('t_hora_abono').value='';
             if(document.getElementById('ocrStatusAbono')) document.getElementById('ocrStatusAbono').textContent='';
+            modoAbonoPago = 'inteligente';
 
             desbloquearCampos('a_ref', 'a_monto', 'a_metodo', 'feedbackTransferAbono');
             activateHeroMode(); 
@@ -998,6 +1014,30 @@ $('btnRegistrarVenta').onclick = async ()=>{
     }
 
     let modoDistribucionAbono = 'uniforme'; // 'uniforme' | 'manual'
+    let modoAbonoPago = 'inteligente'; // 'inteligente' | 'efectivo'
+
+    function setModoAbonoPago(modo) {
+        modoAbonoPago = modo;
+        document.getElementById('btnModoInteligente').classList.toggle('active', modo === 'inteligente');
+        document.getElementById('btnModoEfectivo').classList.toggle('active', modo === 'efectivo');
+        document.getElementById('seccionPagoInteligente').style.display = modo === 'inteligente' ? 'block' : 'none';
+
+        var card = document.getElementById('cardDetalleAbono');
+        if (modo === 'efectivo') {
+            if (card) card.style.display = 'block';
+            document.getElementById('camposPagoInteligente').style.display = 'none';
+            document.getElementById('a_metodo').value = 'Efectivo';
+            document.getElementById('a_ref').value = 'efectivo';
+            document.getElementById('a_idTransferencia').value = '';
+            esAbonoPendiente = false;
+        } else {
+            if (card) card.style.display = 'none';
+            document.getElementById('camposPagoInteligente').style.display = 'none';
+            document.getElementById('a_metodo').value = '';
+            document.getElementById('a_ref').value = '';
+            document.getElementById('a_idTransferencia').value = '';
+        }
+    }
 
     function setModoAbono(modo) {
         modoDistribucionAbono = modo;
@@ -1069,7 +1109,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
         if (checkboxes.length > 0) {
             const yaVisible = zonaPagos.style.display === 'block';
             zonaPagos.style.display = 'block';
-            if (!yaVisible) { resetOcrZone('ocrDropAbono', 'ocrStatusAbono'); modoDistribucionAbono = 'uniforme'; }
+            if (!yaVisible) { resetOcrZone('ocrDropAbono', 'ocrStatusAbono'); modoDistribucionAbono = 'uniforme'; setModoAbonoPago('inteligente'); }
 
             const esMultiple = checkboxes.length > 1;
             if (toggleModo) toggleModo.style.display = esMultiple ? 'block' : 'none';

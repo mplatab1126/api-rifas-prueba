@@ -279,13 +279,58 @@
       </div>
 
       <div class="hero-title-area">
-        <h1 style="font-size: 32px;">RIFA DE 3 CIFRAS</h1>
+        <h1 style="font-size: 32px;" data-modo="boletas">RIFA DE BOLETAS</h1>
+        <h1 style="font-size: 32px;" data-modo="dinero">RIFA DE 3 CIFRAS</h1>
         <div class="info-sorteo-container">
           <div id="badge-sorteo-info" class="badge-sorteo">📅 Cargando info del sorteo...</div>
         </div>
       </div>
 
-      <div class="stats-unified-strip">
+      <!-- === MODO BOLETAS (boletas del apartamento) === -->
+      <div class="stats-unified-strip" data-modo="boletas">
+        <div class="stat-block">
+          <span class="stat-label">🎟️ CADA BOLETA</span>
+          <span class="stat-value">$5.000</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-block highlight">
+          <span class="stat-label">🏢 Premio Mayor</span>
+          <span class="stat-value">Boletas (Apto)</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-block">
+          <span class="stat-label">🏆 Total Boletas</span>
+          <span class="stat-value">15</span>
+        </div>
+      </div>
+
+      <div class="promo-apto-card" data-modo="boletas">
+        <div class="promo-apto-img-wrapper">
+          <img src="https://losplata.s3.us-east-2.amazonaws.com/sala+2+h.png" alt="Apartamento Amoblado" class="promo-apto-img">
+          <div class="promo-apto-badge">¡El Apartamento de tus sueños!</div>
+        </div>
+        <div class="promo-apto-content">
+          <h3 class="promo-apto-title">¿QUÉ GANAS CON ESTAS BOLETAS?</h3>
+          <p class="promo-apto-desc">Si te ganas las boletas oficiales quedarás participando automáticamente por todos estos increíbles premios:</p>
+          <div class="promo-apto-benefits">
+            <div class="benefit-item">
+              <span class="benefit-icon">💰</span>
+              <span>Acumulado de 35 MILLONES (Este fin de semana)</span>
+            </div>
+            <div class="benefit-item">
+              <span class="benefit-icon">💵</span>
+              <span>5 Millones en efectivo (Cada fin de semana)</span>
+            </div>
+            <div class="benefit-item">
+              <span class="benefit-icon">🏢</span>
+              <span>El Apartamento Amoblado (Gran Sorteo 4 de Abril)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- === MODO DINERO (premios en efectivo) === -->
+      <div class="stats-unified-strip" data-modo="dinero">
         <div class="stat-block">
           <span class="stat-label">🎟️ CADA BOLETA</span>
           <span class="stat-value">$5.000</span>
@@ -303,7 +348,8 @@
       </div>
 
       <div class="dinamica-section">
-        <h3 class="section-title-elegant">💡 ¿Cómo se reparten los Premios?</h3>
+        <h3 class="section-title-elegant" data-modo="boletas">💡 ¿Cómo se reparten las Boletas?</h3>
+        <h3 class="section-title-elegant" data-modo="dinero">💡 ¿Cómo se reparten los Premios?</h3>
         <p class="section-subtitle-elegant">Ejemplo: Si cae el número <strong>15284</strong></p>
         
         <div class="balotas-labeled-container">
@@ -324,7 +370,27 @@
             </div>
         </div>
 
-        <div class="premios-dinamica">
+        <!-- Premios modo boletas -->
+        <div class="premios-dinamica" data-modo="boletas">
+          <div class="premio-fila">
+            <div class="premio-badge bg-badge-1">152</div>
+            <div class="premio-detalle">Primeras 3 cifras</div>
+            <div class="premio-valor" style="color:#1b5e20; font-size:14px;">5 Boletas (Apto)</div>
+          </div>
+          <div class="premio-fila">
+            <div class="premio-badge bg-badge-2">528</div>
+            <div class="premio-detalle">3 del medio</div>
+            <div class="premio-valor" style="color:#1b5e20; font-size:14px;">5 Boletas (Apto)</div>
+          </div>
+          <div class="premio-fila">
+            <div class="premio-badge bg-badge-3">284</div>
+            <div class="premio-detalle">Últimas 3 cifras</div>
+            <div class="premio-valor" style="color:#1b5e20; font-size:14px;">5 Boletas (Apto)</div>
+          </div>
+        </div>
+
+        <!-- Premios modo dinero -->
+        <div class="premios-dinamica" data-modo="dinero">
           <div class="premio-fila">
             <div class="premio-badge bg-badge-1">152</div>
             <div class="premio-detalle">Primeras 3 cifras</div>
@@ -575,17 +641,26 @@
     </div>
 
     <script>
+      let MODO_PREMIO = 'boletas';
+
       const PRECIO_BOLETA = 5000;
       let numerosSeleccionados = []; 
 
-      let horaCierreSorteo = { h: 11, m: 0 }; // Fallback por defecto
+      let horaCierreSorteo = { h: 11, m: 0 };
 
       window.onload = function() {
+        aplicarModo();
         cargarConfigYArrancar();
         iniciarNotificacionesEnVivo();
         observarTarjetaNumeros();
         cargarDatosDesdeVercel();
       };
+
+      function aplicarModo() {
+        document.querySelectorAll('[data-modo]').forEach(el => {
+          el.style.display = el.dataset.modo === MODO_PREMIO ? '' : 'none';
+        });
+      }
 
       async function cargarConfigYArrancar() {
         try {
@@ -594,16 +669,19 @@
           if (data.status === 'ok' && data.config) {
             const cfg = data.config;
 
-            // Actualizar badge del sorteo
             const badge = document.getElementById('badge-sorteo-info');
             if (cfg.fecha_sorteo && cfg.loteria) {
               badge.textContent = `📅 JUEGA EL ${cfg.fecha_sorteo} CON ${cfg.loteria}`;
             }
 
-            // Parsear hora de cierre para el temporizador
             if (cfg.hora_cierre) {
               const partes = cfg.hora_cierre.split(':');
               horaCierreSorteo = { h: parseInt(partes[0]) || 11, m: parseInt(partes[1]) || 0 };
+            }
+
+            if (cfg.modo_premio) {
+              MODO_PREMIO = cfg.modo_premio;
+              aplicarModo();
             }
           } else {
             document.getElementById('badge-sorteo-info').textContent = '📅 SORTEO PRÓXIMAMENTE';
