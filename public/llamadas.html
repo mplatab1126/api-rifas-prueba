@@ -170,6 +170,18 @@
         <span class="mega-kpi-sub">En boletas grandes</span>
       </div>
     </div>
+    <div class="mega-kpi-grid" style="margin-top:0;">
+      <div class="mega-kpi kpi-red">
+        <div class="mega-kpi-title">Gasto Twilio</div>
+        <div class="mega-kpi-value" id="kpiGastoTwilio">—</div>
+        <span class="mega-kpi-sub">Últimas 200 llamadas (USD)</span>
+      </div>
+      <div class="mega-kpi" style="background:linear-gradient(135deg,#f0f9ff,#fff); border-color:#bae6fd;">
+        <div class="mega-kpi-title" style="color:#0c4a6e;">ElevenLabs</div>
+        <div class="mega-kpi-value" style="color:#0369a1; font-size:1.4rem;" id="kpiElevenlabs">—</div>
+        <span class="mega-kpi-sub" id="kpiElevenlabsSub">Caracteres usados</span>
+      </div>
+    </div>
 
     <!-- RESCATE WHATSAPP -->
     <div class="saas-divider">Rescate WhatsApp</div>
@@ -328,6 +340,7 @@
               <th>Saldo</th>
               <th>Estado</th>
               <th>Duración</th>
+              <th>Costo</th>
               <th>Grabación</th>
               <th>Lanzada por</th>
             </tr>
@@ -427,12 +440,27 @@
       setTimeout(() => { b.style.display = 'none'; }, 8000);
     }
 
-    // ── DASHBOARD: carga KPIs + historial ──
+    let costosData = {};
+
+    // ── DASHBOARD: carga KPIs + historial + costos ──
     async function cargarDashboard() {
-      const [previewRes, histRes] = await Promise.all([
+      const [previewRes, histRes, costosRes] = await Promise.all([
         apiCall('preview'),
-        apiCall('historial')
+        apiCall('historial'),
+        apiCall('costos')
       ]);
+
+      if (costosRes.status === 'ok') {
+        costosData = costosRes.precios_por_sid || {};
+        document.getElementById('kpiGastoTwilio').textContent = '$' + costosRes.total_twilio_usd.toFixed(2);
+        if (costosRes.elevenlabs) {
+          const el = costosRes.elevenlabs;
+          const pct = Math.round((el.caracteres_usados / el.caracteres_limite) * 100);
+          document.getElementById('kpiElevenlabs').textContent = `${el.caracteres_usados.toLocaleString()} / ${el.caracteres_limite.toLocaleString()}`;
+          const renovacion = el.renovacion ? new Date(el.renovacion * 1000).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' }) : '';
+          document.getElementById('kpiElevenlabsSub').textContent = `${pct}% usado — Plan ${el.plan} — Renueva ${renovacion}`;
+        }
+      }
 
       if (previewRes.status === 'ok') {
         document.getElementById('kpiClientesSaldo').textContent = previewRes.total_clientes;
@@ -512,6 +540,11 @@
           grabacionHTML = '<span style="font-size:0.78rem; color:var(--muted);">Procesando...</span>';
         }
 
+        const costoInfo = costosData[l.sid];
+        const costoHTML = costoInfo && costoInfo.precio
+          ? `<span style="font-weight:700; color:#b91c1c;">$${costoInfo.precio.toFixed(3)}</span>`
+          : '<span style="color:var(--muted);">—</span>';
+
         return `<tr>
           <td style="white-space:nowrap">${fechaStr}</td>
           <td style="font-weight:800">${l.nombre_cliente || '—'}</td>
@@ -520,6 +553,7 @@
           <td style="font-weight:700">${l.saldo ? formatMoney(l.saldo) : '—'}</td>
           <td>${estadoBadge(l.estado)}</td>
           <td>${formatDuracion(l.duracion)}</td>
+          <td>${costoHTML}</td>
           <td>${grabacionHTML}</td>
           <td>${l.lanzada_por || '—'}</td>
         </tr>`;

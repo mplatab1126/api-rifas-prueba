@@ -215,6 +215,54 @@ export default async function handler(req, res) {
     }
   }
 
+  // ── COSTOS: trae precios de Twilio y uso de ElevenLabs ──
+  if (accion === 'costos') {
+    try {
+      const twilioSid = process.env.TWILIO_ACCOUNT_SID;
+      const twilioToken = process.env.TWILIO_AUTH_TOKEN;
+      const auth = Buffer.from(`${twilioSid}:${twilioToken}`).toString('base64');
+
+      const twResp = await fetch(
+        `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Calls.json?PageSize=200`,
+        { headers: { 'Authorization': `Basic ${auth}` } }
+      ).then(r => r.json());
+
+      const preciosPorSid = {};
+      let totalTwilio = 0;
+      for (const c of (twResp.calls || [])) {
+        const precio = c.price ? Math.abs(parseFloat(c.price)) : null;
+        preciosPorSid[c.sid] = { precio, moneda: c.price_unit || 'USD' };
+        if (precio) totalTwilio += precio;
+      }
+
+      let elevenlabs = null;
+      const elKey = process.env.ELEVENLABS_API_KEY;
+      if (elKey) {
+        try {
+          const elResp = await fetch('https://api.elevenlabs.io/v1/user', {
+            headers: { 'xi-api-key': elKey }
+          }).then(r => r.json());
+          const sub = elResp.subscription || {};
+          elevenlabs = {
+            plan: sub.tier || '',
+            caracteres_usados: sub.character_count || 0,
+            caracteres_limite: sub.character_limit || 0,
+            renovacion: sub.next_character_count_reset_unix || 0
+          };
+        } catch (_) {}
+      }
+
+      return res.status(200).json({
+        status: 'ok',
+        precios_por_sid: preciosPorSid,
+        total_twilio_usd: Math.round(totalTwilio * 1000) / 1000,
+        elevenlabs
+      });
+    } catch (error) {
+      return res.status(500).json({ status: 'error', mensaje: error.message });
+    }
+  }
+
   // ── TEST: llamada de prueba a un número específico ──
   if (accion === 'test') {
     try {
