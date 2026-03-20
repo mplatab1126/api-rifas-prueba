@@ -124,7 +124,7 @@ const $ = id => document.getElementById(id);
         else { tag.textContent=''; }
       }
       inp.oninput = function() { actualizarTag(); actualizarBotonPremioVenta(); };
-      if (value) actualizarTag();
+      if (value) { actualizarTag(); setTimeout(actualizarBotonPremioVenta, 0); }
 
       const del = document.createElement('button'); del.className='chip-del'; del.textContent='✕';
       del.onclick = ()=>{ wrap.remove(); if(!numList.children.length) addDefaultPill(); actualizarBotonPremioVenta(); };
@@ -278,6 +278,7 @@ const $ = id => document.getElementById(id);
             if(lines.length>3) {
                 const nums = lines[3].split(',').map(n=>n.replace(/\D+/g,'')).filter(n=>n);
                 numList.innerHTML=''; nums.forEach(n=>numList.appendChild(makeNumPill(n))); if(!nums.length) addDefaultPill();
+                actualizarBotonPremioVenta();
             }
             if(lines.length>4) $('v_telefono').value = lines[4];
             showModal('Pegado Mágico', 'Datos distribuidos correctamente.'); smartInput.value = '';
@@ -801,7 +802,7 @@ const $ = id => document.getElementById(id);
         feedback.textContent = "";
         if(res.tipo === 'ERROR_SERVIDOR') return showModal('Error', res.mensaje);
         if(res.tipo !== 'NO_EXISTE') activateAppMode();
-        if(res.tipo==='BOLETA_DISPONIBLE'){ switchView('view-venta'); numList.innerHTML=''; numList.appendChild(makeNumPill(res.data.numero)); $('v_nombre').focus(); } 
+        if(res.tipo==='BOLETA_DISPONIBLE'){ switchView('view-venta'); numList.innerHTML=''; numList.appendChild(makeNumPill(res.data.numero)); actualizarBotonPremioVenta(); $('v_nombre').focus(); } 
         else if(res.tipo==='BOLETA_OCUPADA'){ switchView('view-cliente'); renderClienteInfo([res.data.infoVenta]); } 
         else if(res.tipo==='CLIENTE_ENCONTRADO'){ switchView('view-cliente'); renderClienteInfo(res.lista); } 
         else if(res.tipo==='CLIENTE_SIN_BOLETAS') {
