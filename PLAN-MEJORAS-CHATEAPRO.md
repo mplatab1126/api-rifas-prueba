@@ -58,30 +58,27 @@ Fecha: 18 de marzo de 2026
 ---
 
 ### 3. Cerrar conversaciones automáticamente
-- **Estado**: 🔲 Pendiente
-- **Problema**: 48,620 conversaciones abiertas y 0 cerradas ayer. La bandeja de asesores está saturada.
-- **Solución**: Crear un cron job (tarea automática que corre cada día) que use la API de ChateaPro para cerrar conversaciones donde:
-  - El cliente no ha respondido en 7+ días
-  - La conversación está en estado "open" sin agente asignado
-- **Impacto**: Bandeja limpia → asesores más rápidos → mejor tiempo de respuesta.
+- **Estado**: ⏭️ Saltado (19 marzo 2026)
+- **Problema original**: 48,620 conversaciones abiertas y 0 cerradas ayer.
+- **Por qué se saltó**: Los asesores usan el filtro "Sin respuesta" de ChateaPro para ver solo las conversaciones que necesitan atención. Las conversaciones abiertas antiguas no les estorban en el día a día. El impacto real de cerrarlas sería mínimo para el flujo de trabajo actual.
+- **Se puede retomar si**: La plataforma de ChateaPro empieza a ir lenta por la cantidad de conversaciones, o si se necesitan métricas de "conversaciones resueltas por asesor".
 
 ---
 
 ## NIVEL 2 — Mejoras de alto impacto
 
 ### 4. Dashboard de embudo de ventas (funnel)
-- **Estado**: 🔲 Pendiente
+- **Estado**: ✅ COMPLETADO (19 marzo 2026)
 - **Problema**: Existen tags de conversión (ViewContent → LeadSubmitted → QualifiedLead → AddToCart → InitiateCheckout → Purchase) pero no se visualizan.
-- **Solución**: Agregar en rendimiento.html un embudo visual que muestre cuántas personas hay en cada paso. Ejemplo:
-  ```
-  ViewContent:       1,000 personas
-  LeadSubmitted:       400 (40% conversión)
-  QualifiedLead:       250 (63% conversión)
-  AddToCart:           200 (80% conversión)  ← separaron boleta
-  InitiateCheckout:    100 (50% conversión)  ← iniciaron pago
-  Purchase:             50 (50% conversión)  ← pagaron
-  ```
-- **Impacto**: Saber EXACTAMENTE dónde se pierden los clientes y arreglar ese paso.
+- **Lo que se construyó**:
+  - Nueva sección "🔻 Embudo de Ventas" en `rendimiento.html` (sección 5, entre Difusiones WhatsApp e IA)
+  - Acción `funnel` en `api/admin/rescate-whatsapp.js` que consulta ChateaPro en tiempo real
+  - Busca automáticamente los tags de conversión ([Rifa 1] ViewContent, LeadSubmitted, etc.) en ambas líneas
+  - Cuenta suscriptores por etapa y calcula conversión entre pasos
+  - KPIs: entrada total, compras totales, % conversión global, mayor punto de caída
+  - Embudo visual con barras de colores proporcionales al volumen de cada etapa
+  - Entre cada etapa muestra cuántas personas se pierden y qué % representa
+  - Botón "Cargar Embudo" bajo demanda (consulta ChateaPro en vivo)
 
 ---
 
@@ -143,13 +140,35 @@ Fecha: 18 de marzo de 2026
 |---|---|---|---|
 | 1 | Rescate con Twilio cuando Meta bloquea | ✅ Hecho | Dinero inmediato que se estaba perdiendo |
 | 2 | Alerta de plantillas bloqueadas | ✅ Hecho | Sección en rendimiento.html con % éxito/fallo por difusión |
-| 3 | Cerrar conversaciones automáticamente | 🔲 Siguiente | Desbloquea la bandeja de asesores |
-| 4 | Dashboard de embudo de ventas | 🔲 | Saber dónde se pierden los clientes |
+| 3 | Cerrar conversaciones automáticamente | ⏭️ Saltado | Asesores usan "Sin respuesta", no les estorba |
+| 4 | Dashboard de embudo de ventas | ✅ Hecho | Embudo visual con % de conversión por etapa |
 | 5 | Despertar clientes dormidos | 🔲 | Base enorme de 48,000+ sin explotar |
 | 6 | Monitoreo de calidad de asesores | 🔲 | Reducir tiempo de respuesta |
 | 7 | Actualizar bot desde Supabase | 🔲 | Eliminar errores manuales |
 | 8 | Análisis de conversaciones con IA | 🔲 | Optimizar flujos con datos |
 | 9 | Score de probabilidad de pago | 🔲 | Máxima eficiencia de cobro |
+
+---
+
+## Fixes adicionales (19 marzo 2026)
+
+### Fix: Llamadas de Twilio quedaban "En curso" para siempre
+- **Problema**: Las llamadas realizadas desde el Centro de Llamadas nunca actualizaban su estado. Aunque la llamada ya hubiera terminado, seguían apareciendo como "En curso" en el historial.
+- **Causa**: Twilio envía un aviso automático (webhook) cuando la llamada termina, pero si el servidor no lo recibe (por ejemplo, en localhost o por timeout), el estado nunca se actualiza. Y el botón "Actualizar estados" solo recargaba datos de la base de datos sin consultar a Twilio.
+- **Lo que se arregló**:
+  - Nueva acción `sync-estados` en `api/admin/difusion-llamadas.js` que consulta directamente la API de Twilio por cada llamada pendiente y actualiza su estado real (completada, sin respuesta, fallida, etc.)
+  - El botón "Actualizar estados" en `llamadas.html` ahora primero sincroniza con Twilio y después recarga la tabla
+  - Muestra un aviso verde indicando cuántas llamadas se actualizaron
+
+### Fix: Página admin.html se veía difuminada al entrar
+- **Problema**: Al entrar a `admin.html` ya logueado, la página se veía con el contenido deslavado/invisible.
+- **Causa**: Un script en el `<head>` escondía el fondo verde (`#heroBg{opacity:0!important}`) cuando el usuario ya tenía sesión guardada. Esto dejaba textos blancos sobre fondo claro = invisibles.
+- **Lo que se arregló**: Se quitó la regla que escondía el fondo verde. Ahora el fondo se mantiene visible y todo se ve correctamente.
+
+### Fix: Botones de selección de rifa en rendimiento.html no funcionaban
+- **Problema**: Al hacer clic en "El Apartamento", "Rifas 2 Cifras" o "Rifas 3 Cifras", no pasaba nada.
+- **Causa**: Un script previo forzaba el selector a estar siempre visible con `#selectorRifa{display:flex!important}`. Cuando el código intentaba esconderlo al hacer clic, el `!important` lo volvía a mostrar instantáneamente.
+- **Lo que se arregló**: Se quitó la regla `!important` del script en el `<head>`. Ahora el JavaScript controla el selector normalmente.
 
 ---
 

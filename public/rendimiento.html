@@ -7,7 +7,7 @@
   <title>BI Dashboard PRO - Los Plata</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="shared-nav.css">
-  <script>if(localStorage.getItem('asesor_pwd')&&localStorage.getItem('asesor_nombre')){document.documentElement.classList.add('snav-authed');document.write('<style>.snav-authed #selectorRifa{display:flex!important}</style>')}</script>
+  <script>if(localStorage.getItem('asesor_pwd')&&localStorage.getItem('asesor_nombre')){document.documentElement.classList.add('snav-authed')}</script>
   <style>
     /* ========================================================= */
     /* VARIABLES DE DISEÑO PREMIUM (SaaS)                        */
@@ -534,7 +534,48 @@
         </div>
     </div>
 
-    <div class="saas-divider"><span>🧠 5. INTELIGENCIA ARTIFICIAL GERENCIAL</span></div>
+    <!-- =============== EMBUDO DE VENTAS =============== -->
+    <div class="saas-divider"><span>🔻 5. EMBUDO DE VENTAS</span></div>
+
+    <div class="row">
+        <div class="col-100" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+            <p style="margin:0; font-size:0.9rem; color:var(--muted); font-weight:600;">Muestra cuántas personas hay en cada paso del proceso de venta, desde que ven la rifa hasta que pagan. Se consulta en tiempo real desde ChateaPro.</p>
+            <button id="btnCargarFunnel" class="btn btn-primary" onclick="cargarFunnel(this)" style="white-space:nowrap;">🔻 Cargar Embudo</button>
+        </div>
+    </div>
+
+    <div id="funnel-contenido" style="display:none;">
+        <div class="row">
+            <div class="col-100 mega-kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+                <div class="mega-kpi kpi-blue">
+                    <div class="mega-kpi-title">👀 Entrada</div>
+                    <div class="mega-kpi-value" id="kpi-fun-entrada">0</div>
+                    <span class="mega-kpi-sub">Vieron la info</span>
+                </div>
+                <div class="mega-kpi kpi-green">
+                    <div class="mega-kpi-title">💰 Compraron</div>
+                    <div class="mega-kpi-value" id="kpi-fun-compras">0</div>
+                    <span class="mega-kpi-sub" id="kpi-fun-conv-total">0% conversión total</span>
+                </div>
+                <div class="mega-kpi kpi-red">
+                    <div class="mega-kpi-title">📉 Mayor caída</div>
+                    <div class="mega-kpi-value" id="kpi-fun-caida" style="font-size:1.4rem;">—</div>
+                    <span class="mega-kpi-sub" id="kpi-fun-caida-pct"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-100">
+                <div class="card" style="height:auto; padding:30px;">
+                    <h3 class="card-title">🔻 Embudo de Conversión</h3>
+                    <div id="funnel-visual" style="display:flex; flex-direction:column; gap:0; align-items:center;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="saas-divider"><span>🧠 6. INTELIGENCIA ARTIFICIAL GERENCIAL</span></div>
     
     <div class="row">
         <div class="col-100">
@@ -1612,6 +1653,88 @@
             if (wrap && drop && !wrap.contains(e.target)) drop.style.display = 'none';
         });
     });
+
+    // ── EMBUDO DE VENTAS ──
+    async function cargarFunnel(btn) {
+      const orig = btn.innerHTML;
+      btn.innerHTML = '⏳ Consultando ChateaPro...';
+      btn.disabled = true;
+      try {
+        const req = await fetch('/api/admin/rescate-whatsapp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contrasena: localStorage.getItem(STORAGE_KEY), accion: 'funnel' })
+        });
+        const res = await req.json();
+        if (res.status !== 'ok') throw new Error(res.mensaje || 'Error desconocido');
+
+        document.getElementById('funnel-contenido').style.display = 'block';
+        const etapas = res.etapas;
+
+        if (etapas.length > 0) {
+          const entrada = etapas[0].total;
+          const compras = etapas[etapas.length - 1].total;
+          document.getElementById('kpi-fun-entrada').textContent = entrada.toLocaleString('es-CO');
+          document.getElementById('kpi-fun-compras').textContent = compras.toLocaleString('es-CO');
+          document.getElementById('kpi-fun-conv-total').textContent =
+            (entrada > 0 ? Math.round((compras / entrada) * 100) : 0) + '% conversión total';
+
+          let mayorCaida = 0, etapaCaida = '';
+          for (let i = 1; i < etapas.length; i++) {
+            const perdidos = etapas[i - 1].total - etapas[i].total;
+            if (perdidos > mayorCaida) {
+              mayorCaida = perdidos;
+              etapaCaida = etapas[i - 1].label + ' → ' + etapas[i].label;
+            }
+          }
+          document.getElementById('kpi-fun-caida').textContent = etapaCaida;
+          document.getElementById('kpi-fun-caida-pct').textContent = mayorCaida.toLocaleString('es-CO') + ' personas se pierden ahí';
+        }
+
+        const maxTotal = Math.max(...etapas.map(e => e.total), 1);
+        const colores = ['#3b82f6', '#6366f1', '#8b5cf6', '#f59e0b', '#f97316', '#10b981'];
+
+        let html = '';
+        for (let i = 0; i < etapas.length; i++) {
+          const e = etapas[i];
+          const widthPct = Math.max((e.total / maxTotal) * 100, 8);
+          const color = colores[i] || '#64748b';
+          const convText = i === 0
+            ? '100% (entrada)'
+            : e.conversion_desde_anterior + '% del paso anterior';
+
+          html += `<div style="width:100%; display:flex; align-items:center; gap:15px; margin-bottom:2px;">`;
+          html += `<div style="width:140px; text-align:right; font-size:0.85rem; font-weight:700; color:var(--ink-2); white-space:nowrap;">${e.emoji} ${e.label}</div>`;
+          html += `<div style="flex:1; position:relative; height:48px; display:flex; align-items:center;">`;
+          html += `<div style="width:${widthPct}%; height:100%; background:${color}; border-radius:8px; display:flex; align-items:center; justify-content:center; padding:0 12px; transition:width 0.5s ease; min-width:80px;">`;
+          html += `<span style="color:#fff; font-weight:900; font-size:1.1rem; text-shadow:0 1px 2px rgba(0,0,0,0.3);">${e.total.toLocaleString('es-CO')}</span>`;
+          html += `</div>`;
+          html += `</div>`;
+          html += `<div style="width:160px; font-size:0.8rem; font-weight:600; color:var(--muted); white-space:nowrap;">${convText}</div>`;
+          html += `</div>`;
+
+          if (i < etapas.length - 1) {
+            const perdidos = etapas[i].total - etapas[i + 1].total;
+            const pctPerdido = etapas[i].total > 0 ? Math.round((perdidos / etapas[i].total) * 100) : 0;
+            if (perdidos > 0) {
+              html += `<div style="width:100%; display:flex; align-items:center; gap:15px; margin-bottom:2px;">`;
+              html += `<div style="width:140px;"></div>`;
+              html += `<div style="flex:1; text-align:center; font-size:0.75rem; color:#b91c1c; font-weight:700; padding:2px 0;">↓ se pierden ${perdidos.toLocaleString('es-CO')} (${pctPerdido}%)</div>`;
+              html += `<div style="width:160px;"></div>`;
+              html += `</div>`;
+            }
+          }
+        }
+
+        document.getElementById('funnel-visual').innerHTML = html;
+        btn.innerHTML = '✅ Embudo cargado';
+        setTimeout(() => { btn.innerHTML = '🔄 Actualizar'; btn.disabled = false; }, 3000);
+      } catch (e) {
+        btn.innerHTML = orig;
+        btn.disabled = false;
+        showModal('Error', 'No se pudo cargar el embudo: ' + e.message);
+      }
+    }
 
     // ── SALUD DE DIFUSIONES WHATSAPP ──
     async function cargarStatsDifusiones(btn) {

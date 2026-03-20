@@ -320,5 +320,76 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(400).json({ status: 'error', mensaje: 'Acción no reconocida. Usa: tags, preview, stats' });
+  // ── FUNNEL: Conteo de suscriptores por etapa del embudo de ventas ──
+  if (accion === 'funnel') {
+    try {
+      const [tags1, tags2] = await Promise.all([
+        fetchTagsPaginated(TOKEN_L1),
+        fetchTagsPaginated(TOKEN_L2)
+      ]);
+
+      const ETAPAS = [
+        { key: 'ViewContent', label: 'Vieron la info', emoji: '👀' },
+        { key: 'LeadSubmitted', label: 'Enviaron datos', emoji: '📝' },
+        { key: 'QualifiedLead', label: 'Lead calificado', emoji: '✅' },
+        { key: 'AddToCart', label: 'Separaron boleta', emoji: '🛒' },
+        { key: 'InitiateCheckout', label: 'Iniciaron pago', emoji: '💳' },
+        { key: 'Purchase', label: 'Pagaron', emoji: '💰' }
+      ];
+
+      const allTags = [
+        ...tags1.map(t => ({ ...t, token: TOKEN_L1 })),
+        ...tags2.map(t => ({ ...t, token: TOKEN_L2 }))
+      ];
+
+      async function fetchTagCount(token, tagNs) {
+        try {
+          const resp = await fetch(`https://chateapro.app/api/subscribers?tag_ns=${tagNs}&limit=1&page=1`, {
+            headers: { 'accept': 'application/json', 'Authorization': `Bearer ${token}` }
+          }).then(r => r.json());
+          return resp.meta?.total || 0;
+        } catch { return 0; }
+      }
+
+      const countPromises = [];
+      const countKeys = [];
+
+      for (const etapa of ETAPAS) {
+        const matchingTags = allTags.filter(t => t.name.includes(etapa.key));
+        for (const t of matchingTags) {
+          countKeys.push({ key: etapa.key });
+          countPromises.push(fetchTagCount(t.token, t.tag_ns));
+        }
+      }
+
+      const counts = await Promise.all(countPromises);
+
+      const totalesPorEtapa = {};
+      for (let i = 0; i < countKeys.length; i++) {
+        const { key } = countKeys[i];
+        totalesPorEtapa[key] = (totalesPorEtapa[key] || 0) + counts[i];
+      }
+
+      const etapasResult = ETAPAS.map((e, idx) => {
+        const total = totalesPorEtapa[e.key] || 0;
+        const anterior = idx > 0 ? (totalesPorEtapa[ETAPAS[idx - 1].key] || 0) : total;
+        return {
+          key: e.key,
+          label: e.label,
+          emoji: e.emoji,
+          total,
+          conversion_desde_anterior: anterior > 0 ? Math.round((total / anterior) * 100) : 0,
+          conversion_desde_inicio: (totalesPorEtapa[ETAPAS[0].key] || 0) > 0
+            ? Math.round((total / (totalesPorEtapa[ETAPAS[0].key] || 1)) * 100)
+            : 0
+        };
+      });
+
+      return res.json({ status: 'ok', etapas: etapasResult });
+    } catch (error) {
+      return res.status(500).json({ status: 'error', mensaje: 'Error al obtener embudo: ' + error.message });
+    }
+  }
+
+  return res.status(400).json({ status: 'error', mensaje: 'Acción no reconocida. Usa: tags, preview, stats, funnel' });
 }

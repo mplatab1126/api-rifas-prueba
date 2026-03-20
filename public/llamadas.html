@@ -322,7 +322,7 @@
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
         <div class="card-title" style="margin:0; padding:0; border:0;">Últimas llamadas realizadas</div>
-        <button class="btn btn-outline btn-sm" onclick="cargarDashboard()">Actualizar estados</button>
+        <button id="btnSyncEstados" class="btn btn-outline btn-sm" onclick="sincronizarYRecargar(this)">Actualizar estados</button>
       </div>
       <div id="historialEmpty" class="empty-state" style="display:none;">
         <p>No hay llamadas registradas aún. Cuando lances una difusión, las llamadas aparecerán aquí con su estado en tiempo real.</p>
@@ -444,6 +444,21 @@
     }
 
     let costosData = {};
+
+    async function sincronizarYRecargar(btn) {
+      const orig = btn.textContent;
+      btn.textContent = '⏳ Sincronizando con Twilio...';
+      btn.disabled = true;
+      try {
+        const syncRes = await apiCall('sync-estados');
+        if (syncRes.status === 'ok' && syncRes.actualizadas > 0) {
+          showBanner(`Se actualizaron ${syncRes.actualizadas} llamadas desde Twilio.`, 'success');
+        }
+      } catch { /* si falla la sync, igual recargamos */ }
+      await cargarDashboard();
+      btn.textContent = orig;
+      btn.disabled = false;
+    }
 
     // ── DASHBOARD: carga KPIs + historial + costos ──
     async function cargarDashboard() {

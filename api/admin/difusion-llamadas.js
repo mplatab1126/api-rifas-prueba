@@ -215,6 +215,56 @@ export default async function handler(req, res) {
     }
   }
 
+  // ── SYNC-ESTADOS: sincroniza estados reales desde Twilio para llamadas no terminadas ──
+  if (accion === 'sync-estados') {
+    try {
+      const estadosTerminales = ['completed', 'busy', 'no-answer', 'failed', 'canceled'];
+      const { data: pendientes, error } = await supabase
+        .from('llamadas_twilio')
+        .select('sid, estado')
+        .not('estado', 'in', `(${estadosTerminales.join(',')})`);
+
+      if (error) throw error;
+      if (!pendientes || pendientes.length === 0) {
+        return res.json({ status: 'ok', mensaje: 'Todas las llamadas ya tienen estado final.', actualizadas: 0 });
+      }
+
+      const twilioSid = process.env.TWILIO_ACCOUNT_SID;
+      const twilioToken = process.env.TWILIO_AUTH_TOKEN;
+      const auth = Buffer.from(`${twilioSid}:${twilioToken}`).toString('base64');
+
+      let actualizadas = 0;
+      const resultados = [];
+
+      for (const llamada of pendientes) {
+        try {
+          const twResp = await fetch(
+            `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Calls/${llamada.sid}.json`,
+            { headers: { 'Authorization': `Basic ${auth}` } }
+          ).then(r => r.json());
+
+          if (twResp.status && twResp.status !== llamada.estado) {
+            const update = { estado: twResp.status, updated_at: new Date().toISOString() };
+            if (twResp.duration) update.duracion = Number(twResp.duration);
+            await supabase.from('llamadas_twilio').update(update).eq('sid', llamada.sid);
+            actualizadas++;
+            resultados.push({ sid: llamada.sid, antes: llamada.estado, ahora: twResp.status });
+          }
+        } catch { /* si falla una, sigue con las demás */ }
+      }
+
+      return res.json({
+        status: 'ok',
+        mensaje: `Se sincronizaron ${actualizadas} de ${pendientes.length} llamadas pendientes.`,
+        actualizadas,
+        total_pendientes: pendientes.length,
+        detalle: resultados
+      });
+    } catch (error) {
+      return res.status(500).json({ status: 'error', mensaje: error.message });
+    }
+  }
+
   // ── COSTOS: trae precios de Twilio y uso de ElevenLabs ──
   if (accion === 'costos') {
     try {
