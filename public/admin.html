@@ -8,7 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="admin.css">
   <link rel="stylesheet" href="shared-nav.css">
-  <script>if(localStorage.getItem('asesor_pwd')&&localStorage.getItem('asesor_nombre'))document.documentElement.classList.add('snav-authed')</script>
+  <script>if(localStorage.getItem('asesor_pwd')&&localStorage.getItem('asesor_nombre')){document.documentElement.classList.add('snav-authed');document.write('<style>.snav-authed .top-search-bar{display:block!important}.snav-authed #heroBg{opacity:0!important}</style>')}</script>
 </head>
 <body>
 <div class="snav-page-content" id="snavPageContent">

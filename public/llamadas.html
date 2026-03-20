@@ -6,7 +6,7 @@
   <title>Centro de Llamadas - Los Plata</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="shared-nav.css">
-  <script>if(localStorage.getItem('asesor_pwd')&&localStorage.getItem('asesor_nombre'))document.documentElement.classList.add('snav-authed')</script>
+  <script>if(localStorage.getItem('asesor_pwd')&&localStorage.getItem('asesor_nombre')){document.documentElement.classList.add('snav-authed');document.write('<style>.snav-authed .top-bar{display:flex!important}.snav-authed .shell{display:block!important}</style>')}</script>
   <style>
     :root {
       --bg: #f1f5f9; --card: #ffffff; --ink: #0f172a; --ink-2: #334155; --muted: #64748b;

@@ -94,6 +94,18 @@
     return html;
   }
 
+  function prefetchPages(asesorName) {
+    const currentPage = detectCurrentPage();
+    for (const page of PAGES) {
+      if (page.id === currentPage) continue;
+      if (!canAccess(page, asesorName)) continue;
+      const link = document.createElement('link');
+      link.rel = 'prefetch';
+      link.href = page.href;
+      document.head.appendChild(link);
+    }
+  }
+
   function injectSidebar() {
     const asesorName = localStorage.getItem(STORAGE_NAME);
     if (!asesorName) return;
@@ -141,6 +153,8 @@
         window.location.href = '/admin';
       });
     }
+
+    prefetchPages(asesorName);
   }
 
   function saveAsesorName(name) {
