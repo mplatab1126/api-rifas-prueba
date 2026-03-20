@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <title>Centro de Llamadas - Los Plata</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared-nav.css">
   <style>
     :root {
       --bg: #f1f5f9; --card: #ffffff; --ink: #0f172a; --ink-2: #334155; --muted: #64748b;
@@ -116,7 +117,7 @@
   </style>
 </head>
 <body>
-
+<div class="snav-page-content" id="snavPageContent">
   <!-- LOGIN -->
   <div id="loginOverlay" class="modal-overlay" style="display:flex;">
     <div class="modal-card">
@@ -134,10 +135,6 @@
   <div class="top-bar" style="display:none;" id="topBar">
     <div class="top-bar-title">Centro de Llamadas <span>Twilio</span></div>
     <div class="top-bar-nav">
-      <a href="/admin.html">Admin</a>
-      <a href="/rendimiento">Rendimiento</a>
-      <a href="/rifas">Finanzas</a>
-      <a href="#" onclick="cerrarSesion()">Salir</a>
     </div>
   </div>
 
@@ -365,7 +362,7 @@
   </div>
 
   <script>
-    const STORAGE_KEY = 'llamadas_pwd';
+    const STORAGE_KEY = 'asesor_pwd';
     let savedPwd = '';
 
     // ── LOGIN ──
@@ -393,8 +390,11 @@
         if (res.status === 'ok' && (res.asesor === 'Mateo' || res.asesor === 'Alejo P' || res.asesor === 'Alejo Plata')) {
           savedPwd = pwd;
           localStorage.setItem(STORAGE_KEY, pwd);
+          localStorage.setItem('asesor_nombre', res.asesor);
+          if (window.__snavSaveAsesor) window.__snavSaveAsesor(res.asesor);
+          if (window.__snavRefresh) window.__snavRefresh();
           document.getElementById('loginOverlay').style.display = 'none';
-          document.getElementById('topBar').style.display = 'flex';
+          document.getElementById('topBar').style.display = 'none';
           document.getElementById('appShell').style.display = 'block';
           cargarDashboard();
           cargarTagsRescate();
@@ -411,6 +411,7 @@
 
     function cerrarSesion() {
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem('asesor_nombre');
       location.reload();
     }
 
@@ -790,5 +791,7 @@
       cargarDashboard();
     }
   </script>
+</div><!-- /snav-page-content -->
+<script src="shared-nav.js"></script>
 </body>
 </html>

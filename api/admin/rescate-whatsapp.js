@@ -210,5 +210,115 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(400).json({ status: 'error', mensaje: 'Acción no reconocida. Usa: tags, preview' });
+  // ── STATS: Estadísticas de éxito/fallo por difusión ──
+  if (accion === 'stats') {
+    try {
+      const [tags1, tags2] = await Promise.all([
+        fetchTagsPaginated(TOKEN_L1),
+        fetchTagsPaginated(TOKEN_L2)
+      ]);
+
+      const allTags = [
+        ...tags1.map(t => ({ ...t, linea: 1, token: TOKEN_L1 })),
+        ...tags2.map(t => ({ ...t, linea: 2, token: TOKEN_L2 }))
+      ];
+
+      const isFallo = (name) => {
+        const lower = name.toLowerCase();
+        return lower.includes('falló') || lower.includes('fallo');
+      };
+
+      const getBaseName = (name) => {
+        return name
+          .replace(/\s*[-–]\s*fallo\s*$/i, '')
+          .replace(/\s*falló\s*$/i, '')
+          .replace(/\s*FALLÓ\s*$/i, '')
+          .replace(/\s*fallo\s*$/i, '')
+          .trim();
+      };
+
+      const falloTags = allTags.filter(t => isFallo(t.name));
+      const exitoTags = allTags.filter(t => !isFallo(t.name));
+
+      const exitoMap = {};
+      for (const t of exitoTags) {
+        const key = t.name.trim();
+        if (!exitoMap[key]) exitoMap[key] = [];
+        exitoMap[key].push(t);
+      }
+
+      async function fetchTagCount(token, tagNs) {
+        try {
+          const resp = await fetch(`https://chateapro.app/api/subscribers?tag_ns=${tagNs}&limit=1&page=1`, {
+            headers: { 'accept': 'application/json', 'Authorization': `Bearer ${token}` }
+          }).then(r => r.json());
+          return resp.meta?.total || resp.data?.length || 0;
+        } catch { return 0; }
+      }
+
+      const pares = {};
+      for (const ft of falloTags) {
+        const base = getBaseName(ft.name);
+        if (!pares[base]) pares[base] = { nombre: base, exitoTags: [], falloTags: [] };
+        pares[base].falloTags.push(ft);
+      }
+
+      for (const base of Object.keys(pares)) {
+        if (exitoMap[base]) {
+          pares[base].exitoTags = exitoMap[base];
+        }
+      }
+
+      const countPromises = [];
+      const countKeys = [];
+      for (const base of Object.keys(pares)) {
+        for (const t of pares[base].exitoTags) {
+          countKeys.push({ base, tipo: 'exito', tag_ns: t.tag_ns });
+          countPromises.push(fetchTagCount(t.token, t.tag_ns));
+        }
+        for (const t of pares[base].falloTags) {
+          countKeys.push({ base, tipo: 'fallo', tag_ns: t.tag_ns });
+          countPromises.push(fetchTagCount(t.token, t.tag_ns));
+        }
+      }
+
+      const counts = await Promise.all(countPromises);
+
+      for (let i = 0; i < countKeys.length; i++) {
+        const { base, tipo } = countKeys[i];
+        if (!pares[base].totalExito) pares[base].totalExito = 0;
+        if (!pares[base].totalFallo) pares[base].totalFallo = 0;
+        if (tipo === 'exito') pares[base].totalExito += counts[i];
+        else pares[base].totalFallo += counts[i];
+      }
+
+      const resultado = Object.values(pares).map(p => ({
+        difusion: p.nombre,
+        enviados: (p.totalExito || 0) + (p.totalFallo || 0),
+        exitosos: p.totalExito || 0,
+        fallidos: p.totalFallo || 0,
+        pct_fallo: (p.totalExito || 0) + (p.totalFallo || 0) > 0
+          ? Math.round(((p.totalFallo || 0) / ((p.totalExito || 0) + (p.totalFallo || 0))) * 100)
+          : 0
+      })).filter(r => r.enviados > 0).sort((a, b) => b.pct_fallo - a.pct_fallo);
+
+      const totalEnviados = resultado.reduce((s, r) => s + r.enviados, 0);
+      const totalFallidos = resultado.reduce((s, r) => s + r.fallidos, 0);
+
+      return res.json({
+        status: 'ok',
+        difusiones: resultado,
+        resumen: {
+          total_difusiones: resultado.length,
+          total_enviados: totalEnviados,
+          total_fallidos: totalFallidos,
+          pct_fallo_global: totalEnviados > 0 ? Math.round((totalFallidos / totalEnviados) * 100) : 0
+        }
+      });
+    } catch (error) {
+      return res.status(500).json({ status: 'error', mensaje: 'Error al obtener estadísticas: ' + error.message });
+    }
+  }
+
+  return res.status(400).json({ status: 'error', mensaje: 'Acción no reconocida. Usa: tags, preview, stats' });
 }

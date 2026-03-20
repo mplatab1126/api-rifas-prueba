@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <title>Gestión de Horarios — Los Plata</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared-nav.css">
   <style>
     :root {
       --ink: #2b3a35;
@@ -250,7 +251,7 @@
   </style>
 </head>
 <body>
-
+<div class="snav-page-content" id="snavPageContent">
 <!-- ── Login ── -->
 <div id="loginOverlay">
   <div style="text-align:center; margin-bottom:28px;">
@@ -269,11 +270,9 @@
 <div id="mainContent" style="display:none;">
 
   <div class="page-header">
-    <a href="/admin" class="btn-back">← Inicio</a>
     <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata S.A.S.">
     <h1>🗓️ Gestión de Horarios</h1>
     <p id="adminLabel">Administrador</p>
-    <a href="/calendario" class="btn-ver-cal" target="_blank">Ver Calendario →</a>
   </div>
 
   <div class="main-wrap">
@@ -394,6 +393,10 @@
           return;
         }
         pwdAdmin = pwd;
+        localStorage.setItem('asesor_pwd', pwd);
+        localStorage.setItem('asesor_nombre', json.asesor);
+        if (window.__snavSaveAsesor) window.__snavSaveAsesor(json.asesor);
+        if (window.__snavRefresh) window.__snavRefresh();
         document.getElementById('adminLabel').textContent = 'Admin: ' + json.asesor;
         document.getElementById('loginOverlay').style.display = 'none';
         document.getElementById('mainContent').style.display = 'block';
@@ -406,6 +409,15 @@
       msg.textContent = 'Error de conexión. Intenta de nuevo.';
     }
   }
+
+  // Auto-login from localStorage
+  (function() {
+    const pwd = localStorage.getItem('asesor_pwd');
+    if (pwd) {
+      document.getElementById('loginPwd').value = pwd;
+      doLogin();
+    }
+  })();
 
   // ── Toast ──
   let toastTimer;
@@ -705,5 +717,7 @@
     } catch(e) { toast('Error de conexión', 'err'); }
   }
 </script>
+</div><!-- /snav-page-content -->
+<script src="shared-nav.js"></script>
 </body>
 </html>

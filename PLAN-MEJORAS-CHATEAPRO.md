@@ -41,10 +41,19 @@ Fecha: 18 de marzo de 2026
 ---
 
 ### 2. Alerta de plantillas bloqueadas
-- **Estado**: 🟡 Parcialmente resuelto
+- **Estado**: ✅ COMPLETADO (19 marzo 2026)
 - **Problema**: No hay forma rápida de saber cuántas plantillas fallan en cada difusión.
-- **Lo que ya existe**: El Rescate WhatsApp muestra cuántos contactos tienen cada tag de "FALLÓ" cuando los seleccionas. Falta una vista consolidada en rendimiento.html con porcentajes de éxito.
-- **Pendiente**: Agregar sección en rendimiento.html con estadísticas de éxito/fallo por difusión.
+- **Lo que se construyó**:
+  - Nueva sección "📬 Salud de Difusiones WhatsApp" en `rendimiento.html` (sección 4, entre Meta Ads e IA)
+  - Endpoint `api/admin/rescate-whatsapp.js` ampliado con acción `stats` que consulta ChateaPro en tiempo real
+  - El sistema empareja automáticamente cada tag de éxito con su tag de "FALLÓ" correspondiente
+  - Consulta ambas líneas de WhatsApp (L1 y L2) y suma los totales
+  - KPIs: total de difusiones, enviados, bloqueados, % fallo global, peor difusión
+  - Tabla detallada ordenada por % de fallo (mayor primero), con badges de color:
+    - Verde = menos de 20% de fallo (OK)
+    - Amarillo = 20-39% de fallo (ALTO)
+    - Rojo = 40%+ de fallo (CRÍTICO)
+  - Botón "Cargar Estadísticas" bajo demanda (no se carga automáticamente porque consulta ChateaPro en vivo)
 
 ---
 
@@ -133,7 +142,7 @@ Fecha: 18 de marzo de 2026
 | # | Mejora | Estado | Por qué en este orden |
 |---|---|---|---|
 | 1 | Rescate con Twilio cuando Meta bloquea | ✅ Hecho | Dinero inmediato que se estaba perdiendo |
-| 2 | Alerta de plantillas bloqueadas | 🟡 Parcial | Ya se ve en el rescate, falta vista consolidada |
+| 2 | Alerta de plantillas bloqueadas | ✅ Hecho | Sección en rendimiento.html con % éxito/fallo por difusión |
 | 3 | Cerrar conversaciones automáticamente | 🔲 Siguiente | Desbloquea la bandeja de asesores |
 | 4 | Dashboard de embudo de ventas | 🔲 | Saber dónde se pierden los clientes |
 | 5 | Despertar clientes dormidos | 🔲 | Base enorme de 48,000+ sin explotar |

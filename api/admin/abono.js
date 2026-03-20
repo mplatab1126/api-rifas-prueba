@@ -183,8 +183,18 @@ export default async function handler(req, res) {
     if (idTransferencia && idTransferencia.trim() !== '') {
       await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('id', idTransferencia);
     } else if (referencia && referencia !== 'Sin Ref' && referencia !== 'efectivo' && referencia !== 'efectivo_oficina' && referencia !== '0') {
-      // Fallback a lógica vieja
-      await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('referencia', referencia);
+      const { data: transLibre } = await supabase
+        .from('transferencias')
+        .select('id')
+        .eq('referencia', referencia)
+        .eq('estado', 'LIBRE')
+        .eq('monto', monto)
+        .limit(1)
+        .maybeSingle();
+
+      if (transLibre) {
+        await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('id', transLibre.id);
+      }
     }
 
     // 8. Si es efectivo en oficina, registrar ingreso directo a caja

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <title>Estado de Resultados — Centro Financiero</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared-nav.css">
   <style>
     :root {
       --ink:          #1a2820;
@@ -518,7 +519,7 @@
   </style>
 </head>
 <body>
-
+<div class="snav-page-content" id="snavPageContent">
 <!-- ══ LOGIN ════════════════════════════════════════════════════════════ -->
 <div id="loginScreen">
   <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata S.A.S.">
@@ -532,14 +533,10 @@
 </div>
 
 <!-- ══ TOP BAR ══════════════════════════════════════════════════════════ -->
-<div id="topBar">
+<div id="topBar" style="display:none;">
   <div class="logo"><span>💼</span> Centro Financiero</div>
   <nav>
     <span id="topAsesor" class="asesor-badge">—</span>
-    <a href="/rifas">🎰 Rifas</a>
-    <a href="/estado-resultados" class="active">📊 Estado de Resultados</a>
-    <a href="/admin">← Volver</a>
-    <button onclick="doLogout()">Salir</button>
   </nav>
 </div>
 
@@ -738,8 +735,11 @@ async function doLogin() {
       contrasena   = pwd;
       asesorNombre = data.asesor;
       localStorage.setItem(STORAGE_KEY, pwd);
+      localStorage.setItem('asesor_nombre', asesorNombre);
+      if (window.__snavSaveAsesor) window.__snavSaveAsesor(asesorNombre);
+      if (window.__snavRefresh) window.__snavRefresh();
       document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('topBar').style.display      = 'flex';
+      document.getElementById('topBar').style.display      = 'none';
       document.getElementById('app').style.display         = 'block';
       document.getElementById('topAsesor').textContent     = asesorNombre;
       cargarTodo();
@@ -1605,5 +1605,7 @@ function scrollACat(sl) {
   }, 100);
 }
 </script>
+</div><!-- /snav-page-content -->
+<script src="shared-nav.js"></script>
 </body>
 </html>

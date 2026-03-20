@@ -7,9 +7,10 @@
   <title>Admin Los Plata</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="shared-nav.css">
 </head>
 <body>
-
+<div class="snav-page-content" id="snavPageContent">
   <div id="heroBg" style="
     position: fixed; inset: 0; z-index: 0;
     background: linear-gradient(160deg, #0f2010 0%, #1e4a1a 40%, #2d6b25 70%, #1a3a14 100%);
@@ -47,13 +48,10 @@
       <span id="asesorDisplay" class="nav-item nav-name">Hola</span>
       <span class="nav-item" onclick="activateAppMode(); switchView('view-referencias')">Referencia</span>
       <span class="nav-item" onclick="activateAppMode(); switchView('view-carga-masiva'); cargarPendientes();">Carga IA</span>
-      <span class="nav-item" onclick="window.location.href='/rendimiento'">Rendimiento</span>
       <span class="nav-item" onclick="activateAppMode(); switchView('view-movimientos'); cargarUltimosMovimientos();">Movimientos</span>
       <span class="nav-item" onclick="activateAppMode(); switchView('view-lista-boletas'); cargarListaBoletas();">Lista Boletas</span>
-      <span class="nav-item" onclick="window.location.href='/caja.html'">Cuadre de Caja</span>
-      <span id="btnLlamadas" class="nav-item" onclick="window.location.href='/llamadas'" style="display:none;">Llamadas IA</span>
-      <span class="nav-item" onclick="window.location.href='/calendario'">Calendario</span>
-      <span id="btnFinanzas" class="nav-item" onclick="window.location.href='/rifas'" style="display:none;">Centro Financiero</span>
+      <span id="btnLlamadas" class="nav-item" style="display:none;"></span>
+      <span id="btnFinanzas" class="nav-item" style="display:none;"></span>
       <span id="btnLogout" class="nav-item nav-salir">Salir</span>
     </div>
     <div id="searchFeedback" class="hint" style="margin: 5px 0 0 0; font-size:0.8rem; min-height: 20px;"></div>
@@ -473,7 +471,9 @@
 
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+</div><!-- /snav-page-content -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   <script src="admin.js"></script>
+  <script src="shared-nav.js"></script>
 </body>
 </html>

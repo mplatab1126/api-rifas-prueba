@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <title>Centro Financiero</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared-nav.css">
   <style>
     /* ── Variables ─────────────────────────────────────────────────────── */
     :root {
@@ -597,7 +598,7 @@
   </style>
 </head>
 <body>
-
+<div class="snav-page-content" id="snavPageContent">
 <!-- ════════════════════════════════════════════════════════════════════════
      LOGIN
 ════════════════════════════════════════════════════════════════════════ -->
@@ -615,14 +616,10 @@
 <!-- ════════════════════════════════════════════════════════════════════════
      TOP BAR
 ════════════════════════════════════════════════════════════════════════ -->
-<div id="topBar">
+<div id="topBar" style="display:none;">
   <div class="logo"><span>💼</span> Centro Financiero</div>
   <nav>
     <span id="topAsesor" class="asesor-badge">—</span>
-    <a href="/rifas" style="font-weight:700;">🎰 Rifas</a>
-    <a href="/estado-resultados">📊 Estado de Resultados</a>
-    <a href="/admin">← Volver</a>
-    <button onclick="doLogout()">Salir</button>
   </nav>
 </div>
 
@@ -920,8 +917,12 @@ async function doLogin() {
         return;
       }
 
+      localStorage.setItem('asesor_pwd', pwd);
+      localStorage.setItem('asesor_nombre', asesorNombre);
+      if (window.__snavSaveAsesor) window.__snavSaveAsesor(asesorNombre);
+      if (window.__snavRefresh) window.__snavRefresh();
       document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('topBar').style.display      = 'flex';
+      document.getElementById('topBar').style.display      = 'none';
       document.getElementById('app').style.display         = 'block';
       document.getElementById('topAsesor').textContent     = asesorNombre;
       cargarRifas();
@@ -935,8 +936,15 @@ async function doLogin() {
   }
 }
 
+window.addEventListener('DOMContentLoaded', () => {
+  const pwd = localStorage.getItem('asesor_pwd');
+  if (pwd) { document.getElementById('loginPwd').value = pwd; doLogin(); }
+});
+
 function doLogout() {
   contrasena = ''; asesorNombre = '';
+  localStorage.removeItem('asesor_pwd');
+  localStorage.removeItem('asesor_nombre');
   document.getElementById('loginPwd').value = '';
   document.getElementById('loginErr').textContent = '';
   document.getElementById('loginScreen').style.display = 'flex';
@@ -1889,5 +1897,7 @@ window.addEventListener('resize', () => {
   }, 200);
 });
 </script>
+</div><!-- /snav-page-content -->
+<script src="shared-nav.js"></script>
 </body>
 </html>

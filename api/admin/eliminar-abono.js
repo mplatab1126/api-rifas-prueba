@@ -26,7 +26,19 @@ export default async function handler(req, res) {
     if (errDelete) throw errDelete;
 
     if (referencia_transferencia && referencia_transferencia !== 'Sin Ref' && referencia_transferencia !== 'efectivo' && referencia_transferencia !== 'efectivo_oficina') {
-      await supabase.from('transferencias').update({ estado: 'LIBRE' }).eq('referencia', referencia_transferencia);
+      const estadoAsignada = `ASIGNADA a boleta ${numeroLimpio}`;
+      const { data: transAsignada } = await supabase
+        .from('transferencias')
+        .select('id')
+        .eq('referencia', referencia_transferencia)
+        .eq('estado', estadoAsignada)
+        .eq('monto', monto)
+        .limit(1)
+        .maybeSingle();
+
+      if (transAsignada) {
+        await supabase.from('transferencias').update({ estado: 'LIBRE' }).eq('id', transAsignada.id);
+      }
     }
 
     // Si era efectivo en oficina, eliminar el ingreso automático que se creó en caja

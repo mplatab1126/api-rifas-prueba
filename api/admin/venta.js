@@ -125,7 +125,18 @@ export default async function handler(req, res) {
       if (idTransferencia && idTransferencia.trim() !== '') {
         await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('id', idTransferencia);
       } else if (referenciaAbono && referenciaAbono !== 'Sin Ref' && referenciaAbono !== 'efectivo' && referenciaAbono !== '0') {
-        await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('referencia', referenciaAbono);
+        const { data: transLibre } = await supabase
+          .from('transferencias')
+          .select('id')
+          .eq('referencia', referenciaAbono)
+          .eq('estado', 'LIBRE')
+          .eq('monto', abonoNum)
+          .limit(1)
+          .maybeSingle();
+
+        if (transLibre) {
+          await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('id', transLibre.id);
+        }
       }
     }
 

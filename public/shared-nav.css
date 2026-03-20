@@ -1,0 +1,225 @@
+/* ═══════════════════════════════════════════════════════════════════
+   SIDEBAR DE NAVEGACIÓN COMPARTIDO — Los Plata S.A.S.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.snav-sidebar {
+  position: fixed;
+  top: 0; left: 0;
+  width: 240px;
+  height: 100vh;
+  background: #0f1f15;
+  display: flex;
+  flex-direction: column;
+  z-index: 1200;
+  transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-right: 1px solid rgba(255,255,255,0.06);
+}
+
+.snav-logo-area {
+  padding: 22px 20px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+.snav-logo-area img {
+  height: 38px;
+  width: auto;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
+}
+.snav-logo-text {
+  color: rgba(255,255,255,0.85);
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+.snav-logo-sub {
+  color: rgba(255,255,255,0.35);
+  font-size: 0.65rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.snav-section-label {
+  color: rgba(255,255,255,0.3);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 20px 20px 6px;
+}
+
+.snav-links {
+  flex: 1;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.snav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: rgba(255,255,255,0.55);
+  text-decoration: none;
+  font-size: 0.84rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+}
+.snav-link:hover {
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.85);
+}
+.snav-link.active {
+  background: rgba(78, 176, 130, 0.15);
+  color: #6ee7a8;
+  font-weight: 600;
+}
+.snav-link-icon {
+  font-size: 1.05rem;
+  width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.snav-bottom {
+  padding: 12px 10px 16px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+.snav-asesor-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.04);
+  margin-bottom: 6px;
+}
+.snav-asesor-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(78, 176, 130, 0.25);
+  color: #6ee7a8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.snav-asesor-name {
+  color: rgba(255,255,255,0.75);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.snav-logout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  color: rgba(255,120,110,0.7);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.snav-logout:hover {
+  background: rgba(255,80,70,0.1);
+  color: rgba(255,120,110,0.95);
+}
+
+/* Hamburger button (mobile only) */
+.snav-hamburger {
+  display: none;
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 1300;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  border: none;
+  background: #0f1f15;
+  color: #fff;
+  font-size: 1.3rem;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  transition: background 0.15s;
+}
+.snav-hamburger:hover {
+  background: #1a3525;
+}
+
+/* Overlay for mobile */
+.snav-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1190;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.snav-overlay.visible {
+  opacity: 1;
+}
+
+/* Content area offset */
+.snav-page-content {
+  margin-left: 240px;
+  min-height: 100vh;
+  transition: margin-left 0.28s cubic-bezier(.4,0,.2,1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .snav-sidebar {
+    transform: translateX(-100%);
+  }
+  .snav-sidebar.open {
+    transform: translateX(0);
+  }
+  .snav-hamburger {
+    display: flex;
+  }
+  .snav-overlay {
+    display: block;
+    pointer-events: none;
+  }
+  .snav-overlay.visible {
+    pointer-events: auto;
+  }
+  .snav-page-content {
+    margin-left: 0;
+  }
+}

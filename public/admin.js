@@ -141,7 +141,7 @@ const $ = id => document.getElementById(id);
 
     function initLogin(){ const s=localStorage.getItem(STORAGE_KEY); if(s) verifyLogin(s,true); }
     $('btnLogin').onclick = ()=> verifyLogin($('loginPwd').value);
-    $('btnLogout').onclick = ()=> { localStorage.removeItem(STORAGE_KEY); location.reload(); };
+    $('btnLogout').onclick = ()=> { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem('asesor_nombre'); location.reload(); };
     
     async function verifyLogin(pwd, auto=false){
       if(!pwd) { 
@@ -157,13 +157,16 @@ const $ = id => document.getElementById(id);
           const res = await req.json();
           if(!auto) { btn.textContent = 'Ingresar'; btn.disabled = false; }
           if(res.status === 'ok') {
-              localStorage.setItem(STORAGE_KEY, pwd); 
+              localStorage.setItem(STORAGE_KEY, pwd);
+              localStorage.setItem('asesor_nombre', res.asesor);
+              if (window.__snavSaveAsesor) window.__snavSaveAsesor(res.asesor);
+              if (window.__snavRefresh) window.__snavRefresh();
               $('loginOverlay').style.display='none'; 
               topBar.style.display='block'; 
               $('asesorDisplay').textContent = res.asesor; 
               $('v_contrasena').value = pwd; 
               $('smartInput').focus();
-              cargarPlataformas(); // <--- Hace que la lista se llene sola
+              cargarPlataformas();
               cargarSaldoAsesor(res.asesor);
               if (res.asesor === 'Mateo') $('btnFinanzas').style.display = '';
               if (res.asesor === 'Mateo' || res.asesor === 'Alejo P' || res.asesor === 'Alejo Plata') $('btnLlamadas').style.display = '';

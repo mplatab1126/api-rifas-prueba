@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <title>Cuadre de Caja - Los Plata</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared-nav.css">
   <style>
     /* Diseño minimalista y elegante */
     :root{
@@ -46,7 +47,7 @@
   </style>
 </head>
 <body>
-
+<div class="snav-page-content" id="snavPageContent">
   <div id="loginOverlay" class="modal-overlay" style="display: flex;">
     <div class="modal-card" style="max-width: 360px;">
       <h2 style="margin: 0 0 8px; color: var(--ink); font-weight: 700;">Control de Caja</h2>
@@ -66,7 +67,6 @@
     </div>
     <div style="display:flex; gap:10px;">
       <button class="cta" style="background: var(--danger);" onclick="abrirModalCierre()">🔒 Cerrar Caja</button>
-      <button class="cta cta-outline" onclick="window.location.href='/admin.html'">🔙 Volver</button>
     </div>
   </div>
 
@@ -308,6 +308,9 @@
           contrasenaActual = pwd;
           asesorActual = res.asesor;
           localStorage.setItem(STORAGE_KEY, pwd);
+          localStorage.setItem('asesor_nombre', res.asesor);
+          if (window.__snavSaveAsesor) window.__snavSaveAsesor(res.asesor);
+          if (window.__snavRefresh) window.__snavRefresh();
           document.getElementById('loginOverlay').style.display = 'none';
           await mostrarPopupCaja(auto);
         } else {
@@ -687,9 +690,8 @@
 
         if (res.status === 'ok') {
           alert('✅ ¡Caja cerrada y arqueo guardado!');
-          localStorage.removeItem(STORAGE_KEY);
           localStorage.removeItem('caja_modo');
-          window.location.href = '/admin.html';
+          window.location.href = '/admin';
         } else {
           alert('Error al cerrar caja: ' + res.mensaje);
         }
@@ -699,5 +701,7 @@
       }
     }
   </script>
+</div><!-- /snav-page-content -->
+<script src="shared-nav.js"></script>
 </body>
 </html>
