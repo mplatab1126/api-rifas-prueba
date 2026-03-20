@@ -28,7 +28,7 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  const { accion, tipo, contrasena, fechaSorteo, horaCierre, loteria, ganadores, totalPagadoGanadores, modoPremio } = req.body;
+  const { accion, tipo, contrasena, fechaSorteo, horaCierre, loteria, ganadores, totalPagadoGanadores, modoPremio, totalBoletasPremio } = req.body;
 
   // ─────────────────────────────────────────────────────────────────────
   // POST obtener_historial — historial de rifas por tipo
@@ -164,6 +164,9 @@ export default async function handler(req, res) {
       };
       if (tipo === '3cifras' && modoPremio) {
         configPayload.modo_premio = modoPremio;
+        if (modoPremio === 'boletas' && totalBoletasPremio > 0) {
+          configPayload.total_boletas_premio = Number(totalBoletasPremio);
+        }
       }
       const { error: configError } = await supabase.from('config_rifa_diaria').insert(configPayload);
       if (configError) throw configError;

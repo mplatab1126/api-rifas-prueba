@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  const { numeroBoleta, valorAbono, metodoPago, referencia, contrasena, esPendiente, idTransferencia, esPagoInteligente } = req.body;
+  const { numeroBoleta, valorAbono, metodoPago, referencia, contrasena, esPendiente, idTransferencia, esPagoInteligente, esPremioRifa } = req.body;
 
   const ASESORES_INDEPENDIENTES = ['alejandra plata', 'joaquín', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
   const esIndependiente = (nombre) => nombre && ASESORES_INDEPENDIENTES.some(ind => nombre.toLowerCase().includes(ind));
@@ -114,6 +114,40 @@ export default async function handler(req, res) {
         }
     }
 
+    // Validación de cupo para premio rifa diaria
+    if (esPremioRifa || referencia === 'premio_rifa_diaria') {
+      if (numeroLimpio.length !== 4) {
+        return res.status(400).json({ status: 'error', mensaje: '🚫 El modo Premio Rifa solo aplica para boletas del apartamento (4 cifras).' });
+      }
+
+      const { data: configRifa } = await supabase
+        .from('config_rifa_diaria')
+        .select('total_boletas_premio')
+        .eq('tipo', '3cifras')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const limite = configRifa?.total_boletas_premio || 0;
+      if (limite <= 0) {
+        return res.status(400).json({ status: 'error', mensaje: '🚫 No hay boletas premio configuradas para la rifa actual. La gerencia debe configurar el total de boletas premio al iniciar la rifa.' });
+      }
+
+      const hoyCol = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Bogota" }));
+      const hoyStr = hoyCol.getFullYear() + '-' + String(hoyCol.getMonth()+1).padStart(2,'0') + '-' + String(hoyCol.getDate()).padStart(2,'0');
+
+      const { count: usados } = await supabase
+        .from('abonos')
+        .select('id', { count: 'exact', head: true })
+        .eq('referencia_transferencia', 'premio_rifa_diaria')
+        .gte('fecha_pago', hoyStr + 'T00:00:00')
+        .lte('fecha_pago', hoyStr + 'T23:59:59');
+
+      if ((usados || 0) >= limite) {
+        return res.status(400).json({ status: 'error', mensaje: `🚫 Ya se usaron las ${limite} boletas premio de esta rifa. No se pueden registrar más abonos como Premio Rifa.` });
+      }
+    }
+
     // Crear hora de Colombia
     const fechaCol = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Bogota" }));
     const fechaPagoColombia = fechaCol.getFullYear() + "-" +
@@ -182,7 +216,7 @@ export default async function handler(req, res) {
     // 7. Amarrar la referencia a la boleta (ASIGNACIÓN SEGURA POR ID)
     if (idTransferencia && idTransferencia.trim() !== '') {
       await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('id', idTransferencia);
-    } else if (referencia && referencia !== 'Sin Ref' && referencia !== 'efectivo' && referencia !== 'efectivo_oficina' && referencia !== '0') {
+    } else if (referencia && referencia !== 'Sin Ref' && referencia !== 'efectivo' && referencia !== 'efectivo_oficina' && referencia !== 'premio_rifa_diaria' && referencia !== '0') {
       const { data: transLibre } = await supabase
         .from('transferencias')
         .select('id')

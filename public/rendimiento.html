@@ -624,10 +624,15 @@
           </div>
           <div id="nrModoWrapper" style="display:none;">
             <label style="font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 6px;">🎁 ¿Qué se premia en esta rifa?</label>
-            <select id="nrModoPremio" class="field-input" style="width:100%; box-sizing:border-box;">
-              <option value="boletas">🏢 Boletas del Apartamento (18 boletas)</option>
+            <select id="nrModoPremio" class="field-input" style="width:100%; box-sizing:border-box;" onchange="toggleCampoBoletasPremio()">
+              <option value="boletas">🏢 Boletas del Apartamento</option>
               <option value="dinero">💰 Dinero en efectivo ($800.000 x premio)</option>
             </select>
+            <div id="nrBoletasPremioWrapper" style="margin-top:10px;">
+              <label style="font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 6px;">🎟️ ¿Cuántas boletas del apto se dan como premio en total?</label>
+              <input type="number" id="nrTotalBoletasPremio" class="field-input" placeholder="Ej: 18" min="1" style="width:100%; box-sizing:border-box;" value="18">
+              <p style="font-size:0.75rem; color:var(--muted); margin:4px 0 0; line-height:1.3;">Este número limita cuántas boletas se pueden registrar con el método "Premio Rifa" en el panel de asesores.</p>
+            </div>
           </div>
           <div style="border-top: 1px dashed var(--ring-strong); padding-top: 14px; margin-top: 4px;">
             <p style="font-size: 0.8rem; font-weight: 800; color: var(--ink-2); text-transform: uppercase; margin: 0 0 12px 0;">📊 Resultados de la rifa que termina</p>
@@ -659,6 +664,7 @@
           <div>🏆 Ganadores rifa anterior: <strong id="nrResumenGanadores">—</strong></div>
           <div>💸 Total pagado a ganadores: <strong id="nrResumenPagado">—</strong></div>
           <div id="nrResumenModoRow" style="display:none;">🎁 Modo de premio: <strong id="nrResumenModo">—</strong></div>
+          <div id="nrResumenBoletasPremioRow" style="display:none;">🎟️ Boletas premio (apto): <strong id="nrResumenBoletasPremio">—</strong></div>
         </div>
         <p style="font-size: 0.9rem; color: #b91c1c; font-weight: 700; margin-bottom: 20px;">¿Confirmas que el sorteo anterior ya jugó y quieres reiniciar la rifa?</p>
         <div style="display: flex; gap: 10px;">
@@ -1545,12 +1551,19 @@
     }
 
     // ── NUEVA RIFA ────────────────────────────────────────────────────
+    function toggleCampoBoletasPremio() {
+      var modo = document.getElementById('nrModoPremio').value;
+      var wrapper = document.getElementById('nrBoletasPremioWrapper');
+      if (wrapper) wrapper.style.display = modo === 'boletas' ? 'block' : 'none';
+    }
+
     function abrirModalNuevaRifa() {
       document.getElementById('nrPaso1').style.display = 'block';
       document.getElementById('nrPaso2').style.display = 'none';
       document.getElementById('nrMsg').textContent = '';
       document.getElementById('nrRifaLabel').textContent = `Rifa: ${LABELS_RIFA[tipoRifaActual]?.badge || tipoRifaActual}`;
       document.getElementById('nrModoWrapper').style.display = tipoRifaActual === '3cifras' ? 'block' : 'none';
+      toggleCampoBoletasPremio();
       document.getElementById('modalNuevaRifa').style.display = 'flex';
     }
 
@@ -1573,8 +1586,16 @@
         const modoPremio = document.getElementById('nrModoPremio').value;
         document.getElementById('nrResumenModo').textContent = modoPremio === 'boletas' ? '🏢 Boletas del Apartamento' : '💰 Dinero en efectivo';
         document.getElementById('nrResumenModoRow').style.display = 'block';
+        if (modoPremio === 'boletas') {
+          const totalBP = document.getElementById('nrTotalBoletasPremio').value || '0';
+          document.getElementById('nrResumenBoletasPremio').textContent = totalBP;
+          document.getElementById('nrResumenBoletasPremioRow').style.display = 'block';
+        } else {
+          document.getElementById('nrResumenBoletasPremioRow').style.display = 'none';
+        }
       } else {
         document.getElementById('nrResumenModoRow').style.display = 'none';
+        document.getElementById('nrResumenBoletasPremioRow').style.display = 'none';
       }
 
       document.getElementById('nrPaso1').style.display = 'none';
@@ -1611,7 +1632,8 @@
             loteria,
             ganadores,
             totalPagadoGanadores: pagado,
-            modoPremio:          tipoRifaActual === '3cifras' ? document.getElementById('nrModoPremio').value : undefined
+            modoPremio:          tipoRifaActual === '3cifras' ? document.getElementById('nrModoPremio').value : undefined,
+            totalBoletasPremio:  tipoRifaActual === '3cifras' && document.getElementById('nrModoPremio').value === 'boletas' ? Number(document.getElementById('nrTotalBoletasPremio').value) || 0 : undefined
           })
         });
         const res = await req.json();

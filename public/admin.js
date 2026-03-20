@@ -11,20 +11,102 @@ const $ = id => document.getElementById(id);
         if (el) el.innerHTML = `📋 Pega la imagen del comprobante aquí (Ctrl+V)<br><span id="${statusId}" style="color:var(--accent-2); font-weight:normal; margin-top:4px; display:block;"></span>`;
     }
 
-    let modoVenta = 'separar'; 
-    function setMode(mode) {
-      modoVenta = mode;
-      const btnAbono = $('btnModeAbono'); const btnSeparar = $('btnModeSeparar');
-      const paySection = $('paymentSections'); const btnReg = $('btnRegistrarVenta');
-      if (mode === 'separar') {
-        btnSeparar.classList.add('active'); btnAbono.classList.remove('active');
-        paySection.style.display = 'none';
-        btnReg.textContent = 'Confirmar Separado ($0)'; btnReg.style.background = 'var(--accent-2)'; 
-      } else {
-        btnAbono.classList.add('active'); btnSeparar.classList.remove('active');
-        paySection.style.display = 'block'; 
-        btnReg.textContent = 'Registrar Venta'; btnReg.style.background = 'var(--accent)'; 
-      }
+    let modoVenta = 'separar'; // 'separar' | 'inteligente' | 'efectivo' | 'premio_rifa'
+    let ubicacionEfectivoVenta = ''; // 'oficina' | 'calle' | ''
+
+    function setModoVenta(modo) {
+        modoVenta = modo;
+        ubicacionEfectivoVenta = '';
+
+        var btnTrans = document.getElementById('btnVentaTransferencia');
+        var btnEfec = document.getElementById('btnVentaEfectivo');
+        var btnPremio = document.getElementById('btnModePremioRifaVenta');
+        var btnSeparar = document.getElementById('btnModeSeparar');
+        var paySection = $('paymentSections');
+        var btnReg = $('btnRegistrarVenta');
+        var infoPremio = document.getElementById('infoPremioRifaVenta');
+        var seccionBuscar = document.getElementById('seccionBuscarTransferenciaVenta');
+        var cardDetalle = document.getElementById('cardDetallePagoVenta');
+        var camposInt = document.getElementById('camposPagoInteligenteVenta');
+        var toggleUbic = document.getElementById('toggleUbicacionEfectivoVenta');
+
+        if (btnTrans) btnTrans.classList.toggle('active', modo === 'inteligente');
+        if (btnEfec) btnEfec.classList.toggle('active', modo === 'efectivo');
+        if (btnPremio) btnPremio.classList.toggle('active', modo === 'premio_rifa');
+        if (btnSeparar) btnSeparar.classList.toggle('active', modo === 'separar');
+
+        if (infoPremio) infoPremio.style.display = 'none';
+        if (toggleUbic) toggleUbic.style.display = 'none';
+
+        if (modo === 'separar') {
+            if (paySection) paySection.style.display = 'none';
+            $('v_metodoPago').value = 'Separado';
+            $('v_referenciaAbono').value = '0';
+            $('v_idTransferencia').value = '';
+            btnReg.textContent = 'Confirmar Separado ($0)'; btnReg.style.background = 'var(--accent-2)';
+        } else if (modo === 'inteligente') {
+            if (paySection) paySection.style.display = 'block';
+            if (seccionBuscar) seccionBuscar.style.display = 'block';
+            if (cardDetalle) cardDetalle.style.display = 'block';
+            if (camposInt) camposInt.style.display = 'block';
+            $('v_metodoPago').value = '';
+            $('v_referenciaAbono').value = '';
+            $('v_idTransferencia').value = '';
+            btnReg.textContent = 'Registrar Venta'; btnReg.style.background = 'var(--accent)';
+        } else if (modo === 'efectivo') {
+            if (paySection) paySection.style.display = 'block';
+            if (seccionBuscar) seccionBuscar.style.display = 'none';
+            if (cardDetalle) cardDetalle.style.display = 'block';
+            if (camposInt) camposInt.style.display = 'none';
+            $('v_metodoPago').value = 'Efectivo';
+            $('v_referenciaAbono').value = 'efectivo';
+            $('v_idTransferencia').value = '';
+            esVentaPendiente = false;
+
+            if (toggleUbic) {
+                var esMiEquipo = nombreAsesorActual && !esAsesorIndependiente(nombreAsesorActual);
+                toggleUbic.style.display = esMiEquipo ? 'block' : 'none';
+                if (esMiEquipo) {
+                    document.getElementById('btnEfectivoOficinaVenta').classList.remove('active');
+                    document.getElementById('btnEfectivoCalleVenta').classList.remove('active');
+                    document.getElementById('infoUbicacionEfectivoVenta').textContent = 'Selecciona dónde recibiste el efectivo';
+                    document.getElementById('infoUbicacionEfectivoVenta').style.color = 'var(--danger)';
+                }
+            }
+            btnReg.textContent = 'Registrar Venta'; btnReg.style.background = 'var(--accent)';
+        } else if (modo === 'premio_rifa') {
+            if (paySection) paySection.style.display = 'block';
+            if (seccionBuscar) seccionBuscar.style.display = 'none';
+            if (cardDetalle) cardDetalle.style.display = 'block';
+            if (camposInt) camposInt.style.display = 'none';
+            $('v_primerAbono').value = '';
+            $('v_metodoPago').value = 'Premio Rifa Diaria';
+            $('v_referenciaAbono').value = 'premio_rifa_diaria';
+            $('v_idTransferencia').value = '';
+            esVentaPendiente = false;
+            if (infoPremio) { infoPremio.style.display = 'block'; cargarCupoRifaVenta(); }
+            btnReg.textContent = '🎰 Registrar Venta (Premio Rifa)'; btnReg.style.background = '#2e7d32';
+        }
+    }
+
+    // Alias para compatibilidad con activateHeroMode que llama setMode('separar')
+    function setMode(mode) { setModoVenta(mode); }
+
+    function setUbicacionEfectivoVenta(ubicacion) {
+        ubicacionEfectivoVenta = ubicacion;
+        document.getElementById('btnEfectivoOficinaVenta').classList.toggle('active', ubicacion === 'oficina');
+        document.getElementById('btnEfectivoCalleVenta').classList.toggle('active', ubicacion === 'calle');
+
+        var info = document.getElementById('infoUbicacionEfectivoVenta');
+        if (ubicacion === 'oficina') {
+            $('v_referenciaAbono').value = 'efectivo_oficina';
+            info.textContent = 'El dinero irá directo a caja, no se te cargará como pendiente';
+            info.style.color = 'var(--accent-2)';
+        } else {
+            $('v_referenciaAbono').value = 'efectivo';
+            info.textContent = 'El dinero se te cargará como pendiente para entregar en caja';
+            info.style.color = 'var(--muted)';
+        }
     }
 
     const numList = $('numList');
@@ -41,11 +123,11 @@ const $ = id => document.getElementById(id);
         else if (len === 4){ tag.textContent='4 cifras'; tag.style.cssText='color:#059669;font-size:.65rem;font-weight:700;'; }
         else { tag.textContent=''; }
       }
-      inp.oninput = actualizarTag;
+      inp.oninput = function() { actualizarTag(); actualizarBotonPremioVenta(); };
       if (value) actualizarTag();
 
       const del = document.createElement('button'); del.className='chip-del'; del.textContent='✕';
-      del.onclick = ()=>{ wrap.remove(); if(!numList.children.length) addDefaultPill(); };
+      del.onclick = ()=>{ wrap.remove(); if(!numList.children.length) addDefaultPill(); actualizarBotonPremioVenta(); };
       wrap.append(inp, tag, del); return wrap;
     }
     function addDefaultPill(){ numList.appendChild(makeNumPill()); }
@@ -757,14 +839,31 @@ const $ = id => document.getElementById(id);
 $('btnRegistrarVenta').onclick = async ()=>{
        const nums = Array.from(numList.querySelectorAll('input')).map(i=>i.value).filter(v=>v.length===3||v.length===4);
        if(!nums.length) return alert('Agrega al menos una boleta válida (3 o 4 dígitos)');
+
+       const esVentaPremioRifa = modoVenta === 'premio_rifa';
+       const esVentaEfectivo = modoVenta === 'efectivo';
+       const esMiEquipoVenta = nombreAsesorActual && !esAsesorIndependiente(nombreAsesorActual);
+
+       if (esVentaPremioRifa && cupoRifaVentaCargado && cupoRifaVentaDisponible <= 0) {
+           return alert("🚫 Ya se usaron todas las boletas premio de esta rifa. No puedes registrar más ventas como Premio Rifa.");
+       }
+       if (esVentaPremioRifa && cupoRifaVentaCargado && nums.length > cupoRifaVentaDisponible) {
+           return alert("🚫 Solo quedan " + cupoRifaVentaDisponible + " boletas premio disponibles, pero estás registrando " + nums.length + " boletas.");
+       }
+       if (esVentaEfectivo && esMiEquipoVenta && !ubicacionEfectivoVenta) {
+           return alert("Selecciona si recibiste el efectivo en la oficina o en la calle.");
+       }
+
        $('btnRegistrarVenta').textContent='Procesando...'; $('btnRegistrarVenta').disabled=true;
        
        let totalMoney=0, ref='', metodo='';
        if (modoVenta === 'separar') { totalMoney=0; ref='0'; metodo='Separado'; } 
+       else if (esVentaPremioRifa) { totalMoney=Number($('v_primerAbono').value)||0; ref='premio_rifa_diaria'; metodo='Premio Rifa Diaria'; }
+       else if (esVentaEfectivo) { totalMoney=Number($('v_primerAbono').value)||0; ref=$('v_referenciaAbono').value; metodo='Efectivo'; }
        else { totalMoney=Number($('v_primerAbono').value)||0; ref=$('v_referenciaAbono').value; metodo=$('v_metodoPago').value; }
 
        const perNum = Math.floor(totalMoney/nums.length);
-       const idTransVenta = $('v_idTransferencia').value;
+       const idTransVenta = (esVentaPremioRifa || esVentaEfectivo) ? '' : $('v_idTransferencia').value;
        const baseData = { 
            nombre: $('v_nombre').value, 
            apellido: $('v_apellido').value, 
@@ -773,10 +872,11 @@ $('btnRegistrarVenta').onclick = async ()=>{
            primerAbono: perNum, 
            referenciaAbono: ref, 
            metodoPago: metodo, 
-           esPendiente: esVentaPendiente, 
+           esPendiente: (esVentaPremioRifa || esVentaEfectivo) ? false : esVentaPendiente, 
            contrasena: localStorage.getItem(STORAGE_KEY),
            idTransferencia: idTransVenta,
-           esPagoInteligente: !!(idTransVenta && idTransVenta.trim() !== '')
+           esPagoInteligente: !esVentaPremioRifa && !esVentaEfectivo && !!(idTransVenta && idTransVenta.trim() !== ''),
+           esPremioRifa: esVentaPremioRifa
        };
   
        let ok=0, fails=0;
@@ -796,7 +896,10 @@ $('btnRegistrarVenta').onclick = async ()=>{
                if(res.status === 'ok') { ok++; actualizarSaldoAsesor(800); } else { fails++; detalleErrores.push(`Boleta ${nums[i]}: ${res.mensaje}`); }
            } catch(e) { fails++; detalleErrores.push(`Boleta ${nums[i]}: Error de conexión`); }
        }
-       $('btnRegistrarVenta').textContent= modoVenta === 'separar' ? 'Confirmar Separado ($0)' : 'Registrar Venta'; 
+       var textoBtn = 'Registrar Venta';
+       if (modoVenta === 'separar') textoBtn = 'Confirmar Separado ($0)';
+       else if (modoVenta === 'premio_rifa') textoBtn = '🎰 Registrar Venta (Premio Rifa)';
+       $('btnRegistrarVenta').textContent = textoBtn;
        $('btnRegistrarVenta').disabled=false;
        
        let mensajeFinal = `Registradas: ${ok} / Errores: ${fails}`;
@@ -817,6 +920,11 @@ $('btnRegistrarVenta').onclick = async ()=>{
            if(document.getElementById('t_plataforma')) document.getElementById('t_plataforma').value='';
            if(document.getElementById('ocrStatus')) document.getElementById('ocrStatus').textContent='';
 
+           ubicacionEfectivoVenta = '';
+           cupoRifaVentaCargado = false;
+           if (document.getElementById('toggleUbicacionEfectivoVenta')) document.getElementById('toggleUbicacionEfectivoVenta').style.display = 'none';
+           if (document.getElementById('infoPremioRifaVenta')) document.getElementById('infoPremioRifaVenta').style.display = 'none';
+
            desbloquearCampos('v_referenciaAbono', 'v_primerAbono', 'v_metodoPago', 'feedbackTransfer');
            numList.innerHTML=''; addDefaultPill(); activateHeroMode();
        }
@@ -829,12 +937,19 @@ $('btnRegistrarVenta').onclick = async ()=>{
         if(boletasTarget.length === 0) return alert("Selecciona al menos una boleta.");
 
         const esEfectivo = modoAbonoPago === 'efectivo';
+        const esPremioRifa = modoAbonoPago === 'premio_rifa';
         const esMiEquipo = nombreAsesorActual && !esAsesorIndependiente(nombreAsesorActual);
         if (esEfectivo && esMiEquipo && !ubicacionEfectivo) {
             return alert("Selecciona si recibiste el efectivo en la oficina o en la calle.");
         }
-        const ref = esEfectivo ? document.getElementById('a_ref').value : document.getElementById('a_ref').value;
-        const metodo = esEfectivo ? 'Efectivo' : document.getElementById('a_metodo').value;
+        if (esPremioRifa && cupoRifaCargado && cupoRifaDisponible <= 0) {
+            return alert("🚫 Ya se usaron todas las boletas premio de esta rifa. No puedes registrar más abonos como Premio Rifa.");
+        }
+        if (esPremioRifa && cupoRifaCargado && boletasTarget.length > cupoRifaDisponible) {
+            return alert("🚫 Solo quedan " + cupoRifaDisponible + " boletas premio disponibles, pero seleccionaste " + boletasTarget.length + " boletas.");
+        }
+        const ref = document.getElementById('a_ref').value;
+        const metodo = esPremioRifa ? 'Premio Rifa Diaria' : (esEfectivo ? 'Efectivo' : document.getElementById('a_metodo').value);
 
         // Construir mapa de montos según el modo
         let montosPorBoleta = {};
@@ -865,14 +980,15 @@ $('btnRegistrarVenta').onclick = async ()=>{
 
         const textoOriginal = btn.textContent; btn.textContent = 'Procesando...'; btn.disabled = true;
 
-        const idTransOriginal = esEfectivo ? '' : document.getElementById('a_idTransferencia').value;
+        const idTransOriginal = (esEfectivo || esPremioRifa) ? '' : document.getElementById('a_idTransferencia').value;
         const basePayload = {
             metodoPago: metodo,
             referencia: ref || 'efectivo',
-            esPendiente: esEfectivo ? false : esAbonoPendiente,
+            esPendiente: (esEfectivo || esPremioRifa) ? false : esAbonoPendiente,
             contrasena: localStorage.getItem(STORAGE_KEY),
             idTransferencia: idTransOriginal,
-            esPagoInteligente: !esEfectivo && !!(idTransOriginal && idTransOriginal.trim() !== '')
+            esPagoInteligente: !esEfectivo && !esPremioRifa && !!(idTransOriginal && idTransOriginal.trim() !== ''),
+            esPremioRifa: esPremioRifa
         };
 
         let ok = 0; let fails = 0;
@@ -917,7 +1033,9 @@ $('btnRegistrarVenta').onclick = async ()=>{
             if(document.getElementById('ocrStatusAbono')) document.getElementById('ocrStatusAbono').textContent='';
             modoAbonoPago = 'inteligente';
             ubicacionEfectivo = '';
+            cupoRifaCargado = false;
             if (document.getElementById('toggleUbicacionEfectivo')) document.getElementById('toggleUbicacionEfectivo').style.display = 'none';
+            if (document.getElementById('infoPremioRifa')) document.getElementById('infoPremioRifa').style.display = 'none';
 
             desbloquearCampos('a_ref', 'a_monto', 'a_metodo', 'feedbackTransferAbono');
             activateHeroMode(); 
@@ -1024,18 +1142,23 @@ $('btnRegistrarVenta').onclick = async ()=>{
     }
 
     let modoDistribucionAbono = 'uniforme'; // 'uniforme' | 'manual'
-    let modoAbonoPago = 'inteligente'; // 'inteligente' | 'efectivo'
+    let modoAbonoPago = 'inteligente'; // 'inteligente' | 'efectivo' | 'premio_rifa'
     let ubicacionEfectivo = ''; // 'oficina' | 'calle' | '' (sin elegir)
+    let cupoRifaDisponible = 0;
+    let cupoRifaCargado = false;
 
     function setModoAbonoPago(modo) {
         modoAbonoPago = modo;
         ubicacionEfectivo = '';
         document.getElementById('btnModoInteligente').classList.toggle('active', modo === 'inteligente');
         document.getElementById('btnModoEfectivo').classList.toggle('active', modo === 'efectivo');
+        var btnPremio = document.getElementById('btnModoPremioRifa');
+        if (btnPremio) btnPremio.classList.toggle('active', modo === 'premio_rifa');
         document.getElementById('seccionPagoInteligente').style.display = modo === 'inteligente' ? 'block' : 'none';
 
         var toggleUbicacion = document.getElementById('toggleUbicacionEfectivo');
         var card = document.getElementById('cardDetalleAbono');
+        var infoPremio = document.getElementById('infoPremioRifa');
 
         if (modo === 'efectivo') {
             if (card) card.style.display = 'block';
@@ -1044,8 +1167,8 @@ $('btnRegistrarVenta').onclick = async ()=>{
             document.getElementById('a_ref').value = 'efectivo';
             document.getElementById('a_idTransferencia').value = '';
             esAbonoPendiente = false;
+            if (infoPremio) infoPremio.style.display = 'none';
 
-            // Solo mostrar oficina/calle para asesores de "mi equipo"
             if (toggleUbicacion) {
                 var esMiEquipo = nombreAsesorActual && !esAsesorIndependiente(nombreAsesorActual);
                 toggleUbicacion.style.display = esMiEquipo ? 'block' : 'none';
@@ -1056,6 +1179,16 @@ $('btnRegistrarVenta').onclick = async ()=>{
                     document.getElementById('infoUbicacionEfectivo').style.color = 'var(--danger)';
                 }
             }
+        } else if (modo === 'premio_rifa') {
+            if (card) card.style.display = 'block';
+            document.getElementById('camposPagoInteligente').style.display = 'none';
+            document.getElementById('a_metodo').value = 'Premio Rifa Diaria';
+            document.getElementById('a_ref').value = 'premio_rifa_diaria';
+            document.getElementById('a_idTransferencia').value = '';
+            esAbonoPendiente = false;
+            if (toggleUbicacion) toggleUbicacion.style.display = 'none';
+            if (infoPremio) infoPremio.style.display = 'block';
+            cargarCupoRifa();
         } else {
             if (card) card.style.display = 'none';
             document.getElementById('camposPagoInteligente').style.display = 'none';
@@ -1063,7 +1196,89 @@ $('btnRegistrarVenta').onclick = async ()=>{
             document.getElementById('a_ref').value = '';
             document.getElementById('a_idTransferencia').value = '';
             if (toggleUbicacion) toggleUbicacion.style.display = 'none';
+            if (infoPremio) infoPremio.style.display = 'none';
         }
+    }
+
+    async function cargarCupoRifa() {
+        var texto = document.getElementById('cupoRifaTexto');
+        if (!texto) return;
+        texto.textContent = 'Cargando cupo...';
+        texto.style.color = '#1b5e20';
+        try {
+            var req = await fetch('/api/admin/cupo-premio-rifa');
+            var res = await req.json();
+            if (res.status === 'ok') {
+                cupoRifaDisponible = res.disponibles;
+                cupoRifaCargado = true;
+                if (res.disponibles > 0) {
+                    texto.textContent = '🎰 Quedan ' + res.disponibles + ' de ' + res.total + ' boletas premio disponibles';
+                    texto.style.color = '#1b5e20';
+                } else {
+                    texto.textContent = '🚫 Ya se usaron todas las ' + res.total + ' boletas premio de esta rifa';
+                    texto.style.color = '#b71c1c';
+                }
+            } else {
+                texto.textContent = '⚠️ ' + (res.mensaje || 'No se pudo cargar el cupo');
+                texto.style.color = '#e65100';
+                cupoRifaDisponible = 0;
+            }
+        } catch(e) {
+            texto.textContent = '⚠️ Error al consultar cupo de premios';
+            texto.style.color = '#b71c1c';
+            cupoRifaDisponible = 0;
+        }
+    }
+
+    function mostrarBotonPremioRifa(boletas) {
+        var btn = document.getElementById('btnModoPremioRifa');
+        if (!btn) return;
+        var tieneBoletaApto = boletas && boletas.some(function(b) {
+            return String(b.numero || b).length === 4;
+        });
+        btn.style.display = tieneBoletaApto ? 'inline-block' : 'none';
+    }
+
+    let cupoRifaVentaDisponible = 0;
+    let cupoRifaVentaCargado = false;
+
+    async function cargarCupoRifaVenta() {
+        var texto = document.getElementById('cupoRifaTextoVenta');
+        if (!texto) return;
+        texto.textContent = 'Cargando cupo...';
+        texto.style.color = '#1b5e20';
+        try {
+            var req = await fetch('/api/admin/cupo-premio-rifa');
+            var res = await req.json();
+            if (res.status === 'ok') {
+                cupoRifaVentaDisponible = res.disponibles;
+                cupoRifaVentaCargado = true;
+                if (res.disponibles > 0) {
+                    texto.textContent = '🎰 Quedan ' + res.disponibles + ' de ' + res.total + ' boletas premio disponibles';
+                    texto.style.color = '#1b5e20';
+                } else {
+                    texto.textContent = '🚫 Ya se usaron todas las ' + res.total + ' boletas premio de esta rifa';
+                    texto.style.color = '#b71c1c';
+                }
+            } else {
+                texto.textContent = '⚠️ ' + (res.mensaje || 'No se pudo cargar el cupo');
+                texto.style.color = '#e65100';
+                cupoRifaVentaDisponible = 0;
+            }
+        } catch(e) {
+            texto.textContent = '⚠️ Error al consultar cupo de premios';
+            texto.style.color = '#b71c1c';
+            cupoRifaVentaDisponible = 0;
+        }
+    }
+
+    function actualizarBotonPremioVenta() {
+        var btnPremioVenta = document.getElementById('btnModePremioRifaVenta');
+        if (!btnPremioVenta) return;
+        var inputs = numList.querySelectorAll('input');
+        var tieneBoletaApto = Array.from(inputs).some(function(inp) { return inp.value.length === 4; });
+        btnPremioVenta.style.display = tieneBoletaApto ? 'inline-block' : 'none';
+        if (!tieneBoletaApto && modoVenta === 'premio_rifa') setMode('separar');
     }
 
     function setUbicacionEfectivo(ubicacion) {
@@ -1154,6 +1369,8 @@ $('btnRegistrarVenta').onclick = async ()=>{
             const yaVisible = zonaPagos.style.display === 'block';
             zonaPagos.style.display = 'block';
             if (!yaVisible) { resetOcrZone('ocrDropAbono', 'ocrStatusAbono'); modoDistribucionAbono = 'uniforme'; setModoAbonoPago('inteligente'); }
+            var boletasSeleccionadas = Array.from(checkboxes).map(function(c) { return { numero: c.value }; });
+            mostrarBotonPremioRifa(boletasSeleccionadas);
 
             const esMultiple = checkboxes.length > 1;
             if (toggleModo) toggleModo.style.display = esMultiple ? 'block' : 'none';

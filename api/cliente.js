@@ -50,7 +50,8 @@ export default async function handler(req, res) {
         abonado_cliente: "",
         nombre_cliente: "",
         enlaces_boletas: "",
-        resumen: ""
+        resumen: "",
+        fecha_ultimo_abono: ""
       });
     }
 
@@ -74,14 +75,33 @@ export default async function handler(req, res) {
       `🎟️ *Boleta ${b.numero}* → Restante: *${formatearPesos(b.saldo_restante)}*`
     ).join('\n\n');
 
-    // 8. Le respondemos a Chatea Pro con el paquete listo y valores COMPLETOS
+    // 8. Buscamos la fecha del último abono entre todas las boletas del cliente
+    const numerosArray = boletas.map(b => b.numero);
+    const { data: abonos } = await supabase
+      .from('abonos')
+      .select('fecha_pago')
+      .in('numero_boleta', numerosArray)
+      .order('fecha_pago', { ascending: false })
+      .limit(1);
+
+    let fechaUltimoAbono = "";
+    if (abonos && abonos.length > 0 && abonos[0].fecha_pago) {
+      const fecha = new Date(abonos[0].fecha_pago);
+      const y = fecha.getFullYear();
+      const m = String(fecha.getMonth() + 1).padStart(2, '0');
+      const d = String(fecha.getDate()).padStart(2, '0');
+      fechaUltimoAbono = `${y}-${m}-${d}`;
+    }
+
+    // 9. Le respondemos a Chatea Pro con el paquete listo y valores COMPLETOS
     res.status(200).json({
       boletas_cliente: listaNumeros,
       deuda_cliente: deudaTotal,
       abonado_cliente: abonadoTotal,
       nombre_cliente: nombre,
       enlaces_boletas: listaEnlaces,
-      resumen
+      resumen,
+      fecha_ultimo_abono: fechaUltimoAbono
     });
 
   } catch (error) {

@@ -216,13 +216,27 @@
         </div>
       </div>
 
-      <div class="mode-switch">
-        <button id="btnModeAbono" class="mode-btn" onclick="setMode('abono')">Con Abono</button>
-        <button id="btnModeSeparar" class="mode-btn active" onclick="setMode('separar')">Solo Separar ($0)</button>
+      <div class="mode-switch" id="toggleMetodoVenta">
+        <button id="btnVentaTransferencia" class="mode-btn" onclick="setModoVenta('inteligente')">Transferencia Real</button>
+        <button id="btnVentaEfectivo" class="mode-btn" onclick="setModoVenta('efectivo')">Efectivo</button>
+        <button id="btnModePremioRifaVenta" class="mode-btn" onclick="setModoVenta('premio_rifa')" style="display:none;">🎰 Premio Rifa</button>
+        <button id="btnModeSeparar" class="mode-btn active" onclick="setModoVenta('separar')">Solo Separar ($0)</button>
+      </div>
+
+      <div id="infoPremioRifaVenta" style="display:none; background:#e8f5e9; border:1.5px solid #43a047; border-radius:10px; padding:10px 14px; margin-top:8px; text-align:center;">
+        <span style="font-size:0.85rem; font-weight:600; color:#1b5e20;" id="cupoRifaTextoVenta">Cargando cupo...</span>
+      </div>
+
+      <div id="toggleUbicacionEfectivoVenta" style="display:none;">
+        <div class="abono-mode-switch">
+          <button id="btnEfectivoOficinaVenta" class="abono-mode-btn" onclick="setUbicacionEfectivoVenta('oficina')">🏢 En Oficina</button>
+          <button id="btnEfectivoCalleVenta" class="abono-mode-btn" onclick="setUbicacionEfectivoVenta('calle')">🚶 En la Calle</button>
+        </div>
+        <p id="infoUbicacionEfectivoVenta" style="font-size:0.8rem; color:var(--muted); text-align:center; margin:6px 0 0;"></p>
       </div>
 
       <div id="paymentSections" style="display: none;">
-        <div class="section-card">
+        <div class="section-card" id="seccionBuscarTransferenciaVenta">
           <div class="section-title">BUSCAR TRANSFERENCIA REAL</div>
           <div class="vertical-form">
             <div id="ocrDrop" class="ocr-drop" tabindex="0" onclick="this.focus()" title="Haz clic aquí y luego Ctrl+V para pegar la imagen">
@@ -272,22 +286,23 @@
           <div id="feedbackTransfer" class="hint"></div>
         </div>
 
-        <div class="section-card">
-          <div class="section-title">Detalle del Pago</div>
+        <div class="section-card" id="cardDetallePagoVenta">
           <div class="vertical-form">
             <div><label>Valor a Abonar</label><div class="field"><input id="v_primerAbono" class="pill" type="number" min="0" value="0"></div></div>
-            <div>
-              <label>Método / Plataforma</label>
-              <div class="field">
-                <input id="v_metodoPago" list="l_metodos" class="pill" type="text" placeholder="Ej: Nequi, Bancolombia">
-                <datalist id="l_metodos"><option value="Nequi"></option><option value="Bancolombia"></option><option value="Efectivo"></option></datalist>
+            <div id="camposPagoInteligenteVenta">
+              <div>
+                <label>Método / Plataforma</label>
+                <div class="field">
+                  <input id="v_metodoPago" list="l_metodos" class="pill" type="text" placeholder="Ej: Nequi, Bancolombia">
+                  <datalist id="l_metodos"><option value="Nequi"></option><option value="Bancolombia"></option><option value="Efectivo"></option></datalist>
+                </div>
               </div>
-            </div>
-            <div>
-              <label>Referencia</label>
-              <div style="display:flex; gap:8px;">
-                <div class="field" style="flex:1"><input id="v_referenciaAbono" class="pill" type="text"></div>
-                <button id="btnForzarPendiente" type="button" style="border:none; border-radius:10px; padding:0 15px; background:var(--pill); color:var(--ink); font-weight:500; cursor:pointer; font-family:inherit; font-size: 0.85rem;">Pendiente</button>
+              <div>
+                <label>Referencia</label>
+                <div style="display:flex; gap:8px;">
+                  <div class="field" style="flex:1"><input id="v_referenciaAbono" class="pill" type="text"></div>
+                  <button id="btnForzarPendiente" type="button" style="border:none; border-radius:10px; padding:0 15px; background:var(--pill); color:var(--ink); font-weight:500; cursor:pointer; font-family:inherit; font-size: 0.85rem;">Pendiente</button>
+                </div>
               </div>
             </div>
           </div>
@@ -311,6 +326,10 @@
         <div class="mode-switch" id="toggleMetodoAbono">
           <button id="btnModoInteligente" class="mode-btn active" onclick="setModoAbonoPago('inteligente')">Transferencia Real</button>
           <button id="btnModoEfectivo" class="mode-btn" onclick="setModoAbonoPago('efectivo')">Efectivo</button>
+          <button id="btnModoPremioRifa" class="mode-btn" onclick="setModoAbonoPago('premio_rifa')" style="display:none;">🎰 Premio Rifa</button>
+        </div>
+        <div id="infoPremioRifa" style="display:none; background:#e8f5e9; border:1.5px solid #43a047; border-radius:10px; padding:10px 14px; margin-top:8px; text-align:center;">
+          <span style="font-size:0.85rem; font-weight:600; color:#1b5e20;" id="cupoRifaTexto">Cargando cupo...</span>
         </div>
 
         <div id="toggleUbicacionEfectivo" style="display:none;">
