@@ -6,6 +6,7 @@
   <title>Gestión de Horarios — Los Plata</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="shared-nav.css">
+  <script>if(localStorage.getItem('asesor_pwd')&&localStorage.getItem('asesor_nombre'))document.documentElement.classList.add('snav-authed')</script>
   <style>
     :root {
       --ink: #2b3a35;
@@ -390,6 +391,7 @@
         const admins = ['mateo', 'alejo p', 'alejo plata'];
         if (!admins.includes(json.asesor.toLowerCase())) {
           msg.textContent = 'Solo administradores pueden acceder a esta sección.';
+          if (window.__snavShowLogin) window.__snavShowLogin();
           return;
         }
         pwdAdmin = pwd;
@@ -404,6 +406,7 @@
         cargarHorarios();
       } else {
         msg.textContent = json.mensaje || 'Contraseña incorrecta';
+        if (window.__snavShowLogin) window.__snavShowLogin();
       }
     } catch(e) {
       msg.textContent = 'Error de conexión. Intenta de nuevo.';

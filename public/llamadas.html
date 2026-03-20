@@ -6,6 +6,7 @@
   <title>Centro de Llamadas - Los Plata</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="shared-nav.css">
+  <script>if(localStorage.getItem('asesor_pwd')&&localStorage.getItem('asesor_nombre'))document.documentElement.classList.add('snav-authed')</script>
   <style>
     :root {
       --bg: #f1f5f9; --card: #ffffff; --ink: #0f172a; --ink-2: #334155; --muted: #64748b;
@@ -403,6 +404,7 @@
         } else {
           if (!auto) msg.textContent = 'Acceso denegado. Solo gerencia.';
           localStorage.removeItem(STORAGE_KEY);
+          if (window.__snavShowLogin) window.__snavShowLogin();
         }
       } catch (err) {
         if (!auto) { btn.textContent = 'Acceder'; btn.disabled = false; msg.textContent = 'Error de conexión'; }

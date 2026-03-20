@@ -154,6 +154,11 @@
   }
 
   window.__snavSaveAsesor = saveAsesorName;
+  window.__snavShowLogin = function () {
+    document.documentElement.classList.remove('snav-authed');
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_NAME);
+  };
   window.__snavRefresh = function () {
     const existing = document.getElementById('snavSidebar');
     if (existing) existing.remove();

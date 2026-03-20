@@ -173,6 +173,7 @@ const $ = id => document.getElementById(id);
           } else {
               if(!auto) msg.textContent = 'Contraseña incorrecta';
               localStorage.removeItem(STORAGE_KEY);
+              if (window.__snavShowLogin) window.__snavShowLogin();
           }
       } catch (error) {
           if(!auto) { btn.textContent = 'Ingresar'; btn.disabled = false; msg.textContent = 'Error de conexión'; }

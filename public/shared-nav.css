@@ -2,6 +2,13 @@
    SIDEBAR DE NAVEGACIÓN COMPARTIDO — Los Plata S.A.S.
    ═══════════════════════════════════════════════════════════════════ */
 
+/* Ocultar login instantáneamente si ya hay sesión guardada */
+html.snav-authed #loginOverlay,
+html.snav-authed #loginScreen {
+  display: none !important;
+}
+
+
 .snav-sidebar {
   position: fixed;
   top: 0; left: 0;

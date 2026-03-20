@@ -6,6 +6,7 @@
   <title>Estado de Resultados — Centro Financiero</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="shared-nav.css">
+  <script>if(localStorage.getItem('asesor_pwd')&&localStorage.getItem('asesor_nombre'))document.documentElement.classList.add('snav-authed')</script>
   <style>
     :root {
       --ink:          #1a2820;
@@ -730,6 +731,7 @@ async function doLogin() {
       if (data.asesor !== 'Mateo') {
         errEl.textContent = 'Solo Mateo tiene acceso al Centro Financiero.';
         btn.textContent = 'Ingresar'; btn.disabled = false;
+        if (window.__snavShowLogin) window.__snavShowLogin();
         return;
       }
       contrasena   = pwd;
@@ -745,6 +747,7 @@ async function doLogin() {
       cargarTodo();
     } else {
       errEl.textContent = data.mensaje || 'Contraseña incorrecta';
+      if (window.__snavShowLogin) window.__snavShowLogin();
     }
   } catch (e) {
     errEl.textContent = 'Error de conexión.';

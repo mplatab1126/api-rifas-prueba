@@ -7,6 +7,7 @@
   <title>BI Dashboard PRO - Los Plata</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="shared-nav.css">
+  <script>if(localStorage.getItem('asesor_pwd')&&localStorage.getItem('asesor_nombre'))document.documentElement.classList.add('snav-authed')</script>
   <style>
     /* ========================================================= */
     /* VARIABLES DE DISEÑO PREMIUM (SaaS)                        */
@@ -683,6 +684,7 @@
           } else {
               if(!auto) msg.textContent = 'Acceso denegado. Solo gerencia.';
               localStorage.removeItem(STORAGE_KEY);
+              if (window.__snavShowLogin) window.__snavShowLogin();
           }
       } catch (error) { if(!auto) { btn.textContent = 'Acceder a la Data'; btn.disabled = false; msg.textContent = 'Error de conexión'; } }
     }
