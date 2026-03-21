@@ -444,11 +444,18 @@
     <!-- LLAMADA DE PRUEBA -->
     <div class="saas-divider">Llamada de Prueba</div>
     <div class="card">
-      <p style="font-size:0.85rem; color:var(--muted); font-weight:600; margin:0 0 16px;">Envía una llamada de prueba a cualquier número para verificar que todo funciona. El mensaje dirá "Cliente Prueba" con saldo de $100.000.</p>
+      <p style="font-size:0.85rem; color:var(--muted); font-weight:600; margin:0 0 16px;">Envía una llamada de prueba a cualquier número para verificar cómo suena el mensaje. Se usa "Cliente Prueba", boleta "0000" y saldo de $100.000.</p>
       <div class="filter-row">
         <div class="input-group">
           <label>Número de celular</label>
           <input type="tel" id="telefonoTest" class="field-input" placeholder="3001234567">
+        </div>
+        <div class="input-group">
+          <label>Usar mensaje de</label>
+          <select id="testPlantillaSource" class="field-input">
+            <option value="cobro">Cobro Directo</option>
+            <option value="rescate">Rescate WhatsApp</option>
+          </select>
         </div>
         <div class="input-group" style="flex:0; min-width:auto;">
           <label>&nbsp;</label>
@@ -735,8 +742,10 @@
       btn.disabled = true;
       result.textContent = '';
 
-      const plantilla = document.getElementById('plantillaLlamada').value;
-      localStorage.setItem('plantilla_llamada', plantilla);
+      const source = document.getElementById('testPlantillaSource').value;
+      const plantilla = source === 'cobro'
+        ? document.getElementById('cobroPlantilla').value
+        : document.getElementById('plantillaLlamada').value;
       const res = await apiCall('test', { telefono_test: tel, plantilla });
 
       btn.textContent = 'Enviar prueba';
