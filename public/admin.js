@@ -1161,7 +1161,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
         var infoPremio = document.getElementById('infoPremioRifa');
 
         if (modo === 'efectivo') {
-            if (card) card.style.display = 'block';
+            if (card) { card.style.display = 'block'; var f = card.querySelector('.vertical-form'); if (f) f.style.display = 'block'; }
             document.getElementById('camposPagoInteligente').style.display = 'none';
             document.getElementById('a_metodo').value = 'Efectivo';
             document.getElementById('a_ref').value = 'efectivo';
@@ -1180,7 +1180,9 @@ $('btnRegistrarVenta').onclick = async ()=>{
                 }
             }
         } else if (modo === 'premio_rifa') {
-            if (card) card.style.display = 'none';
+            if (card) card.style.display = 'block';
+            var formAbono = card ? card.querySelector('.vertical-form') : null;
+            if (formAbono) formAbono.style.display = 'none';
             document.getElementById('camposPagoInteligente').style.display = 'none';
             document.getElementById('a_metodo').value = 'Premio Rifa Diaria';
             document.getElementById('a_ref').value = 'premio_rifa_diaria';
@@ -1191,7 +1193,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
             if (infoPremio) infoPremio.style.display = 'block';
             cargarCupoRifa();
         } else {
-            if (card) card.style.display = 'none';
+            if (card) { card.style.display = 'none'; var f = card.querySelector('.vertical-form'); if (f) f.style.display = 'block'; }
             document.getElementById('camposPagoInteligente').style.display = 'none';
             document.getElementById('a_metodo').value = '';
             document.getElementById('a_ref').value = '';
