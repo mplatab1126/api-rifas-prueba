@@ -218,6 +218,7 @@
 
       <div class="mode-switch" id="toggleMetodoVenta">
         <button id="btnVentaTransferencia" class="mode-btn" onclick="setModoVenta('inteligente')">Transferencia Real</button>
+        <button id="btnVentaPendiente" class="mode-btn" onclick="setModoVenta('pendiente')">⏳ Pendiente</button>
         <button id="btnVentaEfectivo" class="mode-btn" onclick="setModoVenta('efectivo')">Efectivo</button>
         <button id="btnModePremioRifaVenta" class="mode-btn" onclick="setModoVenta('premio_rifa')" style="display:none;">🎰 Premio Rifa</button>
         <button id="btnModeSeparar" class="mode-btn active" onclick="setModoVenta('separar')">Solo Separar ($0)</button>
@@ -325,6 +326,7 @@
 
         <div class="mode-switch" id="toggleMetodoAbono">
           <button id="btnModoInteligente" class="mode-btn active" onclick="setModoAbonoPago('inteligente')">Transferencia Real</button>
+          <button id="btnModoPendiente" class="mode-btn" onclick="setModoAbonoPago('pendiente')">⏳ Pendiente</button>
           <button id="btnModoEfectivo" class="mode-btn" onclick="setModoAbonoPago('efectivo')">Efectivo</button>
           <button id="btnModoPremioRifa" class="mode-btn" onclick="setModoAbonoPago('premio_rifa')" style="display:none;">🎰 Premio Rifa</button>
         </div>

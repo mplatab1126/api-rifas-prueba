@@ -178,7 +178,7 @@ export default async function handler(req, res) {
         es_pendiente: !!esPendiente,
         asesor: nombreAsesor,
         tipo: tipoBoleta,
-        origen: (esPagoInteligente || (idTransferencia && idTransferencia.trim() !== '')) ? 'transferencia_real' : 'manual'
+        origen: esPendiente ? 'pendiente' : (esPagoInteligente || (idTransferencia && idTransferencia.trim() !== '')) ? 'transferencia_real' : 'manual'
       });
     if (insertError) throw insertError;
     

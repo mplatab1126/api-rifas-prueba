@@ -19,6 +19,7 @@ const $ = id => document.getElementById(id);
         ubicacionEfectivoVenta = '';
 
         var btnTrans = document.getElementById('btnVentaTransferencia');
+        var btnPend = document.getElementById('btnVentaPendiente');
         var btnEfec = document.getElementById('btnVentaEfectivo');
         var btnPremio = document.getElementById('btnModePremioRifaVenta');
         var btnSeparar = document.getElementById('btnModeSeparar');
@@ -31,6 +32,7 @@ const $ = id => document.getElementById(id);
         var toggleUbic = document.getElementById('toggleUbicacionEfectivoVenta');
 
         if (btnTrans) btnTrans.classList.toggle('active', modo === 'inteligente');
+        if (btnPend) btnPend.classList.toggle('active', modo === 'pendiente');
         if (btnEfec) btnEfec.classList.toggle('active', modo === 'efectivo');
         if (btnPremio) btnPremio.classList.toggle('active', modo === 'premio_rifa');
         if (btnSeparar) btnSeparar.classList.toggle('active', modo === 'separar');
@@ -74,6 +76,17 @@ const $ = id => document.getElementById(id);
                 }
             }
             btnReg.textContent = 'Registrar Venta'; btnReg.style.background = 'var(--accent)';
+        } else if (modo === 'pendiente') {
+            if (paySection) paySection.style.display = 'block';
+            if (seccionBuscar) seccionBuscar.style.display = 'none';
+            if (cardDetalle) cardDetalle.style.display = 'block';
+            if (camposInt) camposInt.style.display = 'block';
+            $('v_metodoPago').value = '';
+            $('v_referenciaAbono').value = '';
+            $('v_primerAbono').value = '';
+            $('v_idTransferencia').value = '';
+            esVentaPendiente = true;
+            btnReg.textContent = '⏳ Registrar Venta (Pendiente)'; btnReg.style.background = '#e65100';
         } else if (modo === 'premio_rifa') {
             if (paySection) paySection.style.display = 'none';
             if (seccionBuscar) seccionBuscar.style.display = 'none';
@@ -1151,6 +1164,8 @@ $('btnRegistrarVenta').onclick = async ()=>{
         modoAbonoPago = modo;
         ubicacionEfectivo = '';
         document.getElementById('btnModoInteligente').classList.toggle('active', modo === 'inteligente');
+        var btnPend = document.getElementById('btnModoPendiente');
+        if (btnPend) btnPend.classList.toggle('active', modo === 'pendiente');
         document.getElementById('btnModoEfectivo').classList.toggle('active', modo === 'efectivo');
         var btnPremio = document.getElementById('btnModoPremioRifa');
         if (btnPremio) btnPremio.classList.toggle('active', modo === 'premio_rifa');
@@ -1179,6 +1194,16 @@ $('btnRegistrarVenta').onclick = async ()=>{
                     document.getElementById('infoUbicacionEfectivo').style.color = 'var(--danger)';
                 }
             }
+        } else if (modo === 'pendiente') {
+            if (card) { card.style.display = 'block'; var f = card.querySelector('.vertical-form'); if (f) f.style.display = 'block'; }
+            document.getElementById('camposPagoInteligente').style.display = 'block';
+            document.getElementById('a_metodo').value = '';
+            document.getElementById('a_ref').value = '';
+            document.getElementById('a_monto').value = '';
+            document.getElementById('a_idTransferencia').value = '';
+            esAbonoPendiente = true;
+            if (toggleUbicacion) toggleUbicacion.style.display = 'none';
+            if (infoPremio) infoPremio.style.display = 'none';
         } else if (modo === 'premio_rifa') {
             if (card) card.style.display = 'block';
             var formAbono = card ? card.querySelector('.vertical-form') : null;
