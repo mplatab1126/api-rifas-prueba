@@ -491,13 +491,58 @@
 
     <!-- HISTORIAL -->
     <div class="saas-divider">Historial de Llamadas</div>
-    <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
-        <div class="card-title" style="margin:0; padding:0; border:0;">Últimas llamadas realizadas</div>
-        <button id="btnSyncEstados" class="btn btn-outline btn-sm" onclick="sincronizarYRecargar(this)">Actualizar estados</button>
+    <div class="filter-zone" style="margin-bottom:15px;">
+      <div class="filter-row">
+        <div class="input-group">
+          <label>Desde</label>
+          <input type="date" id="histFechaDesde" class="field-input" onchange="filtrarHistorial()">
+        </div>
+        <div class="input-group">
+          <label>Hasta</label>
+          <input type="date" id="histFechaHasta" class="field-input" onchange="filtrarHistorial()">
+        </div>
+        <div class="input-group" style="flex:0; min-width:auto;">
+          <label>&nbsp;</label>
+          <button id="btnSyncEstados" class="btn btn-outline" onclick="sincronizarYRecargar(this)">Actualizar estados</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mega-kpi-grid" id="histKpiGrid" style="display:none;">
+      <div class="mega-kpi kpi-blue">
+        <div class="mega-kpi-title">Total llamadas</div>
+        <div class="mega-kpi-value" id="histKpiTotal">0</div>
+        <span class="mega-kpi-sub" id="histKpiRango">En el rango seleccionado</span>
+      </div>
+      <div class="mega-kpi kpi-green">
+        <div class="mega-kpi-title">Completadas</div>
+        <div class="mega-kpi-value" id="histKpiCompleted">0</div>
+        <span class="mega-kpi-sub" id="histKpiCompletedPct">—</span>
+      </div>
+      <div class="mega-kpi kpi-orange">
+        <div class="mega-kpi-title">Sin respuesta</div>
+        <div class="mega-kpi-value" id="histKpiNoAnswer">0</div>
+        <span class="mega-kpi-sub" id="histKpiNoAnswerPct">—</span>
+      </div>
+      <div class="mega-kpi kpi-red">
+        <div class="mega-kpi-title">Fallidas / Ocupado</div>
+        <div class="mega-kpi-value" id="histKpiFailed">0</div>
+        <span class="mega-kpi-sub" id="histKpiFailedPct">—</span>
+      </div>
+      <div class="mega-kpi kpi-purple">
+        <div class="mega-kpi-title">Pendientes</div>
+        <div class="mega-kpi-value" id="histKpiPending">0</div>
+        <span class="mega-kpi-sub">En cola / Iniciadas</span>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:15px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
+        <div class="card-title" style="margin:0; padding:0; border:0;">Detalle de llamadas</div>
+        <button class="btn btn-outline btn-sm" id="btnToggleDetalle" onclick="toggleDetalleHistorial()" style="display:none;">Mostrar detalle</button>
       </div>
       <div id="historialEmpty" class="empty-state" style="display:none;">
-        <p>No hay llamadas registradas aún. Cuando lances una difusión, las llamadas aparecerán aquí con su estado en tiempo real.</p>
+        <p>No hay llamadas en este rango de fechas.</p>
       </div>
       <div class="table-container" id="historialContainer" style="display:none;">
         <table class="premium-table">
@@ -507,12 +552,9 @@
               <th>Cliente</th>
               <th>Teléfono</th>
               <th>Boleta(s)</th>
-              <th>Saldo</th>
               <th>Estado</th>
               <th>Duración</th>
-              <th>Costo</th>
               <th>Grabación</th>
-              <th>Lanzada por</th>
             </tr>
           </thead>
           <tbody id="historialBody"></tbody>
@@ -662,24 +704,26 @@
       }
 
       if (histRes.status === 'ok') {
-        const llamadas = histRes.llamadas || [];
-        document.getElementById('kpiTotal').textContent = llamadas.length;
+        allLlamadas = histRes.llamadas || [];
+        document.getElementById('kpiTotal').textContent = allLlamadas.length;
 
-        const completadas = llamadas.filter(l => l.estado === 'completed').length;
-        const sinRespuesta = llamadas.filter(l => l.estado === 'no-answer' || l.estado === 'busy').length;
-
-        if (llamadas.length > 0) {
-          const primeraFecha = new Date(llamadas[0].created_at);
-          const mismaFecha = llamadas.filter(l => {
+        if (allLlamadas.length > 0) {
+          const primeraFecha = new Date(allLlamadas[0].created_at);
+          const mismaFecha = allLlamadas.filter(l => {
             const d = new Date(l.created_at);
             return d.toDateString() === primeraFecha.toDateString() &&
                    Math.abs(d - primeraFecha) < 600000;
           });
           document.getElementById('kpiUltimo').textContent = mismaFecha.length;
           document.getElementById('kpiUltimoFecha').textContent = primeraFecha.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+          if (!document.getElementById('histFechaDesde').value) {
+            document.getElementById('histFechaDesde').value = new Date().toISOString().slice(0, 10);
+            document.getElementById('histFechaHasta').value = new Date().toISOString().slice(0, 10);
+          }
         }
 
-        renderHistorial(llamadas);
+        filtrarHistorial();
       }
     }
 
@@ -707,19 +751,72 @@
       return Math.floor(seg / 60) + 'm ' + (seg % 60) + 's';
     }
 
+    let allLlamadas = [];
+
+    function filtrarHistorial() {
+      const desde = document.getElementById('histFechaDesde').value;
+      const hasta = document.getElementById('histFechaHasta').value;
+
+      let filtradas = allLlamadas;
+      if (desde) filtradas = filtradas.filter(l => l.created_at >= desde);
+      if (hasta) filtradas = filtradas.filter(l => l.created_at <= hasta + 'T23:59:59');
+
+      renderHistorialResumen(filtradas);
+      renderHistorial(filtradas);
+    }
+
+    function renderHistorialResumen(llamadas) {
+      const grid = document.getElementById('histKpiGrid');
+      if (!llamadas || llamadas.length === 0) { grid.style.display = 'none'; return; }
+      grid.style.display = 'grid';
+
+      const total = llamadas.length;
+      const completed = llamadas.filter(l => l.estado === 'completed').length;
+      const noAnswer = llamadas.filter(l => l.estado === 'no-answer' || l.estado === 'busy').length;
+      const failed = llamadas.filter(l => l.estado === 'failed' || l.estado === 'canceled').length;
+      const pending = total - completed - noAnswer - failed;
+
+      const pct = n => total > 0 ? Math.round((n / total) * 100) + '%' : '—';
+
+      document.getElementById('histKpiTotal').textContent = total;
+      document.getElementById('histKpiCompleted').textContent = completed;
+      document.getElementById('histKpiCompletedPct').textContent = pct(completed) + ' del total';
+      document.getElementById('histKpiNoAnswer').textContent = noAnswer;
+      document.getElementById('histKpiNoAnswerPct').textContent = pct(noAnswer) + ' del total';
+      document.getElementById('histKpiFailed').textContent = failed;
+      document.getElementById('histKpiFailedPct').textContent = pct(failed) + ' del total';
+      document.getElementById('histKpiPending').textContent = pending;
+    }
+
+    function toggleDetalleHistorial() {
+      const c = document.getElementById('historialContainer');
+      const btn = document.getElementById('btnToggleDetalle');
+      if (c.style.display === 'none') {
+        c.style.display = 'block';
+        btn.textContent = 'Ocultar detalle';
+      } else {
+        c.style.display = 'none';
+        btn.textContent = 'Mostrar detalle';
+      }
+    }
+
     function renderHistorial(llamadas) {
       const body = document.getElementById('historialBody');
       const container = document.getElementById('historialContainer');
       const empty = document.getElementById('historialEmpty');
+      const btnToggle = document.getElementById('btnToggleDetalle');
 
       if (!llamadas || llamadas.length === 0) {
         empty.style.display = 'block';
         container.style.display = 'none';
+        btnToggle.style.display = 'none';
         return;
       }
 
       empty.style.display = 'none';
-      container.style.display = 'block';
+      container.style.display = 'none';
+      btnToggle.style.display = 'inline-block';
+      btnToggle.textContent = 'Mostrar detalle';
 
       body.innerHTML = llamadas.map(l => {
         const fecha = new Date(l.created_at);
@@ -734,22 +831,14 @@
           grabacionHTML = '<span style="font-size:0.78rem; color:var(--muted);">Procesando...</span>';
         }
 
-        const costoInfo = costosData[l.sid];
-        const costoHTML = costoInfo && costoInfo.precio
-          ? `<span style="font-weight:700; color:#b91c1c;">$${costoInfo.precio.toFixed(3)}</span>`
-          : '<span style="color:var(--muted);">—</span>';
-
         return `<tr>
           <td style="white-space:nowrap">${fechaStr}</td>
           <td style="font-weight:800">${l.nombre_cliente || '—'}</td>
           <td>${l.telefono || '—'}</td>
           <td>${l.boletas || '—'}</td>
-          <td style="font-weight:700">${l.saldo ? formatMoney(l.saldo) : '—'}</td>
           <td>${estadoBadge(l.estado)}</td>
           <td>${formatDuracion(l.duracion)}</td>
-          <td>${costoHTML}</td>
           <td>${grabacionHTML}</td>
-          <td>${l.lanzada_por || '—'}</td>
         </tr>`;
       }).join('');
     }
