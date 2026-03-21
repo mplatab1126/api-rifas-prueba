@@ -30,20 +30,13 @@ export default async function handler(req, res) {
 
     if (errAbonos) throw errAbonos;
 
-    // B. Liberar las transferencias bancarias en la tabla 'transferencias'
-    if (abonos && abonos.length > 0) {
-      // Sacamos solo las referencias reales (ignoramos 'efectivo' o 'Sin Ref')
-      const referencias = abonos
-        .map(a => a.referencia_transferencia)
-        .filter(ref => ref && ref !== 'Sin Ref' && ref !== 'efectivo' && ref !== '0');
-        
-      if (referencias.length > 0) {
-        await supabase
-          .from('transferencias')
-          .update({ estado: 'LIBRE' })
-          .in('referencia', referencias);
-      }
-    }
+    // B. Liberar SOLO las transferencias asignadas a ESTA boleta específica
+    //    (antes se usaba .in('referencia', ...) que liberaba transferencias de OTRAS boletas
+    //     cuando compartían la misma referencia, ej: mismo número de cuenta del cliente)
+    await supabase
+      .from('transferencias')
+      .update({ estado: 'LIBRE' })
+      .eq('estado', `ASIGNADA a boleta ${numeroBoleta}`);
 
     // C. Eliminar definitivamente todos los abonos de esta boleta
     await supabase.from('abonos').delete().eq('numero_boleta', numeroBoleta);
