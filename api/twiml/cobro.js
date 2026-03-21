@@ -1,5 +1,17 @@
 const PLANTILLA_DEFAULT = 'Hola {nombre}, te llamamos de Los Plata. Te informamos que tienes un saldo pendiente de {total} pesos en {boletas}. Por favor comunícate con nosotros para ponerte al día. ¡Muchas gracias y que tengas un excelente día!';
 
+const DIGITOS = ['cero','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve'];
+
+function boletaParaVoz(numero) {
+  const str = String(numero).padStart(4, '0');
+  const par1 = str.slice(0, 2);
+  const par2 = str.slice(2, 4);
+  function par(p) {
+    return p[0] === '0' ? `${DIGITOS[+p[0]]} ${DIGITOS[+p[1]]}` : p;
+  }
+  return `${par(par1)}, ${par(par2)}`;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET' && req.method !== 'POST') {
     return res.status(405).end();
@@ -15,10 +27,10 @@ export default async function handler(req, res) {
   const listaNumeros = boletasTexto.split(',').filter(Boolean);
 
   if (listaNumeros.length === 1) {
-    detalleBoletas = `tu boleta número ${listaNumeros[0]}`;
+    detalleBoletas = `tu boleta número ${boletaParaVoz(listaNumeros[0])}`;
   } else if (listaNumeros.length > 1) {
     const ultimas = listaNumeros.pop();
-    detalleBoletas = `tus boletas número ${listaNumeros.join(', ')} y ${ultimas}`;
+    detalleBoletas = `tus boletas número ${listaNumeros.map(boletaParaVoz).join(', ')} y ${boletaParaVoz(ultimas)}`;
   }
 
   const template = plantilla ? decodeURIComponent(plantilla) : PLANTILLA_DEFAULT;
