@@ -128,6 +128,26 @@ export default async function handler(req, res) {
         }
       }
 
+      // Detección adicional por referencia (para egresos distribuidos en múltiples categorías)
+      if (!gastosExistentes?.length && datos.referencia && datos.referencia !== '0') {
+        const { data: refCheck } = await supabase
+          .from('gastos')
+          .select('id, fecha, monto, plataforma, referencia, categoria, descripcion')
+          .eq('fecha', datos.fecha_pago)
+          .eq('referencia', datos.referencia)
+          .limit(1);
+        if (refCheck && refCheck.length > 0) {
+          const g = refCheck[0];
+          if (String(datos.plataforma || '').toLowerCase().trim() === String(g.plataforma || '').toLowerCase().trim()) {
+            return res.status(200).json({
+              status: 'duplicado_egreso',
+              mensaje: `Este egreso ya fue registrado el ${g.fecha} (distribuido)`,
+              clon: g
+            });
+          }
+        }
+      }
+
       let urlComprobanteEgreso = null;
       try {
         const base64Data = imagenBase64.replace(/^data:image\/\w+;base64,/, "");

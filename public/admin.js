@@ -75,11 +75,10 @@ const $ = id => document.getElementById(id);
             }
             btnReg.textContent = 'Registrar Venta'; btnReg.style.background = 'var(--accent)';
         } else if (modo === 'premio_rifa') {
-            if (paySection) paySection.style.display = 'block';
+            if (paySection) paySection.style.display = 'none';
             if (seccionBuscar) seccionBuscar.style.display = 'none';
-            if (cardDetalle) cardDetalle.style.display = 'block';
-            if (camposInt) camposInt.style.display = 'none';
-            $('v_primerAbono').value = '';
+            if (cardDetalle) cardDetalle.style.display = 'none';
+            $('v_primerAbono').value = '0';
             $('v_metodoPago').value = 'Premio Rifa Diaria';
             $('v_referenciaAbono').value = 'premio_rifa_diaria';
             $('v_idTransferencia').value = '';
@@ -1181,10 +1180,11 @@ $('btnRegistrarVenta').onclick = async ()=>{
                 }
             }
         } else if (modo === 'premio_rifa') {
-            if (card) card.style.display = 'block';
+            if (card) card.style.display = 'none';
             document.getElementById('camposPagoInteligente').style.display = 'none';
             document.getElementById('a_metodo').value = 'Premio Rifa Diaria';
             document.getElementById('a_ref').value = 'premio_rifa_diaria';
+            document.getElementById('a_monto').value = '0';
             document.getElementById('a_idTransferencia').value = '';
             esAbonoPendiente = false;
             if (toggleUbicacion) toggleUbicacion.style.display = 'none';
@@ -2067,12 +2067,14 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
             // Tarjeta de justificación para egresos detectados
             if (item.status === 'pendiente_justificacion' && item.datos) {
                 const d = item.datos;
+                const montoTotal = Number(d.monto || 0);
+                if (!item._distNextIdx) item._distNextIdx = 1;
                 html += `
                 <div data-id="${item.id}" style="border:2px solid #1565c0; border-radius:12px; padding:14px; background:#f0f4ff;">
                   <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
                     <span style="font-size:1.1rem;">✏️</span>
                     <span style="font-weight:700; font-size:0.82rem; color:#1565c0; background:#dce8ff; padding:3px 8px; border-radius:6px;">EGRESO — JUSTIFICACIÓN REQUERIDA</span>
-                    <span style="font-size:0.85rem; font-weight:700; color:#1565c0; margin-left:auto; white-space:nowrap;">$${Number(d.monto || 0).toLocaleString('es-CO')}</span>
+                    <span style="font-size:0.85rem; font-weight:700; color:#1565c0; margin-left:auto; white-space:nowrap;">$${montoTotal.toLocaleString('es-CO')}</span>
                   </div>
                   <div style="font-size:0.78rem; color:var(--muted); margin-bottom:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.file.name}</div>
                   <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.82rem; color:var(--ink-2); margin-bottom:12px; background:#fff; border-radius:8px; padding:8px;">
@@ -2083,25 +2085,18 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                     ${d.descripcion_movimiento ? `<div style="grid-column:1/-1; border-top:1px solid #e0e0e0; padding-top:6px; margin-top:2px;">📝 Banco dice: <b>${d.descripcion_movimiento}</b></div>` : ''}
                   </div>
                   <div style="display:flex; flex-direction:column; gap:8px;">
-                    <input id="desc_${item.id}" type="text" value="${(d.descripcion_movimiento || '').replace(/"/g, '&quot;')}" placeholder="¿En qué se gastó? (obligatorio)" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1.5px solid var(--ring-strong); font-size:0.85rem; font-family:inherit;">
-                    <select id="cat_${item.id}" onchange="actualizarSubcatsEgreso(${item.id})" style="width:100%; padding:9px 8px; border-radius:8px; border:1.5px solid #e53935; font-size:0.82rem; font-family:inherit; font-weight:700;">
-                      <option value="">— Categoría del gasto * —</option>
-                      <option value="operacionales">⚙️ Gastos Operacionales</option>
-                      <option value="rifa_apartamento">🏠 Gastos Rifa Apartamento</option>
-                      <option value="construccion">🏗️ Construcción Apartamento</option>
-                      <option value="rifa_camioneta">🚗 Rifa Camioneta</option>
-                      <option value="retiro_ganancia">💸 Retiro de Ganancia</option>
-                      <option value="pagos_diarias">🎯 Pagos Rifas Diarias</option>
-                    </select>
-                    <select id="subcat_${item.id}" style="width:100%; padding:9px 8px; border-radius:8px; border:1.5px solid var(--ring-strong); font-size:0.82rem; font-family:inherit;">
-                      <option value="">— Primero elige una categoría —</option>
-                    </select>
                     <select id="cuenta_${item.id}" style="width:100%; padding:9px 8px; border-radius:8px; border:1.5px solid #f57c00; font-size:0.82rem; font-family:inherit; font-weight:700;">
                       <option value="">— ¿De qué cuenta salió? * —</option>
                       <option value="Nequi Alejandro">📱 Nequi Alejandro</option>
                       <option value="Nequi Mateo">📱 Nequi Mateo</option>
                       <option value="Bancolombia Empresa">🏦 Bancolombia Empresa</option>
                     </select>
+                    <div style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#1565c0; margin-top:4px;">Distribución del gasto</div>
+                    <div id="distContainer_${item.id}" style="display:flex; flex-direction:column; gap:8px;">
+                      ${htmlFilaDist(item.id, 0, montoTotal, d.descripcion_movimiento || '', 'dist')}
+                    </div>
+                    <div id="distResumen_${item.id}" data-total="${montoTotal}" style="background:#e3f2fd; border-radius:8px; padding:8px 12px; text-align:center; font-size:0.82rem; font-weight:600; color:#1565c0;"></div>
+                    <button onclick="agregarDistribucion(${item.id})" style="width:100%; padding:8px; border-radius:8px; border:1.5px dashed #1565c0; background:transparent; color:#1565c0; font-weight:600; font-size:0.82rem; cursor:pointer; font-family:inherit;">+ Distribuir en otra categoría</button>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
                       <button id="btnPendiente_${item.id}" onclick="guardarPendiente(${item.id})" style="padding:10px; border-radius:8px; border:2px solid #f57c00; background:#fff8e1; color:#e65100; font-weight:700; font-size:0.82rem; cursor:pointer; font-family:inherit; transition:background .2s;">⏸️ Dejar pendiente</button>
                       <button id="btnGuardar_${item.id}" onclick="guardarEgreso(${item.id})" style="padding:10px; border-radius:8px; border:none; background:#1565c0; color:#fff; font-weight:700; font-size:0.82rem; cursor:pointer; font-family:inherit; transition:background .2s;">💾 Guardar gasto</button>
@@ -2130,6 +2125,9 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         });
 
         listaDiv.innerHTML = html;
+        filaArchivosIA.forEach(item => {
+            if (item.status === 'pendiente_justificacion') actualizarResumenDist(item.id, 'dist');
+        });
         listaDiv.scrollTop = listaDiv.scrollHeight;
     }
 
@@ -2198,6 +2196,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                     item.mensaje = 'Egreso — requiere justificación';
                     item.datos = de;
                     item.urlComprobante = resIA.url_comprobante || null;
+                    item._distNextIdx = 1;
                     actualizarUIIA();
                     continue;
                 }
@@ -2234,22 +2233,138 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
             : '<option value="">— Primero elige una categoría —</option>';
     }
 
+    // 6b. Sistema de distribución de egresos en múltiples categorías
+    function htmlFilaDist(itemId, idx, monto, desc, prefix) {
+        const p = prefix || 'dist';
+        const safeDesc = (desc || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const idJs = typeof itemId === 'number' ? itemId : `'${itemId}'`;
+        const catOpts = '<option value="">— Categoría * —</option><option value="operacionales">⚙️ Operacionales</option><option value="rifa_apartamento">🏠 Rifa Apartamento</option><option value="construccion">🏗️ Construcción</option><option value="rifa_camioneta">🚗 Rifa Camioneta</option><option value="retiro_ganancia">💸 Retiro Ganancia</option><option value="pagos_diarias">🎯 Pagos Diarias</option>';
+        const removeBtn = idx > 0 ? `<button onclick="eliminarDistFila(${idJs},${idx},'${p}')" style="padding:4px 8px;border-radius:6px;border:1px solid #ef5350;background:#ffebee;color:#c62828;font-weight:700;cursor:pointer;font-size:0.78rem;font-family:inherit;">✕</button>` : '';
+        return `<div id="${p}Row_${itemId}_${idx}" class="dist-row" style="border:1px solid #90caf9;border-radius:10px;padding:10px;background:#f8fbff;">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+            <input type="number" id="${p}Monto_${itemId}_${idx}" value="${monto || ''}" oninput="actualizarResumenDist(${idJs},'${p}')" placeholder="Monto $" style="flex:1;padding:7px 8px;border-radius:6px;border:1.5px solid #1565c0;font-size:0.85rem;font-weight:700;box-sizing:border-box;font-family:inherit;">
+            ${removeBtn}
+          </div>
+          <input id="${p}Desc_${itemId}_${idx}" type="text" value="${safeDesc}" placeholder="¿En qué se gastó? (obligatorio)" style="width:100%;box-sizing:border-box;padding:7px 10px;border-radius:6px;border:1px solid var(--ring-strong);font-size:0.82rem;font-family:inherit;margin-bottom:6px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            <select id="${p}Cat_${itemId}_${idx}" onchange="actualizarSubcatDist(${idJs},${idx},'${p}')" style="padding:7px 6px;border-radius:6px;border:1.5px solid #e53935;font-size:0.8rem;font-weight:600;font-family:inherit;">${catOpts}</select>
+            <select id="${p}Subcat_${itemId}_${idx}" style="padding:7px 6px;border-radius:6px;border:1px solid var(--ring-strong);font-size:0.8rem;font-family:inherit;"><option value="">— Subcategoría —</option></select>
+          </div>
+        </div>`;
+    }
+
+    function actualizarSubcatDist(itemId, idx, prefix) {
+        const p = prefix || 'dist';
+        const cat = document.getElementById(`${p}Cat_${itemId}_${idx}`)?.value;
+        const subcatSelect = document.getElementById(`${p}Subcat_${itemId}_${idx}`);
+        if (!subcatSelect) return;
+        const opciones = SUBCATEGORIAS[cat] || [];
+        subcatSelect.innerHTML = opciones.length
+            ? '<option value="">— Subcategoría —</option>' + opciones.map(s => `<option value="${s}">${s}</option>`).join('')
+            : '<option value="">— Subcategoría —</option>';
+    }
+
+    function actualizarResumenDist(itemId, prefix) {
+        const p = prefix || 'dist';
+        const resumen = document.getElementById(`${p}Resumen_${itemId}`);
+        if (!resumen) return;
+        const totalMonto = Number(resumen.dataset.total || 0);
+        const container = document.getElementById(`${p}Container_${itemId}`);
+        if (!container) return;
+        const rows = container.querySelectorAll('.dist-row');
+        let sumaDist = 0;
+        rows.forEach(row => {
+            const idx = row.id.split('_').pop();
+            const input = document.getElementById(`${p}Monto_${itemId}_${idx}`);
+            sumaDist += Number(input?.value || 0);
+        });
+        const restante = totalMonto - sumaDist;
+        const n = rows.length;
+        if (Math.round(restante) === 0) {
+            resumen.style.background = '#e8f5e9'; resumen.style.color = '#2e7d32';
+            resumen.innerHTML = `✅ ${n > 1 ? n + ' distribuciones · ' : ''}$${sumaDist.toLocaleString('es-CO')} / $${totalMonto.toLocaleString('es-CO')}`;
+        } else if (restante > 0) {
+            resumen.style.background = '#fff3e0'; resumen.style.color = '#e65100';
+            resumen.innerHTML = `⚠️ Distribuido: $${sumaDist.toLocaleString('es-CO')} / $${totalMonto.toLocaleString('es-CO')} — Faltan: $${restante.toLocaleString('es-CO')}`;
+        } else {
+            resumen.style.background = '#ffebee'; resumen.style.color = '#c62828';
+            resumen.innerHTML = `❌ Excede por $${Math.abs(restante).toLocaleString('es-CO')} — $${sumaDist.toLocaleString('es-CO')} / $${totalMonto.toLocaleString('es-CO')}`;
+        }
+    }
+
+    function agregarDistribucion(itemId) {
+        const item = filaArchivosIA.find(f => f.id === itemId);
+        if (!item) return;
+        if (!item._distNextIdx) item._distNextIdx = 1;
+        const idx = item._distNextIdx++;
+        const container = document.getElementById(`distContainer_${itemId}`);
+        if (!container) return;
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = htmlFilaDist(itemId, idx, '', '', 'dist');
+        container.appendChild(wrapper.firstElementChild);
+        actualizarResumenDist(itemId, 'dist');
+    }
+
+    let _pdistNextIdx = 100;
+    function agregarDistribucionPendiente(id) {
+        const idx = _pdistNextIdx++;
+        const container = document.getElementById(`pdistContainer_${id}`);
+        if (!container) return;
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = htmlFilaDist(id, idx, '', '', 'pdist');
+        container.appendChild(wrapper.firstElementChild);
+        actualizarResumenDist(id, 'pdist');
+    }
+
+    function eliminarDistFila(itemId, idx, prefix) {
+        const p = prefix || 'dist';
+        const row = document.getElementById(`${p}Row_${itemId}_${idx}`);
+        if (row) row.remove();
+        actualizarResumenDist(itemId, p);
+    }
+
+    function recogerDistribuciones(itemId, prefix) {
+        const p = prefix || 'dist';
+        const container = document.getElementById(`${p}Container_${itemId}`);
+        if (!container) return [];
+        const rows = container.querySelectorAll('.dist-row');
+        const nombresCat = { operacionales: 'Operacionales', rifa_apartamento: 'Rifa Apartamento', construccion: 'Construcción', rifa_camioneta: 'Rifa Camioneta', retiro_ganancia: 'Retiro de Ganancia', pagos_diarias: 'Pagos Rifas Diarias' };
+        const result = [];
+        rows.forEach(row => {
+            const idx = row.id.split('_').pop();
+            const monto = Number(document.getElementById(`${p}Monto_${itemId}_${idx}`)?.value || 0);
+            const desc = document.getElementById(`${p}Desc_${itemId}_${idx}`)?.value?.trim() || '';
+            const cat = document.getElementById(`${p}Cat_${itemId}_${idx}`)?.value || '';
+            const subcat = document.getElementById(`${p}Subcat_${itemId}_${idx}`)?.value || '';
+            if (monto > 0) {
+                result.push({ monto, descripcion: desc, categoria: cat, subcategoria: subcat, proyecto: nombresCat[cat] || cat });
+            }
+        });
+        return result;
+    }
+
     // 7. Guardar egreso una vez el asesor llena la justificación
     async function guardarEgreso(id) {
         const item = filaArchivosIA.find(f => f.id === id);
         if (!item) return;
 
-        const descripcion  = document.getElementById(`desc_${id}`)?.value?.trim();
-        const categoria    = document.getElementById(`cat_${id}`)?.value;
-        const subcategoria = document.getElementById(`subcat_${id}`)?.value;
         const cuentaOrigen = document.getElementById(`cuenta_${id}`)?.value;
-        const notas        = document.getElementById(`notas_${id}`)?.value?.trim();
-        const nombresCat = { operacionales: 'Operacionales', rifa_apartamento: 'Rifa Apartamento', construccion: 'Construcción', rifa_camioneta: 'Rifa Camioneta', retiro_ganancia: 'Retiro de Ganancia', pagos_diarias: 'Pagos Rifas Diarias' };
-        const proyecto     = nombresCat[categoria] || categoria;
-
-        if (!descripcion) { alert('La descripción es obligatoria.'); return; }
-        if (!categoria)   { alert('Debes seleccionar la categoría del gasto.'); return; }
         if (!cuentaOrigen) { alert('Debes indicar de qué cuenta salió el dinero.'); return; }
+
+        const distribuciones = recogerDistribuciones(id, 'dist');
+        if (!distribuciones.length) { alert('Debes agregar al menos una distribución con monto.'); return; }
+
+        const montoTotal = Math.round(Number(item.datos.monto || 0));
+        const sumaDist = distribuciones.reduce((s, d) => s + Math.round(d.monto), 0);
+        if (sumaDist !== montoTotal) {
+            alert(`El total distribuido ($${sumaDist.toLocaleString('es-CO')}) no coincide con el monto del movimiento ($${montoTotal.toLocaleString('es-CO')}). Ajusta los montos.`);
+            return;
+        }
+
+        for (let i = 0; i < distribuciones.length; i++) {
+            if (!distribuciones[i].descripcion) { alert(`La distribución #${i + 1} necesita una descripción.`); return; }
+            if (!distribuciones[i].categoria) { alert(`La distribución #${i + 1} necesita una categoría.`); return; }
+        }
 
         const btn = document.getElementById(`btnGuardar_${id}`);
         if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
@@ -2268,28 +2383,25 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                     monto: d.monto,
                     plataforma: cuentaOrigen || d.plataforma || null,
                     referencia: d.referencia !== '0' ? d.referencia : null,
-                    descripcion,
-                    proyecto,
-                    categoria,
-                    subcategoria: subcategoria || null,
-                    notas: notas || null,
                     url_comprobante: item.urlComprobante || null,
                     reportado_por: nombreAsesorActual || null,
-                    fuente: 'banco'
+                    fuente: 'banco',
+                    distribuciones: distribuciones
                 })
             });
             const res = await req.json();
 
             if (res.status === 'ok') {
                 item.status = 'guardado';
-                item.mensaje = `Egreso guardado · $${Number(d.monto).toLocaleString('es-CO')} · ${proyecto}`;
+                const resumenCats = [...new Set(distribuciones.map(d => d.proyecto))].join(', ');
+                item.mensaje = `Egreso guardado · $${Number(d.monto).toLocaleString('es-CO')} · ${resumenCats}`;
                 actualizarUIIA();
             } else {
                 if (btn) {
                     btn.disabled = false;
                     btn.style.background = '#c62828';
                     btn.textContent = '❌ ' + (res.mensaje || 'Error al guardar');
-                    setTimeout(() => { btn.style.background = '#1565c0'; btn.textContent = '💾 Confirmar y Guardar Gasto'; }, 6000);
+                    setTimeout(() => { btn.style.background = '#1565c0'; btn.textContent = '💾 Guardar gasto'; }, 6000);
                 }
             }
         } catch (_) {
@@ -2297,7 +2409,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                 btn.disabled = false;
                 btn.style.background = '#c62828';
                 btn.textContent = '❌ Fallo de conexión';
-                setTimeout(() => { btn.style.background = '#1565c0'; btn.textContent = '💾 Confirmar y Guardar Gasto'; }, 6000);
+                setTimeout(() => { btn.style.background = '#1565c0'; btn.textContent = '💾 Guardar gasto'; }, 6000);
             }
         }
     }
@@ -2392,44 +2504,42 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
             return;
         }
 
-        container.innerHTML = pendientesData.map(g => `
+        container.innerHTML = pendientesData.map(g => {
+            const montoP = Number(g.monto || 0);
+            const descP = g.descripcion && g.descripcion !== 'Pendiente de justificar' ? g.descripcion : '';
+            return `
             <div style="border:2px solid #f57c00; border-radius:12px; padding:14px; background:#fff8e1; margin-bottom:10px;">
               <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
                 <span style="font-size:1.1rem;">⏸️</span>
                 <span style="font-weight:700; font-size:0.82rem; color:#e65100; background:#ffe0b2; padding:3px 8px; border-radius:6px;">PENDIENTE DE JUSTIFICAR</span>
-                <span style="font-size:0.85rem; font-weight:700; color:#e65100; margin-left:auto;">$${Number(g.monto || 0).toLocaleString('es-CO')}</span>
+                <span style="font-size:0.85rem; font-weight:700; color:#e65100; margin-left:auto;">$${montoP.toLocaleString('es-CO')}</span>
               </div>
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.82rem; color:var(--ink-2); margin-bottom:12px; background:#fff; border-radius:8px; padding:8px;">
                 <div>📅 <b>${g.fecha || '—'}</b></div>
                 <div>🏦 <b>${g.plataforma || '—'}</b></div>
                 <div>🔖 Ref: <b>${g.referencia || '—'}</b></div>
                 <div>🕐 <b>${(g.hora || '').slice(0,5) || '—'}</b></div>
-                ${g.descripcion && g.descripcion !== 'Pendiente de justificar' ? `<div style="grid-column:1/-1; border-top:1px solid #e0e0e0; padding-top:6px; margin-top:2px;">📝 <b>${g.descripcion}</b></div>` : ''}
+                ${descP ? `<div style="grid-column:1/-1; border-top:1px solid #e0e0e0; padding-top:6px; margin-top:2px;">📝 <b>${descP}</b></div>` : ''}
               </div>
               <div style="display:flex; flex-direction:column; gap:8px;">
-                <input id="pdesc_${g.id}" type="text" value="${(g.descripcion && g.descripcion !== 'Pendiente de justificar' ? g.descripcion : '').replace(/"/g, '&quot;')}" placeholder="¿En qué se gastó? (obligatorio)" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1.5px solid var(--ring-strong); font-size:0.85rem; font-family:inherit;">
-                <select id="pcat_${g.id}" onchange="actualizarSubcatsPendiente('${g.id}')" style="width:100%; padding:9px 8px; border-radius:8px; border:1.5px solid #e53935; font-size:0.82rem; font-family:inherit; font-weight:700;">
-                  <option value="">— Categoría del gasto * —</option>
-                  <option value="operacionales">⚙️ Gastos Operacionales</option>
-                  <option value="rifa_apartamento">🏠 Gastos Rifa Apartamento</option>
-                  <option value="construccion">🏗️ Construcción Apartamento</option>
-                  <option value="rifa_camioneta">🚗 Rifa Camioneta</option>
-                  <option value="retiro_ganancia">💸 Retiro de Ganancia</option>
-                  <option value="pagos_diarias">🎯 Pagos Rifas Diarias</option>
-                </select>
-                <select id="psubcat_${g.id}" style="width:100%; padding:9px 8px; border-radius:8px; border:1.5px solid var(--ring-strong); font-size:0.82rem; font-family:inherit;">
-                  <option value="">— Primero elige una categoría —</option>
-                </select>
                 <select id="pcuenta_${g.id}" style="width:100%; padding:9px 8px; border-radius:8px; border:1.5px solid #f57c00; font-size:0.82rem; font-family:inherit; font-weight:700;">
                   <option value="">— ¿De qué cuenta salió? * —</option>
                   <option value="Nequi Alejandro">📱 Nequi Alejandro</option>
                   <option value="Nequi Mateo">📱 Nequi Mateo</option>
                   <option value="Bancolombia Empresa">🏦 Bancolombia Empresa</option>
                 </select>
+                <div style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#e65100; margin-top:4px;">Distribución del gasto</div>
+                <div id="pdistContainer_${g.id}" style="display:flex; flex-direction:column; gap:8px;">
+                  ${htmlFilaDist(g.id, 0, montoP, descP, 'pdist')}
+                </div>
+                <div id="pdistResumen_${g.id}" data-total="${montoP}" style="background:#fff3e0; border-radius:8px; padding:8px 12px; text-align:center; font-size:0.82rem; font-weight:600; color:#e65100;"></div>
+                <button onclick="agregarDistribucionPendiente('${g.id}')" style="width:100%; padding:8px; border-radius:8px; border:1.5px dashed #e65100; background:transparent; color:#e65100; font-weight:600; font-size:0.82rem; cursor:pointer; font-family:inherit;">+ Distribuir en otra categoría</button>
                 <button id="btnJustificar_${g.id}" onclick="justificarPendiente('${g.id}')" style="width:100%; padding:10px; border-radius:8px; border:none; background:#e65100; color:#fff; font-weight:700; font-size:0.88rem; cursor:pointer; font-family:inherit;">✅ Justificar y Guardar</button>
                 <button id="btnDescartar_${g.id}" onclick="descartarPendiente('${g.id}')" style="width:100%; padding:8px; border-radius:8px; border:1.5px solid #b0bec5; background:#fff; color:#546e7a; font-weight:600; font-size:0.8rem; cursor:pointer; font-family:inherit; transition:background .2s;">🗑️ No es un egreso — Descartar</button>
               </div>
-            </div>`).join('');
+            </div>`;
+        }).join('');
+        pendientesData.forEach(g => actualizarResumenDist(g.id, 'pdist'));
     }
 
     function actualizarSubcatsPendiente(id) {
@@ -2443,14 +2553,24 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
     }
 
     async function justificarPendiente(id) {
-        const descripcion  = document.getElementById(`pdesc_${id}`)?.value?.trim();
-        const categoria    = document.getElementById(`pcat_${id}`)?.value;
-        const subcategoria = document.getElementById(`psubcat_${id}`)?.value;
         const cuentaOrigen = document.getElementById(`pcuenta_${id}`)?.value;
-
-        if (!descripcion) { alert('La descripción es obligatoria.'); return; }
-        if (!categoria)   { alert('Debes seleccionar la categoría del gasto.'); return; }
         if (!cuentaOrigen) { alert('Debes indicar de qué cuenta salió el dinero.'); return; }
+
+        const distribuciones = recogerDistribuciones(id, 'pdist');
+        if (!distribuciones.length) { alert('Debes agregar al menos una distribución con monto.'); return; }
+
+        const pendiente = pendientesData.find(p => p.id === id);
+        const montoTotal = Math.round(Number(pendiente?.monto || 0));
+        const sumaDist = distribuciones.reduce((s, d) => s + Math.round(d.monto), 0);
+        if (sumaDist !== montoTotal) {
+            alert(`El total distribuido ($${sumaDist.toLocaleString('es-CO')}) no coincide con el monto ($${montoTotal.toLocaleString('es-CO')}). Ajusta los montos.`);
+            return;
+        }
+
+        for (let i = 0; i < distribuciones.length; i++) {
+            if (!distribuciones[i].descripcion) { alert(`La distribución #${i + 1} necesita una descripción.`); return; }
+            if (!distribuciones[i].categoria) { alert(`La distribución #${i + 1} necesita una categoría.`); return; }
+        }
 
         const btn = document.getElementById(`btnJustificar_${id}`);
         if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
@@ -2463,9 +2583,9 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                 body: JSON.stringify({
                     accion: 'justificar_pendiente',
                     contrasena: pwd,
-                    id, descripcion, categoria,
-                    subcategoria: subcategoria || null,
-                    plataforma: cuentaOrigen
+                    id,
+                    plataforma: cuentaOrigen,
+                    distribuciones: distribuciones
                 })
             });
             const res = await req.json();

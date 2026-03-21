@@ -20,8 +20,9 @@ export default async function handler(req, res) {
   if (!numeroBoleta || !valorAbono) return res.status(400).json({ status: 'error', mensaje: 'Falta la boleta o el valor del abono' });
 
   const numeroLimpio = String(numeroBoleta).trim();
-  const monto = Number(valorAbono);
-  if (monto <= 0) return res.status(400).json({ status: 'error', mensaje: 'El abono debe ser mayor a cero' });
+  let monto = Number(valorAbono);
+  const esPremioRifaFlag = esPremioRifa || (referencia === 'premio_rifa_diaria');
+  if (!esPremioRifaFlag && monto <= 0) return res.status(400).json({ status: 'error', mensaje: 'El abono debe ser mayor a cero' });
 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
@@ -89,6 +90,12 @@ export default async function handler(req, res) {
     if (saldoActual <= 0) {
       return res.status(400).json({ status: 'error', mensaje: `🚫 La boleta ${numeroLimpio} ya está PAGADA COMPLETAMENTE. No acepta más abonos.` });
     }
+
+    // Premio Rifa: pagar automáticamente el 100% del saldo restante
+    if (esPremioRifaFlag) {
+      monto = saldoActual;
+    }
+
     if (monto > saldoActual) {
       return res.status(400).json({ status: 'error', mensaje: `🚫 El abono de ${fmt(monto)} supera el saldo restante de ${fmt(saldoActual)} de la boleta ${numeroLimpio}. Ajusta el valor para no exceder lo que debe el cliente.` });
     }
@@ -187,7 +194,7 @@ export default async function handler(req, res) {
       .single();
 
     if (clienteActual) {
-        let totalComprado = (clienteActual.total_comprado || 0) + monto;
+        let totalComprado = (clienteActual.total_comprado || 0) + (esPremioRifaFlag ? 0 : monto);
         let diariasCompradas = clienteActual.boletas_diarias_compradas || 0;
         let grandesCompradas = clienteActual.boletas_grandes_compradas || 0;
 

@@ -22,7 +22,7 @@ export default async function handler(req, res) {
 
   const telefonoLimpio = String(telefono).replace(/\D/g, '').slice(-10);
   const numeroLimpio = String(numeroBoleta).trim();
-  const abonoNum = Number(primerAbono) || 0;
+  let abonoNum = Number(primerAbono) || 0;
 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
@@ -100,11 +100,17 @@ export default async function handler(req, res) {
       .eq('telefono', telefonoLimpio)
       .single();
 
-    let totalComprado = (clienteActual?.total_comprado || 0) + abonoNum;
     let diariasCompradas = clienteActual?.boletas_diarias_compradas || 0;
     let grandesCompradas = clienteActual?.boletas_grandes_compradas || 0;
 
     const precioTotal = numeroLimpio.length === 3 ? 5000 : (esDiaria ? 20000 : (Number(boletaData.precio_total) || 200000));
+
+    // Premio Rifa: pagar automáticamente el 100% del precio
+    if (esPremioRifa || referenciaAbono === 'premio_rifa_diaria') {
+      abonoNum = precioTotal;
+    }
+
+    let totalComprado = (clienteActual?.total_comprado || 0) + ((esPremioRifa || referenciaAbono === 'premio_rifa_diaria') ? 0 : abonoNum);
 
     const fmt = n => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
     if (abonoNum > precioTotal) {
