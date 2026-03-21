@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <title>Permisos — Los Plata</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared-nav.css">
+  <script>if(localStorage.getItem('asesor_pwd')&&localStorage.getItem('asesor_nombre')){document.documentElement.classList.add('snav-authed');document.write('<style>.snav-authed #mainContent{display:block!important}</style>')}</script>
+  <style>
+    :root {
+      --ink: #2b3a35;
+      --ink-2: #52665e;
+      --muted: #8ba89d;
+      --bg: #f7fcf9;
+      --card: #ffffff;
+      --ring: #e6eee9;
+      --ring-strong: #d1e3da;
+      --accent: #4eb082;
+      --accent-2: #3a946a;
+      --danger: #d95a53;
+      --shadow: 0 4px 12px rgba(0,0,0,.05);
+      --green-bg: linear-gradient(160deg, #0f2010 0%, #1e4a1a 40%, #2d6b25 70%, #1a3a14 100%);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Poppins', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    #loginOverlay {
+      position: fixed; inset: 0; z-index: 2000;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 0;
+      background: var(--green-bg);
+    }
+    #loginPwd {
+      width: 100%; max-width: 320px; padding: 18px 28px; border-radius: 50px;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(16px);
+      color: #fff; font-size: 1.05rem; font-family: inherit;
+      text-align: center; outline: none; -webkit-text-fill-color: #fff;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    #loginPwd::placeholder { color: rgba(255,255,255,0.5); }
+    #loginMsg { color: rgba(255,120,120,0.9); font-size: 0.9rem; min-height: 20px; text-align: center; margin-top: 12px; }
+
+    .page-header {
+      background: var(--green-bg);
+      padding: 18px 20px 24px;
+      text-align: center;
+      position: relative;
+    }
+    .page-header img { height: 64px; display: block; margin: 0 auto 10px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4)); }
+    .page-header h1 { color: #fff; font-size: 1.2rem; font-weight: 700; }
+    .page-header p { color: rgba(255,255,255,0.6); font-size: 0.8rem; margin-top: 4px; }
+
+    #mainContent { display: none; }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 20px 16px 80px; }
+
+    .info-banner {
+      background: linear-gradient(135deg, rgba(78,176,130,0.08), rgba(78,176,130,0.03));
+      border: 1px solid rgba(78,176,130,0.15);
+      border-radius: 14px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex; align-items: center; gap: 12px;
+      font-size: 0.82rem; color: var(--ink-2);
+    }
+    .info-banner span { font-size: 1.3rem; flex-shrink: 0; }
+
+    .permisos-card {
+      background: var(--card);
+      border-radius: 16px;
+      border: 1px solid var(--ring);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .permisos-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--ring);
+      flex-wrap: wrap; gap: 10px;
+    }
+    .permisos-toolbar h2 {
+      font-size: 0.95rem; font-weight: 700; color: var(--ink);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .btn-init {
+      padding: 8px 18px; border-radius: 50px;
+      background: var(--accent); color: #fff;
+      border: none; cursor: pointer; font-family: inherit;
+      font-size: 0.78rem; font-weight: 600;
+      transition: all 0.15s;
+    }
+    .btn-init:hover { background: var(--accent-2); }
+    .btn-init:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+      width: 100%; border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    thead th {
+      background: #f0f7f3;
+      padding: 12px 10px;
+      font-weight: 600; font-size: 0.72rem;
+      color: var(--ink-2);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 2px solid var(--ring);
+      white-space: nowrap;
+      text-align: center;
+      position: sticky; top: 0; z-index: 2;
+    }
+    thead th:first-child {
+      text-align: left; padding-left: 20px;
+      position: sticky; left: 0; z-index: 3;
+      background: #f0f7f3;
+      min-width: 140px;
+    }
+    tbody td {
+      padding: 14px 10px;
+      border-bottom: 1px solid var(--ring);
+      text-align: center;
+      vertical-align: middle;
+    }
+    tbody td:first-child {
+      text-align: left; padding-left: 20px;
+      font-weight: 600; color: var(--ink);
+      position: sticky; left: 0; z-index: 1;
+      background: var(--card);
+      min-width: 140px;
+    }
+    tbody tr:hover td { background: rgba(78,176,130,0.04); }
+    tbody tr:hover td:first-child { background: rgba(78,176,130,0.06); }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .asesor-cell {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .asesor-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: rgba(78,176,130,0.15); color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 700; flex-shrink: 0;
+    }
+
+    .toggle {
+      position: relative; display: inline-block;
+      width: 42px; height: 24px;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle .slider {
+      position: absolute; cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #cdd8d2; border-radius: 24px;
+      transition: all 0.25s;
+    }
+    .toggle .slider:before {
+      content: ''; position: absolute;
+      height: 18px; width: 18px;
+      left: 3px; bottom: 3px;
+      background: #fff; border-radius: 50%;
+      transition: all 0.25s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+    .toggle input:checked + .slider {
+      background: var(--accent);
+    }
+    .toggle input:checked + .slider:before {
+      transform: translateX(18px);
+    }
+    .toggle input:disabled + .slider {
+      opacity: 0.4; cursor: not-allowed;
+    }
+    .toggle.saving .slider {
+      opacity: 0.6;
+    }
+
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      padding: 12px 24px; border-radius: 12px;
+      font-size: 0.85rem; font-weight: 600; font-family: inherit;
+      color: #fff; z-index: 3000;
+      opacity: 0; transition: opacity 0.3s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #toast.show { opacity: 1; }
+    #toast.ok { background: #2d7a50; }
+    #toast.err { background: #c0392b; }
+
+    .loading-state {
+      text-align: center; padding: 60px 20px;
+      color: var(--muted); font-size: 0.9rem;
+    }
+    .loading-state .spinner {
+      width: 36px; height: 36px; border: 3px solid var(--ring);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 900px) {
+      .page-header { padding-top: 56px; }
+      thead th:first-child, tbody td:first-child { min-width: 120px; }
+    }
+    @media (max-width: 600px) {
+      .container { padding: 12px 8px 60px; }
+      .permisos-toolbar { padding: 12px 14px; }
+      table { font-size: 0.78rem; }
+      thead th { padding: 10px 8px; font-size: 0.68rem; }
+      tbody td { padding: 12px 8px; }
+      tbody td:first-child { padding-left: 14px; }
+      thead th:first-child { padding-left: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Login Overlay -->
+<div id="loginOverlay">
+  <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata" style="height:80px;margin-bottom:30px;filter:drop-shadow(0 4px 16px rgba(0,0,0,0.4))">
+  <input type="password" id="loginPwd" placeholder="Contraseña de administrador" onkeydown="if(event.key==='Enter')doLogin()">
+  <div id="loginMsg"></div>
+</div>
+
+<!-- Main Content -->
+<div id="mainContent" class="snav-page-content">
+  <div class="page-header">
+    <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata">
+    <h1>Gestión de Permisos</h1>
+    <p id="adminLabel">Administrador</p>
+  </div>
+
+  <div class="container">
+    <div class="info-banner">
+      <span>🔐</span>
+      <div>Activa o desactiva el acceso de cada asesor a las diferentes secciones del sistema. Los cambios se aplican de inmediato.</div>
+    </div>
+
+    <div class="permisos-card">
+      <div class="permisos-toolbar">
+        <h2>🛡️ Matriz de Permisos</h2>
+        <button class="btn-init" id="btnInit" onclick="inicializarPermisos()">Reiniciar a valores por defecto</button>
+      </div>
+      <div class="table-wrap">
+        <div id="tablaContainer">
+          <div class="loading-state">
+            <div class="spinner"></div>
+            Cargando permisos...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  let pwdAdmin = '';
+
+  // ── Login ──
+  async function doLogin() {
+    const pwd = document.getElementById('loginPwd').value.trim();
+    if (!pwd) return;
+    const msg = document.getElementById('loginMsg');
+    msg.textContent = 'Verificando...';
+    try {
+      const r = await fetch('/api/admin/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contrasena: pwd })
+      });
+      const json = await r.json();
+      if (json.status === 'ok') {
+        if (json.asesor.toLowerCase() !== 'mateo') {
+          msg.textContent = 'Solo el administrador principal puede gestionar permisos.';
+          if (window.__snavShowLogin) window.__snavShowLogin();
+          return;
+        }
+        pwdAdmin = pwd;
+        localStorage.setItem('asesor_pwd', pwd);
+        localStorage.setItem('asesor_nombre', json.asesor);
+        if (window.__snavSaveAsesor) window.__snavSaveAsesor(json.asesor);
+        if (window.__snavRefresh) window.__snavRefresh();
+        document.getElementById('adminLabel').textContent = 'Admin: ' + json.asesor;
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('mainContent').style.display = 'block';
+        cargarPermisos();
+      } else {
+        msg.textContent = json.mensaje || 'Contraseña incorrecta';
+        if (window.__snavShowLogin) window.__snavShowLogin();
+      }
+    } catch(e) {
+      msg.textContent = 'Error de conexión. Intenta de nuevo.';
+    }
+  }
+
+  // Auto-login
+  (function() {
+    const pwd = localStorage.getItem('asesor_pwd');
+    if (pwd) {
+      document.getElementById('loginPwd').value = pwd;
+      doLogin();
+    }
+  })();
+
+  // ── Toast ──
+  let toastTimer;
+  function toast(msg, tipo = 'ok') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `show ${tipo}`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.className = ''; }, 3000);
+  }
+
+  function getInitials(name) {
+    return name.split(' ').map(w => w[0]).join('').toUpperCase().substring(0, 2);
+  }
+
+  // ── Cargar permisos ──
+  let datosPermisos = null;
+
+  async function cargarPermisos() {
+    const container = document.getElementById('tablaContainer');
+    container.innerHTML = '<div class="loading-state"><div class="spinner"></div>Cargando permisos...</div>';
+
+    try {
+      const r = await fetch('/api/admin/permisos', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contrasena: pwdAdmin, accion: 'listar_todo' })
+      });
+      const json = await r.json();
+
+      if (json.status !== 'ok') {
+        container.innerHTML = `<div class="loading-state" style="color:var(--danger)">${json.mensaje || 'Error al cargar'}</div>`;
+        return;
+      }
+
+      datosPermisos = json;
+      renderTabla();
+    } catch(e) {
+      container.innerHTML = '<div class="loading-state" style="color:var(--danger)">Error de conexión</div>';
+    }
+  }
+
+  // ── Render tabla ──
+  function renderTabla() {
+    if (!datosPermisos) return;
+    const { asesores, paginas, permisos } = datosPermisos;
+
+    let html = '<table><thead><tr><th>Asesor</th>';
+    for (const p of paginas) {
+      html += `<th>${p.label}</th>`;
+    }
+    html += '</tr></thead><tbody>';
+
+    for (const asesor of asesores) {
+      html += '<tr>';
+      html += `<td><div class="asesor-cell"><div class="asesor-avatar">${getInitials(asesor)}</div>${asesor}</div></td>`;
+
+      for (const p of paginas) {
+        const checked = permisos[asesor]?.[p.id] ? 'checked' : '';
+        const toggleId = `t_${asesor.replace(/\s/g, '_')}_${p.id}`;
+        html += `<td>
+          <label class="toggle" id="wrap_${toggleId}">
+            <input type="checkbox" id="${toggleId}" ${checked}
+              onchange="togglePermiso('${asesor}','${p.id}',this.checked,'${toggleId}')">
+            <span class="slider"></span>
+          </label>
+        </td>`;
+      }
+
+      html += '</tr>';
+    }
+
+    html += '</tbody></table>';
+    document.getElementById('tablaContainer').innerHTML = html;
+  }
+
+  // ── Toggle permiso ──
+  async function togglePermiso(asesor, paginaId, permitido, toggleId) {
+    const wrap = document.getElementById('wrap_' + toggleId);
+    const input = document.getElementById(toggleId);
+    wrap.classList.add('saving');
+    input.disabled = true;
+
+    try {
+      const r = await fetch('/api/admin/permisos', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contrasena: pwdAdmin,
+          accion: 'actualizar',
+          asesor_nombre: asesor,
+          pagina_id: paginaId,
+          permitido
+        })
+      });
+      const json = await r.json();
+
+      if (json.status === 'ok') {
+        if (datosPermisos?.permisos?.[asesor]) {
+          datosPermisos.permisos[asesor][paginaId] = permitido;
+        }
+        toast(permitido
+          ? `✅ ${asesor} ahora tiene acceso a ${paginaId}`
+          : `🚫 ${asesor} ya no tiene acceso a ${paginaId}`);
+
+        invalidarCachePermisos(asesor);
+      } else {
+        input.checked = !permitido;
+        toast(json.mensaje || 'Error al actualizar', 'err');
+      }
+    } catch(e) {
+      input.checked = !permitido;
+      toast('Error de conexión', 'err');
+    } finally {
+      wrap.classList.remove('saving');
+      input.disabled = false;
+    }
+  }
+
+  function invalidarCachePermisos(asesor) {
+    const myName = localStorage.getItem('asesor_nombre');
+    if (myName === asesor) {
+      localStorage.removeItem('asesor_permisos');
+    }
+  }
+
+  // ── Inicializar permisos ──
+  async function inicializarPermisos() {
+    if (!confirm('¿Reiniciar todos los permisos a los valores por defecto?\n\nEsto sobrescribirá cualquier cambio que hayas hecho.')) return;
+    const btn = document.getElementById('btnInit');
+    btn.disabled = true;
+    btn.textContent = 'Reiniciando...';
+
+    try {
+      const r = await fetch('/api/admin/permisos', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contrasena: pwdAdmin, accion: 'inicializar' })
+      });
+      const json = await r.json();
+
+      if (json.status === 'ok') {
+        toast(`✅ ${json.inicializados} permisos reiniciados`);
+        localStorage.removeItem('asesor_permisos');
+        await cargarPermisos();
+      } else {
+        toast(json.mensaje || 'Error', 'err');
+      }
+    } catch(e) {
+      toast('Error de conexión', 'err');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Reiniciar a valores por defecto';
+    }
+  }
+</script>
+<script src="shared-nav.js"></script>
+</body>
+</html>

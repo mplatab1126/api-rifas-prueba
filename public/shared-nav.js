@@ -4,6 +4,8 @@
 (function () {
   const STORAGE_KEY = 'asesor_pwd';
   const STORAGE_NAME = 'asesor_nombre';
+  const PERMISOS_CACHE_KEY = 'asesor_permisos';
+  const PERMISOS_CACHE_TTL = 5 * 60 * 1000;
 
   const GERENCIA = ['mateo', 'alejo p', 'alejo plata'];
   const SOLO_MATEO = ['mateo'];
@@ -16,6 +18,7 @@
     { id: 'horarios',    label: 'Gestión de Horarios',   icon: '🗓️', href: '/admin-horarios',        section: 'gerencia',  roles: 'gerencia' },
     { id: 'rifas',       label: 'Centro Financiero',     icon: '🎰', href: '/rifas',                 section: 'finanzas',  roles: 'mateo' },
     { id: 'estado',      label: 'Estado de Resultados',  icon: '💼', href: '/estado-resultados',     section: 'finanzas',  roles: 'mateo' },
+    { id: 'permisos',    label: 'Permisos',              icon: '🔐', href: '/permisos',              section: 'admin',     roles: 'mateo' },
   ];
 
   function detectCurrentPage() {
@@ -27,9 +30,27 @@
     return null;
   }
 
+  function getCachedPermisos() {
+    try {
+      const raw = localStorage.getItem(PERMISOS_CACHE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (Date.now() - parsed.ts > PERMISOS_CACHE_TTL) return null;
+      return parsed.permisos;
+    } catch (e) {
+      return null;
+    }
+  }
+
   function canAccess(page, asesorName) {
     if (!asesorName) return false;
     const name = asesorName.toLowerCase().trim();
+
+    const dbPermisos = getCachedPermisos();
+    if (dbPermisos && typeof dbPermisos[page.id] !== 'undefined') {
+      return dbPermisos[page.id];
+    }
+
     if (page.roles === 'todos') return true;
     if (page.roles === 'gerencia') return GERENCIA.includes(name);
     if (page.roles === 'mateo') return SOLO_MATEO.includes(name);
@@ -43,9 +64,6 @@
 
   function buildSidebar(asesorName) {
     const currentPage = detectCurrentPage();
-    const name = (asesorName || '').toLowerCase().trim();
-    const isGerencia = GERENCIA.includes(name);
-    const isMateo = SOLO_MATEO.includes(name);
 
     let html = `
       <div class="snav-logo-area">
@@ -59,14 +77,21 @@
         <div class="snav-section-label">Principal</div>
     `;
 
+    let lastSection = 'principal';
+
     for (const page of PAGES) {
       if (!canAccess(page, asesorName)) continue;
 
-      if (page.section === 'gerencia' && html.indexOf('Gerencia') === -1) {
-        html += '<div class="snav-section-label">Gerencia</div>';
-      }
-      if (page.section === 'finanzas' && html.indexOf('Finanzas') === -1) {
-        html += '<div class="snav-section-label">Finanzas</div>';
+      if (page.section !== lastSection) {
+        const sectionLabels = {
+          gerencia: 'Gerencia',
+          finanzas: 'Finanzas',
+          admin: 'Administración'
+        };
+        if (sectionLabels[page.section]) {
+          html += `<div class="snav-section-label">${sectionLabels[page.section]}</div>`;
+          lastSection = page.section;
+        }
       }
 
       const active = page.id === currentPage ? ' active' : '';
@@ -106,9 +131,69 @@
     }
   }
 
+  let _refreshingPermisos = false;
+
+  async function refreshPermisosBackground(asesorName) {
+    if (_refreshingPermisos) return;
+    _refreshingPermisos = true;
+
+    try {
+      const pwd = localStorage.getItem(STORAGE_KEY);
+      if (!pwd) return;
+
+      const r = await fetch('/api/admin/permisos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contrasena: pwd })
+      });
+      const data = await r.json();
+
+      if (data.status === 'ok' && data.permisos) {
+        const oldCache = localStorage.getItem(PERMISOS_CACHE_KEY);
+        const newPayload = JSON.stringify({ permisos: data.permisos, ts: Date.now() });
+
+        let changed = !oldCache;
+        if (oldCache) {
+          try {
+            const old = JSON.parse(oldCache);
+            changed = JSON.stringify(old.permisos) !== JSON.stringify(data.permisos);
+          } catch (e) { changed = true; }
+        }
+
+        localStorage.setItem(PERMISOS_CACHE_KEY, newPayload);
+
+        if (changed) {
+          const currentPage = detectCurrentPage();
+          const currentPageObj = PAGES.find(p => p.id === currentPage);
+          if (currentPageObj && !data.permisos[currentPage]) {
+            window.location.href = '/admin';
+            return;
+          }
+          window.__snavRefresh();
+        }
+      }
+    } catch (e) {
+      // Silent fail, use cached
+    } finally {
+      _refreshingPermisos = false;
+    }
+  }
+
+  function checkCurrentPageAccess(asesorName) {
+    const currentPage = detectCurrentPage();
+    if (!currentPage) return;
+    const page = PAGES.find(p => p.id === currentPage);
+    if (!page) return;
+    if (!canAccess(page, asesorName)) {
+      window.location.href = '/admin';
+    }
+  }
+
   function injectSidebar() {
     const asesorName = localStorage.getItem(STORAGE_NAME);
     if (!asesorName) return;
+
+    checkCurrentPageAccess(asesorName);
 
     const sidebar = document.createElement('nav');
     sidebar.className = 'snav-sidebar';
@@ -129,11 +214,6 @@
     document.body.prepend(sidebar);
     document.body.prepend(hamburger);
 
-    const pageContent = document.getElementById('snavPageContent');
-    if (pageContent) {
-      // already wrapped
-    }
-
     hamburger.addEventListener('click', () => {
       sidebar.classList.toggle('open');
       overlay.classList.toggle('visible');
@@ -150,11 +230,13 @@
       logoutBtn.addEventListener('click', () => {
         localStorage.removeItem(STORAGE_KEY);
         localStorage.removeItem(STORAGE_NAME);
+        localStorage.removeItem(PERMISOS_CACHE_KEY);
         window.location.href = '/admin';
       });
     }
 
     prefetchPages(asesorName);
+    refreshPermisosBackground(asesorName);
   }
 
   function saveAsesorName(name) {
@@ -172,6 +254,7 @@
     document.documentElement.classList.remove('snav-authed');
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(STORAGE_NAME);
+    localStorage.removeItem(PERMISOS_CACHE_KEY);
   };
   window.__snavRefresh = function () {
     const existing = document.getElementById('snavSidebar');
@@ -181,5 +264,8 @@
     const ov = document.getElementById('snavOverlay');
     if (ov) ov.remove();
     injectSidebar();
+  };
+  window.__snavInvalidatePermisos = function () {
+    localStorage.removeItem(PERMISOS_CACHE_KEY);
   };
 })();

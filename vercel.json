@@ -45,6 +45,10 @@
     {
       "source": "/llamadas",
       "destination": "/llamadas.html"
+    },
+    {
+      "source": "/permisos",
+      "destination": "/permisos.html"
     }
   ]
 }
