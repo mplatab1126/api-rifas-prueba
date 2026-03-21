@@ -2211,7 +2211,8 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                         other.datos &&
                         Number(other.datos.monto) === Number(de.monto) &&
                         other.datos.fecha_pago === de.fecha_pago &&
-                        String(other.datos.plataforma || '').toLowerCase() === String(de.plataforma || '').toLowerCase()
+                        String(other.datos.plataforma || '').toLowerCase() === String(de.plataforma || '').toLowerCase() &&
+                        (other.datos.hora_pago || '').substring(0, 8) === (de.hora_pago || '').substring(0, 8)
                     );
                     if (yaEnCarga) {
                         item.status = 'duplicado';

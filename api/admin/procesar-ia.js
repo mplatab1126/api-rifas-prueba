@@ -38,7 +38,7 @@ export default async function handler(req, res) {
         "monto": "Solo el número absoluto sin símbolos ni signos (Ej: 3000000). NUNCA incluyas el signo negativo.",
         "referencia": "Código de comprobante o referencia. Si no hay, pon '0'",
         "fecha_pago": "La fecha exacta en formato YYYY-MM-DD",
-        "hora_pago": "La hora en formato HH:MM:00 (Formato 24h. Obligatorio poner los segundos). Si no hay hora, pon '12:00:00'",
+        "hora_pago": "La hora EXACTA tal cual aparece, en formato HH:MM:SS (24h). Incluye los segundos REALES del comprobante, NO los redondees a 00. Ej: si dice 15:00:27, pon '15:00:27'. Si no hay hora visible, pon '12:00:00'",
         "descripcion_movimiento": "El campo 'Descripción' del comprobante bancario, TAL CUAL aparece (Ej: 'Valor iva', 'Compra POS', 'Transferencia a terceros'). Si no hay, pon ''",
         "valor_original": "El valor TAL CUAL aparece en el comprobante, con signos y símbolos incluidos (Ej: 'COP $ 180.000,00' o 'COP -$ 538,07' o '-21,478.00'). Cópialo exacto."
       }
@@ -113,8 +113,8 @@ export default async function handler(req, res) {
         const gastoDuplicado = gastosExistentes.find(g => {
           const mismaRef   = String(datos.referencia).toLowerCase().trim() === String(g.referencia || '').toLowerCase().trim();
           const mismaPlatf = datos.plataforma.toLowerCase().trim() === String(g.plataforma || '').toLowerCase().trim();
-          const horaNew    = (datos.hora_pago || '').substring(0, 5);
-          const horaExist  = (g.hora || '').substring(0, 5);
+          const horaNew    = (datos.hora_pago || '').substring(0, 8);
+          const horaExist  = (g.hora || '').substring(0, 8);
           const mismaHora  = horaNew !== '' && horaExist !== '' && horaNew === horaExist;
           return mismaRef && mismaPlatf && mismaHora;
         });
@@ -199,9 +199,9 @@ export default async function handler(req, res) {
             // 2. Referencia exacta (sin distinción de mayúsculas ni espacios)
             const mismaRef = String(datos.referencia).toLowerCase().trim() === String(tExist.referencia).toLowerCase().trim();
 
-            // 3. Hora a nivel de minuto (HH:MM) — los segundos pueden variar entre comprobantes
-            const horaNew  = (datos.hora_pago  || '').substring(0, 5);
-            const horaExist = (tExist.hora_pago || '').substring(0, 5);
+            // 3. Hora completa (HH:MM:SS) — segundos incluidos para distinguir transacciones en el mismo minuto
+            const horaNew  = (datos.hora_pago  || '').substring(0, 8);
+            const horaExist = (tExist.hora_pago || '').substring(0, 8);
             const mismaHora = horaNew !== '' && horaExist !== '' && horaNew === horaExist;
 
             const coinciden = mismaPlatf && mismaRef && mismaHora;

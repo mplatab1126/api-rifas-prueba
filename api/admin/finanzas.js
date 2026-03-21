@@ -43,7 +43,7 @@ export default async function handler(req, res) {
 
       const { data: existentes } = await supabase
         .from('gastos')
-        .select('id, fecha, monto, plataforma, referencia')
+        .select('id, fecha, hora, monto, plataforma, referencia')
         .eq('monto', montoGasto)
         .eq('fecha', fechaGasto);
 
@@ -51,7 +51,10 @@ export default async function handler(req, res) {
         const duplicado = existentes.find(g => {
           const mismaRef   = String(referencia || '').toLowerCase().trim() === String(g.referencia || '').toLowerCase().trim();
           const mismaPlatf = String(plataforma || '').toLowerCase().trim() === String(g.plataforma || '').toLowerCase().trim();
-          return mismaRef && mismaPlatf;
+          const horaNew    = (hora || '').substring(0, 8);
+          const horaExist  = (g.hora || '').substring(0, 8);
+          const mismaHora  = horaNew !== '' && horaExist !== '' && horaNew === horaExist;
+          return mismaRef && mismaPlatf && mismaHora;
         });
         if (duplicado) {
           return res.status(200).json({ status: 'duplicado', mensaje: `Este movimiento ya fue registrado ($${montoGasto.toLocaleString('es-CO')} del ${fechaGasto}).` });
@@ -194,7 +197,7 @@ export default async function handler(req, res) {
       // Detección de duplicados por monto total
       const { data: existentes } = await supabase
         .from('gastos')
-        .select('id, fecha, monto, plataforma, referencia, descripcion, categoria')
+        .select('id, fecha, hora, monto, plataforma, referencia, descripcion, categoria')
         .eq('monto', montoGasto)
         .eq('fecha', fechaGasto);
 
@@ -202,7 +205,10 @@ export default async function handler(req, res) {
         const duplicado = existentes.find(g => {
           const mismaRef   = String(referencia || '').toLowerCase().trim() === String(g.referencia || '').toLowerCase().trim();
           const mismaPlatf = String(plataforma || '').toLowerCase().trim() === String(g.plataforma || '').toLowerCase().trim();
-          return mismaRef && mismaPlatf;
+          const horaNew    = (hora || '').substring(0, 8);
+          const horaExist  = (g.hora || '').substring(0, 8);
+          const mismaHora  = horaNew !== '' && horaExist !== '' && horaNew === horaExist;
+          return mismaRef && mismaPlatf && mismaHora;
         });
         if (duplicado) {
           return res.status(200).json({
