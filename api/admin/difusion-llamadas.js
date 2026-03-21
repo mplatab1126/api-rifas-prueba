@@ -174,9 +174,10 @@ export default async function handler(req, res) {
           continue;
         }
 
+        const boletaParaLlamada = cliente.boletas[0];
         const params = new URLSearchParams({
           nombre: cliente.nombre,
-          boletas: cliente.boletas.join(','),
+          boletas: boletaParaLlamada,
           total: numeroAPalabras(cliente.totalSaldo)
         });
         if (plantilla) params.set('plantilla', plantilla);
