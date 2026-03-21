@@ -59,6 +59,7 @@ export default async function handler(req, res) {
   if (accion === 'preview') {
     try {
       const maxAbonado = payload.max_abonado;
+      const fechaCorte = payload.ultimo_abono_antes_de || null;
 
       let query = supabase
         .from('boletas')
@@ -85,11 +86,50 @@ export default async function handler(req, res) {
             nombre: b.clientes?.nombre || 'Sin nombre',
             apellido: b.clientes?.apellido || '',
             boletas: [],
-            totalSaldo: 0
+            totalSaldo: 0,
+            ultimoAbono: null
           };
         }
         porCliente[tel].boletas.push(b.numero);
         porCliente[tel].totalSaldo += Number(b.saldo_restante);
+      }
+
+      if (fechaCorte) {
+        const allNumeroBoletas = boletas.map(b => b.numero);
+        let allAbonos = [];
+        const batchSize = 100;
+        for (let i = 0; i < allNumeroBoletas.length; i += batchSize) {
+          const batch = allNumeroBoletas.slice(i, i + batchSize);
+          const { data, error: errAbonos } = await supabase
+            .from('abonos')
+            .select('numero_boleta, fecha_pago')
+            .in('numero_boleta', batch)
+            .order('fecha_pago', { ascending: false });
+          if (errAbonos) throw errAbonos;
+          if (data) allAbonos.push(...data);
+        }
+
+        const ultimoAbonoPorBoleta = {};
+        for (const a of allAbonos) {
+          if (!ultimoAbonoPorBoleta[a.numero_boleta] || a.fecha_pago > ultimoAbonoPorBoleta[a.numero_boleta]) {
+            ultimoAbonoPorBoleta[a.numero_boleta] = a.fecha_pago;
+          }
+        }
+
+        for (const c of Object.values(porCliente)) {
+          let maxFecha = null;
+          for (const num of c.boletas) {
+            const fecha = ultimoAbonoPorBoleta[num];
+            if (fecha && (!maxFecha || fecha > maxFecha)) maxFecha = fecha;
+          }
+          c.ultimoAbono = maxFecha;
+        }
+
+        for (const tel of Object.keys(porCliente)) {
+          if (porCliente[tel].ultimoAbono && porCliente[tel].ultimoAbono >= fechaCorte) {
+            delete porCliente[tel];
+          }
+        }
       }
 
       const clientes = Object.values(porCliente)
