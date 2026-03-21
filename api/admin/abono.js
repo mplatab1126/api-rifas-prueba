@@ -175,7 +175,6 @@ export default async function handler(req, res) {
         fecha_pago: fechaPagoColombia,
         referencia_transferencia: referencia || 'Sin Ref',
         metodo_pago: metodoPago || 'Efectivo',
-        es_pendiente: !!esPendiente,
         asesor: nombreAsesor,
         tipo: tipoBoleta,
         origen: esPendiente ? 'pendiente' : (esPagoInteligente || (idTransferencia && idTransferencia.trim() !== '')) ? 'transferencia_real' : 'manual'

@@ -155,7 +155,6 @@ export default async function handler(req, res) {
           fecha_pago: new Date().toISOString(),
           referencia_transferencia: referenciaAbono || 'Sin Ref',
           metodo_pago: metodoPago || 'Efectivo',
-          es_pendiente: !!esPendiente,
           asesor: nombreAsesor,
           tipo: tipoBoleta,
           origen: esPendiente ? 'pendiente' : (esPagoInteligente || (idTransferencia && idTransferencia.trim() !== '')) ? 'transferencia_real' : 'manual'
