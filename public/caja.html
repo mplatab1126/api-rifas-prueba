@@ -45,6 +45,18 @@
     .field input:focus, .field select:focus { border-color: var(--accent); }
 
     .badge-owner { font-size: 0.7rem; background: var(--pill); color: var(--accent-2); padding: 4px 10px; border-radius: 50px; font-weight: 700; border: 1px solid var(--accent); display: none; }
+
+    .detalle-esperado-list { max-height: 420px; overflow-y: auto; }
+    .mov-detalle-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; margin-bottom: 6px; }
+    .mov-detalle-row.positivo { background: #f0faf4; border: 1px solid #d4edda; }
+    .mov-detalle-row.negativo { background: #fef6f5; border: 1px solid #f5dddb; }
+    .mov-detalle-info { flex: 1; min-width: 0; }
+    .mov-detalle-tipo { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
+    .mov-detalle-desc { font-size: 0.85rem; color: var(--ink); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mov-detalle-hora { font-size: 0.7rem; color: var(--muted); margin-top: 1px; }
+    .mov-detalle-monto { font-weight: 800; font-size: 1rem; white-space: nowrap; flex-shrink: 0; }
+    .mov-separador { text-align: center; font-size: 0.75rem; font-weight: 700; color: var(--muted); margin: 14px 0 8px; text-transform: uppercase; letter-spacing: 1px; border-top: 1px dashed var(--ring-strong); padding-top: 12px; }
+    .mov-total-row { background: var(--pill); border: 2px solid var(--accent); border-radius: 12px; padding: 14px 18px; margin-top: 14px; display: flex; justify-content: space-between; align-items: center; }
   </style>
 </head>
 <body>
@@ -93,6 +105,18 @@
     <button onclick="abrirModalMovimiento()" style="width:100%; padding:16px; border-radius:14px; border:none; background:var(--ink); color:#fff; font-size:1rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:20px; font-family:inherit; box-shadow: 0 4px 14px rgba(0,0,0,0.12); transition: 0.2s;" onmouseover="this.style.background='var(--ink-2)'" onmouseout="this.style.background='var(--ink)'">
       💸 Registrar Ingreso / Salida / Consignación
     </button>
+
+    <div class="section-card">
+      <div class="section-title">
+        <span>📊 Detalle del Efectivo Esperado</span>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0; margin-bottom: 15px;">
+        Desglose de los movimientos de hoy que componen el efectivo físico esperado en caja.
+      </p>
+      <div class="detalle-esperado-list" id="listaDetalleEsperado">
+        <p style="text-align:center; color:var(--muted); font-weight:500;">Cargando...</p>
+      </div>
+    </div>
 
     <div class="section-card">
       <div class="section-title">Asesores con efectivo pendiente</div>
@@ -451,6 +475,99 @@
         document.getElementById('lbl-base').textContent = fmt(res.baseFija);
         document.getElementById('lbl-calle').textContent = fmt(res.totalEnCalle);
         document.getElementById('lbl-oficina').textContent = fmt(res.efectivoFisicoEsperado);
+
+        // Poblar desglose del efectivo esperado
+        const movs = res.movimientos || [];
+        const detalleDiv = document.getElementById('listaDetalleEsperado');
+        let dHTML = '';
+        let hayPositivos = false;
+        let hayNegativos = false;
+
+        if (res.baseFija > 0) {
+          hayPositivos = true;
+          dHTML += `<div class="mov-detalle-row positivo">
+            <span style="font-size:1.2rem;">💵</span>
+            <div class="mov-detalle-info">
+              <div class="mov-detalle-tipo" style="color:var(--accent-2);">Base Fija Inicial</div>
+              <div class="mov-detalle-desc">Dinero con el que abrió la caja</div>
+            </div>
+            <span class="mov-detalle-monto" style="color:var(--accent-2);">+${fmt(res.baseFija)}</span>
+          </div>`;
+        }
+
+        const recepciones = movs.filter(m => m.tipo === 'recepcion');
+        for (const m of recepciones) {
+          hayPositivos = true;
+          const hora = new Date(m.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' });
+          dHTML += `<div class="mov-detalle-row positivo">
+            <span style="font-size:1.2rem;">📥</span>
+            <div class="mov-detalle-info">
+              <div class="mov-detalle-tipo" style="color:var(--accent-2);">Recepción de asesor</div>
+              <div class="mov-detalle-desc">${m.descripcion}</div>
+              <div class="mov-detalle-hora">${hora} · por ${m.creado_por}</div>
+            </div>
+            <span class="mov-detalle-monto" style="color:var(--accent-2);">+${fmt(m.monto)}</span>
+          </div>`;
+        }
+
+        const ingresosArr = movs.filter(m => m.tipo === 'ingreso');
+        for (const m of ingresosArr) {
+          hayPositivos = true;
+          const hora = new Date(m.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' });
+          dHTML += `<div class="mov-detalle-row positivo">
+            <span style="font-size:1.2rem;">🟢</span>
+            <div class="mov-detalle-info">
+              <div class="mov-detalle-tipo" style="color:var(--accent-2);">Ingreso Extra</div>
+              <div class="mov-detalle-desc">${m.descripcion}</div>
+              <div class="mov-detalle-hora">${hora} · por ${m.creado_por}</div>
+            </div>
+            <span class="mov-detalle-monto" style="color:var(--accent-2);">+${fmt(m.monto)}</span>
+          </div>`;
+        }
+
+        const salidasArr = movs.filter(m => m.tipo === 'salida');
+        const consigsArr = movs.filter(m => m.tipo === 'consignacion');
+        if (salidasArr.length > 0 || consigsArr.length > 0) {
+          hayNegativos = true;
+          if (hayPositivos) {
+            dHTML += `<div class="mov-separador">Salidas (reducen el efectivo)</div>`;
+          }
+          for (const m of salidasArr) {
+            const hora = new Date(m.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' });
+            dHTML += `<div class="mov-detalle-row negativo">
+              <span style="font-size:1.2rem;">🔴</span>
+              <div class="mov-detalle-info">
+                <div class="mov-detalle-tipo" style="color:var(--danger);">Salida / Gasto</div>
+                <div class="mov-detalle-desc">${m.descripcion}</div>
+                <div class="mov-detalle-hora">${hora} · por ${m.creado_por}</div>
+              </div>
+              <span class="mov-detalle-monto" style="color:var(--danger);">-${fmt(m.monto)}</span>
+            </div>`;
+          }
+          for (const m of consigsArr) {
+            const hora = new Date(m.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' });
+            dHTML += `<div class="mov-detalle-row negativo">
+              <span style="font-size:1.2rem;">🔵</span>
+              <div class="mov-detalle-info">
+                <div class="mov-detalle-tipo" style="color:#1976d2;">Consignación a Banco</div>
+                <div class="mov-detalle-desc">${m.descripcion}</div>
+                <div class="mov-detalle-hora">${hora} · por ${m.creado_por}</div>
+              </div>
+              <span class="mov-detalle-monto" style="color:var(--danger);">-${fmt(m.monto)}</span>
+            </div>`;
+          }
+        }
+
+        if (!hayPositivos && !hayNegativos) {
+          dHTML = '<p style="text-align:center; color:var(--muted); font-weight:500; padding:15px 0;">Sin movimientos registrados hoy. El efectivo esperado es $0.</p>';
+        } else {
+          dHTML += `<div class="mov-total-row">
+            <span style="color:var(--ink); font-size:0.95rem; font-weight:700;">= Efectivo Físico Esperado</span>
+            <span style="color:var(--accent-2); font-size:1.2rem; font-weight:800;">${fmt(res.efectivoFisicoEsperado)}</span>
+          </div>`;
+        }
+
+        detalleDiv.innerHTML = dHTML;
 
         if (res.asesoresEnCalle.length === 0) {
           document.getElementById('lista-asesores').innerHTML = '<p style="text-align:center; color:var(--muted); font-weight:500; padding:20px 0;">✅ Ningún asesor tiene efectivo pendiente por entregar.</p>';
