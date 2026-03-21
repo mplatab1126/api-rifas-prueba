@@ -594,6 +594,7 @@
     }
 
     let costosData = {};
+    let elevenlabsInfo = { usados: 0, limite: 0 };
 
     async function sincronizarYRecargar(btn) {
       const orig = btn.textContent;
@@ -623,6 +624,7 @@
         document.getElementById('kpiGastoTwilio').textContent = '$' + costosRes.total_twilio_usd.toFixed(2);
         if (costosRes.elevenlabs) {
           const el = costosRes.elevenlabs;
+          elevenlabsInfo = { usados: el.caracteres_usados || 0, limite: el.caracteres_limite || 0 };
           const pct = Math.round((el.caracteres_usados / el.caracteres_limite) * 100);
           document.getElementById('kpiElevenlabs').textContent = `${el.caracteres_usados.toLocaleString()} / ${el.caracteres_limite.toLocaleString()}`;
           const renovacion = el.renovacion ? new Date(el.renovacion * 1000).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' }) : '';
@@ -835,8 +837,15 @@
       }).join('');
     }
 
+    function estimarCaracteresPorLlamada() {
+      const plantilla = document.getElementById('cobroPlantilla').value;
+      const base = plantilla.length;
+      const varsExtra = 40;
+      return base + varsExtra;
+    }
+
     function estimarTiempoCobro(numClientes) {
-      if (numClientes === 0) return { texto: '—', sub: '~2s por llamada + overhead por lote' };
+      if (numClientes === 0) return { texto: '—', sub: '~2s por llamada + overhead por lote', alcanza: true, caracteres: 0 };
       const segPorLlamada = 2;
       const overheadPorLote = 3;
       const numLotes = Math.ceil(numClientes / COBRO_BATCH_SIZE);
@@ -853,27 +862,53 @@
         const m = Math.floor((totalSeg % 3600) / 60);
         texto = `~${h}h ${m}m`;
       }
+
+      const charsPorLlamada = estimarCaracteresPorLlamada();
+      const totalChars = numClientes * charsPorLlamada;
+      const disponibles = elevenlabsInfo.limite - elevenlabsInfo.usados;
+      const alcanza = elevenlabsInfo.limite === 0 || totalChars <= disponibles;
+
       const costo = numClientes * 0.05;
-      const sub = `${numClientes} llamadas × ~2s · Costo aprox: ~$${costo.toFixed(2)} USD`;
-      return { texto, sub };
+      let sub = `~$${costo.toFixed(2)} USD · ~${totalChars.toLocaleString('es-CO')} chars`;
+      if (elevenlabsInfo.limite > 0) {
+        sub += ` de ${disponibles.toLocaleString('es-CO')} disponibles`;
+      }
+
+      return { texto, sub, alcanza, caracteres: totalChars };
     }
 
     function updateCobroSelectCount() {
       const checks = document.querySelectorAll('.chk-cobro:checked');
       const total = document.querySelectorAll('.chk-cobro').length;
       document.getElementById('cobroSelectCount').textContent = `(${checks.length} de ${total} seleccionados)`;
-      document.getElementById('btnCobroLanzar').disabled = checks.length === 0;
       document.getElementById('kpiCobroLotes').textContent = Math.ceil(checks.length / COBRO_BATCH_SIZE);
+
       const est = estimarTiempoCobro(checks.length);
       document.getElementById('kpiCobroTiempo').textContent = est.texto;
       document.getElementById('kpiCobroTiempoSub').textContent = est.sub;
+
+      const kpiTiempo = document.getElementById('kpiCobroTiempo').parentElement;
+      if (!est.alcanza) {
+        kpiTiempo.className = 'mega-kpi kpi-red';
+        document.getElementById('kpiCobroTiempoSub').textContent = est.sub + ' — NO ALCANZAN';
+        document.getElementById('btnCobroLanzar').disabled = true;
+      } else {
+        kpiTiempo.className = 'mega-kpi kpi-red';
+        document.getElementById('btnCobroLanzar').disabled = checks.length === 0;
+      }
     }
 
     function confirmarCobroLanzamiento() {
       const checks = document.querySelectorAll('.chk-cobro:checked');
       if (checks.length === 0) return;
       const lotes = Math.ceil(checks.length / COBRO_BATCH_SIZE);
-      document.getElementById('modalMsg').textContent = `Se lanzarán ${checks.length} llamadas en ${lotes} lote${lotes > 1 ? 's' : ''} de máximo ${COBRO_BATCH_SIZE}. Esta acción generará cargos en Twilio y ElevenLabs.`;
+      const est = estimarTiempoCobro(checks.length);
+      const disponibles = elevenlabsInfo.limite - elevenlabsInfo.usados;
+      let msg = `Se lanzarán ${checks.length} llamadas en ${lotes} lote${lotes > 1 ? 's' : ''}.`;
+      msg += `\n\nElevenLabs: ~${est.caracteres.toLocaleString('es-CO')} caracteres necesarios de ${disponibles.toLocaleString('es-CO')} disponibles.`;
+      msg += `\nTwilio: ~$${(checks.length * 0.05).toFixed(2)} USD estimados.`;
+      document.getElementById('modalMsg').textContent = msg;
+      document.getElementById('modalMsg').style.whiteSpace = 'pre-line';
       document.getElementById('modalConfirm').style.display = 'flex';
       document.getElementById('btnConfirmLanzar').onclick = ejecutarCobroLanzamiento;
     }
