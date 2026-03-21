@@ -77,6 +77,8 @@ export default async function handler(req, res) {
         return res.status(200).json({ status: 'ok', clientes: [], total_clientes: 0, total_saldo: 0 });
       }
 
+      boletas.sort((a, b) => Number(a.total_abonado) - Number(b.total_abonado));
+
       const porCliente = {};
       for (const b of boletas) {
         const tel = b.telefono_cliente;
