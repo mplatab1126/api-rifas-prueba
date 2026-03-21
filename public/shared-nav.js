@@ -11,25 +11,25 @@
   const SOLO_MATEO = ['mateo'];
 
   const PAGES = [
-    { id: 'admin',       label: 'Panel de Ventas',       icon: '🏠', href: '/admin',                  section: 'principal', roles: 'todos' },
-    { id: 'caja',        label: 'Cuadre de Caja',        icon: '💰', href: '/caja',                   section: 'principal', roles: 'todos' },
-    { id: 'rendimiento', label: 'Rendimiento',           icon: '📊', href: '/rendimiento',           section: 'gerencia',  roles: 'gerencia',
+    { id: 'admin',       label: 'Panel de Ventas',       href: '/admin',                  section: 'principal', roles: 'todos' },
+    { id: 'caja',        label: 'Cuadre de Caja',        href: '/caja',                   section: 'principal', roles: 'todos' },
+    { id: 'rendimiento', label: 'Rendimiento',           href: '/rendimiento',           section: 'gerencia',  roles: 'gerencia',
       children: [
-        { id: 'rend-2cifras', label: 'Rifas 2 Cifras',    icon: '🎟️', href: '/rendimiento?tipo=2cifras' },
-        { id: 'rend-3cifras', label: 'Rifas 3 Cifras',    icon: '🏷️', href: '/rendimiento?tipo=3cifras' },
-        { id: 'rend-4cifras', label: 'El Apartamento',    icon: '🏢', href: '/rendimiento?tipo=4cifras' },
+        { id: 'rend-2cifras', label: 'Rifas 2 Cifras',    href: '/rendimiento?tipo=2cifras' },
+        { id: 'rend-3cifras', label: 'Rifas 3 Cifras',    href: '/rendimiento?tipo=3cifras' },
+        { id: 'rend-4cifras', label: 'El Apartamento',    href: '/rendimiento?tipo=4cifras' },
       ]
     },
-    { id: 'llamadas',    label: 'Llamadas IA',           icon: '📞', href: '/llamadas',              section: 'gerencia',  roles: 'gerencia' },
-    { id: 'horarios',    label: 'Gestión de Horarios',   icon: '🗓️', href: '/admin-horarios',        section: 'gerencia',  roles: 'gerencia' },
-    { id: 'rifas',       label: 'Centro Financiero',     icon: '🎰', href: '/rifas',                 section: 'finanzas',  roles: 'mateo' },
-    { id: 'estado',      label: 'Estado de Resultados',  icon: '💼', href: '/estado-resultados',     section: 'finanzas',  roles: 'mateo',
+    { id: 'llamadas',    label: 'Llamadas IA',           href: '/llamadas',              section: 'gerencia',  roles: 'gerencia' },
+    { id: 'horarios',    label: 'Gestión de Horarios',   href: '/admin-horarios',        section: 'gerencia',  roles: 'gerencia' },
+    { id: 'rifas',       label: 'Centro Financiero',     href: '/rifas',                 section: 'finanzas',  roles: 'mateo' },
+    { id: 'estado',      label: 'Estado de Resultados',  href: '/estado-resultados',     section: 'finanzas',  roles: 'mateo',
       children: [
-        { id: 'estado-er',      label: 'Estado de Resultados', icon: '📊', href: '/estado-resultados?tab=er' },
-        { id: 'estado-detalle', label: 'Detalle de Gastos',    icon: '📋', href: '/estado-resultados?tab=detalle' },
+        { id: 'estado-er',      label: 'Estado de Resultados', href: '/estado-resultados?tab=er' },
+        { id: 'estado-detalle', label: 'Detalle de Gastos',    href: '/estado-resultados?tab=detalle' },
       ]
     },
-    { id: 'permisos',    label: 'Permisos',              icon: '🔐', href: '/permisos',              section: 'admin',     roles: 'mateo' },
+    { id: 'permisos',    label: 'Permisos',              href: '/permisos',              section: 'admin',     roles: 'mateo' },
   ];
 
   function detectCurrentPage() {
@@ -125,7 +125,6 @@
         const activeParent = childActive ? ' active' : '';
         html += `
           <button class="snav-link snav-has-children${activeParent}${expanded}" data-snav-toggle="${page.id}">
-            <span class="snav-link-icon">${page.icon}</span>
             ${page.label}
             <span class="snav-chevron">›</span>
           </button>
@@ -135,7 +134,6 @@
           const childIsActive = child.id === currentPage ? ' active' : '';
           html += `
             <a class="snav-link snav-child${childIsActive}" href="${child.href}">
-              <span class="snav-link-icon">${child.icon}</span>
               ${child.label}
             </a>
           `;
@@ -145,7 +143,6 @@
         const active = page.id === currentPage ? ' active' : '';
         html += `
           <a class="snav-link${active}" href="${page.href}">
-            <span class="snav-link-icon">${page.icon}</span>
             ${page.label}
           </a>
         `;
@@ -160,7 +157,7 @@
           <div class="snav-asesor-name">${asesorName || '—'}</div>
         </div>
         <button class="snav-logout" id="snavLogout">
-          <span>🚪</span> Cerrar Sesión
+          Cerrar Sesión
         </button>
       </div>
     `;
