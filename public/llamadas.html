@@ -233,6 +233,11 @@
           <div class="mega-kpi-value" id="kpiCobroLotes">—</div>
           <span class="mega-kpi-sub">De 25 llamadas c/u</span>
         </div>
+        <div class="mega-kpi kpi-red">
+          <div class="mega-kpi-title">Tiempo estimado</div>
+          <div class="mega-kpi-value" id="kpiCobroTiempo" style="font-size:1.6rem;">—</div>
+          <span class="mega-kpi-sub" id="kpiCobroTiempoSub">~2s por llamada + overhead por lote</span>
+        </div>
       </div>
 
       <div class="card" style="margin-top:15px;">
@@ -803,12 +808,38 @@
       }).join('');
     }
 
+    function estimarTiempoCobro(numClientes) {
+      if (numClientes === 0) return { texto: '—', sub: '~2s por llamada + overhead por lote' };
+      const segPorLlamada = 2;
+      const overheadPorLote = 3;
+      const numLotes = Math.ceil(numClientes / COBRO_BATCH_SIZE);
+      const totalSeg = (numClientes * segPorLlamada) + (numLotes * overheadPorLote);
+      let texto;
+      if (totalSeg < 60) {
+        texto = `~${totalSeg}s`;
+      } else if (totalSeg < 3600) {
+        const m = Math.floor(totalSeg / 60);
+        const s = totalSeg % 60;
+        texto = s > 0 ? `~${m}m ${s}s` : `~${m}m`;
+      } else {
+        const h = Math.floor(totalSeg / 3600);
+        const m = Math.floor((totalSeg % 3600) / 60);
+        texto = `~${h}h ${m}m`;
+      }
+      const costo = numClientes * 0.05;
+      const sub = `${numClientes} llamadas × ~2s · Costo aprox: ~$${costo.toFixed(2)} USD`;
+      return { texto, sub };
+    }
+
     function updateCobroSelectCount() {
       const checks = document.querySelectorAll('.chk-cobro:checked');
       const total = document.querySelectorAll('.chk-cobro').length;
       document.getElementById('cobroSelectCount').textContent = `(${checks.length} de ${total} seleccionados)`;
       document.getElementById('btnCobroLanzar').disabled = checks.length === 0;
       document.getElementById('kpiCobroLotes').textContent = Math.ceil(checks.length / COBRO_BATCH_SIZE);
+      const est = estimarTiempoCobro(checks.length);
+      document.getElementById('kpiCobroTiempo').textContent = est.texto;
+      document.getElementById('kpiCobroTiempoSub').textContent = est.sub;
     }
 
     function confirmarCobroLanzamiento() {
