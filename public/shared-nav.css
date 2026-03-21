@@ -103,6 +103,47 @@ html.snav-authed #loginScreen {
   flex-shrink: 0;
 }
 
+/* Submenu toggle chevron */
+.snav-chevron {
+  margin-left: auto;
+  font-size: 0.85rem;
+  transition: transform 0.2s ease;
+  opacity: 0.4;
+}
+.snav-has-children.expanded .snav-chevron {
+  transform: rotate(90deg);
+}
+
+/* Submenu children container */
+.snav-children {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s cubic-bezier(.4,0,.2,1);
+}
+.snav-children.expanded {
+  max-height: 200px;
+}
+
+/* Child items */
+.snav-child {
+  padding-left: 44px !important;
+  font-size: 0.8rem !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+  color: rgba(255,255,255,0.45) !important;
+}
+.snav-child:hover {
+  color: rgba(255,255,255,0.8) !important;
+}
+.snav-child.active {
+  color: #6ee7a8 !important;
+  background: rgba(78, 176, 130, 0.1) !important;
+}
+.snav-child .snav-link-icon {
+  font-size: 0.85rem;
+  width: 18px;
+}
+
 .snav-bottom {
   padding: 12px 10px 16px;
   border-top: 1px solid rgba(255,255,255,0.06);

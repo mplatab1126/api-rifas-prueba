@@ -705,6 +705,13 @@
       '4cifras': { badge: '🏢 El Apartamento', titulo: '4 Cifras · $200K' }
     };
 
+    function getTipoFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      const tipo = params.get('tipo');
+      if (['2cifras', '3cifras', '4cifras'].includes(tipo)) return tipo;
+      return null;
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       const pwd = localStorage.getItem(STORAGE_KEY);
       if (pwd) verificarLogin(pwd, true);
@@ -727,7 +734,8 @@
               if (window.__snavSaveAsesor) window.__snavSaveAsesor(res.asesor);
               if (window.__snavRefresh) window.__snavRefresh();
               document.getElementById('loginOverlay').style.display = 'none';
-              mostrarSelectorRifa();
+              const tipoURL = getTipoFromURL();
+              if (tipoURL) { seleccionarRifa(tipoURL); } else { mostrarSelectorRifa(); }
           } else {
               if(!auto) msg.textContent = 'Acceso denegado. Solo gerencia.';
               localStorage.removeItem(STORAGE_KEY);

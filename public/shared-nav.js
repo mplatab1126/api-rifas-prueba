@@ -13,21 +13,46 @@
   const PAGES = [
     { id: 'admin',       label: 'Panel de Ventas',       icon: '🏠', href: '/admin',                  section: 'principal', roles: 'todos' },
     { id: 'caja',        label: 'Cuadre de Caja',        icon: '💰', href: '/caja',                   section: 'principal', roles: 'todos' },
-    { id: 'rendimiento', label: 'Rendimiento',           icon: '📊', href: '/rendimiento',           section: 'gerencia',  roles: 'gerencia' },
+    { id: 'rendimiento', label: 'Rendimiento',           icon: '📊', href: '/rendimiento',           section: 'gerencia',  roles: 'gerencia',
+      children: [
+        { id: 'rend-2cifras', label: 'Rifas 2 Cifras',    icon: '🎟️', href: '/rendimiento?tipo=2cifras' },
+        { id: 'rend-3cifras', label: 'Rifas 3 Cifras',    icon: '🏷️', href: '/rendimiento?tipo=3cifras' },
+        { id: 'rend-4cifras', label: 'El Apartamento',    icon: '🏢', href: '/rendimiento?tipo=4cifras' },
+      ]
+    },
     { id: 'llamadas',    label: 'Llamadas IA',           icon: '📞', href: '/llamadas',              section: 'gerencia',  roles: 'gerencia' },
     { id: 'horarios',    label: 'Gestión de Horarios',   icon: '🗓️', href: '/admin-horarios',        section: 'gerencia',  roles: 'gerencia' },
     { id: 'rifas',       label: 'Centro Financiero',     icon: '🎰', href: '/rifas',                 section: 'finanzas',  roles: 'mateo' },
-    { id: 'estado',      label: 'Estado de Resultados',  icon: '💼', href: '/estado-resultados',     section: 'finanzas',  roles: 'mateo' },
+    { id: 'estado',      label: 'Estado de Resultados',  icon: '💼', href: '/estado-resultados',     section: 'finanzas',  roles: 'mateo',
+      children: [
+        { id: 'estado-er',      label: 'Estado de Resultados', icon: '📊', href: '/estado-resultados?tab=er' },
+        { id: 'estado-detalle', label: 'Detalle de Gastos',    icon: '📋', href: '/estado-resultados?tab=detalle' },
+      ]
+    },
     { id: 'permisos',    label: 'Permisos',              icon: '🔐', href: '/permisos',              section: 'admin',     roles: 'mateo' },
   ];
 
   function detectCurrentPage() {
     const path = window.location.pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/admin';
+    const search = window.location.search;
+    const fullUrl = path + search;
     for (const p of PAGES) {
       const clean = p.href.replace(/\.html$/, '');
+      if (p.children) {
+        for (const child of p.children) {
+          if (fullUrl === child.href || path + '?' + search.slice(1) === child.href) return child.id;
+        }
+      }
       if (path === clean || path === clean.replace(/^\//, '')) return p.id;
     }
     return null;
+  }
+
+  function isChildActive(page) {
+    if (!page.children) return false;
+    const path = window.location.pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/admin';
+    const parentClean = page.href.replace(/\.html$/, '');
+    return path === parentClean || path === parentClean.replace(/^\//, '');
   }
 
   function getCachedPermisos() {
@@ -94,13 +119,37 @@
         }
       }
 
-      const active = page.id === currentPage ? ' active' : '';
-      html += `
-        <a class="snav-link${active}" href="${page.href}">
-          <span class="snav-link-icon">${page.icon}</span>
-          ${page.label}
-        </a>
-      `;
+      if (page.children) {
+        const childActive = isChildActive(page);
+        const expanded = childActive ? ' expanded' : '';
+        const activeParent = childActive ? ' active' : '';
+        html += `
+          <button class="snav-link snav-has-children${activeParent}${expanded}" data-snav-toggle="${page.id}">
+            <span class="snav-link-icon">${page.icon}</span>
+            ${page.label}
+            <span class="snav-chevron">›</span>
+          </button>
+          <div class="snav-children${expanded}" id="snav-children-${page.id}">
+        `;
+        for (const child of page.children) {
+          const childIsActive = child.id === currentPage ? ' active' : '';
+          html += `
+            <a class="snav-link snav-child${childIsActive}" href="${child.href}">
+              <span class="snav-link-icon">${child.icon}</span>
+              ${child.label}
+            </a>
+          `;
+        }
+        html += `</div>`;
+      } else {
+        const active = page.id === currentPage ? ' active' : '';
+        html += `
+          <a class="snav-link${active}" href="${page.href}">
+            <span class="snav-link-icon">${page.icon}</span>
+            ${page.label}
+          </a>
+        `;
+      }
     }
 
     html += `
@@ -122,12 +171,22 @@
   function prefetchPages(asesorName) {
     const currentPage = detectCurrentPage();
     for (const page of PAGES) {
-      if (page.id === currentPage) continue;
       if (!canAccess(page, asesorName)) continue;
-      const link = document.createElement('link');
-      link.rel = 'prefetch';
-      link.href = page.href;
-      document.head.appendChild(link);
+      if (page.children) {
+        for (const child of page.children) {
+          if (child.id === currentPage) continue;
+          const link = document.createElement('link');
+          link.rel = 'prefetch';
+          link.href = child.href;
+          document.head.appendChild(link);
+        }
+      } else {
+        if (page.id === currentPage) continue;
+        const link = document.createElement('link');
+        link.rel = 'prefetch';
+        link.href = page.href;
+        document.head.appendChild(link);
+      }
     }
   }
 
@@ -164,8 +223,8 @@
 
         if (changed) {
           const currentPage = detectCurrentPage();
-          const currentPageObj = PAGES.find(p => p.id === currentPage);
-          if (currentPageObj && !data.permisos[currentPage]) {
+          const currentPageObj = findPageOrParent(currentPage);
+          if (currentPageObj && !data.permisos[currentPageObj.id]) {
             window.location.href = '/admin';
             return;
           }
@@ -179,10 +238,22 @@
     }
   }
 
+  function findPageOrParent(pageId) {
+    for (const p of PAGES) {
+      if (p.id === pageId) return p;
+      if (p.children) {
+        for (const c of p.children) {
+          if (c.id === pageId) return p;
+        }
+      }
+    }
+    return null;
+  }
+
   function checkCurrentPageAccess(asesorName) {
     const currentPage = detectCurrentPage();
     if (!currentPage) return;
-    const page = PAGES.find(p => p.id === currentPage);
+    const page = findPageOrParent(currentPage);
     if (!page) return;
     if (!canAccess(page, asesorName)) {
       window.location.href = '/admin';
@@ -223,6 +294,17 @@
       sidebar.classList.remove('open');
       overlay.classList.remove('visible');
       hamburger.innerHTML = '☰';
+    });
+
+    sidebar.querySelectorAll('[data-snav-toggle]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-snav-toggle');
+        const childrenEl = document.getElementById('snav-children-' + id);
+        if (!childrenEl) return;
+        const isExpanded = btn.classList.contains('expanded');
+        btn.classList.toggle('expanded', !isExpanded);
+        childrenEl.classList.toggle('expanded', !isExpanded);
+      });
     });
 
     const logoutBtn = document.getElementById('snavLogout');

@@ -805,6 +805,9 @@ async function cargarTodo() {
     seleccionarMiEquipo();   // auto-aplica "mi equipo"
     aplicarFiltros();
 
+    const urlTab = new URLSearchParams(window.location.search).get('tab');
+    if (urlTab === 'er' || urlTab === 'detalle') cambiarTab(urlTab);
+
   } catch (e) {
     document.getElementById('erContent').innerHTML =
       `<div class="empty-state">⚠️ ${e.message}</div>`;
