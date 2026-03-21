@@ -261,6 +261,11 @@ export default async function handler(req, res) {
   // ── SYNC-ESTADOS: sincroniza estados reales desde Twilio para llamadas no terminadas ──
   if (accion === 'sync-estados') {
     try {
+      const twilioSid = process.env.TWILIO_ACCOUNT_SID;
+      const twilioToken = process.env.TWILIO_AUTH_TOKEN;
+      const auth = Buffer.from(`${twilioSid}:${twilioToken}`).toString('base64');
+
+      // 1) Sincronizar estados de llamadas pendientes
       const estadosTerminales = ['completed', 'busy', 'no-answer', 'failed', 'canceled'];
       const { data: pendientes, error } = await supabase
         .from('llamadas_twilio')
@@ -268,18 +273,11 @@ export default async function handler(req, res) {
         .not('estado', 'in', `(${estadosTerminales.join(',')})`);
 
       if (error) throw error;
-      if (!pendientes || pendientes.length === 0) {
-        return res.json({ status: 'ok', mensaje: 'Todas las llamadas ya tienen estado final.', actualizadas: 0 });
-      }
-
-      const twilioSid = process.env.TWILIO_ACCOUNT_SID;
-      const twilioToken = process.env.TWILIO_AUTH_TOKEN;
-      const auth = Buffer.from(`${twilioSid}:${twilioToken}`).toString('base64');
 
       let actualizadas = 0;
       const resultados = [];
 
-      for (const llamada of pendientes) {
+      for (const llamada of (pendientes || [])) {
         try {
           const twResp = await fetch(
             `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Calls/${llamada.sid}.json`,
@@ -296,11 +294,43 @@ export default async function handler(req, res) {
         } catch { /* si falla una, sigue con las demás */ }
       }
 
+      // 2) Sincronizar grabaciones de llamadas completadas sin recording_url
+      const { data: sinGrabacion } = await supabase
+        .from('llamadas_twilio')
+        .select('sid')
+        .eq('estado', 'completed')
+        .is('recording_url', null)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      let grabacionesSincronizadas = 0;
+
+      for (const llamada of (sinGrabacion || [])) {
+        try {
+          const recResp = await fetch(
+            `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Calls/${llamada.sid}/Recordings.json`,
+            { headers: { 'Authorization': `Basic ${auth}` } }
+          ).then(r => r.json());
+
+          const recordings = recResp.recordings || [];
+          if (recordings.length > 0) {
+            const rec = recordings[0];
+            const recordingUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Recordings/${rec.sid}.mp3`;
+            await supabase.from('llamadas_twilio')
+              .update({ recording_url: recordingUrl, updated_at: new Date().toISOString() })
+              .eq('sid', llamada.sid);
+            grabacionesSincronizadas++;
+          }
+        } catch { /* si falla una, sigue con las demás */ }
+      }
+
       return res.json({
         status: 'ok',
-        mensaje: `Se sincronizaron ${actualizadas} de ${pendientes.length} llamadas pendientes.`,
+        mensaje: `Estados: ${actualizadas} actualizados. Grabaciones: ${grabacionesSincronizadas} recuperadas.`,
         actualizadas,
-        total_pendientes: pendientes.length,
+        grabaciones_sincronizadas: grabacionesSincronizadas,
+        total_pendientes: (pendientes || []).length,
+        total_sin_grabacion: (sinGrabacion || []).length,
         detalle: resultados
       });
     } catch (error) {
