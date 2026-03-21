@@ -679,9 +679,10 @@
 
     // ── DASHBOARD: carga KPIs + historial + costos ──
     async function cargarDashboard() {
+      const hoy = new Date().toISOString().slice(0, 10);
       const [previewRes, histRes, costosRes] = await Promise.all([
         apiCall('preview'),
-        apiCall('historial'),
+        apiCall('historial', { desde: hoy, hasta: hoy }),
         apiCall('costos')
       ]);
 
@@ -753,16 +754,22 @@
 
     let allLlamadas = [];
 
-    function filtrarHistorial() {
+    async function filtrarHistorial() {
       const desde = document.getElementById('histFechaDesde').value;
       const hasta = document.getElementById('histFechaHasta').value;
+      if (!desde && !hasta) return;
 
-      let filtradas = allLlamadas;
-      if (desde) filtradas = filtradas.filter(l => l.created_at >= desde);
-      if (hasta) filtradas = filtradas.filter(l => l.created_at <= hasta + 'T23:59:59');
+      const params = {};
+      if (desde) params.desde = desde;
+      if (hasta) params.hasta = hasta;
 
-      renderHistorialResumen(filtradas);
-      renderHistorial(filtradas);
+      const res = await apiCall('historial', params);
+      if (res.status === 'ok') {
+        allLlamadas = res.llamadas || [];
+      }
+
+      renderHistorialResumen(allLlamadas);
+      renderHistorial(allLlamadas);
     }
 
     function renderHistorialResumen(llamadas) {

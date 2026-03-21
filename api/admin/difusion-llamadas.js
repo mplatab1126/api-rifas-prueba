@@ -242,16 +242,21 @@ export default async function handler(req, res) {
     }
   }
 
-  // ── HISTORIAL: llamadas recientes desde la tabla llamadas_twilio ──
+  // ── HISTORIAL: llamadas filtradas por fecha desde la tabla llamadas_twilio ──
   if (accion === 'historial') {
     try {
-      const limite = payload.limite || 200;
-      const { data, error } = await supabase
+      const { desde, hasta } = payload;
+
+      let query = supabase
         .from('llamadas_twilio')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(limite);
+        .order('created_at', { ascending: false });
 
+      if (desde) query = query.gte('created_at', desde + 'T00:00:00');
+      if (hasta) query = query.lte('created_at', hasta + 'T23:59:59');
+      if (!desde && !hasta) query = query.limit(200);
+
+      const { data, error } = await query;
       if (error) throw error;
       return res.status(200).json({ status: 'ok', llamadas: data || [] });
     } catch (error) {
