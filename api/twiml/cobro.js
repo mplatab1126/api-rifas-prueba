@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     return res.status(405).end();
   }
 
-  const { nombre, boletas, total, plantilla } = req.query;
+  const { nombre, boletas, total, plantilla, voz } = req.query;
 
   const nombreCliente = nombre ? decodeURIComponent(nombre) : 'cliente';
   const boletasTexto = boletas ? decodeURIComponent(boletas) : '';
@@ -39,14 +39,25 @@ export default async function handler(req, res) {
     .replace(/\{total\}/g, totalTexto)
     .replace(/\{boletas\}/g, detalleBoletas);
 
-  const appUrl = process.env.APP_URL;
-  const textoEncoded = encodeURIComponent(mensaje);
-  const audioUrl = `${appUrl}/api/twiml/audio-elevenlabs?texto=${textoEncoded}`;
+  const vozSeleccionada = voz ? decodeURIComponent(voz) : 'elevenlabs';
 
-  const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+  let twiml;
+  if (vozSeleccionada === 'elevenlabs') {
+    const appUrl = process.env.APP_URL;
+    const textoEncoded = encodeURIComponent(mensaje);
+    const audioUrl = `${appUrl}/api/twiml/audio-elevenlabs?texto=${textoEncoded}`;
+    twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Play>${audioUrl}</Play>
 </Response>`;
+  } else {
+    const escapedMsg = mensaje.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const lang = vozSeleccionada.startsWith('Google.es-MX') || vozSeleccionada.includes('Mia') || vozSeleccionada.includes('Andres') ? 'es-MX' : 'es-US';
+    twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say voice="${vozSeleccionada}" language="${lang}">${escapedMsg}</Say>
+</Response>`;
+  }
 
   res.setHeader('Content-Type', 'text/xml');
   return res.status(200).send(twiml);

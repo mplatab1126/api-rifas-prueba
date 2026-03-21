@@ -155,7 +155,7 @@ export default async function handler(req, res) {
   // ── LANZAR: ejecuta las llamadas a los clientes seleccionados ──
   if (accion === 'lanzar') {
     try {
-      const { clientes_seleccionados, plantilla } = payload;
+      const { clientes_seleccionados, plantilla, voz } = payload;
       if (!clientes_seleccionados || clientes_seleccionados.length === 0) {
         return res.status(400).json({ status: 'error', mensaje: 'No seleccionaste ningún cliente.' });
       }
@@ -181,6 +181,7 @@ export default async function handler(req, res) {
           total: numeroAPalabras(cliente.totalSaldo)
         });
         if (plantilla) params.set('plantilla', plantilla);
+        if (voz) params.set('voz', voz);
         const twimlUrl = `${appUrl}/api/twiml/cobro?${params.toString()}`;
 
         try {
@@ -389,7 +390,7 @@ export default async function handler(req, res) {
   // ── TEST: llamada de prueba a un número específico ──
   if (accion === 'test') {
     try {
-      const { telefono_test, plantilla } = payload;
+      const { telefono_test, plantilla, voz } = payload;
       if (!telefono_test) return res.status(400).json({ status: 'error', mensaje: 'Falta el número de teléfono.' });
 
       const telefonoE164 = formatearTelefono(telefono_test);
@@ -406,6 +407,7 @@ export default async function handler(req, res) {
         total: 'cien mil'
       });
       if (plantilla) params.set('plantilla', plantilla);
+      if (voz) params.set('voz', voz);
       const twimlUrl = `${appUrl}/api/twiml/cobro?${params.toString()}`;
 
       const statusCallbackUrl = `${appUrl}/api/twiml/estado-llamada`;
