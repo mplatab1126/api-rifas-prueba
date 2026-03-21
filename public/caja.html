@@ -218,6 +218,26 @@
     </div>
   </div>
 
+  <div id="modalCondonar" class="modal-overlay">
+    <div class="modal-card" style="max-width: 360px;">
+      <h3 style="margin: 0 0 5px; color: var(--ink);">🚫 Liberar Efectivo Pendiente</h3>
+      <p style="color:var(--muted); font-size: 0.9rem; margin-bottom: 5px;">
+        Asesor: <strong id="modalCondonarNombre" style="color:var(--ink);">---</strong>
+      </p>
+      <p style="color:var(--ink-2); font-size: 0.85rem; margin-bottom: 20px; background:#fff3e0; padding:10px; border-radius:8px; line-height:1.4;">
+        ⚠️ Esto eliminará el saldo pendiente de este asesor <strong>sin sumar dinero a la caja física</strong>. Úsalo si el asesor ya manejó el dinero por fuera.
+      </p>
+      <div class="field" style="margin-bottom:15px;">
+        <label style="display:block; text-align:left; font-size:0.8rem; font-weight:600; color:var(--ink-2); margin-bottom:5px;">Monto a liberar:</label>
+        <input type="number" id="montoCondonar" placeholder="Ej: 50000">
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="cta cta-outline" style="flex:1;" onclick="document.getElementById('modalCondonar').style.display='none'">Cancelar</button>
+        <button class="cta" style="flex:1; background:#78909c;" onclick="confirmarCondonacion()">🚫 Liberar</button>
+      </div>
+    </div>
+  </div>
+
   <div id="modalCierre" class="modal-overlay">
     <div class="modal-card"> 
       <h3 style="margin: 0 0 5px; color: var(--ink);">🔒 Arqueo y Cierre</h3>
@@ -281,6 +301,7 @@
     let datosCaja = null;
     let valorEsperadoCaja = 0;
     let asesorRecibiendoNombre = '';
+    let asesorCondonandoNombre = '';
 
     const fmt = (n) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
 
@@ -569,22 +590,38 @@
 
         detalleDiv.innerHTML = dHTML;
 
-        if (res.asesoresEnCalle.length === 0) {
+        const equipo = res.asesoresEquipo || [];
+        const indeps = res.asesoresIndependientes || [];
+        const soloVer = modoCaja === 'visor';
+        const disabledAttr = soloVer ? 'disabled style="opacity:0.4; pointer-events:none;"' : '';
+
+        function renderFilaAsesor(a) {
+          return `<div class="asesor-row">
+            <div class="asesor-info">
+              <span class="asesor-name">👤 ${a.asesor}</span>
+              <span style="font-size:0.8rem; color:var(--muted);">Debe entregar a caja:</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+              <span class="asesor-deuda">${fmt(a.pendiente)}</span>
+              <button class="cta" style="font-size:0.8rem; padding:7px 12px;" onclick="abrirModalRecibir('${a.asesor}', ${a.pendiente})" ${disabledAttr}>📥 Recibir</button>
+              <button class="cta" style="font-size:0.8rem; padding:7px 12px; background:#78909c;" onclick="abrirModalCondonar('${a.asesor}', ${a.pendiente})" ${disabledAttr}>🚫 Liberar</button>
+            </div>
+          </div>`;
+        }
+
+        if (equipo.length === 0 && indeps.length === 0) {
           document.getElementById('lista-asesores').innerHTML = '<p style="text-align:center; color:var(--muted); font-weight:500; padding:20px 0;">✅ Ningún asesor tiene efectivo pendiente por entregar.</p>';
         } else {
-          const soloVer = modoCaja === 'visor';
-          document.getElementById('lista-asesores').innerHTML = res.asesoresEnCalle.map(a => `
-            <div class="asesor-row">
-              <div class="asesor-info">
-                <span class="asesor-name">👤 ${a.asesor}</span>
-                <span style="font-size:0.8rem; color:var(--muted);">Debe entregar a caja:</span>
-              </div>
-              <div style="display:flex; align-items:center; gap:15px;">
-                <span class="asesor-deuda">${fmt(a.pendiente)}</span>
-                <button class="cta" onclick="abrirModalRecibir('${a.asesor}', ${a.pendiente})" ${soloVer ? 'disabled style="opacity:0.4; pointer-events:none;"' : ''}>📥 Recibir</button>
-              </div>
-            </div>
-          `).join('');
+          let html = '';
+          if (equipo.length > 0) {
+            html += `<div style="font-size:0.8rem; font-weight:700; color:var(--accent-2); margin-bottom:10px; display:flex; align-items:center; gap:6px;">👥 Mi Equipo</div>`;
+            html += equipo.map(renderFilaAsesor).join('');
+          }
+          if (indeps.length > 0) {
+            html += `<div style="font-size:0.8rem; font-weight:700; color:#e65100; margin-bottom:10px; ${equipo.length > 0 ? 'margin-top:20px; padding-top:15px; border-top:1px dashed var(--ring-strong);' : ''} display:flex; align-items:center; gap:6px;">🤝 Asesores Independientes</div>`;
+            html += indeps.map(renderFilaAsesor).join('');
+          }
+          document.getElementById('lista-asesores').innerHTML = html;
         }
       } catch (error) {
         document.getElementById('lista-asesores').innerHTML = `<p style="text-align:center; color:var(--danger);">Error de conexión al cargar los datos.</p>`;
@@ -597,6 +634,13 @@
       document.getElementById('modalAsesorNombre').textContent = asesor;
       document.getElementById('montoRecibir').value = montoAdeudado;
       document.getElementById('modalRecibir').style.display = 'flex';
+    }
+
+    function abrirModalCondonar(asesor, montoPendiente) {
+      asesorCondonandoNombre = asesor;
+      document.getElementById('modalCondonarNombre').textContent = asesor;
+      document.getElementById('montoCondonar').value = montoPendiente;
+      document.getElementById('modalCondonar').style.display = 'flex';
     }
 
     function abrirModalBase() {
@@ -690,6 +734,34 @@
     }
 
     // --- 4. ACCIONES CON LA API ---
+    async function confirmarCondonacion() {
+      const monto = Number(document.getElementById('montoCondonar').value);
+      if (!monto || monto <= 0) return alert('Ingresa un monto válido.');
+
+      const btn = document.querySelector('#modalCondonar .cta:not(.cta-outline)');
+      btn.textContent = 'Guardando...'; btn.disabled = true;
+
+      try {
+        const req = await fetch('/api/admin/caja', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accion: 'condonar_efectivo', contrasena: contrasenaActual, asesor: asesorCondonandoNombre, monto })
+        });
+        const res = await req.json();
+
+        if (res.status === 'ok') {
+          document.getElementById('modalCondonar').style.display = 'none';
+          cargarDatosCaja();
+        } else {
+          alert('Error: ' + res.mensaje);
+        }
+      } catch (e) {
+        alert('Error de conexión');
+      }
+
+      btn.textContent = '🚫 Liberar'; btn.disabled = false;
+    }
+
     async function confirmarRecepcionDinero() {
       const monto = Number(document.getElementById('montoRecibir').value);
       if (!monto || monto <= 0) return alert('Ingresa un monto válido.');

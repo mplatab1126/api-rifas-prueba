@@ -16,7 +16,7 @@ export default async function handler(req, res) {
 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
-  const EXCLUIDOS_CAJA = ['alejandra plata', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
+  const INDEPENDIENTES = ['alejandra plata', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
   const FECHA_CORTE_CAJA = '2026-03-17';
 
   // Fecha de hoy en zona horaria Colombia
@@ -130,11 +130,11 @@ export default async function handler(req, res) {
         else if (m.tipo === 'recepcion') totalRecepciones += m.monto;
       }
 
-      // 3b. Recepciones desde la fecha de corte para calcular el pendiente real por asesor
+      // 3b. Recepciones y condonaciones desde la fecha de corte para calcular el pendiente real por asesor
       const { data: todasRecepciones } = await supabase
         .from('movimientos_caja')
         .select('asesor, monto')
-        .eq('tipo', 'recepcion')
+        .in('tipo', ['recepcion', 'condonacion'])
         .gte('fecha', FECHA_CORTE_CAJA);
 
       const recibidoPorAsesor = {};
@@ -144,18 +144,23 @@ export default async function handler(req, res) {
         }
       }
 
-      // 4. Calcular pendiente por asesor (cobrado histórico - recibido histórico)
-      const asesoresEnCalle = [];
+      // 4. Calcular pendiente por asesor (cobrado histórico - recibido histórico), separando equipo e independientes
+      const asesoresEquipo = [];
+      const asesoresIndependientes = [];
       for (const [asesor, cobrado] of Object.entries(cobradoPorAsesor)) {
-        if (EXCLUIDOS_CAJA.includes(asesor.toLowerCase().trim())) continue;
         const recibido = recibidoPorAsesor[asesor] || 0;
         const pendiente = cobrado - recibido;
         if (pendiente > 0) {
-          asesoresEnCalle.push({ asesor, pendiente, cobrado, recibido });
+          const entry = { asesor, pendiente, cobrado, recibido };
+          if (INDEPENDIENTES.includes(asesor.toLowerCase().trim())) {
+            asesoresIndependientes.push(entry);
+          } else {
+            asesoresEquipo.push(entry);
+          }
         }
       }
 
-      const totalEnCalle = asesoresEnCalle.reduce((s, a) => s + a.pendiente, 0);
+      const totalEnCalle = [...asesoresEquipo, ...asesoresIndependientes].reduce((s, a) => s + a.pendiente, 0);
 
       // Efectivo esperado en caja = Base + Recepciones entregadas + Ingresos extra - Salidas - Consignaciones
       const efectivoFisicoEsperado = baseFija + totalRecepciones + totalIngresos - totalSalidas - totalConsignaciones;
@@ -170,7 +175,8 @@ export default async function handler(req, res) {
         totalIngresos,
         totalSalidas,
         totalConsignaciones,
-        asesoresEnCalle,
+        asesoresEquipo,
+        asesoresIndependientes,
         movimientos: movimientos || []
       });
     }
@@ -271,6 +277,29 @@ export default async function handler(req, res) {
       if (error) throw error;
 
       return res.status(200).json({ status: 'ok', mensaje: 'Recepción registrada' });
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // ACCIÓN: condonar_efectivo — Liberar deuda sin afectar caja
+    // ─────────────────────────────────────────────────────────
+    if (accion === 'condonar_efectivo') {
+      const { asesor } = payload;
+      const monto = Number(payload.monto);
+
+      if (!asesor) return res.status(400).json({ status: 'error', mensaje: 'Falta el nombre del asesor' });
+      if (!monto || monto <= 0) return res.status(400).json({ status: 'error', mensaje: 'Monto inválido' });
+
+      const { error } = await supabase.from('movimientos_caja').insert({
+        fecha: hoy,
+        tipo: 'condonacion',
+        monto,
+        asesor,
+        descripcion: `Liberación de efectivo pendiente de ${asesor}`,
+        creado_por: nombreAsesor
+      });
+      if (error) throw error;
+
+      return res.status(200).json({ status: 'ok', mensaje: 'Efectivo liberado correctamente' });
     }
 
     // ─────────────────────────────────────────────────────────
