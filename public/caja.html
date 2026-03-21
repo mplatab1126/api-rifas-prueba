@@ -394,7 +394,7 @@
           infoModal.innerHTML = `<span style="color:var(--danger); font-weight:700;">🔒 La caja está abierta por ${estado.operador}.</span><br>Solo puedes ver hasta que la cierre.`;
           infoModal.style.display = 'block';
 
-          if (auto && localStorage.getItem('caja_modo') === 'visor') {
+          if (auto && sessionStorage.getItem('caja_modo') === 'visor') {
             elegirModoCaja('visor');
             return;
           }
@@ -407,8 +407,8 @@
           btnAbrir.style.pointerEvents = 'auto';
           infoModal.style.display = 'none';
 
-          if (auto && localStorage.getItem('caja_modo')) {
-            elegirModoCaja(localStorage.getItem('caja_modo'));
+          if (auto && sessionStorage.getItem('caja_modo')) {
+            elegirModoCaja(sessionStorage.getItem('caja_modo'));
             return;
           }
         }
@@ -458,7 +458,7 @@
       }
 
       modoCaja = modo;
-      localStorage.setItem('caja_modo', modo);
+      sessionStorage.setItem('caja_modo', modo);
       document.getElementById('mainDashboard').style.display = 'block';
 
       const badge = document.getElementById('badgeOwner');
@@ -903,7 +903,7 @@
 
         if (res.status === 'ok') {
           alert('✅ ¡Caja cerrada y arqueo guardado!');
-          localStorage.removeItem('caja_modo');
+          sessionStorage.removeItem('caja_modo');
           window.location.href = '/admin';
         } else {
           alert('Error al cerrar caja: ' + res.mensaje);
