@@ -371,6 +371,12 @@
     }
 
     async function mostrarPopupCaja(auto) {
+      // Mateo es admin: acceso total sin modal de selección
+      if (asesorActual === 'Mateo') {
+        entrarComoAdmin();
+        return;
+      }
+
       try {
         const req = await fetch('/api/admin/caja', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -411,6 +417,22 @@
       } catch (e) {
         document.getElementById('modalModoCaja').style.display = 'flex';
       }
+    }
+
+    function entrarComoAdmin() {
+      document.getElementById('modalModoCaja').style.display = 'none';
+      modoCaja = 'operador';
+      document.getElementById('mainDashboard').style.display = 'block';
+
+      const badge = document.getElementById('badgeOwner');
+      badge.style.display = 'inline-block';
+      badge.textContent = '🔑 Admin (Mateo)';
+      badge.style.background = '#e8eaf6';
+      badge.style.color = '#283593';
+      badge.style.borderColor = '#5c6bc0';
+
+      document.getElementById('btnAjustarBase').style.display = 'inline-block';
+      cargarDatosCaja();
     }
 
     async function elegirModoCaja(modo) {
