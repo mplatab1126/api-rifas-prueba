@@ -603,8 +603,8 @@
             </div>
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
               <span class="asesor-deuda">${fmt(a.pendiente)}</span>
-              <button class="cta" style="font-size:0.8rem; padding:7px 12px;" onclick="abrirModalRecibir('${a.asesor}', ${a.pendiente})" ${disabledAttr}>📥 Recibir</button>
-              <button class="cta" style="font-size:0.8rem; padding:7px 12px; background:#78909c;" onclick="abrirModalCondonar('${a.asesor}', ${a.pendiente})" ${disabledAttr}>🚫 Liberar</button>
+              <button class="cta" style="font-size:0.8rem; padding:7px 12px;${soloVer ? ' opacity:0.4; pointer-events:none;' : ''}" onclick="abrirModalRecibir('${a.asesor}', ${a.pendiente})" ${soloVer ? 'disabled' : ''}>📥 Recibir</button>
+              <button class="cta" style="font-size:0.8rem; padding:7px 12px; background:#78909c;" onclick="abrirModalCondonar('${a.asesor}', ${a.pendiente})">🚫 Liberar</button>
             </div>
           </div>`;
         }
