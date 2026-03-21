@@ -181,6 +181,133 @@
       </div>
     </div>
 
+    <!-- COBRO DIRECTO -->
+    <div class="saas-divider">Cobro Directo</div>
+
+    <div class="filter-zone" id="cobroZone">
+      <p style="font-size:0.85rem; color:var(--muted); font-weight:600; margin:0 0 16px;">
+        Llama directamente a clientes con boletas pendientes de pago. Filtra por el máximo que han abonado para segmentar tu difusión.
+        El sistema lanza las llamadas <b>en lotes de 25</b> para evitar interrupciones por timeout.
+      </p>
+      <div class="filter-row">
+        <div class="input-group">
+          <label>Máximo abonado por boleta (COP)</label>
+          <input type="number" id="cobroMaxAbonado" class="field-input" placeholder="Ej: 120000" value="120000">
+        </div>
+        <div class="input-group" style="flex:0; min-width:auto;">
+          <label>&nbsp;</label>
+          <button class="btn btn-primary" id="btnCobroPreview" onclick="cargarCobroPreview()">Ver clientes</button>
+        </div>
+      </div>
+      <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--ring);">
+        <label style="font-size:0.75rem; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:8px;">Mensaje de la llamada</label>
+        <textarea id="cobroPlantilla" class="field-input" rows="4" style="resize:vertical; line-height:1.5;">Hola {nombre}, te llamamos de Los Plata. Hoy se juega el acumulado de treinta y cinco millones de pesos. Para participar con {boletas}, necesitas realizar un abono de al menos veinte mil pesos. Comunícate con nosotros para ponerte al día. ¡Muchas gracias y mucha suerte!</textarea>
+        <p style="font-size:0.82rem; color:var(--muted); font-weight:600; margin:8px 0 0;">
+          Variables disponibles: <code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:800;">{nombre}</code> nombre del cliente,
+          <code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:800;">{total}</code> monto que debe (en palabras),
+          <code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:800;">{boletas}</code> números de boleta.
+        </p>
+      </div>
+    </div>
+
+    <!-- COBRO PREVIEW -->
+    <div id="cobroPreviewSection" style="display:none;">
+      <div class="mega-kpi-grid" style="margin-top:15px;">
+        <div class="mega-kpi kpi-blue">
+          <div class="mega-kpi-title">Clientes a llamar</div>
+          <div class="mega-kpi-value" id="kpiCobroClientes">—</div>
+          <span class="mega-kpi-sub">Con teléfono válido</span>
+        </div>
+        <div class="mega-kpi kpi-green">
+          <div class="mega-kpi-title">Boletas pendientes</div>
+          <div class="mega-kpi-value" id="kpiCobroBoletas">—</div>
+          <span class="mega-kpi-sub">Total de boletas con saldo</span>
+        </div>
+        <div class="mega-kpi kpi-purple">
+          <div class="mega-kpi-title">Saldo total</div>
+          <div class="mega-kpi-value" id="kpiCobroSaldo">—</div>
+          <span class="mega-kpi-sub">Pendiente de cobro</span>
+        </div>
+        <div class="mega-kpi kpi-orange">
+          <div class="mega-kpi-title">Lotes estimados</div>
+          <div class="mega-kpi-value" id="kpiCobroLotes">—</div>
+          <span class="mega-kpi-sub">De 25 llamadas c/u</span>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:15px;">
+        <div class="card-title" id="cobroPreviewTitle">Clientes con abono dentro del filtro</div>
+        <div class="select-bar">
+          <div>
+            <label style="font-size:0.85rem; font-weight:700; cursor:pointer;">
+              <input type="checkbox" id="cobroSelectAll" checked style="accent-color:var(--accent); margin-right:6px;">
+              Seleccionar todos
+            </label>
+            <span class="select-info" id="cobroSelectCount"></span>
+          </div>
+          <button class="btn btn-danger" id="btnCobroLanzar" onclick="confirmarCobroLanzamiento()">
+            Lanzar llamadas
+          </button>
+        </div>
+        <div class="table-container">
+          <table class="premium-table">
+            <thead>
+              <tr>
+                <th class="checkbox-cell"></th>
+                <th>Cliente</th>
+                <th>Teléfono</th>
+                <th>Boletas</th>
+                <th>Saldo pendiente</th>
+              </tr>
+            </thead>
+            <tbody id="cobroPreviewBody"></tbody>
+          </table>
+        </div>
+        <div id="cobroEmpty" class="empty-state" style="display:none;">
+          <p>No hay clientes que coincidan con este filtro.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- COBRO PROGRESS -->
+    <div id="cobroProgressSection" style="display:none;">
+      <div class="card">
+        <div class="card-title">Progreso de la difusión</div>
+        <div style="margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span id="cobroProgressText" style="font-weight:700; font-size:0.9rem;">Preparando...</span>
+            <span id="cobroProgressPct" style="font-weight:800; font-size:0.9rem; color:var(--accent);">0%</span>
+          </div>
+          <div style="background:var(--ring); border-radius:8px; height:12px; overflow:hidden;">
+            <div id="cobroProgressBar" style="background:var(--accent); height:100%; border-radius:8px; width:0%; transition:width 0.5s ease;"></div>
+          </div>
+        </div>
+        <div class="mega-kpi-grid">
+          <div class="mega-kpi kpi-green" style="padding:14px;">
+            <div class="mega-kpi-title">Exitosas</div>
+            <div class="mega-kpi-value" id="cobroProgExitosas" style="font-size:1.5rem;">0</div>
+          </div>
+          <div class="mega-kpi kpi-red" style="padding:14px;">
+            <div class="mega-kpi-title">Fallidas</div>
+            <div class="mega-kpi-value" id="cobroProgFallidas" style="font-size:1.5rem;">0</div>
+          </div>
+          <div class="mega-kpi kpi-orange" style="padding:14px;">
+            <div class="mega-kpi-title">Omitidas</div>
+            <div class="mega-kpi-value" id="cobroProgOmitidas" style="font-size:1.5rem;">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COBRO RESULTS -->
+    <div id="cobroResultSection" style="display:none;">
+      <div class="card">
+        <div class="card-title">Resultado de la difusión</div>
+        <div class="mega-kpi-grid" id="cobroResultKpis"></div>
+        <div class="results-grid" id="cobroResultGrid"></div>
+      </div>
+    </div>
+
     <!-- RESCATE WHATSAPP -->
     <div class="saas-divider">Rescate WhatsApp</div>
 
@@ -401,6 +528,8 @@
           cargarTagsRescate();
           const plantillaGuardada = localStorage.getItem('plantilla_llamada');
           if (plantillaGuardada) document.getElementById('plantillaLlamada').value = plantillaGuardada;
+          const cobroPlantillaGuardada = localStorage.getItem('cobro_plantilla');
+          if (cobroPlantillaGuardada) document.getElementById('cobroPlantilla').value = cobroPlantillaGuardada;
         } else {
           if (!auto) msg.textContent = 'Acceso denegado. Solo gerencia.';
           localStorage.removeItem(STORAGE_KEY);
@@ -608,6 +737,194 @@
       }
     }
     // ══════════════════════════════════════════════════
+    // ══ COBRO DIRECTO ══
+    // ══════════════════════════════════════════════════
+
+    let cobroClientes = [];
+    const COBRO_BATCH_SIZE = 25;
+
+    async function cargarCobroPreview() {
+      const maxAbonado = document.getElementById('cobroMaxAbonado').value;
+      const btn = document.getElementById('btnCobroPreview');
+      btn.innerHTML = '<span class="loading"></span> Cargando...';
+      btn.disabled = true;
+
+      try {
+        const params = {};
+        if (maxAbonado !== '') params.max_abonado = Number(maxAbonado);
+        const res = await apiCall('preview', params);
+
+        btn.innerHTML = 'Ver clientes';
+        btn.disabled = false;
+
+        if (res.status !== 'ok') {
+          showBanner(res.mensaje || 'Error al cargar clientes', 'error');
+          return;
+        }
+
+        cobroClientes = res.clientes || [];
+        document.getElementById('cobroPreviewSection').style.display = 'block';
+        document.getElementById('cobroProgressSection').style.display = 'none';
+        document.getElementById('cobroResultSection').style.display = 'none';
+
+        document.getElementById('kpiCobroClientes').textContent = res.total_clientes;
+        document.getElementById('kpiCobroBoletas').textContent = res.total_boletas;
+        document.getElementById('kpiCobroSaldo').textContent = formatMoney(res.total_saldo);
+        document.getElementById('kpiCobroLotes').textContent = Math.ceil(res.total_clientes / COBRO_BATCH_SIZE);
+
+        if (cobroClientes.length === 0) {
+          document.getElementById('cobroEmpty').style.display = 'block';
+          document.getElementById('cobroPreviewBody').innerHTML = '';
+          document.getElementById('btnCobroLanzar').disabled = true;
+        } else {
+          document.getElementById('cobroEmpty').style.display = 'none';
+          document.getElementById('cobroSelectAll').checked = true;
+          renderCobroPreview();
+          updateCobroSelectCount();
+        }
+
+        window.scrollTo({ top: document.getElementById('cobroPreviewSection').offsetTop - 80, behavior: 'smooth' });
+      } catch (err) {
+        btn.innerHTML = 'Ver clientes';
+        btn.disabled = false;
+        showBanner('Error de conexión: ' + err.message, 'error');
+      }
+    }
+
+    function renderCobroPreview() {
+      document.getElementById('cobroPreviewBody').innerHTML = cobroClientes.map((c, i) => {
+        return `<tr>
+          <td class="checkbox-cell"><input type="checkbox" class="chk-cobro" data-idx="${i}" checked onchange="updateCobroSelectCount()"></td>
+          <td style="font-weight:800">${c.nombre} ${c.apellido || ''}</td>
+          <td>${c.telefono}</td>
+          <td>${c.boletas.join(', ')}</td>
+          <td style="font-weight:800; color:#15803d;">${formatMoney(c.totalSaldo)}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    function updateCobroSelectCount() {
+      const checks = document.querySelectorAll('.chk-cobro:checked');
+      const total = document.querySelectorAll('.chk-cobro').length;
+      document.getElementById('cobroSelectCount').textContent = `(${checks.length} de ${total} seleccionados)`;
+      document.getElementById('btnCobroLanzar').disabled = checks.length === 0;
+      document.getElementById('kpiCobroLotes').textContent = Math.ceil(checks.length / COBRO_BATCH_SIZE);
+    }
+
+    function confirmarCobroLanzamiento() {
+      const checks = document.querySelectorAll('.chk-cobro:checked');
+      if (checks.length === 0) return;
+      const lotes = Math.ceil(checks.length / COBRO_BATCH_SIZE);
+      document.getElementById('modalMsg').textContent = `Se lanzarán ${checks.length} llamadas en ${lotes} lote${lotes > 1 ? 's' : ''} de máximo ${COBRO_BATCH_SIZE}. Esta acción generará cargos en Twilio y ElevenLabs.`;
+      document.getElementById('modalConfirm').style.display = 'flex';
+      document.getElementById('btnConfirmLanzar').onclick = ejecutarCobroLanzamiento;
+    }
+
+    async function ejecutarCobroLanzamiento() {
+      cerrarModal();
+
+      const checks = document.querySelectorAll('.chk-cobro:checked');
+      const seleccionados = Array.from(checks).map(ch => cobroClientes[ch.dataset.idx]);
+
+      const lotes = [];
+      for (let i = 0; i < seleccionados.length; i += COBRO_BATCH_SIZE) {
+        lotes.push(seleccionados.slice(i, i + COBRO_BATCH_SIZE));
+      }
+
+      document.getElementById('cobroProgressSection').style.display = 'block';
+      document.getElementById('cobroResultSection').style.display = 'none';
+      document.getElementById('cobroProgExitosas').textContent = '0';
+      document.getElementById('cobroProgFallidas').textContent = '0';
+      document.getElementById('cobroProgOmitidas').textContent = '0';
+      document.getElementById('cobroProgressBar').style.width = '0%';
+
+      const btnLanzar = document.getElementById('btnCobroLanzar');
+      btnLanzar.disabled = true;
+      btnLanzar.innerHTML = '<span class="loading"></span> En progreso...';
+
+      window.scrollTo({ top: document.getElementById('cobroProgressSection').offsetTop - 80, behavior: 'smooth' });
+
+      let exitosas = 0, fallidas = 0, omitidas = 0;
+      const allResults = [];
+      const plantilla = document.getElementById('cobroPlantilla').value;
+      localStorage.setItem('cobro_plantilla', plantilla);
+
+      for (let i = 0; i < lotes.length; i++) {
+        const pct = Math.round((i / lotes.length) * 100);
+        document.getElementById('cobroProgressText').textContent = `Procesando lote ${i + 1} de ${lotes.length} (${lotes[i].length} llamadas)...`;
+        document.getElementById('cobroProgressPct').textContent = pct + '%';
+        document.getElementById('cobroProgressBar').style.width = pct + '%';
+
+        try {
+          const res = await apiCall('lanzar', { clientes_seleccionados: lotes[i], plantilla });
+
+          if (res.status === 'ok') {
+            exitosas += res.exitosas;
+            fallidas += res.fallidas;
+            omitidas += res.omitidas;
+            allResults.push(...(res.resultados || []));
+          } else {
+            fallidas += lotes[i].length;
+            for (const c of lotes[i]) {
+              allResults.push({ telefono: c.telefono, nombre: c.nombre, status: 'error', detalle: res.mensaje || 'Error del servidor' });
+            }
+          }
+        } catch (err) {
+          fallidas += lotes[i].length;
+          for (const c of lotes[i]) {
+            allResults.push({ telefono: c.telefono, nombre: c.nombre, status: 'error', detalle: 'Error de conexión' });
+          }
+        }
+
+        document.getElementById('cobroProgExitosas').textContent = exitosas;
+        document.getElementById('cobroProgFallidas').textContent = fallidas;
+        document.getElementById('cobroProgOmitidas').textContent = omitidas;
+      }
+
+      document.getElementById('cobroProgressText').textContent = '¡Difusión completada!';
+      document.getElementById('cobroProgressPct').textContent = '100%';
+      document.getElementById('cobroProgressBar').style.width = '100%';
+
+      btnLanzar.innerHTML = 'Lanzar llamadas';
+      btnLanzar.disabled = false;
+
+      showBanner(`Difusión completada: ${exitosas} exitosas, ${fallidas} fallidas, ${omitidas} omitidas`);
+
+      document.getElementById('cobroResultSection').style.display = 'block';
+      document.getElementById('cobroResultKpis').innerHTML = `
+        <div class="mega-kpi kpi-green">
+          <div class="mega-kpi-title">Exitosas</div>
+          <div class="mega-kpi-value">${exitosas}</div>
+          <span class="mega-kpi-sub">de ${seleccionados.length} intentadas</span>
+        </div>
+        <div class="mega-kpi kpi-red">
+          <div class="mega-kpi-title">Fallidas</div>
+          <div class="mega-kpi-value">${fallidas}</div>
+        </div>
+        <div class="mega-kpi kpi-orange">
+          <div class="mega-kpi-title">Omitidas</div>
+          <div class="mega-kpi-value">${omitidas}</div>
+        </div>
+      `;
+
+      document.getElementById('cobroResultGrid').innerHTML = allResults.map(r => {
+        const statusBadge = r.status === 'ok' ? '<span class="badge badge-green">Exitosa</span>' :
+                            r.status === 'error' ? '<span class="badge badge-red">Error</span>' :
+                            '<span class="badge badge-gray">Omitida</span>';
+        return `<div class="result-item">
+          <div>
+            <div class="name">${r.nombre}</div>
+            <div class="phone">${r.telefono}${r.detalle ? ' — ' + r.detalle : ''}</div>
+          </div>
+          ${statusBadge}
+        </div>`;
+      }).join('');
+
+      window.scrollTo({ top: document.getElementById('cobroResultSection').offsetTop - 80, behavior: 'smooth' });
+      cargarDashboard();
+    }
+
+    // ══════════════════════════════════════════════════
     // ══ RESCATE WHATSAPP ══
     // ══════════════════════════════════════════════════
 
@@ -741,6 +1058,11 @@
         const checked = e.target.checked;
         document.querySelectorAll('.chk-rescate').forEach(ch => ch.checked = checked);
         updateRescateSelectCount();
+      }
+      if (e.target.id === 'cobroSelectAll') {
+        const checked = e.target.checked;
+        document.querySelectorAll('.chk-cobro').forEach(ch => ch.checked = checked);
+        updateCobroSelectCount();
       }
     });
 
