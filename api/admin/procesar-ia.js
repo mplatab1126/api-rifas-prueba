@@ -110,13 +110,20 @@ export default async function handler(req, res) {
         .eq('fecha', datos.fecha_pago);
 
       if (gastosExistentes && gastosExistentes.length > 0) {
+        const refEspecifica = datos.referencia && datos.referencia !== '0' && datos.referencia.toLowerCase() !== 'sin ref';
         const gastoDuplicado = gastosExistentes.find(g => {
-          const mismaRef   = String(datos.referencia).toLowerCase().trim() === String(g.referencia || '').toLowerCase().trim();
-          const mismaPlatf = datos.plataforma.toLowerCase().trim() === String(g.plataforma || '').toLowerCase().trim();
+          const mismaRef = String(datos.referencia).toLowerCase().trim() === String(g.referencia || '').toLowerCase().trim();
+
+          // Referencia específica (ej: M10684428) + mismo monto + misma fecha = duplicado seguro
+          // No comparamos plataforma porque la IA extrae el banco (Bancolombia) pero
+          // la DB guarda la cuenta seleccionada por el asesor (Nequi Mateo)
+          if (refEspecifica && mismaRef) return true;
+
+          // Para referencias genéricas ("0"), comparamos hora completa
           const horaNew    = (datos.hora_pago || '').substring(0, 8);
           const horaExist  = (g.hora || '').substring(0, 8);
           const mismaHora  = horaNew !== '' && horaExist !== '' && horaNew === horaExist;
-          return mismaRef && mismaPlatf && mismaHora;
+          return mismaRef && mismaHora;
         });
 
         if (gastoDuplicado) {
@@ -128,8 +135,9 @@ export default async function handler(req, res) {
         }
       }
 
-      // Detección adicional por referencia (para egresos distribuidos en múltiples categorías)
-      if (!gastosExistentes?.length && datos.referencia && datos.referencia !== '0') {
+      // Detección adicional por referencia (para egresos distribuidos en múltiples categorías,
+      // donde el monto total difiere de las partes individuales guardadas)
+      if (datos.referencia && datos.referencia !== '0') {
         const { data: refCheck } = await supabase
           .from('gastos')
           .select('id, fecha, monto, plataforma, referencia, categoria, descripcion')
@@ -137,14 +145,11 @@ export default async function handler(req, res) {
           .eq('referencia', datos.referencia)
           .limit(1);
         if (refCheck && refCheck.length > 0) {
-          const g = refCheck[0];
-          if (String(datos.plataforma || '').toLowerCase().trim() === String(g.plataforma || '').toLowerCase().trim()) {
-            return res.status(200).json({
-              status: 'duplicado_egreso',
-              mensaje: `Este egreso ya fue registrado el ${g.fecha} (distribuido)`,
-              clon: g
-            });
-          }
+          return res.status(200).json({
+            status: 'duplicado_egreso',
+            mensaje: `Este egreso ya fue registrado el ${refCheck[0].fecha} (distribuido)`,
+            clon: refCheck[0]
+          });
         }
       }
 
