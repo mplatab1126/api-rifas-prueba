@@ -72,6 +72,31 @@ export default async function handler(req, res) {
   }
 
   // ─────────────────────────────────────────────────────────────────────
+  // POST actualizar_config — actualizar fecha/lotería sin reiniciar
+  // ─────────────────────────────────────────────────────────────────────
+  if (accion === 'actualizar_config') {
+    const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
+    const nombreAsesor = asesores[contrasena];
+    if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
+    if (nombreAsesor !== 'Mateo' && nombreAsesor !== 'Alejo P' && nombreAsesor !== 'Alejo Plata') {
+      return res.status(403).json({ status: 'error', mensaje: 'Solo gerencia puede realizar esta acción.' });
+    }
+
+    const tipoRifa = tipo || '3cifras';
+    const updates = { updated_at: new Date().toISOString() };
+    if (fechaSorteo) updates.fecha_sorteo = fechaSorteo;
+    if (loteria) updates.loteria = loteria;
+
+    const { error } = await supabase
+      .from('config_rifa_diaria')
+      .update(updates)
+      .eq('tipo', tipoRifa);
+
+    if (error) return res.status(500).json({ status: 'error', mensaje: error.message });
+    return res.status(200).json({ status: 'ok', mensaje: `Configuración de ${tipoRifa} actualizada.` });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────
   // POST guardar_y_reiniciar — solo gerencia
   // ─────────────────────────────────────────────────────────────────────
   if (accion === 'guardar_y_reiniciar') {

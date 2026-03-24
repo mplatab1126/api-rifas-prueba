@@ -13,6 +13,8 @@
   const PAGES = [
     { id: 'admin',       label: 'Panel de Ventas',       href: '/admin',                  section: 'principal', roles: 'todos' },
     { id: 'caja',        label: 'Cuadre de Caja',        href: '/caja',                   section: 'principal', roles: 'todos' },
+    { id: 'rifa-2cifras', label: 'Rifas 2 Cifras',       href: '/diarias',                  section: 'principal', roles: 'todos', external: true },
+    { id: 'rifa-3cifras', label: 'Rifas 3 Cifras',       href: '/diarias3',                 section: 'principal', roles: 'todos', external: true },
     { id: 'rendimiento', label: 'Rendimiento',           href: '/rendimiento',           section: 'gerencia',  roles: 'gerencia',
       children: [
         { id: 'rend-2cifras', label: 'Rifas 2 Cifras',    href: '/rendimiento?tipo=2cifras' },
@@ -141,9 +143,10 @@
         html += `</div>`;
       } else {
         const active = page.id === currentPage ? ' active' : '';
+        const target = page.external ? ' target="_blank" rel="noopener"' : '';
         html += `
-          <a class="snav-link${active}" href="${page.href}">
-            ${page.label}
+          <a class="snav-link${active}" href="${page.href}"${target}>
+            ${page.label}${page.external ? ' ↗' : ''}
           </a>
         `;
       }
