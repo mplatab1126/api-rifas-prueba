@@ -167,6 +167,8 @@ export default async function handler(req, res) {
     // 4. Insertar el Abono (solo llega aquí si pasó TODAS las validaciones)
     const tipoBoleta = tabla === 'boletas_diarias' ? '2cifras' : (tabla === 'boletas_diarias_3cifras' ? '3cifras' : '4cifras');
 
+    const idTransLimpio = (idTransferencia && idTransferencia.trim() !== '') ? idTransferencia.trim() : null;
+
     const { error: insertError } = await supabase
       .from('abonos')
       .insert({
@@ -177,7 +179,8 @@ export default async function handler(req, res) {
         metodo_pago: metodoPago || 'Efectivo',
         asesor: nombreAsesor,
         tipo: tipoBoleta,
-        origen: esPendiente ? 'pendiente' : (esPagoInteligente || (idTransferencia && idTransferencia.trim() !== '')) ? 'transferencia_real' : 'manual'
+        origen: esPendiente ? 'pendiente' : (esPagoInteligente || idTransLimpio) ? 'transferencia_real' : 'manual',
+        id_transferencia: idTransLimpio
       });
     if (insertError) throw insertError;
     

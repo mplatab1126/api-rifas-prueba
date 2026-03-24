@@ -25,14 +25,15 @@ export default async function handler(req, res) {
     const { error: errDelete } = await supabase.from('abonos').delete().eq('id', id);
     if (errDelete) throw errDelete;
 
-    if (referencia_transferencia && referencia_transferencia !== 'Sin Ref' && referencia_transferencia !== 'efectivo' && referencia_transferencia !== 'efectivo_oficina') {
+    if (abono.id_transferencia) {
+      await supabase.from('transferencias').update({ estado: 'LIBRE' }).eq('id', abono.id_transferencia);
+    } else if (referencia_transferencia && referencia_transferencia !== 'Sin Ref' && referencia_transferencia !== 'efectivo' && referencia_transferencia !== 'efectivo_oficina') {
       const estadoAsignada = `ASIGNADA a boleta ${numeroLimpio}`;
       const { data: transAsignada } = await supabase
         .from('transferencias')
         .select('id')
         .eq('referencia', referencia_transferencia)
         .eq('estado', estadoAsignada)
-        .eq('monto', monto)
         .limit(1)
         .maybeSingle();
 

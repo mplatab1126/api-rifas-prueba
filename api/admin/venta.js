@@ -148,6 +148,8 @@ export default async function handler(req, res) {
     // 5. Registrar el abono
     const tipoBoleta = tabla === 'boletas_diarias' ? '2cifras' : (tabla === 'boletas_diarias_3cifras' ? '3cifras' : '4cifras');
 
+    const idTransLimpio = (idTransferencia && idTransferencia.trim() !== '') ? idTransferencia.trim() : null;
+
     if (abonoNum > 0) {
       const { error: abonoError } = await supabase.from('abonos').insert({
           numero_boleta: numeroLimpio,
@@ -157,7 +159,8 @@ export default async function handler(req, res) {
           metodo_pago: metodoPago || 'Efectivo',
           asesor: nombreAsesor,
           tipo: tipoBoleta,
-          origen: esPendiente ? 'pendiente' : (esPagoInteligente || (idTransferencia && idTransferencia.trim() !== '')) ? 'transferencia_real' : 'manual'
+          origen: esPendiente ? 'pendiente' : (esPagoInteligente || idTransLimpio) ? 'transferencia_real' : 'manual',
+          id_transferencia: idTransLimpio
       });
 
       // ASIGNACIÓN SEGURA AL ID DE LA BASE DE DATOS
