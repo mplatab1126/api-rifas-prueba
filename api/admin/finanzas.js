@@ -43,7 +43,7 @@ export default async function handler(req, res) {
 
       const { data: existentes } = await supabase
         .from('gastos')
-        .select('id, fecha, hora, monto, plataforma, referencia')
+        .select('id, fecha, hora, monto, plataforma, referencia, created_at')
         .eq('monto', montoGasto)
         .eq('fecha', fechaGasto);
 
@@ -57,6 +57,10 @@ export default async function handler(req, res) {
           return mismaRef && mismaPlatf && mismaHora;
         });
         if (duplicado) {
+          const creadoHace = Date.now() - new Date(duplicado.created_at).getTime();
+          if (creadoHace < 30000) {
+            return res.status(200).json({ status: 'ok', mensaje: `Gasto de $${montoGasto.toLocaleString('es-CO')} registrado correctamente.` });
+          }
           return res.status(200).json({ status: 'duplicado', mensaje: `Este movimiento ya fue registrado ($${montoGasto.toLocaleString('es-CO')} del ${fechaGasto}).` });
         }
       }
@@ -197,7 +201,7 @@ export default async function handler(req, res) {
       // Detección de duplicados por monto total
       const { data: existentes } = await supabase
         .from('gastos')
-        .select('id, fecha, hora, monto, plataforma, referencia, descripcion, categoria')
+        .select('id, fecha, hora, monto, plataforma, referencia, descripcion, categoria, created_at')
         .eq('monto', montoGasto)
         .eq('fecha', fechaGasto);
 
@@ -211,6 +215,10 @@ export default async function handler(req, res) {
           return mismaRef && mismaPlatf && mismaHora;
         });
         if (duplicado) {
+          const creadoHace = Date.now() - new Date(duplicado.created_at).getTime();
+          if (creadoHace < 30000) {
+            return res.status(200).json({ status: 'ok', mensaje: `Gasto de $${montoGasto.toLocaleString('es-CO')} registrado correctamente.` });
+          }
           return res.status(200).json({
             status: 'duplicado',
             mensaje: `Este gasto ya existe: $${montoGasto.toLocaleString('es-CO')} · ${duplicado.categoria} · ${duplicado.descripcion} (${duplicado.fecha})`
@@ -222,7 +230,7 @@ export default async function handler(req, res) {
       if (referencia && referencia !== '0') {
         const { data: refExistentes } = await supabase
           .from('gastos')
-          .select('id, fecha, monto, plataforma, referencia, categoria')
+          .select('id, fecha, monto, plataforma, referencia, categoria, created_at')
           .eq('fecha', fechaGasto)
           .eq('referencia', referencia)
           .limit(1);
@@ -231,6 +239,10 @@ export default async function handler(req, res) {
             String(plataforma || '').toLowerCase().trim() === String(g.plataforma || '').toLowerCase().trim()
           );
           if (dupRef) {
+            const creadoHace = Date.now() - new Date(dupRef.created_at).getTime();
+            if (creadoHace < 30000) {
+              return res.status(200).json({ status: 'ok', mensaje: `Gasto de $${montoGasto.toLocaleString('es-CO')} registrado correctamente.` });
+            }
             return res.status(200).json({
               status: 'duplicado',
               mensaje: `Este gasto ya fue registrado (Ref: ${referencia}, ${dupRef.categoria}).`

@@ -2374,24 +2374,26 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
     // 7. Guardar egreso una vez el asesor llena la justificación
     async function guardarEgreso(id) {
         const item = filaArchivosIA.find(f => f.id === id);
-        if (!item) return;
+        if (!item || item._guardando) return;
+        item._guardando = true;
 
         const cuentaOrigen = document.getElementById(`cuenta_${id}`)?.value;
-        if (!cuentaOrigen) { alert('Debes indicar de qué cuenta salió el dinero.'); return; }
+        if (!cuentaOrigen) { item._guardando = false; alert('Debes indicar de qué cuenta salió el dinero.'); return; }
 
         const distribuciones = recogerDistribuciones(id, 'dist');
-        if (!distribuciones.length) { alert('Debes agregar al menos una distribución con monto.'); return; }
+        if (!distribuciones.length) { item._guardando = false; alert('Debes agregar al menos una distribución con monto.'); return; }
 
         const montoTotal = Math.round(Number(item.datos.monto || 0));
         const sumaDist = distribuciones.reduce((s, d) => s + Math.round(d.monto), 0);
         if (sumaDist !== montoTotal) {
+            item._guardando = false;
             alert(`El total distribuido ($${sumaDist.toLocaleString('es-CO')}) no coincide con el monto del movimiento ($${montoTotal.toLocaleString('es-CO')}). Ajusta los montos.`);
             return;
         }
 
         for (let i = 0; i < distribuciones.length; i++) {
-            if (!distribuciones[i].descripcion) { alert(`La distribución #${i + 1} necesita una descripción.`); return; }
-            if (!distribuciones[i].categoria) { alert(`La distribución #${i + 1} necesita una categoría.`); return; }
+            if (!distribuciones[i].descripcion) { item._guardando = false; alert(`La distribución #${i + 1} necesita una descripción.`); return; }
+            if (!distribuciones[i].categoria) { item._guardando = false; alert(`La distribución #${i + 1} necesita una categoría.`); return; }
         }
 
         const btn = document.getElementById(`btnGuardar_${id}`);
@@ -2425,6 +2427,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                 item.mensaje = `Egreso guardado · $${Number(d.monto).toLocaleString('es-CO')} · ${resumenCats}`;
                 actualizarUIIA();
             } else {
+                item._guardando = false;
                 if (btn) {
                     btn.disabled = false;
                     btn.style.background = '#c62828';
@@ -2433,6 +2436,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                 }
             }
         } catch (_) {
+            item._guardando = false;
             if (btn) {
                 btn.disabled = false;
                 btn.style.background = '#c62828';
@@ -2445,7 +2449,8 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
     // 7b. Guardar egreso como pendiente
     async function guardarPendiente(id) {
         const item = filaArchivosIA.find(f => f.id === id);
-        if (!item || !item.datos) return;
+        if (!item || !item.datos || item._guardando) return;
+        item._guardando = true;
 
         const btn = document.getElementById(`btnPendiente_${id}`);
         if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
@@ -2481,10 +2486,12 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                 item.mensaje = res.mensaje;
                 actualizarUIIA();
             } else {
+                item._guardando = false;
                 if (btn) { btn.disabled = false; btn.textContent = '⏸️ Dejar pendiente'; }
                 alert(res.mensaje || 'Error al guardar');
             }
         } catch (_) {
+            item._guardando = false;
             if (btn) { btn.disabled = false; btn.textContent = '⏸️ Dejar pendiente'; }
         }
     }
