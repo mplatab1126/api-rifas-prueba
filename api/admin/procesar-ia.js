@@ -44,33 +44,49 @@ export default async function handler(req, res) {
       }
     `;
 
-    // 4. Llamada a Claude Sonnet 4 (Anthropic Vision)
+    // 4. Llamada a Claude Sonnet 4 (Anthropic Vision) con reintentos ante sobrecarga
     const base64SinPrefijo = imagenBase64.replace(/^data:image\/\w+;base64,/, '');
     const mediaType = imagenBase64.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
 
-    const responseAI = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': anthropicKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 400,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64SinPrefijo } },
-              { type: 'text', text: prompt }
-            ]
-          }
-        ]
-      })
+    const bodyAI = JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 400,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64SinPrefijo } },
+            { type: 'text', text: prompt }
+          ]
+        }
+      ]
     });
 
-    const dataAI = await responseAI.json();
+    let dataAI;
+    const MAX_REINTENTOS = 4;
+    for (let intento = 0; intento < MAX_REINTENTOS; intento++) {
+      const responseAI = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': anthropicKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: bodyAI
+      });
+
+      dataAI = await responseAI.json();
+
+      const esOverload = responseAI.status === 529 ||
+        (dataAI.error && (dataAI.error.type === 'overloaded_error' || (dataAI.error.message || '').toLowerCase().includes('overloaded')));
+
+      if (esOverload && intento < MAX_REINTENTOS - 1) {
+        await new Promise(r => setTimeout(r, (intento + 1) * 4000));
+        continue;
+      }
+      break;
+    }
+
     if (dataAI.error) throw new Error("Error en Claude: " + (dataAI.error.message || JSON.stringify(dataAI.error)));
 
     const respuestaTexto = (dataAI.content && dataAI.content[0] ? dataAI.content[0].text : '').trim();

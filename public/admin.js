@@ -2168,6 +2168,8 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
             const item = filaArchivosIA[i];
             if (item.status !== 'pendiente') continue;
 
+            if (i > 0) await new Promise(r => setTimeout(r, 1500));
+
             item.status = 'procesando';
             item.mensaje = modoUploadIA === 'ingreso' ? 'Procesando ingreso...' : 'Procesando egreso...';
             actualizarUIIA();
