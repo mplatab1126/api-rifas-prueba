@@ -420,6 +420,18 @@
           <span class="mega-kpi-sub">No tienen deuda registrada</span>
         </div>
       </div>
+      <div class="mega-kpi-grid" style="margin-top:0;">
+        <div class="mega-kpi kpi-blue">
+          <div class="mega-kpi-title">Lotes estimados</div>
+          <div class="mega-kpi-value" id="kpiRescateLotes">—</div>
+          <span class="mega-kpi-sub">De 25 llamadas c/u</span>
+        </div>
+        <div class="mega-kpi kpi-red">
+          <div class="mega-kpi-title">Tiempo estimado</div>
+          <div class="mega-kpi-value" id="kpiRescateTiempo" style="font-size:1.6rem;">—</div>
+          <span class="mega-kpi-sub" id="kpiRescateTiempoSub">~2s por llamada + overhead por lote</span>
+        </div>
+      </div>
 
       <div class="card" style="margin-top:15px;">
         <div class="card-title" id="rescatePreviewTitle">Clientes bloqueados con deuda</div>
@@ -1273,10 +1285,29 @@
       }).join('');
     }
 
+    function estimarTiempoRescate(numClientes) {
+      if (numClientes === 0) return { texto: '—', sub: '~2s por llamada + overhead por lote' };
+      const segPorLlamada = 2;
+      const overheadPorLote = 3;
+      const numLotes = Math.ceil(numClientes / COBRO_BATCH_SIZE);
+      const totalSeg = (numClientes * segPorLlamada) + (numLotes * overheadPorLote);
+      let texto;
+      if (totalSeg < 60) texto = `~${totalSeg}s`;
+      else if (totalSeg < 3600) { const m = Math.floor(totalSeg / 60); const s = totalSeg % 60; texto = s > 0 ? `~${m}m ${s}s` : `~${m}m`; }
+      else { const h = Math.floor(totalSeg / 3600); const m = Math.floor((totalSeg % 3600) / 60); texto = `~${h}h ${m}m`; }
+      const costo = numClientes * 0.05;
+      const sub = `~$${costo.toFixed(2)} USD · Usa voz de ElevenLabs`;
+      return { texto, sub };
+    }
+
     function updateRescateSelectCount() {
       const checks = document.querySelectorAll('.chk-rescate:checked');
       document.getElementById('rescateSelectCount').textContent = `(${checks.length} de ${rescateClientes.length} seleccionados)`;
       document.getElementById('btnRescateLanzar').disabled = checks.length === 0;
+      document.getElementById('kpiRescateLotes').textContent = Math.ceil(checks.length / COBRO_BATCH_SIZE);
+      const est = estimarTiempoRescate(checks.length);
+      document.getElementById('kpiRescateTiempo').textContent = est.texto;
+      document.getElementById('kpiRescateTiempoSub').textContent = est.sub;
     }
 
     document.addEventListener('change', e => {
