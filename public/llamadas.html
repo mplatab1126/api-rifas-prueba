@@ -181,8 +181,23 @@
       </div>
     </div>
 
+    <!-- SELECTOR DE MÉTODO -->
+    <div class="saas-divider">Nueva Difusión</div>
+    <div class="card" id="metodoPicker" style="text-align:center; padding:30px;">
+      <p style="font-size:1rem; font-weight:700; color:var(--ink); margin:0 0 20px;">¿Cómo quieres lanzar la difusión?</p>
+      <div style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap;">
+        <button class="btn btn-primary" style="padding:16px 30px; font-size:1rem; border-radius:14px;" onclick="seleccionarMetodo('cobro')">
+          Cobro Directo<br><span style="font-size:0.78rem; font-weight:500; opacity:0.85;">Desde boletas con saldo</span>
+        </button>
+        <button class="btn btn-outline" style="padding:16px 30px; font-size:1rem; border-radius:14px;" onclick="seleccionarMetodo('rescate')">
+          Rescate WhatsApp<br><span style="font-size:0.78rem; font-weight:500; opacity:0.85;">Clientes bloqueados por Meta</span>
+        </button>
+      </div>
+    </div>
+
     <!-- COBRO DIRECTO -->
-    <div class="saas-divider">Cobro Directo</div>
+    <div id="seccionCobro" style="display:none;">
+    <div class="saas-divider">Cobro Directo <span style="font-size:0.75rem; cursor:pointer; color:var(--muted); font-weight:600;" onclick="seleccionarMetodo(null)">(cambiar)</span></div>
 
     <div class="filter-zone" id="cobroZone">
       <p style="font-size:0.85rem; color:var(--muted); font-weight:600; margin:0 0 16px;">
@@ -346,8 +361,11 @@
       </div>
     </div>
 
+    </div><!-- /seccionCobro -->
+
     <!-- RESCATE WHATSAPP -->
-    <div class="saas-divider">Rescate WhatsApp</div>
+    <div id="seccionRescate" style="display:none;">
+    <div class="saas-divider">Rescate WhatsApp <span style="font-size:0.75rem; cursor:pointer; color:var(--muted); font-weight:600;" onclick="seleccionarMetodo(null)">(cambiar)</span></div>
 
     <div class="filter-zone" id="rescateZone">
       <p style="font-size:0.85rem; color:var(--muted); font-weight:600; margin:0 0 16px;">
@@ -476,6 +494,8 @@
         <div class="results-grid" id="rescateResultGrid"></div>
       </div>
     </div>
+
+    </div><!-- /seccionRescate -->
 
     <!-- LLAMADA DE PRUEBA -->
     <div class="saas-divider">Llamada de Prueba</div>
@@ -899,6 +919,12 @@
     // ══════════════════════════════════════════════════
     // ══ COBRO DIRECTO ══
     // ══════════════════════════════════════════════════
+
+    function seleccionarMetodo(metodo) {
+      document.getElementById('metodoPicker').style.display = metodo ? 'none' : 'block';
+      document.getElementById('seccionCobro').style.display = metodo === 'cobro' ? 'block' : 'none';
+      document.getElementById('seccionRescate').style.display = metodo === 'rescate' ? 'block' : 'none';
+    }
 
     let cobroClientes = [];
     const COBRO_BATCH_SIZE = 25;
