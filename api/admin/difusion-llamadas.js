@@ -395,7 +395,7 @@ export default async function handler(req, res) {
   // ── TEST: llamada de prueba a un número específico ──
   if (accion === 'test') {
     try {
-      const { telefono_test, plantilla, voz } = payload;
+      const { telefono_test, plantilla, voz, test_nombre, test_boleta, test_total } = payload;
       if (!telefono_test) return res.status(400).json({ status: 'error', mensaje: 'Falta el número de teléfono.' });
 
       const telefonoE164 = formatearTelefono(telefono_test);
@@ -407,9 +407,9 @@ export default async function handler(req, res) {
       if (!appUrl) return res.status(500).json({ status: 'error', mensaje: 'Falta APP_URL en el servidor.' });
 
       const params = new URLSearchParams({
-        nombre: 'Cliente Prueba',
-        boletas: '0000',
-        total: 'cien mil'
+        nombre: test_nombre || 'Cliente Prueba',
+        boletas: test_boleta || '0000',
+        total: numeroAPalabras(Number(test_total) || 100000)
       });
       if (plantilla) params.set('plantilla', plantilla);
       if (voz) params.set('voz', voz);
