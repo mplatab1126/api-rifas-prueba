@@ -411,6 +411,30 @@
             Edita el texto como quieras, las variables se reemplazan automáticamente para cada cliente.
           </p>
         </div>
+        <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--ring);">
+          <label style="font-size:0.75rem; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:8px;">Voz de la llamada</label>
+          <select id="rescateVoz" class="field-input">
+            <optgroup label="Gratis (incluidas en Twilio)">
+              <option value="Google.es-US-Chirp3-HD-Orus">Google Chirp3-HD Orus (Masculino, Generativa)</option>
+              <option value="Google.es-US-Chirp3-HD-Puck">Google Chirp3-HD Puck (Masculino, Generativa)</option>
+              <option value="Google.es-US-Chirp3-HD-Charon">Google Chirp3-HD Charon (Masculino, Generativa)</option>
+              <option value="Google.es-US-Chirp3-HD-Kore">Google Chirp3-HD Kore (Femenino, Generativa)</option>
+              <option value="Google.es-US-Chirp3-HD-Leda">Google Chirp3-HD Leda (Femenino, Generativa)</option>
+              <option value="Google.es-US-Chirp3-HD-Zephyr">Google Chirp3-HD Zephyr (Femenino, Generativa)</option>
+              <option value="Google.es-US-Neural2-B">Google Neural2-B (Masculino)</option>
+              <option value="Google.es-US-Wavenet-B">Google WaveNet-B (Masculino)</option>
+              <option value="Polly.Andres-Generative">Polly Andres Generativa (Masculino, MX)</option>
+              <option value="Polly.Pedro-Generative">Polly Pedro Generativa (Masculino, US)</option>
+              <option value="Polly.Mía-Generative">Polly Mía Generativa (Femenino, MX)</option>
+            </optgroup>
+            <optgroup label="ElevenLabs (consume créditos)">
+              <option value="elevenlabs">Voz clonada de Alejandro (ElevenLabs)</option>
+            </optgroup>
+          </select>
+          <p style="font-size:0.82rem; color:var(--muted); font-weight:600; margin:8px 0 0;">
+            Las voces <b>Chirp3-HD</b> son las más naturales y humanas. Usa <b>Llamada de Prueba</b> para escucharlas antes de lanzar.
+          </p>
+        </div>
       </div>
     </div>
 
@@ -1367,9 +1391,10 @@
       const seleccionados = Array.from(checks).map(ch => rescateClientes[ch.dataset.idx]);
 
       const plantilla = document.getElementById('plantillaLlamada').value;
+      const voz = document.getElementById('rescateVoz').value;
       localStorage.setItem('plantilla_llamada', plantilla);
 
-      const res = await apiCall('lanzar', { clientes_seleccionados: seleccionados, plantilla });
+      const res = await apiCall('lanzar', { clientes_seleccionados: seleccionados, plantilla, voz });
 
       btn.innerHTML = 'Lanzar llamadas';
       btn.disabled = false;
