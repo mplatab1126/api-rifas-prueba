@@ -183,6 +183,69 @@ export default async function handler(req, res) {
       return res.status(200).json({ status: 'ok', mensaje: `Gasto justificado en "${catObj.nombre}".` });
     }
 
+    // ── Listar gastos para división entre socios ──────────────────────
+    if (accion === 'listar_gastos_division') {
+      const esGerencia = ['Mateo', 'Alejo P', 'Alejo Plata'].includes(nombreAsesor);
+      if (!esGerencia) return res.status(403).json({ status: 'error', mensaje: 'Solo gerencia puede ver la división de gastos.' });
+
+      const { fecha_desde, fecha_hasta } = payload;
+      if (!fecha_desde || !fecha_hasta) return res.status(400).json({ status: 'error', mensaje: 'Se necesitan ambas fechas.' });
+
+      const { data, error } = await supabase
+        .from('gastos')
+        .select('id, fecha, monto, descripcion, categoria, subcategoria, plataforma, reportado_por, asignado_a')
+        .neq('categoria', 'Pendiente')
+        .gte('fecha', fecha_desde)
+        .lte('fecha', fecha_hasta)
+        .order('fecha', { ascending: true })
+        .order('id', { ascending: true })
+        .limit(5000);
+      if (error) throw error;
+      return res.status(200).json({ status: 'ok', gastos: data || [] });
+    }
+
+    // ── Asignar gasto a socio ─────────────────────────────────────────
+    if (accion === 'asignar_gasto') {
+      const esGerencia = ['Mateo', 'Alejo P', 'Alejo Plata'].includes(nombreAsesor);
+      if (!esGerencia) return res.status(403).json({ status: 'error', mensaje: 'Solo gerencia puede asignar gastos.' });
+
+      const { id, asignado_a } = payload;
+      if (!id) return res.status(400).json({ status: 'error', mensaje: 'Falta el ID del gasto.' });
+
+      const validos = ['Mateo', 'Alejandro', 'Empresa', null, ''];
+      if (!validos.includes(asignado_a)) return res.status(400).json({ status: 'error', mensaje: 'Valor no válido. Usa: Mateo, Alejandro o Empresa.' });
+
+      const { error } = await supabase
+        .from('gastos')
+        .update({ asignado_a: asignado_a || null })
+        .eq('id', id);
+      if (error) throw error;
+      return res.status(200).json({ status: 'ok' });
+    }
+
+    // ── Asignar gastos en lote ────────────────────────────────────────
+    if (accion === 'asignar_gastos_lote') {
+      const esGerencia = ['Mateo', 'Alejo P', 'Alejo Plata'].includes(nombreAsesor);
+      if (!esGerencia) return res.status(403).json({ status: 'error', mensaje: 'Solo gerencia puede asignar gastos.' });
+
+      const { asignaciones } = payload;
+      if (!asignaciones || !Array.isArray(asignaciones) || asignaciones.length === 0) {
+        return res.status(400).json({ status: 'error', mensaje: 'No hay asignaciones para guardar.' });
+      }
+
+      const validos = ['Mateo', 'Alejandro', 'Empresa', null, ''];
+      let actualizados = 0;
+      for (const { id, asignado_a } of asignaciones) {
+        if (!id || !validos.includes(asignado_a)) continue;
+        const { error } = await supabase
+          .from('gastos')
+          .update({ asignado_a: asignado_a || null })
+          .eq('id', id);
+        if (!error) actualizados++;
+      }
+      return res.status(200).json({ status: 'ok', mensaje: `${actualizados} gastos actualizados.` });
+    }
+
     const puedeRegistrarGastos = ['Mateo', 'Juan Pablo', 'Juan Pablo Rojas'];
     if (!puedeRegistrarGastos.includes(nombreAsesor)) {
       return res.status(403).json({ status: 'error', mensaje: 'Solo Mateo o Juan Pablo pueden registrar gastos.' });

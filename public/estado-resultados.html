@@ -518,6 +518,96 @@
       .detalle-gasto-row { flex-wrap: wrap; gap: 6px; }
       .detalle-gasto-fecha { min-width: auto; }
     }
+
+    /* ── División Socios ──────────────────────────────────────────────── */
+    .div-intro { margin-bottom: 20px; }
+    .div-intro-title { font-size: 1.1rem; font-weight: 800; color: var(--ink); }
+    .div-intro-sub { font-size: .82rem; color: var(--muted); margin-top: 4px; }
+
+    .div-filtros {
+      display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .div-filtro-field { display: flex; flex-direction: column; gap: 4px; }
+    .div-filtro-field label { font-size: .72rem; font-weight: 700; text-transform: uppercase; color: var(--muted); }
+    .div-filtro-field input {
+      padding: 10px 14px; border: 1px solid var(--ring-strong); border-radius: 10px;
+      font-family: inherit; font-size: .85rem; background: var(--card);
+    }
+
+    .div-resumen {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px;
+    }
+    .div-card {
+      background: var(--card); border: 1.5px solid var(--ring-strong); border-radius: 14px;
+      padding: 16px; text-align: center;
+    }
+    .div-card-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 4px; }
+    .div-card-monto { font-size: 1.2rem; font-weight: 800; }
+    .div-card-count { font-size: .72rem; color: var(--muted); margin-top: 2px; }
+
+    .div-mateo { border-color: #93c5fd; background: #eff6ff; }
+    .div-mateo .div-card-monto { color: #1d4ed8; }
+    .div-alejo { border-color: #fdba74; background: #fff7ed; }
+    .div-alejo .div-card-monto { color: #c2410c; }
+    .div-empresa { border-color: #a5b4fc; background: #eef2ff; }
+    .div-empresa .div-card-monto { color: #4338ca; }
+    .div-sin { border-color: var(--ring-strong); }
+    .div-sin .div-card-monto { color: var(--muted); }
+
+    .div-balance {
+      background: var(--card); border: 1.5px solid var(--ring-strong); border-radius: 14px;
+      padding: 18px 24px; margin-bottom: 20px; text-align: center;
+    }
+    .div-balance-label { font-size: .78rem; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+    .div-balance-valor { font-size: 1.3rem; font-weight: 800; }
+    .div-balance-detalle { font-size: .8rem; color: var(--ink-2); margin-top: 6px; }
+
+    .div-progreso {
+      background: var(--card); border: 1px solid var(--ring); border-radius: 10px;
+      padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px;
+    }
+    .div-progreso-bar { flex: 1; height: 8px; background: var(--ring); border-radius: 4px; overflow: hidden; }
+    .div-progreso-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width .3s; }
+    .div-progreso-text { font-size: .78rem; font-weight: 700; color: var(--ink-2); white-space: nowrap; }
+
+    .div-tabla {
+      background: var(--card); border: 1.5px solid var(--ring-strong); border-radius: 14px;
+      overflow: hidden;
+    }
+    .div-fila {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px; border-bottom: 1px solid var(--ring);
+      transition: background .1s;
+    }
+    .div-fila:last-child { border-bottom: none; }
+    .div-fila:hover { background: var(--bg); }
+    .div-fila.asignado { background: rgba(58,158,107,.04); }
+
+    .div-fila-info { flex: 1; min-width: 0; }
+    .div-fila-desc { font-size: .85rem; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .div-fila-meta { font-size: .72rem; color: var(--muted); margin-top: 2px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .div-fila-monto { font-size: .92rem; font-weight: 800; color: var(--danger); white-space: nowrap; min-width: 90px; text-align: right; }
+
+    .div-fila-radios { display: flex; gap: 4px; flex-shrink: 0; }
+    .div-radio {
+      padding: 5px 10px; border-radius: 8px; border: 1.5px solid var(--ring-strong);
+      background: var(--card); font-family: inherit; font-size: .7rem; font-weight: 700;
+      cursor: pointer; transition: all .15s; color: var(--ink-2);
+    }
+    .div-radio:hover { border-color: var(--accent); background: var(--accent-light); }
+    .div-radio.sel-mateo { background: #dbeafe; border-color: #93c5fd; color: #1d4ed8; }
+    .div-radio.sel-alejo { background: #ffedd5; border-color: #fdba74; color: #c2410c; }
+    .div-radio.sel-empresa { background: #e0e7ff; border-color: #a5b4fc; color: #4338ca; }
+
+    @media (max-width: 700px) {
+      .div-resumen { grid-template-columns: repeat(2, 1fr); }
+      .div-fila { flex-wrap: wrap; }
+      .div-fila-radios { width: 100%; justify-content: flex-end; }
+    }
+    @media (max-width: 480px) {
+      .div-radio { padding: 4px 7px; font-size: .65rem; }
+    }
   </style>
 </head>
 <body>
@@ -553,6 +643,7 @@
   <div class="tabs-bar">
     <button class="tab-btn active" id="tabER" onclick="cambiarTab('er')">📊 Estado de Resultados</button>
     <button class="tab-btn" id="tabDetalle" onclick="cambiarTab('detalle')">📋 Detalle de Gastos</button>
+    <button class="tab-btn" id="tabDivision" onclick="cambiarTab('division')">🤝 División Socios</button>
   </div>
 
   <!-- Filtros -->
@@ -593,6 +684,31 @@
   <!-- Contenido del detalle de gastos -->
   <div id="detalleContent" style="display:none;">
     <div class="loading-state">⏳ Cargando datos…</div>
+  </div>
+
+  <!-- Contenido de división entre socios -->
+  <div id="divisionContent" style="display:none;">
+    <div class="div-intro">
+      <div class="div-intro-title">División de gastos entre socios</div>
+      <div class="div-intro-sub">Clasifica cada gasto como de Mateo, Alejandro o Empresa para calcular quién gastó más y cuánto se deben.</div>
+    </div>
+
+    <div class="div-filtros">
+      <div class="div-filtro-field">
+        <label>Desde</label>
+        <input type="date" id="divFechaDesde" value="2026-01-26">
+      </div>
+      <div class="div-filtro-field">
+        <label>Hasta</label>
+        <input type="date" id="divFechaHasta" value="2026-02-20">
+      </div>
+      <button class="btn-filtro btn-filtro-primary" onclick="cargarGastosDivision()">Cargar gastos</button>
+    </div>
+
+    <div id="divResumen" class="div-resumen" style="display:none;"></div>
+    <div id="divBalance" class="div-balance" style="display:none;"></div>
+    <div id="divProgreso" style="display:none;"></div>
+    <div id="divGastosLista"></div>
   </div>
 </div>
 
@@ -1445,8 +1561,10 @@ function cambiarTab(tab) {
   tabActual = tab;
   document.getElementById('tabER').classList.toggle('active', tab === 'er');
   document.getElementById('tabDetalle').classList.toggle('active', tab === 'detalle');
+  document.getElementById('tabDivision').classList.toggle('active', tab === 'division');
   document.getElementById('erContent').style.display = tab === 'er' ? 'block' : 'none';
   document.getElementById('detalleContent').style.display = tab === 'detalle' ? 'block' : 'none';
+  document.getElementById('divisionContent').style.display = tab === 'division' ? 'block' : 'none';
 }
 
 // ── Detalle de gastos ─────────────────────────────────────────────────────
@@ -1613,6 +1731,196 @@ function scrollACat(sl) {
       if (body && !body.classList.contains('open')) toggleCatDetalle(sl);
     }
   }, 100);
+}
+
+// ── División entre socios ────────────────────────────────────────────────
+let gastosDivision = [];
+let divGuardando = {};
+
+async function cargarGastosDivision() {
+  const desde = document.getElementById('divFechaDesde').value;
+  const hasta = document.getElementById('divFechaHasta').value;
+  if (!desde || !hasta) { toast('⚠️ Selecciona ambas fechas.'); return; }
+
+  document.getElementById('divGastosLista').innerHTML = '<div class="loading-state">⏳ Cargando gastos…</div>';
+  document.getElementById('divResumen').style.display = 'none';
+  document.getElementById('divBalance').style.display = 'none';
+  document.getElementById('divProgreso').style.display = 'none';
+
+  try {
+    const res = await fetch('/api/admin/finanzas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contrasena, accion: 'listar_gastos_division', fecha_desde: desde, fecha_hasta: hasta })
+    });
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.mensaje);
+
+    gastosDivision = data.gastos;
+    renderDivisionCompleta();
+  } catch (e) {
+    toast('⚠️ ' + e.message);
+    document.getElementById('divGastosLista').innerHTML = '<div class="empty-state">Error al cargar gastos.</div>';
+  }
+}
+
+function renderDivisionCompleta() {
+  actualizarTotalesDivision();
+  renderListaDivision();
+}
+
+function actualizarTotalesDivision() {
+  let tMateo = 0, cMateo = 0;
+  let tAlejo = 0, cAlejo = 0;
+  let tEmpresa = 0, cEmpresa = 0;
+  let tSin = 0, cSin = 0;
+
+  gastosDivision.forEach(g => {
+    const m = Number(g.monto || 0);
+    if (g.asignado_a === 'Mateo') { tMateo += m; cMateo++; }
+    else if (g.asignado_a === 'Alejandro') { tAlejo += m; cAlejo++; }
+    else if (g.asignado_a === 'Empresa') { tEmpresa += m; cEmpresa++; }
+    else { tSin += m; cSin++; }
+  });
+
+  const total = gastosDivision.length;
+  const clasificados = cMateo + cAlejo + cEmpresa;
+  const pct = total > 0 ? Math.round((clasificados / total) * 100) : 0;
+
+  document.getElementById('divResumen').innerHTML = `
+    <div class="div-card div-mateo">
+      <div class="div-card-label">Mateo</div>
+      <div class="div-card-monto">${fmt(tMateo)}</div>
+      <div class="div-card-count">${cMateo} gasto${cMateo !== 1 ? 's' : ''}</div>
+    </div>
+    <div class="div-card div-alejo">
+      <div class="div-card-label">Alejandro</div>
+      <div class="div-card-monto">${fmt(tAlejo)}</div>
+      <div class="div-card-count">${cAlejo} gasto${cAlejo !== 1 ? 's' : ''}</div>
+    </div>
+    <div class="div-card div-empresa">
+      <div class="div-card-label">Empresa</div>
+      <div class="div-card-monto">${fmt(tEmpresa)}</div>
+      <div class="div-card-count">${cEmpresa} gasto${cEmpresa !== 1 ? 's' : ''}</div>
+    </div>
+    <div class="div-card div-sin">
+      <div class="div-card-label">Sin clasificar</div>
+      <div class="div-card-monto">${fmt(tSin)}</div>
+      <div class="div-card-count">${cSin} gasto${cSin !== 1 ? 's' : ''}</div>
+    </div>`;
+  document.getElementById('divResumen').style.display = '';
+
+  // Balance entre Mateo y Alejandro
+  const balDiv = document.getElementById('divBalance');
+  const gastosPersonales = tMateo + tAlejo;
+  const cadaUno = gastosPersonales / 2;
+  const diff = tMateo - tAlejo;
+
+  let balHTML = '';
+  if (cMateo === 0 && cAlejo === 0) {
+    balHTML = `<div class="div-balance-label">Clasifica los gastos para ver el balance</div>`;
+  } else if (Math.abs(diff) < 100) {
+    balHTML = `
+      <div class="div-balance-label">Balance entre socios</div>
+      <div class="div-balance-valor" style="color:var(--accent);">Están parejos ✓</div>
+      <div class="div-balance-detalle">Cada uno gastó ~${fmt(cadaUno)}</div>`;
+  } else {
+    const deudor = diff > 0 ? 'Alejandro' : 'Mateo';
+    const acreedor = diff > 0 ? 'Mateo' : 'Alejandro';
+    const deuda = Math.abs(diff) / 2;
+    balHTML = `
+      <div class="div-balance-label">Balance entre socios</div>
+      <div class="div-balance-valor" style="color:var(--danger);">${deudor} le debe ${fmt(deuda)} a ${acreedor}</div>
+      <div class="div-balance-detalle">
+        Mateo gastó ${fmt(tMateo)} · Alejandro gastó ${fmt(tAlejo)} · Total personal: ${fmt(gastosPersonales)}
+        ${tEmpresa > 0 ? ` · Empresa (aparte): ${fmt(tEmpresa)}` : ''}
+      </div>`;
+  }
+  balDiv.innerHTML = balHTML;
+  balDiv.style.display = '';
+
+  // Barra de progreso
+  const progDiv = document.getElementById('divProgreso');
+  progDiv.innerHTML = `
+    <div class="div-progreso">
+      <div class="div-progreso-bar"><div class="div-progreso-fill" style="width:${pct}%"></div></div>
+      <div class="div-progreso-text">${clasificados}/${total} (${pct}%)</div>
+    </div>`;
+  progDiv.style.display = '';
+}
+
+function renderListaDivision() {
+  const container = document.getElementById('divGastosLista');
+  if (!gastosDivision.length) {
+    container.innerHTML = '<div class="empty-state">No hay gastos en este rango de fechas.</div>';
+    return;
+  }
+
+  const filasHTML = gastosDivision.map((g, i) => {
+    const meta = [];
+    if (g.categoria) meta.push(g.categoria);
+    if (g.subcategoria) meta.push(g.subcategoria);
+    if (g.plataforma) meta.push('🏦 ' + g.plataforma);
+    if (g.reportado_por) meta.push('👤 ' + g.reportado_por);
+
+    const sel = g.asignado_a || '';
+    const asignadoClass = sel ? ' asignado' : '';
+
+    return `
+      <div class="div-fila${asignadoClass}" id="divfila-${g.id}">
+        <div class="div-fila-info">
+          <div class="div-fila-desc">${g.descripcion || 'Sin descripción'}</div>
+          <div class="div-fila-meta">
+            <span>${formatFechaCorta(g.fecha)}</span>
+            ${meta.map(m => `<span>${m}</span>`).join('')}
+          </div>
+        </div>
+        <div class="div-fila-monto">${fmt(g.monto)}</div>
+        <div class="div-fila-radios">
+          <button class="div-radio${sel === 'Mateo' ? ' sel-mateo' : ''}" onclick="asignarGasto(${i}, 'Mateo', this)">Mateo</button>
+          <button class="div-radio${sel === 'Alejandro' ? ' sel-alejo' : ''}" onclick="asignarGasto(${i}, 'Alejandro', this)">Alejo</button>
+          <button class="div-radio${sel === 'Empresa' ? ' sel-empresa' : ''}" onclick="asignarGasto(${i}, 'Empresa', this)">Empresa</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = `<div class="div-tabla">${filasHTML}</div>`;
+}
+
+async function asignarGasto(idx, valor, btn) {
+  const g = gastosDivision[idx];
+  if (!g) return;
+
+  const valorAnterior = g.asignado_a;
+  const nuevoValor = (g.asignado_a === valor) ? null : valor;
+
+  g.asignado_a = nuevoValor;
+  actualizarTotalesDivision();
+
+  const fila = document.getElementById('divfila-' + g.id);
+  if (fila) {
+    const radios = fila.querySelectorAll('.div-radio');
+    radios.forEach(r => r.className = 'div-radio');
+    if (nuevoValor === 'Mateo') radios[0].classList.add('sel-mateo');
+    else if (nuevoValor === 'Alejandro') radios[1].classList.add('sel-alejo');
+    else if (nuevoValor === 'Empresa') radios[2].classList.add('sel-empresa');
+    fila.classList.toggle('asignado', !!nuevoValor);
+  }
+
+  try {
+    const res = await fetch('/api/admin/finanzas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contrasena, accion: 'asignar_gasto', id: g.id, asignado_a: nuevoValor })
+    });
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.mensaje);
+  } catch (e) {
+    g.asignado_a = valorAnterior;
+    actualizarTotalesDivision();
+    renderListaDivision();
+    toast('⚠️ Error al guardar: ' + e.message);
+  }
 }
 </script>
 </div><!-- /snav-page-content -->
