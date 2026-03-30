@@ -502,6 +502,7 @@
       background: var(--danger-bg); border: 1.5px solid #f5c6c5;
       border-radius: var(--radius); padding: 20px 24px;
       display: flex; justify-content: space-between; align-items: center;
+      gap: 12px; flex-wrap: wrap;
       margin-bottom: 16px;
     }
     .detalle-gran-total-label {
@@ -1512,8 +1513,11 @@ function renderDetalleGastos(gastos) {
 
   let html = `
     <div class="detalle-gran-total">
-      <div class="detalle-gran-total-label">Total gastos del período</div>
-      <div class="detalle-gran-total-valor">${fmt(granTotal)}</div>
+      <div>
+        <div class="detalle-gran-total-label">Total gastos del período</div>
+        <div class="detalle-gran-total-valor">${fmt(granTotal)}</div>
+      </div>
+      <button class="btn-agregar-gasto" onclick="abrirModalGasto()" style="font-size:.82rem; padding:10px 18px;">+ Registrar gasto manual</button>
     </div>
     <div class="detalle-resumen">${tarjetasHTML}</div>`;
 
