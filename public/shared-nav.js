@@ -13,17 +13,16 @@
   const PAGES = [
     { id: 'admin',       label: 'Panel de Ventas',       href: '/admin',                  section: 'principal', roles: 'todos' },
     { id: 'caja',        label: 'Cuadre de Caja',        href: '/caja',                   section: 'principal', roles: 'todos' },
-    { id: 'rifas-menu',   label: 'Rifas',                 href: '/diarias',                  section: 'principal', roles: 'todos',
+    { id: 'rifas-menu',   label: 'Rifas Diarias',         href: '/diarias',                  section: 'principal', roles: 'todos',
       children: [
-        { id: 'rifa-2cifras', label: '🎯 2 Cifras', children: [
+        { id: 'rifa-2cifras', label: '2 Cifras', children: [
           { id: 'rifa-2cifras-ver',   label: 'Ver página',    href: '/diarias',  external: true },
           { id: 'rifa-2cifras-reset', label: 'Reiniciar rifa', href: '/rendimiento?tipo=2cifras&reiniciar=1', rolesChild: 'gerencia' },
         ]},
-        { id: 'rifa-3cifras', label: '🎲 3 Cifras', children: [
+        { id: 'rifa-3cifras', label: '3 Cifras', children: [
           { id: 'rifa-3cifras-ver',   label: 'Ver página',    href: '/diarias3', external: true },
           { id: 'rifa-3cifras-reset', label: 'Reiniciar rifa', href: '/rendimiento?tipo=3cifras&reiniciar=1', rolesChild: 'gerencia' },
         ]},
-        { id: 'rifa-apto',  label: '🏠 Apartamento', href: '/admin' },
       ]
     },
     { id: 'rendimiento', label: 'Rendimiento',           href: '/rendimiento',           section: 'gerencia',  roles: 'gerencia',
