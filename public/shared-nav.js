@@ -13,8 +13,13 @@
   const PAGES = [
     { id: 'admin',       label: 'Panel de Ventas',       href: '/admin',                  section: 'principal', roles: 'todos' },
     { id: 'caja',        label: 'Cuadre de Caja',        href: '/caja',                   section: 'principal', roles: 'todos' },
-    { id: 'rifa-2cifras', label: 'Rifas 2 Cifras',       href: '/diarias',                  section: 'principal', roles: 'todos', external: true },
-    { id: 'rifa-3cifras', label: 'Rifas 3 Cifras',       href: '/diarias3',                 section: 'principal', roles: 'todos', external: true },
+    { id: 'rifas-menu',   label: 'Rifas',                 href: '/diarias',                  section: 'principal', roles: 'todos',
+      children: [
+        { id: 'rifa-2cifras', label: '2 Cifras',    href: '/diarias',  external: true },
+        { id: 'rifa-3cifras', label: '3 Cifras',    href: '/diarias3', external: true },
+        { id: 'rifa-apto',    label: 'Apartamento', href: '/admin' },
+      ]
+    },
     { id: 'rendimiento', label: 'Rendimiento',           href: '/rendimiento',           section: 'gerencia',  roles: 'gerencia',
       children: [
         { id: 'rend-2cifras', label: 'Rifas 2 Cifras',    href: '/rendimiento?tipo=2cifras' },
@@ -53,8 +58,13 @@
   function isChildActive(page) {
     if (!page.children) return false;
     const path = window.location.pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/admin';
-    const parentClean = page.href.replace(/\.html$/, '');
-    return path === parentClean || path === parentClean.replace(/^\//, '');
+    const search = window.location.search;
+    const fullUrl = path + search;
+    for (const child of page.children) {
+      const childClean = child.href.replace(/\.html$/, '');
+      if (fullUrl === childClean || path === childClean || path === childClean.replace(/^\//, '')) return true;
+    }
+    return false;
   }
 
   function getCachedPermisos() {
@@ -134,9 +144,10 @@
         `;
         for (const child of page.children) {
           const childIsActive = child.id === currentPage ? ' active' : '';
+          const childTarget = child.external ? ' target="_blank" rel="noopener"' : '';
           html += `
-            <a class="snav-link snav-child${childIsActive}" href="${child.href}">
-              ${child.label}
+            <a class="snav-link snav-child${childIsActive}" href="${child.href}"${childTarget}>
+              ${child.label}${child.external ? ' ↗' : ''}
             </a>
           `;
         }
