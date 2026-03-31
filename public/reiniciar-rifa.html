@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <title>Reiniciar Rifa — Los Plata</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared-nav.css">
+  <style>
+    :root {
+      --ink: #1e293b; --ink-2: #64748b; --muted: #94a3b8;
+      --bg: #f1f5f9; --card: #fff; --ring: #e2e8f0; --ring-strong: #cbd5e1;
+      --accent: #10b981; --accent-hover: #059669;
+      --danger: #dc2626;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+    .page-wrapper {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 20px;
+    }
+    .card {
+      background: var(--card); border-radius: 20px; padding: 32px;
+      max-width: 480px; width: 100%;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.1);
+    }
+    .card h2 {
+      color: var(--danger); font-weight: 900; font-size: 1.4rem; margin-bottom: 4px;
+    }
+    .card .rifa-badge {
+      display: inline-block; background: #fef2f2; border: 1px solid #fecaca;
+      border-radius: 8px; padding: 4px 12px; font-size: 0.8rem; font-weight: 700;
+      color: #991b1b; margin-bottom: 16px;
+    }
+    .card p.desc {
+      color: var(--ink-2); font-size: 0.9rem; margin-bottom: 20px; line-height: 1.5;
+    }
+    .warning-box {
+      background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px;
+      padding: 14px; margin-bottom: 20px; font-size: 0.85rem; color: #b91c1c;
+      font-weight: 600; line-height: 1.5;
+    }
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      font-size: 0.78rem; font-weight: 800; color: var(--muted);
+      text-transform: uppercase; display: block; margin-bottom: 6px;
+    }
+    .form-group input, .form-group select {
+      width: 100%; border: 1px solid var(--ring-strong); border-radius: 10px;
+      padding: 10px 12px; font-family: inherit; font-size: 0.95rem; font-weight: 600;
+      outline: none; background: #fff; color: var(--ink);
+    }
+    .form-group input:focus, .form-group select:focus {
+      border-color: var(--accent); box-shadow: 0 0 0 3px rgba(16,185,129,0.1);
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .separator {
+      border-top: 1px dashed var(--ring-strong); padding-top: 14px; margin-top: 4px; margin-bottom: 14px;
+    }
+    .separator-title {
+      font-size: 0.8rem; font-weight: 800; color: var(--ink-2);
+      text-transform: uppercase; margin-bottom: 12px;
+    }
+    .btn-row { display: flex; gap: 10px; margin-top: 20px; }
+    .btn {
+      flex: 1; padding: 12px; border-radius: 12px; font-family: inherit;
+      font-size: 0.95rem; font-weight: 700; cursor: pointer; border: none;
+      transition: all 0.15s;
+    }
+    .btn-cancel { background: transparent; border: 1px solid var(--ring-strong); color: var(--ink); }
+    .btn-cancel:hover { background: var(--bg); }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-back { background: transparent; border: 1px solid var(--ring-strong); color: var(--ink); }
+
+    .resumen-box {
+      background: var(--bg); border: 1px solid var(--ring); border-radius: 12px;
+      padding: 16px; margin-bottom: 20px; font-size: 0.9rem; line-height: 1.8;
+    }
+    .resumen-box strong { color: var(--ink); }
+
+    .result-card {
+      text-align: center; padding: 30px;
+    }
+    .result-card h2 { color: var(--accent); margin-bottom: 16px; }
+    .result-card pre {
+      text-align: left; background: var(--bg); border-radius: 12px; padding: 16px;
+      font-family: inherit; font-size: 0.85rem; white-space: pre-wrap;
+      line-height: 1.6; margin-bottom: 20px; color: var(--ink-2);
+    }
+
+    .msg { margin-top: 12px; font-size: 0.85rem; font-weight: 700; text-align: center; }
+
+    #loginOverlay {
+      position: fixed; inset: 0; z-index: 1500; display: flex;
+      flex-direction: column; align-items: center; justify-content: center;
+      background: linear-gradient(160deg, #0f2010 0%, #1e4a1a 40%, #2d6b25 70%, #1a3a14 100%);
+    }
+    #loginOverlay input {
+      width: 100%; padding: 16px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.08); color: #fff; font-size: 1rem; font-family: inherit;
+      text-align: center; outline: none;
+    }
+    #loginOverlay button {
+      width: 100%; padding: 16px; border-radius: 100px; border: none;
+      background: rgba(255,255,255,0.18); color: #fff; font-size: 1rem; font-weight: 600;
+      font-family: inherit; cursor: pointer; transition: background 0.2s;
+    }
+    #loginOverlay button:hover { background: rgba(255,255,255,0.28); }
+  </style>
+</head>
+<body>
+
+<div id="loginOverlay">
+  <div style="text-align:center; margin-bottom:32px;">
+    <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata S.A.S." style="height:140px; width:auto; display:block; margin:0 auto; filter:drop-shadow(0 8px 24px rgba(0,0,0,0.45));">
+    <p style="color:rgba(255,255,255,0.6); font-size:0.9rem; margin:14px 0 0; letter-spacing:0.15em; text-transform:uppercase;">Acceso solo para gerencia</p>
+  </div>
+  <div style="width:90%; max-width:400px; display:flex; flex-direction:column; gap:14px;">
+    <input id="loginPwd" type="password" placeholder="Contraseña..." onkeydown="if(event.key==='Enter') verificarLogin()">
+    <button onclick="verificarLogin()">Ingresar</button>
+    <div id="loginMsg" style="color:rgba(255,120,120,0.9); font-size:0.9rem; min-height:20px; text-align:center;"></div>
+  </div>
+</div>
+
+<div class="snav-page-content" id="snavPageContent">
+  <div class="page-wrapper">
+    <div class="card" id="paso1">
+      <h2>🔁 Reiniciar Rifa</h2>
+      <span class="rifa-badge" id="rifaBadge">—</span>
+      <p class="desc">Se <strong>guardará un snapshot</strong> del estado actual (boletas vendidas, recaudo, etc.) y luego <strong>todas las boletas quedarán disponibles</strong> para la nueva rifa.</p>
+      <div class="warning-box">⚠️ Esta acción es <strong>irreversible</strong>. Asegúrate de que el sorteo de hoy ya haya jugado antes de continuar.</div>
+
+      <div class="form-group">
+        <label>📅 ¿Cuándo juega el próximo sorteo?</label>
+        <input type="text" id="nrFecha" placeholder="Ej: 15 MAR, MARTES 18 MAR...">
+      </div>
+      <div class="form-group">
+        <label>⏰ ¿A qué hora cierra la venta?</label>
+        <input type="time" id="nrHora" value="11:00">
+      </div>
+      <div class="form-group">
+        <label>🎱 ¿Con qué lotería juega?</label>
+        <input type="text" id="nrLoteria" placeholder="Ej: CHONTICO DÍA, MARDE BOGOTÁ..." style="text-transform:uppercase;">
+      </div>
+      <div class="form-group" id="nrModoWrapper" style="display:none;">
+        <label>🎁 ¿Qué se premia en esta rifa?</label>
+        <select id="nrModoPremio" onchange="toggleCampoBoletasPremio()">
+          <option value="boletas">🏢 Boletas del Apartamento</option>
+          <option value="dinero">💰 Dinero en efectivo ($800.000 x premio)</option>
+        </select>
+        <div id="nrBoletasPremioWrapper" style="margin-top:10px;">
+          <label style="font-size:0.78rem; font-weight:800; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:6px;">🎟️ ¿Cuántas boletas del apto se dan como premio?</label>
+          <input type="number" id="nrTotalBoletasPremio" placeholder="Ej: 18" min="1" value="18">
+          <p style="font-size:0.75rem; color:var(--muted); margin:4px 0 0; line-height:1.3;">Limita cuántas boletas se registran con "Premio Rifa" en el panel.</p>
+        </div>
+      </div>
+
+      <div class="separator"></div>
+      <div class="separator-title">📊 Resultados de la rifa que termina</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>🏆 Nº de ganadores</label>
+          <input type="number" id="nrGanadores" placeholder="Ej: 3" min="0">
+        </div>
+        <div class="form-group">
+          <label>💸 Total pagado</label>
+          <input type="number" id="nrPagado" placeholder="Ej: 2400000" min="0">
+        </div>
+      </div>
+
+      <p style="font-size:0.8rem; color:var(--muted); font-weight:600;" id="nrRifaLabel">Rifa: —</p>
+      <div class="btn-row">
+        <button class="btn btn-cancel" onclick="window.location.href='/admin'">Cancelar</button>
+        <button class="btn btn-danger" onclick="pasarAConfirmacion()">Continuar →</button>
+      </div>
+    </div>
+
+    <div class="card" id="paso2" style="display:none;">
+      <h2>⚠️ Confirmar acción</h2>
+      <div class="resumen-box">
+        <div>📅 Juega el: <strong id="nrResumenFecha">—</strong></div>
+        <div>⏰ Cierre venta: <strong id="nrResumenHora">—</strong></div>
+        <div>🎱 Lotería: <strong id="nrResumenLoteria">—</strong></div>
+        <div>🏆 Ganadores rifa anterior: <strong id="nrResumenGanadores">—</strong></div>
+        <div>💸 Total pagado a ganadores: <strong id="nrResumenPagado">—</strong></div>
+        <div id="nrResumenModoRow" style="display:none;">🎁 Modo de premio: <strong id="nrResumenModo">—</strong></div>
+        <div id="nrResumenBoletasPremioRow" style="display:none;">🎟️ Boletas premio (apto): <strong id="nrResumenBoletasPremio">—</strong></div>
+      </div>
+      <p style="font-size:0.9rem; color:#b91c1c; font-weight:700; margin-bottom:20px;">¿Confirmas que el sorteo anterior ya jugó y quieres reiniciar la rifa?</p>
+      <div class="btn-row">
+        <button class="btn btn-back" onclick="volverAPaso1()">← Atrás</button>
+        <button class="btn btn-danger" id="btnConfirmar" style="flex:2;" onclick="confirmarNuevaRifa()">🔁 Sí, reiniciar rifa</button>
+      </div>
+      <p id="nrMsg" class="msg"></p>
+    </div>
+
+    <div class="card" id="pasoExito" style="display:none;">
+      <div class="result-card">
+        <h2>✅ ¡Rifa reiniciada!</h2>
+        <pre id="resultadoTexto"></pre>
+        <button class="btn btn-danger" style="background:var(--accent);" onclick="window.location.href='/admin'">Volver al panel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="shared-nav.js"></script>
+<script>
+  const STORAGE_KEY = 'asesor_pwd';
+  const STORAGE_NAME = 'asesor_nombre';
+  const GERENCIA = ['mateo', 'alejo p', 'alejo plata'];
+
+  const params = new URLSearchParams(window.location.search);
+  const tipoRifa = params.get('tipo');
+
+  if (!['2cifras', '3cifras'].includes(tipoRifa)) {
+    window.location.href = '/admin';
+  }
+
+  const LABELS = {
+    '2cifras': 'Rifas 2 Cifras',
+    '3cifras': 'Rifas 3 Cifras'
+  };
+
+  document.getElementById('rifaBadge').textContent = LABELS[tipoRifa] || tipoRifa;
+  document.getElementById('nrRifaLabel').textContent = 'Rifa: ' + (LABELS[tipoRifa] || tipoRifa);
+  if (tipoRifa === '3cifras') {
+    document.getElementById('nrModoWrapper').style.display = 'block';
+  }
+
+  function verificarLogin(pwdAuto) {
+    const pwd = pwdAuto || document.getElementById('loginPwd').value;
+    if (!pwd) return;
+    const nombre = localStorage.getItem(STORAGE_NAME) || '';
+    if (!nombre || !GERENCIA.includes(nombre.toLowerCase().trim())) {
+      const storedPwd = localStorage.getItem(STORAGE_KEY);
+      if (storedPwd) {
+        fetch('/api/admin/estadisticas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contrasena: storedPwd, tipo: '2cifras' })
+        }).then(r => r.json()).then(data => {
+          if (data.status === 'ok') {
+            const n = (localStorage.getItem(STORAGE_NAME) || '').toLowerCase().trim();
+            if (GERENCIA.includes(n)) {
+              document.getElementById('loginOverlay').style.display = 'none';
+            } else {
+              document.getElementById('loginMsg').textContent = 'Solo gerencia puede reiniciar rifas.';
+            }
+          }
+        }).catch(() => {});
+        return;
+      }
+      document.getElementById('loginMsg').textContent = 'Solo gerencia puede reiniciar rifas.';
+      return;
+    }
+    document.getElementById('loginOverlay').style.display = 'none';
+  }
+
+  (function autoLogin() {
+    const pwd = localStorage.getItem(STORAGE_KEY);
+    const nombre = localStorage.getItem(STORAGE_NAME);
+    if (pwd && nombre && GERENCIA.includes(nombre.toLowerCase().trim())) {
+      document.getElementById('loginOverlay').style.display = 'none';
+    }
+  })();
+
+  function toggleCampoBoletasPremio() {
+    const modo = document.getElementById('nrModoPremio').value;
+    const wrapper = document.getElementById('nrBoletasPremioWrapper');
+    if (wrapper) wrapper.style.display = modo === 'boletas' ? 'block' : 'none';
+  }
+
+  function pasarAConfirmacion() {
+    const fecha   = document.getElementById('nrFecha').value.trim().toUpperCase();
+    const hora    = document.getElementById('nrHora').value;
+    const loteria = document.getElementById('nrLoteria').value.trim().toUpperCase();
+    const ganadores = document.getElementById('nrGanadores').value;
+    const pagado  = document.getElementById('nrPagado').value;
+    if (!fecha || !hora || !loteria) return alert('Por favor completa fecha, hora y lotería.');
+
+    const fmtCOP = (n) => '$' + Number(n || 0).toLocaleString('es-CO');
+    document.getElementById('nrResumenFecha').textContent = fecha;
+    document.getElementById('nrResumenHora').textContent = hora;
+    document.getElementById('nrResumenLoteria').textContent = loteria;
+    document.getElementById('nrResumenGanadores').textContent = ganadores || '0';
+    document.getElementById('nrResumenPagado').textContent = fmtCOP(pagado);
+
+    if (tipoRifa === '3cifras') {
+      const modoPremio = document.getElementById('nrModoPremio').value;
+      document.getElementById('nrResumenModo').textContent = modoPremio === 'boletas' ? '🏢 Boletas del Apartamento' : '💰 Dinero en efectivo';
+      document.getElementById('nrResumenModoRow').style.display = 'block';
+      if (modoPremio === 'boletas') {
+        document.getElementById('nrResumenBoletasPremio').textContent = document.getElementById('nrTotalBoletasPremio').value || '0';
+        document.getElementById('nrResumenBoletasPremioRow').style.display = 'block';
+      } else {
+        document.getElementById('nrResumenBoletasPremioRow').style.display = 'none';
+      }
+    }
+
+    document.getElementById('paso1').style.display = 'none';
+    document.getElementById('paso2').style.display = '';
+  }
+
+  function volverAPaso1() {
+    document.getElementById('paso1').style.display = '';
+    document.getElementById('paso2').style.display = 'none';
+  }
+
+  async function confirmarNuevaRifa() {
+    const fecha     = document.getElementById('nrFecha').value.trim().toUpperCase();
+    const hora      = document.getElementById('nrHora').value;
+    const loteria   = document.getElementById('nrLoteria').value.trim().toUpperCase();
+    const ganadores = Number(document.getElementById('nrGanadores').value) || 0;
+    const pagado    = Number(document.getElementById('nrPagado').value) || 0;
+    const btn       = document.getElementById('btnConfirmar');
+    const msg       = document.getElementById('nrMsg');
+
+    btn.textContent = '⏳ Procesando...'; btn.disabled = true;
+    msg.style.color = 'var(--muted)'; msg.textContent = 'Guardando historial y reiniciando boletas...';
+
+    try {
+      const req = await fetch('/api/admin/nueva-rifa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accion: 'guardar_y_reiniciar',
+          contrasena: localStorage.getItem(STORAGE_KEY),
+          tipo: tipoRifa,
+          fechaSorteo: fecha,
+          horaCierre: hora,
+          loteria,
+          ganadores,
+          totalPagadoGanadores: pagado,
+          modoPremio: tipoRifa === '3cifras' ? document.getElementById('nrModoPremio').value : undefined,
+          totalBoletasPremio: tipoRifa === '3cifras' && document.getElementById('nrModoPremio').value === 'boletas'
+            ? Number(document.getElementById('nrTotalBoletasPremio').value) || 0 : undefined
+        })
+      });
+      const res = await req.json();
+
+      if (res.status === 'ok') {
+        const snap = res.snapshot;
+        const fmtCOP = (n) => '$' + Number(n || 0).toLocaleString('es-CO');
+        const ganancia = snap.recaudo - pagado;
+        document.getElementById('resultadoTexto').textContent =
+          `📊 Resumen de la rifa anterior:\n` +
+          `• Boletas vendidas: ${snap.vendidas} de ${snap.totalBoletas}\n` +
+          `• Recaudo total: ${fmtCOP(snap.recaudo)}\n` +
+          `• Ganadores: ${ganadores} — Total pagado: ${fmtCOP(pagado)}\n` +
+          `• 💰 GANANCIA NETA: ${fmtCOP(ganancia)}\n\n` +
+          `Todas las boletas están disponibles para la nueva rifa. 🎉`;
+        document.getElementById('paso2').style.display = 'none';
+        document.getElementById('pasoExito').style.display = '';
+      } else {
+        msg.style.color = '#dc2626'; msg.textContent = 'Error: ' + res.mensaje;
+      }
+    } catch (e) {
+      msg.style.color = '#dc2626'; msg.textContent = 'Error de conexión.';
+    }
+    btn.textContent = '🔁 Sí, reiniciar rifa'; btn.disabled = false;
+  }
+</script>
+</body>
+</html>

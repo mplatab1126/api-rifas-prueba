@@ -592,7 +592,7 @@
   </div><!-- fin mainDashboard -->
 
   <!-- Modal Nueva Rifa -->
-  <div id="modalNuevaRifa" class="modal-overlay" onclick="if(event.target===this) cancelarNuevaRifa()">
+  <div id="modalNuevaRifa" class="modal-overlay" onclick="if(event.target===this) document.getElementById('modalNuevaRifa').style.display='none'">
     <div class="modal-card" style="max-width: 460px; text-align: left;">
       <div id="nrPaso1">
         <h3 style="color: #dc2626; font-weight: 900; margin: 0 0 6px 0; font-size: 1.4rem;">🆕 Empezar Nueva Rifa</h3>
@@ -643,7 +643,7 @@
         </div>
         <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 16px; font-weight: 600;" id="nrRifaLabel">Rifa: —</p>
         <div style="display: flex; gap: 10px;">
-          <button class="btn btn-outline" style="flex:1;" onclick="cancelarNuevaRifa()">Cancelar</button>
+          <button class="btn btn-outline" style="flex:1;" onclick="document.getElementById('modalNuevaRifa').style.display='none'">Cancelar</button>
           <button class="btn" style="flex:1; background:#dc2626; color:white;" onclick="pasarAConfirmacion()">Continuar →</button>
         </div>
       </div>
@@ -705,10 +705,6 @@
       return null;
     }
 
-    function checkReiniciarFromURL() {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('reiniciar') === '1';
-    }
 
     document.addEventListener('DOMContentLoaded', () => {
       const pwd = localStorage.getItem(STORAGE_KEY);
@@ -733,10 +729,7 @@
               if (window.__snavRefresh) window.__snavRefresh();
               document.getElementById('loginOverlay').style.display = 'none';
               const tipoURL = getTipoFromURL();
-              if (tipoURL) {
-                seleccionarRifa(tipoURL);
-                if (checkReiniciarFromURL()) setTimeout(() => abrirModalNuevaRifa(), 600);
-              } else { mostrarSelectorRifa(); }
+              if (tipoURL) { seleccionarRifa(tipoURL); } else { mostrarSelectorRifa(); }
           } else {
               if(!auto) msg.textContent = 'Acceso denegado. Solo gerencia.';
               localStorage.removeItem(STORAGE_KEY);
@@ -1564,13 +1557,6 @@
       var modo = document.getElementById('nrModoPremio').value;
       var wrapper = document.getElementById('nrBoletasPremioWrapper');
       if (wrapper) wrapper.style.display = modo === 'boletas' ? 'block' : 'none';
-    }
-
-    function cancelarNuevaRifa() {
-      document.getElementById('modalNuevaRifa').style.display = 'none';
-      if (checkReiniciarFromURL()) {
-        window.location.href = '/admin';
-      }
     }
 
     function abrirModalNuevaRifa() {
