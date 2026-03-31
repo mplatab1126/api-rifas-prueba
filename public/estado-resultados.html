@@ -526,8 +526,33 @@
 
     .div-filtros {
       display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
     }
+
+    .div-filtro-cats {
+      margin-bottom: 20px; padding: 12px 16px; background: var(--card);
+      border: 1px solid var(--ring); border-radius: 12px;
+    }
+    .div-filtro-cats-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
+    }
+    .div-filtro-cats-label { font-size: .75rem; font-weight: 700; text-transform: uppercase; color: var(--muted); }
+    .div-filtro-cats-toggle {
+      font-size: .72rem; font-weight: 600; color: var(--accent); background: none;
+      border: none; cursor: pointer; padding: 0; text-decoration: underline;
+    }
+    .div-filtro-cats-toggle:hover { opacity: .7; }
+    .div-filtro-cats-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .div-cat-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 6px 12px; border-radius: 20px; font-size: .78rem; font-weight: 600;
+      cursor: pointer; border: 1.5px solid var(--ring-strong); background: var(--bg);
+      color: var(--ink-2); transition: all .15s; user-select: none;
+    }
+    .div-cat-chip.active {
+      background: var(--accent); border-color: var(--accent); color: #fff;
+    }
+    .div-cat-chip:hover { opacity: .85; }
     .div-filtro-field { display: flex; flex-direction: column; gap: 4px; }
     .div-filtro-field label { font-size: .72rem; font-weight: 700; text-transform: uppercase; color: var(--muted); }
     .div-filtro-field input {
@@ -589,6 +614,51 @@
     .div-fila-meta { font-size: .72rem; color: var(--muted); margin-top: 2px; display: flex; gap: 8px; flex-wrap: wrap; }
     .div-fila-monto { font-size: .92rem; font-weight: 800; color: var(--danger); white-space: nowrap; min-width: 90px; text-align: right; }
 
+    .div-fila-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .div-btn-foto {
+      padding: 5px 10px; border-radius: 8px; font-size: .7rem; font-weight: 700;
+      background: #ecfdf5; border: 1.5px solid #6ee7b7; color: #047857;
+      text-decoration: none; white-space: nowrap; transition: all .15s;
+    }
+    .div-btn-foto:hover { background: #d1fae5; border-color: #34d399; }
+
+    .div-filtro-monto {
+      margin-bottom: 16px; padding: 12px 16px; background: var(--card);
+      border: 1px solid var(--ring); border-radius: 12px;
+    }
+    .div-filtro-monto-row {
+      display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;
+    }
+    .div-filtro-monto-row .div-filtro-field input {
+      padding: 10px 14px; border: 1px solid var(--ring-strong); border-radius: 10px;
+      font-family: inherit; font-size: .85rem; background: var(--card); width: 140px;
+    }
+
+    .div-editable-desc {
+      cursor: pointer; border-radius: 4px; padding: 1px 4px;
+      transition: background .15s;
+    }
+    .div-editable-desc:hover { background: rgba(59,130,246,.08); }
+    .div-inline-input {
+      font-family: inherit; font-size: .85rem; font-weight: 600; padding: 4px 8px;
+      border: 1.5px solid var(--accent); border-radius: 6px;
+      background: var(--card); color: var(--ink); outline: none; width: 100%;
+    }
+
+    .div-editable-cat, .div-editable-sub, .div-editable-plat {
+      cursor: pointer; border-radius: 4px; padding: 1px 4px;
+      transition: background .15s;
+    }
+    .div-editable-cat:hover, .div-editable-sub:hover, .div-editable-plat:hover {
+      background: rgba(59,130,246,.12); color: var(--accent);
+    }
+    .div-inline-select {
+      font-family: inherit; font-size: .72rem; padding: 2px 6px;
+      border: 1.5px solid var(--accent); border-radius: 6px;
+      background: var(--card); color: var(--ink); outline: none;
+      max-width: 200px;
+    }
+
     .div-fila-radios { display: flex; gap: 4px; flex-shrink: 0; }
     .div-radio {
       padding: 5px 10px; border-radius: 8px; border: 1.5px solid var(--ring-strong);
@@ -603,7 +673,8 @@
     @media (max-width: 700px) {
       .div-resumen { grid-template-columns: repeat(2, 1fr); }
       .div-fila { flex-wrap: wrap; }
-      .div-fila-radios { width: 100%; justify-content: flex-end; }
+      .div-fila-actions { width: 100%; justify-content: flex-end; flex-wrap: wrap; }
+      .div-fila-radios { justify-content: flex-end; }
     }
     @media (max-width: 480px) {
       .div-radio { padding: 4px 7px; font-size: .65rem; }
@@ -705,6 +776,32 @@
       <button class="btn-filtro btn-filtro-primary" onclick="cargarGastosDivision()">Cargar gastos</button>
     </div>
 
+    <div id="divFiltroCategorias" class="div-filtro-cats" style="display:none;">
+      <div class="div-filtro-cats-header">
+        <span class="div-filtro-cats-label">Filtrar por categoría:</span>
+        <button class="div-filtro-cats-toggle" onclick="toggleTodasCatsDivision()">Deseleccionar todas</button>
+      </div>
+      <div id="divCatsChips" class="div-filtro-cats-chips"></div>
+    </div>
+
+    <div id="divFiltroMonto" class="div-filtro-monto" style="display:none;">
+      <div class="div-filtro-monto-row">
+        <div class="div-filtro-field">
+          <label>Buscar por monto</label>
+          <input type="text" id="divBuscarMonto" placeholder="Ej: 800000" oninput="aplicarFiltroCatsDivision()">
+        </div>
+        <div class="div-filtro-field">
+          <label>Monto mínimo</label>
+          <input type="number" id="divMontoMin" placeholder="Desde" oninput="aplicarFiltroCatsDivision()">
+        </div>
+        <div class="div-filtro-field">
+          <label>Monto máximo</label>
+          <input type="number" id="divMontoMax" placeholder="Hasta" oninput="aplicarFiltroCatsDivision()">
+        </div>
+        <button class="btn-filtro btn-filtro-ghost" onclick="limpiarFiltroMonto()">Limpiar</button>
+      </div>
+    </div>
+
     <div id="divResumen" class="div-resumen" style="display:none;"></div>
     <div id="divBalance" class="div-balance" style="display:none;"></div>
     <div id="divProgreso" style="display:none;"></div>
@@ -762,14 +859,17 @@
 
     <div class="gasto-field-row">
       <div class="gasto-field">
-        <label>Plataforma de pago</label>
+        <label>¿De dónde salió el dinero? *</label>
         <select id="gastoPlataforma">
-          <option value="">— Opcional —</option>
-          <option value="Bancolombia">Bancolombia</option>
-          <option value="Nequi">Nequi</option>
-          <option value="Daviplata">Daviplata</option>
+          <option value="">— Selecciona —</option>
+          <option value="Nequi Mateo">Nequi Mateo</option>
+          <option value="Nequi Alejandro">Nequi Alejandro</option>
+          <option value="Bancolombia Mateo">Bancolombia Mateo</option>
+          <option value="Bancolombia Alejandro">Bancolombia Alejandro</option>
+          <option value="Daviplata Mateo">Daviplata Mateo</option>
+          <option value="Daviplata Alejandro">Daviplata Alejandro</option>
           <option value="Efectivo">Efectivo</option>
-          <option value="Otro">Otro</option>
+          <option value="Empresa">Empresa</option>
         </select>
       </div>
       <div class="gasto-field">
@@ -1735,6 +1835,8 @@ function scrollACat(sl) {
 
 // ── División entre socios ────────────────────────────────────────────────
 let gastosDivision = [];
+let gastosDivisionFiltrados = [];
+let divCatsActivas = new Set();
 let divGuardando = {};
 
 async function cargarGastosDivision() {
@@ -1757,11 +1859,97 @@ async function cargarGastosDivision() {
     if (data.status !== 'ok') throw new Error(data.mensaje);
 
     gastosDivision = data.gastos;
-    renderDivisionCompleta();
+    inicializarFiltroCategoriasDiv();
+    aplicarFiltroCatsDivision();
   } catch (e) {
     toast('⚠️ ' + e.message);
     document.getElementById('divGastosLista').innerHTML = '<div class="empty-state">Error al cargar gastos.</div>';
   }
+}
+
+function inicializarFiltroCategoriasDiv() {
+  const cats = new Set();
+  gastosDivision.forEach(g => cats.add(g.categoria || 'Sin categoría'));
+  divCatsActivas = new Set(cats);
+
+  const chipsContainer = document.getElementById('divCatsChips');
+  const catIconos = {
+    'Gastos Operacionales': '⚙️', 'Gastos Rifa Apartamento': '🏠',
+    'Construcción Apartamento': '🏗️', 'Rifa Camioneta': '🚗',
+    'Retiro de Ganancia': '💸', 'Pagos Rifas Diarias': '🎯'
+  };
+
+  chipsContainer.innerHTML = [...cats].sort().map(cat =>
+    `<button class="div-cat-chip active" data-cat="${cat}" onclick="toggleCatDivision(this)">
+      <span>${catIconos[cat] || '📁'}</span> ${cat}
+    </button>`
+  ).join('');
+
+  document.getElementById('divFiltroCategorias').style.display = cats.size > 1 ? '' : 'none';
+  document.getElementById('divFiltroMonto').style.display = gastosDivision.length ? '' : 'none';
+  actualizarToggleBtnDiv();
+}
+
+function toggleCatDivision(btn) {
+  const cat = btn.dataset.cat;
+  if (divCatsActivas.has(cat)) {
+    divCatsActivas.delete(cat);
+    btn.classList.remove('active');
+  } else {
+    divCatsActivas.add(cat);
+    btn.classList.add('active');
+  }
+  actualizarToggleBtnDiv();
+  aplicarFiltroCatsDivision();
+}
+
+function toggleTodasCatsDivision() {
+  const allCats = new Set();
+  gastosDivision.forEach(g => allCats.add(g.categoria || 'Sin categoría'));
+  const todasActivas = divCatsActivas.size === allCats.size;
+
+  document.querySelectorAll('#divCatsChips .div-cat-chip').forEach(chip => {
+    const cat = chip.dataset.cat;
+    if (todasActivas) {
+      divCatsActivas.delete(cat);
+      chip.classList.remove('active');
+    } else {
+      divCatsActivas.add(cat);
+      chip.classList.add('active');
+    }
+  });
+  actualizarToggleBtnDiv();
+  aplicarFiltroCatsDivision();
+}
+
+function actualizarToggleBtnDiv() {
+  const allCats = new Set();
+  gastosDivision.forEach(g => allCats.add(g.categoria || 'Sin categoría'));
+  const btn = document.querySelector('.div-filtro-cats-toggle');
+  if (btn) btn.textContent = divCatsActivas.size === allCats.size ? 'Deseleccionar todas' : 'Seleccionar todas';
+}
+
+function aplicarFiltroCatsDivision() {
+  const buscarMonto = (document.getElementById('divBuscarMonto')?.value || '').replace(/\D/g, '');
+  const montoMin = Number(document.getElementById('divMontoMin')?.value) || 0;
+  const montoMax = Number(document.getElementById('divMontoMax')?.value) || 0;
+
+  gastosDivisionFiltrados = gastosDivision.filter(g => {
+    if (!divCatsActivas.has(g.categoria || 'Sin categoría')) return false;
+    const m = Number(g.monto || 0);
+    if (buscarMonto && !String(m).includes(buscarMonto)) return false;
+    if (montoMin && m < montoMin) return false;
+    if (montoMax && m > montoMax) return false;
+    return true;
+  });
+  renderDivisionCompleta();
+}
+
+function limpiarFiltroMonto() {
+  document.getElementById('divBuscarMonto').value = '';
+  document.getElementById('divMontoMin').value = '';
+  document.getElementById('divMontoMax').value = '';
+  aplicarFiltroCatsDivision();
 }
 
 function renderDivisionCompleta() {
@@ -1775,7 +1963,7 @@ function actualizarTotalesDivision() {
   let tEmpresa = 0, cEmpresa = 0;
   let tSin = 0, cSin = 0;
 
-  gastosDivision.forEach(g => {
+  gastosDivisionFiltrados.forEach(g => {
     const m = Number(g.monto || 0);
     if (g.asignado_a === 'Mateo') { tMateo += m; cMateo++; }
     else if (g.asignado_a === 'Alejandro') { tAlejo += m; cAlejo++; }
@@ -1783,7 +1971,7 @@ function actualizarTotalesDivision() {
     else { tSin += m; cSin++; }
   });
 
-  const total = gastosDivision.length;
+  const total = gastosDivisionFiltrados.length;
   const clasificados = cMateo + cAlejo + cEmpresa;
   const pct = total > 0 ? Math.round((clasificados / total) * 100) : 0;
 
@@ -1851,40 +2039,261 @@ function actualizarTotalesDivision() {
 
 function renderListaDivision() {
   const container = document.getElementById('divGastosLista');
-  if (!gastosDivision.length) {
-    container.innerHTML = '<div class="empty-state">No hay gastos en este rango de fechas.</div>';
+  if (!gastosDivisionFiltrados.length) {
+    container.innerHTML = divCatsActivas.size === 0
+      ? '<div class="empty-state">Selecciona al menos una categoría para ver gastos.</div>'
+      : '<div class="empty-state">No hay gastos en este rango de fechas.</div>';
     return;
   }
 
-  const filasHTML = gastosDivision.map((g, i) => {
-    const meta = [];
-    if (g.categoria) meta.push(g.categoria);
-    if (g.subcategoria) meta.push(g.subcategoria);
-    if (g.plataforma) meta.push('🏦 ' + g.plataforma);
-    if (g.reportado_por) meta.push('👤 ' + g.reportado_por);
+  const catSlugMap = {
+    'Gastos Operacionales': 'operacionales', 'Gastos Rifa Apartamento': 'rifa_apartamento',
+    'Construcción Apartamento': 'construccion', 'Rifa Camioneta': 'rifa_camioneta',
+    'Retiro de Ganancia': 'retiro_ganancia', 'Pagos Rifas Diarias': 'pagos_diarias'
+  };
 
+  const filasHTML = gastosDivisionFiltrados.map((g, i) => {
+    const idxOriginal = gastosDivision.indexOf(g);
+    const reportadoMeta = g.reportado_por ? `<span>👤 ${g.reportado_por}</span>` : '';
+
+    const catSlug = catSlugMap[g.categoria] || '';
     const sel = g.asignado_a || '';
     const asignadoClass = sel ? ' asignado' : '';
 
     return `
       <div class="div-fila${asignadoClass}" id="divfila-${g.id}">
         <div class="div-fila-info">
-          <div class="div-fila-desc">${g.descripcion || 'Sin descripción'}</div>
+          <div class="div-fila-desc div-editable-desc" onclick="abrirEditDesc(${idxOriginal}, this)" title="Clic para editar descripción">${g.descripcion || 'Sin descripción'}</div>
           <div class="div-fila-meta">
             <span>${formatFechaCorta(g.fecha)}</span>
-            ${meta.map(m => `<span>${m}</span>`).join('')}
+            <span class="div-editable-cat" onclick="abrirEditCat(${idxOriginal}, this)" title="Clic para cambiar categoría">✏️ ${g.categoria || 'Sin categoría'}</span>
+            <span class="div-editable-sub" onclick="abrirEditSub(${idxOriginal}, this)" title="Clic para cambiar subcategoría">✏️ ${g.subcategoria || 'Sin subcategoría'}</span>
+            <span class="div-editable-plat" onclick="abrirEditPlat(${idxOriginal}, this)" title="Clic para cambiar origen del dinero">🏦 ${g.plataforma || 'Sin plataforma'}</span>
+            ${reportadoMeta}
           </div>
         </div>
         <div class="div-fila-monto">${fmt(g.monto)}</div>
-        <div class="div-fila-radios">
-          <button class="div-radio${sel === 'Mateo' ? ' sel-mateo' : ''}" onclick="asignarGasto(${i}, 'Mateo', this)">Mateo</button>
-          <button class="div-radio${sel === 'Alejandro' ? ' sel-alejo' : ''}" onclick="asignarGasto(${i}, 'Alejandro', this)">Alejo</button>
-          <button class="div-radio${sel === 'Empresa' ? ' sel-empresa' : ''}" onclick="asignarGasto(${i}, 'Empresa', this)">Empresa</button>
+        <div class="div-fila-actions">
+          ${g.url_comprobante ? `<a href="${g.url_comprobante}" target="_blank" class="div-btn-foto">📷 Ver foto</a>` : ''}
+          <div class="div-fila-radios">
+            <button class="div-radio${sel === 'Mateo' ? ' sel-mateo' : ''}" onclick="asignarGasto(${idxOriginal}, 'Mateo', this)">Mateo</button>
+            <button class="div-radio${sel === 'Alejandro' ? ' sel-alejo' : ''}" onclick="asignarGasto(${idxOriginal}, 'Alejandro', this)">Alejo</button>
+            <button class="div-radio${sel === 'Empresa' ? ' sel-empresa' : ''}" onclick="asignarGasto(${idxOriginal}, 'Empresa', this)">Empresa</button>
+          </div>
         </div>
       </div>`;
   }).join('');
 
   container.innerHTML = `<div class="div-tabla">${filasHTML}</div>`;
+}
+
+const DIV_CATS = [
+  { id: 'operacionales',    nombre: 'Gastos Operacionales',    icono: '⚙️' },
+  { id: 'rifa_apartamento', nombre: 'Gastos Rifa Apartamento', icono: '🏠' },
+  { id: 'construccion',     nombre: 'Construcción Apartamento', icono: '🏗️' },
+  { id: 'rifa_camioneta',   nombre: 'Rifa Camioneta',          icono: '🚗' },
+  { id: 'retiro_ganancia',  nombre: 'Retiro de Ganancia',      icono: '💸' },
+  { id: 'pagos_diarias',    nombre: 'Pagos Rifas Diarias',     icono: '🎯' }
+];
+
+const DIV_SUBCATS = {
+  operacionales:    ['Publicidad Meta', 'Nómina', 'Plataformas', 'Impuestos', 'Comisiones', 'Arriendo', 'Servicios públicos', 'Transporte', 'Papelería', 'Alimentación', 'Cursos', 'Otros'],
+  rifa_apartamento: ['Adecuación', 'Muebles', 'Pintura', 'Electrodomésticos', 'Acabados', 'Publicidad rifa', 'Premios', 'Devoluciones a Clientes', 'Otros'],
+  construccion:     ['Materiales', 'Mano de obra', 'Hierro', 'Cemento', 'Acabados', 'Transporte material', 'Otros'],
+  rifa_camioneta:   ['Publicidad', 'Premios', 'Preparación', 'Otros'],
+  retiro_ganancia:  ['Papá', 'Mateo', 'Alejandro', 'Alejandro y Mateo'],
+  pagos_diarias:    ['Rifa de 2 cifras', 'Rifa de 3 cifras']
+};
+
+function catNombreToSlug(nombre) {
+  const c = DIV_CATS.find(c => c.nombre === nombre);
+  return c ? c.id : '';
+}
+
+function abrirEditCat(idx, span) {
+  if (span.querySelector('select')) return;
+  const g = gastosDivision[idx];
+  const slugActual = catNombreToSlug(g.categoria);
+  const opciones = DIV_CATS.map(c =>
+    `<option value="${c.id}" ${c.id === slugActual ? 'selected' : ''}>${c.icono} ${c.nombre}</option>`
+  ).join('');
+  span.innerHTML = `<select class="div-inline-select" onchange="guardarCatDiv(${idx}, this)" onblur="cancelarEditCat(${idx}, this)">
+    ${opciones}
+  </select>`;
+  span.querySelector('select').focus();
+}
+
+function abrirEditSub(idx, span) {
+  if (span.querySelector('select')) return;
+  const g = gastosDivision[idx];
+  const slug = catNombreToSlug(g.categoria);
+  const subs = DIV_SUBCATS[slug] || [];
+  if (!subs.length) { toast('⚠️ Primero asigna una categoría válida.'); return; }
+  const opciones = `<option value="">— Sin subcategoría —</option>` +
+    subs.map(s => `<option value="${s}" ${s === g.subcategoria ? 'selected' : ''}>${s}</option>`).join('');
+  span.innerHTML = `<select class="div-inline-select" onchange="guardarSubDiv(${idx}, this)" onblur="cancelarEditSub(${idx}, this)">
+    ${opciones}
+  </select>`;
+  span.querySelector('select').focus();
+}
+
+async function guardarCatDiv(idx, sel) {
+  const g = gastosDivision[idx];
+  const nuevaCatSlug = sel.value;
+  const catObj = DIV_CATS.find(c => c.id === nuevaCatSlug);
+  if (!catObj) return;
+
+  const catAnterior = g.categoria;
+  const subAnterior = g.subcategoria;
+  g.categoria = catObj.nombre;
+  g.subcategoria = null;
+
+  inicializarFiltroCategoriasDiv();
+  aplicarFiltroCatsDivision();
+
+  try {
+    const res = await fetch('/api/admin/finanzas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contrasena, accion: 'actualizar_categoria_gasto', id: g.id, categoria: nuevaCatSlug, subcategoria: null })
+    });
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.mensaje);
+    toast('✅ Categoría actualizada');
+  } catch (e) {
+    g.categoria = catAnterior;
+    g.subcategoria = subAnterior;
+    inicializarFiltroCategoriasDiv();
+    aplicarFiltroCatsDivision();
+    toast('⚠️ Error: ' + e.message);
+  }
+}
+
+async function guardarSubDiv(idx, sel) {
+  const g = gastosDivision[idx];
+  const nuevaSub = sel.value || null;
+  const subAnterior = g.subcategoria;
+  const catSlug = catNombreToSlug(g.categoria);
+
+  g.subcategoria = nuevaSub;
+  aplicarFiltroCatsDivision();
+
+  try {
+    const res = await fetch('/api/admin/finanzas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contrasena, accion: 'actualizar_categoria_gasto', id: g.id, categoria: catSlug, subcategoria: nuevaSub })
+    });
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.mensaje);
+    toast('✅ Subcategoría actualizada');
+  } catch (e) {
+    g.subcategoria = subAnterior;
+    aplicarFiltroCatsDivision();
+    toast('⚠️ Error: ' + e.message);
+  }
+}
+
+function cancelarEditCat(idx, sel) {
+  const g = gastosDivision[idx];
+  sel.parentElement.innerHTML = `✏️ ${g.categoria || 'Sin categoría'}`;
+}
+
+function cancelarEditSub(idx, sel) {
+  const g = gastosDivision[idx];
+  sel.parentElement.innerHTML = `✏️ ${g.subcategoria || 'Sin subcategoría'}`;
+}
+
+const DIV_PLATAFORMAS = [
+  'Nequi Mateo', 'Nequi Alejandro',
+  'Bancolombia Mateo', 'Bancolombia Alejandro',
+  'Daviplata Mateo', 'Daviplata Alejandro',
+  'Efectivo', 'Empresa'
+];
+
+function abrirEditPlat(idx, span) {
+  if (span.querySelector('select')) return;
+  const g = gastosDivision[idx];
+  const opciones = `<option value="">— Sin plataforma —</option>` +
+    DIV_PLATAFORMAS.map(p => `<option value="${p}" ${p === g.plataforma ? 'selected' : ''}>${p}</option>`).join('');
+  span.innerHTML = `<select class="div-inline-select" onchange="guardarPlatDiv(${idx}, this)" onblur="cancelarEditPlat(${idx}, this)">
+    ${opciones}
+  </select>`;
+  span.querySelector('select').focus();
+}
+
+async function guardarPlatDiv(idx, sel) {
+  const g = gastosDivision[idx];
+  const nuevaPlat = sel.value || null;
+  const platAnterior = g.plataforma;
+
+  g.plataforma = nuevaPlat;
+  aplicarFiltroCatsDivision();
+
+  try {
+    const res = await fetch('/api/admin/finanzas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contrasena, accion: 'actualizar_plataforma_gasto', id: g.id, plataforma: nuevaPlat })
+    });
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.mensaje);
+    toast('✅ Origen del dinero actualizado');
+  } catch (e) {
+    g.plataforma = platAnterior;
+    aplicarFiltroCatsDivision();
+    toast('⚠️ Error: ' + e.message);
+  }
+}
+
+function cancelarEditPlat(idx, sel) {
+  const g = gastosDivision[idx];
+  sel.parentElement.innerHTML = `🏦 ${g.plataforma || 'Sin plataforma'}`;
+}
+
+function abrirEditDesc(idx, div) {
+  if (div.querySelector('input')) return;
+  const g = gastosDivision[idx];
+  const valorActual = g.descripcion || '';
+  div.innerHTML = `<input class="div-inline-input" type="text" value="${valorActual.replace(/"/g, '&quot;')}"
+    onkeydown="if(event.key==='Enter'){guardarDescDiv(${idx}, this);event.preventDefault();}if(event.key==='Escape'){cancelarEditDesc(${idx}, this);}"
+    onblur="guardarDescDiv(${idx}, this)">`;
+  const input = div.querySelector('input');
+  input.focus();
+  input.select();
+}
+
+async function guardarDescDiv(idx, input) {
+  const g = gastosDivision[idx];
+  const nuevaDesc = input.value.trim();
+  if (!nuevaDesc || nuevaDesc === g.descripcion) {
+    input.parentElement.textContent = g.descripcion || 'Sin descripción';
+    return;
+  }
+
+  const descAnterior = g.descripcion;
+  g.descripcion = nuevaDesc;
+  input.parentElement.textContent = nuevaDesc;
+
+  try {
+    const res = await fetch('/api/admin/finanzas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contrasena, accion: 'actualizar_descripcion_gasto', id: g.id, descripcion: nuevaDesc })
+    });
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.mensaje);
+    toast('✅ Descripción actualizada');
+  } catch (e) {
+    g.descripcion = descAnterior;
+    input.parentElement.textContent = descAnterior || 'Sin descripción';
+    toast('⚠️ Error: ' + e.message);
+  }
+}
+
+function cancelarEditDesc(idx, input) {
+  const g = gastosDivision[idx];
+  input.parentElement.textContent = g.descripcion || 'Sin descripción';
 }
 
 async function asignarGasto(idx, valor, btn) {

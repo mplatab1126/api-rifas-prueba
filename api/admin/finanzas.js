@@ -193,7 +193,7 @@ export default async function handler(req, res) {
 
       const { data, error } = await supabase
         .from('gastos')
-        .select('id, fecha, monto, descripcion, categoria, subcategoria, plataforma, reportado_por, asignado_a')
+        .select('id, fecha, monto, descripcion, categoria, subcategoria, plataforma, reportado_por, asignado_a, url_comprobante')
         .neq('categoria', 'Pendiente')
         .gte('fecha', fecha_desde)
         .lte('fecha', fecha_hasta)
@@ -221,6 +221,58 @@ export default async function handler(req, res) {
         .eq('id', id);
       if (error) throw error;
       return res.status(200).json({ status: 'ok' });
+    }
+
+    // ── Actualizar descripción de un gasto ─────────────────────────────
+    if (accion === 'actualizar_descripcion_gasto') {
+      const esGerencia = ['Mateo', 'Alejo P', 'Alejo Plata'].includes(nombreAsesor);
+      if (!esGerencia) return res.status(403).json({ status: 'error', mensaje: 'Solo gerencia puede modificar gastos.' });
+
+      const { id, descripcion } = payload;
+      if (!id) return res.status(400).json({ status: 'error', mensaje: 'Falta el ID del gasto.' });
+      if (!descripcion || !descripcion.trim()) return res.status(400).json({ status: 'error', mensaje: 'La descripción no puede estar vacía.' });
+
+      const { error } = await supabase
+        .from('gastos')
+        .update({ descripcion: descripcion.trim() })
+        .eq('id', id);
+      if (error) throw error;
+      return res.status(200).json({ status: 'ok' });
+    }
+
+    // ── Actualizar plataforma (origen del dinero) de un gasto ─────────
+    if (accion === 'actualizar_plataforma_gasto') {
+      const esGerencia = ['Mateo', 'Alejo P', 'Alejo Plata'].includes(nombreAsesor);
+      if (!esGerencia) return res.status(403).json({ status: 'error', mensaje: 'Solo gerencia puede modificar gastos.' });
+
+      const { id, plataforma } = payload;
+      if (!id) return res.status(400).json({ status: 'error', mensaje: 'Falta el ID del gasto.' });
+
+      const { error } = await supabase
+        .from('gastos')
+        .update({ plataforma: plataforma || null })
+        .eq('id', id);
+      if (error) throw error;
+      return res.status(200).json({ status: 'ok' });
+    }
+
+    // ── Actualizar categoría/subcategoría de un gasto ─────────────────
+    if (accion === 'actualizar_categoria_gasto') {
+      const esGerencia = ['Mateo', 'Alejo P', 'Alejo Plata'].includes(nombreAsesor);
+      if (!esGerencia) return res.status(403).json({ status: 'error', mensaje: 'Solo gerencia puede reclasificar gastos.' });
+
+      const { id, categoria, subcategoria } = payload;
+      if (!id) return res.status(400).json({ status: 'error', mensaje: 'Falta el ID del gasto.' });
+
+      const catObj = CATEGORIAS.find(c => c.id === categoria);
+      if (!catObj) return res.status(400).json({ status: 'error', mensaje: 'Categoría no válida.' });
+
+      const { error } = await supabase
+        .from('gastos')
+        .update({ categoria: catObj.nombre, subcategoria: subcategoria || null })
+        .eq('id', id);
+      if (error) throw error;
+      return res.status(200).json({ status: 'ok', categoria: catObj.nombre, subcategoria: subcategoria || null });
     }
 
     // ── Asignar gastos en lote ────────────────────────────────────────
