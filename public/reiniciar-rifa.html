@@ -210,7 +210,6 @@
 <script>
   const STORAGE_KEY = 'asesor_pwd';
   const STORAGE_NAME = 'asesor_nombre';
-  const GERENCIA = ['mateo', 'alejo p', 'alejo plata'];
 
   const params = new URLSearchParams(window.location.search);
   const tipoRifa = params.get('tipo');
@@ -230,39 +229,10 @@
     document.getElementById('nrModoWrapper').style.display = 'block';
   }
 
-  function verificarLogin(pwdAuto) {
-    const pwd = pwdAuto || document.getElementById('loginPwd').value;
-    if (!pwd) return;
-    const nombre = localStorage.getItem(STORAGE_NAME) || '';
-    if (!nombre || !GERENCIA.includes(nombre.toLowerCase().trim())) {
-      const storedPwd = localStorage.getItem(STORAGE_KEY);
-      if (storedPwd) {
-        fetch('/api/admin/estadisticas', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contrasena: storedPwd, tipo: '2cifras' })
-        }).then(r => r.json()).then(data => {
-          if (data.status === 'ok') {
-            const n = (localStorage.getItem(STORAGE_NAME) || '').toLowerCase().trim();
-            if (GERENCIA.includes(n)) {
-              document.getElementById('loginOverlay').style.display = 'none';
-            } else {
-              document.getElementById('loginMsg').textContent = 'Solo gerencia puede reiniciar rifas.';
-            }
-          }
-        }).catch(() => {});
-        return;
-      }
-      document.getElementById('loginMsg').textContent = 'Solo gerencia puede reiniciar rifas.';
-      return;
-    }
-    document.getElementById('loginOverlay').style.display = 'none';
-  }
-
   (function autoLogin() {
     const pwd = localStorage.getItem(STORAGE_KEY);
     const nombre = localStorage.getItem(STORAGE_NAME);
-    if (pwd && nombre && GERENCIA.includes(nombre.toLowerCase().trim())) {
+    if (pwd && nombre) {
       document.getElementById('loginOverlay').style.display = 'none';
     }
   })();

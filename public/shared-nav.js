@@ -17,11 +17,11 @@
       children: [
         { id: 'rifa-2cifras', label: '2 Cifras', children: [
           { id: 'rifa-2cifras-ver',   label: 'Ver página',    href: '/diarias',  external: true },
-          { id: 'rifa-2cifras-reset', label: 'Reiniciar rifa', href: '/reiniciar-rifa?tipo=2cifras', rolesChild: 'gerencia' },
+          { id: 'rifa-2cifras-reset', label: 'Reiniciar rifa', href: '/reiniciar-rifa?tipo=2cifras' },
         ]},
         { id: 'rifa-3cifras', label: '3 Cifras', children: [
           { id: 'rifa-3cifras-ver',   label: 'Ver página',    href: '/diarias3', external: true },
-          { id: 'rifa-3cifras-reset', label: 'Reiniciar rifa', href: '/reiniciar-rifa?tipo=3cifras', rolesChild: 'gerencia' },
+          { id: 'rifa-3cifras-reset', label: 'Reiniciar rifa', href: '/reiniciar-rifa?tipo=3cifras' },
         ]},
       ]
     },
