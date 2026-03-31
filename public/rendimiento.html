@@ -592,7 +592,7 @@
   </div><!-- fin mainDashboard -->
 
   <!-- Modal Nueva Rifa -->
-  <div id="modalNuevaRifa" class="modal-overlay">
+  <div id="modalNuevaRifa" class="modal-overlay" onclick="if(event.target===this) cancelarNuevaRifa()">
     <div class="modal-card" style="max-width: 460px; text-align: left;">
       <div id="nrPaso1">
         <h3 style="color: #dc2626; font-weight: 900; margin: 0 0 6px 0; font-size: 1.4rem;">🆕 Empezar Nueva Rifa</h3>
@@ -643,7 +643,7 @@
         </div>
         <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 16px; font-weight: 600;" id="nrRifaLabel">Rifa: —</p>
         <div style="display: flex; gap: 10px;">
-          <button class="btn btn-outline" style="flex:1;" onclick="document.getElementById('modalNuevaRifa').style.display='none'">Cancelar</button>
+          <button class="btn btn-outline" style="flex:1;" onclick="cancelarNuevaRifa()">Cancelar</button>
           <button class="btn" style="flex:1; background:#dc2626; color:white;" onclick="pasarAConfirmacion()">Continuar →</button>
         </div>
       </div>
@@ -1564,6 +1564,13 @@
       var modo = document.getElementById('nrModoPremio').value;
       var wrapper = document.getElementById('nrBoletasPremioWrapper');
       if (wrapper) wrapper.style.display = modo === 'boletas' ? 'block' : 'none';
+    }
+
+    function cancelarNuevaRifa() {
+      document.getElementById('modalNuevaRifa').style.display = 'none';
+      if (checkReiniciarFromURL()) {
+        window.location.href = '/admin';
+      }
     }
 
     function abrirModalNuevaRifa() {
