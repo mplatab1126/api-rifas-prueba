@@ -235,6 +235,7 @@ export default async function handler(req, res) {
           rifa_apartamento: 'Gastos Rifa Apartamento',
           construccion:     'Construcción Apartamento',
           rifa_camioneta:   'Rifa Camioneta',
+          rifa_santa_teresita: 'Rifa Casa Santa Teresita',
           retiro_ganancia:  'Retiro de Ganancia',
           pagos_diarias:    'Pagos Rifas Diarias'
         };

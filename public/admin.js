@@ -2249,6 +2249,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         rifa_apartamento: ['Adecuación', 'Muebles', 'Pintura', 'Electrodomésticos', 'Acabados', 'Publicidad rifa', 'Premios', 'Devoluciones a Clientes', 'Otros'],
         construccion: ['Materiales', 'Mano de obra', 'Hierro', 'Cemento', 'Acabados', 'Transporte material', 'Otros'],
         rifa_camioneta: ['Publicidad', 'Premios', 'Preparación', 'Otros'],
+        rifa_santa_teresita: ['Publicidad', 'Adecuación', 'Muebles', 'Electrodomésticos', 'Acabados', 'Premios', 'Devoluciones a Clientes', 'Otros'],
         retiro_ganancia: ['Papá', 'Mateo', 'Alejandro', 'Alejandro y Mateo'],
         pagos_diarias:  ['Rifa de 2 cifras', 'Rifa de 3 cifras']
     };
