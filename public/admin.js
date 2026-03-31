@@ -2269,7 +2269,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         const p = prefix || 'dist';
         const safeDesc = (desc || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const idJs = typeof itemId === 'number' ? itemId : `'${itemId}'`;
-        const catOpts = '<option value="">— Categoría * —</option><option value="operacionales">⚙️ Operacionales</option><option value="rifa_apartamento">🏠 Rifa Apartamento</option><option value="construccion">🏗️ Construcción</option><option value="rifa_camioneta">🚗 Rifa Camioneta</option><option value="retiro_ganancia">💸 Retiro Ganancia</option><option value="pagos_diarias">🎯 Pagos Diarias</option>';
+        const catOpts = '<option value="">— Categoría * —</option><option value="operacionales">⚙️ Operacionales</option><option value="rifa_apartamento">🏠 Rifa Apartamento</option><option value="construccion">🏗️ Construcción</option><option value="rifa_camioneta">🚗 Rifa Camioneta</option><option value="rifa_santa_teresita">🏡 Rifa Santa Teresita</option><option value="retiro_ganancia">💸 Retiro Ganancia</option><option value="pagos_diarias">🎯 Pagos Diarias</option>';
         const removeBtn = idx > 0 ? `<button onclick="eliminarDistFila(${idJs},${idx},'${p}')" style="padding:4px 8px;border-radius:6px;border:1px solid #ef5350;background:#ffebee;color:#c62828;font-weight:700;cursor:pointer;font-size:0.78rem;font-family:inherit;">✕</button>` : '';
         return `<div id="${p}Row_${itemId}_${idx}" class="dist-row" style="border:1px solid #90caf9;border-radius:10px;padding:10px;background:#f8fbff;">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
@@ -2359,7 +2359,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         const container = document.getElementById(`${p}Container_${itemId}`);
         if (!container) return [];
         const rows = container.querySelectorAll('.dist-row');
-        const nombresCat = { operacionales: 'Operacionales', rifa_apartamento: 'Rifa Apartamento', construccion: 'Construcción', rifa_camioneta: 'Rifa Camioneta', retiro_ganancia: 'Retiro de Ganancia', pagos_diarias: 'Pagos Rifas Diarias' };
+        const nombresCat = { operacionales: 'Operacionales', rifa_apartamento: 'Rifa Apartamento', construccion: 'Construcción', rifa_camioneta: 'Rifa Camioneta', rifa_santa_teresita: 'Rifa Santa Teresita', retiro_ganancia: 'Retiro de Ganancia', pagos_diarias: 'Pagos Rifas Diarias' };
         const result = [];
         rows.forEach(row => {
             const idx = row.id.split('_').pop();
