@@ -114,7 +114,7 @@ html.snav-authed #loginScreen {
   transition: max-height 0.25s cubic-bezier(.4,0,.2,1);
 }
 .snav-children.expanded {
-  max-height: 200px;
+  max-height: 500px;
 }
 
 /* Child items */
@@ -131,6 +131,30 @@ html.snav-authed #loginScreen {
 .snav-child.active {
   color: #6ee7a8 !important;
   background: rgba(78, 176, 130, 0.1) !important;
+}
+
+/* Grandchildren (second-level submenu) */
+.snav-grandchildren {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s cubic-bezier(.4,0,.2,1);
+}
+.snav-grandchildren.expanded {
+  max-height: 200px;
+}
+.snav-grandchild {
+  padding-left: 62px !important;
+  font-size: 0.75rem !important;
+  padding-top: 7px !important;
+  padding-bottom: 7px !important;
+  color: rgba(255,255,255,0.4) !important;
+}
+.snav-grandchild:hover {
+  color: rgba(255,255,255,0.8) !important;
+}
+.snav-grandchild.active {
+  color: #6ee7a8 !important;
+  background: rgba(78, 176, 130, 0.08) !important;
 }
 .snav-bottom {
   padding: 12px 10px 16px;
