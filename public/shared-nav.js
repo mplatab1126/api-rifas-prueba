@@ -15,9 +15,11 @@
     { id: 'caja',        label: 'Cuadre de Caja',        href: '/caja',                   section: 'principal', roles: 'todos' },
     { id: 'rifas-menu',   label: 'Rifas',                 href: '/diarias',                  section: 'principal', roles: 'todos',
       children: [
-        { id: 'rifa-2cifras', label: '2 Cifras',    href: '/diarias',  external: true },
-        { id: 'rifa-3cifras', label: '3 Cifras',    href: '/diarias3', external: true },
-        { id: 'rifa-apto',    label: 'Apartamento', href: '/admin' },
+        { id: 'rifa-2cifras-ver',    label: '🎯 2 Cifras — Ver página',      href: '/diarias',  external: true },
+        { id: 'rifa-2cifras-reset',  label: '🔁 2 Cifras — Reiniciar rifa',  href: '/rendimiento?tipo=2cifras&reiniciar=1', rolesChild: 'gerencia' },
+        { id: 'rifa-3cifras-ver',    label: '🎲 3 Cifras — Ver página',      href: '/diarias3', external: true },
+        { id: 'rifa-3cifras-reset',  label: '🔁 3 Cifras — Reiniciar rifa',  href: '/rendimiento?tipo=3cifras&reiniciar=1', rolesChild: 'gerencia' },
+        { id: 'rifa-apto',           label: '🏠 Apartamento',                href: '/admin' },
       ]
     },
     { id: 'rendimiento', label: 'Rendimiento',           href: '/rendimiento',           section: 'gerencia',  roles: 'gerencia',
@@ -143,6 +145,11 @@
           <div class="snav-children${expanded}" id="snav-children-${page.id}">
         `;
         for (const child of page.children) {
+          if (child.rolesChild) {
+            const n = asesorName.toLowerCase().trim();
+            if (child.rolesChild === 'gerencia' && !GERENCIA.includes(n)) continue;
+            if (child.rolesChild === 'mateo' && !SOLO_MATEO.includes(n)) continue;
+          }
           const childIsActive = child.id === currentPage ? ' active' : '';
           const childTarget = child.external ? ' target="_blank" rel="noopener"' : '';
           html += `

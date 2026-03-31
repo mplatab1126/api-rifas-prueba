@@ -346,14 +346,7 @@
       </div>
     </div>
 
-    <!-- Zona peligro: iniciar nueva rifa -->
-    <div style="background: #fff8f8; border: 2px dashed #fecaca; border-radius: 16px; padding: 24px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-      <div>
-        <div style="font-size: 1rem; font-weight: 800; color: #7f1d1d;">🔁 Administración de la Rifa</div>
-        <div style="font-size: 0.85rem; color: #b91c1c; font-weight: 500; margin-top: 4px;">Guarda el historial del sorteo actual y habilita uno nuevo. Esta acción limpia todas las boletas.</div>
-      </div>
-      <button class="btn" style="background: #dc2626; color: white; font-size: 0.95rem; padding: 12px 24px; white-space: nowrap;" onclick="abrirModalNuevaRifa()">🆕 Empezar Nueva Rifa</button>
-    </div>
+    <!-- Reiniciar rifa: se accede desde el menú lateral → Rifas → Reiniciar rifa -->
   </div>
 
   <div id="seccionesAvanzadas" style="display:none;">
@@ -712,6 +705,11 @@
       return null;
     }
 
+    function checkReiniciarFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('reiniciar') === '1';
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       const pwd = localStorage.getItem(STORAGE_KEY);
       if (pwd) verificarLogin(pwd, true);
@@ -735,7 +733,10 @@
               if (window.__snavRefresh) window.__snavRefresh();
               document.getElementById('loginOverlay').style.display = 'none';
               const tipoURL = getTipoFromURL();
-              if (tipoURL) { seleccionarRifa(tipoURL); } else { mostrarSelectorRifa(); }
+              if (tipoURL) {
+                seleccionarRifa(tipoURL);
+                if (checkReiniciarFromURL()) setTimeout(() => abrirModalNuevaRifa(), 600);
+              } else { mostrarSelectorRifa(); }
           } else {
               if(!auto) msg.textContent = 'Acceso denegado. Solo gerencia.';
               localStorage.removeItem(STORAGE_KEY);
