@@ -153,7 +153,7 @@ const $ = id => document.getElementById(id);
     let nombreAsesorActual = '';
 
     // Asesores cuyas ganancias son propias (independientes)
-    const ASESORES_INDEPENDIENTES = ['alejandra plata', 'joaquín', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
+    const ASESORES_INDEPENDIENTES = ['alejandra plata', 'claudia', 'joaquín', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
 
     function esAsesorIndependiente(nombre) {
         if (!nombre) return false;
@@ -3116,14 +3116,20 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         const catBg = { problema: '#fef2f2', solucion: '#f0fdf4', cambio: '#eff6ff', aviso: '#fefce8' };
         const catBorder = { problema: '#fecaca', solucion: '#bbf7d0', cambio: '#bfdbfe', aviso: '#fef08a' };
 
+        const esMateo = (nombreAsesorActual || '').toLowerCase().trim() === 'mateo';
+
         lista.innerHTML = entradas.map(e => {
             const fecha = e.created_at ? new Date(e.created_at) : null;
             const fechaStr = fecha ? formatearFechaRelativa(fecha) : '';
             const cat = e.categoria || 'aviso';
             const esNuevo = !leidos.includes(e.id);
             const nuevoBadge = esNuevo ? '<span style="background:#d95a53; color:#fff; font-size:0.68rem; font-weight:700; padding:1px 8px; border-radius:20px; margin-left:6px;">NUEVO</span>' : '';
+            const botonesAdmin = esMateo ? `<div style="display:flex; gap:6px; margin-top:12px; padding-top:10px; border-top:1px solid ${catBorder[cat]};">
+                <button onclick="editarBitacora(${e.id})" style="border:1px solid var(--ring-strong); background:#fff; cursor:pointer; font-family:inherit; font-size:0.78rem; padding:4px 14px; border-radius:6px; color:var(--ink-2);">✏️ Editar</button>
+                <button onclick="eliminarBitacora(${e.id})" style="border:1px solid #fecaca; background:#fff; cursor:pointer; font-family:inherit; font-size:0.78rem; padding:4px 14px; border-radius:6px; color:var(--danger);">🗑️ Eliminar</button>
+            </div>` : '';
 
-            return `<div style="background:${catBg[cat]}; border:1px solid ${catBorder[cat]}; border-radius:14px; padding:18px 20px;${esNuevo ? ' box-shadow:0 0 0 2px #d95a53;' : ''}">
+            return `<div id="bitacora-entry-${e.id}" style="background:${catBg[cat]}; border:1px solid ${catBorder[cat]}; border-radius:14px; padding:18px 20px;${esNuevo ? ' box-shadow:0 0 0 2px #d95a53;' : ''}">
                 <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:10px;">
                     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                         <span style="font-size:1.1rem;">${catEmoji[cat]}</span>
@@ -3134,6 +3140,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
                 </div>
                 <div style="font-size:0.88rem; color:var(--ink-2); line-height:1.7; white-space:pre-line;">${e.contenido || ''}</div>
                 <div style="margin-top:10px; font-size:0.72rem; color:var(--muted); font-style:italic;">— ${e.autor || 'Sistema'}</div>
+                ${botonesAdmin}
             </div>`;
         }).join('');
     }
@@ -3149,6 +3156,70 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         if (hrs < 24) return `Hace ${hrs}h`;
         if (dias < 7) return `Hace ${dias} día${dias > 1 ? 's' : ''}`;
         return `${String(fecha.getDate()).padStart(2,'0')}/${String(fecha.getMonth()+1).padStart(2,'0')}/${fecha.getFullYear()}`;
+    }
+
+    function editarBitacora(id) {
+        const entrada = _bitacoraEntradas.find(e => e.id === id);
+        if (!entrada) return;
+
+        const catOptions = ['problema', 'solucion', 'cambio', 'aviso'];
+        const catLabels = { problema: '🔴 Problema', solucion: '✅ Solución', cambio: '🔵 Cambio', aviso: '⚠️ Aviso' };
+
+        const container = document.getElementById(`bitacora-entry-${id}`);
+        if (!container) return;
+
+        container.innerHTML = `
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <input type="text" id="bit-edit-titulo-${id}" value="${(entrada.titulo || '').replace(/"/g, '&quot;')}" class="pill" style="flex:1; min-width:200px;" placeholder="Título">
+                    <select id="bit-edit-cat-${id}" class="pill" style="min-width:150px;">
+                        ${catOptions.map(c => `<option value="${c}" ${entrada.categoria === c ? 'selected' : ''}>${catLabels[c]}</option>`).join('')}
+                    </select>
+                </div>
+                <textarea id="bit-edit-contenido-${id}" class="pill" rows="6" style="resize:vertical; min-height:100px; font-size:0.88rem; line-height:1.6;">${entrada.contenido || ''}</textarea>
+                <div style="display:flex; gap:8px; justify-content:flex-end;">
+                    <button onclick="cargarBitacora()" style="padding:6px 16px; border-radius:6px; border:1px solid var(--ring-strong); background:#fff; cursor:pointer; font-family:inherit; font-size:0.82rem; color:var(--ink-2);">Cancelar</button>
+                    <button onclick="guardarEdicionBitacora(${id})" style="padding:6px 16px; border-radius:6px; border:none; background:var(--accent); color:#fff; cursor:pointer; font-family:inherit; font-size:0.82rem; font-weight:600;">Guardar</button>
+                </div>
+            </div>`;
+    }
+
+    async function guardarEdicionBitacora(id) {
+        const titulo = document.getElementById(`bit-edit-titulo-${id}`)?.value.trim();
+        const contenido = document.getElementById(`bit-edit-contenido-${id}`)?.value.trim();
+        const categoria = document.getElementById(`bit-edit-cat-${id}`)?.value;
+        if (!titulo || !contenido) { alert('Completa el título y la descripción'); return; }
+
+        const pwd = localStorage.getItem(STORAGE_KEY) || '';
+        try {
+            const res = await fetch('/api/admin/bitacora', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contrasena: pwd, accion: 'editar', id, titulo, contenido, categoria })
+            });
+            const data = await res.json();
+            if (data.status !== 'ok') throw new Error(data.mensaje || 'Error');
+            cargarBitacora();
+        } catch (e) {
+            alert('Error al guardar: ' + e.message);
+        }
+    }
+
+    async function eliminarBitacora(id) {
+        if (!confirm('¿Eliminar esta notificación?')) return;
+        const pwd = localStorage.getItem(STORAGE_KEY) || '';
+        try {
+            const res = await fetch('/api/admin/bitacora', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contrasena: pwd, accion: 'eliminar', id })
+            });
+            const data = await res.json();
+            if (data.status !== 'ok') throw new Error(data.mensaje || 'Error');
+            cargarBitacora();
+        } catch (e) {
+            alert('Error al eliminar: ' + e.message);
+        }
     }
 
     // Cargar badge de novedades al iniciar sesión

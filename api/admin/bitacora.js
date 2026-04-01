@@ -40,6 +40,25 @@ export default async function handler(req, res) {
       return res.status(200).json({ status: 'ok', entrada: data[0] });
     }
 
+    if (accion === 'editar') {
+      if (!esApiExterna) {
+        const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
+        const nombre = (asesores[contrasena] || '').toLowerCase().trim();
+        if (!['mateo'].includes(nombre)) {
+          return res.status(403).json({ status: 'error', mensaje: 'Solo Mateo puede editar entradas' });
+        }
+      }
+      const { id } = req.body;
+      if (!id) return res.status(400).json({ status: 'error', mensaje: 'Falta id' });
+      const updates = {};
+      if (titulo) updates.titulo = titulo;
+      if (contenido) updates.contenido = contenido;
+      if (categoria) updates.categoria = categoria;
+      const { data, error } = await supabase.from('bitacora').update(updates).eq('id', id).select();
+      if (error) throw error;
+      return res.status(200).json({ status: 'ok', entrada: data[0] });
+    }
+
     if (accion === 'eliminar') {
       if (!esApiExterna) {
         const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
