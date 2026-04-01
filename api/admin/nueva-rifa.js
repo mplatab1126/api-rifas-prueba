@@ -78,8 +78,10 @@ export default async function handler(req, res) {
     const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
     const nombreAsesor = asesores[contrasena];
     if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
-    if (nombreAsesor !== 'Mateo' && nombreAsesor !== 'Alejo P' && nombreAsesor !== 'Alejo Plata') {
-      return res.status(403).json({ status: 'error', mensaje: 'Solo gerencia puede realizar esta acción.' });
+    const { data: permRow } = await supabase.from('permisos_asesores').select('permitido').eq('asesor_nombre', nombreAsesor).eq('pagina_id', 'rifas-menu').maybeSingle();
+    const tienePermiso = permRow ? permRow.permitido : ['mateo', 'alejo p', 'alejo plata'].includes(nombreAsesor.toLowerCase().trim());
+    if (!tienePermiso) {
+      return res.status(403).json({ status: 'error', mensaje: 'No tienes permiso para realizar esta acción. Necesitas acceso a Rifas Diarias.' });
     }
 
     const tipoRifa = tipo || '3cifras';
@@ -97,15 +99,17 @@ export default async function handler(req, res) {
   }
 
   // ─────────────────────────────────────────────────────────────────────
-  // POST guardar_y_reiniciar — solo gerencia
+  // POST guardar_y_reiniciar — asesores con permiso de Rifas Diarias
   // ─────────────────────────────────────────────────────────────────────
   if (accion === 'guardar_y_reiniciar') {
     const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
     const nombreAsesor = asesores[contrasena];
 
     if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
-    if (nombreAsesor !== 'Mateo' && nombreAsesor !== 'Alejo P' && nombreAsesor !== 'Alejo Plata') {
-      return res.status(403).json({ status: 'error', mensaje: 'Solo gerencia puede realizar esta acción.' });
+    const { data: permRow } = await supabase.from('permisos_asesores').select('permitido').eq('asesor_nombre', nombreAsesor).eq('pagina_id', 'rifas-menu').maybeSingle();
+    const tienePermiso = permRow ? permRow.permitido : ['mateo', 'alejo p', 'alejo plata'].includes(nombreAsesor.toLowerCase().trim());
+    if (!tienePermiso) {
+      return res.status(403).json({ status: 'error', mensaje: 'No tienes permiso para reiniciar rifas. Necesitas acceso a Rifas Diarias.' });
     }
 
     const tablaMap  = { '2cifras': 'boletas_diarias',        '3cifras': 'boletas_diarias_3cifras' };
