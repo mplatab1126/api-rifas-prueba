@@ -53,6 +53,7 @@
       <span class="nav-item" onclick="activateAppMode(); switchView('view-lista-boletas'); cargarListaBoletas();">Lista Boletas</span>
       <span id="btnLlamadas" class="nav-item" style="display:none;"></span>
       <span id="btnFinanzas" class="nav-item" style="display:none;"></span>
+      <span class="nav-item" onclick="activateAppMode(); switchView('view-bitacora'); cargarBitacora();" style="position:relative;">🔔 <span id="notifBadge" style="display:none; position:absolute; top:-2px; right:-4px; background:#d95a53; color:#fff; font-size:0.65rem; font-weight:700; min-width:16px; height:16px; border-radius:50%; display:none; align-items:center; justify-content:center; line-height:1;">0</span></span>
       <span id="btnLogout" class="nav-item nav-salir">Salir</span>
     </div>
     <div id="searchFeedback" class="hint" style="margin: 5px 0 0 0; font-size:0.8rem; min-height: 20px;"></div>
@@ -418,6 +419,19 @@
         </div>
       </div>
     </div>
+    <div id="view-bitacora" class="view-section">
+      <div class="section-card">
+        <div style="margin-bottom:18px;">
+          <div class="section-title" style="margin-bottom:2px;">🔔 Novedades</div>
+          <p style="font-size:0.82rem; color:var(--muted); margin:0;">Cambios recientes, problemas resueltos y avisos importantes del sistema.</p>
+        </div>
+
+        <div id="bitacora-lista" style="display:flex; flex-direction:column; gap:14px;">
+          <p style="text-align:center; color:var(--muted); font-size:0.85rem; padding:30px 0;">Cargando novedades...</p>
+        </div>
+      </div>
+    </div>
+
     <div id="view-lista-boletas" class="view-section">
       <div class="section-card">
         <div class="section-title">📋 Lista de Boletas Vendidas</div>

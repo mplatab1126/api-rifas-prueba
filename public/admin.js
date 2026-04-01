@@ -3044,3 +3044,114 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
             btn.style.opacity = '1';
         }
     }
+
+    // ==========================================
+    // NOVEDADES (Notificaciones del sistema)
+    // ==========================================
+    let _bitacoraEntradas = [];
+    const NOTIF_READ_KEY = 'bitacora_leidos';
+
+    function getLeidos() {
+        try { return JSON.parse(localStorage.getItem(NOTIF_READ_KEY) || '[]'); } catch { return []; }
+    }
+
+    function marcarLeido(id) {
+        const leidos = getLeidos();
+        if (!leidos.includes(id)) { leidos.push(id); localStorage.setItem(NOTIF_READ_KEY, JSON.stringify(leidos)); }
+    }
+
+    function contarNoLeidos(entradas) {
+        const leidos = getLeidos();
+        return entradas.filter(e => !leidos.includes(e.id)).length;
+    }
+
+    function actualizarBadge() {
+        const badge = document.getElementById('notifBadge');
+        if (!badge) return;
+        const count = contarNoLeidos(_bitacoraEntradas);
+        if (count > 0) {
+            badge.textContent = count > 9 ? '9+' : count;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    async function cargarBitacora() {
+        const lista = document.getElementById('bitacora-lista');
+        if (lista) lista.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem; padding:30px 0;">Cargando...</p>';
+
+        const pwd = localStorage.getItem(STORAGE_KEY) || '';
+        try {
+            const res = await fetch('/api/admin/bitacora', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contrasena: pwd, accion: 'listar' })
+            });
+            const data = await res.json();
+            if (data.status !== 'ok') throw new Error(data.mensaje || 'Error');
+            _bitacoraEntradas = data.entradas || [];
+            actualizarBadge();
+            if (lista) renderBitacora(_bitacoraEntradas);
+        } catch (e) {
+            if (lista) lista.innerHTML = `<p style="text-align:center; color:var(--danger); font-size:0.85rem; padding:20px 0;">❌ ${e.message}</p>`;
+        }
+    }
+
+    function renderBitacora(entradas) {
+        const lista = document.getElementById('bitacora-lista');
+        if (!lista) return;
+
+        const leidos = getLeidos();
+        entradas.forEach(e => marcarLeido(e.id));
+        actualizarBadge();
+
+        if (!entradas.length) {
+            lista.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem; padding:30px 0;">No hay novedades todavía.</p>';
+            return;
+        }
+
+        const catEmoji = { problema: '🔴', solucion: '✅', cambio: '🔵', aviso: '⚠️' };
+        const catLabel = { problema: 'Problema detectado', solucion: 'Solución aplicada', cambio: 'Cambio nuevo', aviso: 'Aviso importante' };
+        const catBg = { problema: '#fef2f2', solucion: '#f0fdf4', cambio: '#eff6ff', aviso: '#fefce8' };
+        const catBorder = { problema: '#fecaca', solucion: '#bbf7d0', cambio: '#bfdbfe', aviso: '#fef08a' };
+
+        lista.innerHTML = entradas.map(e => {
+            const fecha = e.created_at ? new Date(e.created_at) : null;
+            const fechaStr = fecha ? formatearFechaRelativa(fecha) : '';
+            const cat = e.categoria || 'aviso';
+            const esNuevo = !leidos.includes(e.id);
+            const nuevoBadge = esNuevo ? '<span style="background:#d95a53; color:#fff; font-size:0.68rem; font-weight:700; padding:1px 8px; border-radius:20px; margin-left:6px;">NUEVO</span>' : '';
+
+            return `<div style="background:${catBg[cat]}; border:1px solid ${catBorder[cat]}; border-radius:14px; padding:18px 20px;${esNuevo ? ' box-shadow:0 0 0 2px #d95a53;' : ''}">
+                <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:10px;">
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <span style="font-size:1.1rem;">${catEmoji[cat]}</span>
+                        <span style="font-weight:700; color:var(--ink); font-size:1rem;">${e.titulo || ''}</span>
+                        ${nuevoBadge}
+                    </div>
+                    <span style="font-size:0.75rem; color:var(--muted); white-space:nowrap;">${fechaStr}</span>
+                </div>
+                <div style="font-size:0.88rem; color:var(--ink-2); line-height:1.7; white-space:pre-line;">${e.contenido || ''}</div>
+                <div style="margin-top:10px; font-size:0.72rem; color:var(--muted); font-style:italic;">— ${e.autor || 'Sistema'}</div>
+            </div>`;
+        }).join('');
+    }
+
+    function formatearFechaRelativa(fecha) {
+        const ahora = new Date();
+        const diff = ahora - fecha;
+        const mins = Math.floor(diff / 60000);
+        const hrs = Math.floor(diff / 3600000);
+        const dias = Math.floor(diff / 86400000);
+        if (mins < 1) return 'Ahora mismo';
+        if (mins < 60) return `Hace ${mins} min`;
+        if (hrs < 24) return `Hace ${hrs}h`;
+        if (dias < 7) return `Hace ${dias} día${dias > 1 ? 's' : ''}`;
+        return `${String(fecha.getDate()).padStart(2,'0')}/${String(fecha.getMonth()+1).padStart(2,'0')}/${fecha.getFullYear()}`;
+    }
+
+    // Cargar badge de novedades al iniciar sesión
+    setTimeout(() => {
+        if (localStorage.getItem(STORAGE_KEY)) cargarBitacora();
+    }, 2000);
