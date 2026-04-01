@@ -187,6 +187,7 @@
             <button class="btn-quick" onclick="setRangoFecha('semana')">Últimos 7 días</button>
             <button class="btn-quick" onclick="setRangoFecha('mes')">Este Mes</button>
             <button class="btn-quick" onclick="setRangoFecha('todo')">Histórico Total</button>
+            <button class="btn-quick" onclick="setRangoFecha('rifa-actual')" style="background:var(--accent); color:#fff; border-color:var(--accent);">Rifa Actual</button>
         </div>
         <div class="input-group"><label>Desde</label><input type="date" id="filt-desde" class="field-input" onchange="aplicarFiltrosEstadisticas()"></div>
         <div class="input-group"><label>Hasta</label><input type="date" id="filt-hasta" class="field-input" onchange="aplicarFiltrosEstadisticas()"></div>
@@ -219,11 +220,6 @@
                 <div class="mega-kpi-title">💳 Abonos Recibidos</div>
                 <div class="mega-kpi-value" id="kpi-gen-abonos">0</div>
                 <span class="mega-kpi-sub">Transacciones exitosas</span>
-            </div>
-            <div class="mega-kpi kpi-orange">
-                <div class="mega-kpi-title">📝 Boletas Vendidas</div>
-                <div class="mega-kpi-value" id="kpi-gen-nuevas">0</div>
-                <span class="mega-kpi-sub">Nuevos números separados</span>
             </div>
             <div class="mega-kpi kpi-green">
                 <div class="mega-kpi-title">💵 Boletas con Abono <span id="kpi-gen-con-abono-pct" style="font-size:0.75rem; font-weight:700; background:rgba(255,255,255,0.35); padding:2px 7px; border-radius:20px; margin-left:5px;">0%</span></div>
@@ -286,6 +282,15 @@
             <div class="card" style="height: 350px;">
                 <h3 class="card-title">📈 Evolución del Recaudo Diario</h3>
                 <canvas id="chartEvolucion"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-100">
+            <div class="card" style="height: 350px;">
+                <h3 class="card-title">🛒 Evolución de Ventas Diarias</h3>
+                <canvas id="chartVentas"></canvas>
             </div>
         </div>
     </div>
@@ -681,7 +686,7 @@
     const STORAGE_KEY = 'asesor_pwd';
     let globalAbonos = []; let globalVentas = []; let globalChatea = []; let globalFb = []; let globalesAPI = {};
     let globalEstadoFb = {};
-    let chartLinea = null; let chartMix = null;
+    let chartLinea = null; let chartVentas = null; let chartMix = null;
     let tipoRifaActual = null; // '2cifras' | '3cifras' | '4cifras'
     
     let rifaInicioTimestamp = null;
@@ -792,6 +797,7 @@
         else if (rango === 'semana') { const semana = new Date(hoy); semana.setDate(semana.getDate() - 6); inputDesde.value = getFormat(semana); inputHasta.value = getFormat(hoy); } 
         else if (rango === 'mes') { const primeroMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1); inputDesde.value = getFormat(primeroMes); inputHasta.value = getFormat(hoy); } 
         else if (rango === 'todo') { inputDesde.value = ''; inputHasta.value = ''; }
+        else if (rango === 'rifa-actual') { inputDesde.value = '2026-01-26'; inputHasta.value = '2026-04-04'; }
         
         aplicarFiltrosEstadisticas();
     }
@@ -1031,16 +1037,13 @@
         let convProm = totalAsignadas > 0 ? ((totalNuevas / totalAsignadas) * 100).toFixed(1) : 0;
         let tProm = tiempos.length > 0 ? (tiempos.reduce((a,b)=>a+b, 0) / tiempos.length) : 0;
 
-        const boletasVendidasSet = new Set(ventasF.map(v => v.boleta));
-        const boletasConAbono = [...boletasVendidasSet].filter(
-            num => globalAbonos.some(a => a.numero_boleta === num)
-        ).length;
+        const boletasConAbono = new Set(abonosF.map(a => a.numero_boleta)).size;
 
         document.getElementById('kpi-gen-recaudo').textContent = formatoPlata.format(recaudoReal);
         document.getElementById('kpi-gen-ticket').textContent = formatoPlata.format(ticketProm);
         document.getElementById('kpi-gen-abonos').textContent = formatoNum.format(totalPagos);
-        document.getElementById('kpi-gen-nuevas').textContent = formatoNum.format(totalNuevas);
-        const pctConAbono = totalNuevas > 0 ? ((boletasConAbono / totalNuevas) * 100).toFixed(1) : 0;
+        const totalVendidas = globalesAPI.registradas || 0;
+        const pctConAbono = totalVendidas > 0 ? ((boletasConAbono / totalVendidas) * 100).toFixed(1) : 0;
         document.getElementById('kpi-gen-con-abono').textContent = formatoNum.format(boletasConAbono);
         document.getElementById('kpi-gen-con-abono-pct').textContent = pctConAbono + '%';
 
@@ -1066,7 +1069,8 @@
         let recaudoPorDia = {}, statsAsesor = {};
         asesoresSeleccionados.forEach(a => statsAsesor[a] = { recaudo: 0, nuevas: 0, cantAbonos: 0, chats: 0, tiempos: [] });
 
-        ventasF.forEach(v => { const a = v.asesor || 'Sin Asesor'; if(statsAsesor[a]) statsAsesor[a].nuevas++; });
+        let ventasPorDia = {};
+        ventasF.forEach(v => { const a = v.asesor || 'Sin Asesor'; if(statsAsesor[a]) statsAsesor[a].nuevas++; const f = normalizarFecha(v.created_at); ventasPorDia[f] = (ventasPorDia[f] || 0) + 1; });
         abonosF.forEach(a => { 
             const as = a.asesor || 'Sin Asesor'; const m = Number(a.monto); const f = normalizarFecha(a.fecha_pago);
             recaudoPorDia[f] = (recaudoPorDia[f] || 0) + m;
@@ -1213,13 +1217,21 @@
         // ============================================
         // 3. GRÁFICAS Y ACTUALIZACIÓN IA
         // ============================================
-        const todasLasFechas = [...new Set([...Object.keys(recaudoPorDia), ...Object.keys(fbRecaudoPorDia)])].sort();
+        const todasLasFechas = [...new Set([...Object.keys(recaudoPorDia), ...Object.keys(ventasPorDia), ...Object.keys(fbRecaudoPorDia)])].sort();
         
         // Gráfica Lineal (Solo Recaudo)
         if (chartLinea) chartLinea.destroy();
         chartLinea = new Chart(document.getElementById('chartEvolucion').getContext('2d'), {
             type: 'line', data: { labels: todasLasFechas.map(f => new Date(f + 'T12:00:00').toLocaleDateString('es-CO', {day:'2-digit', month:'short'})), datasets: [{ data: todasLasFechas.map(f => recaudoPorDia[f] || 0), borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 4, tension: 0.4, fill: true, pointBackgroundColor: '#0f172a', pointRadius: 4 }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+        });
+
+        // Gráfica Lineal (Ventas Diarias)
+        if (chartVentas) chartVentas.destroy();
+        chartVentas = new Chart(document.getElementById('chartVentas').getContext('2d'), {
+            type: 'line',
+            data: { labels: todasLasFechas.map(f => new Date(f + 'T12:00:00').toLocaleDateString('es-CO', {day:'2-digit', month:'short'})), datasets: [{ data: todasLasFechas.map(f => ventasPorDia[f] || 0), borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', borderWidth: 4, tension: 0.4, fill: true, pointBackgroundColor: '#0f172a', pointRadius: 4 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } } } }
         });
 
         // Gráfica Mixta (Gasto vs Recaudo)
@@ -1267,7 +1279,7 @@
     }
 
     // Funciones de Checkbox y Limpieza
-    const EXCLUIDOS_MI_EQUIPO = ['alejandra plata', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
+    const EXCLUIDOS_MI_EQUIPO = ['alejandra plata', 'claudia', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
     function seleccionarMiEquipo() {
         document.querySelectorAll('.asesor-chk').forEach(chk => {
             chk.checked = !EXCLUIDOS_MI_EQUIPO.includes(chk.value.toLowerCase().trim());

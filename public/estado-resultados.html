@@ -718,7 +718,7 @@
   </div>
 
   <!-- Filtros -->
-  <div class="filtros-card">
+  <div class="filtros-card" id="filtrosGlobales">
     <div class="filtros-title">Filtros</div>
     <div class="filtros-row">
       <div class="filtro-field">
@@ -733,7 +733,7 @@
       <button class="btn-filtro btn-filtro-ghost" onclick="resetFiltros()">Restablecer</button>
     </div>
 
-    <div class="asesores-toggle">
+    <div class="asesores-toggle" id="asesoresToggle">
       <div class="asesores-toggle-header" onclick="toggleAsesores()">
         <span id="asesoresLabel">👥 Mi equipo (<span id="asesoresCount">—</span> asesores)</span>
         <span class="chevron" id="asesoresChevron">▼</span>
@@ -898,7 +898,7 @@
 <script>
 // ── Constantes ────────────────────────────────────────────────────────────
 const STORAGE_KEY = 'asesor_pwd';
-const EXCLUIDOS_MI_EQUIPO = ['alejandra plata', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
+const EXCLUIDOS_MI_EQUIPO = ['alejandra plata', 'claudia', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
 const FECHA_DESDE_DEFAULT = '2026-01-26';
 const FECHA_HASTA_DEFAULT = '2026-04-04';
 
@@ -991,6 +991,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // ── Carga de datos ────────────────────────────────────────────────────────
 async function cargarTodo() {
+  // Activar la pestaña correcta inmediatamente, antes de cargar datos
+  const urlTab = new URLSearchParams(window.location.search).get('tab');
+  if (['er', 'detalle', 'division'].includes(urlTab)) cambiarTab(urlTab);
+
   try {
     const [resStats, resRifas] = await Promise.all([
       fetch('/api/admin/estadisticas', {
@@ -1022,9 +1026,6 @@ async function cargarTodo() {
     renderAsesoresChips();
     seleccionarMiEquipo();   // auto-aplica "mi equipo"
     aplicarFiltros();
-
-    const urlTab = new URLSearchParams(window.location.search).get('tab');
-    if (urlTab === 'er' || urlTab === 'detalle') cambiarTab(urlTab);
 
   } catch (e) {
     document.getElementById('erContent').innerHTML =
@@ -1244,7 +1245,8 @@ function renderEstado(abonos, fb, rifaEmpresa, gastos, retiros) {
       </div>`).join('');
 
   // ── EGRESOS — Gastos Operacionales ──────────────────────────────────────
-  const gastosOp = (gastos || []).filter(g => g.categoria === 'Gastos Operacionales');
+  // Excluir subcategoría "Publicidad Meta" porque ya se contabiliza desde la API de Meta Ads
+  const gastosOp = (gastos || []).filter(g => g.categoria === 'Gastos Operacionales' && g.subcategoria !== 'Publicidad Meta');
   const totalGastosOp = gastosOp.reduce((s, g) => s + Number(g.monto || 0), 0);
 
   const porSubcatOp = {};
@@ -1667,6 +1669,8 @@ function cambiarTab(tab) {
   document.getElementById('erContent').style.display = tab === 'er' ? 'block' : 'none';
   document.getElementById('detalleContent').style.display = tab === 'detalle' ? 'block' : 'none';
   document.getElementById('divisionContent').style.display = tab === 'division' ? 'block' : 'none';
+  document.getElementById('filtrosGlobales').style.display = tab === 'division' ? 'none' : '';
+  document.getElementById('asesoresToggle').style.display = tab === 'detalle' || tab === 'division' ? 'none' : '';
 }
 
 // ── Detalle de gastos ─────────────────────────────────────────────────────

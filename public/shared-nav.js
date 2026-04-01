@@ -34,11 +34,12 @@
     },
     { id: 'llamadas',    label: 'Llamadas IA',           href: '/llamadas',              section: 'gerencia',  roles: 'gerencia' },
     { id: 'horarios',    label: 'Gestión de Horarios',   href: '/admin-horarios',        section: 'gerencia',  roles: 'gerencia' },
-    { id: 'rifas',       label: 'Centro Financiero',     href: '/rifas',                 section: 'finanzas',  roles: 'mateo' },
-    { id: 'estado',      label: 'Estado de Resultados',  href: '/estado-resultados',     section: 'finanzas',  roles: 'mateo',
+    { id: 'rifas',       label: 'Capital',               href: '/rifas',                 section: 'finanzas',  roles: 'mateo' },
+    { id: 'estado',      label: 'Centro Financiero',     href: '/estado-resultados',     section: 'finanzas',  roles: 'mateo',
       children: [
-        { id: 'estado-er',      label: 'Estado de Resultados', href: '/estado-resultados?tab=er' },
-        { id: 'estado-detalle', label: 'Detalle de Gastos',    href: '/estado-resultados?tab=detalle' },
+        { id: 'estado-er',       label: 'Estado de Resultados', href: '/estado-resultados?tab=er' },
+        { id: 'estado-detalle',  label: 'Detalle de Gastos',    href: '/estado-resultados?tab=detalle' },
+        { id: 'estado-division', label: 'División Socios',      href: '/estado-resultados?tab=division' },
       ]
     },
     { id: 'permisos',    label: 'Permisos',              href: '/permisos',              section: 'admin',     roles: 'mateo' },
