@@ -35,12 +35,23 @@ export default async function handler(req, res) {
   // ─────────────────────────────────────────────────────────────────────
   if (accion === 'obtener_historial') {
     const tipoConsulta = tipo || '3cifras';
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('historial_rifas')
-      .select('id, fecha_guardado, loteria, vendidas, total_boletas, recaudo_total, ganadores, total_pagado_ganadores, ganancia_neta')
+      .select('id, fecha_guardado, loteria, vendidas, total_boletas, recaudo_total, ganadores, total_pagado_ganadores, ganancia_neta, modo_premio')
       .eq('tipo', tipoConsulta)
       .order('id', { ascending: true })
       .limit(60);
+
+    if (error && error.message && error.message.includes('modo_premio')) {
+      const fallback = await supabase
+        .from('historial_rifas')
+        .select('id, fecha_guardado, loteria, vendidas, total_boletas, recaudo_total, ganadores, total_pagado_ganadores, ganancia_neta')
+        .eq('tipo', tipoConsulta)
+        .order('id', { ascending: true })
+        .limit(60);
+      data = fallback.data;
+      error = fallback.error;
+    }
 
     if (error) return res.status(500).json({ status: 'error', mensaje: error.message });
 
@@ -124,6 +135,14 @@ export default async function handler(req, res) {
 
     try {
       // 1. ─── Guardar snapshot histórico ───────────────────────────────
+      const { data: configActual } = await supabase
+        .from('config_rifa_diaria')
+        .select('modo_premio, total_boletas_premio')
+        .eq('tipo', tipo)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
       const { data: boletasActuales } = await supabase
         .from(tabla)
         .select('estado, total_abonado, telefono_cliente');
@@ -131,15 +150,13 @@ export default async function handler(req, res) {
       const totalBoletas = boletasActuales?.length || 0;
       const vendidas     = boletasActuales?.filter(b => b.estado === 'Pagada').length || 0;
       const pagadas      = vendidas;
-      // Se usa total_abonado de cada boleta (se resetea a 0 al iniciar cada rifa),
-      // en lugar de sumar la tabla abonos que acumula histórico de todas las rifas.
       const recaudo      = boletasActuales?.reduce((s, b) => s + Number(b.total_abonado || 0), 0) || 0;
 
       const nGanadores   = Number(ganadores)            || 0;
       const nPagado      = Number(totalPagadoGanadores) || 0;
       const ganancia     = recaudo - nPagado;
 
-      const { error: historialError } = await supabase.from('historial_rifas').insert({
+      const historialPayload = {
         tipo,
         fecha_guardado:       new Date().toISOString(),
         total_boletas:        totalBoletas,
@@ -151,9 +168,19 @@ export default async function handler(req, res) {
         ganancia_neta:        ganancia,
         loteria:              loteria || '',
         creado_por:           nombreAsesor
-      });
+      };
+      if (configActual?.modo_premio) {
+        historialPayload.modo_premio = configActual.modo_premio;
+      }
 
-      // Si no se puede guardar el historial, abortamos ANTES de reiniciar las boletas
+      let { error: historialError } = await supabase.from('historial_rifas').insert(historialPayload);
+
+      if (historialError && historialError.message && historialError.message.includes('modo_premio')) {
+        delete historialPayload.modo_premio;
+        const retry = await supabase.from('historial_rifas').insert(historialPayload);
+        historialError = retry.error;
+      }
+
       if (historialError) throw new Error('No se pudo guardar el historial: ' + historialError.message);
 
       // 2. ─── Eliminar abonos de la rifa que termina ────────────────

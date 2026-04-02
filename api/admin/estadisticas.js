@@ -48,9 +48,12 @@ export default async function handler(req, res) {
     if (errVentas) throw errVentas;
 
     // 3. Traemos el resumen global de la tabla de boletas correspondiente
+    const boletasSelect = tipo === '4cifras'
+      ? 'numero, estado, total_abonado, telefono_cliente, asesor, fecha_venta'
+      : 'numero, estado, total_abonado, telefono_cliente, asesor';
     const { data: boletasGlobal, error: errBoletas } = await supabase
       .from(tablaBoletas)
-      .select('estado, total_abonado, telefono_cliente, asesor')
+      .select(boletasSelect)
       .limit(100000); 
     if (errBoletas) throw errBoletas;
 
@@ -110,11 +113,16 @@ export default async function handler(req, res) {
         }
     });
 
+    const boletas_detalle = boletasGlobal
+        .filter(b => b.telefono_cliente && b.estado !== 'LIBRE')
+        .map(b => ({ n: b.numero, a: Number(b.total_abonado || 0), s: b.asesor || '', f: b.fecha_venta || null }));
+
     return res.status(200).json({ 
         status: 'ok', 
         abonos: abonos, 
         ventas: ventas,
         globales: { registradas, separadas_cero, libres, pagadas, total, recaudo_boletas, recaudo_por_asesor },
+        boletas_detalle,
         chatea: chateaData,
         fb: fbData,
         gastos: gastosData,
