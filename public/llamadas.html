@@ -222,7 +222,7 @@
         <b>Máximo abonado:</b> Solo boletas donde el cliente ha abonado igual o menos a este valor.
         <b>Último abono:</b> Solo clientes que NO han pagado desde esa fecha. Déjalos vacíos para ver todos.
       </p>
-      <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--ring);">
+      <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--ring);" id="cobroPlantillaZone">
         <label style="font-size:0.75rem; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:8px;">Mensaje de la llamada</label>
         <textarea id="cobroPlantilla" class="field-input" rows="4" style="resize:vertical; line-height:1.5;">Hola {nombre}, te llamamos de Los Plata. Hoy se juega el acumulado de treinta y cinco millones de pesos. Para participar con {boletas}, necesitas realizar un abono de al menos veinte mil pesos. Comunícate con nosotros para ponerte al día. ¡Muchas gracias y mucha suerte!</textarea>
         <p style="font-size:0.82rem; color:var(--muted); font-weight:600; margin:8px 0 0;">
@@ -233,7 +233,7 @@
       </div>
       <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--ring);">
         <label style="font-size:0.75rem; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:8px;">Voz de la llamada</label>
-          <select id="cobroVoz" class="field-input" onchange="updateCobroSelectCount()">
+          <select id="cobroVoz" class="field-input" onchange="toggleCobroPlantilla(); updateCobroSelectCount()">
           <optgroup label="Audio grabado (gratis, sin variables)">
             <option value="audio:0404.mp3">Audio de Alejandro — Premio Mayor 04/04</option>
           </optgroup>
@@ -404,7 +404,7 @@
             <b>Máximo abonado:</b> Solo muestra boletas donde el cliente ha abonado igual o menos a este valor. Déjalos vacíos para ver todos.
           </p>
         </div>
-        <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--ring);">
+        <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--ring);" id="rescatePlantillaZone">
           <label style="font-size:0.75rem; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:8px;">Mensaje de la llamada</label>
           <textarea id="plantillaLlamada" class="field-input" rows="4" style="resize:vertical; line-height:1.5;">Hola {nombre}, te llamamos de Los Plata. Te informamos que tienes un saldo pendiente de {total} pesos en {boletas}. Por favor comunícate con nosotros para ponerte al día. ¡Muchas gracias y que tengas un excelente día!</textarea>
           <p style="font-size:0.82rem; color:var(--muted); font-weight:600; margin:8px 0 0;">
@@ -416,7 +416,7 @@
         </div>
         <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--ring);">
           <label style="font-size:0.75rem; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:8px;">Voz de la llamada</label>
-          <select id="rescateVoz" class="field-input">
+          <select id="rescateVoz" class="field-input" onchange="toggleRescatePlantilla()">
             <optgroup label="Audio grabado (gratis, sin variables)">
               <option value="audio:0404.mp3">Audio de Alejandro — Premio Mayor 04/04</option>
             </optgroup>
@@ -538,7 +538,7 @@
         </div>
         <div class="input-group">
           <label>Usar mensaje de</label>
-          <select id="testPlantillaSource" class="field-input">
+          <select id="testPlantillaSource" class="field-input" onchange="toggleTestVariables()">
             <option value="cobro">Cobro Directo</option>
             <option value="rescate">Rescate WhatsApp</option>
           </select>
@@ -548,7 +548,7 @@
           <button class="btn btn-outline" id="btnTest" onclick="enviarTest()">Enviar prueba</button>
         </div>
       </div>
-      <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--ring);">
+      <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--ring);" id="testVariablesZone">
         <label style="font-size:0.75rem; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:8px;">Valores de las variables para la prueba</label>
         <div class="filter-row">
           <div class="input-group">
@@ -1057,6 +1057,25 @@
 
     function esVozGratis() {
       return document.getElementById('cobroVoz').value !== 'elevenlabs';
+    }
+
+    function esAudioGrabado(vozId) {
+      const val = document.getElementById(vozId).value;
+      return val.startsWith('audio:');
+    }
+
+    function toggleCobroPlantilla() {
+      document.getElementById('cobroPlantillaZone').style.display = esAudioGrabado('cobroVoz') ? 'none' : 'block';
+    }
+
+    function toggleRescatePlantilla() {
+      document.getElementById('rescatePlantillaZone').style.display = esAudioGrabado('rescateVoz') ? 'none' : 'block';
+    }
+
+    function toggleTestVariables() {
+      const source = document.getElementById('testPlantillaSource').value;
+      const vozId = source === 'cobro' ? 'cobroVoz' : 'rescateVoz';
+      document.getElementById('testVariablesZone').style.display = esAudioGrabado(vozId) ? 'none' : 'block';
     }
 
     function estimarTiempoCobro(numClientes) {
