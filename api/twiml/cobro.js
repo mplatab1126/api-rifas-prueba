@@ -42,7 +42,14 @@ export default async function handler(req, res) {
   const vozSeleccionada = voz ? decodeURIComponent(voz) : 'elevenlabs';
 
   let twiml;
-  if (vozSeleccionada === 'elevenlabs') {
+  if (vozSeleccionada.startsWith('audio:')) {
+    const appUrl = process.env.APP_URL;
+    const audioFile = vozSeleccionada.replace('audio:', '');
+    twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Play>${appUrl}/audio/${audioFile}</Play>
+</Response>`;
+  } else if (vozSeleccionada === 'elevenlabs') {
     const appUrl = process.env.APP_URL;
     const textoEncoded = encodeURIComponent(mensaje);
     const audioUrl = `${appUrl}/api/twiml/audio-elevenlabs?texto=${textoEncoded}`;

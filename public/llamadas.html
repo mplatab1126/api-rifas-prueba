@@ -233,7 +233,10 @@
       </div>
       <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--ring);">
         <label style="font-size:0.75rem; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:8px;">Voz de la llamada</label>
-        <select id="cobroVoz" class="field-input" onchange="updateCobroSelectCount()">
+          <select id="cobroVoz" class="field-input" onchange="updateCobroSelectCount()">
+          <optgroup label="Audio grabado (gratis, sin variables)">
+            <option value="audio:0404.mp3">Audio de Alejandro — Premio Mayor 04/04</option>
+          </optgroup>
           <optgroup label="Gratis (incluidas en Twilio)">
             <option value="Google.es-US-Chirp3-HD-Orus">Google Chirp3-HD Orus (Masculino, Generativa)</option>
             <option value="Google.es-US-Chirp3-HD-Puck">Google Chirp3-HD Puck (Masculino, Generativa)</option>
@@ -414,6 +417,9 @@
         <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--ring);">
           <label style="font-size:0.75rem; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:8px;">Voz de la llamada</label>
           <select id="rescateVoz" class="field-input">
+            <optgroup label="Audio grabado (gratis, sin variables)">
+              <option value="audio:0404.mp3">Audio de Alejandro — Premio Mayor 04/04</option>
+            </optgroup>
             <optgroup label="Gratis (incluidas en Twilio)">
               <option value="Google.es-US-Chirp3-HD-Orus">Google Chirp3-HD Orus (Masculino, Generativa)</option>
               <option value="Google.es-US-Chirp3-HD-Puck">Google Chirp3-HD Puck (Masculino, Generativa)</option>
