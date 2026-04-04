@@ -1279,10 +1279,12 @@
         let debugMsg = 'No se encontraron tags de difusiones fallidas.';
         if (res.debug) {
           const d = res.debug;
-          debugMsg += `\nL1: ${d.total_tags_linea1} tags${d.error_linea1 ? ' (Error: ' + d.error_linea1 + ')' : ''} — Token: ${d.token_l1_presente ? 'Sí' : 'NO'}`;
-          debugMsg += `\nL2: ${d.total_tags_linea2} tags${d.error_linea2 ? ' (Error: ' + d.error_linea2 + ')' : ''} — Token: ${d.token_l2_presente ? 'Sí' : 'NO'}`;
+          debugMsg += `\nL1: ${d.total_tags_linea1} tags — Token: ${d.token_l1_presente ? 'Sí' : 'NO'}${d.error_linea1 ? ' — Error: ' + d.error_linea1 : ''}`;
+          debugMsg += `\nL2: ${d.total_tags_linea2} tags — Token: ${d.token_l2_presente ? 'Sí' : 'NO'}${d.error_linea2 ? ' — Error: ' + d.error_linea2 : ''}`;
+          if (d.raw_linea1) debugMsg += `\nAPI L1: status=${d.raw_linea1.status}, keys=[${d.raw_linea1.keys}], dataLength=${d.raw_linea1.dataLength}`;
+          if (d.raw_linea2) debugMsg += `\nAPI L2: status=${d.raw_linea2.status}, keys=[${d.raw_linea2.keys}], dataLength=${d.raw_linea2.dataLength}`;
         }
-        container.innerHTML = `<p style="color:var(--muted); font-size:0.85rem; padding:8px; white-space:pre-line;">${debugMsg}</p>`;
+        container.innerHTML = `<p style="color:var(--muted); font-size:0.8rem; padding:8px; white-space:pre-line; font-family:monospace;">${debugMsg}</p>`;
       }
     }
 

@@ -2,19 +2,25 @@ import { createClient } from '@supabase/supabase-js';
 
 const GERENCIA = ['Mateo', 'Alejo P', 'Alejo Plata'];
 
-async function fetchTagsPaginated(token) {
+async function fetchTagsPaginated(token, debug = false) {
   const tags = [];
   let page = 1;
   let hasMore = true;
+  let rawFirstPage = null;
   while (hasMore) {
-    const resp = await fetch(`https://chateapro.app/api/flow/tags?limit=50&page=${page}`, {
+    const rawResp = await fetch(`https://chateapro.app/api/flow/tags?limit=50&page=${page}`, {
       headers: { 'accept': 'application/json', 'Authorization': `Bearer ${token}` }
-    }).then(r => r.json());
+    });
+    const statusCode = rawResp.status;
+    const resp = await rawResp.json();
+    if (page === 1 && debug) {
+      rawFirstPage = { status: statusCode, keys: Object.keys(resp), meta: resp.meta || null, dataLength: resp.data ? resp.data.length : 'no data field', sample: resp.data ? resp.data.slice(0, 2) : resp };
+    }
     if (resp.data) tags.push(...resp.data);
     hasMore = resp.meta && page < resp.meta.last_page;
     page++;
   }
-  return tags;
+  return debug ? { tags, rawFirstPage } : tags;
 }
 
 async function fetchSubscribersByTag(token, tagNs) {
@@ -58,9 +64,16 @@ export default async function handler(req, res) {
     try {
       let error1 = null, error2 = null;
       let tags1 = [], tags2 = [];
+      let raw1 = null, raw2 = null;
 
-      try { tags1 = await fetchTagsPaginated(TOKEN_L1); } catch (e) { error1 = e.message; }
-      try { tags2 = await fetchTagsPaginated(TOKEN_L2); } catch (e) { error2 = e.message; }
+      try {
+        const r1 = await fetchTagsPaginated(TOKEN_L1, true);
+        tags1 = r1.tags; raw1 = r1.rawFirstPage;
+      } catch (e) { error1 = e.message; }
+      try {
+        const r2 = await fetchTagsPaginated(TOKEN_L2, true);
+        tags2 = r2.tags; raw2 = r2.rawFirstPage;
+      } catch (e) { error2 = e.message; }
 
       const falloTags = [];
       for (const t of tags1) {
@@ -83,7 +96,9 @@ export default async function handler(req, res) {
           error_linea1: error1,
           error_linea2: error2,
           token_l1_presente: !!TOKEN_L1,
-          token_l2_presente: !!TOKEN_L2
+          token_l2_presente: !!TOKEN_L2,
+          raw_linea1: raw1,
+          raw_linea2: raw2
         }
       });
     } catch (error) {
