@@ -56,10 +56,11 @@ export default async function handler(req, res) {
   // ── TAGS: Lista los tags que contienen "falló" o "fallo" ──
   if (accion === 'tags') {
     try {
-      const [tags1, tags2] = await Promise.all([
-        fetchTagsPaginated(TOKEN_L1),
-        fetchTagsPaginated(TOKEN_L2)
-      ]);
+      let error1 = null, error2 = null;
+      let tags1 = [], tags2 = [];
+
+      try { tags1 = await fetchTagsPaginated(TOKEN_L1); } catch (e) { error1 = e.message; }
+      try { tags2 = await fetchTagsPaginated(TOKEN_L2); } catch (e) { error2 = e.message; }
 
       const falloTags = [];
       for (const t of tags1) {
@@ -73,7 +74,18 @@ export default async function handler(req, res) {
         }
       }
 
-      return res.json({ status: 'ok', tags: falloTags });
+      return res.json({
+        status: 'ok',
+        tags: falloTags,
+        debug: {
+          total_tags_linea1: tags1.length,
+          total_tags_linea2: tags2.length,
+          error_linea1: error1,
+          error_linea2: error2,
+          token_l1_presente: !!TOKEN_L1,
+          token_l2_presente: !!TOKEN_L2
+        }
+      });
     } catch (error) {
       return res.status(500).json({ status: 'error', mensaje: 'Error al obtener tags: ' + error.message });
     }

@@ -1276,7 +1276,13 @@
         }).join('');
         btn.disabled = false;
       } else {
-        container.innerHTML = '<p style="color:var(--muted); font-size:0.85rem; padding:8px;">No se encontraron tags de difusiones fallidas</p>';
+        let debugMsg = 'No se encontraron tags de difusiones fallidas.';
+        if (res.debug) {
+          const d = res.debug;
+          debugMsg += `\nL1: ${d.total_tags_linea1} tags${d.error_linea1 ? ' (Error: ' + d.error_linea1 + ')' : ''} — Token: ${d.token_l1_presente ? 'Sí' : 'NO'}`;
+          debugMsg += `\nL2: ${d.total_tags_linea2} tags${d.error_linea2 ? ' (Error: ' + d.error_linea2 + ')' : ''} — Token: ${d.token_l2_presente ? 'Sí' : 'NO'}`;
+        }
+        container.innerHTML = `<p style="color:var(--muted); font-size:0.85rem; padding:8px; white-space:pre-line;">${debugMsg}</p>`;
       }
     }
 
