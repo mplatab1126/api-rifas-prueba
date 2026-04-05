@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sorteo en Vivo - Los Plata</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;900&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared-nav.css">
+  <script>if(localStorage.getItem('asesor_pwd')&&localStorage.getItem('asesor_nombre')){document.documentElement.classList.add('snav-authed')}</script>
+  <style>
+    :root {
+      --gold: #C5A059;
+      --gold-light: #d4b577;
+      --dark: #0a0a0a;
+      --card-bg: rgba(255,255,255,0.04);
+      --card-border: rgba(255,255,255,0.08);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: var(--dark);
+      color: #fff;
+      min-height: 100vh;
+    }
+
+    .sorteo-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 30px 24px;
+    }
+
+    .sorteo-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .sorteo-header img {
+      width: 70px;
+      margin-bottom: 10px;
+    }
+
+    .sorteo-header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.2rem;
+      color: var(--gold);
+    }
+
+    .sorteo-header p {
+      color: #888;
+      font-size: 0.95rem;
+      margin-top: 4px;
+    }
+
+    /* KPIs */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+
+    .kpi-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .kpi-label {
+      font-size: 0.75rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    .kpi-value {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.2rem;
+      color: var(--gold);
+      font-weight: 900;
+      margin: 6px 0;
+    }
+
+    .kpi-sub {
+      font-size: 0.8rem;
+      color: #666;
+    }
+
+    /* Animation selector */
+    .anim-selector {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .anim-option {
+      background: var(--card-bg);
+      border: 2px solid var(--card-border);
+      border-radius: 12px;
+      padding: 12px 20px;
+      color: #aaa;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .anim-option:hover { border-color: rgba(197,160,89,0.3); color: #ddd; }
+    .anim-option.active { border-color: var(--gold); color: var(--gold); background: rgba(197,160,89,0.08); }
+
+    /* Generate button */
+    .generate-area {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .btn-generate {
+      padding: 20px 60px;
+      background: linear-gradient(135deg, var(--gold), #b8923e);
+      color: var(--dark);
+      border: none;
+      border-radius: 16px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 800;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 6px 30px rgba(197,160,89,0.3);
+    }
+
+    .btn-generate:hover { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(197,160,89,0.4); }
+    .btn-generate:active { transform: scale(0.98); }
+    .btn-generate:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .prizes-remaining {
+      margin-top: 12px;
+      font-size: 1rem;
+      color: #888;
+    }
+
+    .prizes-remaining strong { color: var(--gold); font-size: 1.2rem; }
+
+    /* Animation stage */
+    .animation-stage {
+      width: 100%;
+      height: 300px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      margin-bottom: 30px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .animation-stage.visible { display: flex; }
+
+    .stage-number {
+      font-family: 'DM Serif Display', serif;
+      font-size: 9rem;
+      color: var(--gold);
+      font-weight: 400;
+      letter-spacing: 12px;
+      text-shadow: 0 0 40px rgba(197,160,89,0.3);
+      transition: opacity 0.1s;
+    }
+
+    /* Shuffle animation */
+    .shuffle-cards {
+      display: flex;
+      gap: 8px;
+      position: absolute;
+    }
+
+    .shuffle-card {
+      width: 85px;
+      height: 115px;
+      background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+      border: 2px solid var(--gold);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'DM Serif Display', serif;
+      font-size: 2.2rem;
+      color: var(--gold);
+      font-weight: 400;
+      letter-spacing: 2px;
+    }
+
+    /* Dramatic countdown */
+    .dramatic-count {
+      font-family: 'Playfair Display', serif;
+      font-size: 12rem;
+      color: var(--gold);
+      font-weight: 900;
+      opacity: 0;
+      animation: dramaticPulse 0.8s ease forwards;
+    }
+
+    @keyframes dramaticPulse {
+      0% { opacity: 0; transform: scale(2); }
+      50% { opacity: 1; transform: scale(1); }
+      90% { opacity: 1; }
+      100% { opacity: 0; transform: scale(0.8); }
+    }
+
+    /* Winner display */
+    .winner-display {
+      display: none;
+      text-align: center;
+      padding: 30px;
+      background: var(--card-bg);
+      border: 2px solid var(--gold);
+      border-radius: 24px;
+      margin-bottom: 30px;
+      animation: winnerReveal 0.6s ease;
+    }
+
+    .winner-display.visible { display: block; }
+
+    @keyframes winnerReveal {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .winner-crown { font-size: 3rem; margin-bottom: 10px; }
+
+    .winner-title {
+      font-size: 1rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+
+    .winner-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.5rem;
+      color: var(--gold);
+      font-weight: 900;
+      margin-bottom: 16px;
+    }
+
+    .winner-details {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .winner-detail {
+      text-align: center;
+    }
+
+    .winner-detail-label {
+      font-size: 0.7rem;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .winner-detail-value {
+      font-size: 1.1rem;
+      color: #fff;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .badge-tipo {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .badge-auto {
+      background: rgba(46,204,113,0.15);
+      color: #2ecc71;
+      border: 1px solid rgba(46,204,113,0.3);
+    }
+
+    .badge-manual {
+      background: rgba(231,76,60,0.15);
+      color: #e74c3c;
+      border: 1px solid rgba(231,76,60,0.3);
+    }
+
+    .manual-warning {
+      background: rgba(231,76,60,0.08);
+      border: 1px solid rgba(231,76,60,0.2);
+      border-radius: 12px;
+      padding: 14px 20px;
+      margin-top: 16px;
+      color: #e74c3c;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    /* History */
+    .history-section {
+      margin-top: 30px;
+    }
+
+    .history-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      color: var(--gold);
+      margin-bottom: 16px;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 16px 20px;
+      margin-bottom: 10px;
+    }
+
+    .history-round {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--gold);
+      color: var(--dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .history-info { flex: 1; }
+    .history-name { font-weight: 700; font-size: 1.05rem; }
+    .history-meta { font-size: 0.85rem; color: #888; margin-top: 2px; }
+    .history-boleta {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      color: var(--gold);
+      font-weight: 700;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: #555;
+      font-size: 0.95rem;
+      padding: 20px;
+    }
+
+    /* Confetti for winner */
+    .sorteo-confetti {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+      overflow: hidden;
+    }
+
+    .sorteo-confetti-piece {
+      position: absolute;
+      top: -20px;
+      opacity: 0;
+      animation: confettiRain 3s ease-in forwards;
+    }
+
+    @keyframes confettiRain {
+      0% { opacity: 1; transform: translateY(0) rotate(0deg); }
+      100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
+    }
+
+    @media (max-width: 768px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .stage-number { font-size: 5rem; }
+      .winner-name { font-size: 1.8rem; }
+      .btn-generate { padding: 16px 40px; font-size: 1.1rem; }
+      .anim-selector { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+<div class="snav-page-content">
+  <div style="position:fixed; inset:0; z-index:0; background:linear-gradient(160deg, #080808 0%, #0a0a0a 50%, #111 100%); pointer-events:none;"></div>
+
+  <div style="position:relative; z-index:1;">
+    <div class="sorteo-container">
+
+      <div class="sorteo-header">
+        <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata">
+        <h1>Sorteo en Vivo</h1>
+        <p>Sorteo exclusivo — $3.000.000 en premios</p>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Boletas registradas</div>
+          <div class="kpi-value" id="kpiTotal">—</div>
+          <div class="kpi-sub">En el sorteo</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Participantes</div>
+          <div class="kpi-value" id="kpiParticipantes">—</div>
+          <div class="kpi-sub">Personas únicas</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Premios restantes</div>
+          <div class="kpi-value" id="kpiPremios">3</div>
+          <div class="kpi-sub">De 3 sorteos</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Premio actual</div>
+          <div class="kpi-value" style="color:#2ecc71">$1M</div>
+          <div class="kpi-sub">$1.000.000 COP</div>
+        </div>
+      </div>
+
+      <!-- Animation selector -->
+      <div class="anim-selector">
+        <button class="anim-option active" data-anim="ruleta">🎰 Ruleta</button>
+        <button class="anim-option" data-anim="shuffle">🃏 Shuffle</button>
+        <button class="anim-option" data-anim="dramatic">💥 Dramático</button>
+      </div>
+
+      <!-- Generate -->
+      <div class="generate-area">
+        <button class="btn-generate" id="btnGenerate">Generar Ganador</button>
+        <div class="prizes-remaining">
+          Sorteo <strong id="sorteoActual">1</strong> de <strong>3</strong>
+        </div>
+      </div>
+
+      <!-- Animation stage -->
+      <div class="animation-stage" id="animStage">
+        <div class="stage-number" id="stageNumber">0000</div>
+      </div>
+
+      <!-- Winner display -->
+      <div class="winner-display" id="winnerDisplay">
+        <div class="winner-crown">🏆</div>
+        <div class="winner-title" id="winnerRoundLabel">Ganador del sorteo #1</div>
+        <div class="winner-name" id="winnerName">—</div>
+        <div class="winner-details">
+          <div class="winner-detail">
+            <div class="winner-detail-label">Boleta</div>
+            <div class="winner-detail-value" id="winnerBoleta">—</div>
+          </div>
+          <div class="winner-detail">
+            <div class="winner-detail-label">Ciudad</div>
+            <div class="winner-detail-value" id="winnerCiudad">—</div>
+          </div>
+          <div class="winner-detail">
+            <div class="winner-detail-label">Teléfono</div>
+            <div class="winner-detail-value" id="winnerTel">—</div>
+          </div>
+          <div class="winner-detail">
+            <div class="winner-detail-label">Tipo de registro</div>
+            <div class="winner-detail-value" id="winnerTipo">—</div>
+          </div>
+        </div>
+        <div class="manual-warning" id="manualWarning" style="display:none;">
+          ⚠️ REGISTRO MANUAL — Verificar que esta persona realmente compró la boleta antes de entregar el premio.
+        </div>
+      </div>
+
+      <!-- History -->
+      <div class="history-section">
+        <div class="history-title">Ganadores</div>
+        <div id="historyList">
+          <div class="empty-state">Aún no se han generado ganadores.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="sorteo-confetti" id="sorteoConfetti"></div>
+
+<script src="shared-nav.js"></script>
+<script>
+  const PWD = localStorage.getItem('asesor_pwd');
+  if (!PWD) { window.location.href = '/admin'; }
+
+  let allBoletas = [];
+  let ganadores = [];
+  let selectedAnim = 'ruleta';
+  let isAnimating = false;
+
+  // Animation selector
+  document.querySelectorAll('.anim-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (isAnimating) return;
+      document.querySelectorAll('.anim-option').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedAnim = btn.dataset.anim;
+    });
+  });
+
+  // Load KPIs
+  async function loadKPIs() {
+    try {
+      const res = await fetch('/api/admin/sorteo-ganador', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contrasena: PWD, action: 'kpis' })
+      });
+      const data = await res.json();
+      document.getElementById('kpiTotal').textContent = data.total_boletas;
+      document.getElementById('kpiParticipantes').textContent = data.participantes;
+      allBoletas = data.boletas || [];
+    } catch (e) {
+      console.error('Error loading KPIs:', e);
+    }
+  }
+
+  function updateUI() {
+    const remaining = 3 - ganadores.length;
+    document.getElementById('kpiPremios').textContent = remaining;
+    document.getElementById('sorteoActual').textContent = ganadores.length + 1;
+    document.getElementById('btnGenerate').disabled = remaining <= 0;
+    if (remaining <= 0) {
+      document.getElementById('btnGenerate').textContent = 'Todos los premios entregados';
+    }
+  }
+
+  // Animations
+  function resetStage() {
+    const stage = document.getElementById('animStage');
+    stage.innerHTML = '<div class="stage-number" id="stageNumber">0000</div>';
+    return stage;
+  }
+
+  function animRuleta(boletas, winnerBoleta) {
+    return new Promise(resolve => {
+      const stage = resetStage();
+      const numEl = document.getElementById('stageNumber');
+      stage.classList.add('visible');
+
+      let speed = 50;
+      let iterations = 0;
+      const maxIterations = 60;
+
+      function tick() {
+        numEl.textContent = boletas[Math.floor(Math.random() * boletas.length)];
+        iterations++;
+
+        if (iterations < maxIterations * 0.5) speed = 50;
+        else if (iterations < maxIterations * 0.75) speed = 120;
+        else if (iterations < maxIterations * 0.9) speed = 250;
+        else speed = 500;
+
+        if (iterations >= maxIterations) {
+          numEl.textContent = winnerBoleta;
+          numEl.style.textShadow = '0 0 60px rgba(197,160,89,0.8)';
+          setTimeout(() => {
+            numEl.style.textShadow = '';
+            resolve();
+          }, 1500);
+          return;
+        }
+        setTimeout(tick, speed);
+      }
+      tick();
+    });
+  }
+
+  function animShuffle(boletas, winnerBoleta) {
+    return new Promise(resolve => {
+      const stage = document.getElementById('animStage');
+      stage.innerHTML = '';
+      stage.classList.add('visible');
+
+      const digits = winnerBoleta.split('');
+      const cardsContainer = document.createElement('div');
+      cardsContainer.className = 'shuffle-cards';
+
+      for (let i = 0; i < 4; i++) {
+        const card = document.createElement('div');
+        card.className = 'shuffle-card';
+        card.textContent = '?';
+        card.style.transition = 'transform 0.15s, background 0.3s';
+        cardsContainer.appendChild(card);
+      }
+      stage.appendChild(cardsContainer);
+
+      let iterations = 0;
+      const maxIterations = 40;
+
+      function shuffleTick() {
+        const cards = cardsContainer.querySelectorAll('.shuffle-card');
+        cards.forEach(card => {
+          card.textContent = String(Math.floor(Math.random() * 10));
+          card.style.transform = 'translateY(' + ((Math.random() - 0.5) * 20) + 'px) rotate(' + ((Math.random() - 0.5) * 10) + 'deg)';
+        });
+        iterations++;
+
+        let speed = iterations < maxIterations * 0.6 ? 80 : iterations < maxIterations * 0.85 ? 200 : 400;
+
+        if (iterations >= maxIterations) {
+          cards.forEach((card, i) => {
+            setTimeout(() => {
+              card.textContent = digits[i];
+              card.style.transform = 'translateY(0) rotate(0deg)';
+              card.style.background = 'linear-gradient(135deg, rgba(197,160,89,0.2), rgba(197,160,89,0.05))';
+              card.style.borderColor = '#C5A059';
+            }, i * 400);
+          });
+          setTimeout(resolve, 4 * 400 + 1200);
+          return;
+        }
+        setTimeout(shuffleTick, speed);
+      }
+      shuffleTick();
+    });
+  }
+
+  function animDramatic(boletas, winnerBoleta) {
+    return new Promise(resolve => {
+      const stage = document.getElementById('animStage');
+      stage.innerHTML = '';
+      stage.classList.add('visible');
+
+      const counts = [3, 2, 1];
+      let i = 0;
+
+      function showCount() {
+        if (i < counts.length) {
+          stage.innerHTML = '';
+          const el = document.createElement('div');
+          el.className = 'dramatic-count';
+          el.textContent = counts[i];
+          stage.appendChild(el);
+          i++;
+          setTimeout(showCount, 900);
+        } else {
+          stage.innerHTML = '';
+          const numEl = document.createElement('div');
+          numEl.className = 'stage-number';
+          numEl.textContent = winnerBoleta;
+          numEl.style.opacity = '0';
+          numEl.style.transform = 'scale(0.5)';
+          numEl.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+          numEl.style.textShadow = '0 0 60px rgba(197,160,89,0.8)';
+          stage.appendChild(numEl);
+
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              numEl.style.opacity = '1';
+              numEl.style.transform = 'scale(1)';
+            });
+          });
+
+          setTimeout(resolve, 2500);
+        }
+      }
+      showCount();
+    });
+  }
+
+  function launchSorteoConfetti() {
+    const container = document.getElementById('sorteoConfetti');
+    const colors = ['#C5A059', '#d4b577', '#FFD700', '#ffffff', '#e8c36a', '#f0d78c', '#2ecc71'];
+    for (let i = 0; i < 120; i++) {
+      const piece = document.createElement('div');
+      piece.className = 'sorteo-confetti-piece';
+      piece.style.left = Math.random() * 100 + '%';
+      piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.width = (Math.random() * 10 + 6) + 'px';
+      piece.style.height = (Math.random() * 10 + 6) + 'px';
+      piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+      piece.style.animationDelay = Math.random() * 2 + 's';
+      piece.style.animationDuration = (Math.random() * 2 + 2.5) + 's';
+      container.appendChild(piece);
+    }
+    setTimeout(() => { container.innerHTML = ''; }, 6000);
+  }
+
+  // Generate winner
+  document.getElementById('btnGenerate').addEventListener('click', async () => {
+    if (isAnimating || ganadores.length >= 3) return;
+    isAnimating = true;
+
+    const btn = document.getElementById('btnGenerate');
+    btn.disabled = true;
+    btn.textContent = 'Generando...';
+
+    document.getElementById('winnerDisplay').classList.remove('visible');
+    document.getElementById('animStage').classList.remove('visible');
+
+    try {
+      const res = await fetch('/api/admin/sorteo-ganador', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contrasena: PWD,
+          action: 'generar',
+          excluidos: ganadores.map(g => g.numero_boleta)
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      const g = data.ganador;
+      const elegibles = allBoletas.filter(b => !ganadores.some(w => w.numero_boleta === b));
+
+      const animFn = selectedAnim === 'ruleta' ? animRuleta
+        : selectedAnim === 'shuffle' ? animShuffle
+        : animDramatic;
+
+      await animFn(elegibles.length > 0 ? elegibles : allBoletas, g.numero_boleta);
+
+      document.getElementById('animStage').classList.remove('visible');
+
+      const roundNum = ganadores.length + 1;
+      document.getElementById('winnerRoundLabel').textContent = 'Ganador del sorteo #' + roundNum;
+      document.getElementById('winnerName').textContent = g.nombre_completo;
+      document.getElementById('winnerBoleta').textContent = g.numero_boleta;
+      document.getElementById('winnerCiudad').textContent = g.ciudad;
+      document.getElementById('winnerTel').textContent = g.telefono_whatsapp;
+
+      const isManual = g.tipo_registro === 'manual';
+      document.getElementById('winnerTipo').innerHTML = isManual
+        ? '<span class="badge-tipo badge-manual">Manual</span>'
+        : '<span class="badge-tipo badge-auto">Automático</span>';
+      document.getElementById('manualWarning').style.display = isManual ? 'block' : 'none';
+
+      document.getElementById('winnerDisplay').classList.add('visible');
+      launchSorteoConfetti();
+
+      ganadores.push(g);
+      updateHistory();
+      updateUI();
+
+    } catch (err) {
+      alert('Error: ' + (err.message || 'No se pudo generar el ganador'));
+    } finally {
+      isAnimating = false;
+      if (ganadores.length < 3) {
+        btn.disabled = false;
+        btn.textContent = 'Generar Ganador';
+      }
+    }
+  });
+
+  function updateHistory() {
+    const container = document.getElementById('historyList');
+    if (ganadores.length === 0) {
+      container.innerHTML = '<div class="empty-state">Aún no se han generado ganadores.</div>';
+      return;
+    }
+    container.innerHTML = ganadores.map((g, i) => `
+      <div class="history-item">
+        <div class="history-round">${i + 1}</div>
+        <div class="history-info">
+          <div class="history-name">${g.nombre_completo}</div>
+          <div class="history-meta">${g.ciudad} · ${g.telefono_whatsapp} · <span class="badge-tipo ${g.tipo_registro === 'manual' ? 'badge-manual' : 'badge-auto'}" style="font-size:0.7rem;padding:2px 8px;">${g.tipo_registro || 'automático'}</span></div>
+        </div>
+        <div class="history-boleta">${g.numero_boleta}</div>
+      </div>
+    `).join('');
+  }
+
+  loadKPIs();
+</script>
+</body>
+</html>

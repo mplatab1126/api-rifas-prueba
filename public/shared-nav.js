@@ -42,6 +42,7 @@
         { id: 'estado-division', label: 'División Socios',      href: '/estado-resultados?tab=division' },
       ]
     },
+    { id: 'sorteo',      label: 'Sorteo en Vivo',         href: '/sorteo',                section: 'admin',     roles: 'gerencia' },
     { id: 'permisos',    label: 'Permisos',              href: '/permisos',              section: 'admin',     roles: 'mateo' },
   ];
 

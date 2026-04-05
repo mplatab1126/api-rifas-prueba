@@ -1,8 +1,14 @@
 {
   "name": "api-rifas",
   "version": "1.0.0",
+  "scripts": {
+    "chateapro:export-subflow": "node scripts/export-chateapro-subflow.mjs"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
     "twilio": "^5.4.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
   }
 }

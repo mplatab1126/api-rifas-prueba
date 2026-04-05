@@ -1,0 +1,1727 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Los Plata - Sorteo Exclusivo $3.000.000</title>
+  <meta name="description" content="¿Compraste una boleta de La Plata House? Regístrate y participa por $3.000.000 en premios sorpresa esta noche.">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.losplata.com.co">
+  <meta property="og:title" content="🎉 Sorteo Exclusivo - $3.000.000 en premios">
+  <meta property="og:description" content="Si compraste una boleta de La Plata House, regístrate y participa por $1.000.000 x3 oportunidades. ¡Esta noche en vivo!">
+  <meta property="og:image" content="https://losplata.s3.us-east-2.amazonaws.com/Logo.png">
+  <meta property="og:image:width" content="500">
+  <meta property="og:image:height" content="500">
+  <meta property="og:locale" content="es_CO">
+  <meta property="og:site_name" content="Los Plata">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #C5A059;
+      --gold-light: #d4b577;
+      --dark: #1a1a1a;
+      --darker: #111111;
+      --soft-wood: #F9F6F2;
+      --white: #ffffff;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: var(--darker);
+      color: var(--white);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .page-wrapper {
+      max-width: 520px;
+      margin: 0 auto;
+      min-height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bg-glow {
+      position: fixed;
+      top: -150px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(197,160,89,0.15) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .content {
+      position: relative;
+      z-index: 1;
+      padding: 30px 20px 40px;
+    }
+
+    .logo-container {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .logo {
+      width: 100px;
+      height: auto;
+      filter: drop-shadow(0 4px 15px rgba(197,160,89,0.4));
+    }
+
+    .hero-text {
+      text-align: center;
+      margin-bottom: 35px;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: rgba(197,160,89,0.15);
+      border: 1px solid rgba(197,160,89,0.3);
+      color: var(--gold-light);
+      padding: 8px 20px;
+      border-radius: 50px;
+      font-size: 0.85rem;
+      letter-spacing: 2.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .hero-question {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.3rem;
+      line-height: 1.2;
+      color: var(--white);
+      margin-bottom: 18px;
+    }
+
+    .hero-question .gold { color: var(--gold); }
+
+    .hero-desc {
+      font-size: 1.1rem;
+      color: #aaa;
+      line-height: 1.7;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .hero-desc strong { color: var(--gold-light); font-weight: 600; }
+
+    .prize-banner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      background: linear-gradient(135deg, rgba(197,160,89,0.12), rgba(197,160,89,0.05));
+      border: 1px solid rgba(197,160,89,0.2);
+      border-radius: 14px;
+      padding: 20px 22px;
+      margin-bottom: 32px;
+    }
+
+    .prize-amount {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.4rem;
+      color: var(--gold);
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .prize-detail {
+      font-size: 1rem;
+      color: #ccc;
+      line-height: 1.5;
+    }
+
+    .prize-detail strong { color: var(--white); }
+
+    .form-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 28px 22px;
+      backdrop-filter: blur(10px);
+    }
+
+    .form-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      text-align: center;
+      margin-bottom: 8px;
+      color: var(--white);
+    }
+
+    .form-subtitle {
+      text-align: center;
+      font-size: 1.1rem;
+      color: #999;
+      margin-bottom: 26px;
+      line-height: 1.5;
+    }
+
+    .field {
+      margin-bottom: 20px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #bbb;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 16px 18px;
+      background: rgba(255,255,255,0.06);
+      border: 1.5px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      color: var(--white);
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.1rem;
+      outline: none;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .field input::placeholder {
+      color: #555;
+      font-size: 1rem;
+    }
+
+    .field input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(197,160,89,0.15);
+    }
+
+    .field input.error-input {
+      border-color: #e74c3c;
+      box-shadow: 0 0 0 3px rgba(231,76,60,0.15);
+    }
+
+    .field .field-error {
+      color: #e74c3c;
+      font-size: 0.9rem;
+      margin-top: 6px;
+      display: none;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, var(--gold), #b8923e);
+      color: var(--dark);
+      border: none;
+      border-radius: 14px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(197,160,89,0.3);
+      margin-top: 6px;
+    }
+
+    .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 25px rgba(197,160,89,0.4); }
+    .submit-btn:active { transform: scale(0.98); }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .footer-note {
+      text-align: center;
+      font-size: 1.05rem;
+      color: #666;
+      margin-top: 24px;
+      line-height: 1.7;
+    }
+
+    .footer-note a { color: var(--gold); text-decoration: none; font-weight: 600; }
+
+    /* Success state */
+    .success-screen {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .success-screen.visible { display: block; }
+
+    .success-icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      display: block;
+      animation: popIn 0.5s ease;
+    }
+
+    .success-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.1rem;
+      color: var(--gold);
+      margin-bottom: 14px;
+    }
+
+    .success-msg {
+      font-size: 1.1rem;
+      color: #aaa;
+      line-height: 1.7;
+      max-width: 380px;
+      margin: 0 auto 24px;
+    }
+
+    .success-msg strong { color: var(--white); }
+
+    .success-ticket {
+      display: inline-block;
+      background: rgba(197,160,89,0.12);
+      border: 1px solid rgba(197,160,89,0.3);
+      border-radius: 12px;
+      padding: 16px 30px;
+      margin-bottom: 24px;
+    }
+
+    .success-ticket span {
+      display: block;
+      font-size: 0.9rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .success-ticket strong {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.4rem;
+      color: var(--gold);
+    }
+
+    .success-note {
+      font-size: 1rem;
+      color: #666;
+      line-height: 1.6;
+    }
+
+    /* Duplicate state */
+    .duplicate-screen {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .duplicate-screen.visible { display: block; }
+
+    .duplicate-icon {
+      font-size: 3.5rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .duplicate-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      color: var(--gold-light);
+      margin-bottom: 14px;
+    }
+
+    .duplicate-msg {
+      font-size: 1.1rem;
+      color: #aaa;
+      line-height: 1.7;
+      max-width: 380px;
+      margin: 0 auto;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.5); opacity: 0; }
+      70% { transform: scale(1.1); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* General error */
+    .general-error {
+      background: rgba(231,76,60,0.1);
+      border: 1px solid rgba(231,76,60,0.3);
+      color: #e74c3c;
+      padding: 14px 18px;
+      border-radius: 10px;
+      font-size: 1rem;
+      text-align: center;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    /* Countdown */
+    .countdown-section {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .countdown-label {
+      font-size: 0.9rem;
+      color: #999;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    .countdown-boxes {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .cd-box {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(197,160,89,0.25);
+      border-radius: 12px;
+      padding: 12px 16px;
+      min-width: 70px;
+    }
+
+    .cd-box .cd-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      color: var(--gold);
+      font-weight: 700;
+      display: block;
+      line-height: 1;
+    }
+
+    .cd-box .cd-unit {
+      font-size: 0.75rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 4px;
+      display: block;
+    }
+
+    .countdown-live {
+      display: none;
+      animation: popIn 0.5s ease;
+    }
+
+    .countdown-live.visible { display: block; }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #e53935;
+      color: white;
+      padding: 8px 20px;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      animation: pulse 1.5s infinite;
+    }
+
+    .live-dot {
+      width: 10px;
+      height: 10px;
+      background: white;
+      border-radius: 50%;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(229,57,53,0.4); }
+      50% { box-shadow: 0 0 0 12px rgba(229,57,53,0); }
+    }
+
+    /* Live button */
+    .live-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 16px;
+      background: #1877F2;
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(24,119,242,0.3);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .live-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 25px rgba(24,119,242,0.4); }
+    .live-btn:active { transform: scale(0.98); }
+
+    .live-btn svg { width: 22px; height: 22px; fill: white; }
+
+    /* WhatsApp share button */
+    .share-section {
+      margin-top: 20px;
+    }
+
+    .share-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 15px;
+      background: #25D366;
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 15px rgba(37,211,102,0.3);
+    }
+
+    .share-btn:hover { transform: translateY(-1px); }
+    .share-btn:active { transform: scale(0.98); }
+
+    .share-btn svg { width: 22px; height: 22px; fill: white; }
+
+    /* No boleta link */
+    .no-boleta {
+      text-align: center;
+      margin-top: 22px;
+      padding: 16px;
+      background: rgba(255,255,255,0.03);
+      border: 1px dashed rgba(255,255,255,0.1);
+      border-radius: 14px;
+    }
+
+    .no-boleta p {
+      font-size: 1.1rem;
+      color: #999;
+      margin-bottom: 10px;
+    }
+
+    .no-boleta a {
+      color: var(--gold);
+      text-decoration: underline;
+      font-weight: 700;
+      font-size: 1.15rem;
+    }
+
+    /* Success steps */
+    .success-steps {
+      text-align: left;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 20px;
+      margin: 20px auto;
+      max-width: 360px;
+    }
+
+    .success-steps h3 {
+      font-size: 1rem;
+      color: var(--gold-light);
+      margin-bottom: 14px;
+      text-align: center;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 14px;
+      font-size: 1rem;
+      color: #ccc;
+      line-height: 1.5;
+    }
+
+    .step-item:last-child { margin-bottom: 0; }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      background: var(--gold);
+      color: var(--dark);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    /* Results display */
+    .results-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .results-greeting {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      color: var(--gold);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .results-subtitle {
+      font-size: 1rem;
+      color: #aaa;
+    }
+
+    .results-info {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .results-data-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+    }
+
+    .results-data-row + .results-data-row {
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .results-label {
+      font-size: 0.9rem;
+      color: #888;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .results-value {
+      font-size: 1.05rem;
+      color: var(--white);
+      font-weight: 500;
+    }
+
+    .results-boletas {
+      text-align: center;
+      margin-bottom: 22px;
+    }
+
+    .results-boletas-label {
+      font-size: 0.95rem;
+      color: #aaa;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: block;
+      margin-bottom: 12px;
+    }
+
+    .boletas-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .boleta-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(197,160,89,0.12);
+      border: 1.5px solid rgba(197,160,89,0.35);
+      border-radius: 10px;
+      padding: 10px 20px;
+      min-width: 80px;
+    }
+
+    .boleta-chip .chip-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      color: var(--gold);
+      font-weight: 700;
+    }
+
+    .back-btn {
+      width: 100%;
+      padding: 14px;
+      background: transparent;
+      color: #888;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.95rem;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: color 0.2s;
+    }
+
+    .back-btn:hover { color: var(--white); }
+
+    /* How it works */
+    .how-section {
+      margin-bottom: 30px;
+    }
+
+    .how-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      text-align: center;
+      color: var(--white);
+      margin-bottom: 20px;
+    }
+
+    .how-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .how-step {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      padding: 16px;
+    }
+
+    .how-step-icon {
+      flex-shrink: 0;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: rgba(197,160,89,0.12);
+      border: 1.5px solid rgba(197,160,89,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+    }
+
+    .how-step-text {
+      flex: 1;
+    }
+
+    .how-step-text strong {
+      display: block;
+      font-size: 1.05rem;
+      color: var(--white);
+      margin-bottom: 2px;
+    }
+
+    .how-step-text span {
+      font-size: 0.95rem;
+      color: #999;
+      line-height: 1.4;
+    }
+
+    /* Social links */
+    .social-section {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .social-section p {
+      font-size: 0.95rem;
+      color: #777;
+      margin-bottom: 14px;
+    }
+
+    .social-icons {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .social-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, transform 0.2s;
+      text-decoration: none;
+    }
+
+    .social-icon:hover {
+      background: rgba(197,160,89,0.15);
+      transform: scale(1.08);
+    }
+
+    .social-icon svg {
+      width: 22px;
+      height: 22px;
+      fill: #ccc;
+    }
+
+    .social-icon:hover svg { fill: var(--gold); }
+
+    /* Manual link */
+    .manual-link {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 1.1rem;
+      color: #999;
+      line-height: 1.6;
+    }
+
+    .manual-link a {
+      color: var(--gold);
+      text-decoration: underline;
+      font-weight: 700;
+      font-size: 1.15rem;
+    }
+
+    .manual-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .manual-icon {
+      font-size: 2.5rem;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    /* Registered counter */
+    .registered-counter {
+      text-align: center;
+      margin-bottom: 28px;
+      padding: 14px 20px;
+      background: rgba(197,160,89,0.08);
+      border: 1px solid rgba(197,160,89,0.15);
+      border-radius: 12px;
+    }
+
+    .registered-counter .rc-number {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      color: var(--gold);
+      font-weight: 700;
+    }
+
+    .registered-counter .rc-text {
+      font-size: 0.95rem;
+      color: #aaa;
+    }
+
+    /* Modal registros */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.75);
+      z-index: 10000;
+      justify-content: center;
+      align-items: flex-end;
+      padding: 0;
+    }
+
+    .modal-overlay.visible {
+      display: flex;
+    }
+
+    .modal-content {
+      background: #1e1e1e;
+      border-top-left-radius: 24px;
+      border-top-right-radius: 24px;
+      width: 100%;
+      max-width: 520px;
+      max-height: 80vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .modal-header {
+      padding: 20px 22px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .modal-header h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      color: var(--gold);
+    }
+
+    .modal-close {
+      background: rgba(255,255,255,0.08);
+      border: none;
+      color: #aaa;
+      font-size: 1.3rem;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-close:hover { color: white; background: rgba(255,255,255,0.15); }
+
+    .modal-body {
+      overflow-y: auto;
+      padding: 16px 22px 24px;
+      flex: 1;
+    }
+
+    .registro-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .registro-item:last-child { border-bottom: none; }
+
+    .registro-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: rgba(197,160,89,0.15);
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .registro-info {
+      flex: 1;
+    }
+
+    .registro-nombre {
+      font-size: 1.05rem;
+      color: var(--white);
+      font-weight: 600;
+    }
+
+    .registro-ciudad {
+      font-size: 0.9rem;
+      color: #888;
+    }
+
+    .registro-boletas-count {
+      font-size: 0.85rem;
+      color: var(--gold);
+      font-weight: 700;
+      background: rgba(197,160,89,0.1);
+      padding: 4px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    .modal-empty {
+      text-align: center;
+      padding: 30px;
+      color: #888;
+      font-size: 1rem;
+    }
+
+    .ver-registros-btn {
+      display: inline-block;
+      margin-top: 10px;
+      background: transparent;
+      border: 1px solid rgba(197,160,89,0.3);
+      color: var(--gold);
+      padding: 8px 18px;
+      border-radius: 50px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .ver-registros-btn:hover { background: rgba(197,160,89,0.1); }
+
+    /* Live toast notifications */
+    .toast-notification {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      max-width: 400px;
+      background: rgba(30,30,30,0.95);
+      border: 1px solid rgba(197,160,89,0.25);
+      border-radius: 14px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 9000;
+      transform: translateY(120%);
+      opacity: 0;
+      transition: transform 0.4s ease, opacity 0.4s ease;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+      pointer-events: none;
+    }
+
+    .toast-notification.visible {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: rgba(197,160,89,0.15);
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+
+    .toast-text {
+      flex: 1;
+      font-size: 0.95rem;
+      color: #ccc;
+      line-height: 1.4;
+    }
+
+    .toast-text strong {
+      color: var(--white);
+    }
+
+    .toast-text .toast-city {
+      color: var(--gold);
+      font-weight: 600;
+    }
+
+    .toast-time {
+      font-size: 0.75rem;
+      color: #666;
+      white-space: nowrap;
+    }
+
+    /* Confetti */
+    .confetti-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+      overflow: hidden;
+    }
+
+    .confetti-piece {
+      position: absolute;
+      top: -20px;
+      width: 10px;
+      height: 10px;
+      opacity: 0;
+      animation: confettiFall 3s ease-in forwards;
+    }
+
+    @keyframes confettiFall {
+      0% { opacity: 1; transform: translateY(0) rotate(0deg); }
+      100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-glow"></div>
+
+  <div class="page-wrapper">
+    <div class="content">
+
+      <div class="logo-container">
+        <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata" class="logo">
+      </div>
+
+      <!-- ==================== FORMULARIO ==================== -->
+      <div id="formSection">
+        <div class="hero-text">
+          <div class="hero-badge">Sorteo exclusivo en vivo</div>
+          <h1 class="hero-question">
+            ¿Compraste una boleta de <span class="gold">La Plata House</span>?
+          </h1>
+          <p class="hero-desc">
+            Si compraste una boleta de la rifa <strong>La Plata House</strong>, regístrate con tu número de boleta y podrás participar por un premio sorpresa que entregaremos esta noche en nuestro en vivo.
+          </p>
+        </div>
+
+        <div class="prize-banner">
+          <div>
+            <div class="prize-amount">$3.000.000</div>
+          </div>
+          <div class="prize-detail">
+            <strong>3 oportunidades</strong> de ganar<br>$1.000.000 cada una
+          </div>
+        </div>
+
+        <!-- Countdown / En Vivo -->
+        <div class="countdown-section" id="countdownSection">
+          <div id="countdownTimer">
+            <p class="countdown-label">El en vivo empieza en</p>
+            <div class="countdown-boxes">
+              <div class="cd-box"><span class="cd-num" id="cdHours">00</span><span class="cd-unit">Horas</span></div>
+              <div class="cd-box"><span class="cd-num" id="cdMins">00</span><span class="cd-unit">Min</span></div>
+              <div class="cd-box"><span class="cd-num" id="cdSecs">00</span><span class="cd-unit">Seg</span></div>
+            </div>
+          </div>
+          <div class="countdown-live" id="liveNow">
+            <div class="live-badge"><span class="live-dot"></span> EN VIVO AHORA</div>
+            <br>
+            <a href="https://www.facebook.com/share/1B7VmyL75H/" target="_blank" class="live-btn">
+              <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+              Ver en vivo en Facebook
+            </a>
+          </div>
+        </div>
+
+        <div class="registered-counter" id="registeredCounter" style="display:none;">
+          <span class="rc-text">Ya se han registrado </span>
+          <span class="rc-number" id="rcNumber">0</span>
+          <span class="rc-text"> personas</span>
+          <br>
+          <button class="ver-registros-btn" id="btnVerRegistros">Ver registros</button>
+        </div>
+
+        <div class="form-card">
+          <!-- PASO 1: Buscar boletas -->
+          <div id="stepBuscar">
+            <h2 class="form-title">Busca tus boletas</h2>
+            <p class="form-subtitle">Ingresa tu número de WhatsApp y buscaremos tus boletas</p>
+
+            <div id="generalError" class="general-error"></div>
+
+            <div class="field">
+              <label for="whatsapp">Teléfono de WhatsApp</label>
+              <input type="tel" id="whatsapp" name="whatsapp" placeholder="Ej: 3107334957" inputmode="numeric" autocomplete="tel">
+              <div class="field-error" id="errorWhatsapp">Ingresa un número de WhatsApp válido (10 dígitos)</div>
+            </div>
+
+            <button type="button" class="submit-btn" id="btnBuscar">Buscar mis boletas</button>
+
+            <p class="manual-link" id="manualLink" style="display:none;">
+              ¿No encuentras tus boletas? <a href="#" id="btnManual">Regístrate manualmente</a>
+            </p>
+          </div>
+
+          <!-- PASO 2: Resultados encontrados -->
+          <div id="stepResultados" style="display:none;">
+            <div class="results-header">
+              <span class="results-greeting" id="resultsGreeting">Hola</span>
+              <span class="results-subtitle">Encontramos tus boletas</span>
+            </div>
+
+            <div class="results-info">
+              <div class="results-data-row">
+                <span class="results-label">Nombre</span>
+                <span class="results-value" id="resNombre">—</span>
+              </div>
+              <div class="results-data-row">
+                <span class="results-label">Ciudad</span>
+                <span class="results-value" id="resCiudad">—</span>
+              </div>
+            </div>
+
+            <div class="results-boletas">
+              <span class="results-boletas-label">Tus boletas:</span>
+              <div class="boletas-grid" id="boletasGrid"></div>
+            </div>
+
+            <button type="button" class="submit-btn" id="btnRegistrar">Participar con mis boletas</button>
+
+            <button type="button" class="back-btn" id="btnVolver">← Buscar con otro número</button>
+          </div>
+
+          <!-- PASO 3: Registro manual -->
+          <div id="stepManual" style="display:none;">
+            <div class="manual-header">
+              <span class="manual-icon">📝</span>
+              <h2 class="form-title">Registro manual</h2>
+              <p class="form-subtitle">Ingresa tus datos y el número de tu boleta</p>
+            </div>
+
+            <div id="manualError" class="general-error"></div>
+
+            <div class="field">
+              <label for="manNombre">Nombre completo</label>
+              <input type="text" id="manNombre" placeholder="Ej: Juan Pérez" autocomplete="name">
+              <div class="field-error" id="errorManNombre">Ingresa tu nombre completo</div>
+            </div>
+
+            <div class="field">
+              <label for="manCiudad">Ciudad</label>
+              <input type="text" id="manCiudad" placeholder="Ej: Tunja" autocomplete="address-level2">
+              <div class="field-error" id="errorManCiudad">Ingresa tu ciudad</div>
+            </div>
+
+            <div class="field">
+              <label for="manWhatsapp">Teléfono de WhatsApp</label>
+              <input type="tel" id="manWhatsapp" placeholder="Ej: 3107334957" inputmode="numeric" autocomplete="tel">
+              <div class="field-error" id="errorManWhatsapp">Ingresa un número válido (10 dígitos)</div>
+            </div>
+
+            <div class="field">
+              <label for="manBoleta">Número de boleta</label>
+              <input type="text" id="manBoleta" placeholder="Ej: 0523" inputmode="numeric" maxlength="4" autocomplete="off">
+              <div class="field-error" id="errorManBoleta">Ingresa tu número de boleta (4 dígitos)</div>
+            </div>
+
+            <button type="button" class="submit-btn" id="btnManualRegistrar">Registrarme</button>
+
+            <button type="button" class="back-btn" id="btnVolverManual">← Volver a buscar por teléfono</button>
+          </div>
+
+        </div>
+
+        <div class="share-section">
+          <a href="#" id="shareBtn" class="share-btn" onclick="shareWhatsApp(); return false;">
+            <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            Compartir con un amigo
+          </a>
+        </div>
+
+        <div class="social-section">
+          <p>Síguenos en redes</p>
+          <div class="social-icons">
+            <a href="https://www.facebook.com/rifaslosplata" target="_blank" class="social-icon" title="Facebook">
+              <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            </a>
+            <a href="https://www.instagram.com/losplata_" target="_blank" class="social-icon" title="Instagram">
+              <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+            </a>
+            <a href="https://www.tiktok.com/@losplata777" target="_blank" class="social-icon" title="TikTok">
+              <svg viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== ÉXITO ==================== -->
+      <div id="successScreen" class="success-screen">
+        <span class="success-icon">🎉</span>
+        <h2 class="success-title">¡Registro exitoso!</h2>
+        <p class="success-msg">
+          Ya estás participando por los <strong>$3.000.000</strong> que vamos a regalar esta noche en nuestro en vivo.
+        </p>
+        <div class="success-boletas-container" id="successBoletasContainer">
+          <span class="results-boletas-label" style="color:#888; margin-bottom:10px; display:block;">Tus boletas registradas:</span>
+          <div class="boletas-grid" id="successBoletasGrid"></div>
+        </div>
+
+        <div class="success-steps">
+          <h3>¿Qué sigue ahora?</h3>
+          <div class="step-item">
+            <span class="step-num">1</span>
+            <span>Conéctate al <strong style="color:var(--gold-light)">en vivo a las 10:30 PM</strong> por Facebook.</span>
+          </div>
+          <div class="step-item">
+            <span class="step-num">2</span>
+            <span>Espera a que se revelen los <strong style="color:var(--gold-light)">3 ganadores del millón</strong>.</span>
+          </div>
+          <div class="step-item">
+            <span class="step-num">3</span>
+            <span>Comparte con tus amigos para que también participen.</span>
+          </div>
+        </div>
+
+        <a href="https://www.facebook.com/share/1B7VmyL75H/" target="_blank" class="live-btn" style="margin-top:20px;">
+          <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          Ir al en vivo de Facebook
+        </a>
+
+        <div class="share-section">
+          <a href="#" class="share-btn" onclick="shareWhatsApp(); return false;">
+            <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            Compartir con un amigo
+          </a>
+        </div>
+      </div>
+
+      <!-- ==================== DUPLICADO ==================== -->
+      <div id="duplicateScreen" class="duplicate-screen">
+        <span class="duplicate-icon">✅</span>
+        <h2 class="duplicate-title">Ya te registraste</h2>
+        <p class="duplicate-msg">
+          Tu boleta ya fue registrada anteriormente. No necesitas hacer nada más. ¡Quédate pendiente del en vivo esta noche!
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal de registros -->
+  <div class="modal-overlay" id="modalRegistros">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Personas registradas</h3>
+        <button class="modal-close" id="btnCerrarModal">✕</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <div class="modal-empty">Cargando...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="confetti-container" id="confettiContainer"></div>
+
+  <!-- Toast notification -->
+  <div class="toast-notification" id="toastNotification">
+    <div class="toast-avatar" id="toastAvatar">J</div>
+    <div class="toast-text">
+      <strong id="toastName">Juan P.</strong> de <span class="toast-city" id="toastCity">Tunja</span> acaba de registrarse
+    </div>
+    <span class="toast-time">Ahora</span>
+  </div>
+
+  <script>
+    // ==================== COUNTDOWN ====================
+    (function() {
+      const target = new Date('2026-04-04T22:30:00-05:00'); // 10:30 PM Colombia
+      const cdH = document.getElementById('cdHours');
+      const cdM = document.getElementById('cdMins');
+      const cdS = document.getElementById('cdSecs');
+      const timerDiv = document.getElementById('countdownTimer');
+      const liveDiv = document.getElementById('liveNow');
+
+      function updateCountdown() {
+        const now = new Date();
+        const diff = target - now;
+
+        if (diff <= 0) {
+          timerDiv.style.display = 'none';
+          liveDiv.classList.add('visible');
+          return;
+        }
+
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+
+        cdH.textContent = String(h).padStart(2, '0');
+        cdM.textContent = String(m).padStart(2, '0');
+        cdS.textContent = String(s).padStart(2, '0');
+      }
+
+      updateCountdown();
+      setInterval(updateCountdown, 1000);
+    })();
+
+    // ==================== SHARE WHATSAPP ====================
+    function shareWhatsApp() {
+      const msg = encodeURIComponent('🎉 ¡Oye! Si compraste una boleta de La Plata House, regístrate y podrás ganar $1.000.000. ¡Esta noche en vivo!\n\n👉 https://www.losplata.com.co');
+      window.open('https://wa.me/?text=' + msg, '_blank');
+    }
+
+    // ==================== CONFETTI ====================
+    function launchConfetti() {
+      const container = document.getElementById('confettiContainer');
+      const colors = ['#C5A059', '#d4b577', '#FFD700', '#ffffff', '#e8c36a', '#f0d78c'];
+      for (let i = 0; i < 80; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = Math.random() * 100 + '%';
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.width = (Math.random() * 8 + 6) + 'px';
+        piece.style.height = (Math.random() * 8 + 6) + 'px';
+        piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+        piece.style.animationDelay = Math.random() * 1.5 + 's';
+        piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        container.appendChild(piece);
+      }
+      setTimeout(() => { container.innerHTML = ''; }, 5000);
+    }
+
+    // ==================== REGISTERED COUNTER ====================
+    (function() {
+      const counterEl = document.getElementById('registeredCounter');
+      const numberEl = document.getElementById('rcNumber');
+
+      async function fetchCount() {
+        try {
+          const res = await fetch('/api/registro-sorteo?action=count');
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data.total > 0) {
+            numberEl.textContent = data.total;
+            counterEl.style.display = 'block';
+          }
+        } catch(e) {}
+      }
+
+      fetchCount();
+      setInterval(fetchCount, 15000);
+    })();
+
+    // ==================== FORM ====================
+    const generalError = document.getElementById('generalError');
+    const btnBuscar = document.getElementById('btnBuscar');
+    const btnRegistrar = document.getElementById('btnRegistrar');
+    const btnVolver = document.getElementById('btnVolver');
+    const whatsappInput = document.getElementById('whatsapp');
+
+    let clienteData = null; // datos del cliente encontrado
+
+    whatsappInput.addEventListener('input', () => {
+      whatsappInput.classList.remove('error-input');
+      document.getElementById('errorWhatsapp').style.display = 'none';
+      generalError.style.display = 'none';
+    });
+
+    // PASO 1: Buscar boletas por teléfono
+    btnBuscar.addEventListener('click', async () => {
+      const phone = whatsappInput.value.replace(/\D/g, '');
+      generalError.style.display = 'none';
+
+      if (!phone || phone.length < 10) {
+        whatsappInput.classList.add('error-input');
+        document.getElementById('errorWhatsapp').style.display = 'block';
+        return;
+      }
+
+      btnBuscar.disabled = true;
+      btnBuscar.textContent = 'Buscando...';
+
+      try {
+        const res = await fetch('/api/registro-sorteo?action=buscar&telefono=' + encodeURIComponent(phone));
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || 'No se encontraron boletas');
+
+        clienteData = data;
+
+        document.getElementById('resultsGreeting').textContent = '¡Hola, ' + data.nombre + '!';
+        document.getElementById('resNombre').textContent = data.nombre;
+        document.getElementById('resCiudad').textContent = data.ciudad;
+
+        const grid = document.getElementById('boletasGrid');
+        grid.innerHTML = '';
+        data.boletas.forEach(b => {
+          grid.innerHTML += '<div class="boleta-chip"><span class="chip-num">' + b + '</span></div>';
+        });
+
+        document.getElementById('stepBuscar').style.display = 'none';
+        document.getElementById('stepResultados').style.display = 'block';
+
+      } catch (err) {
+        generalError.textContent = err.message || 'No encontramos boletas con ese número.';
+        generalError.style.display = 'block';
+        showManualLink();
+      } finally {
+        btnBuscar.disabled = false;
+        btnBuscar.textContent = 'Buscar mis boletas';
+      }
+    });
+
+    // PASO 2: Registrar todas las boletas
+    btnRegistrar.addEventListener('click', async () => {
+      if (!clienteData) return;
+
+      btnRegistrar.disabled = true;
+      btnRegistrar.textContent = 'Registrando...';
+
+      try {
+        const res = await fetch('/api/registro-sorteo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nombre_completo: clienteData.nombre,
+            ciudad: clienteData.ciudad,
+            telefono_whatsapp: clienteData.telefono,
+            boletas: clienteData.boletas
+          })
+        });
+
+        const data = await res.json();
+
+        if (res.status === 409) {
+          document.getElementById('formSection').style.display = 'none';
+          document.getElementById('duplicateScreen').classList.add('visible');
+          return;
+        }
+
+        if (!res.ok) throw new Error(data.error || 'Error al registrar');
+
+        const successGrid = document.getElementById('successBoletasGrid');
+        successGrid.innerHTML = '';
+        clienteData.boletas.forEach(b => {
+          successGrid.innerHTML += '<div class="boleta-chip"><span class="chip-num">' + b + '</span></div>';
+        });
+
+        document.getElementById('formSection').style.display = 'none';
+        document.getElementById('successScreen').classList.add('visible');
+        launchConfetti();
+        vibrateDevice();
+
+      } catch (err) {
+        generalError.textContent = err.message || 'Ocurrió un error. Intenta nuevamente.';
+        generalError.style.display = 'block';
+        document.getElementById('stepResultados').style.display = 'none';
+        document.getElementById('stepBuscar').style.display = 'block';
+      } finally {
+        btnRegistrar.disabled = false;
+        btnRegistrar.textContent = 'Participar con mis boletas';
+      }
+    });
+
+    // Volver a buscar
+    btnVolver.addEventListener('click', () => {
+      document.getElementById('stepResultados').style.display = 'none';
+      document.getElementById('stepBuscar').style.display = 'block';
+      whatsappInput.value = '';
+      clienteData = null;
+    });
+
+    // ==================== MANUAL REGISTRATION ====================
+    const btnManual = document.getElementById('btnManual');
+    const btnManualRegistrar = document.getElementById('btnManualRegistrar');
+    const btnVolverManual = document.getElementById('btnVolverManual');
+    const manualError = document.getElementById('manualError');
+
+    // Mostrar enlace manual cuando la búsqueda falla
+    function showManualLink() {
+      document.getElementById('manualLink').style.display = 'block';
+    }
+
+    // Ir al formulario manual
+    btnManual.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('stepBuscar').style.display = 'none';
+      document.getElementById('stepManual').style.display = 'block';
+      const phone = whatsappInput.value.replace(/\D/g, '');
+      if (phone.length >= 10) {
+        document.getElementById('manWhatsapp').value = phone;
+      }
+    });
+
+    // Volver de manual a búsqueda
+    btnVolverManual.addEventListener('click', () => {
+      document.getElementById('stepManual').style.display = 'none';
+      document.getElementById('stepBuscar').style.display = 'block';
+    });
+
+    // Limpiar errores al escribir (manual)
+    ['manNombre', 'manCiudad', 'manWhatsapp', 'manBoleta'].forEach(f => {
+      document.getElementById(f).addEventListener('input', () => {
+        document.getElementById(f).classList.remove('error-input');
+        const errorId = 'error' + f.charAt(0).toUpperCase() + f.slice(1);
+        const errorEl = document.getElementById(errorId);
+        if (errorEl) errorEl.style.display = 'none';
+        manualError.style.display = 'none';
+      });
+    });
+
+    // Enviar registro manual
+    btnManualRegistrar.addEventListener('click', async () => {
+      manualError.style.display = 'none';
+      let valid = true;
+
+      const nombre = document.getElementById('manNombre').value.trim();
+      const ciudad = document.getElementById('manCiudad').value.trim();
+      const wap = document.getElementById('manWhatsapp').value.replace(/\D/g, '');
+      const boleta = document.getElementById('manBoleta').value.trim();
+
+      if (!nombre || nombre.length < 3) {
+        document.getElementById('manNombre').classList.add('error-input');
+        document.getElementById('errorManNombre').style.display = 'block';
+        valid = false;
+      }
+      if (!ciudad || ciudad.length < 2) {
+        document.getElementById('manCiudad').classList.add('error-input');
+        document.getElementById('errorManCiudad').style.display = 'block';
+        valid = false;
+      }
+      if (!wap || wap.length < 10) {
+        document.getElementById('manWhatsapp').classList.add('error-input');
+        document.getElementById('errorManWhatsapp').style.display = 'block';
+        valid = false;
+      }
+      if (!boleta || boleta.length !== 4 || isNaN(boleta)) {
+        document.getElementById('manBoleta').classList.add('error-input');
+        document.getElementById('errorManBoleta').style.display = 'block';
+        valid = false;
+      }
+
+      if (!valid) return;
+
+      btnManualRegistrar.disabled = true;
+      btnManualRegistrar.textContent = 'Registrando...';
+
+      try {
+        const res = await fetch('/api/registro-sorteo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nombre_completo: nombre,
+            ciudad: ciudad,
+            telefono_whatsapp: wap,
+            boletas: [boleta],
+            tipo: 'manual'
+          })
+        });
+
+        const data = await res.json();
+
+        if (res.status === 409) {
+          document.getElementById('formSection').style.display = 'none';
+          document.getElementById('duplicateScreen').classList.add('visible');
+          return;
+        }
+
+        if (!res.ok) throw new Error(data.error || 'Error al registrar');
+
+        const successGrid = document.getElementById('successBoletasGrid');
+        successGrid.innerHTML = '<div class="boleta-chip"><span class="chip-num">' + boleta.padStart(4, '0') + '</span></div>';
+
+        document.getElementById('formSection').style.display = 'none';
+        document.getElementById('successScreen').classList.add('visible');
+        launchConfetti();
+        vibrateDevice();
+
+      } catch (err) {
+        manualError.textContent = err.message || 'Ocurrió un error. Intenta nuevamente.';
+        manualError.style.display = 'block';
+      } finally {
+        btnManualRegistrar.disabled = false;
+        btnManualRegistrar.textContent = 'Registrarme';
+      }
+    });
+
+    // ==================== MODAL REGISTROS ====================
+    const modalOverlay = document.getElementById('modalRegistros');
+    const modalBody = document.getElementById('modalBody');
+
+    document.getElementById('btnVerRegistros').addEventListener('click', async () => {
+      modalOverlay.classList.add('visible');
+      modalBody.innerHTML = '<div class="modal-empty">Cargando...</div>';
+
+      try {
+        const res = await fetch('/api/registro-sorteo?action=lista');
+        const data = await res.json();
+
+        if (!res.ok || !data.registros || data.registros.length === 0) {
+          modalBody.innerHTML = '<div class="modal-empty">Aún no hay registros.</div>';
+          return;
+        }
+
+        modalBody.innerHTML = data.registros.map(r => {
+          const inicial = r.nombre.charAt(0).toUpperCase();
+          const txtBoletas = r.boletas === 1 ? '1 boleta' : r.boletas + ' boletas';
+          return '<div class="registro-item">' +
+            '<div class="registro-avatar">' + inicial + '</div>' +
+            '<div class="registro-info">' +
+              '<div class="registro-nombre">' + r.nombre + '</div>' +
+              '<div class="registro-ciudad">' + r.ciudad + '</div>' +
+            '</div>' +
+            '<span class="registro-boletas-count">' + txtBoletas + '</span>' +
+          '</div>';
+        }).join('');
+
+      } catch (e) {
+        modalBody.innerHTML = '<div class="modal-empty">Error al cargar los registros.</div>';
+      }
+    });
+
+    document.getElementById('btnCerrarModal').addEventListener('click', () => {
+      modalOverlay.classList.remove('visible');
+    });
+
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) modalOverlay.classList.remove('visible');
+    });
+
+    // ==================== LIVE TOAST NOTIFICATIONS ====================
+    (function() {
+      const toast = document.getElementById('toastNotification');
+      const toastAvatar = document.getElementById('toastAvatar');
+      const toastName = document.getElementById('toastName');
+      const toastCity = document.getElementById('toastCity');
+      let registrosCache = [];
+      let toastIndex = 0;
+      let toastActive = false;
+
+      async function loadRegistros() {
+        try {
+          const res = await fetch('/api/registro-sorteo?action=lista');
+          const data = await res.json();
+          if (data.registros && data.registros.length > 0) {
+            registrosCache = data.registros;
+          }
+        } catch(e) {}
+      }
+
+      function showToast() {
+        if (registrosCache.length === 0 || toastActive) return;
+        toastActive = true;
+
+        const r = registrosCache[toastIndex % registrosCache.length];
+        toastIndex++;
+
+        toastAvatar.textContent = r.nombre.charAt(0).toUpperCase();
+        toastName.textContent = r.nombre;
+        toastCity.textContent = r.ciudad;
+
+        toast.classList.add('visible');
+
+        setTimeout(() => {
+          toast.classList.remove('visible');
+          setTimeout(() => { toastActive = false; }, 500);
+        }, 4000);
+      }
+
+      loadRegistros();
+      setInterval(loadRegistros, 30000);
+
+      setTimeout(() => {
+        showToast();
+        setInterval(showToast, 12000);
+      }, 5000);
+    })();
+
+    // ==================== VIBRATION ====================
+    function vibrateDevice() {
+      if (navigator.vibrate) {
+        navigator.vibrate([100, 50, 100]);
+      }
+    }
+  </script>
+</body>
+</html>
