@@ -2666,6 +2666,125 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
     }
 
     // 8. Conversor de archivos a base64 (imágenes directas, PDFs renderizados)
+    // ==========================================
+    // CONCILIAR CONSOLIDADO BANCOLOMBIA
+    // ==========================================
+    let archivoConsolidado = null;
+
+    function seleccionarConsolidado(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        archivoConsolidado = file;
+        document.getElementById('nombreConsolidado').textContent = file.name;
+        document.getElementById('btnConciliar').style.display = 'inline-block';
+    }
+
+    async function iniciarConciliacion() {
+        if (!archivoConsolidado) return alert('Selecciona un PDF primero.');
+        const btn = document.getElementById('btnConciliar');
+        const divRes = document.getElementById('resultadoConciliacion');
+        btn.disabled = true; btn.textContent = '⏳ Procesando...';
+        divRes.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem;">Leyendo PDF y comparando con el sistema... Esto puede tardar unos segundos.</p>';
+
+        try {
+            const arrayBuffer = await archivoConsolidado.arrayBuffer();
+            const base64 = btoa(new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ''));
+
+            const req = await fetch('/api/admin/conciliar-consolidado', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pdfBase64: base64, contrasena: localStorage.getItem(STORAGE_KEY) })
+            });
+            const res = await req.json();
+            btn.disabled = false; btn.textContent = '🔍 Comparar';
+
+            if (res.status !== 'ok') {
+                divRes.innerHTML = `<p style="color:var(--danger); font-weight:600;">${res.mensaje}</p>`;
+                return;
+            }
+
+            renderResultadoConciliacion(res, divRes);
+        } catch (e) {
+            btn.disabled = false; btn.textContent = '🔍 Comparar';
+            divRes.innerHTML = '<p style="color:var(--danger); font-weight:600;">Error de conexión al servidor.</p>';
+        }
+    }
+
+    function renderResultadoConciliacion(res, divRes) {
+        const r = res.resumen;
+        const faltantes = res.faltantes || [];
+        const faltantesIng = faltantes.filter(f => f.tipo === 'ingreso');
+        const faltantesEgr = faltantes.filter(f => f.tipo === 'egreso');
+        const fmt = v => new Intl.NumberFormat('es-CO').format(v);
+        const sumaFaltIng = faltantesIng.reduce((s, f) => s + f.valor, 0);
+        const sumaFaltEgr = faltantesEgr.reduce((s, f) => s + f.valor, 0);
+
+        let html = `
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:16px;">
+            <div style="background:#e8f5e9; border-radius:10px; padding:12px; text-align:center;">
+              <div style="font-size:1.4rem; font-weight:800; color:#2e7d32;">${r.encontrados}</div>
+              <div style="font-size:0.75rem; color:#2e7d32; font-weight:600;">Encontrados</div>
+            </div>
+            <div style="background:${r.faltantes > 0 ? '#fff3e0' : '#e8f5e9'}; border-radius:10px; padding:12px; text-align:center;">
+              <div style="font-size:1.4rem; font-weight:800; color:${r.faltantes > 0 ? '#e65100' : '#2e7d32'};">${r.faltantes}</div>
+              <div style="font-size:0.75rem; color:${r.faltantes > 0 ? '#e65100' : '#2e7d32'}; font-weight:600;">Faltantes</div>
+            </div>
+            <div style="background:#e3f2fd; border-radius:10px; padding:12px; text-align:center;">
+              <div style="font-size:1.4rem; font-weight:800; color:#1565c0;">${r.totalPDF}</div>
+              <div style="font-size:0.75rem; color:#1565c0; font-weight:600;">Total en PDF</div>
+            </div>
+            <div style="background:#f3e5f5; border-radius:10px; padding:12px; text-align:center;">
+              <div style="font-size:0.9rem; font-weight:700; color:#7b1fa2;">${r.fechas.join(', ')}</div>
+              <div style="font-size:0.75rem; color:#7b1fa2; font-weight:600;">Fechas</div>
+            </div>
+          </div>`;
+
+        if (faltantes.length === 0) {
+            html += '<div style="background:#e8f5e9; border:2px solid #4caf50; border-radius:12px; padding:20px; text-align:center;"><span style="font-size:1.5rem;">✅</span><p style="font-weight:700; color:#2e7d32; margin:8px 0 0;">Todos los movimientos del consolidado están en el sistema.</p></div>';
+        } else {
+            // Ingresos faltantes
+            if (faltantesIng.length > 0) {
+                html += `<div style="margin-bottom:16px;">
+                  <div style="font-weight:700; font-size:0.88rem; color:#e65100; margin-bottom:8px;">📥 ${faltantesIng.length} Ingresos faltantes · $${fmt(sumaFaltIng)}</div>
+                  <div style="display:flex; flex-direction:column; gap:6px; max-height:400px; overflow-y:auto;">`;
+                for (const f of faltantesIng) {
+                    html += tarjetaFaltante(f, fmt);
+                }
+                html += '</div></div>';
+            }
+
+            // Egresos faltantes
+            if (faltantesEgr.length > 0) {
+                html += `<div>
+                  <div style="font-weight:700; font-size:0.88rem; color:#c62828; margin-bottom:8px;">📤 ${faltantesEgr.length} Egresos faltantes · $${fmt(sumaFaltEgr)}</div>
+                  <div style="display:flex; flex-direction:column; gap:6px; max-height:400px; overflow-y:auto;">`;
+                for (const f of faltantesEgr) {
+                    html += tarjetaFaltante(f, fmt);
+                }
+                html += '</div></div>';
+            }
+        }
+
+        divRes.innerHTML = html;
+    }
+
+    function tarjetaFaltante(f, fmt) {
+        const esIngreso = f.tipo === 'ingreso';
+        const color = esIngreso ? '#e65100' : '#c62828';
+        const bg = esIngreso ? '#fff8e1' : '#ffebee';
+        const badge = esIngreso ? '📥 INGRESO' : '📤 EGRESO';
+        return `<div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border:1px solid ${color}40; border-radius:10px; background:${bg}; gap:10px;">
+          <div style="flex:1; min-width:0;">
+            <div style="font-weight:600; font-size:0.85rem; color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${f.descripcion}</div>
+            <div style="font-size:0.78rem; color:var(--muted); margin-top:2px;">${f.fecha} ${f.referencia ? '· Ref: ' + f.referencia.substring(0, 30) : ''}</div>
+          </div>
+          <div style="text-align:right; flex-shrink:0;">
+            <div style="font-weight:700; font-size:0.92rem; color:${color};">$${fmt(f.valor)}</div>
+            <div style="font-size:0.65rem; font-weight:600; color:${color}; opacity:0.7;">${badge}</div>
+          </div>
+        </div>`;
+    }
+
     async function convertirABase64(file) {
         return new Promise(async (resolve, reject) => {
             if (file.type.startsWith('image/')) {

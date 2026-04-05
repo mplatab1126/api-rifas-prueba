@@ -130,6 +130,23 @@
         </div>
 
       </div>
+
+      <!-- CONCILIAR CONSOLIDADO BANCOLOMBIA -->
+      <div class="section-card" style="margin-top:20px;">
+        <div class="section-title">🏦 Conciliar Consolidado Bancolombia</div>
+        <p style="font-size:0.85rem; color:var(--muted); margin-top:0; line-height:1.5;">
+          Sube el PDF del consolidado histórico de movimientos de Bancolombia. El sistema comparará cada movimiento contra lo que ya está registrado y te mostrará los <b>faltantes</b>.
+        </p>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <div id="dropZoneConsolidado" onclick="document.getElementById('fileInputConsolidado').click()" style="flex:1; min-width:200px; border:2px dashed var(--ink); border-radius:12px; padding:20px; text-align:center; cursor:pointer; background:var(--bg); transition:0.3s;" onmouseover="this.style.background='var(--pill)'" onmouseout="this.style.background='var(--bg)'">
+            <span style="font-size:1.5rem;">📄</span>
+            <p style="margin:5px 0 0; font-weight:600; font-size:0.9rem; color:var(--ink);" id="nombreConsolidado">Seleccionar PDF del consolidado</p>
+            <input type="file" id="fileInputConsolidado" accept="application/pdf" style="display:none;" onchange="seleccionarConsolidado(event)">
+          </div>
+          <button id="btnConciliar" class="cta" onclick="iniciarConciliacion()" style="width:auto; padding:10px 24px; display:none;">🔍 Comparar</button>
+        </div>
+        <div id="resultadoConciliacion" style="margin-top:15px;"></div>
+      </div>
     </div>
 
 
