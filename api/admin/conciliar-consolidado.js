@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import pdfParse from 'pdf-parse';
 
 export const config = { api: { bodyParser: { sizeLimit: '8mb' } } };
 
@@ -10,17 +9,15 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  const { pdfBase64, contrasena } = req.body;
+  const { textoPDF, contrasena } = req.body;
   const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
   if (!asesores[contrasena]) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
-  if (!pdfBase64) return res.status(400).json({ status: 'error', mensaje: 'No se envió ningún PDF' });
+  if (!textoPDF) return res.status(400).json({ status: 'error', mensaje: 'No se envió texto del PDF' });
 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
-    const buffer = Buffer.from(pdfBase64.replace(/^data:application\/pdf;base64,/, ''), 'base64');
-    const pdfData = await pdfParse(buffer);
-    const movimientos = parseConsolidadoBancolombia(pdfData.text);
+    const movimientos = parseConsolidadoBancolombia(textoPDF);
 
     if (!movimientos.length) {
       return res.status(400).json({ status: 'error', mensaje: 'No se encontraron movimientos en el PDF. Verifica que sea un consolidado de Bancolombia.' });
@@ -102,13 +99,20 @@ function parseConsolidadoBancolombia(textoRaw) {
 
   // Limpiar: quitar headers, footers, paginación
   const limpias = lineas.filter(l => {
-    const t = l.trim();
+    const t = l.replace(/\t/g, ' ').trim();
     if (!t) return false;
-    if (/^Empresa:|^NIT:|^Saldo|^Impreso por/i.test(t)) return false;
-    if (/^FECHA\s+DESCRIPCI[OÓ]N/i.test(t)) return false;
-    if (/^Número de Cuenta|^Tipo de cuenta|^Fecha y Hora/i.test(t)) return false;
-    if (/^\d+\s+Página\s+\d+\s+de$/i.test(t)) return false;
+    if (/Empresa:?\s/i.test(t) && /NIT/i.test(t)) return false;
+    if (/^Empresa:/i.test(t)) return false;
+    if (/^NIT:/i.test(t)) return false;
+    if (/Saldo\s*(Efectivo|en Canje|Total)/i.test(t)) return false;
+    if (/^Impreso por/i.test(t)) return false;
+    if (/FECHA.*DESCRIPCI[OÓ]N/i.test(t)) return false;
+    if (/N[uú]mero de Cuenta/i.test(t)) return false;
+    if (/Tipo de cuenta/i.test(t)) return false;
+    if (/Fecha y Hora/i.test(t)) return false;
+    if (/P[aá]gina\s+\d+\s+de/i.test(t)) return false;
     if (/^--\s*\d+\s*of\s*\d+\s*--$/.test(t)) return false;
+    if (/^\d+\s+P[aá]gina\s+\d+\s+de$/i.test(t)) return false;
     return true;
   });
 
@@ -117,8 +121,8 @@ function parseConsolidadoBancolombia(textoRaw) {
   let actual = null;
 
   for (const linea of limpias) {
-    const t = linea.trim();
-    if (/^\d{4}\/\d{2}\/\d{2}\s/.test(t)) {
+    const t = linea.replace(/\t/g, ' ').trim();
+    if (/^\d{4}\/\d{2}\/\d{2}[\s\t]/.test(t)) {
       if (actual) bloques.push(actual);
       actual = t;
     } else if (actual) {
@@ -135,7 +139,8 @@ function parseConsolidadoBancolombia(textoRaw) {
   return movimientos;
 }
 
-function parseBloque(bloque) {
+function parseBloque(bloqueRaw) {
+  const bloque = bloqueRaw.replace(/\t/g, ' ');
   const fechaMatch = bloque.match(/^(\d{4}\/\d{2}\/\d{2})/);
   if (!fechaMatch) return null;
   const fecha = fechaMatch[1].replace(/\//g, '-');
@@ -147,15 +152,20 @@ function parseBloque(bloque) {
   const valor = parseFloat(valorStr.replace(/,/g, ''));
   if (isNaN(valor) || valor === 0) return null;
 
-  // Quitar fecha del inicio y valor del final para obtener la parte media
+  // Quitar fecha del inicio y valor del final, preservando texto huérfano (ej: 4 dígitos Nequi)
   let medio = bloque.substring(fechaMatch[0].length);
   const posValor = medio.lastIndexOf(valorStr);
-  if (posValor > 0) medio = medio.substring(0, posValor);
-  medio = medio.trim();
+  if (posValor > 0) {
+    const despuesValor = medio.substring(posValor + valorStr.length).trim();
+    medio = medio.substring(0, posValor).trim();
+    if (despuesValor) medio += ' ' + despuesValor;
+  }
 
-  // Separar sucursal del resto
-  const partes = medio.split(/\t+/);
-  let descripcionArea = partes.length > 1 ? partes.slice(1).join(' ') : medio;
+  // Quitar sucursales conocidas de Bancolombia al inicio
+  let descripcionArea = medio
+    .replace(/^(CHINCHINA|CNB\s*REDES|DIRECCION\s*GENERAL|SERVICIOS\s*ELCTR\.?)\s+/i, '')
+    .trim();
+  if (!descripcionArea) descripcionArea = medio;
 
   let descripcion = '';
   let referencia = '';
@@ -168,9 +178,7 @@ function parseBloque(bloque) {
     const refs = resto.split(/\s+/).filter(r => /^\d{5,}$/.test(r));
     referencia = refs[0] || '';
   } else if (descripcionArea.includes('CONSIGNACION CORRESPONSAL CB')) {
-    tipoMov = 'corresponsal';
-    descripcion = 'Consignación Corresponsal';
-    referencia = '';
+    return null;
   } else if (descripcionArea.includes('TRANSFERENCIA DESDE NEQUI')) {
     tipoMov = 'nequi';
     descripcion = 'Transferencia Nequi';

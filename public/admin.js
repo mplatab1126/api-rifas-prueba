@@ -2175,12 +2175,23 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
             actualizarUIIA();
 
             try {
+                // Para PDFs: intentar extracción directa de texto (100% preciso, sin IA)
+                let datosPDF = null;
+                if (item.file.type === 'application/pdf') {
+                    item.mensaje = 'Extrayendo texto del PDF...';
+                    actualizarUIIA();
+                    datosPDF = await parsearComprobantePDF(item.file);
+                }
+
                 const base64 = await convertirABase64(item.file);
+
+                const payload = { imagenBase64: base64, contrasena: pwd, forzarTipo: modoUploadIA };
+                if (datosPDF) payload.datosDirectos = datosPDF;
 
                 const reqIA = await fetch('/api/admin/procesar-ia', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ imagenBase64: base64, contrasena: pwd, forzarTipo: modoUploadIA })
+                    body: JSON.stringify(payload)
                 });
                 const resIA = await reqIA.json();
 
@@ -2679,21 +2690,140 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         document.getElementById('btnConciliar').style.display = 'inline-block';
     }
 
+    async function extraerTextoPDF(file) {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdfjsLib = window['pdfjs-dist/build/pdf'];
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+        const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+        let textoTotal = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            // Reconstruir líneas usando la coordenada Y de cada fragmento
+            const items = content.items.filter(it => it.str.trim() !== '');
+            if (!items.length) continue;
+            items.sort((a, b) => {
+                const dy = b.transform[5] - a.transform[5];
+                if (Math.abs(dy) > 3) return dy;
+                return a.transform[4] - b.transform[4];
+            });
+            let lineas = [];
+            let lineaActual = items[0].str;
+            let yActual = items[0].transform[5];
+            for (let j = 1; j < items.length; j++) {
+                const it = items[j];
+                if (Math.abs(it.transform[5] - yActual) > 3) {
+                    lineas.push(lineaActual);
+                    lineaActual = it.str;
+                    yActual = it.transform[5];
+                } else {
+                    lineaActual += '\t' + it.str;
+                }
+            }
+            lineas.push(lineaActual);
+            textoTotal += lineas.join('\n') + '\n';
+        }
+        return textoTotal;
+    }
+
+    // ==========================================
+    // PARSER DE COMPROBANTE INDIVIDUAL BANCOLOMBIA (PDF → texto directo)
+    // ==========================================
+    async function parsearComprobantePDF(file) {
+        try {
+            const texto = await extraerTextoPDF(file);
+            if (!texto || texto.length < 50) return null;
+
+            const t = texto.replace(/\t/g, ' ');
+            const lineas = t.split('\n').map(l => l.trim()).filter(l => l);
+
+            function buscarCampo(etiqueta) {
+                for (let i = 0; i < lineas.length; i++) {
+                    if (lineas[i].toLowerCase().includes(etiqueta.toLowerCase())) {
+                        return (lineas[i + 1] || '').trim();
+                    }
+                }
+                return '';
+            }
+
+            function buscarEnTexto(regex) {
+                const m = t.match(regex);
+                return m ? m[1].trim() : '';
+            }
+
+            // Referencia: línea después de "Referencia 1"
+            let referencia = buscarCampo('Referencia 1');
+            if (referencia.toLowerCase().startsWith('referencia 2') || referencia === '- -' || referencia === '--') referencia = '0';
+
+            // Monto: "COP $ 30.000,00" o "COP -$ 538,07"
+            const montoRaw = buscarEnTexto(/COP\s*[-]?\$?\s*([\d.,]+)/i);
+            if (!montoRaw) return null;
+            const monto = montoRaw.replace(/\./g, '').replace(',', '.');
+            const montoNum = parseFloat(monto);
+            if (isNaN(montoNum) || montoNum <= 0) return null;
+
+            // Detectar egreso por signo negativo en el valor original
+            const valorOriginal = buscarEnTexto(/(COP\s*[-]?\$?\s*[\d.,]+)/i) || '';
+            const esEgreso = valorOriginal.includes('-');
+
+            // Fecha de aplicación: "21 mar 2026" → YYYY-MM-DD
+            const meses = { 'ene': '01', 'feb': '02', 'mar': '03', 'abr': '04', 'may': '05', 'jun': '06',
+                            'jul': '07', 'ago': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dic': '12' };
+            let fechaPago = '';
+            const fechaLinea = buscarCampo('Fecha de aplicación') || buscarCampo('Fecha de aplicacion') || buscarCampo('Fecha de creación') || buscarCampo('Fecha de creacion');
+            const fechaMatch = fechaLinea.match(/(\d{1,2})\s+(\w{3})\s+(\d{4})/);
+            if (fechaMatch) {
+                const dia = fechaMatch[1].padStart(2, '0');
+                const mes = meses[fechaMatch[2].toLowerCase()] || '01';
+                const anio = fechaMatch[3];
+                fechaPago = `${anio}-${mes}-${dia}`;
+            }
+            if (!fechaPago) return null;
+
+            // Hora: HH:MM:SS (buscar en todo el texto)
+            const horaMatch = t.match(/\b(\d{1,2}:\d{2}:\d{2})\b/);
+            const horaPago = horaMatch ? horaMatch[1].padStart(8, '0') : '12:00:00';
+
+            // Descripción
+            const descripcion = buscarCampo('Descripción') || buscarCampo('Descripcion') || '';
+
+            // Plataforma
+            let plataforma = 'Bancolombia';
+            const descLower = descripcion.toLowerCase();
+            if (descLower.includes('nequi')) plataforma = 'Nequi';
+            else if (descLower.includes('daviplata')) plataforma = 'Daviplata';
+            else if (descLower.includes('corresponsal')) plataforma = 'Corresponsal';
+
+            return {
+                tipo: esEgreso ? 'egreso' : 'ingreso',
+                plataforma,
+                monto: String(Math.round(montoNum)),
+                referencia: referencia || '0',
+                fecha_pago: fechaPago,
+                hora_pago: horaPago,
+                descripcion_movimiento: descripcion,
+                valor_original: valorOriginal
+            };
+        } catch (_) {
+            return null;
+        }
+    }
+
     async function iniciarConciliacion() {
         if (!archivoConsolidado) return alert('Selecciona un PDF primero.');
         const btn = document.getElementById('btnConciliar');
         const divRes = document.getElementById('resultadoConciliacion');
-        btn.disabled = true; btn.textContent = '⏳ Procesando...';
-        divRes.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem;">Leyendo PDF y comparando con el sistema... Esto puede tardar unos segundos.</p>';
+        btn.disabled = true; btn.textContent = '⏳ Leyendo PDF...';
+        divRes.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem;">Extrayendo texto del PDF... Esto puede tardar unos segundos para consolidados grandes.</p>';
 
         try {
-            const arrayBuffer = await archivoConsolidado.arrayBuffer();
-            const base64 = btoa(new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ''));
+            const textoPDF = await extraerTextoPDF(archivoConsolidado);
+            btn.textContent = '⏳ Comparando...';
 
             const req = await fetch('/api/admin/conciliar-consolidado', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pdfBase64: base64, contrasena: localStorage.getItem(STORAGE_KEY) })
+                body: JSON.stringify({ textoPDF, contrasena: localStorage.getItem(STORAGE_KEY) })
             });
             const res = await req.json();
             btn.disabled = false; btn.textContent = '🔍 Comparar';
@@ -2706,7 +2836,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
             renderResultadoConciliacion(res, divRes);
         } catch (e) {
             btn.disabled = false; btn.textContent = '🔍 Comparar';
-            divRes.innerHTML = '<p style="color:var(--danger); font-weight:600;">Error de conexión al servidor.</p>';
+            divRes.innerHTML = `<p style="color:var(--danger); font-weight:600;">Error de conexión al servidor.</p><p style="color:var(--muted); font-size:0.8rem;">${e.message || e}</p>`;
         }
     }
 

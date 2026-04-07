@@ -6,6 +6,9 @@
     },
     "api/admin/difusion-llamadas.js": {
       "maxDuration": 60
+    },
+    "api/admin/conciliar-consolidado.js": {
+      "maxDuration": 30
     }
   },
   "crons": [],

@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  const { imagenBase64, contrasena, soloConsulta, forzarTipo } = req.body;
+  const { imagenBase64, contrasena, soloConsulta, forzarTipo, datosDirectos } = req.body;
 
   // 2. Seguridad
   const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
@@ -22,79 +22,86 @@ export default async function handler(req, res) {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
-    const prompt = `
-      Eres un asistente bancario experto en bancos colombianos (Bancolombia, Nequi, Daviplata). Analiza este comprobante bancario y extrae los datos TAL CUAL aparecen.
-      Devuelve ÚNICAMENTE un objeto JSON válido (sin formato Markdown, sin comillas invertidas, solo llaves y texto).
-      Reemplaza comas por puntos en los decimales si aplica, pero devuelve enteros si no hay centavos.
+    let datos;
 
-      CONTEXTO: Este sistema es de una empresa de rifas. Los asesores suben pantallazos desde las cuentas bancarias del negocio.
+    // RUTA DIRECTA: si el frontend extrajo texto del PDF, usamos esos datos sin llamar a Claude
+    if (datosDirectos && datosDirectos.monto && datosDirectos.fecha_pago) {
+      datos = { ...datosDirectos };
+    } else {
+      // RUTA IA: para imágenes o PDFs que no se pudieron parsear
+      const prompt = `
+        Eres un asistente bancario experto en bancos colombianos (Bancolombia, Nequi, Daviplata). Analiza este comprobante bancario y extrae los datos TAL CUAL aparecen.
+        Devuelve ÚNICAMENTE un objeto JSON válido (sin formato Markdown, sin comillas invertidas, solo llaves y texto).
+        Reemplaza comas por puntos en los decimales si aplica, pero devuelve enteros si no hay centavos.
 
-      Para el campo "tipo": clasifica como "egreso" SOLO si el valor tiene signo NEGATIVO (-) o aparece en color ROJO. Si no tiene signo negativo y no está en rojo, clasifica como "ingreso". En caso de duda, pon "ingreso".
+        CONTEXTO: Este sistema es de una empresa de rifas. Los asesores suben pantallazos desde las cuentas bancarias del negocio.
 
-      Formato exacto esperado:
-      {
-        "tipo": "ingreso" o "egreso",
-        "plataforma": "Nombre del banco o app (Ej: Bancolombia, Nequi, Daviplata)",
-        "monto": "Solo el número absoluto sin símbolos ni signos (Ej: 3000000). NUNCA incluyas el signo negativo.",
-        "referencia": "Código de comprobante o referencia. Si no hay, pon '0'",
-        "fecha_pago": "La fecha exacta en formato YYYY-MM-DD",
-        "hora_pago": "La hora EXACTA tal cual aparece, en formato HH:MM:SS (24h). Incluye los segundos REALES del comprobante, NO los redondees a 00. Ej: si dice 15:00:27, pon '15:00:27'. Si no hay hora visible, pon '12:00:00'",
-        "descripcion_movimiento": "El campo 'Descripción' del comprobante bancario, TAL CUAL aparece (Ej: 'Valor iva', 'Compra POS', 'Transferencia a terceros'). Si no hay, pon ''",
-        "valor_original": "El valor TAL CUAL aparece en el comprobante, con signos y símbolos incluidos (Ej: 'COP $ 180.000,00' o 'COP -$ 538,07' o '-21,478.00'). Cópialo exacto."
-      }
-    `;
+        Para el campo "tipo": clasifica como "egreso" SOLO si el valor tiene signo NEGATIVO (-) o aparece en color ROJO. Si no tiene signo negativo y no está en rojo, clasifica como "ingreso". En caso de duda, pon "ingreso".
 
-    // 4. Llamada a Claude Sonnet 4 (Anthropic Vision) con reintentos ante sobrecarga
-    const base64SinPrefijo = imagenBase64.replace(/^data:image\/\w+;base64,/, '');
-    const mediaType = imagenBase64.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
-
-    const bodyAI = JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 400,
-      messages: [
+        Formato exacto esperado:
         {
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64SinPrefijo } },
-            { type: 'text', text: prompt }
-          ]
+          "tipo": "ingreso" o "egreso",
+          "plataforma": "Nombre del banco o app (Ej: Bancolombia, Nequi, Daviplata)",
+          "monto": "Solo el número absoluto sin símbolos ni signos (Ej: 3000000). NUNCA incluyas el signo negativo.",
+          "referencia": "Código de comprobante o referencia. Si no hay, pon '0'",
+          "fecha_pago": "La fecha exacta en formato YYYY-MM-DD",
+          "hora_pago": "La hora EXACTA tal cual aparece, en formato HH:MM:SS (24h). Incluye los segundos REALES del comprobante, NO los redondees a 00. Ej: si dice 15:00:27, pon '15:00:27'. Si no hay hora visible, pon '12:00:00'",
+          "descripcion_movimiento": "El campo 'Descripción' del comprobante bancario, TAL CUAL aparece (Ej: 'Valor iva', 'Compra POS', 'Transferencia a terceros'). Si no hay, pon ''",
+          "valor_original": "El valor TAL CUAL aparece en el comprobante, con signos y símbolos incluidos (Ej: 'COP $ 180.000,00' o 'COP -$ 538,07' o '-21,478.00'). Cópialo exacto."
         }
-      ]
-    });
+      `;
 
-    let dataAI;
-    const MAX_REINTENTOS = 4;
-    for (let intento = 0; intento < MAX_REINTENTOS; intento++) {
-      const responseAI = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': anthropicKey,
-          'anthropic-version': '2023-06-01'
-        },
-        body: bodyAI
+      const base64SinPrefijo = imagenBase64.replace(/^data:image\/\w+;base64,/, '');
+      const mediaType = imagenBase64.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
+
+      const bodyAI = JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 400,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64SinPrefijo } },
+              { type: 'text', text: prompt }
+            ]
+          }
+        ]
       });
 
-      dataAI = await responseAI.json();
+      let dataAI;
+      const MAX_REINTENTOS = 4;
+      for (let intento = 0; intento < MAX_REINTENTOS; intento++) {
+        const responseAI = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': anthropicKey,
+            'anthropic-version': '2023-06-01'
+          },
+          body: bodyAI
+        });
 
-      const esOverload = responseAI.status === 529 ||
-        (dataAI.error && (dataAI.error.type === 'overloaded_error' || (dataAI.error.message || '').toLowerCase().includes('overloaded')));
+        dataAI = await responseAI.json();
 
-      if (esOverload && intento < MAX_REINTENTOS - 1) {
-        await new Promise(r => setTimeout(r, (intento + 1) * 4000));
-        continue;
+        const esOverload = responseAI.status === 529 ||
+          (dataAI.error && (dataAI.error.type === 'overloaded_error' || (dataAI.error.message || '').toLowerCase().includes('overloaded')));
+
+        if (esOverload && intento < MAX_REINTENTOS - 1) {
+          await new Promise(r => setTimeout(r, (intento + 1) * 4000));
+          continue;
+        }
+        break;
       }
-      break;
-    }
 
-    if (dataAI.error) throw new Error("Error en Claude: " + (dataAI.error.message || JSON.stringify(dataAI.error)));
+      if (dataAI.error) throw new Error("Error en Claude: " + (dataAI.error.message || JSON.stringify(dataAI.error)));
 
-    const respuestaTexto = (dataAI.content && dataAI.content[0] ? dataAI.content[0].text : '').trim();
-    const jsonLimpio = respuestaTexto.replace(/```json/g, '').replace(/```/g, '').trim();
-    const datos = JSON.parse(jsonLimpio);
+      const respuestaTexto = (dataAI.content && dataAI.content[0] ? dataAI.content[0].text : '').trim();
+      const jsonLimpio = respuestaTexto.replace(/```json/g, '').replace(/```/g, '').trim();
+      datos = JSON.parse(jsonLimpio);
 
-    if (!datos.monto || !datos.referencia || !datos.fecha_pago) {
-       return res.status(400).json({ status: 'error', mensaje: 'La imagen es borrosa o no es un comprobante válido.' });
+      if (!datos.monto || !datos.referencia || !datos.fecha_pago) {
+         return res.status(400).json({ status: 'error', mensaje: 'La imagen es borrosa o no es un comprobante válido.' });
+      }
     }
 
     // Corrección de plataforma: consignaciones corresponsal → "Corresponsal"
