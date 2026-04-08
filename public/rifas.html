@@ -855,8 +855,8 @@
 let contrasena = '';
 let asesorNombre = '';
 let rifasData = [];
+let retirosCapitalData = [];
 let saldoRecapData = { mateo: 0, alejandro: 0 };
-let recapResumenVisible = true;
 
 // ── Utilidades ─────────────────────────────────────────────────────────────
 const fmt = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-CO');
@@ -952,6 +952,7 @@ async function cargarRifas() {
   try {
     const data = await apiCall('listar_rifas');
     rifasData = data.rifas || [];
+    retirosCapitalData = data.retiros_capital || [];
     saldoRecapData = data.saldo_recapitalizacion || { mateo: 0, alejandro: 0 };
     renderRifas();
   } catch (e) {
@@ -1076,12 +1077,20 @@ function renderCapitalPorInversor() {
     .filter(r => r.numero_rifa != null && r.numero_rifa <= 4)
     .map(r => ({ id: r.id, nombre: r.nombre }));
 
+  // Mapeo subcategoría de gastos → nombre en tabla de capital
+  const MAPEO_INVERSOR = { 'Federico': 'Papá' };
+  function normInversor(sub) { return MAPEO_INVERSOR[sub] || sub; }
+
   // detalleMap[inversor][rifa_id] = [{ uid, nombre, valor, esExceso }]
   const detalleMap = {};
+  // retiroMap[inversor] = [{ uid, nombre, valor }]
+  const retiroMap = {};
   let uidCounter = 0;
+
   inversores.forEach(inv => {
     detalleMap[inv] = {};
     rifas.forEach(r => { detalleMap[inv][r.id] = []; });
+    retiroMap[inv] = [];
   });
 
   todosLosPremios.forEach(p => {
@@ -1104,29 +1113,61 @@ function renderCapitalPorInversor() {
     });
   });
 
+  // Retiros de capital por inversor
+  (retirosCapitalData || []).forEach(ret => {
+    const inv = normInversor(ret.inversor);
+    if (!retiroMap[inv]) return;
+    retiroMap[inv].push({
+      uid: `ret_${uidCounter++}`,
+      nombre: ret.descripcion || 'Retiro',
+      valor: ret.monto
+    });
+  });
+
   // Estado de checks (todos activos por defecto)
   window._capChecks = {};
-  inversores.forEach(inv => rifas.forEach(r =>
-    detalleMap[inv][r.id].forEach(d => { window._capChecks[d.uid] = true; })
-  ));
+  inversores.forEach(inv => {
+    rifas.forEach(r => detalleMap[inv][r.id].forEach(d => { window._capChecks[d.uid] = true; }));
+    retiroMap[inv].forEach(d => { window._capChecks[d.uid] = true; });
+  });
+
+  function calcInvTotal(inv) {
+    let t = 0;
+    rifas.forEach(r => {
+      detalleMap[inv][r.id].forEach(d => { if (window._capChecks[d.uid]) t += d.valor; });
+    });
+    retiroMap[inv].forEach(d => { if (window._capChecks[d.uid]) t -= d.valor; });
+    return t;
+  }
 
   function recalcAndUpdate() {
     inversores.forEach(inv => {
-      let totalInv = 0;
       rifas.forEach(r => {
         const items = detalleMap[inv][r.id];
         const cellVal = items.reduce((s, d) => s + (window._capChecks[d.uid] ? d.valor : 0), 0);
-        totalInv += cellVal;
         const cellEl = document.querySelector(`[data-cap-cell="${inv}__${r.id}"]`);
         if (cellEl) {
           const strongEl = cellEl.querySelector('.cap-cell-total');
           if (strongEl) strongEl.textContent = cellVal > 0 ? fmt(cellVal) : '—';
         }
       });
+
+      // Celda de retiros
+      const retItems = retiroMap[inv];
+      const retVal = retItems.reduce((s, d) => s + (window._capChecks[d.uid] ? d.valor : 0), 0);
+      const retCellEl = document.querySelector(`[data-cap-cell="${inv}__retiros"]`);
+      if (retCellEl) {
+        const strongEl = retCellEl.querySelector('.cap-cell-total');
+        if (strongEl) strongEl.textContent = retVal > 0 ? '-' + fmt(retVal) : '—';
+      }
+
+      // Total inversor
+      const totalInv = calcInvTotal(inv);
       const totalEl = document.querySelector(`[data-cap-inv-total="${inv}"]`);
-      if (totalEl) totalEl.textContent = totalInv > 0 ? fmt(totalInv) : '—';
+      if (totalEl) totalEl.textContent = fmt(totalInv);
     });
 
+    // Totales por columna de rifa
     rifas.forEach(r => {
       let totalRifa = 0;
       inversores.forEach(inv => {
@@ -1136,10 +1177,17 @@ function renderCapitalPorInversor() {
       if (el) el.textContent = totalRifa > 0 ? fmt(totalRifa) : '—';
     });
 
+    // Total columna retiros
+    let totalRetiros = 0;
+    inversores.forEach(inv => {
+      totalRetiros += retiroMap[inv].reduce((s, d) => s + (window._capChecks[d.uid] ? d.valor : 0), 0);
+    });
+    const retTotalEl = document.querySelector('[data-cap-rifa-total="retiros"]');
+    if (retTotalEl) retTotalEl.textContent = totalRetiros > 0 ? '-' + fmt(totalRetiros) : '—';
+
+    // Gran total
     let gt = 0;
-    inversores.forEach(inv => rifas.forEach(r =>
-      detalleMap[inv][r.id].forEach(d => { if (window._capChecks[d.uid]) gt += d.valor; })
-    ));
+    inversores.forEach(inv => { gt += calcInvTotal(inv); });
     const gtEl = document.querySelector('[data-cap-gran-total]');
     if (gtEl) gtEl.textContent = fmt(gt);
   }
@@ -1151,7 +1199,9 @@ function renderCapitalPorInversor() {
     recalcAndUpdate();
   };
 
-  // Renderizar tabla
+  // ── Renderizar tabla ──────────────────────────────────────────────────
+  const hayRetiros = inversores.some(inv => retiroMap[inv].length > 0);
+
   body.innerHTML = `
     <div style="overflow-x:auto;">
       <table class="capital-table">
@@ -1159,17 +1209,18 @@ function renderCapitalPorInversor() {
           <tr>
             <th>Inversor</th>
             ${rifas.map(r => `<th>${r.nombre}</th>`).join('')}
+            ${hayRetiros ? '<th style="color:#b91c1c;">Retiros de Capital</th>' : ''}
             <th style="color:var(--ink);">Total capital</th>
           </tr>
         </thead>
         <tbody>
           ${inversores.map(inv => {
             const color = colorInv(inv);
-            let totalInv = 0;
+
+            // Celdas de rifas
             const celdas = rifas.map(r => {
               const items = detalleMap[inv][r.id];
               const cellVal = items.reduce((s, d) => s + d.valor, 0);
-              totalInv += cellVal;
               if (!cellVal) return `<td class="capital-val-zero">—</td>`;
 
               const detalle = items.map(d =>
@@ -1185,13 +1236,37 @@ function renderCapitalPorInversor() {
               </td>`;
             }).join('');
 
+            // Celda de retiros
+            let celdaRetiros = '';
+            if (hayRetiros) {
+              const retItems = retiroMap[inv];
+              const retVal = retItems.reduce((s, d) => s + d.valor, 0);
+              if (!retVal) {
+                celdaRetiros = `<td class="capital-val-zero">—</td>`;
+              } else {
+                const retDetalle = retItems.map(d =>
+                  `<div class="cap-item-row">
+                    <input type="checkbox" class="cap-check" checked onchange="_capToggle('${d.uid}')">
+                    <span data-cap-label="${d.uid}" class="cap-item-label" style="color:#b91c1c; font-weight:500;">${d.nombre}: ${fmt(d.valor)}</span>
+                  </div>`
+                ).join('');
+                celdaRetiros = `<td class="capital-val" style="vertical-align:top;" data-cap-cell="${inv}__retiros">
+                  <strong class="cap-cell-total" style="color:#b91c1c;">-${fmt(retVal)}</strong>
+                  <div style="margin-top:4px;">${retDetalle}</div>
+                </td>`;
+              }
+            }
+
+            const totalInv = calcInvTotal(inv);
+
             return `<tr>
               <td>
                 <span class="inv-dot" style="background:${color};"></span>
                 <strong>${inv}</strong>
               </td>
               ${celdas}
-              <td class="capital-total-val" data-cap-inv-total="${inv}">${totalInv > 0 ? fmt(totalInv) : '<span class="capital-val-zero">—</span>'}</td>
+              ${celdaRetiros}
+              <td class="capital-total-val" data-cap-inv-total="${inv}">${fmt(totalInv)}</td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -1202,7 +1277,11 @@ function renderCapitalPorInversor() {
               const t = inversores.reduce((s, inv) => s + detalleMap[inv][r.id].reduce((ss, d) => ss + d.valor, 0), 0);
               return `<td data-cap-rifa-total="${r.id}">${t > 0 ? fmt(t) : '—'}</td>`;
             }).join('')}
-            <td data-cap-gran-total>${fmt(inversores.reduce((s, inv) => s + rifas.reduce((ss, r) => ss + detalleMap[inv][r.id].reduce((sss, d) => sss + d.valor, 0), 0), 0))}</td>
+            ${hayRetiros ? (() => {
+              const tRet = inversores.reduce((s, inv) => s + retiroMap[inv].reduce((ss, d) => ss + d.valor, 0), 0);
+              return `<td data-cap-rifa-total="retiros" style="color:#b91c1c;">${tRet > 0 ? '-' + fmt(tRet) : '—'}</td>`;
+            })() : ''}
+            <td data-cap-gran-total>${fmt(inversores.reduce((s, inv) => s + calcInvTotal(inv), 0))}</td>
           </tr>
         </tfoot>
       </table>

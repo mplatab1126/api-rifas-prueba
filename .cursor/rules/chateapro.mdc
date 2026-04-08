@@ -248,6 +248,29 @@ Rastrean cuántas veces el bot ha interactuado con el cliente y qué preguntó:
 ## Endpoints del sistema que ChateaPro consume
 - `GET /api/cliente?telefono={tel}` — ChateaPro consulta boletas, deuda y datos del cliente
 - `GET /api/disponibles` — ChateaPro consulta números de boleta disponibles
+- `POST /api/chateapro/clasificar-plantilla` — Clasificación de intenciones del subflujo **Plantilla** (difusiones) con Claude **fuera** del nodo de IA de ChateaPro. Útil cuando quieres control total del prompt y del modelo vía Vercel.
+
+### Clasificador externo (`/api/chateapro/clasificar-plantilla`)
+
+1. **Vercel — variables de entorno**
+   - `CHATEAPRO_CLASIFICAR_SECRET` — contraseña larga aleatoria; ChateaPro la envía en el header.
+   - `ANTHROPIC_API_KEY` — ya usada en admin; misma clave.
+   - Opcional: `ANTHROPIC_CLASIFICADOR_MODEL` (por defecto `claude-haiku-4-5-20251001`).
+   - Opcional: `CHATEAPRO_CLASIFICADOR_SYSTEM` — prompt completo del clasificador (si no, se usa el prompt por defecto del archivo `api/chateapro/clasificador-prompt.js`).
+
+2. **Request**
+   - Método: `POST`
+   - Header: `Authorization: Bearer {CHATEAPRO_CLASIFICAR_SECRET}` (o header `x-chateapro-secret` con el mismo valor).
+   - Body JSON: `{ "mensaje": "{{variable_con_texto_del_cliente}}" }` — el nombre del campo en ChateaPro depende de cómo armes el cuerpo en el nodo de solicitud HTTP; también se aceptan `message`, `text` o `contenido`.
+
+3. **Response (200 JSON)**
+   - Éxito: `{ "ok": true, "categoria": "PAGO", "tag": "Plantilla pago" }` — `categoria` es una de: PAGO, MEDIO DE PAGO, CONSULTA, PROMESA, SALUDO, OTRO, ASESOR, NINGUNO.
+   - Fallo de IA: `{ "ok": false, "categoria": "NINGUNO", "tag": "Plantilla ninguno", "error": "..." }` (HTTP 200 para que el flujo pueda ramificar igual).
+
+4. **En el editor de ChateaPro**
+   - Sustituir el nodo de IA de “Reconocimiento de intenciones” por un nodo de **solicitud HTTP** a la URL pública del proyecto (ej. `https://<tu-dominio-vercel>/api/chateapro/clasificar-plantilla`).
+   - Guardar `categoria` o `tag` en un campo personalizado o variable de flujo y reutilizar las **mismas condiciones** que ya tenías (ramas por categoría / aplicación de tags “Plantilla …”).
+   - La lógica de mensajes posteriores (textos al cliente) no cambia salvo que quieras mover también la **generación** de respuestas a otro endpoint; este endpoint solo clasifica.
 
 ## Endpoints del sistema que consumen la API de ChateaPro
 - `POST /api/admin/sincronizar-agentes` — Trae el resumen de rendimiento de asesores de ambas líneas y lo guarda en la tabla `rendimiento_asesores`

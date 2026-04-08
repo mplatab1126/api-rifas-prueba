@@ -117,12 +117,28 @@ export default async function handler(req, res) {
       const saldoFinal = {};
       HERMANOS.forEach(h => { saldoFinal[h.toLowerCase()] = saldoAcum[h]; });
 
+      // ── Paso 3: obtener retiros de capital desde gastos ──────────────────
+      const { data: retirosRaw } = await supabase
+        .from('gastos')
+        .select('id, monto, subcategoria, descripcion, fecha')
+        .eq('categoria', 'Retiro de Capital')
+        .order('fecha', { ascending: true });
+
+      const retiros_capital = (retirosRaw || []).map(g => ({
+        id: g.id,
+        monto: Number(g.monto),
+        inversor: g.subcategoria || null,
+        descripcion: g.descripcion || '',
+        fecha: g.fecha
+      }));
+
       // Para el frontend: lista en orden DESCENDENTE (más reciente primero)
       const rifasDesc = [...rifasCompletas].reverse();
 
       return res.status(200).json({
         status: 'ok',
         rifas: rifasDesc,
+        retiros_capital,
         saldo_recapitalizacion: saldoFinal   // { mateo: N, alejandro: N }
       });
     }
