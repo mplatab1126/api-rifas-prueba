@@ -1,15 +1,8 @@
 import { supabase } from './lib/supabase.js';
+import { aplicarCors } from './lib/cors.js';
 
 export default async function handler(req, res) {
-  // 1. Configuramos permisos CORS
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
-  
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
+  if (aplicarCors(req, res, 'GET,OPTIONS,POST')) return;
 
   // 2. Solo aceptamos peticiones POST (más seguras para enviar datos)
   if (req.method !== 'POST') {

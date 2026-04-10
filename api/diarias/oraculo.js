@@ -1,9 +1,7 @@
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'OPTIONS,POST');
+import { aplicarCors } from '../lib/cors.js';
 
-  if (req.method === 'OPTIONS') { res.status(200).end(); return; }
+export default async function handler(req, res) {
+  if (aplicarCors(req, res, 'OPTIONS,POST')) return;
   if (req.method !== 'POST') return res.status(405).json({ status: 'error' });
 
   const { texto, cifras } = req.body;

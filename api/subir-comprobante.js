@@ -1,11 +1,8 @@
 import { supabase } from './lib/supabase.js';
+import { aplicarCors } from './lib/cors.js';
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
-  
-  if (req.method === 'OPTIONS') { res.status(200).end(); return; }
+  if (aplicarCors(req, res, 'GET,OPTIONS,POST')) return;
 
   const textoIA = req.body?.texto_ia || req.query?.texto_ia;
 

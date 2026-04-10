@@ -1,15 +1,8 @@
 import { supabase } from './lib/supabase.js';
+import { aplicarCors } from './lib/cors.js';
 
 export default async function handler(req, res) {
-  // 1. Configuramos los permisos (CORS) para que cualquiera pueda consultar
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
+  if (aplicarCors(req, res, 'GET,OPTIONS,PATCH,DELETE,POST,PUT')) return;
 
   // 2. Recibimos el teléfono que manda Chatea Pro
   const { telefono } = req.query;

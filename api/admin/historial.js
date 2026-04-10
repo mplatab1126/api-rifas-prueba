@@ -1,13 +1,8 @@
 import { supabase } from '../lib/supabase.js';
+import { aplicarCors } from '../lib/cors.js';
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'OPTIONS,GET');
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end(); return;
-  }
+  if (aplicarCors(req, res, 'OPTIONS,GET')) return;
 
   const { numero } = req.query;
   if (!numero) return res.status(400).json({ status: 'error', mensaje: 'Falta la boleta' });

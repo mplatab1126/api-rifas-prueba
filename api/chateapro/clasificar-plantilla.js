@@ -3,6 +3,7 @@ import {
   CATEGORIAS_VALIDAS,
   TAG_POR_CATEGORIA,
 } from './clasificador-prompt.js';
+import { aplicarCors } from '../lib/cors.js';
 
 /**
  * Clasificación de intenciones para el subflujo "Plantilla" (difusiones).
@@ -18,13 +19,6 @@ import {
  * Si falla la IA:
  *   { "ok": false, "categoria": "NINGUNO", "tag": "Plantilla ninguno", "error": "..." }
  */
-
-function cors(res) {
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'OPTIONS,POST');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-chateapro-secret');
-}
 
 function extraerMensaje(body) {
   if (body == null) return '';
@@ -119,11 +113,7 @@ Devuelve SOLO el JSON {"categoria":"..."} con una de las categorías permitidas 
 }
 
 export default async function handler(req, res) {
-  cors(res);
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
+  if (aplicarCors(req, res, 'OPTIONS,POST', 'Content-Type, Authorization, x-chateapro-secret')) return;
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, mensaje: 'Usa POST' });
   }

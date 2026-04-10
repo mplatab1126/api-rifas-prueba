@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase.js';
+import { aplicarCors } from '../lib/cors.js';
 import twilio from 'twilio';
 
 // Convierte un número entero a palabras en español (para que la voz lo lea bien)
@@ -58,12 +59,7 @@ function formatearTelefono(telefono) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
-  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
-
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (aplicarCors(req, res, 'GET,OPTIONS,POST', 'Authorization, Content-Type')) return;
 
   if (req.method !== 'GET' && req.method !== 'POST') {
     return res.status(405).json({ error: 'Método no permitido' });

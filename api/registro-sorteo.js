@@ -1,14 +1,8 @@
 import { supabase } from './lib/supabase.js';
+import { aplicarCors } from './lib/cors.js';
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
+  if (aplicarCors(req, res, 'GET,OPTIONS,POST')) return;
 
   // GET: Contar registros o buscar boletas por teléfono
   if (req.method === 'GET') {
