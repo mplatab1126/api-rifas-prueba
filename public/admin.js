@@ -231,8 +231,6 @@ const $ = id => document.getElementById(id);
         }
     }
 
-    function preguntarReiniciarSaldo() { /* deshabilitado */ }
-
     function initLogin(){ const s=localStorage.getItem(STORAGE_KEY); if(s) verifyLogin(s,true); }
     $('btnLogin').onclick = ()=> verifyLogin($('loginPwd').value);
     $('btnLogout').onclick = ()=> { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem('asesor_nombre'); location.reload(); };
