@@ -12,6 +12,15 @@
 - Cuando hagas cambios en el código, explícame en palabras simples qué hiciste y por qué.
 - Si hay varias formas de hacer algo, recomiéndame la más simple y dime por qué la elegiste.
 
+## Largo de las respuestas
+
+- Sé conciso. Ve al grano, sin preámbulo ni relleno.
+- Para tareas rutinarias (cambios simples, ediciones de texto, commits): responde corto, sin tablas decorativas, sin analogías innecesarias, sin repetir lo que ya te dije.
+- Para tareas delicadas (pagos, dinero, permisos, base de datos, cambios que tocan muchos archivos): extiéndete lo necesario para que entienda bien qué pasa y qué riesgos hay. Aquí sí vale la pena explicar con detalle.
+- No repitas resúmenes de lo que ya hicimos a menos que te lo pida.
+- No termines cada respuesta preguntando "¿seguimos con X?" salvo que tenga sentido para avanzar.
+- Evita secciones tipo "Lo que ganaste" o "Beneficios reales" a menos que sean útiles para entender una decisión.
+
 ## Cuándo preguntarme o avisarme
 
 - Si una tarea no está clara, hazme una o dos preguntas clave antes de empezar. No adivines.
