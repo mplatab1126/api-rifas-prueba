@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
+import { validarAsesor } from '../lib/auth.js';
 
 export const config = { api: { bodyParser: { sizeLimit: '8mb' } } };
 
@@ -8,8 +9,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
   const { textoPDF, contrasena } = req.body;
-  const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
-  if (!asesores[contrasena]) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
+  if (!validarAsesor(contrasena)) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
   if (!textoPDF) return res.status(400).json({ status: 'error', mensaje: 'No se envió texto del PDF' });
 
   try {

@@ -1,5 +1,6 @@
 import { supabaseAdmin as supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
+import { validarAsesor } from '../lib/auth.js';
 
 // Devuelve el lunes de la semana que contiene la fecha dada (YYYY-MM-DD)
 function getMondayOf(dateStr) {
@@ -43,9 +44,7 @@ export default async function handler(req, res) {
     const { contrasena, accion, horarios, asesor_nombre, semana_inicio,
             semana_origen, semana_destino } = req.body;
 
-    const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
-    const nombreAsesor = asesores[contrasena];
-
+    const nombreAsesor = validarAsesor(contrasena);
     if (!nombreAsesor) {
       return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
     }

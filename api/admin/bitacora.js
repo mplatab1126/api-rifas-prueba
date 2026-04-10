@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
+import { validarAsesor } from '../lib/auth.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -9,8 +10,7 @@ export default async function handler(req, res) {
   const esApiExterna = api_key === process.env.CRON_SECRET;
 
   if (!esApiExterna) {
-    const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
-    if (!asesores[contrasena]) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
+    if (!validarAsesor(contrasena)) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
   }
 
   try {
@@ -38,8 +38,7 @@ export default async function handler(req, res) {
 
     if (accion === 'editar') {
       if (!esApiExterna) {
-        const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
-        const nombre = (asesores[contrasena] || '').toLowerCase().trim();
+        const nombre = (validarAsesor(contrasena) || '').toLowerCase().trim();
         if (!['mateo'].includes(nombre)) {
           return res.status(403).json({ status: 'error', mensaje: 'Solo Mateo puede editar entradas' });
         }
@@ -57,8 +56,7 @@ export default async function handler(req, res) {
 
     if (accion === 'eliminar') {
       if (!esApiExterna) {
-        const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
-        const nombre = (asesores[contrasena] || '').toLowerCase().trim();
+        const nombre = (validarAsesor(contrasena) || '').toLowerCase().trim();
         if (!['mateo'].includes(nombre)) {
           return res.status(403).json({ status: 'error', mensaje: 'Solo Mateo puede eliminar entradas' });
         }

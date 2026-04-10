@@ -1,13 +1,12 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
+import { validarAsesor } from '../lib/auth.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
 
-  const { id, contrasena } = req.body; 
-  const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
-  const nombreAsesor = asesores[contrasena]; // <-- CORRECCIÓN: Definimos el nombre del asesor
-
+  const { id, contrasena } = req.body;
+  const nombreAsesor = validarAsesor(contrasena);
   if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
   if (!id) return res.status(400).json({ status: 'error', mensaje: 'Falta el ID del abono' });
 

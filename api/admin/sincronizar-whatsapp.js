@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
+import { validarAsesor } from '../lib/auth.js';
 
 /**
  * Sincroniza los costos de plantillas de WhatsApp Business
@@ -27,8 +28,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
   const { contrasena } = req.body;
-  const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
-  const nombreAsesor = asesores[contrasena];
+  const nombreAsesor = validarAsesor(contrasena);
   if (!nombreAsesor || nombreAsesor !== 'Mateo') {
     return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido.' });
   }

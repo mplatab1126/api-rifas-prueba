@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
+import { validarAsesor } from '../lib/auth.js';
 import { PRECIOS } from '../config/precios.js';
 
 export default async function handler(req, res) {
@@ -82,8 +83,7 @@ export default async function handler(req, res) {
   // POST actualizar_config — actualizar fecha/lotería sin reiniciar
   // ─────────────────────────────────────────────────────────────────────
   if (accion === 'actualizar_config') {
-    const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
-    const nombreAsesor = asesores[contrasena];
+    const nombreAsesor = validarAsesor(contrasena);
     if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
     const { data: permRow } = await supabase.from('permisos_asesores').select('permitido').eq('asesor_nombre', nombreAsesor).eq('pagina_id', 'rifas-menu').maybeSingle();
     const tienePermiso = permRow ? permRow.permitido : ['mateo', 'alejo p', 'alejo plata'].includes(nombreAsesor.toLowerCase().trim());
@@ -109,9 +109,7 @@ export default async function handler(req, res) {
   // POST guardar_y_reiniciar — asesores con permiso de Rifas Diarias
   // ─────────────────────────────────────────────────────────────────────
   if (accion === 'guardar_y_reiniciar') {
-    const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
-    const nombreAsesor = asesores[contrasena];
-
+    const nombreAsesor = validarAsesor(contrasena);
     if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
     const { data: permRow } = await supabase.from('permisos_asesores').select('permitido').eq('asesor_nombre', nombreAsesor).eq('pagina_id', 'rifas-menu').maybeSingle();
     const tienePermiso = permRow ? permRow.permitido : ['mateo', 'alejo p', 'alejo plata'].includes(nombreAsesor.toLowerCase().trim());

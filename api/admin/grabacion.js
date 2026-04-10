@@ -1,4 +1,5 @@
 import { aplicarCors } from '../lib/cors.js';
+import { validarAsesor } from '../lib/auth.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'GET,OPTIONS')) return;
@@ -6,8 +7,7 @@ export default async function handler(req, res) {
 
   const { url, contrasena } = req.query;
 
-  const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
-  const nombreAsesor = asesores[contrasena];
+  const nombreAsesor = validarAsesor(contrasena);
   if (!nombreAsesor) return res.status(401).json({ error: 'No autorizado' });
 
   if (!url || !url.includes('api.twilio.com')) {

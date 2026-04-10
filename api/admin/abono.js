@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
+import { validarAsesor } from '../lib/auth.js';
 import { PRECIOS } from '../config/precios.js';
 
 export default async function handler(req, res) {
@@ -11,9 +12,7 @@ export default async function handler(req, res) {
   const ASESORES_INDEPENDIENTES = ['alejandra plata', 'joaquín', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
   const esIndependiente = (nombre) => nombre && ASESORES_INDEPENDIENTES.some(ind => nombre.toLowerCase().includes(ind));
 
-  const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
-  const nombreAsesor = asesores[contrasena];
-
+  const nombreAsesor = validarAsesor(contrasena);
   if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña de asesor incorrecta' });
   if (!numeroBoleta || !valorAbono) return res.status(400).json({ status: 'error', mensaje: 'Falta la boleta o el valor del abono' });
 

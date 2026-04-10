@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
+import { validarAsesor } from '../lib/auth.js';
 
 const GERENCIA = ['Mateo', 'Alejo P', 'Alejo Plata'];
 
@@ -48,8 +49,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
 
   const { contrasena, accion, ...payload } = req.body;
-  const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
-  const nombreAsesor = asesores[contrasena];
+  const nombreAsesor = validarAsesor(contrasena);
   if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
   if (!GERENCIA.includes(nombreAsesor)) return res.status(403).json({ status: 'error', mensaje: 'Solo gerencia puede usar esta función.' });
 

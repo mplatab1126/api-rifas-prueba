@@ -1,12 +1,12 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
+import { validarAsesor } from '../lib/auth.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
 
   const { contrasena } = req.body;
-  const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
-  if (!asesores[contrasena]) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
+  if (!validarAsesor(contrasena)) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
 
   const CHATEA_TOKEN_LINEA_1 = process.env.CHATEA_TOKEN_LINEA_1;
   const CHATEA_TOKEN_LINEA_2 = process.env.CHATEA_TOKEN_LINEA_2;

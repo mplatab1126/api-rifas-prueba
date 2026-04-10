@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
+import { validarAsesor } from '../lib/auth.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -7,9 +8,7 @@ export default async function handler(req, res) {
 
   const { referencia, contrasena } = req.body;
 
-  // 2. Seguridad
-  const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
-  if (!asesores[contrasena]) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
+  if (!validarAsesor(contrasena)) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
   if (!referencia) return res.status(400).json({ status: 'error', mensaje: 'Falta la referencia' });
 
   try {

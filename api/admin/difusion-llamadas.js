@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
+import { validarAsesor } from '../lib/auth.js';
 
 function numeroAPalabras(n) {
   const num = Math.round(n);
@@ -43,8 +44,7 @@ export default async function handler(req, res) {
 
   const { contrasena, accion, ...payload } = req.body;
 
-  const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
-  const nombreAsesor = asesores[contrasena];
+  const nombreAsesor = validarAsesor(contrasena);
   if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
   if (!GERENCIA.includes(nombreAsesor)) {
     return res.status(403).json({ status: 'error', mensaje: 'Solo gerencia puede gestionar las llamadas.' });

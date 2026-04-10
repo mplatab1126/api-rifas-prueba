@@ -1,4 +1,5 @@
 import { aplicarCors } from '../lib/cors.js';
+import { validarAsesor } from '../lib/auth.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -6,9 +7,7 @@ export default async function handler(req, res) {
 
   const { stats, globales, contrasena } = req.body;
 
-  // Seguridad
-  const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
-  if (!asesores[contrasena]) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
+  if (!validarAsesor(contrasena)) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
 
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (!anthropicKey) return res.status(500).json({ status: 'error', mensaje: 'Falta la API Key de Anthropic en el servidor' });

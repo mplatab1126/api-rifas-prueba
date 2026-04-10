@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
+import { validarAsesor } from '../lib/auth.js';
 
 const CATEGORIAS = [
   { id: 'operacionales',    nombre: 'Gastos Operacionales',      icono: '⚙️', afecta_er: true  },
@@ -18,8 +19,7 @@ export default async function handler(req, res) {
 
   const { contrasena, accion, ...payload } = req.body;
 
-  const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
-  const nombreAsesor = asesores[contrasena];
+  const nombreAsesor = validarAsesor(contrasena);
   if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
 
   try {
