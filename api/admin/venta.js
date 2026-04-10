@@ -103,7 +103,7 @@ export default async function handler(req, res) {
     let diariasCompradas = clienteActual?.boletas_diarias_compradas || 0;
     let grandesCompradas = clienteActual?.boletas_grandes_compradas || 0;
 
-    const precioTotal = numeroLimpio.length === 3 ? 5000 : (esDiaria ? 20000 : (Number(boletaData.precio_total) || 200000));
+    const precioTotal = numeroLimpio.length === 3 ? 5000 : (esDiaria ? 20000 : (Number(boletaData.precio_total) || 150000));
 
     // Premio Rifa: pagar automáticamente el 100% del precio
     if (esPremioRifa || referenciaAbono === 'premio_rifa_diaria') {
