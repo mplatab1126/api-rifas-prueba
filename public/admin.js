@@ -161,73 +161,11 @@ const $ = id => document.getElementById(id);
         return ASESORES_INDEPENDIENTES.some(ind => n.includes(ind));
     }
 
-    function cargarSaldoAsesor(nombre) {
+    function inicializarAsesor(nombre) {
         nombreAsesorActual = nombre;
-        const saldo = parseInt(localStorage.getItem('saldo_asesor_' + nombre) || '0');
-        actualizarDisplaySaldo(saldo);
         const nombreBadge = document.getElementById('nombreAsesorBadge');
         if (nombreBadge) {
             nombreBadge.innerHTML = '👤 ' + nombre;
-        }
-    }
-
-    function actualizarSaldoAsesor(incremento) {
-        if (!nombreAsesorActual) return;
-        const saldo = parseInt(localStorage.getItem('saldo_asesor_' + nombreAsesorActual) || '0');
-        const nuevoSaldo = saldo + incremento;
-        localStorage.setItem('saldo_asesor_' + nombreAsesorActual, nuevoSaldo);
-        actualizarDisplaySaldo(nuevoSaldo);
-        celebrarSaldo(incremento);
-    }
-
-    function actualizarDisplaySaldo(saldo) {
-        const cantidad = document.getElementById('saldoCantidad');
-        if (!cantidad) return;
-        if (saldoOculto) return;
-        const fmt = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(saldo);
-        cantidad.textContent = fmt;
-    }
-
-    function celebrarSaldo(incremento) {
-        const badge = document.getElementById('saldoAsesor');
-        if (!badge) return;
-
-        // Pulso del badge
-        badge.classList.remove('celebrando');
-        void badge.offsetWidth;
-        badge.classList.add('celebrando');
-        badge.addEventListener('animationend', () => badge.classList.remove('celebrando'), { once: true });
-
-        // Toast flotante
-        const fmt = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(incremento);
-        const toast = document.createElement('div');
-        toast.className = 'saldo-toast';
-        toast.textContent = '+' + fmt;
-
-        const rect = badge.getBoundingClientRect();
-        toast.style.top = (rect.top + window.scrollY - 4) + 'px';
-        toast.style.right = (window.innerWidth - rect.right) + 'px';
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 1500);
-    }
-
-    let saldoOculto = false;
-
-    function toggleSaldoVisibilidad() {
-        saldoOculto = !saldoOculto;
-        const cantidad = document.getElementById('saldoCantidad');
-        const texto = document.getElementById('btnOcultarTexto');
-        const btn = document.getElementById('btnOcultarSaldo');
-        if (!cantidad || !btn) return;
-        if (saldoOculto) {
-            cantidad.textContent = '••••••';
-            btn.childNodes[0].textContent = '🙈 ';
-            if (texto) texto.textContent = 'Mostrar';
-        } else {
-            const saldo = parseInt(localStorage.getItem('saldo_asesor_' + nombreAsesorActual) || '0');
-            actualizarDisplaySaldo(saldo);
-            btn.childNodes[0].textContent = '👁 ';
-            if (texto) texto.textContent = 'Ocultar';
         }
     }
 
@@ -259,7 +197,7 @@ const $ = id => document.getElementById(id);
               $('v_contrasena').value = pwd; 
               $('smartInput').focus();
               cargarPlataformas();
-              cargarSaldoAsesor(res.asesor);
+              inicializarAsesor(res.asesor);
               if (res.asesor === 'Mateo') $('btnFinanzas').style.display = '';
               if (res.asesor === 'Mateo' || res.asesor === 'Alejo P' || res.asesor === 'Alejo Plata') $('btnLlamadas').style.display = '';
           } else {
@@ -904,7 +842,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
                };
                const req = await fetch('/api/admin/venta', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(ventaPayload) });
                const res = await req.json();
-               if(res.status === 'ok') { ok++; actualizarSaldoAsesor(800); } else { fails++; detalleErrores.push(`Boleta ${nums[i]}: ${res.mensaje}`); }
+               if(res.status === 'ok') { ok++; } else { fails++; detalleErrores.push(`Boleta ${nums[i]}: ${res.mensaje}`); }
            } catch(e) { fails++; detalleErrores.push(`Boleta ${nums[i]}: Error de conexión`); }
        }
        var textoBtn = 'Registrar Venta';
@@ -1018,7 +956,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
                const req = await fetch('/api/admin/abono', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
                const res = await req.json();
 
-               if(res.status === 'ok') { ok++; actualizarSaldoAsesor(400); } else { fails++; detalleErrores.push(`Boleta ${boletasTarget[i]}: ${res.mensaje}`); }
+               if(res.status === 'ok') { ok++; } else { fails++; detalleErrores.push(`Boleta ${boletasTarget[i]}: ${res.mensaje}`); }
             } catch(e) { fails++; detalleErrores.push(`Boleta ${boletasTarget[i]}: Error de conexión del servidor`); }
         }
         
