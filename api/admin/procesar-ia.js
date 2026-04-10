@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase.js';
 
 export default async function handler(req, res) {
   // 1. Permisos CORS
@@ -19,7 +19,6 @@ export default async function handler(req, res) {
   if (!imagenBase64) return res.status(400).json({ status: 'error', mensaje: 'No se envió ninguna imagen' });
 
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
     let datos;

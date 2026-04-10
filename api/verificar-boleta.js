@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from './lib/supabase.js';
 
 export default async function handler(req, res) {
   // 1. Configuramos permisos CORS
@@ -26,11 +26,6 @@ export default async function handler(req, res) {
   // 4. Limpiamos ambos datos (Boleta a 4 dígitos, Teléfono a 10 dígitos)
   const boletaLimpia = ("0000" + String(numero_boleta).trim()).slice(-4);
   const telefonoLimpio = String(telefono).replace(/\D/g, '').slice(-10);
-
-  const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_ANON_KEY
-  );
 
   try {
     // 5. Buscamos la boleta en Supabase

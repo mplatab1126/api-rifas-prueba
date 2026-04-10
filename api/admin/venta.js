@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase.js';
 import { PRECIOS } from '../config/precios.js';
 
 export default async function handler(req, res) {
@@ -24,8 +24,6 @@ export default async function handler(req, res) {
   const telefonoLimpio = String(telefono).replace(/\D/g, '').slice(-10);
   const numeroLimpio = String(numeroBoleta).trim();
   let abonoNum = Number(primerAbono) || 0;
-
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
     // 🚨 1. NUEVA VALIDACIÓN ANTI-DUPLICADOS (Bloqueo por ID)

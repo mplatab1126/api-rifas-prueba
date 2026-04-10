@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase.js';
 
 export const config = { api: { bodyParser: { sizeLimit: '8mb' } } };
 
@@ -13,8 +13,6 @@ export default async function handler(req, res) {
   const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
   if (!asesores[contrasena]) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
   if (!textoPDF) return res.status(400).json({ status: 'error', mensaje: 'No se envió texto del PDF' });
-
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
     const movimientos = parseConsolidadoBancolombia(textoPDF);

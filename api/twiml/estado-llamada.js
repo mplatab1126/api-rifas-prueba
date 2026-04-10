@@ -1,10 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(200).end();
 
   const body = req.body || {};
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
     // Twilio envía datos de grabación cuando la grabación está lista

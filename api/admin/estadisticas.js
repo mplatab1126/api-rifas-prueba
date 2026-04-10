@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -25,8 +25,6 @@ export default async function handler(req, res) {
   const tablaBoletasMap = { '2cifras': 'boletas_diarias', '3cifras': 'boletas_diarias_3cifras', '4cifras': 'boletas' };
   const tablaBoletas = tablaBoletasMap[tipo] || 'boletas';
   const patronLengthMap = { '2cifras': '__', '3cifras': '___', '4cifras': '____' };
-
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
     // 1. Traemos los Abonos filtrados por tipo de boleta

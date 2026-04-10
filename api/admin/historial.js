@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -11,8 +11,6 @@ export default async function handler(req, res) {
 
   const { numero } = req.query;
   if (!numero) return res.status(400).json({ status: 'error', mensaje: 'Falta la boleta' });
-
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
     // Buscamos los abonos de esta boleta, ordenados por los más recientes primero

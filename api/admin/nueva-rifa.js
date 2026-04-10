@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase.js';
 import { PRECIOS } from '../config/precios.js';
 
 export default async function handler(req, res) {
@@ -7,8 +7,6 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'OPTIONS,GET,POST');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
-
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   // ─────────────────────────────────────────────────────────────────────
   // GET público: obtener la configuración actual de la rifa

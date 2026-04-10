@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase.js';
 
 function numeroAPalabras(n) {
   const num = Math.round(n);
@@ -52,8 +52,6 @@ export default async function handler(req, res) {
   if (!GERENCIA.includes(nombreAsesor)) {
     return res.status(403).json({ status: 'error', mensaje: 'Solo gerencia puede gestionar las llamadas.' });
   }
-
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   // ── PREVIEW: muestra los clientes que serían llamados ──
   if (accion === 'preview') {

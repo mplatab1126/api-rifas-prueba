@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from './lib/supabase.js';
 
 export default async function handler(req, res) {
   // 1. Configuramos los permisos (CORS) para que cualquiera pueda consultar
@@ -20,12 +20,6 @@ export default async function handler(req, res) {
 
   // 3. Limpiamos el número y sacamos los últimos 10 dígitos
   const telefonoLimpio = String(telefono).replace(/\D/g, '').slice(-10);
-
-  // 4. Conectamos con tu Bóveda de Supabase
-  const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_ANON_KEY
-  );
 
   try {
     // 5. Buscamos TODAS las boletas que le pertenecen a este teléfono

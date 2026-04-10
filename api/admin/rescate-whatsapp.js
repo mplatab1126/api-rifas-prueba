@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase.js';
 
 const GERENCIA = ['Mateo', 'Alejo P', 'Alejo Plata'];
 
@@ -145,7 +145,6 @@ export default async function handler(req, res) {
         }
       }
 
-      const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
       const last10List = Object.keys(phoneMap);
       const fechaCorte = payload.ultimo_abono_antes_de || null;
       const maxAbonado = payload.max_abonado !== undefined && payload.max_abonado !== null ? Number(payload.max_abonado) : null;

@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase.js';
 import { PRECIOS } from '../config/precios.js';
 
 export default async function handler(req, res) {
@@ -34,8 +34,6 @@ export default async function handler(req, res) {
       mensaje: `⚠️ Formato incorrecto.\nEscribiste un número de ${queryLimpio.length} cifras.\n\nEl sistema solo permite buscar:\n• 2 cifras (Diaria)\n• 3 cifras (Diaria 3C)\n• 4 cifras (Apto)\n• 10 cifras (Celular)` 
     });
   }
-
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
     // --- CASO A: 4 CIFRAS (APARTAMENTO) ---

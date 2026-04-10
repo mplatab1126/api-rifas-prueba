@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase.js';
 import { PRECIOS } from '../config/precios.js';
 
 export default async function handler(req, res) {
@@ -19,8 +19,6 @@ export default async function handler(req, res) {
     return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
   }
   if (!numeroBoleta) return res.status(400).json({ status: 'error', mensaje: 'Falta el número de la boleta' });
-
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
     // A. Buscar los abonos de esta boleta para ver si usaron transferencias del banco

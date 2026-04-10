@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin as supabase } from '../lib/supabase.js';
 
 const PAGINAS = [
   { id: 'admin',       label: 'Panel de Ventas' },
@@ -31,11 +31,6 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
-
-  const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
-  );
 
   const { contrasena, accion, asesor_nombre, pagina_id, permitido } = req.body;
 

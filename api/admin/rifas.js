@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -19,8 +19,6 @@ export default async function handler(req, res) {
   if (nombreAsesor !== 'Mateo') {
     return res.status(403).json({ status: 'error', mensaje: 'No tienes permiso para acceder a este módulo.' });
   }
-
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
 

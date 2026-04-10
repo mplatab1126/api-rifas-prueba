@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase.js';
 
 const CATEGORIAS = [
   { id: 'operacionales',    nombre: 'Gastos Operacionales',      icono: '⚙️', afecta_er: true  },
@@ -30,8 +30,6 @@ export default async function handler(req, res) {
     if (accion === 'listar_categorias') {
       return res.status(200).json({ status: 'ok', categorias: CATEGORIAS });
     }
-
-    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
     // ── Guardar egreso pendiente (cualquier asesor) ──────────────────────
     if (accion === 'guardar_pendiente') {

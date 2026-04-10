@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase.js';
 
 /**
  * Sincroniza los costos de plantillas de WhatsApp Business
@@ -45,8 +45,6 @@ export default async function handler(req, res) {
       mensaje: 'Faltan las variables WABA_ID y WABA_TOKEN en Vercel. Configúralas para activar la sincronización automática.'
     });
   }
-
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
   try {
     const tokenLimpio = wabaToken.trim();

@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin as supabase } from '../lib/supabase.js';
 
 // Devuelve el lunes de la semana que contiene la fecha dada (YYYY-MM-DD)
 function getMondayOf(dateStr) {
@@ -20,11 +20,6 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
-
-  const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
-  );
 
   // ── GET: devuelve horarios ──
   if (req.method === 'GET') {
