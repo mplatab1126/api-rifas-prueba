@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { PRECIOS } from '../config/precios.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -192,7 +193,7 @@ export default async function handler(req, res) {
       if (deleteAbonosError) throw new Error('No se pudieron limpiar los abonos: ' + deleteAbonosError.message);
 
       // 3. ─── Reiniciar todas las boletas ──────────────────────────────
-      const precioInicial = tipo === '3cifras' ? 5000 : 20000;
+      const precioInicial = tipo === '3cifras' ? PRECIOS.RIFA_3_CIFRAS : PRECIOS.RIFA_2_CIFRAS;
       const resetPayload = {
         estado:           'Disponible',
         nombre_cliente:   '',

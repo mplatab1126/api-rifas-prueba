@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { PRECIOS } from '../config/precios.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -82,7 +83,7 @@ export default async function handler(req, res) {
     if (!boletaData.telefono_cliente) return res.status(400).json({ status: 'error', mensaje: 'Esta boleta está libre' });
 
     // 2. Calcular saldo base de fallback según el tipo de boleta
-    const precioBase = numeroLimpio.length === 3 ? 5000 : (esDiaria ? 20000 : 150000);
+    const precioBase = numeroLimpio.length === 3 ? PRECIOS.RIFA_3_CIFRAS : (esDiaria ? PRECIOS.RIFA_2_CIFRAS : PRECIOS.RIFA_4_CIFRAS);
     const saldoActual = boletaData.saldo_restante !== null && boletaData.saldo_restante !== undefined ? Number(boletaData.saldo_restante) : precioBase;
     const abonadoActual = boletaData.total_abonado !== null && boletaData.total_abonado !== undefined ? Number(boletaData.total_abonado) : 0;
 

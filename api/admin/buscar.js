@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { PRECIOS } from '../config/precios.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -90,7 +91,7 @@ export default async function handler(req, res) {
               ciudad: clienteDB?.ciudad || '',
               telefono: boleta.telefono_cliente,
               totalAbonos: boleta.total_abonado || 0,
-              restante: boleta.saldo_restante !== null && boleta.saldo_restante !== undefined ? boleta.saldo_restante : 20000,
+              restante: boleta.saldo_restante !== null && boleta.saldo_restante !== undefined ? boleta.saldo_restante : PRECIOS.RIFA_2_CIFRAS,
               asesor: boleta.asesor || ''
             }
           }
@@ -126,7 +127,7 @@ export default async function handler(req, res) {
               ciudad: clienteDB?.ciudad || '',
               telefono: boleta.telefono_cliente,
               totalAbonos: boleta.total_abonado || 0,
-              restante: boleta.saldo_restante !== null && boleta.saldo_restante !== undefined ? boleta.saldo_restante : 5000,
+              restante: boleta.saldo_restante !== null && boleta.saldo_restante !== undefined ? boleta.saldo_restante : PRECIOS.RIFA_3_CIFRAS,
               asesor: boleta.asesor || ''
             }
           }
@@ -190,7 +191,7 @@ export default async function handler(req, res) {
           ciudad: clienteDB?.ciudad || '',
           telefono: b.telefono_cliente,
           totalAbonos: b.total_abonado || 0,
-          restante: b.saldo_restante !== null && b.saldo_restante !== undefined ? b.saldo_restante : 20000,
+          restante: b.saldo_restante !== null && b.saldo_restante !== undefined ? b.saldo_restante : PRECIOS.RIFA_2_CIFRAS,
           asesor: b.asesor || ''
         })));
       }
@@ -203,7 +204,7 @@ export default async function handler(req, res) {
           ciudad: clienteDB?.ciudad || '',
           telefono: b.telefono_cliente,
           totalAbonos: b.total_abonado || 0,
-          restante: b.saldo_restante !== null && b.saldo_restante !== undefined ? b.saldo_restante : 5000,
+          restante: b.saldo_restante !== null && b.saldo_restante !== undefined ? b.saldo_restante : PRECIOS.RIFA_3_CIFRAS,
           asesor: b.asesor || ''
         })));
       }

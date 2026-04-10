@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { PRECIOS } from '../config/precios.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -54,8 +55,7 @@ export default async function handler(req, res) {
       boletas_grandes_compradas: clienteActual?.boletas_grandes_compradas || 0
     }, { onConflict: 'telefono' });
 
-    const PRECIO_BOLETA_3_CIFRAS = 5000; 
-    const totalPagar = numeros.length * PRECIO_BOLETA_3_CIFRAS;
+    const totalPagar = numeros.length * PRECIOS.RIFA_3_CIFRAS;
     const mensaje = `¡Hola Los Plata! 👋\nAcabo de reservar en la RIFA DE 3 CIFRAS.\n\n👤 Nombre: ${nombreCompleto}\n📱 Celular: ${telefonoLimpio}\n🎟️ Mis números: ${numeros.join(', ')}\n💰 Total a pagar: $${totalPagar.toLocaleString('es-CO')}\n\nMuchas gracias`;
     
     const urlWhatsapp = `https://wa.me/573107334957?text=${encodeURIComponent(mensaje)}`;

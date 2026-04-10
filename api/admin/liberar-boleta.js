@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { PRECIOS } from '../config/precios.js';
 
 export default async function handler(req, res) {
   // 1. Permisos CORS
@@ -42,18 +43,18 @@ export default async function handler(req, res) {
     await supabase.from('abonos').delete().eq('numero_boleta', numeroBoleta);
 
     let tabla = 'boletas';
-    let precioOriginal = 150000;
+    let precioOriginal = PRECIOS.RIFA_4_CIFRAS;
     let estadoOriginal = 'LIBRE';
-    
+
     const longitud = String(numeroBoleta).trim().length;
 
     if (longitud === 2) {
       tabla = 'boletas_diarias';
-      precioOriginal = 20000;
+      precioOriginal = PRECIOS.RIFA_2_CIFRAS;
       estadoOriginal = 'Disponible';
     } else if (longitud === 3) {
       tabla = 'boletas_diarias_3cifras';
-      precioOriginal = 5000;
+      precioOriginal = PRECIOS.RIFA_3_CIFRAS;
       estadoOriginal = 'Disponible';
     }
 

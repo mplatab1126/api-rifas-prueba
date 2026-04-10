@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { PRECIOS } from '../config/precios.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -103,7 +104,7 @@ export default async function handler(req, res) {
     let diariasCompradas = clienteActual?.boletas_diarias_compradas || 0;
     let grandesCompradas = clienteActual?.boletas_grandes_compradas || 0;
 
-    const precioTotal = numeroLimpio.length === 3 ? 5000 : (esDiaria ? 20000 : (Number(boletaData.precio_total) || 150000));
+    const precioTotal = numeroLimpio.length === 3 ? PRECIOS.RIFA_3_CIFRAS : (esDiaria ? PRECIOS.RIFA_2_CIFRAS : (Number(boletaData.precio_total) || PRECIOS.RIFA_4_CIFRAS));
 
     // Premio Rifa: pagar automáticamente el 100% del precio
     if (esPremioRifa || referenciaAbono === 'premio_rifa_diaria') {

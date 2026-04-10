@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { PRECIOS } from '../config/precios.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -61,8 +62,8 @@ export default async function handler(req, res) {
       boletas_grandes_compradas: clienteActual?.boletas_grandes_compradas || 0
     }, { onConflict: 'telefono' });
 
-    // 4. Generamos el link de WhatsApp (Calculando a $20.000 la boleta)
-    const totalPagar = numeros.length * 20000;
+    // 4. Generamos el link de WhatsApp
+    const totalPagar = numeros.length * PRECIOS.RIFA_2_CIFRAS;
     const mensaje = `¡Hola Los Plata! 👋\nAcabo de reservar en la RIFA DIARIA.\n\n👤 Nombre: ${nombreCompleto}\n📱 Celular: ${telefonoLimpio}\n🎟️ Mis números: ${numeros.join(', ')}\n💰 Total a pagar: $${totalPagar.toLocaleString('es-CO')}\n\nQuedo atento para enviar el comprobante.`;
     
     // Aquí puse la línea exclusiva de rifas diarias que estaba en tu HTML (311 667 5984)
