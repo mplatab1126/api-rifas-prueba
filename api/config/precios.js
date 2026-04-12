@@ -5,13 +5,13 @@
  * Si necesitas cambiar el precio de una rifa, solo tienes que modificarlo aqui
  * y el cambio se aplica automaticamente en todo el sistema.
  *
- * - RIFA_4_CIFRAS: Rifa principal (apartamento). Numeros 0000-9999.
+ * - RIFA_4_CIFRAS: Rifa principal (camioneta + 2 motos). Numeros 0000-9999.
  * - RIFA_2_CIFRAS: Rifa diaria. Numeros 00-99.
  * - RIFA_3_CIFRAS: Rifa diaria. Numeros 000-999.
  */
 
 export const PRECIOS = {
-  RIFA_4_CIFRAS: 150000,
+  RIFA_4_CIFRAS: 80000,
   RIFA_2_CIFRAS: 20000,
   RIFA_3_CIFRAS: 5000,
 };
