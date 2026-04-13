@@ -1,1726 +1,632 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Los Plata - Sorteo Exclusivo $3.000.000</title>
-  <meta name="description" content="¿Compraste una boleta de La Plata House? Regístrate y participa por $3.000.000 en premios sorpresa esta noche.">
-
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://www.losplata.com.co">
-  <meta property="og:title" content="🎉 Sorteo Exclusivo - $3.000.000 en premios">
-  <meta property="og:description" content="Si compraste una boleta de La Plata House, regístrate y participa por $1.000.000 x3 oportunidades. ¡Esta noche en vivo!">
+  <meta name="format-detection" content="telephone=no">
+  <title>RIFA CAMIONETA Y 2 MOTOS — Los Plata S.A.S.</title>
+  <meta property="og:title" content="RIFA CAMIONETA Y 2 MOTOS — Los Plata S.A.S.">
+  <meta property="og:description" content="Participa por una Camioneta Nissan Frontier, Moto KTM Duke y Scooter Yamaha NMAX. Boleta a solo $80.000">
   <meta property="og:image" content="https://losplata.s3.us-east-2.amazonaws.com/Logo.png">
-  <meta property="og:image:width" content="500">
-  <meta property="og:image:height" content="500">
-  <meta property="og:locale" content="es_CO">
-  <meta property="og:site_name" content="Los Plata">
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+  <meta property="og:url" content="https://losplata.com.co/">
+  <meta property="og:type" content="website">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --gold: #C5A059;
-      --gold-light: #d4b577;
-      --dark: #1a1a1a;
-      --darker: #111111;
-      --soft-wood: #F9F6F2;
-      --white: #ffffff;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      font-family: 'Montserrat', sans-serif;
-      background: var(--darker);
-      color: var(--white);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    .page-wrapper {
-      max-width: 520px;
-      margin: 0 auto;
-      min-height: 100vh;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .bg-glow {
-      position: fixed;
-      top: -150px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 600px;
-      height: 600px;
-      background: radial-gradient(circle, rgba(197,160,89,0.15) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .content {
-      position: relative;
-      z-index: 1;
-      padding: 30px 20px 40px;
-    }
-
-    .logo-container {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-
-    .logo {
-      width: 100px;
-      height: auto;
-      filter: drop-shadow(0 4px 15px rgba(197,160,89,0.4));
-    }
-
-    .hero-text {
-      text-align: center;
-      margin-bottom: 35px;
-    }
-
-    .hero-badge {
-      display: inline-block;
-      background: rgba(197,160,89,0.15);
-      border: 1px solid rgba(197,160,89,0.3);
-      color: var(--gold-light);
-      padding: 8px 20px;
-      border-radius: 50px;
-      font-size: 0.85rem;
-      letter-spacing: 2.5px;
-      font-weight: 700;
-      text-transform: uppercase;
-      margin-bottom: 20px;
-    }
-
-    .hero-question {
-      font-family: 'Playfair Display', serif;
-      font-size: 2.3rem;
-      line-height: 1.2;
-      color: var(--white);
-      margin-bottom: 18px;
-    }
-
-    .hero-question .gold { color: var(--gold); }
-
-    .hero-desc {
-      font-size: 1.1rem;
-      color: #aaa;
-      line-height: 1.7;
-      max-width: 420px;
-      margin: 0 auto;
-    }
-
-    .hero-desc strong { color: var(--gold-light); font-weight: 600; }
-
-    .prize-banner {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 14px;
-      background: linear-gradient(135deg, rgba(197,160,89,0.12), rgba(197,160,89,0.05));
-      border: 1px solid rgba(197,160,89,0.2);
-      border-radius: 14px;
-      padding: 20px 22px;
-      margin-bottom: 32px;
-    }
-
-    .prize-amount {
-      font-family: 'Playfair Display', serif;
-      font-size: 2.4rem;
-      color: var(--gold);
-      font-weight: 700;
-      line-height: 1;
-    }
-
-    .prize-detail {
-      font-size: 1rem;
-      color: #ccc;
-      line-height: 1.5;
-    }
-
-    .prize-detail strong { color: var(--white); }
-
-    .form-card {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 20px;
-      padding: 28px 22px;
-      backdrop-filter: blur(10px);
-    }
-
-    .form-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.5rem;
-      text-align: center;
-      margin-bottom: 8px;
-      color: var(--white);
-    }
-
-    .form-subtitle {
-      text-align: center;
-      font-size: 1.1rem;
-      color: #999;
-      margin-bottom: 26px;
-      line-height: 1.5;
-    }
-
-    .field {
-      margin-bottom: 20px;
-    }
-
-    .field label {
-      display: block;
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #bbb;
-      margin-bottom: 8px;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-    }
-
-    .field input {
-      width: 100%;
-      padding: 16px 18px;
-      background: rgba(255,255,255,0.06);
-      border: 1.5px solid rgba(255,255,255,0.1);
-      border-radius: 12px;
-      color: var(--white);
-      font-family: 'Montserrat', sans-serif;
-      font-size: 1.1rem;
-      outline: none;
-      transition: border-color 0.3s, box-shadow 0.3s;
-    }
-
-    .field input::placeholder {
-      color: #555;
-      font-size: 1rem;
-    }
-
-    .field input:focus {
-      border-color: var(--gold);
-      box-shadow: 0 0 0 3px rgba(197,160,89,0.15);
-    }
-
-    .field input.error-input {
-      border-color: #e74c3c;
-      box-shadow: 0 0 0 3px rgba(231,76,60,0.15);
-    }
-
-    .field .field-error {
-      color: #e74c3c;
-      font-size: 0.9rem;
-      margin-top: 6px;
-      display: none;
-    }
-
-    .submit-btn {
-      width: 100%;
-      padding: 18px;
-      background: linear-gradient(135deg, var(--gold), #b8923e);
-      color: var(--dark);
-      border: none;
-      border-radius: 14px;
-      font-family: 'Montserrat', sans-serif;
-      font-size: 1.15rem;
-      font-weight: 700;
-      cursor: pointer;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      transition: transform 0.2s, box-shadow 0.2s;
-      box-shadow: 0 4px 20px rgba(197,160,89,0.3);
-      margin-top: 6px;
-    }
-
-    .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 25px rgba(197,160,89,0.4); }
-    .submit-btn:active { transform: scale(0.98); }
-    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
-    .footer-note {
-      text-align: center;
-      font-size: 1.05rem;
-      color: #666;
-      margin-top: 24px;
-      line-height: 1.7;
-    }
-
-    .footer-note a { color: var(--gold); text-decoration: none; font-weight: 600; }
-
-    /* Success state */
-    .success-screen {
-      display: none;
-      text-align: center;
-      padding: 40px 20px;
-    }
-
-    .success-screen.visible { display: block; }
-
-    .success-icon {
-      font-size: 4rem;
-      margin-bottom: 20px;
-      display: block;
-      animation: popIn 0.5s ease;
-    }
-
-    .success-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 2.1rem;
-      color: var(--gold);
-      margin-bottom: 14px;
-    }
-
-    .success-msg {
-      font-size: 1.1rem;
-      color: #aaa;
-      line-height: 1.7;
-      max-width: 380px;
-      margin: 0 auto 24px;
-    }
-
-    .success-msg strong { color: var(--white); }
-
-    .success-ticket {
-      display: inline-block;
-      background: rgba(197,160,89,0.12);
-      border: 1px solid rgba(197,160,89,0.3);
-      border-radius: 12px;
-      padding: 16px 30px;
-      margin-bottom: 24px;
-    }
-
-    .success-ticket span {
-      display: block;
-      font-size: 0.9rem;
-      color: #888;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 4px;
-    }
-
-    .success-ticket strong {
-      font-family: 'Playfair Display', serif;
-      font-size: 2.4rem;
-      color: var(--gold);
-    }
-
-    .success-note {
-      font-size: 1rem;
-      color: #666;
-      line-height: 1.6;
-    }
-
-    /* Duplicate state */
-    .duplicate-screen {
-      display: none;
-      text-align: center;
-      padding: 40px 20px;
-    }
-
-    .duplicate-screen.visible { display: block; }
-
-    .duplicate-icon {
-      font-size: 3.5rem;
-      margin-bottom: 16px;
-      display: block;
-    }
-
-    .duplicate-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.8rem;
-      color: var(--gold-light);
-      margin-bottom: 14px;
-    }
-
-    .duplicate-msg {
-      font-size: 1.1rem;
-      color: #aaa;
-      line-height: 1.7;
-      max-width: 380px;
-      margin: 0 auto;
-    }
-
-    @keyframes popIn {
-      0% { transform: scale(0.5); opacity: 0; }
-      70% { transform: scale(1.1); }
-      100% { transform: scale(1); opacity: 1; }
-    }
-
-    /* General error */
-    .general-error {
-      background: rgba(231,76,60,0.1);
-      border: 1px solid rgba(231,76,60,0.3);
-      color: #e74c3c;
-      padding: 14px 18px;
-      border-radius: 10px;
-      font-size: 1rem;
-      text-align: center;
-      margin-bottom: 16px;
-      display: none;
-    }
-
-    /* Countdown */
-    .countdown-section {
-      text-align: center;
-      margin-bottom: 28px;
-    }
-
-    .countdown-label {
-      font-size: 0.9rem;
-      color: #999;
-      margin-bottom: 10px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      font-weight: 600;
-    }
-
-    .countdown-boxes {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-    }
-
-    .cd-box {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(197,160,89,0.25);
-      border-radius: 12px;
-      padding: 12px 16px;
-      min-width: 70px;
-    }
-
-    .cd-box .cd-num {
-      font-family: 'Playfair Display', serif;
-      font-size: 2rem;
-      color: var(--gold);
-      font-weight: 700;
-      display: block;
-      line-height: 1;
-    }
-
-    .cd-box .cd-unit {
-      font-size: 0.75rem;
-      color: #888;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-top: 4px;
-      display: block;
-    }
-
-    .countdown-live {
-      display: none;
-      animation: popIn 0.5s ease;
-    }
-
-    .countdown-live.visible { display: block; }
-
-    .live-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: #e53935;
-      color: white;
-      padding: 8px 20px;
-      border-radius: 50px;
-      font-size: 1rem;
-      font-weight: 700;
-      letter-spacing: 1px;
-      margin-bottom: 12px;
-      animation: pulse 1.5s infinite;
-    }
-
-    .live-dot {
-      width: 10px;
-      height: 10px;
-      background: white;
-      border-radius: 50%;
-    }
-
-    @keyframes pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(229,57,53,0.4); }
-      50% { box-shadow: 0 0 0 12px rgba(229,57,53,0); }
-    }
-
-    /* Live button */
-    .live-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      width: 100%;
-      padding: 16px;
-      background: #1877F2;
-      color: white;
-      border: none;
-      border-radius: 14px;
-      font-family: 'Montserrat', sans-serif;
-      font-size: 1.1rem;
-      font-weight: 700;
-      cursor: pointer;
-      text-decoration: none;
-      transition: transform 0.2s, box-shadow 0.2s;
-      box-shadow: 0 4px 20px rgba(24,119,242,0.3);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .live-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 25px rgba(24,119,242,0.4); }
-    .live-btn:active { transform: scale(0.98); }
-
-    .live-btn svg { width: 22px; height: 22px; fill: white; }
-
-    /* WhatsApp share button */
-    .share-section {
-      margin-top: 20px;
-    }
-
-    .share-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      width: 100%;
-      padding: 15px;
-      background: #25D366;
-      color: white;
-      border: none;
-      border-radius: 14px;
-      font-family: 'Montserrat', sans-serif;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      text-decoration: none;
-      transition: transform 0.2s, box-shadow 0.2s;
-      box-shadow: 0 4px 15px rgba(37,211,102,0.3);
-    }
-
-    .share-btn:hover { transform: translateY(-1px); }
-    .share-btn:active { transform: scale(0.98); }
-
-    .share-btn svg { width: 22px; height: 22px; fill: white; }
-
-    /* No boleta link */
-    .no-boleta {
-      text-align: center;
-      margin-top: 22px;
-      padding: 16px;
-      background: rgba(255,255,255,0.03);
-      border: 1px dashed rgba(255,255,255,0.1);
-      border-radius: 14px;
-    }
-
-    .no-boleta p {
-      font-size: 1.1rem;
-      color: #999;
-      margin-bottom: 10px;
-    }
-
-    .no-boleta a {
-      color: var(--gold);
-      text-decoration: underline;
-      font-weight: 700;
-      font-size: 1.15rem;
-    }
-
-    /* Success steps */
-    .success-steps {
-      text-align: left;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 14px;
-      padding: 20px;
-      margin: 20px auto;
-      max-width: 360px;
-    }
-
-    .success-steps h3 {
-      font-size: 1rem;
-      color: var(--gold-light);
-      margin-bottom: 14px;
-      text-align: center;
-    }
-
-    .step-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      margin-bottom: 14px;
-      font-size: 1rem;
-      color: #ccc;
-      line-height: 1.5;
-    }
-
-    .step-item:last-child { margin-bottom: 0; }
-
-    .step-num {
-      flex-shrink: 0;
-      width: 28px;
-      height: 28px;
-      background: var(--gold);
-      color: var(--dark);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 0.85rem;
-    }
-
-    /* Results display */
-    .results-header {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .results-greeting {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.5rem;
-      color: var(--gold);
-      display: block;
-      margin-bottom: 4px;
-    }
-
-    .results-subtitle {
-      font-size: 1rem;
-      color: #aaa;
-    }
-
-    .results-info {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 20px;
-    }
-
-    .results-data-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 0;
-    }
-
-    .results-data-row + .results-data-row {
-      border-top: 1px solid rgba(255,255,255,0.06);
-    }
-
-    .results-label {
-      font-size: 0.9rem;
-      color: #888;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .results-value {
-      font-size: 1.05rem;
-      color: var(--white);
-      font-weight: 500;
-    }
-
-    .results-boletas {
-      text-align: center;
-      margin-bottom: 22px;
-    }
-
-    .results-boletas-label {
-      font-size: 0.95rem;
-      color: #aaa;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      display: block;
-      margin-bottom: 12px;
-    }
-
-    .boletas-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-    }
-
-    .boleta-chip {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(197,160,89,0.12);
-      border: 1.5px solid rgba(197,160,89,0.35);
-      border-radius: 10px;
-      padding: 10px 20px;
-      min-width: 80px;
-    }
-
-    .boleta-chip .chip-num {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.5rem;
-      color: var(--gold);
-      font-weight: 700;
-    }
-
-    .back-btn {
-      width: 100%;
-      padding: 14px;
-      background: transparent;
-      color: #888;
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 14px;
-      font-family: 'Montserrat', sans-serif;
-      font-size: 0.95rem;
-      cursor: pointer;
-      margin-top: 10px;
-      transition: color 0.2s;
-    }
-
-    .back-btn:hover { color: var(--white); }
-
-    /* How it works */
-    .how-section {
-      margin-bottom: 30px;
-    }
-
-    .how-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.3rem;
-      text-align: center;
-      color: var(--white);
-      margin-bottom: 20px;
-    }
-
-    .how-steps {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .how-step {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 14px;
-      padding: 16px;
-    }
-
-    .how-step-icon {
-      flex-shrink: 0;
-      width: 46px;
-      height: 46px;
-      border-radius: 50%;
-      background: rgba(197,160,89,0.12);
-      border: 1.5px solid rgba(197,160,89,0.25);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.4rem;
-    }
-
-    .how-step-text {
-      flex: 1;
-    }
-
-    .how-step-text strong {
-      display: block;
-      font-size: 1.05rem;
-      color: var(--white);
-      margin-bottom: 2px;
-    }
-
-    .how-step-text span {
-      font-size: 0.95rem;
-      color: #999;
-      line-height: 1.4;
-    }
-
-    /* Social links */
-    .social-section {
-      text-align: center;
-      margin-top: 30px;
-      padding-top: 24px;
-      border-top: 1px solid rgba(255,255,255,0.06);
-    }
-
-    .social-section p {
-      font-size: 0.95rem;
-      color: #777;
-      margin-bottom: 14px;
-    }
-
-    .social-icons {
-      display: flex;
-      justify-content: center;
-      gap: 16px;
-    }
-
-    .social-icon {
-      width: 46px;
-      height: 46px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.2s, transform 0.2s;
-      text-decoration: none;
-    }
-
-    .social-icon:hover {
-      background: rgba(197,160,89,0.15);
-      transform: scale(1.08);
-    }
-
-    .social-icon svg {
-      width: 22px;
-      height: 22px;
-      fill: #ccc;
-    }
-
-    .social-icon:hover svg { fill: var(--gold); }
-
-    /* Manual link */
-    .manual-link {
-      text-align: center;
-      margin-top: 20px;
-      font-size: 1.1rem;
-      color: #999;
-      line-height: 1.6;
-    }
-
-    .manual-link a {
-      color: var(--gold);
-      text-decoration: underline;
-      font-weight: 700;
-      font-size: 1.15rem;
-    }
-
-    .manual-header {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .manual-icon {
-      font-size: 2.5rem;
-      display: block;
-      margin-bottom: 8px;
-    }
-
-    /* Registered counter */
-    .registered-counter {
-      text-align: center;
-      margin-bottom: 28px;
-      padding: 14px 20px;
-      background: rgba(197,160,89,0.08);
-      border: 1px solid rgba(197,160,89,0.15);
-      border-radius: 12px;
-    }
-
-    .registered-counter .rc-number {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.6rem;
-      color: var(--gold);
-      font-weight: 700;
-    }
-
-    .registered-counter .rc-text {
-      font-size: 0.95rem;
-      color: #aaa;
-    }
-
-    /* Modal registros */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.75);
-      z-index: 10000;
-      justify-content: center;
-      align-items: flex-end;
-      padding: 0;
-    }
-
-    .modal-overlay.visible {
-      display: flex;
-    }
-
-    .modal-content {
-      background: #1e1e1e;
-      border-top-left-radius: 24px;
-      border-top-right-radius: 24px;
-      width: 100%;
-      max-width: 520px;
-      max-height: 80vh;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      animation: slideUp 0.3s ease;
-    }
-
-    @keyframes slideUp {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
-    }
-
-    .modal-header {
-      padding: 20px 22px 14px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-shrink: 0;
-    }
-
-    .modal-header h3 {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.3rem;
-      color: var(--gold);
-    }
-
-    .modal-close {
-      background: rgba(255,255,255,0.08);
-      border: none;
-      color: #aaa;
-      font-size: 1.3rem;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .modal-close:hover { color: white; background: rgba(255,255,255,0.15); }
-
-    .modal-body {
-      overflow-y: auto;
-      padding: 16px 22px 24px;
-      flex: 1;
-    }
-
-    .registro-item {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 14px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
-
-    .registro-item:last-child { border-bottom: none; }
-
-    .registro-avatar {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      background: rgba(197,160,89,0.15);
-      color: var(--gold);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 1rem;
-      flex-shrink: 0;
-    }
-
-    .registro-info {
-      flex: 1;
-    }
-
-    .registro-nombre {
-      font-size: 1.05rem;
-      color: var(--white);
-      font-weight: 600;
-    }
-
-    .registro-ciudad {
-      font-size: 0.9rem;
-      color: #888;
-    }
-
-    .registro-boletas-count {
-      font-size: 0.85rem;
-      color: var(--gold);
-      font-weight: 700;
-      background: rgba(197,160,89,0.1);
-      padding: 4px 10px;
-      border-radius: 20px;
-      white-space: nowrap;
-    }
-
-    .modal-empty {
-      text-align: center;
-      padding: 30px;
-      color: #888;
-      font-size: 1rem;
-    }
-
-    .ver-registros-btn {
-      display: inline-block;
-      margin-top: 10px;
-      background: transparent;
-      border: 1px solid rgba(197,160,89,0.3);
-      color: var(--gold);
-      padding: 8px 18px;
-      border-radius: 50px;
-      font-family: 'Montserrat', sans-serif;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .ver-registros-btn:hover { background: rgba(197,160,89,0.1); }
-
-    /* Live toast notifications */
-    .toast-notification {
-      position: fixed;
-      bottom: 20px;
-      left: 20px;
-      right: 20px;
-      max-width: 400px;
-      background: rgba(30,30,30,0.95);
-      border: 1px solid rgba(197,160,89,0.25);
-      border-radius: 14px;
-      padding: 14px 18px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      z-index: 9000;
-      transform: translateY(120%);
-      opacity: 0;
-      transition: transform 0.4s ease, opacity 0.4s ease;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
-      pointer-events: none;
-    }
-
-    .toast-notification.visible {
-      transform: translateY(0);
-      opacity: 1;
-    }
-
-    .toast-avatar {
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      background: rgba(197,160,89,0.15);
-      color: var(--gold);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 0.95rem;
-      flex-shrink: 0;
-    }
-
-    .toast-text {
-      flex: 1;
-      font-size: 0.95rem;
-      color: #ccc;
-      line-height: 1.4;
-    }
-
-    .toast-text strong {
-      color: var(--white);
-    }
-
-    .toast-text .toast-city {
-      color: var(--gold);
-      font-weight: 600;
-    }
-
-    .toast-time {
-      font-size: 0.75rem;
-      color: #666;
-      white-space: nowrap;
-    }
-
-    /* Confetti */
-    .confetti-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 9999;
-      overflow: hidden;
-    }
-
-    .confetti-piece {
-      position: absolute;
-      top: -20px;
-      width: 10px;
-      height: 10px;
-      opacity: 0;
-      animation: confettiFall 3s ease-in forwards;
-    }
-
-    @keyframes confettiFall {
-      0% { opacity: 1; transform: translateY(0) rotate(0deg); }
-      100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
-    }
+    a[href^="tel"] { color: inherit !important; text-decoration: none !important; }
+    body { font-family: 'Poppins', sans-serif; background-color: #f4f7f9; margin: 0; padding: 0; color: #333; padding-bottom: 100px; -webkit-tap-highlight-color: transparent; }
+    .container { max-width: 480px; margin: 0 auto; background: transparent; min-height: 100vh; display: flex; flex-direction: column; position: relative; }
+
+    .top-logo-bar { background: linear-gradient(to bottom, #051e11, #0a3d24); text-align: center; padding: 12px 20px; border-radius: 0 0 25px 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+    .logo-img { max-width: 85px; height: auto; display: block; margin: 0 auto; }
+
+    .hero-title-area { text-align: center; padding: 25px 20px 10px 20px; }
+    .hero-title-area h1 { margin: 0; font-family: 'Montserrat', sans-serif; font-size: 28px; font-weight: 900; text-transform: uppercase; line-height: 1.1; letter-spacing: 0.5px; background: linear-gradient(135deg, #0a3d24 0%, #1b5e20 40%, #d4af37 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; color: transparent; }
+
+    /* Carrusel */
+    .carousel-wrapper { position: relative; margin: 15px 20px 25px 20px; border-radius: 20px; overflow: hidden; border: 2px solid #d4af37; box-shadow: 0 10px 30px rgba(212,175,55,0.15); }
+    .carousel-track { display: flex; transition: transform 0.5s ease; }
+    .carousel-slide { min-width: 100%; }
+    .carousel-slide img { width: 100%; height: 250px; object-fit: cover; display: block; }
+    .carousel-dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; }
+    .carousel-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.5); border: none; cursor: pointer; padding: 0; }
+    .carousel-dot.active { background: #d4af37; }
+    .carousel-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.4); color: white; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .carousel-btn.prev { left: 8px; }
+    .carousel-btn.next { right: 8px; }
+
+    /* Stats */
+    .stats-unified-strip { display: flex; background: #ffffff; border-radius: 16px; margin: 0 20px 25px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; overflow: hidden; }
+    .stat-block { flex: 1; padding: 12px 5px; text-align: center; display: flex; flex-direction: column; justify-content: center; }
+    .stat-divider { width: 1px; background-color: #f1f5f9; margin: 10px 0; }
+    .stat-block.highlight { background: linear-gradient(135deg, #1b5e20 0%, #0a3d24 100%); }
+    .stat-label { font-size: 10px; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 3px; letter-spacing: 0.5px; }
+    .stat-value { font-size: 15px; font-weight: 900; color: #1b5e20; white-space: nowrap; letter-spacing: -0.5px; }
+    .stat-block.highlight .stat-label { color: #c8e6c9; }
+    .stat-block.highlight .stat-value { color: #ffffff; font-size: 16px; }
+
+    /* Premios */
+    .premios-section { padding: 0 20px; margin-bottom: 30px; }
+    .section-title-elegant { margin: 0 0 8px 0; font-size: 17px; color: #1b5e20; font-weight: 800; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; }
+    .section-subtitle-elegant { margin: 0 0 20px 0; font-size: 14px; color: #64748b; text-align: center; font-weight: 500; }
+    .premio-fila { display: flex; align-items: center; background: #ffffff; border-radius: 12px; padding: 12px 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; margin-bottom: 8px; }
+    .premio-badge { width: 38px; height: 38px; border-radius: 10px; color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-right: 12px; flex-shrink: 0; }
+    .bg-badge-1 { background: linear-gradient(135deg, #d4af37, #b8962e); }
+    .bg-badge-2 { background: linear-gradient(135deg, #458d6b, #26543e); }
+    .bg-badge-3 { background: linear-gradient(135deg, #1b5e20, #0a2e0e); }
+    .premio-detalle { flex: 1; }
+    .premio-nombre { font-size: 14px; color: #1e293b; font-weight: 700; }
+    .premio-sub { font-size: 11px; color: #64748b; font-weight: 500; }
+
+    /* Números */
+    .numbers-card { background: #ffffff; border: 2px solid #a5d6a7; border-radius: 20px; margin: 0 20px 30px 20px; padding: 25px 20px; box-shadow: 0 10px 30px rgba(27,94,32,0.08); position: relative; }
+    .numbers-title { text-align: center; font-size: 18px; font-weight: 900; color: #475569; margin: 0 0 15px 0; text-transform: uppercase; }
+    .search-bar { display: flex; gap: 8px; margin-bottom: 18px; }
+    .search-bar input { flex: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 16px; outline: none; font-family: 'Poppins', sans-serif; background: #f9f9f9; }
+    .search-bar input:focus { border-color: #1b5e20; background: white; }
+    .search-bar button { background: #1b5e20; color: white; border: none; padding: 12px 18px; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; font-family: 'Poppins', sans-serif; white-space: nowrap; }
+    .grid-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+    .btn-numero { width: 65px; height: 65px; border: none; border-radius: 14px; font-family: 'Poppins', sans-serif; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; padding: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+    .disponible { background-color: #ffffff; color: #2e7d32; border: 1px solid #c8e6c9; font-size: 18px; font-weight: 700; }
+    .seleccionado { background-color: #ff9800 !important; color: white !important; border-color: #f57c00 !important; transform: scale(1.05); box-shadow: 0 4px 10px rgba(255,152,0,0.3); }
+
+    /* Pagos */
+    .payment-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; margin: 0 20px 30px 20px; padding: 25px 20px; box-shadow: 0 8px 25px rgba(27,94,32,0.04); text-align: center; }
+
+    /* Trust badges */
+    .trust-badges-container { display: flex; justify-content: center; gap: 15px; margin: 0 20px 30px 20px; }
+    .trust-badge { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+    .trust-badge svg { width: 16px; height: 16px; fill: #1b5e20; }
+
+    /* WhatsApp list */
+    .whatsapp-list-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; margin: 0 20px 30px 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.05); overflow: hidden; }
+    .wa-header { background: #f8fafc; padding: 15px 20px; border-bottom: 1px solid #e2e8f0; text-align: center; }
+    .wa-header-title { font-size: 16px; font-weight: 800; color: #0a3d24; margin: 0 0 3px 0; }
+    .wa-header-sub { font-size: 13px; color: #64748b; margin: 0; }
+    .wa-chat-item { display: flex; padding: 18px 20px; align-items: center; }
+    .wa-avatar { width: 50px; height: 50px; border-radius: 50%; background: #e8f5e9; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-right: 15px; flex-shrink: 0; border: 1px solid #c8e6c9; }
+    .wa-info { flex: 1; overflow: hidden; }
+    .wa-name { font-size: 16px; font-weight: 700; color: #111; }
+    .wa-phone { font-size: 12px; color: #64748b; font-weight: 500; }
+    .wa-msg { font-size: 14px; color: #64748b; margin-top: 2px; }
+
+    /* Botón flotante WA */
+    .float-wa-btn { position: fixed; bottom: 85px; right: 20px; width: 55px; height: 55px; background-color: #25d366; color: #fff; border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 15px rgba(37,211,102,0.4); z-index: 950; cursor: pointer; transition: transform 0.3s; text-decoration: none; }
+    .float-wa-btn:active { transform: scale(0.9); }
+    .float-wa-btn svg { width: 32px; height: 32px; fill: currentColor; }
+
+    /* Barra progreso */
+    .sticky-progress { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.98); backdrop-filter: blur(8px); padding: 10px 20px 15px 20px; box-sizing: border-box; border-top: 1px solid #e2e8f0; box-shadow: 0 -4px 20px rgba(0,0,0,0.06); z-index: 850; }
+    .sticky-progress-text { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .urgency-text { font-size: 13px; font-weight: 800; color: #d9700b; }
+    .urgency-numbers { font-size: 12px; color: #64748b; font-weight: 600; }
+    .urgency-numbers strong { color: #1b5e20; font-weight: 900; font-size: 13px; }
+    .progress-track { width: 100%; height: 6px; background-color: #f1f5f9; border-radius: 10px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #3cb579, #1b5e20); border-radius: 10px; width: 0%; transition: width 1.5s cubic-bezier(0.4,0,0.2,1); }
+
+    /* Barra compra */
+    .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd; padding: 12px 20px 20px 20px; box-sizing: border-box; display: none; justify-content: space-between; align-items: center; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); z-index: 900; animation: slideUp 0.3s ease; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .resumen-compra { font-size: 14px; color: #555; }
+    .resumen-total { font-size: 20px; font-weight: 800; color: #1b5e20; display: block; }
+    .btn-pagar-float { background-color: #1b5e20; color: white; padding: 12px 25px; border: none; border-radius: 50px; font-weight: bold; font-size: 16px; cursor: pointer; box-shadow: 0 4px 12px rgba(27,94,32,0.3); }
+
+    /* Modales */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { background: white; padding: 25px; border-radius: 20px; width: 85%; max-width: 320px; text-align: left; }
+    .input-group label { display: block; font-size: 13px; margin-bottom: 6px; color: #444; font-weight: 700; }
+    .input-group input { width: 100%; padding: 12px; border: 2px solid #f0f2f5; border-radius: 12px; font-size: 16px; box-sizing: border-box; outline: none; background: #f9f9f9; font-family: 'Poppins', sans-serif; }
+    .input-group input:focus { border-color: #1b5e20; background: white; }
+    .input-group { margin-bottom: 15px; }
+    .btn-confirmar { width: 100%; padding: 14px; background-color: #1b5e20; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; font-family: 'Poppins', sans-serif; }
+    .btn-cancelar { width: 100%; padding: 12px; background: white; border: none; color: #999; margin-top: 5px; cursor: pointer; font-weight: 600; font-family: 'Poppins', sans-serif; }
+    .loader { text-align: center; display: none; margin-top: 15px; font-size: 14px; color: #1b5e20; }
   </style>
 </head>
 <body>
+  <div class="container">
 
-  <div class="bg-glow"></div>
+    <div class="top-logo-bar">
+      <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata" class="logo-img">
+    </div>
 
-  <div class="page-wrapper">
-    <div class="content">
+    <div class="hero-title-area">
+      <h1>RIFA CAMIONETA Y 2 MOTOS</h1>
+    </div>
 
-      <div class="logo-container">
-        <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata" class="logo">
+    <div class="carousel-wrapper">
+      <div class="carousel-track" id="carousel-track">
+        <div class="carousel-slide"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+1.png" alt="Premio 1"></div>
+        <div class="carousel-slide"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+2.png" alt="Premio 2"></div>
+        <div class="carousel-slide"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+3.png" alt="Premio 3"></div>
+        <div class="carousel-slide"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla++4.png" alt="Premio 4"></div>
+        <div class="carousel-slide"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+5.png" alt="Premio 5"></div>
+        <div class="carousel-slide"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+6.png" alt="Premio 6"></div>
+        <div class="carousel-slide"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+7.png" alt="Premio 7"></div>
+        <div class="carousel-slide"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+8.png" alt="Premio 8"></div>
+        <div class="carousel-slide"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+9.png" alt="Premio 9"></div>
+        <div class="carousel-slide"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+10.png" alt="Premio 10"></div>
+        <div class="carousel-slide"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+11.png" alt="Premio 11"></div>
+        <div class="carousel-slide"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+12.png" alt="Premio 12"></div>
       </div>
+      <button class="carousel-btn prev" onclick="moverCarrusel(-1)">&#8249;</button>
+      <button class="carousel-btn next" onclick="moverCarrusel(1)">&#8250;</button>
+      <div class="carousel-dots" id="carousel-dots"></div>
+    </div>
 
-      <!-- ==================== FORMULARIO ==================== -->
-      <div id="formSection">
-        <div class="hero-text">
-          <div class="hero-badge">Sorteo exclusivo en vivo</div>
-          <h1 class="hero-question">
-            ¿Compraste una boleta de <span class="gold">La Plata House</span>?
-          </h1>
-          <p class="hero-desc">
-            Si compraste una boleta de la rifa <strong>La Plata House</strong>, regístrate con tu número de boleta y podrás participar por un premio sorpresa que entregaremos esta noche en nuestro en vivo.
-          </p>
-        </div>
+    <div class="stats-unified-strip">
+      <div class="stat-block">
+        <span class="stat-label">🎟️ CADA BOLETA</span>
+        <span class="stat-value">$80.000</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-block highlight">
+        <span class="stat-label">🏆 PREMIO MAYOR</span>
+        <span class="stat-value">Camioneta</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-block">
+        <span class="stat-label">🎁 TOTAL PREMIOS</span>
+        <span class="stat-value">3</span>
+      </div>
+    </div>
 
-        <div class="prize-banner">
-          <div>
-            <div class="prize-amount">$3.000.000</div>
-          </div>
-          <div class="prize-detail">
-            <strong>3 oportunidades</strong> de ganar<br>$1.000.000 cada una
-          </div>
-        </div>
-
-        <!-- Countdown / En Vivo -->
-        <div class="countdown-section" id="countdownSection">
-          <div id="countdownTimer">
-            <p class="countdown-label">El en vivo empieza en</p>
-            <div class="countdown-boxes">
-              <div class="cd-box"><span class="cd-num" id="cdHours">00</span><span class="cd-unit">Horas</span></div>
-              <div class="cd-box"><span class="cd-num" id="cdMins">00</span><span class="cd-unit">Min</span></div>
-              <div class="cd-box"><span class="cd-num" id="cdSecs">00</span><span class="cd-unit">Seg</span></div>
-            </div>
-          </div>
-          <div class="countdown-live" id="liveNow">
-            <div class="live-badge"><span class="live-dot"></span> EN VIVO AHORA</div>
-            <br>
-            <a href="https://www.facebook.com/share/1B7VmyL75H/" target="_blank" class="live-btn">
-              <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-              Ver en vivo en Facebook
-            </a>
-          </div>
-        </div>
-
-        <div class="registered-counter" id="registeredCounter" style="display:none;">
-          <span class="rc-text">Ya se han registrado </span>
-          <span class="rc-number" id="rcNumber">0</span>
-          <span class="rc-text"> personas</span>
-          <br>
-          <button class="ver-registros-btn" id="btnVerRegistros">Ver registros</button>
-        </div>
-
-        <div class="form-card">
-          <!-- PASO 1: Buscar boletas -->
-          <div id="stepBuscar">
-            <h2 class="form-title">Busca tus boletas</h2>
-            <p class="form-subtitle">Ingresa tu número de WhatsApp y buscaremos tus boletas</p>
-
-            <div id="generalError" class="general-error"></div>
-
-            <div class="field">
-              <label for="whatsapp">Teléfono de WhatsApp</label>
-              <input type="tel" id="whatsapp" name="whatsapp" placeholder="Ej: 3107334957" inputmode="numeric" autocomplete="tel">
-              <div class="field-error" id="errorWhatsapp">Ingresa un número de WhatsApp válido (10 dígitos)</div>
-            </div>
-
-            <button type="button" class="submit-btn" id="btnBuscar">Buscar mis boletas</button>
-
-            <p class="manual-link" id="manualLink" style="display:none;">
-              ¿No encuentras tus boletas? <a href="#" id="btnManual">Regístrate manualmente</a>
-            </p>
-          </div>
-
-          <!-- PASO 2: Resultados encontrados -->
-          <div id="stepResultados" style="display:none;">
-            <div class="results-header">
-              <span class="results-greeting" id="resultsGreeting">Hola</span>
-              <span class="results-subtitle">Encontramos tus boletas</span>
-            </div>
-
-            <div class="results-info">
-              <div class="results-data-row">
-                <span class="results-label">Nombre</span>
-                <span class="results-value" id="resNombre">—</span>
-              </div>
-              <div class="results-data-row">
-                <span class="results-label">Ciudad</span>
-                <span class="results-value" id="resCiudad">—</span>
-              </div>
-            </div>
-
-            <div class="results-boletas">
-              <span class="results-boletas-label">Tus boletas:</span>
-              <div class="boletas-grid" id="boletasGrid"></div>
-            </div>
-
-            <button type="button" class="submit-btn" id="btnRegistrar">Participar con mis boletas</button>
-
-            <button type="button" class="back-btn" id="btnVolver">← Buscar con otro número</button>
-          </div>
-
-          <!-- PASO 3: Registro manual -->
-          <div id="stepManual" style="display:none;">
-            <div class="manual-header">
-              <span class="manual-icon">📝</span>
-              <h2 class="form-title">Registro manual</h2>
-              <p class="form-subtitle">Ingresa tus datos y el número de tu boleta</p>
-            </div>
-
-            <div id="manualError" class="general-error"></div>
-
-            <div class="field">
-              <label for="manNombre">Nombre completo</label>
-              <input type="text" id="manNombre" placeholder="Ej: Juan Pérez" autocomplete="name">
-              <div class="field-error" id="errorManNombre">Ingresa tu nombre completo</div>
-            </div>
-
-            <div class="field">
-              <label for="manCiudad">Ciudad</label>
-              <input type="text" id="manCiudad" placeholder="Ej: Tunja" autocomplete="address-level2">
-              <div class="field-error" id="errorManCiudad">Ingresa tu ciudad</div>
-            </div>
-
-            <div class="field">
-              <label for="manWhatsapp">Teléfono de WhatsApp</label>
-              <input type="tel" id="manWhatsapp" placeholder="Ej: 3107334957" inputmode="numeric" autocomplete="tel">
-              <div class="field-error" id="errorManWhatsapp">Ingresa un número válido (10 dígitos)</div>
-            </div>
-
-            <div class="field">
-              <label for="manBoleta">Número de boleta</label>
-              <input type="text" id="manBoleta" placeholder="Ej: 0523" inputmode="numeric" maxlength="4" autocomplete="off">
-              <div class="field-error" id="errorManBoleta">Ingresa tu número de boleta (4 dígitos)</div>
-            </div>
-
-            <button type="button" class="submit-btn" id="btnManualRegistrar">Registrarme</button>
-
-            <button type="button" class="back-btn" id="btnVolverManual">← Volver a buscar por teléfono</button>
-          </div>
-
-        </div>
-
-        <div class="share-section">
-          <a href="#" id="shareBtn" class="share-btn" onclick="shareWhatsApp(); return false;">
-            <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            Compartir con un amigo
-          </a>
-        </div>
-
-        <div class="social-section">
-          <p>Síguenos en redes</p>
-          <div class="social-icons">
-            <a href="https://www.facebook.com/rifaslosplata" target="_blank" class="social-icon" title="Facebook">
-              <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-            </a>
-            <a href="https://www.instagram.com/losplata_" target="_blank" class="social-icon" title="Instagram">
-              <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
-            </a>
-            <a href="https://www.tiktok.com/@losplata777" target="_blank" class="social-icon" title="TikTok">
-              <svg viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
-            </a>
-          </div>
+    <div class="premios-section">
+      <h3 class="section-title-elegant">🏆 Premios</h3>
+      <p class="section-subtitle-elegant">3 ganadores en un solo sorteo</p>
+      <div class="premio-fila">
+        <div class="premio-badge bg-badge-1">🚙</div>
+        <div class="premio-detalle">
+          <div class="premio-nombre">Camioneta Nissan Frontier</div>
+          <div class="premio-sub">Premio mayor</div>
         </div>
       </div>
-
-      <!-- ==================== ÉXITO ==================== -->
-      <div id="successScreen" class="success-screen">
-        <span class="success-icon">🎉</span>
-        <h2 class="success-title">¡Registro exitoso!</h2>
-        <p class="success-msg">
-          Ya estás participando por los <strong>$3.000.000</strong> que vamos a regalar esta noche en nuestro en vivo.
-        </p>
-        <div class="success-boletas-container" id="successBoletasContainer">
-          <span class="results-boletas-label" style="color:#888; margin-bottom:10px; display:block;">Tus boletas registradas:</span>
-          <div class="boletas-grid" id="successBoletasGrid"></div>
-        </div>
-
-        <div class="success-steps">
-          <h3>¿Qué sigue ahora?</h3>
-          <div class="step-item">
-            <span class="step-num">1</span>
-            <span>Conéctate al <strong style="color:var(--gold-light)">en vivo a las 10:30 PM</strong> por Facebook.</span>
-          </div>
-          <div class="step-item">
-            <span class="step-num">2</span>
-            <span>Espera a que se revelen los <strong style="color:var(--gold-light)">3 ganadores del millón</strong>.</span>
-          </div>
-          <div class="step-item">
-            <span class="step-num">3</span>
-            <span>Comparte con tus amigos para que también participen.</span>
-          </div>
-        </div>
-
-        <a href="https://www.facebook.com/share/1B7VmyL75H/" target="_blank" class="live-btn" style="margin-top:20px;">
-          <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-          Ir al en vivo de Facebook
-        </a>
-
-        <div class="share-section">
-          <a href="#" class="share-btn" onclick="shareWhatsApp(); return false;">
-            <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            Compartir con un amigo
-          </a>
+      <div class="premio-fila">
+        <div class="premio-badge bg-badge-2">🏍️</div>
+        <div class="premio-detalle">
+          <div class="premio-nombre">Moto KTM Duke</div>
+          <div class="premio-sub">Segundo premio</div>
         </div>
       </div>
+      <div class="premio-fila">
+        <div class="premio-badge bg-badge-3">🛵</div>
+        <div class="premio-detalle">
+          <div class="premio-nombre">Scooter Yamaha NMAX</div>
+          <div class="premio-sub">Tercer premio</div>
+        </div>
+      </div>
+    </div>
+    <div class="numbers-card" id="tarjeta-numeros">
+      <h2 class="numbers-title">👇 SELECCIONA TUS NÚMEROS 👇</h2>
+      <p style="text-align:center; font-size:13px; color:#64748b; margin-top:-10px; margin-bottom:15px; font-weight:600;">Mínimo 1 · Máximo 10 boletas</p>
 
-      <!-- ==================== DUPLICADO ==================== -->
-      <div id="duplicateScreen" class="duplicate-screen">
-        <span class="duplicate-icon">✅</span>
-        <h2 class="duplicate-title">Ya te registraste</h2>
-        <p class="duplicate-msg">
-          Tu boleta ya fue registrada anteriormente. No necesitas hacer nada más. ¡Quédate pendiente del en vivo esta noche!
-        </p>
+      <div class="search-bar">
+        <input type="text" id="input-buscar" placeholder="Buscar número (ej: 7777)" maxlength="4" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+        <button onclick="buscarNumero()">Buscar</button>
       </div>
 
+      <div id="loading" style="text-align:center; color:#999; padding:20px;">Cargando números disponibles...</div>
+      <div id="grid" class="grid-container"></div>
+    </div>
+
+    <div class="payment-card">
+      <h3 class="section-title-elegant">💳 Cuenta Oficial</h3>
+      <p class="section-subtitle-elegant" style="margin-bottom: 15px;">Transfiere a nuestra cuenta empresarial:</p>
+      <div style="display:flex; align-items:center; justify-content:space-between; max-width:320px; margin:0 auto; padding:18px; background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 4px 10px rgba(0,0,0,0.03);">
+        <div style="display:flex; align-items:center; gap:15px;">
+          <div style="background:#f1f5f9; color:#1b5e20; width:45px; height:45px; border-radius:12px; display:flex; align-items:center; justify-content:center;">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2L1 7v2h22V7L12 2zM2 10v7h3v-7H2zm5 0v7h3v-7H7zm5 0v7h3v-7h-3zm5 0v7h3v-7h-3zM1 19v2h22v-2H1z"/></svg>
+          </div>
+          <div style="text-align:left;">
+            <span style="font-size:14px; color:#64748b; font-weight:600; display:block;">Bancolombia · Ahorros</span>
+            <span style="font-size:18px; font-weight:800; color:#1e293b; letter-spacing:0.5px; display:block;">706-000025-93</span>
+            <span style="font-size:11px; color:#475569; font-weight:600; display:block; margin-top:2px;">LOS PLATA S.A.S.</span>
+          </div>
+        </div>
+        <button id="btn-copiar-main" onclick="copiarCuenta()" title="Copiar número" style="background:#f8fafc; border:1px solid #cbd5e1; color:#475569; border-radius:10px; width:45px; height:45px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="trust-badges-container">
+      <div class="trust-badge">
+        <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+        Sorteo Transparente
+      </div>
+      <div class="trust-badge">
+        <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+        Pago 100% Seguro
+      </div>
+    </div>
+
+    <div class="whatsapp-list-card">
+      <div class="wa-header">
+        <h3 class="wa-header-title">📱 Línea de Atención</h3>
+        <p class="wa-header-sub">Escríbenos por WhatsApp</p>
+      </div>
+      <div class="wa-chat-item">
+        <div class="wa-avatar">🎟️</div>
+        <div class="wa-info">
+          <span class="wa-name">Boletería LOS PLATA</span>
+          <span class="wa-phone">+57 310 733 4957</span>
+          <span class="wa-msg">Atención Rifa Camioneta y Motos</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <a href="https://wa.me/573107334957" class="float-wa-btn" target="_blank" title="Escríbenos por WhatsApp">
+    <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.305-.88-.653-1.473-1.46-1.646-1.757-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+  </a>
+  <div class="sticky-progress" id="sticky-progress-bar">
+    <div class="sticky-progress-text">
+      <span class="urgency-text" id="urgency-label">🔥 ¡Compra tu boleta!</span>
+      <span class="urgency-numbers"><strong id="progress-percent-text">0%</strong> vendido (Quedan <span id="progress-left-text">0</span>)</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill-bar"></div>
     </div>
   </div>
 
-  <!-- Modal de registros -->
-  <div class="modal-overlay" id="modalRegistros">
+  <div id="bottom-bar" class="bottom-bar">
+    <div class="resumen-compra">
+      <span id="qty-text">0 boletas</span>
+      <span id="total-text" class="resumen-total">$0</span>
+    </div>
+    <button class="btn-pagar-float" onclick="abrirModal()">Comprar</button>
+  </div>
+
+  <div id="modal" class="modal-overlay">
     <div class="modal-content">
-      <div class="modal-header">
-        <h3>Personas registradas</h3>
-        <button class="modal-close" id="btnCerrarModal">✕</button>
+      <h3 style="text-align:center; margin-top:0; color:#333;">Reservar: <span id="num-modal" style="color:#1b5e20;"></span></h3>
+      <div class="input-group">
+        <label>Nombre</label>
+        <input type="text" id="input-nombre" placeholder="Tu nombre">
       </div>
-      <div class="modal-body" id="modalBody">
-        <div class="modal-empty">Cargando...</div>
+      <div class="input-group">
+        <label>Apellido</label>
+        <input type="text" id="input-apellido" placeholder="Tu apellido">
       </div>
+      <div class="input-group">
+        <label>Ciudad</label>
+        <input type="text" id="input-ciudad" placeholder="Tu ciudad">
+      </div>
+      <div class="input-group">
+        <label>Celular / WhatsApp</label>
+        <input type="tel" id="input-telefono" placeholder="Ej: 3001234567" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+      </div>
+      <button class="btn-confirmar" onclick="confirmarReserva()">Confirmar Reserva</button>
+      <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
+      <div id="msg-carga" class="loader">🔄 Guardando...</div>
     </div>
   </div>
 
-  <div class="confetti-container" id="confettiContainer"></div>
-
-  <!-- Toast notification -->
-  <div class="toast-notification" id="toastNotification">
-    <div class="toast-avatar" id="toastAvatar">J</div>
-    <div class="toast-text">
-      <strong id="toastName">Juan P.</strong> de <span class="toast-city" id="toastCity">Tunja</span> acaba de registrarse
+  <div id="modal-exito" class="modal-overlay" style="align-items: flex-end;">
+    <div class="modal-content" style="width:100%; max-width:480px; border-radius:24px 24px 0 0; padding:28px 22px 32px 22px; max-height:92vh; overflow-y:auto; box-sizing:border-box;">
+      <div style="text-align:center; margin-bottom:18px;">
+        <div style="font-size:52px; line-height:1;">✅</div>
+        <h2 style="margin:10px 0 4px 0; color:#1b5e20; font-size:20px; font-weight:900;">¡Números reservados!</h2>
+        <p style="margin:0; color:#64748b; font-size:13px;">Tu reserva fue registrada con éxito</p>
+      </div>
+      <div style="background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:14px; padding:14px 16px; margin-bottom:16px;">
+        <p style="margin:0 0 6px 0; font-size:12px; font-weight:800; color:#166534; text-transform:uppercase; letter-spacing:0.5px;">🎟️ Tus números reservados</p>
+        <p id="exito-numeros" style="margin:0; font-size:18px; font-weight:900; color:#1b5e20; letter-spacing:1px;"></p>
+        <p id="exito-total" style="margin:6px 0 0 0; font-size:14px; font-weight:700; color:#15803d;"></p>
+      </div>
+      <div style="background:#fff; border:1.5px solid #e2e8f0; border-radius:14px; padding:14px 16px; margin-bottom:16px;">
+        <p style="margin:0 0 10px 0; font-size:12px; font-weight:800; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">💳 Realiza tu pago a</p>
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <p style="margin:0; font-size:13px; color:#64748b; font-weight:600;">Bancolombia · Cuenta de Ahorros</p>
+            <p style="margin:3px 0 0 0; font-size:20px; font-weight:900; color:#1e293b; letter-spacing:0.5px;">706-000025-93</p>
+            <p style="margin:2px 0 0 0; font-size:12px; color:#475569; font-weight:600;">LOS PLATA S.A.S.</p>
+          </div>
+          <button onclick="copiarCuentaExito()" id="btn-copiar-exito" style="background:#f1f5f9; border:1px solid #cbd5e1; color:#475569; border-radius:10px; width:42px; height:42px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+          </button>
+        </div>
+      </div>
+      <div style="background:#fff7ed; border:2px solid #fed7aa; border-radius:14px; padding:14px 16px; margin-bottom:16px; text-align:center;">
+        <p style="margin:0; font-size:15px; font-weight:900; color:#c2410c;">⚠️ BOLETA SIN CANCELAR NO JUEGA</p>
+        <p style="margin:6px 0 0 0; font-size:12px; color:#92400e; font-weight:600; line-height:1.4;">Una vez realices la transferencia, toma un pantallazo del comprobante y envíalo por WhatsApp para que tu boleta quede activa.</p>
+      </div>
+      <a id="btn-whatsapp-exito" href="#" target="_blank" style="display:flex; align-items:center; justify-content:center; gap:10px; background:#25d366; color:white; text-decoration:none; border-radius:14px; padding:16px; font-size:16px; font-weight:800; margin-bottom:10px; box-shadow:0 4px 15px rgba(37,211,102,0.3);">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.305-.88-.653-1.473-1.46-1.646-1.757-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Enviar comprobante por WhatsApp
+      </a>
+      <button onclick="cerrarExito()" style="width:100%; padding:13px; background:white; border:1.5px solid #e2e8f0; border-radius:14px; font-size:14px; font-weight:600; color:#64748b; cursor:pointer; font-family:'Poppins',sans-serif;">Cerrar</button>
     </div>
-    <span class="toast-time">Ahora</span>
   </div>
 
+  <div id="modal-soldout" class="modal-overlay">
+    <div class="modal-content" style="text-align:center;">
+      <h2 style="color:#d32f2f; margin-top:0;">🚫 ¡BOLETAS AGOTADAS!</h2>
+      <p style="font-size:14px; color:#555;">Todas las boletas han sido vendidas. ¡Gracias por el apoyo!</p>
+      <button class="btn-confirmar" onclick="document.getElementById('modal-soldout').style.display='none'">Aceptar</button>
+    </div>
+  </div>
   <script>
-    // ==================== COUNTDOWN ====================
-    (function() {
-      const target = new Date('2026-04-04T22:30:00-05:00'); // 10:30 PM Colombia
-      const cdH = document.getElementById('cdHours');
-      const cdM = document.getElementById('cdMins');
-      const cdS = document.getElementById('cdSecs');
-      const timerDiv = document.getElementById('countdownTimer');
-      const liveDiv = document.getElementById('liveNow');
+    const PRECIO_BOLETA = 80000;
+    const MIN_BOLETAS = 1;
+    const MAX_BOLETAS = 10;
+    let numerosSeleccionados = [];
+    let carruselIndex = 0;
+    let carruselTotal = 12;
+    let carruselTimer;
 
-      function updateCountdown() {
-        const now = new Date();
-        const diff = target - now;
+    window.onload = function() {
+      cargarNumeros();
+      iniciarCarrusel();
+    };
 
-        if (diff <= 0) {
-          timerDiv.style.display = 'none';
-          liveDiv.classList.add('visible');
-          return;
-        }
-
-        const h = Math.floor(diff / 3600000);
-        const m = Math.floor((diff % 3600000) / 60000);
-        const s = Math.floor((diff % 60000) / 1000);
-
-        cdH.textContent = String(h).padStart(2, '0');
-        cdM.textContent = String(m).padStart(2, '0');
-        cdS.textContent = String(s).padStart(2, '0');
+    /* --- CARRUSEL --- */
+    function iniciarCarrusel() {
+      const dotsContainer = document.getElementById('carousel-dots');
+      for (let i = 0; i < carruselTotal; i++) {
+        const dot = document.createElement('button');
+        dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
+        dot.onclick = function() { irASlide(i); };
+        dotsContainer.appendChild(dot);
       }
+      carruselTimer = setInterval(function() { moverCarrusel(1); }, 4000);
 
-      updateCountdown();
-      setInterval(updateCountdown, 1000);
-    })();
-
-    // ==================== SHARE WHATSAPP ====================
-    function shareWhatsApp() {
-      const msg = encodeURIComponent('🎉 ¡Oye! Si compraste una boleta de La Plata House, regístrate y podrás ganar $1.000.000. ¡Esta noche en vivo!\n\n👉 https://www.losplata.com.co');
-      window.open('https://wa.me/?text=' + msg, '_blank');
+      // Swipe en móvil
+      let startX = 0;
+      const track = document.getElementById('carousel-track');
+      track.addEventListener('touchstart', function(e) { startX = e.touches[0].clientX; });
+      track.addEventListener('touchend', function(e) {
+        const diff = startX - e.changedTouches[0].clientX;
+        if (Math.abs(diff) > 50) { moverCarrusel(diff > 0 ? 1 : -1); }
+      });
     }
 
-    // ==================== CONFETTI ====================
-    function launchConfetti() {
-      const container = document.getElementById('confettiContainer');
-      const colors = ['#C5A059', '#d4b577', '#FFD700', '#ffffff', '#e8c36a', '#f0d78c'];
-      for (let i = 0; i < 80; i++) {
-        const piece = document.createElement('div');
-        piece.className = 'confetti-piece';
-        piece.style.left = Math.random() * 100 + '%';
-        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
-        piece.style.width = (Math.random() * 8 + 6) + 'px';
-        piece.style.height = (Math.random() * 8 + 6) + 'px';
-        piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-        piece.style.animationDelay = Math.random() * 1.5 + 's';
-        piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
-        container.appendChild(piece);
-      }
-      setTimeout(() => { container.innerHTML = ''; }, 5000);
+    function moverCarrusel(dir) {
+      carruselIndex = (carruselIndex + dir + carruselTotal) % carruselTotal;
+      actualizarCarrusel();
+      clearInterval(carruselTimer);
+      carruselTimer = setInterval(function() { moverCarrusel(1); }, 4000);
     }
 
-    // ==================== REGISTERED COUNTER ====================
-    (function() {
-      const counterEl = document.getElementById('registeredCounter');
-      const numberEl = document.getElementById('rcNumber');
+    function irASlide(i) {
+      carruselIndex = i;
+      actualizarCarrusel();
+      clearInterval(carruselTimer);
+      carruselTimer = setInterval(function() { moverCarrusel(1); }, 4000);
+    }
 
-      async function fetchCount() {
-        try {
-          const res = await fetch('/api/registro-sorteo?action=count');
-          if (!res.ok) return;
-          const data = await res.json();
-          if (data.total > 0) {
-            numberEl.textContent = data.total;
-            counterEl.style.display = 'block';
+    function actualizarCarrusel() {
+      document.getElementById('carousel-track').style.transform = 'translateX(-' + (carruselIndex * 100) + '%)';
+      document.querySelectorAll('.carousel-dot').forEach(function(dot, i) {
+        dot.className = 'carousel-dot' + (i === carruselIndex ? ' active' : '');
+      });
+    }
+
+    /* --- CARGAR NÚMEROS --- */
+    function cargarNumeros() {
+      fetch('/api/rifa/numeros')
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.status === 'ok') {
+            pintarNumeros(data.lista, data.stats);
+          } else {
+            document.getElementById('loading').innerText = 'Error cargando la rifa.';
           }
-        } catch(e) {}
+        })
+        .catch(function() {
+          document.getElementById('loading').innerText = 'Error de conexión. Recarga la página.';
+        });
+    }
+
+    function pintarNumeros(lista, stats) {
+      var contenedor = document.getElementById('grid');
+      document.getElementById('loading').style.display = 'none';
+      contenedor.innerHTML = '';
+
+      // Barra de progreso
+      if (stats) {
+        var total = stats.total || 10000;
+        var disponibles = stats.disponibles || 0;
+        var vendidas = stats.vendidas || 0;
+        var porcentaje = Math.round((vendidas / total) * 100);
+        document.getElementById('progress-fill-bar').style.width = porcentaje + '%';
+        document.getElementById('progress-percent-text').innerText = porcentaje + '%';
+        document.getElementById('progress-left-text').innerText = disponibles.toLocaleString('es-CO');
+        if (porcentaje > 70) {
+          document.getElementById('urgency-label').innerText = '🔥 ¡Casi agotado!';
+        } else if (porcentaje > 40) {
+          document.getElementById('urgency-label').innerText = '🔥 ¡Se están agotando!';
+        }
+        if (disponibles === 0) {
+          document.getElementById('modal-soldout').style.display = 'flex';
+        }
       }
 
-      fetchCount();
-      setInterval(fetchCount, 15000);
-    })();
+      lista.forEach(function(item) {
+        var num = item.numero || item;
+        var btn = document.createElement('button');
+        btn.id = 'btn-' + num;
+        btn.className = 'btn-numero disponible';
+        btn.innerText = num;
+        btn.onclick = function() { toggleSeleccion(num, btn); };
+        contenedor.appendChild(btn);
+      });
+    }
 
-    // ==================== FORM ====================
-    const generalError = document.getElementById('generalError');
-    const btnBuscar = document.getElementById('btnBuscar');
-    const btnRegistrar = document.getElementById('btnRegistrar');
-    const btnVolver = document.getElementById('btnVolver');
-    const whatsappInput = document.getElementById('whatsapp');
-
-    let clienteData = null; // datos del cliente encontrado
-
-    whatsappInput.addEventListener('input', () => {
-      whatsappInput.classList.remove('error-input');
-      document.getElementById('errorWhatsapp').style.display = 'none';
-      generalError.style.display = 'none';
-    });
-
-    // PASO 1: Buscar boletas por teléfono
-    btnBuscar.addEventListener('click', async () => {
-      const phone = whatsappInput.value.replace(/\D/g, '');
-      generalError.style.display = 'none';
-
-      if (!phone || phone.length < 10) {
-        whatsappInput.classList.add('error-input');
-        document.getElementById('errorWhatsapp').style.display = 'block';
+    /* --- BUSCADOR --- */
+    function buscarNumero() {
+      var input = document.getElementById('input-buscar');
+      var numero = input.value.trim();
+      if (!numero || numero.length === 0) {
+        alert('Escribe un número para buscar.');
         return;
       }
 
-      btnBuscar.disabled = true;
-      btnBuscar.textContent = 'Buscando...';
-
-      try {
-        const res = await fetch('/api/registro-sorteo?action=buscar&telefono=' + encodeURIComponent(phone));
-        const data = await res.json();
-
-        if (!res.ok) throw new Error(data.error || 'No se encontraron boletas');
-
-        clienteData = data;
-
-        document.getElementById('resultsGreeting').textContent = '¡Hola, ' + data.nombre + '!';
-        document.getElementById('resNombre').textContent = data.nombre;
-        document.getElementById('resCiudad').textContent = data.ciudad;
-
-        const grid = document.getElementById('boletasGrid');
-        grid.innerHTML = '';
-        data.boletas.forEach(b => {
-          grid.innerHTML += '<div class="boleta-chip"><span class="chip-num">' + b + '</span></div>';
+      fetch('/api/rifa/verificar?numero=' + numero)
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.status === 'ok' && data.disponible) {
+            var numPad = data.numero;
+            var existente = document.getElementById('btn-' + numPad);
+            if (existente) {
+              if (!existente.classList.contains('seleccionado')) {
+                existente.click();
+              }
+              existente.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+              var contenedor = document.getElementById('grid');
+              var btn = document.createElement('button');
+              btn.id = 'btn-' + numPad;
+              btn.className = 'btn-numero disponible';
+              btn.innerText = numPad;
+              btn.onclick = function() { toggleSeleccion(numPad, btn); };
+              contenedor.insertBefore(btn, contenedor.firstChild);
+              toggleSeleccion(numPad, btn);
+              btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            input.value = '';
+          } else {
+            alert('El número ' + (data.numero || numero) + ' no está disponible.');
+          }
+        })
+        .catch(function() {
+          alert('Error de conexión. Intenta de nuevo.');
         });
-
-        document.getElementById('stepBuscar').style.display = 'none';
-        document.getElementById('stepResultados').style.display = 'block';
-
-      } catch (err) {
-        generalError.textContent = err.message || 'No encontramos boletas con ese número.';
-        generalError.style.display = 'block';
-        showManualLink();
-      } finally {
-        btnBuscar.disabled = false;
-        btnBuscar.textContent = 'Buscar mis boletas';
-      }
-    });
-
-    // PASO 2: Registrar todas las boletas
-    btnRegistrar.addEventListener('click', async () => {
-      if (!clienteData) return;
-
-      btnRegistrar.disabled = true;
-      btnRegistrar.textContent = 'Registrando...';
-
-      try {
-        const res = await fetch('/api/registro-sorteo', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            nombre_completo: clienteData.nombre,
-            ciudad: clienteData.ciudad,
-            telefono_whatsapp: clienteData.telefono,
-            boletas: clienteData.boletas
-          })
-        });
-
-        const data = await res.json();
-
-        if (res.status === 409) {
-          document.getElementById('formSection').style.display = 'none';
-          document.getElementById('duplicateScreen').classList.add('visible');
-          return;
-        }
-
-        if (!res.ok) throw new Error(data.error || 'Error al registrar');
-
-        const successGrid = document.getElementById('successBoletasGrid');
-        successGrid.innerHTML = '';
-        clienteData.boletas.forEach(b => {
-          successGrid.innerHTML += '<div class="boleta-chip"><span class="chip-num">' + b + '</span></div>';
-        });
-
-        document.getElementById('formSection').style.display = 'none';
-        document.getElementById('successScreen').classList.add('visible');
-        launchConfetti();
-        vibrateDevice();
-
-      } catch (err) {
-        generalError.textContent = err.message || 'Ocurrió un error. Intenta nuevamente.';
-        generalError.style.display = 'block';
-        document.getElementById('stepResultados').style.display = 'none';
-        document.getElementById('stepBuscar').style.display = 'block';
-      } finally {
-        btnRegistrar.disabled = false;
-        btnRegistrar.textContent = 'Participar con mis boletas';
-      }
-    });
-
-    // Volver a buscar
-    btnVolver.addEventListener('click', () => {
-      document.getElementById('stepResultados').style.display = 'none';
-      document.getElementById('stepBuscar').style.display = 'block';
-      whatsappInput.value = '';
-      clienteData = null;
-    });
-
-    // ==================== MANUAL REGISTRATION ====================
-    const btnManual = document.getElementById('btnManual');
-    const btnManualRegistrar = document.getElementById('btnManualRegistrar');
-    const btnVolverManual = document.getElementById('btnVolverManual');
-    const manualError = document.getElementById('manualError');
-
-    // Mostrar enlace manual cuando la búsqueda falla
-    function showManualLink() {
-      document.getElementById('manualLink').style.display = 'block';
     }
 
-    // Ir al formulario manual
-    btnManual.addEventListener('click', (e) => {
-      e.preventDefault();
-      document.getElementById('stepBuscar').style.display = 'none';
-      document.getElementById('stepManual').style.display = 'block';
-      const phone = whatsappInput.value.replace(/\D/g, '');
-      if (phone.length >= 10) {
-        document.getElementById('manWhatsapp').value = phone;
-      }
-    });
-
-    // Volver de manual a búsqueda
-    btnVolverManual.addEventListener('click', () => {
-      document.getElementById('stepManual').style.display = 'none';
-      document.getElementById('stepBuscar').style.display = 'block';
-    });
-
-    // Limpiar errores al escribir (manual)
-    ['manNombre', 'manCiudad', 'manWhatsapp', 'manBoleta'].forEach(f => {
-      document.getElementById(f).addEventListener('input', () => {
-        document.getElementById(f).classList.remove('error-input');
-        const errorId = 'error' + f.charAt(0).toUpperCase() + f.slice(1);
-        const errorEl = document.getElementById(errorId);
-        if (errorEl) errorEl.style.display = 'none';
-        manualError.style.display = 'none';
+    // Buscar con Enter
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('input-buscar').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { buscarNumero(); }
       });
     });
 
-    // Enviar registro manual
-    btnManualRegistrar.addEventListener('click', async () => {
-      manualError.style.display = 'none';
-      let valid = true;
-
-      const nombre = document.getElementById('manNombre').value.trim();
-      const ciudad = document.getElementById('manCiudad').value.trim();
-      const wap = document.getElementById('manWhatsapp').value.replace(/\D/g, '');
-      const boleta = document.getElementById('manBoleta').value.trim();
-
-      if (!nombre || nombre.length < 3) {
-        document.getElementById('manNombre').classList.add('error-input');
-        document.getElementById('errorManNombre').style.display = 'block';
-        valid = false;
-      }
-      if (!ciudad || ciudad.length < 2) {
-        document.getElementById('manCiudad').classList.add('error-input');
-        document.getElementById('errorManCiudad').style.display = 'block';
-        valid = false;
-      }
-      if (!wap || wap.length < 10) {
-        document.getElementById('manWhatsapp').classList.add('error-input');
-        document.getElementById('errorManWhatsapp').style.display = 'block';
-        valid = false;
-      }
-      if (!boleta || boleta.length !== 4 || isNaN(boleta)) {
-        document.getElementById('manBoleta').classList.add('error-input');
-        document.getElementById('errorManBoleta').style.display = 'block';
-        valid = false;
-      }
-
-      if (!valid) return;
-
-      btnManualRegistrar.disabled = true;
-      btnManualRegistrar.textContent = 'Registrando...';
-
-      try {
-        const res = await fetch('/api/registro-sorteo', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            nombre_completo: nombre,
-            ciudad: ciudad,
-            telefono_whatsapp: wap,
-            boletas: [boleta],
-            tipo: 'manual'
-          })
-        });
-
-        const data = await res.json();
-
-        if (res.status === 409) {
-          document.getElementById('formSection').style.display = 'none';
-          document.getElementById('duplicateScreen').classList.add('visible');
+    /* --- SELECCIÓN --- */
+    function toggleSeleccion(numero, btn) {
+      var index = numerosSeleccionados.indexOf(numero);
+      if (index === -1) {
+        if (numerosSeleccionados.length >= MAX_BOLETAS) {
+          alert('⚠️ Máximo ' + MAX_BOLETAS + ' boletas por pedido.');
           return;
         }
-
-        if (!res.ok) throw new Error(data.error || 'Error al registrar');
-
-        const successGrid = document.getElementById('successBoletasGrid');
-        successGrid.innerHTML = '<div class="boleta-chip"><span class="chip-num">' + boleta.padStart(4, '0') + '</span></div>';
-
-        document.getElementById('formSection').style.display = 'none';
-        document.getElementById('successScreen').classList.add('visible');
-        launchConfetti();
-        vibrateDevice();
-
-      } catch (err) {
-        manualError.textContent = err.message || 'Ocurrió un error. Intenta nuevamente.';
-        manualError.style.display = 'block';
-      } finally {
-        btnManualRegistrar.disabled = false;
-        btnManualRegistrar.textContent = 'Registrarme';
+        numerosSeleccionados.push(numero);
+        btn.classList.add('seleccionado');
+      } else {
+        numerosSeleccionados.splice(index, 1);
+        btn.classList.remove('seleccionado');
       }
-    });
+      actualizarBarra();
+    }
 
-    // ==================== MODAL REGISTROS ====================
-    const modalOverlay = document.getElementById('modalRegistros');
-    const modalBody = document.getElementById('modalBody');
+    function actualizarBarra() {
+      var bar = document.getElementById('bottom-bar');
+      var progress = document.getElementById('sticky-progress-bar');
+      if (numerosSeleccionados.length > 0) {
+        bar.style.display = 'flex';
+        progress.style.display = 'none';
+        document.getElementById('qty-text').innerText = numerosSeleccionados.length + (numerosSeleccionados.length === 1 ? ' boleta' : ' boletas');
+        var total = numerosSeleccionados.length * PRECIO_BOLETA;
+        document.getElementById('total-text').innerText = '$' + total.toLocaleString('es-CO');
+      } else {
+        bar.style.display = 'none';
+        progress.style.display = 'block';
+      }
+    }
 
-    document.getElementById('btnVerRegistros').addEventListener('click', async () => {
-      modalOverlay.classList.add('visible');
-      modalBody.innerHTML = '<div class="modal-empty">Cargando...</div>';
+    /* --- MODAL RESERVA --- */
+    function abrirModal() {
+      if (numerosSeleccionados.length < MIN_BOLETAS) {
+        alert('Selecciona al menos ' + MIN_BOLETAS + ' boleta.');
+        return;
+      }
+      document.getElementById('num-modal').innerText = numerosSeleccionados.join(', ');
+      document.getElementById('modal').style.display = 'flex';
+      document.getElementById('msg-carga').style.display = 'none';
+      document.querySelector('.btn-confirmar').disabled = false;
+    }
 
-      try {
-        const res = await fetch('/api/registro-sorteo?action=lista');
-        const data = await res.json();
+    function cerrarModal() {
+      document.getElementById('modal').style.display = 'none';
+    }
 
-        if (!res.ok || !data.registros || data.registros.length === 0) {
-          modalBody.innerHTML = '<div class="modal-empty">Aún no hay registros.</div>';
-          return;
+    function confirmarReserva() {
+      var nombre = document.getElementById('input-nombre').value.trim();
+      var apellido = document.getElementById('input-apellido').value.trim();
+      var ciudad = document.getElementById('input-ciudad').value.trim();
+      var telefono = document.getElementById('input-telefono').value;
+
+      if (!nombre || !apellido || !ciudad || telefono.length !== 10) {
+        alert('⚠️ Completa nombre, apellido, ciudad y un celular de 10 dígitos.');
+        return;
+      }
+
+      document.getElementById('msg-carga').style.display = 'block';
+      document.querySelector('.btn-confirmar').disabled = true;
+
+      fetch('/api/rifa/reservar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ numeros: numerosSeleccionados, nombre: nombre, apellido: apellido, ciudad: ciudad, telefono: telefono })
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data.exito) {
+          var total = numerosSeleccionados.length * PRECIO_BOLETA;
+          var mensaje = '¡Hola Los Plata! 👋\nReservé en la RIFA CAMIONETA Y 2 MOTOS.\n\n👤 Nombre: ' + nombre + ' ' + apellido + '\n📱 Celular: ' + telefono + '\n🎟️ Mis números: ' + numerosSeleccionados.join(', ') + '\n💰 Total: $' + total.toLocaleString('es-CO') + '\n\nAquí va mi comprobante 👇';
+          var urlWA = 'https://wa.me/573107334957?text=' + encodeURIComponent(mensaje);
+
+          document.getElementById('exito-numeros').textContent = numerosSeleccionados.join('  ·  ');
+          document.getElementById('exito-total').textContent = 'Total a pagar: $' + total.toLocaleString('es-CO');
+          document.getElementById('btn-whatsapp-exito').href = urlWA;
+
+          cerrarModal();
+          document.getElementById('modal-exito').style.display = 'flex';
+        } else {
+          alert('Error: ' + (data.error || 'Intenta de nuevo.'));
+          cerrarModal();
+          location.reload();
         }
+      })
+      .catch(function() {
+        alert('Error de conexión. Intenta de nuevo.');
+        document.querySelector('.btn-confirmar').disabled = false;
+        document.getElementById('msg-carga').style.display = 'none';
+      });
+    }
 
-        modalBody.innerHTML = data.registros.map(r => {
-          const inicial = r.nombre.charAt(0).toUpperCase();
-          const txtBoletas = r.boletas === 1 ? '1 boleta' : r.boletas + ' boletas';
-          return '<div class="registro-item">' +
-            '<div class="registro-avatar">' + inicial + '</div>' +
-            '<div class="registro-info">' +
-              '<div class="registro-nombre">' + r.nombre + '</div>' +
-              '<div class="registro-ciudad">' + r.ciudad + '</div>' +
-            '</div>' +
-            '<span class="registro-boletas-count">' + txtBoletas + '</span>' +
-          '</div>';
-        }).join('');
+    function cerrarExito() {
+      document.getElementById('modal-exito').style.display = 'none';
+      location.reload();
+    }
 
-      } catch (e) {
-        modalBody.innerHTML = '<div class="modal-empty">Error al cargar los registros.</div>';
-      }
-    });
+    /* --- COPIAR CUENTA --- */
+    function copiarCuenta() {
+      navigator.clipboard.writeText('70600002593').then(function() {
+        var btn = document.getElementById('btn-copiar-main');
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="#1b5e20"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+        btn.style.background = '#f0fdf4';
+        btn.style.borderColor = '#bbf7d0';
+        setTimeout(function() {
+          btn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>';
+          btn.style.background = '#f8fafc';
+          btn.style.borderColor = '#cbd5e1';
+        }, 2000);
+      });
+    }
 
-    document.getElementById('btnCerrarModal').addEventListener('click', () => {
-      modalOverlay.classList.remove('visible');
-    });
-
-    modalOverlay.addEventListener('click', (e) => {
-      if (e.target === modalOverlay) modalOverlay.classList.remove('visible');
-    });
-
-    // ==================== LIVE TOAST NOTIFICATIONS ====================
-    (function() {
-      const toast = document.getElementById('toastNotification');
-      const toastAvatar = document.getElementById('toastAvatar');
-      const toastName = document.getElementById('toastName');
-      const toastCity = document.getElementById('toastCity');
-      let registrosCache = [];
-      let toastIndex = 0;
-      let toastActive = false;
-
-      async function loadRegistros() {
-        try {
-          const res = await fetch('/api/registro-sorteo?action=lista');
-          const data = await res.json();
-          if (data.registros && data.registros.length > 0) {
-            registrosCache = data.registros;
-          }
-        } catch(e) {}
-      }
-
-      function showToast() {
-        if (registrosCache.length === 0 || toastActive) return;
-        toastActive = true;
-
-        const r = registrosCache[toastIndex % registrosCache.length];
-        toastIndex++;
-
-        toastAvatar.textContent = r.nombre.charAt(0).toUpperCase();
-        toastName.textContent = r.nombre;
-        toastCity.textContent = r.ciudad;
-
-        toast.classList.add('visible');
-
-        setTimeout(() => {
-          toast.classList.remove('visible');
-          setTimeout(() => { toastActive = false; }, 500);
-        }, 4000);
-      }
-
-      loadRegistros();
-      setInterval(loadRegistros, 30000);
-
-      setTimeout(() => {
-        showToast();
-        setInterval(showToast, 12000);
-      }, 5000);
-    })();
-
-    // ==================== VIBRATION ====================
-    function vibrateDevice() {
-      if (navigator.vibrate) {
-        navigator.vibrate([100, 50, 100]);
-      }
+    function copiarCuentaExito() {
+      navigator.clipboard.writeText('70600002593').then(function() {
+        var btn = document.getElementById('btn-copiar-exito');
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="#1b5e20"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+        btn.style.background = '#f0fdf4';
+        btn.style.borderColor = '#bbf7d0';
+        setTimeout(function() {
+          btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>';
+          btn.style.background = '#f1f5f9';
+          btn.style.borderColor = '#cbd5e1';
+        }, 2000);
+      });
     }
   </script>
 </body>
