@@ -119,7 +119,7 @@ export default async function handler(req, res) {
 
     // 7. Armar WhatsApp
     const totalStr = '$' + totalPagar.toLocaleString('es-CO');
-    const mensaje = `¡Hola Los Plata! 👋\nAcabo de reservar mis boletas de *LA PERLA ROJA*.\n\n👤 *Nombre:* ${nombreCompleto}\n📱 *Celular:* ${telefonoLimpio}\n🏙️ *Ciudad:* ${ciudad || ''}\n🎟️ *Números:* ${numeros.join(', ')}\n💰 *Total:* ${totalStr}\n\n¡Quedo atento para enviar el pago!`;
+    const mensaje = `Hola Los Plata!\nAcabo de reservar mis boletas de *LA PERLA ROJA*.\n\n*Nombre:* ${nombreCompleto}\n*Celular:* ${telefonoLimpio}\n*Ciudad:* ${ciudad || ''}\n*Numeros:* ${numeros.join(', ')}\n*Total:* ${totalStr}\n\nQuedo atento para enviar el pago!`;
     const url = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(mensaje)}`;
 
     return res.status(200).json({ exito: true, url, total: totalPagar });
