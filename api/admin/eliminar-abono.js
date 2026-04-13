@@ -57,7 +57,7 @@ export default async function handler(req, res) {
       esDiaria = true; 
     }
 
-    const { data: boleta } = await supabase.from(tabla).select('saldo_restante, total_abonado').eq('numero', numeroLimpio).single();
+    const { data: boleta } = await supabase.from(tabla).select('saldo_restante, total_abonado, telefono_cliente').eq('numero', numeroLimpio).single();
     
     if (boleta) {
       const nuevoAbonado = Number(boleta.total_abonado) - Number(monto);
@@ -67,6 +67,34 @@ export default async function handler(req, res) {
       else nuevoEstado = nuevoSaldo <= 0 ? 'Pagada' : 'Ocupada';
 
       await supabase.from(tabla).update({ total_abonado: nuevoAbonado, saldo_restante: nuevoSaldo, estado: nuevoEstado }).eq('numero', numeroLimpio);
+
+      // AJUSTAR ESTADÍSTICAS DEL CLIENTE
+      if (boleta.telefono_cliente) {
+        const { data: clienteActual } = await supabase
+          .from('clientes')
+          .select('total_comprado, boletas_diarias_compradas, boletas_grandes_compradas')
+          .eq('telefono', boleta.telefono_cliente)
+          .single();
+
+        if (clienteActual) {
+          const esPremio = referencia_transferencia === 'premio_rifa_diaria';
+          let totalComprado = Math.max(0, (clienteActual.total_comprado || 0) - (esPremio ? 0 : monto));
+          let diariasCompradas = clienteActual.boletas_diarias_compradas || 0;
+          let grandesCompradas = clienteActual.boletas_grandes_compradas || 0;
+
+          // Si la boleta estaba pagada y ahora ya no, restar 1 al contador
+          if (boleta.saldo_restante <= 0 && nuevoSaldo > 0) {
+            if (esDiaria) diariasCompradas = Math.max(0, diariasCompradas - 1);
+            else grandesCompradas = Math.max(0, grandesCompradas - 1);
+          }
+
+          await supabase.from('clientes').update({
+            total_comprado: totalComprado,
+            boletas_diarias_compradas: diariasCompradas,
+            boletas_grandes_compradas: grandesCompradas
+          }).eq('telefono', boleta.telefono_cliente);
+        }
+      }
     }
 
     // GUARDAR EN LA BITÁCORA
