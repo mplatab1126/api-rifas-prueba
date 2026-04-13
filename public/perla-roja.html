@@ -35,7 +35,7 @@
 
     /* ========== RESET ========== */
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    html { scroll-behavior: smooth; font-size: 18.5px; }
+    html { scroll-behavior: smooth; font-size: 18.5px; overflow-x: hidden; }
     body {
       font-family: 'Montserrat', sans-serif;
       background: var(--negro);
@@ -633,6 +633,7 @@
     .wa-float-wrap {
       position: fixed; bottom: 80px; right: 16px; z-index: 999;
       display: flex; align-items: center; gap: 10px;
+      max-width: calc(100vw - 32px);
     }
     .wa-tooltip {
       background: var(--blanco); color: var(--negro);
