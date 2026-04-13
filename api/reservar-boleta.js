@@ -52,7 +52,26 @@ export default async function handler(req, res) {
       String(fechaCol.getMinutes()).padStart(2, '0') + ":" +
       String(fechaCol.getSeconds()).padStart(2, '0');
 
-    // 4. Actualizar boletas a "Reservado" (con candado optimista)
+    // 4. Guardar/actualizar cliente ANTES de la boleta (FK: boletas.telefono_cliente → clientes.telefono)
+    const { data: clienteActual } = await supabase
+      .from('clientes')
+      .select('total_comprado, boletas_diarias_compradas, boletas_grandes_compradas')
+      .eq('telefono', telefonoLimpio)
+      .single();
+
+    const { error: clienteError } = await supabase.from('clientes').upsert({
+      telefono: telefonoLimpio,
+      nombre: nombre,
+      apellido: apellido || '',
+      ciudad: ciudad || '',
+      total_comprado: clienteActual?.total_comprado || 0,
+      boletas_diarias_compradas: clienteActual?.boletas_diarias_compradas || 0,
+      boletas_grandes_compradas: clienteActual?.boletas_grandes_compradas || 0
+    }, { onConflict: 'telefono' });
+
+    if (clienteError) throw clienteError;
+
+    // 5. Actualizar boletas a "Reservado" (con candado optimista)
     const { data: updated, error: updateError } = await supabase
       .from('boletas')
       .update({
@@ -89,23 +108,6 @@ export default async function handler(req, res) {
           .eq('numero', boleta.numero);
       }
     }
-
-    // 5. Guardar/actualizar cliente
-    const { data: clienteActual } = await supabase
-      .from('clientes')
-      .select('total_comprado, boletas_diarias_compradas, boletas_grandes_compradas')
-      .eq('telefono', telefonoLimpio)
-      .single();
-
-    await supabase.from('clientes').upsert({
-      telefono: telefonoLimpio,
-      nombre: nombre,
-      apellido: apellido || '',
-      ciudad: ciudad || '',
-      total_comprado: clienteActual?.total_comprado || 0,
-      boletas_diarias_compradas: clienteActual?.boletas_diarias_compradas || 0,
-      boletas_grandes_compradas: clienteActual?.boletas_grandes_compradas || 0
-    }, { onConflict: 'telefono' });
 
     // 6. Bitácora
     await supabase.from('registro_movimientos').insert({
