@@ -5,6 +5,16 @@ export default async function handler(req, res) {
   if (aplicarCors(req, res, 'GET,OPTIONS')) return;
 
   try {
+    // Si piden solo el conteo
+    if (req.query.count === 'true') {
+      const { count, error } = await supabase
+        .from('boletas')
+        .select('numero', { count: 'exact', head: true })
+        .is('telefono_cliente', null);
+      if (error) throw error;
+      return res.status(200).json({ total: count || 0 });
+    }
+
     let seleccionados = [];
 
     // 3. Hacemos un recorrido exacto del 0 al 9
