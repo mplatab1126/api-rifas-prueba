@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "Los Plata",
+    "slug": "los-plata-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#1a1a2e"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.losplata.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1a1a2e"
+      },
+      "package": "com.losplata.app"
+    },
+    "extra": {
+      "apiUrl": "https://www.losplata.com.co"
+    }
+  }
+}
