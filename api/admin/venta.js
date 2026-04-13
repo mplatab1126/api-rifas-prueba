@@ -90,11 +90,34 @@ export default async function handler(req, res) {
     if (boletaData.telefono_cliente) return res.status(400).json({ status: 'error', mensaje: 'Esta boleta ya fue vendida' });
 
     // 2. Traer el historial actual del cliente (si existe)
-    const { data: clienteActual } = await supabase
+    //    Si el número tiene indicativo (más de 10 dígitos) y no existe así en la BD,
+    //    buscamos por los últimos 10 dígitos y migramos el registro viejo al nuevo formato.
+    let { data: clienteActual } = await supabase
       .from('clientes')
-      .select('total_comprado, boletas_grandes_compradas, boletas_diarias_compradas')
+      .select('telefono, total_comprado, boletas_grandes_compradas, boletas_diarias_compradas')
       .eq('telefono', telefonoLimpio)
       .single();
+
+    if (!clienteActual && telefonoLimpio.length > 10) {
+      const last10 = telefonoLimpio.slice(-10);
+      const { data: clienteViejo } = await supabase
+        .from('clientes')
+        .select('telefono, total_comprado, boletas_grandes_compradas, boletas_diarias_compradas')
+        .eq('telefono', last10)
+        .single();
+
+      if (clienteViejo) {
+        // Migrar: actualizar el teléfono viejo (10 dígitos) al nuevo (con indicativo)
+        await Promise.all([
+          supabase.from('clientes').update({ telefono: telefonoLimpio }).eq('telefono', last10),
+          supabase.from('boletas').update({ telefono_cliente: telefonoLimpio }).eq('telefono_cliente', last10),
+          supabase.from('boletas_diarias').update({ telefono_cliente: telefonoLimpio }).eq('telefono_cliente', last10),
+          supabase.from('boletas_diarias_3cifras').update({ telefono_cliente: telefonoLimpio }).eq('telefono_cliente', last10),
+          supabase.from('registro_sorteo').update({ telefono_whatsapp: telefonoLimpio }).eq('telefono_whatsapp', last10)
+        ]);
+        clienteActual = { ...clienteViejo, telefono: telefonoLimpio };
+      }
+    }
 
     let diariasCompradas = clienteActual?.boletas_diarias_compradas || 0;
     let grandesCompradas = clienteActual?.boletas_grandes_compradas || 0;
