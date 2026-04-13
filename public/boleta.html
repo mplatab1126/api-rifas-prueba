@@ -2,7 +2,9 @@
 <html style="overflow-x:hidden">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0A0A0A">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Boleta Digital - La Perla Roja</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;800&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
 
@@ -24,6 +26,7 @@
         color: var(--white);
         -webkit-tap-highlight-color: transparent;
         overflow-x: hidden;
+        -webkit-text-size-adjust: 100%;
       }
       .page-wrapper {
         max-width: 480px;
@@ -31,6 +34,7 @@
         background: var(--dark);
         overflow: hidden;
         position: relative;
+        min-height: 100vh;
       }
 
       /* --- PORTADA --- */
