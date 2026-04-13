@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
 import { PRECIOS } from '../config/precios.js';
+import { limpiarTelefono } from '../lib/telefono.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -12,7 +13,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Faltan datos para la reserva' });
   }
 
-  const telefonoLimpio = String(telefono).replace(/\D/g, '').slice(-10);
+  const telefonoLimpio = limpiarTelefono(telefono);
   const nombreCompleto = `${nombre} ${apellido}`.trim();
 
   try {

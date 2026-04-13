@@ -1,5 +1,6 @@
 import { supabase } from './lib/supabase.js';
 import { aplicarCors } from './lib/cors.js';
+import { limpiarTelefono } from './lib/telefono.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'GET,OPTIONS,PATCH,DELETE,POST,PUT')) return;
@@ -11,8 +12,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Falta el número de teléfono' });
   }
 
-  // 3. Limpiamos el número y sacamos los últimos 10 dígitos
-  const telefonoLimpio = String(telefono).replace(/\D/g, '').slice(-10);
+  // 3. Limpiamos el número (con indicativo para registros nuevos, sufijo para buscar viejos)
+  const telefonoLimpio = limpiarTelefono(telefono);
+  const last10 = String(telefono).replace(/\D/g, '').slice(-10);
 
   try {
     // 5. Buscamos TODAS las boletas que le pertenecen a este teléfono
@@ -25,7 +27,7 @@ export default async function handler(req, res) {
         total_abonado,
         clientes (nombre)
       `)
-      .eq('telefono_cliente', telefonoLimpio);
+      .like('telefono_cliente', '%' + last10);
 
     if (error) throw error;
 

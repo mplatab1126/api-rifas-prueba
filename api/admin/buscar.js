@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
 import { PRECIOS } from '../config/precios.js';
+import { limpiarTelefono } from '../lib/telefono.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'GET,OPTIONS,POST')) return;
@@ -130,22 +131,23 @@ export default async function handler(req, res) {
       }
     }
     // --- CASO D: CELULAR (AHORA SÍ BUSCA EN LAS 3 TABLAS A LA VEZ) ---
-    else if (queryLimpio.length === 10) {
-      
+    else if (queryLimpio.length >= 10) {
+      const last10 = queryLimpio.slice(-10);
+
       const { data: clienteBoletasApto } = await supabase
         .from('boletas')
         .select(`numero, total_abonado, saldo_restante, telefono_cliente, asesor, clientes (nombre, apellido, ciudad)`)
-        .eq('telefono_cliente', queryLimpio);
+        .like('telefono_cliente', '%' + last10);
 
       const { data: clienteBoletasDiarias } = await supabase
         .from('boletas_diarias')
         .select('*')
-        .eq('telefono_cliente', queryLimpio);
+        .like('telefono_cliente', '%' + last10);
 
       const { data: clienteBoletas3Cifras } = await supabase
         .from('boletas_diarias_3cifras')
         .select('*')
-        .eq('telefono_cliente', queryLimpio);
+        .like('telefono_cliente', '%' + last10);
 
       if ((!clienteBoletasApto || clienteBoletasApto.length === 0) && 
           (!clienteBoletasDiarias || clienteBoletasDiarias.length === 0) &&
@@ -154,7 +156,7 @@ export default async function handler(req, res) {
         const { data: clienteSolo } = await supabase
           .from('clientes')
           .select('nombre, apellido, ciudad, telefono')
-          .eq('telefono', queryLimpio)
+          .like('telefono', '%' + last10)
           .maybeSingle();
 
         if (clienteSolo) {
@@ -175,7 +177,7 @@ export default async function handler(req, res) {
       const { data: clienteDB } = await supabase
         .from('clientes')
         .select('nombre, apellido, ciudad')
-        .eq('telefono', queryLimpio)
+        .like('telefono', '%' + last10)
         .maybeSingle();
 
       if (clienteBoletasDiarias && clienteBoletasDiarias.length > 0) {

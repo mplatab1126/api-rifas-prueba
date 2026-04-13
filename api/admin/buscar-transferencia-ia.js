@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
+import { limpiarTelefono } from '../lib/telefono.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -94,7 +95,7 @@ export default async function handler(req, res) {
 
     // 🛡️ INTENTO 3: Ventana de Tolerancia (± 60 min) + Teléfono en Referencia (Nequi -> Bancolombia)
     if (!match && telefono_cliente && hora_pago) {
-      const telLimpio = String(telefono_cliente).replace(/\D/g, '').slice(-10);
+      const telLimpio = limpiarTelefono(telefono_cliente);
       const [hIA, mIA] = hora_pago.split(':').map(Number);
       const minTotalesIA = (hIA * 60) + mIA;
 

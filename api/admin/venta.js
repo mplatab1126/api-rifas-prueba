@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 import { PRECIOS } from '../config/precios.js';
+import { limpiarTelefono } from '../lib/telefono.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -17,7 +18,7 @@ export default async function handler(req, res) {
   if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
   if (!numeroBoleta || !telefono) return res.status(400).json({ status: 'error', mensaje: 'Faltan datos' });
 
-  const telefonoLimpio = String(telefono).replace(/\D/g, '').slice(-10);
+  const telefonoLimpio = limpiarTelefono(telefono);
   const numeroLimpio = String(numeroBoleta).trim();
   let abonoNum = Number(primerAbono) || 0;
 

@@ -1,5 +1,6 @@
 import { supabase } from './lib/supabase.js';
 import { aplicarCors } from './lib/cors.js';
+import { limpiarTelefono } from './lib/telefono.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'GET,OPTIONS,POST')) return;
@@ -50,7 +51,7 @@ export default async function handler(req, res) {
     }
 
     if (action === 'buscar' && telefono) {
-      const telLimpio = String(telefono).replace(/\D/g, '').slice(-10);
+      const telLimpio = limpiarTelefono(telefono);
       if (telLimpio.length < 10) {
         return res.status(400).json({ error: 'Número inválido' });
       }
@@ -95,7 +96,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Datos incompletos' });
   }
 
-  const telefonoLimpio = String(telefono_whatsapp).replace(/\D/g, '').slice(-10);
+  const telefonoLimpio = limpiarTelefono(telefono_whatsapp);
   const tipoRegistro = tipo === 'manual' ? 'manual' : 'automatico';
 
   try {

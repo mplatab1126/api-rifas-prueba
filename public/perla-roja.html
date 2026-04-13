@@ -1,0 +1,1706 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>La Perla Roja - Duke 200 + Nissan Frontier | Los Plata</title>
+  <meta name="description" content="Gana una KTM Duke 200 modelo 2027 y de obsequio una Nissan Frontier 2023 totalmente equipada. Boleta a solo $80.000. Lotería de Boyacá.">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.losplata.com.co">
+  <meta property="og:title" content="La Perla Roja - Duke 200 + Nissan Frontier de OBSEQUIO">
+  <meta property="og:description" content="Participa por una KTM Duke 200 modelo 2027 (0km) y llévate de regalo una Nissan Frontier 2023 equipada. Solo $80.000.">
+  <meta property="og:image" content="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+1.png">
+  <meta property="og:locale" content="es_CO">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;1,400&family=Poppins:wght@800;900&display=swap" rel="stylesheet">
+
+  <style>
+    /* ========== VARIABLES ========== */
+    :root {
+      --rojo: #C41E3A;
+      --rojo-dark: #8B1A2B;
+      --rojo-glow: rgba(196, 30, 58, 0.4);
+      --oro: #D4AF37;
+      --oro-light: #E8C547;
+      --negro: #0A0A0A;
+      --negro-card: #141414;
+      --negro-light: #1C1C1C;
+      --blanco: #FFFFFF;
+      --gris: #9CA3AF;
+      --gris-light: #D1D5DB;
+      --verde-wa: #25D366;
+    }
+
+    /* ========== RESET ========== */
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html { scroll-behavior: smooth; font-size: 18.5px; }
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: var(--negro);
+      color: var(--blanco);
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { text-decoration: none; color: inherit; }
+    button { border: none; cursor: pointer; font-family: inherit; }
+    img { max-width: 100%; display: block; }
+
+    /* ========== PAGE WRAPPER ========== */
+    .page { max-width: 520px; margin: 0 auto; padding-bottom: 100px; }
+
+    /* ========== BARRA URGENCIA FIJA (TOP) ========== */
+    .urgency-bar {
+      position: fixed; top: 0; left: 0; width: 100%; z-index: 1000;
+      background: linear-gradient(135deg, var(--rojo-dark), var(--rojo));
+      padding: 10px 16px;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+    .urgency-bar .pulse-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #ff4d4d;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.3); }
+    }
+    .urgency-bar .text {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+      color: var(--blanco);
+    }
+    .urgency-bar .countdown-mini {
+      display: flex; gap: 3px; align-items: center;
+    }
+    .urgency-bar .cd-box {
+      background: rgba(0,0,0,0.3); color: var(--blanco);
+      padding: 3px 5px; border-radius: 4px; font-size: 11px; font-weight: 800;
+      min-width: 22px; text-align: center; font-variant-numeric: tabular-nums;
+    }
+    .urgency-bar .cd-sep { font-size: 10px; font-weight: 800; opacity: 0.7; }
+
+    /* ========== TOAST NOTIFICACIONES EN VIVO ========== */
+    .live-toast {
+      position: fixed; top: 52px; left: 50%; transform: translateX(-50%) translateY(-30px);
+      background: rgba(10,10,10,0.92); backdrop-filter: blur(10px);
+      color: var(--blanco); padding: 10px 18px; border-radius: 50px;
+      display: flex; align-items: center; gap: 10px;
+      font-size: 12px; font-weight: 500;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+      z-index: 990; opacity: 0; visibility: hidden;
+      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      white-space: nowrap; border: 1px solid rgba(255,255,255,0.08);
+    }
+    .live-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; visibility: visible; }
+    .live-toast .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--verde-wa); flex-shrink: 0; }
+    .live-toast b { color: var(--oro-light); }
+
+    /* ========== HERO ========== */
+    .hero {
+      padding: 60px 20px 30px;
+      text-align: center;
+      position: relative;
+    }
+    .hero::before {
+      content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, var(--rojo-glow) 0%, transparent 65%);
+      pointer-events: none; z-index: 0;
+    }
+    .hero > * { position: relative; z-index: 1; }
+    .hero .logo { width: 80px; margin: 0 auto 20px; filter: drop-shadow(0 4px 15px rgba(212,175,55,0.3)); }
+    .hero .badge {
+      display: inline-block; background: rgba(196,30,58,0.15);
+      border: 1px solid rgba(196,30,58,0.4); color: var(--rojo);
+      padding: 6px 18px; border-radius: 50px; font-size: 11px;
+      font-weight: 800; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 16px;
+    }
+    .hero-intro {
+      font-size: 1.15rem; line-height: 1.5; color: var(--gris-light);
+      margin-bottom: 6px; font-weight: 400;
+    }
+    .hero .sub {
+      font-size: 15px; color: var(--gris-light); line-height: 1.5; margin-bottom: 6px;
+    }
+    .hero .sub strong { color: var(--oro); }
+    .hero-frontier {
+      font-family: 'Poppins', sans-serif;
+      font-size: 2.3rem; font-weight: 900; line-height: 1.1;
+      margin-top: 4px; letter-spacing: 1px; text-transform: uppercase;
+      background: linear-gradient(135deg, var(--oro-light) 0%, var(--oro) 40%, #fff 55%, var(--oro) 70%, var(--oro-light) 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 3s linear infinite;
+      filter: drop-shadow(0 2px 10px rgba(212,175,55,0.35));
+    }
+    .hero-frontier span {
+      font-size: 2.4rem;
+    }
+    @keyframes shimmer {
+      0% { background-position: 100% center; }
+      100% { background-position: -100% center; }
+    }
+    .hero .regalo-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05));
+      border: 1px solid rgba(212,175,55,0.3);
+      padding: 8px 16px; border-radius: 8px; margin-top: 10px;
+      font-size: 13px; font-weight: 700; color: var(--oro);
+    }
+
+    /* ========== CARRUSEL ========== */
+    .carousel-section { padding: 20px 0 10px; overflow: hidden; }
+    .carousel-track {
+      display: flex; gap: 12px; padding: 0 20px;
+      overflow-x: auto; scroll-snap-type: x mandatory;
+      scrollbar-width: none; -ms-overflow-style: none;
+      scroll-padding: 20px;
+    }
+    .carousel-track::-webkit-scrollbar { display: none; }
+    .carousel-slide {
+      min-width: calc(100% - 40px); scroll-snap-align: start;
+      border-radius: 16px; overflow: hidden;
+      position: relative; background: var(--negro-card);
+    }
+    /* Primera slide: imagen a tamaño natural */
+    .carousel-slide.hero-slide {
+      aspect-ratio: auto;
+    }
+    .carousel-slide.hero-slide img {
+      width: 100%; height: auto; display: block;
+    }
+    /* Slides tipo tarjeta */
+    .carousel-slide.card-slide {
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .carousel-slide.card-slide .card-img {
+      position: relative; aspect-ratio: 4/3; overflow: hidden;
+    }
+    .carousel-slide.card-slide .card-img img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .carousel-slide.card-slide .card-tag {
+      position: absolute; top: 12px; left: 12px;
+      padding: 6px 14px; border-radius: 8px;
+      font-size: 11px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .carousel-slide.card-slide .card-tag.mayor {
+      background: linear-gradient(135deg, var(--rojo), var(--rojo-dark)); color: var(--blanco);
+    }
+    .carousel-slide.card-slide .card-tag.regalo {
+      background: linear-gradient(135deg, var(--oro), #b8962e); color: var(--negro);
+    }
+    .carousel-slide.card-slide .card-tag.anticipado {
+      background: linear-gradient(135deg, #059669, #047857); color: var(--blanco);
+    }
+    .carousel-slide.card-slide .card-body {
+      padding: 16px;
+    }
+    .carousel-slide.card-slide .card-body h3 {
+      font-size: 1.2rem; font-weight: 800; margin-bottom: 6px;
+    }
+    .carousel-slide.card-slide .card-body h3.frontier-title {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.4rem; font-weight: 900; text-transform: uppercase;
+      background: linear-gradient(135deg, var(--oro-light) 0%, var(--oro) 40%, #fff 55%, var(--oro) 70%, var(--oro-light) 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; animation: shimmer 3s linear infinite;
+    }
+    .carousel-slide.card-slide .card-body .detail {
+      font-size: 15px; color: var(--gris); line-height: 1.5; margin-bottom: 10px;
+    }
+    .carousel-slide.card-slide .card-body .detail strong { color: var(--blanco); }
+    .carousel-slide.card-slide .card-body .specs {
+      display: flex; flex-wrap: wrap; gap: 6px;
+    }
+    .carousel-slide.card-slide .card-body .specs .spec {
+      background: rgba(255,255,255,0.05); padding: 5px 10px;
+      border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--gris-light);
+    }
+    /* Slide combinada (Duke + Frontier) */
+    .carousel-slide.combo-slide {
+      border: 1px solid rgba(212,175,55,0.25);
+      padding: 16px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .combo-title {
+      text-align: center; font-size: 13px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--oro); padding-bottom: 8px;
+      border-bottom: 1px solid rgba(212,175,55,0.15);
+    }
+    .combo-card {
+      display: flex; gap: 12px; align-items: center;
+    }
+    .combo-card .combo-img {
+      width: 45%; flex-shrink: 0; border-radius: 10px;
+      overflow: hidden; position: relative; aspect-ratio: 4/3;
+    }
+    .combo-card .combo-img img { width: 100%; height: 100%; object-fit: cover; }
+    .combo-card .combo-img .card-tag {
+      position: absolute; top: 6px; left: 6px;
+      padding: 4px 8px; border-radius: 6px;
+      font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .combo-card .combo-info { flex: 1; }
+    .combo-card .combo-info h4 {
+      font-size: 14px; font-weight: 800; margin-bottom: 4px;
+    }
+    .combo-card .combo-info h4.frontier-title {
+      font-family: 'Poppins', sans-serif; font-weight: 900;
+      background: linear-gradient(135deg, var(--oro-light), var(--oro));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .combo-card .combo-info p {
+      font-size: 11px; color: var(--gris); line-height: 1.4;
+    }
+    .combo-card .combo-info p strong { color: var(--blanco); }
+    .combo-divider {
+      text-align: center; color: var(--oro); font-size: 20px; font-weight: 900;
+      line-height: 1; padding: 2px 0;
+    }
+    .carousel-dots {
+      display: flex; justify-content: center; gap: 8px; padding: 16px 0;
+    }
+    .carousel-dots .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: rgba(255,255,255,0.2); transition: all 0.3s;
+    }
+    .carousel-dots .dot.active {
+      background: var(--rojo); width: 24px; border-radius: 4px;
+    }
+
+    /* ========== ESTADÍSTICAS STRIP ========== */
+    .stats-strip {
+      display: flex; margin: 10px 20px 0; border-radius: 14px;
+      background: var(--negro-card); border: 1px solid rgba(255,255,255,0.06);
+      overflow: hidden;
+    }
+    .stat-item {
+      flex: 1; padding: 14px 8px; text-align: center;
+      border-right: 1px solid rgba(255,255,255,0.04);
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-item .label { font-size: 10px; font-weight: 700; color: var(--gris); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .stat-item .value { font-size: 16px; font-weight: 900; color: var(--blanco); }
+    .stat-item .value.gold { color: var(--oro); }
+    .stat-item .value.red {
+      color: var(--rojo);
+      animation: pulseText 2s infinite;
+    }
+    @keyframes pulseText {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    /* ========== SECCIÓN GENÉRICA ========== */
+    .section { padding: 40px 20px; }
+    .section-label {
+      display: inline-block; font-size: 10px; font-weight: 800;
+      letter-spacing: 3px; text-transform: uppercase;
+      color: var(--rojo); margin-bottom: 10px;
+    }
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.7rem; line-height: 1.25; margin-bottom: 16px;
+    }
+    .section-text { font-size: 15px; color: var(--gris-light); line-height: 1.6; }
+
+    /* ========== TARJETA PREMIO ========== */
+    .prize-card {
+      background: var(--negro-card); border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.06);
+      overflow: hidden; margin: 0 20px 30px;
+    }
+    .prize-card .img-wrap { position: relative; aspect-ratio: 16/10; overflow: hidden; }
+    .prize-card .img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+    .prize-card .img-wrap .tag {
+      position: absolute; top: 14px; left: 14px;
+      padding: 6px 14px; border-radius: 8px;
+      font-size: 11px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .prize-card .img-wrap .tag.mayor {
+      background: linear-gradient(135deg, var(--rojo), var(--rojo-dark));
+      color: var(--blanco);
+    }
+    .prize-card .img-wrap .tag.regalo {
+      background: linear-gradient(135deg, var(--oro), #b8962e);
+      color: var(--negro);
+    }
+    .prize-card .img-wrap .tag.anticipado {
+      background: linear-gradient(135deg, #059669, #047857);
+      color: var(--blanco);
+    }
+    .prize-card .info { padding: 20px; }
+    .prize-card .info h3 {
+      font-size: 1.3rem; font-weight: 800; margin-bottom: 6px;
+    }
+    .prize-card .info h3.frontier-title {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.6rem; font-weight: 900; text-transform: uppercase;
+      background: linear-gradient(135deg, var(--oro-light) 0%, var(--oro) 40%, #fff 55%, var(--oro) 70%, var(--oro-light) 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 3s linear infinite;
+    }
+    .prize-card .info .detail {
+      font-size: 13px; color: var(--gris); line-height: 1.5;
+    }
+    .prize-card .info .detail strong { color: var(--blanco); }
+    .prize-card .specs {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px;
+    }
+    .prize-card .specs .spec {
+      background: rgba(255,255,255,0.05); padding: 6px 12px;
+      border-radius: 8px; font-size: 11px; font-weight: 600; color: var(--gris-light);
+    }
+
+    /* ========== SECCIÓN ANTICIPADO (URGENTE) ========== */
+    .anticipado-section {
+      margin: 0 20px 30px;
+      background: linear-gradient(135deg, #064e3b, #047857);
+      border-radius: 20px; padding: 24px; position: relative; overflow: hidden;
+    }
+    .anticipado-section::before {
+      content: ''; position: absolute; top: -50px; right: -50px;
+      width: 150px; height: 150px; border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+    }
+    .anticipado-section .urgency-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.15); padding: 6px 14px;
+      border-radius: 50px; font-size: 11px; font-weight: 800;
+      color: #86efac; margin-bottom: 14px; letter-spacing: 1px;
+    }
+    .anticipado-section .urgency-badge .blink {
+      width: 6px; height: 6px; border-radius: 50%; background: #86efac;
+      animation: pulse 1s infinite;
+    }
+    .anticipado-section h3 { font-size: 1.3rem; font-weight: 800; margin-bottom: 6px; }
+    .anticipado-section .model { font-size: 14px; color: #bbf7d0; margin-bottom: 14px; }
+    .anticipado-section .countdown-anticipado {
+      display: flex; gap: 8px; margin-bottom: 16px;
+    }
+    .anticipado-section .cd-item {
+      background: rgba(0,0,0,0.25); border-radius: 10px; padding: 10px 0;
+      flex: 1; text-align: center;
+    }
+    .anticipado-section .cd-item .num {
+      font-size: 22px; font-weight: 900; color: var(--blanco);
+      font-variant-numeric: tabular-nums;
+    }
+    .anticipado-section .cd-item .lbl { font-size: 9px; font-weight: 700; color: #86efac; text-transform: uppercase; letter-spacing: 1px; }
+    .anticipado-section .condition {
+      background: rgba(0,0,0,0.2); border-radius: 10px; padding: 12px 16px;
+      font-size: 13px; color: #d1fae5; line-height: 1.5;
+    }
+    .anticipado-section .condition strong { color: var(--blanco); }
+
+    /* ========== VALOR / PRECIO ========== */
+    .value-section {
+      margin: 0 20px 30px; text-align: center;
+      background: var(--negro-card); border-radius: 20px;
+      border: 2px solid var(--oro); padding: 30px 20px;
+      position: relative; overflow: hidden;
+    }
+    .value-section::before {
+      content: ''; position: absolute; top: -60px; left: 50%; transform: translateX(-50%);
+      width: 300px; height: 200px;
+      background: radial-gradient(ellipse, rgba(212,175,55,0.1), transparent 70%);
+    }
+    .value-section > * { position: relative; z-index: 1; }
+    .value-section .pretitle { font-size: 16px; font-weight: 700; color: var(--gris); margin-bottom: 4px; }
+    .value-section .price-big {
+      font-size: 3rem; font-weight: 900; color: var(--oro);
+      line-height: 1; margin-bottom: 4px;
+    }
+    .value-section .price-sub { font-size: 12px; color: var(--gris); margin-bottom: 20px; }
+    .value-section .prizes-list { text-align: left; margin-bottom: 20px; }
+    .value-section .prize-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .value-section .prize-row:last-child { border-bottom: none; }
+    .value-section .prize-row .icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .value-section .prize-row .icon.red { background: rgba(196,30,58,0.15); }
+    .value-section .prize-row .icon.gold { background: rgba(212,175,55,0.15); }
+    .value-section .prize-row .icon.green { background: rgba(5,150,105,0.15); }
+    .value-section .prize-row .name { font-size: 16px; font-weight: 700; }
+    .value-section .prize-row .desc { font-size: 13px; color: var(--gris); }
+    .value-section .cta-main {
+      width: 100%; padding: 18px; border-radius: 14px;
+      background: linear-gradient(135deg, var(--rojo), #e02050);
+      color: var(--blanco); font-size: 16px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 1px;
+      box-shadow: 0 8px 30px var(--rojo-glow);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .value-section .cta-main:active {
+      transform: scale(0.97);
+    }
+
+    /* ========== CÓMO FUNCIONA ========== */
+    .steps { padding: 40px 20px; }
+    .steps h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem; text-align: center; margin-bottom: 24px;
+    }
+    .step {
+      display: flex; gap: 16px; align-items: flex-start;
+      margin-bottom: 20px;
+    }
+    .step .num-circle {
+      width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 900;
+      background: linear-gradient(135deg, var(--rojo), var(--rojo-dark));
+      color: var(--blanco);
+    }
+    .step .step-text h4 { font-size: 17px; font-weight: 700; margin-bottom: 2px; }
+    .step .step-text p { font-size: 15px; color: var(--gris); line-height: 1.4; }
+
+    /* ========== CONDICIONES ========== */
+    .conditions {
+      margin: 0 20px 30px;
+      background: var(--negro-card); border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.06); padding: 20px;
+    }
+    .conditions h3 { font-size: 14px; font-weight: 800; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
+    .condition-row {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .condition-row:last-child { border-bottom: none; }
+    .condition-row .bullet {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .condition-row .bullet.red { background: rgba(196,30,58,0.15); color: var(--rojo); }
+    .condition-row .bullet.green { background: rgba(5,150,105,0.15); color: #10b981; }
+    .condition-row .text { font-size: 15px; color: var(--gris-light); line-height: 1.5; }
+    .condition-row .text strong { color: var(--blanco); }
+
+    /* ========== FAQ ========== */
+    .faq { padding: 30px 20px; }
+    .faq h2 { font-family: 'Playfair Display', serif; font-size: 1.5rem; text-align: center; margin-bottom: 20px; }
+    .faq-item {
+      background: var(--negro-card); border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.06);
+      margin-bottom: 10px; overflow: hidden;
+    }
+    .faq-q {
+      padding: 16px; display: flex; justify-content: space-between; align-items: center;
+      cursor: pointer; font-size: 16px; font-weight: 600;
+      transition: background 0.2s;
+    }
+    .faq-q:hover { background: rgba(255,255,255,0.02); }
+    .faq-q .arrow { transition: transform 0.3s; font-size: 12px; color: var(--gris); }
+    .faq-item.open .faq-q .arrow { transform: rotate(180deg); }
+    .faq-a {
+      max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+    }
+    .faq-item.open .faq-a { max-height: 300px; }
+    .faq-a-inner { padding: 0 16px 16px; font-size: 15px; color: var(--gris); line-height: 1.6; }
+
+    /* ========== CTA FINAL ========== */
+    .final-cta {
+      padding: 40px 20px; text-align: center;
+    }
+    .final-cta h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem; line-height: 1.3; margin-bottom: 10px;
+    }
+    .final-cta p { font-size: 16px; color: var(--gris); margin-bottom: 20px; }
+    .final-cta .cta-big {
+      display: block; width: 100%; padding: 20px; border-radius: 16px;
+      background: linear-gradient(135deg, var(--rojo), #e02050);
+      color: var(--blanco); font-size: 18px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 1px;
+      box-shadow: 0 8px 30px var(--rojo-glow);
+      animation: ctaPulse 2s infinite;
+    }
+    @keyframes ctaPulse {
+      0%, 100% { box-shadow: 0 8px 30px var(--rojo-glow); }
+      50% { box-shadow: 0 8px 50px rgba(196,30,58,0.6); }
+    }
+    .final-cta .cta-big:active { transform: scale(0.97); animation: none; }
+    .final-cta .seguridad {
+      margin-top: 14px; font-size: 11px; color: var(--gris);
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .testimonios-section {
+      padding: 30px 20px;
+    }
+    .testimonios-title {
+      font-size: 1.3rem; font-weight: 800; text-align: center; margin-bottom: 4px;
+    }
+    .testimonios-sub {
+      font-size: 13px; color: var(--gris); text-align: center; margin-bottom: 20px;
+    }
+    .testimonios-scroll {
+      display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch; padding-bottom: 10px;
+    }
+    .testimonios-scroll::-webkit-scrollbar { display: none; }
+    .testimonio-card {
+      flex: 0 0 100%; scroll-snap-align: center; max-width: 400px; margin: 0 auto;
+      border-radius: 12px; overflow: hidden; background: var(--negro-card);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .testimonio-card {
+      position: relative; display: block; cursor: pointer;
+    }
+    .testimonio-thumb {
+      width: 100%; aspect-ratio: 9/16; object-fit: cover; border-radius: 12px;
+    }
+    .testimonio-play {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 60px; height: 60px; background: rgba(0,0,0,0.6);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 24px; color: white; backdrop-filter: blur(4px);
+      border: 2px solid rgba(255,255,255,0.3);
+      transition: transform 0.2s;
+    }
+    .testimonio-card:active .testimonio-play { transform: translate(-50%, -50%) scale(0.9); }
+    .testimonio-overlay {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 16px; border-radius: 0 0 12px 12px;
+      background: linear-gradient(transparent, rgba(0,0,0,0.85));
+    }
+    .testimonio-ig-tag {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 700; color: white; margin-bottom: 4px;
+    }
+    .testimonio-caption {
+      font-size: 12px; color: rgba(255,255,255,0.7); line-height: 1.4;
+    }
+    .social-section {
+      text-align: center; padding: 30px 20px 40px;
+    }
+    .social-title {
+      font-size: 14px; font-weight: 700; color: var(--gris); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px;
+    }
+    .social-links {
+      display: flex; justify-content: center; gap: 12px;
+    }
+    .social-btn {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 20px; border-radius: 12px; font-size: 14px; font-weight: 700;
+      transition: transform 0.2s, opacity 0.2s;
+    }
+    .social-btn:active { transform: scale(0.95); }
+    .social-btn.facebook {
+      background: rgba(24,119,242,0.15); border: 1px solid rgba(24,119,242,0.3); color: #60a5fa;
+    }
+    .social-btn.instagram {
+      background: rgba(225,48,108,0.15); border: 1px solid rgba(225,48,108,0.3); color: #f472b6;
+    }
+
+    /* ========== BARRA FLOTANTE INFERIOR ========== */
+    .float-bar {
+      position: fixed; bottom: 0; left: 0; width: 100%; z-index: 1000;
+      background: rgba(10,10,10,0.95); backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding: 12px 16px; display: flex; align-items: center; gap: 12px;
+    }
+    .float-bar .info-col { flex: 1; }
+    .float-bar .price-float { font-size: 20px; font-weight: 900; color: var(--oro); }
+    .float-bar .label-float { font-size: 10px; color: var(--gris); font-weight: 600; text-transform: uppercase; }
+    .float-bar .btn-float {
+      padding: 14px 24px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--rojo), #e02050);
+      color: var(--blanco); font-size: 14px; font-weight: 800;
+      text-transform: uppercase; white-space: nowrap;
+      box-shadow: 0 4px 15px var(--rojo-glow);
+      transition: transform 0.15s;
+    }
+    .float-bar .btn-float:active { transform: scale(0.95); }
+
+    /* ========== BOTÓN WHATSAPP FLOTANTE ========== */
+    .wa-float {
+      position: fixed; bottom: 80px; right: 16px; z-index: 999;
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--verde-wa); color: var(--blanco);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 20px rgba(37,211,102,0.4);
+      font-size: 26px; transition: transform 0.2s;
+    }
+    .wa-float:active { transform: scale(0.9); }
+
+    /* ========== MODAL SELECCIÓN DE NÚMEROS ========== */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2000;
+      background: rgba(0,0,0,0.85); backdrop-filter: blur(4px);
+      display: none; align-items: flex-end; justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-sheet {
+      background: var(--negro); width: 100%; max-width: 520px;
+      max-height: 92vh; border-radius: 24px 24px 0 0;
+      overflow-y: auto; animation: slideUp 0.35s ease;
+      padding-bottom: env(safe-area-inset-bottom, 20px);
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .modal-header {
+      position: sticky; top: 0; background: var(--negro);
+      padding: 20px 20px 14px; z-index: 10;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .modal-header .handle {
+      width: 40px; height: 4px; border-radius: 2px;
+      background: rgba(255,255,255,0.15); margin: 0 auto 16px;
+    }
+    .modal-header .close-btn {
+      position: absolute; top: 20px; right: 20px;
+      background: rgba(255,255,255,0.08); border: none;
+      width: 32px; height: 32px; border-radius: 50%;
+      color: var(--blanco); font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-header h2 { font-size: 1.2rem; font-weight: 800; }
+    .modal-header .subtitle { font-size: 12px; color: var(--gris); margin-top: 4px; }
+
+    /* Buscador */
+    .search-bar {
+      padding: 0 20px; margin: 14px 0;
+    }
+    .search-input-wrap {
+      display: flex; gap: 8px;
+    }
+    .search-input-wrap input {
+      flex: 1; background: var(--negro-light); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px; padding: 14px 16px; color: var(--blanco);
+      font-size: 16px; font-family: inherit; outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-input-wrap input::placeholder { color: var(--gris); }
+    .search-input-wrap input:focus { border-color: var(--rojo); }
+    .search-input-wrap .search-btn {
+      background: var(--rojo); color: var(--blanco);
+      border-radius: 12px; padding: 0 18px; font-size: 14px; font-weight: 700;
+    }
+
+    /* Grid de números */
+    .numeros-info { padding: 0 20px; margin-bottom: 10px; font-size: 12px; color: var(--gris); }
+    .numeros-grid {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+      padding: 0 20px; margin-bottom: 20px;
+    }
+    .num-btn {
+      background: var(--negro-light); border: 2px solid rgba(255,255,255,0.06);
+      border-radius: 10px; padding: 12px 4px; text-align: center;
+      font-size: 14px; font-weight: 700; color: var(--blanco);
+      transition: all 0.2s; cursor: pointer;
+    }
+    .num-btn:hover { border-color: rgba(255,255,255,0.15); }
+    .num-btn.selected {
+      background: rgba(196,30,58,0.15); border-color: var(--rojo); color: var(--rojo);
+    }
+    .num-btn.occupied {
+      background: rgba(255,255,255,0.02); color: rgba(255,255,255,0.15);
+      border-color: transparent; cursor: not-allowed; text-decoration: line-through;
+    }
+    .numeros-loading {
+      text-align: center; padding: 40px 20px; color: var(--gris);
+    }
+    .numeros-loading .spinner {
+      width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: var(--rojo); border-radius: 50%;
+      animation: spin 0.8s linear infinite; margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .refresh-btn {
+      display: block; margin: 0 auto 20px; padding: 10px 20px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px; color: var(--gris-light); font-size: 13px; font-weight: 600;
+    }
+
+    /* Barra inferior del modal */
+    .modal-bottom {
+      position: sticky; bottom: 0; background: var(--negro);
+      padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .selected-count { font-size: 13px; color: var(--gris); text-align: center; margin-bottom: 10px; }
+    .selected-count b { color: var(--blanco); }
+    .btn-continuar {
+      width: 100%; padding: 16px; border-radius: 14px;
+      background: linear-gradient(135deg, var(--rojo), #e02050);
+      color: var(--blanco); font-size: 16px; font-weight: 800;
+      text-transform: uppercase; opacity: 0.4; pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .btn-continuar.active { opacity: 1; pointer-events: auto; }
+
+    /* ========== MODAL FORMULARIO ========== */
+    .form-content { padding: 20px; }
+    .form-content h2 { font-size: 1.2rem; font-weight: 800; margin-bottom: 4px; }
+    .form-content .form-sub { font-size: 12px; color: var(--gris); margin-bottom: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block; font-size: 12px; font-weight: 700; color: var(--gris);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+    }
+    .form-group input, .form-group select {
+      width: 100%; background: var(--negro-light); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px; padding: 14px 16px; color: var(--blanco);
+      font-size: 16px; font-family: inherit; outline: none;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: var(--rojo); }
+    .form-group select { appearance: none; }
+    .form-group select option { background: var(--negro); }
+    .tel-row {
+      display: flex; gap: 8px;
+    }
+    .pais-select {
+      width: auto !important; flex-shrink: 0; padding: 14px 10px !important;
+      font-size: 15px !important; border-radius: 12px;
+      background: var(--negro-light); border: 1px solid rgba(255,255,255,0.1);
+      color: var(--blanco); outline: none; appearance: none; cursor: pointer;
+    }
+    .pais-select:focus { border-color: var(--rojo); }
+    .tel-row input { flex: 1; }
+
+    .resumen-boletas {
+      background: var(--negro-light); border-radius: 12px; padding: 16px;
+      margin-bottom: 20px;
+    }
+    .resumen-boletas .res-title { font-size: 12px; font-weight: 700; color: var(--gris); margin-bottom: 8px; text-transform: uppercase; }
+    .resumen-boletas .res-nums { font-size: 16px; font-weight: 800; color: var(--oro); word-break: break-all; }
+    .resumen-boletas .res-total { margin-top: 10px; display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .resumen-boletas .res-total .t-label { font-size: 14px; color: var(--gris-light); }
+    .resumen-boletas .res-total .t-value { font-size: 20px; font-weight: 900; color: var(--blanco); }
+
+    .btn-whatsapp {
+      width: 100%; padding: 18px; border-radius: 14px;
+      background: var(--verde-wa); color: var(--blanco);
+      font-size: 16px; font-weight: 800; text-transform: uppercase;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      box-shadow: 0 8px 30px rgba(37,211,102,0.3);
+      transition: transform 0.15s;
+    }
+    .btn-whatsapp:active { transform: scale(0.97); }
+    .btn-whatsapp.disabled { opacity: 0.4; pointer-events: none; }
+
+    /* ========== UTILIDADES ========== */
+    .hidden { display: none !important; }
+    .text-center { text-align: center; }
+    .mt-10 { margin-top: 10px; }
+
+    /* Animaciones scroll */
+    .fade-up {
+      opacity: 0; transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .fade-up.visible { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+
+<body>
+  <!-- ===== BARRA URGENCIA FIJA ===== -->
+  <div class="urgency-bar">
+    <div class="pulse-dot"></div>
+    <span class="text" id="barSorteoLabel">Sorteo:</span>
+    <div class="countdown-mini" id="countdownMini">
+      <span class="cd-box" id="cdDias">--</span>
+      <span class="cd-sep">d</span>
+      <span class="cd-box" id="cdHoras">--</span>
+      <span class="cd-sep">:</span>
+      <span class="cd-box" id="cdMins">--</span>
+      <span class="cd-sep">:</span>
+      <span class="cd-box" id="cdSegs">--</span>
+    </div>
+    <span class="text" id="barSorteoFecha" style="color:var(--oro)">Boyacá</span>
+  </div>
+
+  <!-- ===== TOAST VENTAS EN VIVO ===== -->
+  <div class="live-toast" id="liveToast">
+    <div class="dot"></div>
+    <span id="toastText"></span>
+  </div>
+
+  <!-- ===== CONTENIDO PRINCIPAL ===== -->
+  <div class="page">
+
+    <!-- HERO -->
+    <section class="hero">
+      <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata" class="logo">
+      <div class="badge">La Perla Roja</div>
+      <p class="hero-intro">
+        ¿Te imaginas ganarte una Duke 200<br>y que de regalo te den una
+      </p>
+      <p class="hero-frontier">
+        NISSAN FRONTIER <span>2023</span>?
+      </p>
+    </section>
+
+    <!-- CARRUSEL DE PREMIOS -->
+    <section class="carousel-section">
+      <div class="carousel-track" id="carouselTrack">
+
+        <!-- Slide 1: Foto hero (todos los premios juntos) -->
+        <div class="carousel-slide hero-slide">
+          <img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+11.png" alt="Todos los premios - La Perla Roja">
+        </div>
+
+        <!-- Slide 2: Frontier -->
+        <div class="carousel-slide card-slide">
+          <div class="card-img">
+            <img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+5.png" alt="Nissan Frontier 2023" loading="lazy">
+            <div class="card-tag regalo">&#127873; Obsequio del Premio Mayor</div>
+          </div>
+          <div class="card-body">
+            <h3 class="frontier-title">NISSAN FRONTIER 2023</h3>
+            <p class="detail">Totalmente equipada: <strong>rines de lujo</strong>, llantas nuevas, estribos, barra antivuelco y exploradoras.</p>
+            <div class="specs">
+              <span class="spec">4x4</span>
+              <span class="spec">Equipada</span>
+              <span class="spec">Modelo 2023</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 3: Duke -->
+        <div class="carousel-slide card-slide">
+          <div class="card-img">
+            <img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+3.png" alt="KTM Duke 200" loading="lazy">
+            <div class="card-tag mayor">&#127942; Premio Mayor</div>
+          </div>
+          <div class="card-body">
+            <h3>KTM Duke 200</h3>
+            <p class="detail">Modelo <strong>2027</strong>, <strong>0 kilómetros</strong>, completamente nueva. Se sortea el <strong>2 de mayo</strong> con Lotería de Boyacá.</p>
+            <div class="specs">
+              <span class="spec">0 km</span>
+              <span class="spec">Modelo 2027</span>
+              <span class="spec">2 de mayo</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 4: Tarjeta NMAX -->
+        <div class="carousel-slide card-slide">
+          <div class="card-img">
+            <img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+1.png" alt="Yamaha NMAX 2027" loading="lazy">
+            <div class="card-tag anticipado">&#9889; Anticipado</div>
+          </div>
+          <div class="card-body">
+            <h3>Yamaha NMAX 2027</h3>
+            <p class="detail"><strong>0 kilómetros</strong>. Se sortea el <strong>18 de abril</strong>. Abona $40.000 y ya participas.</p>
+            <div class="specs">
+              <span class="spec">0 km</span>
+              <span class="spec">Modelo 2027</span>
+              <span class="spec">18 de abril</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slides extra: más fotos -->
+        <div class="carousel-slide hero-slide"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+2.png" alt="Nissan Frontier 2023" loading="lazy"></div>
+        <div class="carousel-slide hero-slide"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+4.png" alt="Nissan Frontier 2023" loading="lazy"></div>
+        <div class="carousel-slide hero-slide"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+6.png" alt="Nissan Frontier 2023" loading="lazy"></div>
+        <div class="carousel-slide hero-slide"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+7.png" alt="Nissan Frontier 2023" loading="lazy"></div>
+        <div class="carousel-slide hero-slide"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+8.png" alt="Nissan Frontier 2023" loading="lazy"></div>
+        <div class="carousel-slide hero-slide"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+9.png" alt="Nissan Frontier 2023" loading="lazy"></div>
+        <div class="carousel-slide hero-slide"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+10.png" alt="Nissan Frontier 2023" loading="lazy"></div>
+        <div class="carousel-slide hero-slide"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+12.png" alt="Nissan Frontier 2023" loading="lazy"></div>
+
+      </div>
+      <div class="carousel-dots" id="carouselDots"></div>
+    </section>
+
+    <!-- ESTADÍSTICAS -->
+    <!-- (Tarjetas de premio dentro del carrusel) -->
+
+    <!-- SECCIÓN VALOR / PRECIO -->
+    <div class="value-section fade-up">
+      <div class="pretitle">Todo esto por solo</div>
+      <div class="price-big">$80.000</div>
+      <div class="price-sub">Precio por boleta &bull; 4 cifras</div>
+
+      <div class="prizes-list">
+        <div class="prize-row">
+          <div class="icon red">&#128293;</div>
+          <div>
+            <div class="name">KTM Duke 200</div>
+            <div class="desc">Premio Mayor &bull; 0km &bull; 2027</div>
+          </div>
+        </div>
+        <div class="prize-row">
+          <div class="icon gold">&#127873;</div>
+          <div>
+            <div class="name">Nissan Frontier 2023</div>
+            <div class="desc">De obsequio &bull; Totalmente equipada</div>
+          </div>
+        </div>
+        <div class="prize-row">
+          <div class="icon green">&#9889;</div>
+          <div>
+            <div class="name">Yamaha NMAX 2027</div>
+            <div class="desc">Premio Anticipado &bull; 0km &bull; 18 de abril</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="cta-main" onclick="abrirModal()">
+        &#127915; Quiero mi boleta ahora
+      </button>
+    </div>
+
+    <!-- CÓMO FUNCIONA -->
+    <div class="steps fade-up">
+      <h2>Así de fácil participas</h2>
+      <div class="step">
+        <div class="num-circle">1</div>
+        <div class="step-text">
+          <h4>Escoge tu número</h4>
+          <p>Elige el número de 4 cifras que más te guste o te traiga suerte.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num-circle">2</div>
+        <div class="step-text">
+          <h4>Llena tus datos</h4>
+          <p>Solo necesitamos tu nombre, teléfono y ciudad.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num-circle">3</div>
+        <div class="step-text">
+          <h4>Separa por WhatsApp</h4>
+          <p>Te conectamos con un asesor para que envíes tu pago y listo.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONDICIONES -->
+    <div class="conditions fade-up">
+      <h3>Condiciones</h3>
+      <div class="condition-row">
+        <div class="bullet green">&#9989;</div>
+        <div class="text">
+          <strong>Premio Anticipado (NMAX):</strong> Abona mínimo <strong>$40.000</strong> antes del 18 de abril. Juega con la Lotería de Boyacá.
+        </div>
+      </div>
+      <div class="condition-row">
+        <div class="bullet red">&#127942;</div>
+        <div class="text">
+          <strong>Premio Mayor (Duke + Frontier):</strong> Boleta <strong>100% cancelada</strong> ($80.000). Juega el 2 de mayo con la Lotería de Boyacá.
+        </div>
+      </div>
+      <div class="condition-row">
+        <div class="bullet green">&#128176;</div>
+        <div class="text">
+          Puedes abonar en <strong>2 cuotas de $40.000</strong>. Con la primera cuota ya participas por la NMAX.
+        </div>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="faq fade-up">
+      <h2>Preguntas frecuentes</h2>
+
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <span>¿Cómo pago mi boleta?</span>
+          <span class="arrow">&#9660;</span>
+        </div>
+        <div class="faq-a"><div class="faq-a-inner">
+          Al separar tu boleta te conectamos por WhatsApp con un asesor. Él te indica las cuentas para transferir (Bancolombia, Nequi, Daviplata). Solo envías el comprobante y listo.
+        </div></div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <span>¿Puedo pagar en cuotas?</span>
+          <span class="arrow">&#9660;</span>
+        </div>
+        <div class="faq-a"><div class="faq-a-inner">
+          Sí. Puedes abonar $40.000 ahora y con eso ya participas por la NMAX (18 de abril). Cuando completes los $80.000 participas por el premio mayor (2 de mayo).
+        </div></div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <span>¿Con qué lotería juega?</span>
+          <span class="arrow">&#9660;</span>
+        </div>
+        <div class="faq-a"><div class="faq-a-inner">
+          Juega con las últimas 4 cifras de la Lotería de Boyacá. El premio anticipado el 18 de abril y el premio mayor el 2 de mayo de 2026.
+        </div></div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <span>¿Cómo sé si gané?</span>
+          <span class="arrow">&#9660;</span>
+        </div>
+        <div class="faq-a"><div class="faq-a-inner">
+          Te contactamos directamente por WhatsApp si tu número coincide con el resultado de la Lotería de Boyacá. También puedes verificar en nuestra página.
+        </div></div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          <span>¿Cuántas boletas puedo comprar?</span>
+          <span class="arrow">&#9660;</span>
+        </div>
+        <div class="faq-a"><div class="faq-a-inner">
+          Puedes comprar hasta 10 boletas por pedido. Cada boleta es un número diferente, así multiplicas tus oportunidades de ganar.
+        </div></div>
+      </div>
+    </div>
+
+    <!-- TESTIMONIOS / POSTS DE INSTAGRAM -->
+    <div class="testimonios-section fade-up">
+      <h3 class="testimonios-title">Entregas reales</h3>
+      <p class="testimonios-sub">Mira las entregas de nuestros ganadores</p>
+      <div class="testimonios-scroll">
+        <a href="https://www.instagram.com/reel/DUWFPKLkS4L/" target="_blank" rel="noopener" class="testimonio-card">
+          <img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+11.png" alt="Entrega de premio" class="testimonio-thumb">
+          <div class="testimonio-play">&#9654;</div>
+          <div class="testimonio-overlay">
+            <div class="testimonio-ig-tag">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+              @losplata_
+            </div>
+            <p class="testimonio-caption">Entrega emotiva de premio</p>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- CTA FINAL -->
+    <section class="final-cta fade-up">
+      <h2>No dejes pasar esta oportunidad</h2>
+      <p>Las boletas se están acabando. Separa la tuya antes de que otro se lleve tu número de la suerte.</p>
+      <button class="cta-big" onclick="abrirModal()">
+        Separar mi boleta ahora &#10132;
+      </button>
+      <div class="seguridad">
+        &#128274; Pago seguro por transferencia &bull; Los Plata S.A.S.
+      </div>
+    </section>
+
+    <!-- REDES SOCIALES -->
+    <div class="social-section fade-up">
+      <p class="social-title">Síguenos en redes sociales</p>
+      <div class="social-links">
+        <a href="https://web.facebook.com/rifaslosplata" target="_blank" rel="noopener" class="social-btn facebook">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          Facebook
+        </a>
+        <a href="https://instagram.com/losplata_/" target="_blank" rel="noopener" class="social-btn instagram">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+          Instagram
+        </a>
+      </div>
+    </div>
+
+  </div><!-- /page -->
+
+  <!-- ===== BARRA FLOTANTE INFERIOR ===== -->
+  <div class="float-bar" id="floatBar">
+    <div class="info-col">
+      <div class="price-float">$80.000</div>
+      <div class="label-float">Boleta 4 cifras</div>
+    </div>
+    <button class="btn-float" onclick="abrirModal()">Separar boleta</button>
+  </div>
+
+  <!-- ===== BOTÓN WHATSAPP ===== -->
+  <a href="https://wa.me/573107334957?text=Hola%20Los%20Plata%2C%20quiero%20informaci%C3%B3n%20sobre%20La%20Perla%20Roja" class="wa-float" target="_blank" rel="noopener" id="waFloat">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+  </a>
+
+  <!-- ===== MODAL: SELECCIÓN DE NÚMEROS ===== -->
+  <div class="modal-overlay" id="modalNumeros">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <div class="handle"></div>
+        <button class="close-btn" onclick="cerrarModal()">&#10005;</button>
+        <h2>Escoge tu número de la suerte</h2>
+        <p class="subtitle">Selecciona hasta 10 boletas</p>
+      </div>
+
+      <div class="search-bar">
+        <div class="search-input-wrap">
+          <input type="tel" id="searchNumero" placeholder="Buscar un número (ej: 7777)" maxlength="4" inputmode="numeric">
+          <button class="search-btn" onclick="buscarNumero()">Buscar</button>
+        </div>
+      </div>
+      <div id="searchResult" class="hidden" style="padding:0 20px; margin-bottom:10px;"></div>
+
+      <div id="seleccionadosBar" style="padding:0 20px;margin-bottom:10px;display:none">
+        <p style="font-size:12px;color:var(--oro);font-weight:700;margin-bottom:6px">Tus boletas:</p>
+        <div id="seleccionadosList" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+      </div>
+
+      <p class="numeros-info">Números disponibles (de menor a mayor):</p>
+      <div id="numerosContainer">
+        <div class="numeros-loading">
+          <div class="spinner"></div>
+          <p>Cargando números disponibles...</p>
+        </div>
+      </div>
+
+      <button class="refresh-btn" onclick="cargarNumeros()">&#128260; Cargar otros números</button>
+
+      <div class="modal-bottom">
+        <p class="selected-count">Seleccionados: <b><span id="selectedCount">0</span>/10</b></p>
+        <button class="btn-continuar" id="btnContinuar" onclick="mostrarFormulario()">
+          Continuar &#10132;
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: FORMULARIO ===== -->
+  <div class="modal-overlay" id="modalFormulario">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <div class="handle"></div>
+        <button class="close-btn" onclick="volverANumeros()">&#8592;</button>
+        <h2>Tus datos para la boleta</h2>
+        <p class="subtitle">Solo necesitamos esto para separar tu número</p>
+      </div>
+
+      <div class="form-content">
+        <div class="resumen-boletas">
+          <div class="res-title">Tus boletas</div>
+          <div class="res-nums" id="resumenNums">--</div>
+          <div class="res-total">
+            <span class="t-label">Total a pagar</span>
+            <span class="t-value" id="resumenTotal">$0</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Nombre completo</label>
+          <input type="text" id="inputNombre" placeholder="Ej: Juan Pérez" autocomplete="name">
+        </div>
+        <div class="form-group">
+          <label>Número de celular</label>
+          <div class="tel-row">
+            <select id="selectPais" class="pais-select">
+              <option value="+57" data-flag="🇨🇴">🇨🇴 +57</option>
+              <option value="+58" data-flag="🇻🇪">🇻🇪 +58</option>
+              <option value="+593" data-flag="🇪🇨">🇪🇨 +593</option>
+              <option value="+51" data-flag="🇵🇪">🇵🇪 +51</option>
+              <option value="+1" data-flag="🇺🇸">🇺🇸 +1</option>
+              <option value="+52" data-flag="🇲🇽">🇲🇽 +52</option>
+              <option value="+56" data-flag="🇨🇱">🇨🇱 +56</option>
+              <option value="+54" data-flag="🇦🇷">🇦🇷 +54</option>
+              <option value="+507" data-flag="🇵🇦">🇵🇦 +507</option>
+              <option value="+34" data-flag="🇪🇸">🇪🇸 +34</option>
+            </select>
+            <input type="tel" id="inputTelefono" placeholder="Ej: 3101234567" maxlength="15" inputmode="numeric" autocomplete="tel">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Ciudad</label>
+          <input type="text" id="inputCiudad" placeholder="Ej: Bogotá" autocomplete="address-level2">
+        </div>
+
+        <button class="btn-whatsapp disabled" id="btnWhatsapp" onclick="reservarBoletas()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          Reservar mis boletas
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== JAVASCRIPT ===== -->
+  <script>
+    // ============================
+    // CONFIGURACIÓN
+    // ============================
+    const PRECIO_BOLETA = 80000;
+    const MAX_BOLETAS = 10;
+    const WHATSAPP = '573107334957';
+    const FECHA_MAYOR = new Date('2026-05-02T23:00:00-05:00');
+    const FECHA_ANTICIPADO = new Date('2026-04-18T23:00:00-05:00');
+
+    // Estado
+    let numerosSeleccionados = [];
+    let numerosDisponibles = [];
+
+    // ============================
+    // COUNTDOWN
+    // ============================
+    function actualizarCountdowns() {
+      const ahora = new Date();
+      const diffAnt = FECHA_ANTICIPADO - ahora;
+      const diffMayor = FECHA_MAYOR - ahora;
+
+      // BARRA SUPERIOR: muestra el sorteo más próximo
+      // Si aún no pasa el 18 de abril → muestra countdown al anticipado (NMAX)
+      // Si ya pasó → muestra countdown al premio mayor (2 de mayo)
+      const esAnticipado = diffAnt > 0;
+      const diffBar = esAnticipado ? diffAnt : diffMayor;
+      const labelEl = document.getElementById('barSorteoLabel');
+      const fechaEl = document.getElementById('barSorteoFecha');
+
+      if (esAnticipado) {
+        labelEl.textContent = 'NMAX:';
+        fechaEl.textContent = '18 Abr';
+      } else {
+        labelEl.textContent = 'Sorteo:';
+        fechaEl.textContent = '2 May';
+      }
+
+      if (diffBar > 0) {
+        const d = Math.floor(diffBar / 86400000);
+        const h = Math.floor((diffBar % 86400000) / 3600000);
+        const m = Math.floor((diffBar % 3600000) / 60000);
+        const s = Math.floor((diffBar % 60000) / 1000);
+        document.getElementById('cdDias').textContent = String(d).padStart(2, '0');
+        document.getElementById('cdHoras').textContent = String(h).padStart(2, '0');
+        document.getElementById('cdMins').textContent = String(m).padStart(2, '0');
+        document.getElementById('cdSegs').textContent = String(s).padStart(2, '0');
+      }
+
+      // Countdown de la sección anticipado (elementos pueden no existir si se ocultó la sección)
+      const antDiasEl = document.getElementById('antDias');
+      if (antDiasEl) {
+        if (diffAnt > 0) {
+          const d = Math.floor(diffAnt / 86400000);
+          const h = Math.floor((diffAnt % 86400000) / 3600000);
+          const m = Math.floor((diffAnt % 3600000) / 60000);
+          const s = Math.floor((diffAnt % 60000) / 1000);
+          antDiasEl.textContent = String(d).padStart(2, '0');
+          document.getElementById('antHoras').textContent = String(h).padStart(2, '0');
+          document.getElementById('antMins').textContent = String(m).padStart(2, '0');
+          document.getElementById('antSegs').textContent = String(s).padStart(2, '0');
+          const diasAnt = document.getElementById('diasAnticipado');
+          if (diasAnt) diasAnt.textContent = d;
+        } else {
+          const diasAnt = document.getElementById('diasAnticipado');
+          if (diasAnt) diasAnt.textContent = '0';
+          antDiasEl.textContent = '00';
+          document.getElementById('antHoras').textContent = '00';
+          document.getElementById('antMins').textContent = '00';
+          document.getElementById('antSegs').textContent = '00';
+        }
+      }
+    }
+    actualizarCountdowns();
+    setInterval(actualizarCountdowns, 1000);
+
+    // ============================
+    // CARRUSEL
+    // ============================
+    (function() {
+      const track = document.getElementById('carouselTrack');
+      const dotsContainer = document.getElementById('carouselDots');
+      const slides = track.querySelectorAll('.carousel-slide');
+      let current = 0;
+
+      // Crear dots
+      slides.forEach((_, i) => {
+        const dot = document.createElement('div');
+        dot.className = 'dot' + (i === 0 ? ' active' : '');
+        dot.onclick = () => goTo(i);
+        dotsContainer.appendChild(dot);
+      });
+
+      function goTo(index) {
+        current = index;
+        const slide = slides[index];
+        track.scrollTo({ left: slide.offsetLeft - 20, behavior: 'smooth' });
+        updateDots();
+      }
+
+      function updateDots() {
+        dotsContainer.querySelectorAll('.dot').forEach((d, i) => {
+          d.className = 'dot' + (i === current ? ' active' : '');
+        });
+      }
+
+      // Auto-play
+      setInterval(() => {
+        current = (current + 1) % slides.length;
+        goTo(current);
+      }, 4000);
+
+      // Detectar scroll manual
+      let scrollTimeout;
+      track.addEventListener('scroll', () => {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+          const scrollLeft = track.scrollLeft;
+          let closest = 0;
+          let minDist = Infinity;
+          slides.forEach((s, i) => {
+            const dist = Math.abs(s.offsetLeft - 20 - scrollLeft);
+            if (dist < minDist) { minDist = dist; closest = i; }
+          });
+          current = closest;
+          updateDots();
+        }, 100);
+      });
+    })();
+
+    // ============================
+    // TOAST NOTIFICACIONES
+    // ============================
+    (function() {
+      const nombres = ['María','Carlos','Ana','Jorge','Laura','Andrés','Paola','Diego','Sandra','Luis','Martha','Felipe','Claudia','Oscar','Diana','Camilo','Andrea','Pedro','Natalia','Ricardo'];
+      const ciudades = ['Bogotá','Medellín','Cali','Barranquilla','Tunja','Bucaramanga','Pereira','Manizales','Ibagué','Villavicencio','Neiva','Pasto','Cúcuta','Montería','Cartagena'];
+      const toast = document.getElementById('liveToast');
+      const toastText = document.getElementById('toastText');
+
+      function mostrarToast() {
+        const nombre = nombres[Math.floor(Math.random() * nombres.length)];
+        const ciudad = ciudades[Math.floor(Math.random() * ciudades.length)];
+        const cant = Math.floor(Math.random() * 3) + 1;
+        toastText.innerHTML = `<b>${nombre}</b> de ${ciudad} separó ${cant} boleta${cant > 1 ? 's' : ''}`;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 4000);
+      }
+
+      // Primer toast a los 8 segundos, luego cada 15-30 seg
+      setTimeout(() => {
+        mostrarToast();
+        setInterval(mostrarToast, 15000 + Math.random() * 15000);
+      }, 8000);
+    })();
+
+    // ============================
+    // SCROLL ANIMATIONS
+    // ============================
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+    // ============================
+    // FAQ
+    // ============================
+    function toggleFaq(el) {
+      el.closest('.faq-item').classList.toggle('open');
+    }
+
+    // ============================
+    // MODAL NÚMEROS
+    // ============================
+    function abrirModal() {
+      document.getElementById('modalNumeros').classList.add('active');
+      document.body.style.overflow = 'hidden';
+      if (numerosDisponibles.length === 0) cargarNumeros();
+    }
+
+    function cerrarModal() {
+      document.getElementById('modalNumeros').classList.remove('active');
+      document.getElementById('modalFormulario').classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    async function cargarNumeros() {
+      const container = document.getElementById('numerosContainer');
+      container.innerHTML = '<div class="numeros-loading"><div class="spinner"></div><p>Cargando números disponibles...</p></div>';
+
+      try {
+        const res = await fetch('/api/disponibles');
+        const data = await res.json();
+
+        if (data.numeros_disponibles && typeof data.numeros_disponibles === 'string') {
+          // Parsear el formato "0001 - 0023 - 0156 - ..."
+          numerosDisponibles = data.numeros_disponibles
+            .split(' - ')
+            .map(n => n.trim())
+            .filter(n => n.length === 4);
+        } else {
+          numerosDisponibles = [];
+        }
+
+        renderNumeros();
+      } catch (err) {
+        container.innerHTML = '<p style="text-align:center;padding:30px;color:var(--gris)">Error al cargar números. Intenta de nuevo.</p>';
+      }
+    }
+
+    function renderNumeros() {
+      const container = document.getElementById('numerosContainer');
+      if (numerosDisponibles.length === 0) {
+        container.innerHTML = '<p style="text-align:center;padding:30px;color:var(--gris)">No hay números disponibles en este momento.</p>';
+        return;
+      }
+
+      let html = '<div class="numeros-grid">';
+      numerosDisponibles.forEach(num => {
+        const isSelected = numerosSeleccionados.includes(num);
+        html += `<button class="num-btn${isSelected ? ' selected' : ''}" onclick="toggleNumero('${num}', this)">${num}</button>`;
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    function toggleNumero(num, btn) {
+      const idx = numerosSeleccionados.indexOf(num);
+      if (idx >= 0) {
+        numerosSeleccionados.splice(idx, 1);
+        btn.classList.remove('selected');
+      } else {
+        if (numerosSeleccionados.length >= MAX_BOLETAS) {
+          alert('Máximo ' + MAX_BOLETAS + ' boletas por pedido');
+          return;
+        }
+        numerosSeleccionados.push(num);
+        btn.classList.add('selected');
+      }
+      actualizarContador();
+    }
+
+    function actualizarContador() {
+      const count = numerosSeleccionados.length;
+      document.getElementById('selectedCount').textContent = count;
+      const btn = document.getElementById('btnContinuar');
+      btn.classList.toggle('active', count > 0);
+      btn.textContent = count > 0 ? `Continuar con ${count} boleta${count > 1 ? 's' : ''} →` : 'Continuar →';
+
+      // Mostrar barra de seleccionados
+      const bar = document.getElementById('seleccionadosBar');
+      const list = document.getElementById('seleccionadosList');
+      if (count > 0) {
+        bar.style.display = 'block';
+        list.innerHTML = numerosSeleccionados.map(n =>
+          `<span onclick="quitarSeleccionado('${n}')" style="background:var(--rojo);color:white;padding:5px 10px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px">${n} <span style="font-size:11px;opacity:0.7">✕</span></span>`
+        ).join('');
+      } else {
+        bar.style.display = 'none';
+      }
+    }
+
+    function quitarSeleccionado(num) {
+      numerosSeleccionados = numerosSeleccionados.filter(n => n !== num);
+      renderNumeros();
+      actualizarContador();
+    }
+
+    async function buscarNumero() {
+      const input = document.getElementById('searchNumero');
+      const val = input.value.trim();
+      const resultDiv = document.getElementById('searchResult');
+
+      if (!val || val.length < 1 || val.length > 4) {
+        resultDiv.className = 'hidden';
+        return;
+      }
+
+      const numPadded = val.padStart(4, '0');
+      resultDiv.className = '';
+
+      // Verificar si ya está en los disponibles
+      if (numerosDisponibles.includes(numPadded)) {
+        resultDiv.innerHTML = `<div style="background:rgba(5,150,105,0.15);border:1px solid rgba(5,150,105,0.3);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center">
+          <div><span style="font-weight:800;font-size:18px">${numPadded}</span> <span style="color:#10b981;font-size:13px">Disponible</span></div>
+          <button onclick="seleccionarBuscado('${numPadded}')" style="background:var(--rojo);color:white;border:none;padding:8px 16px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer">Seleccionar</button>
+        </div>`;
+        return;
+      }
+
+      // Si no está en los 50, buscar en la base de datos
+      resultDiv.innerHTML = `<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;font-size:13px;color:var(--gris);text-align:center">
+        Buscando <strong style="color:white">${numPadded}</strong>...
+      </div>`;
+
+      try {
+        const resp = await fetch('/api/buscar-boleta?numero=' + encodeURIComponent(val));
+        const data = await resp.json();
+
+        if (data.disponible) {
+          resultDiv.innerHTML = `<div style="background:rgba(5,150,105,0.15);border:1px solid rgba(5,150,105,0.3);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center">
+            <div><span style="font-weight:800;font-size:18px">${data.numero}</span> <span style="color:#10b981;font-size:13px">¡Disponible!</span></div>
+            <button onclick="seleccionarBuscado('${data.numero}')" style="background:var(--rojo);color:white;border:none;padding:8px 16px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer">Seleccionar</button>
+          </div>`;
+        } else {
+          resultDiv.innerHTML = `<div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:12px;font-size:13px;color:#fca5a5">
+            El número <strong style="color:white">${numPadded}</strong> ya está ocupado o no existe. Prueba con otro número.
+          </div>`;
+        }
+      } catch(e) {
+        resultDiv.innerHTML = `<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;font-size:13px;color:var(--gris)">
+          No se pudo verificar. Intenta de nuevo o contacta a un asesor por WhatsApp.
+        </div>`;
+      }
+    }
+
+    function seleccionarBuscado(num) {
+      if (!numerosSeleccionados.includes(num)) {
+        if (numerosSeleccionados.length >= MAX_BOLETAS) {
+          alert('Máximo ' + MAX_BOLETAS + ' boletas');
+          return;
+        }
+        numerosSeleccionados.push(num);
+        renderNumeros();
+        actualizarContador();
+      }
+      document.getElementById('searchResult').className = 'hidden';
+      document.getElementById('searchNumero').value = '';
+    }
+
+    // ============================
+    // FORMULARIO
+    // ============================
+    function mostrarFormulario() {
+      if (numerosSeleccionados.length === 0) return;
+
+      document.getElementById('modalNumeros').classList.remove('active');
+      document.getElementById('modalFormulario').classList.add('active');
+
+      // Resumen
+      document.getElementById('resumenNums').textContent = numerosSeleccionados.join('  •  ');
+      const total = numerosSeleccionados.length * PRECIO_BOLETA;
+      document.getElementById('resumenTotal').textContent = '$' + total.toLocaleString('es-CO');
+
+      // Validar formulario en tiempo real
+      validarFormulario();
+    }
+
+    function volverANumeros() {
+      document.getElementById('modalFormulario').classList.remove('active');
+      document.getElementById('modalNumeros').classList.add('active');
+    }
+
+    function validarFormulario() {
+      const inputs = ['inputNombre', 'inputTelefono', 'inputCiudad'];
+      const btn = document.getElementById('btnWhatsapp');
+
+      function check() {
+        const nombre = document.getElementById('inputNombre').value.trim();
+        const tel = document.getElementById('inputTelefono').value.trim();
+        const ciudad = document.getElementById('inputCiudad').value.trim();
+        const valid = nombre.length >= 3 && tel.length >= 7 && ciudad.length >= 2;
+        btn.classList.toggle('disabled', !valid);
+      }
+
+      inputs.forEach(id => {
+        document.getElementById(id).addEventListener('input', check);
+      });
+      check();
+    }
+
+    async function reservarBoletas() {
+      const btn = document.getElementById('btnWhatsapp');
+      const nombreCompleto = document.getElementById('inputNombre').value.trim();
+      const tel = document.getElementById('inputTelefono').value.trim();
+      const ciudad = document.getElementById('inputCiudad').value.trim();
+      const indicativo = document.getElementById('selectPais').value;
+
+      if (!nombreCompleto || !tel || !ciudad) return;
+
+      const partes = nombreCompleto.split(' ');
+      const nombre = partes[0];
+      const apellido = partes.slice(1).join(' ') || '';
+
+      btn.disabled = true;
+      const btnOriginal = btn.innerHTML;
+      btn.innerHTML = 'Reservando...';
+
+      try {
+        const resp = await fetch('/api/reservar-boleta', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            numeros: numerosSeleccionados,
+            nombre, apellido, ciudad, telefono: tel, indicativo
+          })
+        });
+
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          alert(data.error || 'Error al reservar. Intenta de nuevo.');
+          btn.disabled = false;
+          btn.innerHTML = btnOriginal;
+          return;
+        }
+
+        mostrarConfirmacion(data);
+      } catch (err) {
+        alert('Error de conexión. Intenta de nuevo o contáctanos por WhatsApp.');
+        btn.disabled = false;
+        btn.innerHTML = btnOriginal;
+      }
+    }
+
+    function mostrarConfirmacion(data) {
+      const modal = document.getElementById('modalFormulario');
+      const sheet = modal.querySelector('.modal-sheet');
+      const nums = numerosSeleccionados.join('  •  ');
+      const totalStr = '$' + (data.total || 0).toLocaleString('es-CO');
+
+      sheet.innerHTML = `
+        <div style="padding:30px 20px;text-align:center;">
+          <div style="width:70px;height:70px;background:#22c55e;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          </div>
+          <h2 style="color:var(--texto);margin:0 0 8px;font-size:22px;">¡Tus boletas han sido separadas!</h2>
+          <div style="background:var(--bg);border-radius:12px;padding:14px;margin:16px 0;">
+            <div style="font-size:13px;color:var(--muted);margin-bottom:6px;">Números reservados</div>
+            <div style="font-size:18px;font-weight:700;color:var(--rojo);">${nums}</div>
+            <div style="font-size:15px;color:var(--texto);margin-top:6px;">Total: <b>${totalStr}</b></div>
+          </div>
+          <div style="background:#FFF3CD;border-radius:10px;padding:14px;margin:14px 0;text-align:left;font-size:13px;color:#856404;line-height:1.5;">
+            <b>⏰ Importante:</b> Tus boletas quedan separadas temporalmente. Si no registras al menos un abono de <b>$20.000</b> por boleta en las próximas <b>72 horas</b>, serán liberadas nuevamente para la venta.
+          </div>
+          <div style="background:#D1ECF1;border-radius:10px;padding:14px;margin:14px 0;text-align:left;font-size:13px;color:#0C5460;line-height:1.5;">
+            📲 Tu boleta digital te la enviaremos a través de <b>WhatsApp</b>.
+          </div>
+          <button onclick="irAWhatsapp('${data.url}')" style="width:100%;padding:14px;background:#25D366;color:white;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            Ir a WhatsApp
+          </button>
+        </div>
+      `;
+    }
+
+    function irAWhatsapp(url) {
+      window.open(url, '_blank');
+      numerosSeleccionados = [];
+      cerrarModal();
+    }
+
+    // Solo permitir números en campo teléfono y búsqueda
+    ['inputTelefono', 'searchNumero'].forEach(id => {
+      document.getElementById(id).addEventListener('input', function() {
+        this.value = this.value.replace(/\D/g, '');
+      });
+    });
+
+    // ============================
+    // OCULTAR WHATSAPP FLOAT CUANDO SE VE EL FLOAT BAR
+    // ============================
+    const waFloat = document.getElementById('waFloat');
+    const floatBar = document.getElementById('floatBar');
+
+    // ============================
+    // CARGAR CONTEO DE DISPONIBLES
+    // ============================
+    (async function() {
+      try {
+        // Simulamos un conteo basado en la API existente
+        // Cuando haya endpoint de conteo, reemplazar esto
+        const el = document.getElementById('disponiblesCount');
+        if (el) el.textContent = '¡Pocas!';
+      } catch(e) {}
+    })();
+  </script>
+</body>
+</html>

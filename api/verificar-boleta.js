@@ -1,5 +1,6 @@
 import { supabase } from './lib/supabase.js';
 import { aplicarCors } from './lib/cors.js';
+import { limpiarTelefono } from './lib/telefono.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'GET,OPTIONS,POST')) return;
@@ -18,7 +19,7 @@ export default async function handler(req, res) {
 
   // 4. Limpiamos ambos datos (Boleta a 4 dígitos, Teléfono a 10 dígitos)
   const boletaLimpia = ("0000" + String(numero_boleta).trim()).slice(-4);
-  const telefonoLimpio = String(telefono).replace(/\D/g, '').slice(-10);
+  const telefonoLimpio = String(telefono).replace(/\D/g, '').slice(-10); // últimos 10 para comparación compatible
 
   try {
     // 5. Buscamos la boleta en Supabase
@@ -40,7 +41,7 @@ export default async function handler(req, res) {
 
     // 6. VERIFICACIÓN DE SEGURIDAD: Comparamos el teléfono
     // Extraemos los últimos 10 dígitos del teléfono real de la base de datos
-    const telefonoRealDB = String(boleta.telefono_cliente).replace(/\D/g, '').slice(-10);
+    const telefonoRealDB = String(boleta.telefono_cliente).replace(/\D/g, '').slice(-10); // últimos 10 para comparación compatible
 
     if (telefonoLimpio !== telefonoRealDB) {
       return res.status(401).json({ error: 'El número de teléfono no coincide con el titular' });

@@ -133,13 +133,14 @@ export default async function handler(req, res) {
       for (const s of withPhone) {
         const digits = String(s.phone).replace(/\D/g, '');
         const last10 = digits.slice(-10);
-        if (!phoneMap[last10]) {
-          phoneMap[last10] = {
-            fullPhone: `+${digits}`,
-            chateaName: s.name || s.first_name || 'Sin nombre',
-            user_ns: s.user_ns
-          };
-        }
+        const with57 = '57' + last10;
+        const entry = {
+          fullPhone: `+${digits}`,
+          chateaName: s.name || s.first_name || 'Sin nombre',
+          user_ns: s.user_ns
+        };
+        if (!phoneMap[last10]) phoneMap[last10] = entry;
+        if (!phoneMap[with57]) phoneMap[with57] = entry;
       }
 
       const last10List = Object.keys(phoneMap);
