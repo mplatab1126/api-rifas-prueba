@@ -29,10 +29,11 @@ function numeroAPalabras(n) {
   return convertir(num);
 }
 
+// Soporta números colombianos (10 dígitos) e internacionales (11-15 dígitos con indicativo)
 function formatearTelefono(telefono) {
   const limpio = String(telefono).replace(/\D/g, '');
-  if (limpio.length === 10) return `+57${limpio}`;
-  if (limpio.length >= 11 && limpio.length <= 15) return `+${limpio}`;
+  if (limpio.length === 10) return `+57${limpio}`; // colombiano sin indicativo
+  if (limpio.length >= 11 && limpio.length <= 15) return `+${limpio}`; // ya tiene indicativo
   return null;
 }
 

@@ -616,7 +616,7 @@
         </div>
         <div class="input-group">
           <label>Celular / WhatsApp</label>
-          <input type="tel" id="input-telefono" placeholder="Ej: 3001234567" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+          <input type="tel" id="input-telefono" placeholder="Ej: 573001234567" maxlength="15" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
         </div>
         <button class="btn-confirmar" onclick="confirmarReserva()">Confirmar Reserva</button>
         <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
@@ -929,8 +929,8 @@
         const ciudad = document.getElementById('input-ciudad').value.trim();
         const telefono = document.getElementById('input-telefono').value;
 
-        if (!nombre || !apellido || !ciudad || telefono.length !== 10) {
-          alert("⚠️ ATENCIÓN:\n\nDebes completar nombre, apellido, ciudad y un celular de 10 dígitos.");
+        if (!nombre || !apellido || !ciudad || telefono.length < 7 || telefono.length > 15) {
+          alert("⚠️ ATENCIÓN:\n\nDebes completar nombre, apellido, ciudad y un número de celular válido.");
           return;
         }
 

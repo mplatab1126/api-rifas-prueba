@@ -133,23 +133,25 @@ export default async function handler(req, res) {
       for (const s of withPhone) {
         const digits = String(s.phone).replace(/\D/g, '');
         const last10 = digits.slice(-10);
-        if (!phoneMap[last10]) {
-          phoneMap[last10] = {
-            fullPhone: `+${digits}`,
-            chateaName: s.name || s.first_name || 'Sin nombre',
-            user_ns: s.user_ns
-          };
-        }
+        const info = {
+          fullPhone: `+${digits}`,
+          chateaName: s.name || s.first_name || 'Sin nombre',
+          user_ns: s.user_ns
+        };
+        // Mapeamos tanto el número completo como los últimos 10 dígitos
+        // para compatibilidad con registros viejos (10 dígitos) y nuevos (con indicativo)
+        if (!phoneMap[digits]) phoneMap[digits] = info;
+        if (!phoneMap[last10]) phoneMap[last10] = info;
       }
 
-      const last10List = Object.keys(phoneMap);
+      const phoneKeys = [...new Set(Object.keys(phoneMap))];
       const fechaCorte = payload.ultimo_abono_antes_de || null;
       const maxAbonado = payload.max_abonado !== undefined && payload.max_abonado !== null ? Number(payload.max_abonado) : null;
 
       let allBoletas = [];
       const batchSize = 100;
-      for (let i = 0; i < last10List.length; i += batchSize) {
-        const batch = last10List.slice(i, i + batchSize);
+      for (let i = 0; i < phoneKeys.length; i += batchSize) {
+        const batch = phoneKeys.slice(i, i + batchSize);
         let query = supabase
           .from('boletas')
           .select('numero, saldo_restante, total_abonado, telefono_cliente, clientes(nombre, apellido)')

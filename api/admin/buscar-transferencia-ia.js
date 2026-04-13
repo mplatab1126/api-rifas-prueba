@@ -94,7 +94,7 @@ export default async function handler(req, res) {
 
     // 🛡️ INTENTO 3: Ventana de Tolerancia (± 60 min) + Teléfono en Referencia (Nequi -> Bancolombia)
     if (!match && telefono_cliente && hora_pago) {
-      const telLimpio = String(telefono_cliente).replace(/\D/g, '').slice(-10);
+      const telLimpio = String(telefono_cliente).replace(/\D/g, '');
       const [hIA, mIA] = hora_pago.split(':').map(Number);
       const minTotalesIA = (hIA * 60) + mIA;
 

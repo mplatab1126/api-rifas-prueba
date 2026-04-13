@@ -50,8 +50,8 @@ export default async function handler(req, res) {
     }
 
     if (action === 'buscar' && telefono) {
-      const telLimpio = String(telefono).replace(/\D/g, '').slice(-10);
-      if (telLimpio.length < 10) {
+      const telLimpio = String(telefono).replace(/\D/g, '');
+      if (telLimpio.length < 7 || telLimpio.length > 15) {
         return res.status(400).json({ error: 'Número inválido' });
       }
 
@@ -59,7 +59,8 @@ export default async function handler(req, res) {
         const { data: boletas, error } = await supabase
           .from('boletas')
           .select('numero, telefono_cliente, clientes (nombre, apellido, ciudad)')
-          .like('telefono_cliente', '%' + telLimpio.slice(-10));
+          .like('telefono_cliente', '%' + telLimpio.slice(-10))
+          // Busca por los últimos dígitos para compatibilidad con registros viejos y nuevos
 
         if (error) throw error;
         if (!boletas || boletas.length === 0) {
@@ -95,7 +96,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Datos incompletos' });
   }
 
-  const telefonoLimpio = String(telefono_whatsapp).replace(/\D/g, '').slice(-10);
+  const telefonoLimpio = String(telefono_whatsapp).replace(/\D/g, '');
   const tipoRegistro = tipo === 'manual' ? 'manual' : 'automatico';
 
   try {

@@ -11,8 +11,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Falta el número de teléfono' });
   }
 
-  // 3. Limpiamos el número y sacamos los últimos 10 dígitos
-  const telefonoLimpio = String(telefono).replace(/\D/g, '').slice(-10);
+  // 3. Limpiamos el número (solo dígitos)
+  const telefonoLimpio = String(telefono).replace(/\D/g, '');
 
   try {
     // 5. Buscamos TODAS las boletas que le pertenecen a este teléfono

@@ -12,7 +12,10 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Faltan datos para la reserva' });
   }
 
-  const telefonoLimpio = String(telefono).replace(/\D/g, '').slice(-10);
+  const telefonoLimpio = String(telefono).replace(/\D/g, '');
+  if (telefonoLimpio.length < 7 || telefonoLimpio.length > 15) {
+    return res.status(400).json({ error: 'El número de teléfono no es válido' });
+  }
   const nombreCompleto = `${nombre} ${apellido}`.trim();
 
   try {

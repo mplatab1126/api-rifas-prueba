@@ -16,9 +16,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Faltan datos' });
   }
 
-  // 4. Limpiamos ambos datos (Boleta a 4 dígitos, Teléfono a 10 dígitos)
+  // 4. Limpiamos ambos datos (Boleta a 4 dígitos, Teléfono solo dígitos)
   const boletaLimpia = ("0000" + String(numero_boleta).trim()).slice(-4);
-  const telefonoLimpio = String(telefono).replace(/\D/g, '').slice(-10);
+  const telefonoLimpio = String(telefono).replace(/\D/g, '');
 
   try {
     // 5. Buscamos la boleta en Supabase
@@ -39,10 +39,12 @@ export default async function handler(req, res) {
     }
 
     // 6. VERIFICACIÓN DE SEGURIDAD: Comparamos el teléfono
-    // Extraemos los últimos 10 dígitos del teléfono real de la base de datos
-    const telefonoRealDB = String(boleta.telefono_cliente).replace(/\D/g, '').slice(-10);
+    const telefonoRealDB = String(boleta.telefono_cliente).replace(/\D/g, '');
 
-    if (telefonoLimpio !== telefonoRealDB) {
+    // Comparamos completo o por últimos dígitos (compatibilidad con registros viejos de 10 dígitos)
+    const coincide = telefonoLimpio === telefonoRealDB || telefonoLimpio.slice(-10) === telefonoRealDB.slice(-10);
+
+    if (!coincide) {
       return res.status(401).json({ error: 'El número de teléfono no coincide con el titular' });
     }
 

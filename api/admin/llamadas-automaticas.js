@@ -50,11 +50,11 @@ function numeroAPalabras(n) {
   return convertir(num);
 }
 
-// Convierte un celular colombiano de 10 dígitos al formato E.164 que exige Twilio
+// Convierte un celular al formato E.164 que exige Twilio (soporta números internacionales)
 function formatearTelefono(telefono) {
   const limpio = String(telefono).replace(/\D/g, '');
-  if (limpio.length === 10) return `+57${limpio}`;
-  if (limpio.length === 12 && limpio.startsWith('57')) return `+${limpio}`;
+  if (limpio.length === 10) return `+57${limpio}`; // colombiano sin indicativo
+  if (limpio.length >= 11 && limpio.length <= 15) return `+${limpio}`; // ya tiene indicativo
   return null;
 }
 

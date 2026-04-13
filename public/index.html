@@ -1133,7 +1133,7 @@
             <div class="field">
               <label for="whatsapp">Teléfono de WhatsApp</label>
               <input type="tel" id="whatsapp" name="whatsapp" placeholder="Ej: 3107334957" inputmode="numeric" autocomplete="tel">
-              <div class="field-error" id="errorWhatsapp">Ingresa un número de WhatsApp válido (10 dígitos)</div>
+              <div class="field-error" id="errorWhatsapp">Ingresa un número de WhatsApp válido</div>
             </div>
 
             <button type="button" class="submit-btn" id="btnBuscar">Buscar mis boletas</button>
@@ -1196,7 +1196,7 @@
             <div class="field">
               <label for="manWhatsapp">Teléfono de WhatsApp</label>
               <input type="tel" id="manWhatsapp" placeholder="Ej: 3107334957" inputmode="numeric" autocomplete="tel">
-              <div class="field-error" id="errorManWhatsapp">Ingresa un número válido (10 dígitos)</div>
+              <div class="field-error" id="errorManWhatsapp">Ingresa un número válido</div>
             </div>
 
             <div class="field">
@@ -1411,7 +1411,7 @@
       const phone = whatsappInput.value.replace(/\D/g, '');
       generalError.style.display = 'none';
 
-      if (!phone || phone.length < 10) {
+      if (!phone || phone.length < 7 || phone.length > 15) {
         whatsappInput.classList.add('error-input');
         document.getElementById('errorWhatsapp').style.display = 'block';
         return;
@@ -1527,7 +1527,7 @@
       document.getElementById('stepBuscar').style.display = 'none';
       document.getElementById('stepManual').style.display = 'block';
       const phone = whatsappInput.value.replace(/\D/g, '');
-      if (phone.length >= 10) {
+      if (phone.length >= 7) {
         document.getElementById('manWhatsapp').value = phone;
       }
     });
@@ -1569,7 +1569,7 @@
         document.getElementById('errorManCiudad').style.display = 'block';
         valid = false;
       }
-      if (!wap || wap.length < 10) {
+      if (!wap || wap.length < 7 || wap.length > 15) {
         document.getElementById('manWhatsapp').classList.add('error-input');
         document.getElementById('errorManWhatsapp').style.display = 'block';
         valid = false;
