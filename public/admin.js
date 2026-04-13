@@ -3408,6 +3408,124 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         }
     }
 
+    // ── SIN ETIQUETA ──────────────────────────────────────────────────────────
+    let _sinEtiquetaCompleta = [];
+
+    async function cargarSinEtiqueta() {
+        const contenedor = document.getElementById('se-tabla-render');
+        const contador = document.getElementById('se-contador');
+        const resumen = document.getElementById('se-resumen');
+        const btn = document.getElementById('btnCargarSinEtiqueta');
+
+        contenedor.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem; padding:30px 0;">Consultando ChateaPro y la base de datos... esto puede tardar 10-20 segundos.</p>';
+        contador.textContent = '';
+        resumen.style.display = 'none';
+        if (btn) btn.disabled = true;
+
+        const pwd = localStorage.getItem(STORAGE_KEY) || '';
+        try {
+            const res = await fetch('/api/admin/sin-etiqueta', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contrasena: pwd })
+            });
+            const data = await res.json();
+            if (data.status !== 'ok') throw new Error(data.mensaje || 'Error desconocido');
+
+            _sinEtiquetaCompleta = data.lista;
+
+            // Mostrar resumen de números
+            resumen.style.display = 'flex';
+            resumen.innerHTML = `
+                <span style="background:#fff3cd; color:#856404; padding:6px 14px; border-radius:20px; font-size:0.82rem; font-weight:600;">📋 Total boletas activas: ${data.total_boletas_activas}</span>
+                <span style="background:#d1e7dd; color:#0a3622; padding:6px 14px; border-radius:20px; font-size:0.82rem; font-weight:600;">✅ Con etiqueta: ${data.total_con_etiqueta}</span>
+                <span style="background:#f8d7da; color:#842029; padding:6px 14px; border-radius:20px; font-size:0.82rem; font-weight:600;">⚠️ Sin etiqueta: ${data.total}</span>
+            `;
+
+            filtrarSinEtiqueta();
+        } catch (e) {
+            contenedor.innerHTML = `<p style="text-align:center; color:var(--danger); font-size:0.85rem; padding:20px 0;">❌ ${e.message}</p>`;
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    }
+
+    function filtrarSinEtiqueta() {
+        const texto = (document.getElementById('se-filtro-texto')?.value || '').toLowerCase().trim();
+        let filtrada = _sinEtiquetaCompleta;
+        if (texto) {
+            filtrada = filtrada.filter(b =>
+                String(b.numero).includes(texto) ||
+                b.nombre.toLowerCase().includes(texto) ||
+                String(b.telefono).includes(texto) ||
+                (b.asesor || '').toLowerCase().includes(texto)
+            );
+        }
+        renderTablaSinEtiqueta(filtrada);
+    }
+
+    function seFormatFecha(isoStr) {
+        if (!isoStr) return '—';
+        const d = new Date(isoStr);
+        const dia = String(d.getDate()).padStart(2, '0');
+        const mes = String(d.getMonth() + 1).padStart(2, '0');
+        const anio = d.getFullYear();
+        return `${dia}/${mes}/${anio}`;
+    }
+
+    function seFormatPeso(n) {
+        if (!n) return '$0';
+        return '$' + Number(n).toLocaleString('es-CO');
+    }
+
+    function renderTablaSinEtiqueta(lista) {
+        const contenedor = document.getElementById('se-tabla-render');
+        const contador = document.getElementById('se-contador');
+
+        if (!lista.length) {
+            contador.textContent = '';
+            contenedor.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem; padding:30px 0;">No hay boletas sin etiqueta con ese filtro.</p>';
+            return;
+        }
+
+        contador.textContent = `${lista.length} boleta${lista.length !== 1 ? 's' : ''} sin etiqueta`;
+
+        let html = '<div style="overflow-x:auto;">';
+        html += '<table style="width:100%; border-collapse:collapse; font-size:0.85rem;">';
+        html += '<thead><tr style="border-bottom:2px solid var(--ring-strong); color:var(--muted); font-weight:600; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.04em;">';
+        html += '<th style="padding:8px 6px; text-align:center;">Boleta</th>';
+        html += '<th style="padding:8px 6px; text-align:left;">Nombre</th>';
+        html += '<th style="padding:8px 6px; text-align:left;">Teléfono</th>';
+        html += '<th style="padding:8px 6px; text-align:left;">Asesor</th>';
+        html += '<th style="padding:8px 6px; text-align:left;">Fecha venta</th>';
+        html += '<th style="padding:8px 6px; text-align:right;">Abonado</th>';
+        html += '<th style="padding:8px 6px; text-align:right;">Saldo</th>';
+        html += '</tr></thead><tbody>';
+
+        lista.forEach((b, i) => {
+            const bg = i % 2 === 0 ? '#fff' : 'var(--bg)';
+            const telLink = b.telefono
+                ? `<a href="https://wa.me/${String(b.telefono).replace(/\D/g, '')}" target="_blank" style="color:var(--accent); text-decoration:none; font-size:0.82rem;">${b.telefono}</a>`
+                : '<span style="color:var(--muted)">—</span>';
+            const saldoColor = b.saldo_restante > 0 ? '#842029' : '#0a3622';
+            const saldoBg = b.saldo_restante > 0 ? '#f8d7da' : '#d1e7dd';
+
+            html += `<tr style="background:${bg}; border-bottom:1px solid var(--ring);">`;
+            html += `<td style="padding:8px 6px; text-align:center; font-weight:700;">${b.numero}</td>`;
+            html += `<td style="padding:8px 6px;">${b.nombre || '—'}</td>`;
+            html += `<td style="padding:8px 6px;">${telLink}</td>`;
+            html += `<td style="padding:8px 6px; font-size:0.8rem; color:var(--ink-2);">${b.asesor}</td>`;
+            html += `<td style="padding:8px 6px; font-size:0.8rem; color:var(--muted);">${seFormatFecha(b.fecha_venta)}</td>`;
+            html += `<td style="padding:8px 6px; text-align:right; font-size:0.82rem;">${seFormatPeso(b.total_abonado)}</td>`;
+            html += `<td style="padding:8px 6px; text-align:right;"><span style="background:${saldoBg}; color:${saldoColor}; padding:2px 8px; border-radius:12px; font-size:0.8rem; font-weight:600;">${seFormatPeso(b.saldo_restante)}</span></td>`;
+            html += '</tr>';
+        });
+
+        html += '</tbody></table></div>';
+        contenedor.innerHTML = html;
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     // Cargar badge de novedades al iniciar sesión
     setTimeout(() => {
         if (localStorage.getItem(STORAGE_KEY)) cargarBitacora();

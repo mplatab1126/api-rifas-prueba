@@ -51,6 +51,7 @@
       <span class="nav-item" onclick="activateAppMode(); switchView('view-carga-masiva'); cargarPendientes();">Carga IA</span>
       <span class="nav-item" onclick="activateAppMode(); switchView('view-movimientos'); cargarUltimosMovimientos();">Movimientos</span>
       <span class="nav-item" onclick="activateAppMode(); switchView('view-lista-boletas'); cargarListaBoletas();">Lista Boletas</span>
+      <span class="nav-item" onclick="activateAppMode(); switchView('view-sin-etiqueta');">Sin Etiqueta</span>
       <span id="btnLlamadas" class="nav-item" style="display:none;"></span>
       <span id="btnFinanzas" class="nav-item" style="display:none;"></span>
       <span class="nav-item" onclick="activateAppMode(); switchView('view-bitacora'); cargarBitacora();" style="position:relative;">🔔 <span id="notifBadge" style="display:none; position:absolute; top:-2px; right:-4px; background:#d95a53; color:#fff; font-size:0.65rem; font-weight:700; min-width:16px; height:16px; border-radius:50%; display:none; align-items:center; justify-content:center; line-height:1;">0</span></span>
@@ -473,6 +474,26 @@
         <div id="lb-contador" style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;"></div>
         <div id="lb-tabla-render" style="margin-top:5px;">
           <p style="text-align:center; color:var(--muted); font-size:0.85rem; padding:30px 0;">Presiona "Lista Boletas" para cargar.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-sin-etiqueta" class="view-section">
+      <div class="section-card">
+        <div class="section-title">🔍 Boletas sin etiqueta en ChateaPro</div>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0;">Clientes que están en la base de datos pero que en ChateaPro <strong>no tienen</strong> ninguna de estas etiquetas: <em>[LPR] Abono</em>, <em>[LPR] Boleta pagada</em> o <em>[LPR] Boleta separada sin dinero</em>.</p>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px;">
+          <button id="btnCargarSinEtiqueta" onclick="cargarSinEtiqueta()" style="height:44px; padding:0 20px; border-radius:10px; border:none; background:var(--ink); color:#fff; font-family:inherit; font-size:0.9rem; font-weight:600; cursor:pointer;">Consultar ahora</button>
+          <div class="field" style="flex:1; min-width:150px;">
+            <input type="text" id="se-filtro-texto" class="pill" placeholder="Buscar nombre, teléfono o boleta..." oninput="filtrarSinEtiqueta()">
+          </div>
+        </div>
+
+        <div id="se-resumen" style="display:none; margin-bottom:14px; display:flex; gap:12px; flex-wrap:wrap;"></div>
+        <div id="se-contador" style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;"></div>
+        <div id="se-tabla-render" style="margin-top:5px;">
+          <p style="text-align:center; color:var(--muted); font-size:0.85rem; padding:30px 0;">Presiona "Consultar ahora" para cargar. Puede tardar unos segundos.</p>
         </div>
       </div>
     </div>

@@ -6,21 +6,20 @@
     <meta name="theme-color" content="#0A0A0A">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Boleta Digital - La Perla Roja</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;800&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
     <style>
       :root {
-        --rojo: #C41E3A;
-        --rojo-dark: #8B1A2B;
-        --oro: #D4AF37;
         --dark: #0A0A0A;
-        --dark-card: #141414;
-        --soft: #1C1C1C;
+        --card: #111111;
+        --border: rgba(255,255,255,0.06);
         --white: #ffffff;
-        --gris: #9CA3AF;
+        --gray: #888;
+        --light-gray: #bbb;
+        --accent: #C41E3A;
       }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
       body {
-        margin: 0; padding: 0;
         background: var(--dark);
         font-family: 'Montserrat', sans-serif;
         color: var(--white);
@@ -28,396 +27,283 @@
         overflow-x: hidden;
         -webkit-text-size-adjust: 100%;
       }
-      .page-wrapper {
+      .page {
         max-width: 480px;
         margin: 0 auto;
-        background: var(--dark);
-        overflow: hidden;
-        position: relative;
         min-height: 100vh;
       }
 
-      /* --- PORTADA --- */
-      .hero-section {
+      /* HERO */
+      .hero {
         position: relative;
         text-align: center;
-        background: var(--dark);
-        color: white;
-        padding-bottom: 3rem;
+        padding-bottom: 2rem;
       }
-      .hero-bg-img {
+      .hero-img {
         width: 100%;
-        height: 380px;
+        height: 340px;
         object-fit: cover;
-        opacity: 0.8;
-        mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
-        -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+        mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+        -webkit-mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
       }
-      .floating-info {
-        margin-top: -140px;
+      .hero-content {
+        margin-top: -100px;
         position: relative;
         z-index: 2;
         padding: 0 20px;
       }
-      .ticket-number {
+      .hero-logo {
+        width: 70px;
+        display: block;
+        margin: 0 auto 12px;
+        filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+      }
+      .hero-label {
+        font-size: 10px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--gray);
+        font-weight: 600;
+      }
+      .hero-number {
         font-family: 'Playfair Display', serif;
-        font-size: 5rem;
-        color: var(--rojo);
-        line-height: 0.9;
-        margin: 10px 0;
-        text-shadow: 2px 2px 8px rgba(0,0,0,0.8), 0 0 30px rgba(196,30,58,0.3);
+        font-size: 4.5rem;
         font-weight: 700;
-      }
-      .badge {
-        display: inline-block;
-        background: var(--rojo);
+        line-height: 1;
+        margin: 4px 0;
         color: var(--white);
-        padding: 6px 18px;
-        border-radius: 50px;
-        font-size: 0.75rem;
-        letter-spacing: 2px;
-        font-weight: 700;
-        box-shadow: 0 4px 10px rgba(196,30,58,0.4);
       }
-      .rifa-name {
+      .hero-rifa {
         font-family: 'Playfair Display', serif;
         font-style: italic;
-        margin-top: 5px;
-        opacity: 0.9;
-        color: var(--oro);
+        font-size: 1rem;
+        color: var(--accent);
+        margin-top: 2px;
       }
 
-      /* --- DATOS TITULAR --- */
-      .client-box {
-        padding: 1.5rem;
-        background: var(--dark-card);
-        margin: -20px 20px 30px;
-        border-radius: 15px;
-        position: relative;
-        z-index: 5;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        border-bottom: 3px solid var(--rojo);
-        border: 1px solid rgba(196,30,58,0.2);
+      /* DATOS */
+      .datos {
+        margin: 0 20px 24px;
+        padding: 20px;
+        background: var(--card);
+        border-radius: 12px;
+        border: 1px solid var(--border);
       }
-      .client-box h3 {
-        font-family: 'Playfair Display', serif;
-        margin-top: 0;
-        color: var(--white);
-        font-size: 1.1rem;
+      .datos-title {
+        font-size: 10px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--gray);
         text-align: center;
-        margin-bottom: 1.5rem;
-        letter-spacing: 1px;
+        margin-bottom: 16px;
+        font-weight: 600;
       }
-      .data-grid {
+      .datos-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 15px;
-        font-size: 0.9rem;
+        gap: 14px;
       }
-      .data-item span { display: block; font-size: 0.75rem; color: var(--gris); margin-bottom: 3px; }
-      .data-item strong { display: block; font-size: 1rem; color: var(--white); }
-      .financial-row {
+      .dato-label { font-size: 11px; color: var(--gray); margin-bottom: 2px; }
+      .dato-value { font-size: 14px; font-weight: 600; }
+      .datos-divider {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 16px 0;
+      }
+      .datos-financial {
         display: flex;
         justify-content: space-between;
-        margin-top: 20px;
-        padding-top: 15px;
-        border-top: 1px dashed rgba(255,255,255,0.15);
       }
+      .dato-green { color: #22c55e; font-size: 1.1rem; font-weight: 700; }
+      .dato-red { color: #ef4444; font-size: 1.1rem; font-weight: 700; }
 
-      /* --- GALERIA --- */
-      .interactive-gallery {
-        padding: 0 20px 30px;
+      /* GALERIA */
+      .gallery {
+        padding: 0 20px 24px;
       }
-      .gallery-title {
-        font-family: 'Playfair Display', serif;
-        text-align: center;
-        font-size: 1.5rem;
-        margin-bottom: 20px;
-        color: var(--white);
-      }
-      .main-image-viewer {
+      .gallery-viewer {
         width: 100%;
-        height: 350px;
-        background: var(--dark-card);
-        border-radius: 15px;
+        height: 300px;
+        border-radius: 12px;
         overflow: hidden;
-        margin-bottom: 15px;
+        margin-bottom: 12px;
         position: relative;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        border: 1px solid rgba(196,30,58,0.15);
+        background: var(--card);
       }
-      .main-image-viewer img {
+      .gallery-viewer img {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: opacity 0.3s ease-in-out;
+        transition: opacity 0.3s;
       }
-      .swipe-hint {
+      .gallery-hint {
         position: absolute;
-        bottom: 15px;
+        bottom: 12px;
         left: 50%;
         transform: translateX(-50%);
-        background: rgba(0,0,0,0.7);
-        color: white;
-        padding: 5px 15px;
+        background: rgba(0,0,0,0.6);
+        padding: 4px 14px;
         border-radius: 20px;
-        font-size: 0.8rem;
-        pointer-events: none;
-        opacity: 0.8;
+        font-size: 11px;
+        color: rgba(255,255,255,0.7);
       }
-      .thumbnail-carousel {
+      .thumbs {
         display: flex;
-        gap: 10px;
+        gap: 8px;
         overflow-x: auto;
-        padding: 5px;
         scrollbar-width: none;
         -webkit-overflow-scrolling: touch;
       }
-      .thumbnail-carousel::-webkit-scrollbar { display: none; }
-      .thumb {
-        flex: 0 0 70px;
-        height: 70px;
-        border-radius: 10px;
+      .thumbs::-webkit-scrollbar { display: none; }
+      .th {
+        flex: 0 0 56px;
+        height: 56px;
+        border-radius: 8px;
         overflow: hidden;
-        opacity: 0.5;
+        opacity: 0.4;
         transition: 0.3s;
         cursor: pointer;
         border: 2px solid transparent;
       }
-      .thumb img { width: 100%; height: 100%; object-fit: cover; }
-      .thumb.active {
-        opacity: 1;
-        border-color: var(--rojo);
-        transform: scale(1.05);
-      }
+      .th img { width: 100%; height: 100%; object-fit: cover; }
+      .th.active { opacity: 1; border-color: var(--accent); }
 
-      /* --- PREMIOS --- */
-      .prizes {
-        padding: 2rem 1.5rem;
-        border-top: 1px solid rgba(255,255,255,0.06);
+      /* PREMIOS */
+      .premios {
+        margin: 0 20px 24px;
+        padding: 20px;
+        background: var(--card);
+        border-radius: 12px;
+        border: 1px solid var(--border);
       }
-      .prizes h3 {
-        font-family: 'Playfair Display', serif;
+      .premios-title {
+        font-size: 10px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--gray);
         text-align: center;
-        margin-top: 0;
-        margin-bottom: 20px;
-        font-size: 1.3rem;
-        color: var(--white);
+        margin-bottom: 16px;
+        font-weight: 600;
       }
-      .prize-card {
-        background: var(--dark-card);
-        padding: 16px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        margin-bottom: 12px;
-        border: 1px solid rgba(255,255,255,0.06);
+      .premio {
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border);
       }
-      .prize-card .p-icon {
-        font-size: 2rem;
-        flex-shrink: 0;
-        width: 50px;
-        height: 50px;
-        background: rgba(196,30,58,0.15);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .prize-card .p-icon.gold { background: rgba(212,175,55,0.15); }
-      .prize-card .p-icon.green { background: rgba(34,197,94,0.15); }
-      .prize-card .p-title {
+      .premio:last-child { border-bottom: none; }
+      .premio-name {
+        font-size: 15px;
         font-weight: 700;
-        font-size: 0.95rem;
-        color: var(--white);
         margin-bottom: 2px;
       }
-      .prize-card .p-desc {
-        font-size: 0.75rem;
-        color: var(--gris);
-        line-height: 1.3;
+      .premio-detail {
+        font-size: 12px;
+        color: var(--gray);
+        line-height: 1.4;
       }
-      .prize-card .p-tag {
-        display: inline-block;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 0.6rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+      .premio-date {
+        font-size: 11px;
+        color: var(--accent);
+        font-weight: 600;
         margin-top: 4px;
       }
-      .prize-card .p-tag.mayor { background: var(--rojo); color: white; }
-      .prize-card .p-tag.regalo { background: var(--oro); color: var(--dark); }
-      .prize-card .p-tag.anticipado { background: #22c55e; color: white; }
-
-      /* --- TIMELINE --- */
-      .roadmap-section {
-        padding: 20px 15px;
-        border-top: 1px solid rgba(255,255,255,0.06);
-        overflow: hidden;
-      }
-      .section-title {
-        font-family: 'Playfair Display', serif;
+      .efectivo {
+        margin-top: 16px;
+        padding: 14px;
         text-align: center;
-        font-size: 1.5rem;
-        margin-bottom: 40px;
-        color: var(--white);
-      }
-      .timeline {
-        position: relative;
-        max-width: 100%;
-        margin: 0 auto;
-      }
-      .timeline::before {
-        content: '';
-        position: absolute;
-        top: 15px;
-        bottom: 30px;
-        left: 28px;
-        width: 4px;
-        background: var(--rojo);
-        z-index: 1;
-        box-shadow: 0 0 15px rgba(196,30,58,0.4);
+        border: 1px solid var(--border);
         border-radius: 10px;
       }
-      .timeline-item {
-        position: relative;
-        margin-bottom: 40px;
-        padding-left: 75px;
-      }
-      .timeline-item:last-child { margin-bottom: 0; }
-      .t-circle {
-        position: absolute;
-        left: 5px;
-        top: 0;
-        width: 46px;
-        height: 46px;
-        background: var(--dark-card);
-        border: 3px solid var(--rojo);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.3rem;
-        z-index: 2;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-      }
-      .t-circle.big {
-        width: 56px;
-        height: 56px;
-        left: 0px;
-        background: var(--rojo);
-        color: white;
-        border-color: var(--oro);
-        font-size: 1.6rem;
-        box-shadow: 0 0 0 5px rgba(196,30,58,0.2);
-      }
-      .t-date {
-        font-family: 'Montserrat', sans-serif;
-        font-weight: 700;
-        color: var(--rojo);
-        text-transform: uppercase;
-        font-size: 0.8rem;
+      .efectivo-label {
+        font-size: 11px;
+        color: var(--gray);
         letter-spacing: 1px;
-        margin-bottom: 5px;
-        display: block;
-        padding-top: 5px;
+        text-transform: uppercase;
       }
-      .t-title { font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
-      .t-desc { font-size: 0.85rem; color: var(--gris); line-height: 1.4; }
-      .t-condition {
-        margin-top: 8px;
-        padding: 8px 12px;
-        background: rgba(196,30,58,0.1);
-        border-radius: 8px;
-        font-size: 0.75rem;
-        color: var(--gris);
-        border-left: 3px solid var(--rojo);
+      .efectivo-amount {
+        font-size: 1.4rem;
+        font-weight: 800;
+        margin-top: 4px;
       }
-      .t-condition strong { color: var(--white); }
 
-      /* --- CONDICIONES --- */
-      .info-boxes {
-        padding: 30px 20px;
-        border-top: 1px solid rgba(255,255,255,0.06);
-      }
-      .lottery-banner {
-        text-align: center;
-        padding: 15px;
-        background: rgba(196,30,58,0.1);
-        border-radius: 8px;
-        color: var(--white);
-        font-weight: 600;
-        font-size: 0.9rem;
-        margin-bottom: 20px;
-        border: 1px solid rgba(196,30,58,0.2);
-      }
-      .info-card {
-        background: var(--dark-card);
+      /* CONDICIONES */
+      .condiciones {
+        margin: 0 20px 24px;
         padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        margin-bottom: 20px;
-        border-left: 4px solid var(--rojo);
+        background: var(--card);
+        border-radius: 12px;
+        border: 1px solid var(--border);
       }
-      .info-card h4 {
-        margin: 0 0 10px;
-        font-size: 1rem;
-        color: var(--white);
-        display: flex;
-        align-items: center;
-        gap: 8px;
+      .condiciones-title {
+        font-size: 10px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--gray);
+        margin-bottom: 12px;
+        font-weight: 600;
       }
-      .rule-list {
-        margin: 0; padding-left: 20px;
-        font-size: 0.85rem;
-        color: var(--gris);
+      .condicion {
+        font-size: 13px;
+        color: var(--light-gray);
+        line-height: 1.5;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border);
       }
-      .rule-list li { margin-bottom: 8px; }
-      .rule-list strong { color: var(--white); }
+      .condicion:last-child { border-bottom: none; }
+      .condicion strong { color: var(--white); }
 
-      /* --- FOOTER --- */
-      .policies-area {
-        padding: 30px 20px 80px;
-        font-size: 0.75rem;
-        background: var(--dark);
-        color: rgba(255,255,255,0.4);
+      /* FOOTER */
+      .footer {
+        padding: 24px 20px 90px;
         text-align: center;
+      }
+      .footer-logo {
+        width: 60px;
+        display: block;
+        margin: 0 auto 12px;
+        filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+      }
+      .footer-text {
+        font-size: 11px;
+        color: var(--gray);
         line-height: 1.6;
-        border-top: 1px solid rgba(255,255,255,0.06);
+      }
+      .footer-legal {
+        font-size: 10px;
+        color: rgba(255,255,255,0.25);
+        margin-top: 12px;
+        line-height: 1.5;
       }
 
-      /* --- BOTON DESCARGAR --- */
-      .btn-container {
-        padding: 15px 20px;
+      /* BOTON */
+      .btn-bar {
         position: fixed;
         bottom: 0; left: 0; right: 0;
-        background: rgba(10,10,10,0.98);
+        padding: 14px 20px;
+        background: rgba(10,10,10,0.95);
         z-index: 100;
-        box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
-        display: flex; justify-content: center;
-        border-top: 1px solid rgba(196,30,58,0.2);
+        display: flex;
+        justify-content: center;
+        border-top: 1px solid var(--border);
+        backdrop-filter: blur(10px);
       }
-      .download-btn {
-        width: 100%; max-width: 440px;
-        padding: 1.1rem;
-        background: var(--rojo);
-        color: var(--white);
+      .btn-download {
+        width: 100%;
+        max-width: 440px;
+        padding: 14px;
+        background: var(--white);
+        color: var(--dark);
         border: none;
         border-radius: 50px;
         font-weight: 700;
+        font-size: 14px;
         cursor: pointer;
-        font-size: 1rem;
-        text-transform: uppercase;
         letter-spacing: 1px;
-        box-shadow: 0 5px 15px rgba(196,30,58,0.3);
+        text-transform: uppercase;
         transition: transform 0.2s;
       }
-      .download-btn:active { transform: scale(0.98); }
+      .btn-download:active { transform: scale(0.97); }
 
-      /* --- SEGURIDAD --- */
+      /* SEGURIDAD */
       #security-overlay {
         position: fixed;
         top: 0; left: 0;
@@ -425,75 +311,66 @@
         background: var(--dark);
         z-index: 99999;
         display: flex;
-        flex-direction: column;
         justify-content: center;
         align-items: center;
         padding: 20px;
-        text-align: center;
       }
-      .security-box {
-        background: var(--dark-card);
-        padding: 30px 24px;
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      .sec-box {
+        background: var(--card);
+        padding: 32px 24px;
+        border-radius: 16px;
         max-width: 320px;
         width: 85%;
-        margin: 0 auto;
-        border: 1px solid rgba(255,255,255,0.08);
-        border-top: 5px solid var(--rojo);
+        text-align: center;
+        border: 1px solid var(--border);
       }
-      .security-icon {
-        font-size: 3rem;
-        margin-bottom: 15px;
-        display: block;
-      }
-      .security-title {
+      .sec-icon { font-size: 2.5rem; margin-bottom: 16px; display: block; }
+      .sec-title {
         font-family: 'Playfair Display', serif;
-        font-size: 1.5rem;
-        color: var(--white);
-        margin-bottom: 10px;
+        font-size: 1.3rem;
+        margin-bottom: 8px;
       }
-      .security-desc {
-        font-size: 0.9rem;
-        color: var(--gris);
-        margin-bottom: 20px;
-      }
-      .security-input {
+      .sec-desc { font-size: 13px; color: var(--gray); margin-bottom: 20px; line-height: 1.5; }
+      .sec-input {
         width: 100%;
         padding: 12px;
-        font-size: 1.1rem;
-        border: 2px solid rgba(255,255,255,0.1);
-        border-radius: 8px;
+        font-size: 16px;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 10px;
         text-align: center;
-        margin-bottom: 15px;
-        outline: none;
-        transition: 0.3s;
-        box-sizing: border-box;
-        background: rgba(255,255,255,0.05);
+        margin-bottom: 12px;
+        background: rgba(255,255,255,0.04);
         color: var(--white);
         font-family: 'Montserrat', sans-serif;
+        outline: none;
+        box-sizing: border-box;
       }
-      .security-input:focus { border-color: var(--rojo); }
-      .security-btn {
-        background: var(--rojo);
-        color: var(--white);
-        border: none;
-        padding: 12px 25px;
-        font-size: 1rem;
-        border-radius: 50px;
-        cursor: pointer;
-        font-weight: bold;
+      .sec-input:focus { border-color: var(--accent); }
+      .sec-btn {
         width: 100%;
-        text-transform: uppercase;
+        padding: 12px;
+        background: var(--white);
+        color: var(--dark);
+        border: none;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 14px;
+        cursor: pointer;
         letter-spacing: 1px;
+        text-transform: uppercase;
       }
-      .error-msg {
+      .sec-error {
         color: #ef4444;
-        font-size: 0.8rem;
+        font-size: 12px;
         margin-top: 10px;
         display: none;
-        font-weight: bold;
+        font-weight: 600;
       }
+      .sec-help {
+        margin-top: 16px;
+        font-size: 11px;
+      }
+      .sec-help a { color: var(--accent); text-decoration: none; }
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -501,166 +378,117 @@
   <body>
 
     <div id="security-overlay">
-      <div class="security-box">
-        <span class="security-icon">&#128274;</span>
-        <h2 class="security-title">Zona Segura</h2>
-        <p class="security-desc">Por seguridad, confirma el celular registrado en la boleta <strong id="lbl-boleta" style="color:var(--rojo);">---</strong> para visualizarla.</p>
-
-        <input type="tel" id="inputPhone" class="security-input" placeholder="Ingresa tu celular" inputmode="numeric">
-
-        <button class="security-btn" id="btnVerificar" onclick="verificarIdentidad()">VER MI BOLETA</button>
-
-        <p id="errorMsg" class="error-msg">El numero no coincide con el titular.</p>
-
-        <p style="margin-top:20px; font-size:0.75rem; color:rgba(255,255,255,0.3);">
-          <a href="https://wa.me/573107334957" style="color:var(--rojo); text-decoration:none;">Contactar soporte</a>
-        </p>
+      <div class="sec-box">
+        <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata" style="width:70px;display:block;margin:0 auto 16px;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.4));">
+        <span class="sec-icon">&#128274;</span>
+        <h2 class="sec-title">Verificacion</h2>
+        <p class="sec-desc">Ingresa el celular registrado en la boleta <strong id="lbl-boleta" style="color:var(--accent);">---</strong></p>
+        <input type="tel" id="inputPhone" class="sec-input" placeholder="Tu numero de celular" inputmode="numeric">
+        <button class="sec-btn" id="btnVerificar" onclick="verificarIdentidad()">Ver mi boleta</button>
+        <p id="errorMsg" class="sec-error">El numero no coincide.</p>
+        <p class="sec-help"><a href="https://wa.me/573107334957">Necesitas ayuda?</a></p>
       </div>
     </div>
 
-    <div class="page-wrapper" id="captureArea">
+    <div class="page" id="captureArea">
 
-      <section class="hero-section">
-        <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata" style="width:80px;margin:10px auto 0;display:block;position:relative;z-index:10;filter:drop-shadow(0 4px 15px rgba(212,175,55,0.3));">
-        <img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+11.png" class="hero-bg-img" crossOrigin="anonymous">
-
-        <div class="floating-info">
-          <span class="badge">BOLETA OFICIAL DIGITAL</span>
-          <div class="ticket-number" id="val-numero">0000</div>
-
-          <p class="rifa-name">La Perla Roja</p>
+      <!-- HERO -->
+      <section class="hero">
+        <img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+11.png" class="hero-img" crossOrigin="anonymous">
+        <div class="hero-content">
+          <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata" class="hero-logo">
+          <div class="hero-label">Boleta digital</div>
+          <div class="hero-number" id="val-numero">0000</div>
+          <div class="hero-rifa">La Perla Roja</div>
         </div>
       </section>
 
-      <section class="client-box">
-        <h3>TITULAR DE LA BOLETA</h3>
-        <div class="data-grid">
-          <div class="data-item"><span>Titular:</span> <strong><span id="val-nombre">Cargando...</span> <span id="val-apellido"></span></strong></div>
-          <div class="data-item"><span>Ciudad:</span> <strong><span id="val-ciudad">---</span></strong></div>
-          <div class="data-item"><span>Celular:</span> <strong><span id="val-telefono">---</span></strong></div>
-          <div class="data-item"><span>Sorteo:</span> <strong>Loteria de Boyaca</strong></div>
+      <!-- DATOS DEL TITULAR -->
+      <section class="datos">
+        <div class="datos-title">Titular de la boleta</div>
+        <div class="datos-grid">
+          <div><div class="dato-label">Nombre</div><div class="dato-value"><span id="val-nombre">---</span> <span id="val-apellido"></span></div></div>
+          <div><div class="dato-label">Ciudad</div><div class="dato-value"><span id="val-ciudad">---</span></div></div>
+          <div><div class="dato-label">Celular</div><div class="dato-value"><span id="val-telefono">---</span></div></div>
+          <div><div class="dato-label">Sorteo</div><div class="dato-value">Loteria de Boyaca</div></div>
         </div>
-        <div class="financial-row">
-          <div class="data-item"><span>Abonado:</span> <strong style="color:#22c55e; font-size:1.2rem" id="val-abonado">$0</strong></div>
-          <div class="data-item" style="text-align:right"><span>Saldo Pendiente:</span> <strong style="color:#ef4444; font-size:1.2rem" id="val-restante">$0</strong></div>
+        <hr class="datos-divider">
+        <div class="datos-financial">
+          <div><div class="dato-label">Abonado</div><div class="dato-green" id="val-abonado">$0</div></div>
+          <div style="text-align:right"><div class="dato-label">Saldo pendiente</div><div class="dato-red" id="val-restante">$0</div></div>
         </div>
       </section>
 
-      <section class="interactive-gallery">
-        <h2 class="gallery-title">Tus premios</h2>
-
-        <div class="main-image-viewer" id="mainImageViewer">
+      <!-- GALERIA -->
+      <section class="gallery">
+        <div class="gallery-viewer" id="mainImageViewer">
           <img id="activeImage" src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+11.png" crossOrigin="anonymous">
-          <div class="swipe-hint">Desliza para ver mas</div>
+          <div class="gallery-hint">Desliza para ver mas</div>
         </div>
-
-        <div class="thumbnail-carousel" id="thumbCarousel">
-          <div class="thumb active"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+11.png" crossOrigin="anonymous"></div>
-          <div class="thumb"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+3.png" crossOrigin="anonymous"></div>
-          <div class="thumb"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+5.png" crossOrigin="anonymous"></div>
-          <div class="thumb"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+1.png" crossOrigin="anonymous"></div>
-          <div class="thumb"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+2.png" crossOrigin="anonymous"></div>
-          <div class="thumb"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+6.png" crossOrigin="anonymous"></div>
-          <div class="thumb"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+8.png" crossOrigin="anonymous"></div>
-          <div class="thumb"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+10.png" crossOrigin="anonymous"></div>
-        </div>
-      </section>
-
-      <section class="prizes">
-        <h3>Premios de La Perla Roja</h3>
-
-        <div class="prize-card">
-          <div class="p-icon">&#128293;</div>
-          <div>
-            <div class="p-title">KTM Duke 200</div>
-            <div class="p-desc">Modelo 2026, 0 kilometros, completamente nueva.</div>
-            <div class="p-desc" style="margin-top:4px;color:var(--oro);">O $120.000.000 en efectivo</div>
-            <span class="p-tag mayor">Premio Mayor</span>
-          </div>
-        </div>
-
-        <div class="prize-card">
-          <div class="p-icon gold">&#127873;</div>
-          <div>
-            <div class="p-title">Nissan Frontier 2023</div>
-            <div class="p-desc">Totalmente equipada. Se entrega junto al premio mayor.</div>
-            <span class="p-tag regalo">Obsequio</span>
-          </div>
-        </div>
-
-        <div class="prize-card">
-          <div class="p-icon green">&#9889;</div>
-          <div>
-            <div class="p-title">Yamaha NMAX 2026</div>
-            <div class="p-desc">0 kilometros. Abona minimo $40.000 y ya participas.</div>
-            <span class="p-tag anticipado">Anticipado</span>
-          </div>
+        <div class="thumbs" id="thumbCarousel">
+          <div class="th active"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+11.png" crossOrigin="anonymous"></div>
+          <div class="th"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+3.png" crossOrigin="anonymous"></div>
+          <div class="th"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+5.png" crossOrigin="anonymous"></div>
+          <div class="th"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+1.png" crossOrigin="anonymous"></div>
+          <div class="th"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+2.png" crossOrigin="anonymous"></div>
+          <div class="th"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+6.png" crossOrigin="anonymous"></div>
+          <div class="th"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+8.png" crossOrigin="anonymous"></div>
+          <div class="th"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+10.png" crossOrigin="anonymous"></div>
         </div>
       </section>
 
-      <section class="roadmap-section">
-        <h3 class="section-title">Fechas y premios</h3>
+      <!-- PREMIOS -->
+      <section class="premios">
+        <div class="premios-title">Premios</div>
 
-        <div class="timeline">
+        <div class="premio">
+          <div class="premio-name">Nissan Frontier 2023 + KTM Duke 200</div>
+          <div class="premio-detail">Camioneta totalmente equipada y moto 0km modelo 2026.</div>
+          <div class="premio-date">Premio Mayor — 2 de mayo</div>
+        </div>
 
-          <div class="timeline-item">
-            <div class="t-circle">&#9889;</div>
-            <span class="t-date">18 DE ABRIL</span>
-            <h4 class="t-title">Premio Anticipado: Yamaha NMAX 2026</h4>
-            <p class="t-desc">Moto 0km. Juega con la Loteria de Boyaca.</p>
-            <div class="t-condition"><strong>Condicion:</strong> Abona minimo <strong>$40.000</strong> antes de esta fecha.</div>
-          </div>
+        <div class="premio">
+          <div class="premio-name">Yamaha NMAX 2026</div>
+          <div class="premio-detail">Moto 0 kilometros. Abona minimo $40.000 y ya participas.</div>
+          <div class="premio-date">Premio Anticipado — 18 de abril</div>
+        </div>
 
-          <div class="timeline-item">
-            <div class="t-circle big">&#127942;</div>
-            <span class="t-date" style="font-size: 1rem; color:var(--oro);">2 DE MAYO</span>
-            <h4 class="t-title" style="font-size:1.2rem; color:var(--rojo);">GRAN FINAL: Duke 200 + Frontier</h4>
-            <p class="t-desc">KTM Duke 200 modelo 2026 y de obsequio una Nissan Frontier 2023. Juega con la Loteria de Boyaca.<br><strong style="color:var(--oro);">O recibe $120.000.000 en efectivo.</strong></p>
-            <div class="t-condition"><strong>Condicion:</strong> Boleta <strong>100% pagada</strong> ($80.000).</div>
-          </div>
-
+        <div class="efectivo">
+          <div class="efectivo-label">O recibe en efectivo</div>
+          <div class="efectivo-amount">120 MILLONES</div>
         </div>
       </section>
 
-      <section class="info-boxes">
-
-        <div class="lottery-banner">
-          Todos los sorteos juegan con la <strong>Loteria de Boyaca</strong> (ultimas 4 cifras)
-        </div>
-
-        <div class="info-card">
-          <h4>Condiciones para Ganar</h4>
-          <ul class="rule-list">
-            <li><strong>Para la NMAX (18 de abril):</strong> Abona minimo $40.000 antes de esa fecha.</li>
-            <li><strong>Para la Duke + Frontier (2 de mayo):</strong> La boleta debe estar totalmente pagada ($80.000 - Paz y Salvo).</li>
-          </ul>
-        </div>
-
+      <!-- CONDICIONES -->
+      <section class="condiciones">
+        <div class="condiciones-title">Condiciones para ganar</div>
+        <div class="condicion"><strong>NMAX (18 de abril):</strong> Abona minimo $40.000 antes de esa fecha.</div>
+        <div class="condicion"><strong>Frontier + Duke (2 de mayo):</strong> Boleta 100% pagada ($80.000).</div>
+        <div class="condicion">Todos los sorteos juegan con la <strong>Loteria de Boyaca</strong> (ultimas 4 cifras).</div>
       </section>
 
-      <footer class="policies-area">
-        <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Logo Los Plata" style="width:80px;height:auto;display:block;margin:0 auto 15px;filter:drop-shadow(0 4px 15px rgba(212,175,55,0.3));">
-        <p>Este documento digital es su soporte oficial de participacion en la Rifa "La Perla Roja" de Los Plata S.A.S. El premio mayor se sortea el 02 DE MAYO DE 2026 con la Loteria de Boyaca. Aplican terminos y condiciones. Conserve los comprobantes de pago.</p>
+      <!-- FOOTER -->
+      <footer class="footer">
+        <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata" class="footer-logo">
+        <div class="footer-text">Los Plata S.A.S.</div>
+        <div class="footer-legal">Documento oficial de participacion en la Rifa "La Perla Roja". Premio mayor: 02 de mayo de 2026 con Loteria de Boyaca. Aplican terminos y condiciones.</div>
       </footer>
 
     </div>
 
-    <div class="btn-container">
-      <button class="download-btn" id="btnDownload">GUARDAR MI BOLETA</button>
+    <div class="btn-bar">
+      <button class="btn-download" id="btnDownload">Guardar mi boleta</button>
     </div>
 
     <script>
       let boletaParam = "0000";
       const urlParams = new URLSearchParams(window.location.search);
-
       if (urlParams.has('numero')) {
         boletaParam = urlParams.get('numero');
       } else {
         const ruta = window.location.pathname.split('/');
         const ultimoValor = ruta[ruta.length - 1];
-        if (!isNaN(ultimoValor) && ultimoValor.trim() !== "") {
-          boletaParam = ultimoValor;
-        }
+        if (!isNaN(ultimoValor) && ultimoValor.trim() !== "") boletaParam = ultimoValor;
       }
       document.getElementById('lbl-boleta').textContent = boletaParam;
 
@@ -668,45 +496,38 @@
         const inputPhone = document.getElementById('inputPhone').value;
         const btn = document.getElementById('btnVerificar');
         const msgError = document.getElementById('errorMsg');
-
         btn.textContent = "Verificando...";
         btn.disabled = true;
         msgError.style.display = 'none';
-
         try {
           const response = await fetch("/api/verificar-boleta", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ numero_boleta: boletaParam, telefono: inputPhone })
           });
-
-          if (!response.ok) throw new Error("Datos invalidos");
+          if (!response.ok) throw new Error("error");
           const data = await response.json();
-
           document.getElementById('val-numero').textContent = data.numero;
           document.getElementById('val-nombre').textContent = data.nombre;
           document.getElementById('val-apellido').textContent = data.apellido;
           document.getElementById('val-ciudad').textContent = data.ciudad;
           document.getElementById('val-telefono').textContent = data.telefono;
-
-          const formatoPlata = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 });
-          document.getElementById('val-abonado').textContent = formatoPlata.format(data.total);
-          document.getElementById('val-restante').textContent = formatoPlata.format(data.restante);
-
+          const fmt = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 });
+          document.getElementById('val-abonado').textContent = fmt.format(data.total);
+          document.getElementById('val-restante').textContent = fmt.format(data.restante);
           var overlay = document.getElementById('security-overlay');
           overlay.style.transition = "opacity 0.5s ease";
           overlay.style.opacity = '0';
           setTimeout(() => overlay.style.display = 'none', 500);
-
         } catch (error) {
           msgError.style.display = 'block';
           msgError.textContent = "El numero no coincide con el titular.";
-          var box = document.querySelector('.security-box');
+          var box = document.querySelector('.sec-box');
           box.style.transform = 'translateX(5px)';
           setTimeout(() => box.style.transform = 'translateX(-5px)', 100);
           setTimeout(() => box.style.transform = 'translateX(0)', 200);
         } finally {
-          btn.textContent = "VER MI BOLETA";
+          btn.textContent = "Ver mi boleta";
           btn.disabled = false;
         }
       }
@@ -715,85 +536,51 @@
       (function(){
         const mainImg = document.getElementById('activeImage');
         const viewer = document.getElementById('mainImageViewer');
-        const thumbs = document.querySelectorAll('.thumb');
-        let currentIndex = 0;
-        const totalImages = thumbs.length;
-
-        function setActiveImage(index) {
+        const thumbs = document.querySelectorAll('.th');
+        let ci = 0;
+        const total = thumbs.length;
+        function set(i) {
           mainImg.style.opacity = 0.5;
           setTimeout(() => {
-            mainImg.src = thumbs[index].querySelector('img').src;
+            mainImg.src = thumbs[i].querySelector('img').src;
             mainImg.style.opacity = 1;
             thumbs.forEach(t => t.classList.remove('active'));
-            thumbs[index].classList.add('active');
-            thumbs[index].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-            currentIndex = index;
+            thumbs[i].classList.add('active');
+            thumbs[i].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            ci = i;
           }, 150);
         }
-
-        thumbs.forEach((thumb, index) => {
-          thumb.addEventListener('click', () => setActiveImage(index));
-        });
-
-        let touchStartX = 0;
-        let touchEndX = 0;
-        viewer.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, {passive: true});
-        viewer.addEventListener('touchend', e => { touchEndX = e.changedTouches[0].screenX; handleSwipe(); }, {passive: true});
-
-        function handleSwipe() {
-          const threshold = 50;
-          if (touchEndX < touchStartX - threshold) { setActiveImage((currentIndex + 1) % totalImages); }
-          if (touchEndX > touchStartX + threshold) { setActiveImage((currentIndex - 1 + totalImages) % totalImages); }
-        }
+        thumbs.forEach((t, i) => t.addEventListener('click', () => set(i)));
+        let sx = 0, ex = 0;
+        viewer.addEventListener('touchstart', e => { sx = e.changedTouches[0].screenX; }, {passive: true});
+        viewer.addEventListener('touchend', e => { ex = e.changedTouches[0].screenX; const d = 50; if (ex < sx - d) set((ci+1)%total); if (ex > sx + d) set((ci-1+total)%total); }, {passive: true});
       })();
 
       // DESCARGA
       (function(){
         const btn = document.getElementById('btnDownload');
         const area = document.getElementById('captureArea');
-
         btn.addEventListener('click', async () => {
-          const originalText = btn.textContent;
+          const orig = btn.textContent;
           btn.disabled = true;
-          btn.textContent = 'Generando imagen...';
+          btn.textContent = 'Generando...';
           btn.style.opacity = 0.7;
-
-          const numeroBoleta = document.getElementById('val-numero').textContent || boletaParam;
-          const hint = document.querySelector('.swipe-hint');
+          const num = document.getElementById('val-numero').textContent || boletaParam;
+          const hint = document.querySelector('.gallery-hint');
           if(hint) hint.style.display = 'none';
-
           try {
             await new Promise(r => setTimeout(r, 300));
-
-            const canvas = await html2canvas(area, {
-              scale: 2,
-              useCORS: true,
-              allowTaint: true,
-              backgroundColor: "#0A0A0A",
-              scrollY: 0,
-              windowHeight: area.scrollHeight + 100,
-              onclone: (clonedDoc) => {
-                const clonedImg = clonedDoc.getElementById('activeImage');
-                clonedImg.style.opacity = 1;
-              }
-            });
-
+            const canvas = await html2canvas(area, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: "#0A0A0A", scrollY: 0, windowHeight: area.scrollHeight + 100, onclone: d => { d.getElementById('activeImage').style.opacity = 1; } });
             const link = document.createElement('a');
-            link.download = `Boleta_PerlaRoja_N${numeroBoleta}.png`;
+            link.download = `Boleta_PerlaRoja_N${num}.png`;
             link.href = canvas.toDataURL('image/png', 0.9);
             link.click();
-
-            btn.textContent = 'Imagen Guardada!';
+            btn.textContent = 'Guardada!';
           } catch (e) {
-            console.error("Error en captura:", e);
-            btn.textContent = 'Error al generar. Intente nuevamente.';
+            btn.textContent = 'Error. Intenta de nuevo.';
           } finally {
             if(hint) hint.style.display = 'block';
-            setTimeout(() => {
-              btn.disabled = false;
-              btn.textContent = originalText;
-              btn.style.opacity = 1;
-            }, 3000);
+            setTimeout(() => { btn.disabled = false; btn.textContent = orig; btn.style.opacity = 1; }, 3000);
           }
         });
       })();

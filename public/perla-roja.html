@@ -1258,7 +1258,7 @@
               <option value="+507" data-flag="🇵🇦">🇵🇦 +507</option>
               <option value="+34" data-flag="🇪🇸">🇪🇸 +34</option>
             </select>
-            <input type="tel" id="inputTelefono" placeholder="Ej: 3101234567" maxlength="15" inputmode="numeric" autocomplete="tel">
+            <input type="tel" id="inputTelefono" placeholder="Ej: 3101234567" maxlength="11" inputmode="numeric" autocomplete="tel">
           </div>
         </div>
         <div class="form-group">
@@ -1621,22 +1621,62 @@
       document.getElementById('modalNumeros').classList.add('active');
     }
 
+    const DIGITOS_POR_PAIS = {
+      '+57':  10,  // Colombia
+      '+58':  11,  // Venezuela
+      '+593':  9,  // Ecuador
+      '+51':   9,  // Perú
+      '+1':   10,  // EE.UU.
+      '+52':  10,  // México
+      '+56':   9,  // Chile
+      '+54':  10,  // Argentina
+      '+507':  8,  // Panamá
+      '+34':   9,  // España
+    };
+
     function validarFormulario() {
       const inputs = ['inputNombre', 'inputApellido', 'inputTelefono', 'inputCiudad'];
       const btn = document.getElementById('btnWhatsapp');
+      const telInput = document.getElementById('inputTelefono');
+      const selectPaisEl = document.getElementById('selectPais');
 
       function check() {
         const nombre = document.getElementById('inputNombre').value.trim();
         const apellido = document.getElementById('inputApellido').value.trim();
-        const tel = document.getElementById('inputTelefono').value.trim();
+        const tel = telInput.value.trim();
         const ciudad = document.getElementById('inputCiudad').value.trim();
-        const valid = nombre.length >= 2 && apellido.length >= 2 && tel.length >= 7 && ciudad.length >= 2;
+        const indicativo = selectPaisEl.value;
+        const digitosRequeridos = DIGITOS_POR_PAIS[indicativo] || 7;
+
+        // Mostrar ayuda debajo del campo de teléfono
+        let ayuda = document.getElementById('telAyuda');
+        if (!ayuda) {
+          ayuda = document.createElement('p');
+          ayuda.id = 'telAyuda';
+          ayuda.style.cssText = 'font-size:11px;margin-top:5px;';
+          telInput.parentElement.insertAdjacentElement('afterend', ayuda);
+        }
+
+        const telValido = tel.length === digitosRequeridos;
+        if (tel.length > 0 && !telValido) {
+          ayuda.textContent = `Faltan ${digitosRequeridos - tel.length} dígito${digitosRequeridos - tel.length !== 1 ? 's' : ''} (necesitas ${digitosRequeridos} en total)`;
+          ayuda.style.color = '#f87171';
+        } else if (telValido) {
+          ayuda.textContent = '✓ Número correcto';
+          ayuda.style.color = '#4ade80';
+        } else {
+          ayuda.textContent = `Ingresa ${digitosRequeridos} dígitos`;
+          ayuda.style.color = 'var(--gris)';
+        }
+
+        const valid = nombre.length >= 2 && apellido.length >= 2 && telValido && ciudad.length >= 2;
         btn.classList.toggle('disabled', !valid);
       }
 
       inputs.forEach(id => {
         document.getElementById(id).addEventListener('input', check);
       });
+      selectPaisEl.addEventListener('change', check);
       check();
     }
 
