@@ -4,8 +4,7 @@
  * Devuelve todas las boletas del cliente autenticado (los 3 tipos).
  * Requiere token de sesion en el header Authorization.
  *
- * Responde con una lista unificada de boletas con tipo, numero,
- * estado de pago, y datos de la rifa.
+ * Usa la misma query que /api/cliente (que funciona correctamente).
  */
 
 import { supabase } from '../lib/supabase.js';
@@ -28,68 +27,69 @@ export default async function handler(req, res) {
 
   try {
     // Consultar los 3 tipos de boletas en paralelo
-    const [res4, res2, res3, resRifa] = await Promise.all([
-      // Boletas de 4 cifras (rifa principal)
+    // Usando SOLO las columnas que sabemos que existen (mismas que /api/cliente)
+    const [res4, res2, res3] = await Promise.all([
       supabase
         .from('boletas')
-        .select('numero, estado, precio_total, total_abonado, saldo_restante, fecha_venta')
+        .select('numero, saldo_restante, total_abonado')
         .like('telefono_cliente', '%' + last10),
 
-      // Boletas de 2 cifras (diarias)
       supabase
         .from('boletas_diarias')
-        .select('numero, estado, precio_total, total_abonado, saldo_restante, fecha_venta')
+        .select('numero, saldo_restante, total_abonado')
         .like('telefono_cliente', '%' + last10),
 
-      // Boletas de 3 cifras (diarias)
       supabase
         .from('boletas_diarias_3cifras')
-        .select('numero, estado, precio_total, total_abonado, saldo_restante, fecha_venta')
+        .select('numero, saldo_restante, total_abonado')
         .like('telefono_cliente', '%' + last10),
-
-      // Info de la rifa actual
-      supabase
-        .from('rifas')
-        .select('nombre, premio_mayor')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single(),
     ]);
 
-    if (res4.error) throw res4.error;
-    if (res2.error) throw res2.error;
-    if (res3.error) throw res3.error;
+    // Log de errores para debug
+    if (res4.error) console.error('Error boletas 4:', res4.error);
+    if (res2.error) console.error('Error boletas 2:', res2.error);
+    if (res3.error) console.error('Error boletas 3:', res3.error);
 
-    const nombreRifa = resRifa.data?.nombre || 'Rifa Principal';
+    // Precio fijo por tipo
+    const PRECIOS = { 4: 80000, 2: 20000, 3: 5000 };
 
     // Unificar boletas con su tipo
     const boletas = [
       ...(res4.data || []).map(b => ({
-        ...b,
+        numero: String(b.numero),
         tipo: '4cifras',
         tipo_label: 'Principal',
-        rifa: nombreRifa,
+        rifa: 'La Perla Roja',
+        precio_total: PRECIOS[4],
+        total_abonado: Number(b.total_abonado || 0),
+        saldo_restante: Number(b.saldo_restante || 0),
+        estado: Number(b.saldo_restante || 0) === 0 ? 'Pagada' : 'Pendiente',
       })),
       ...(res2.data || []).map(b => ({
-        ...b,
+        numero: String(b.numero),
         tipo: '2cifras',
         tipo_label: 'Diaria 2 cifras',
         rifa: 'Rifa Diaria',
+        precio_total: PRECIOS[2],
+        total_abonado: Number(b.total_abonado || 0),
+        saldo_restante: Number(b.saldo_restante || 0),
+        estado: Number(b.saldo_restante || 0) === 0 ? 'Pagada' : 'Pendiente',
       })),
       ...(res3.data || []).map(b => ({
-        ...b,
+        numero: String(b.numero),
         tipo: '3cifras',
         tipo_label: 'Diaria 3 cifras',
         rifa: 'Rifa Diaria',
+        precio_total: PRECIOS[3],
+        total_abonado: Number(b.total_abonado || 0),
+        saldo_restante: Number(b.saldo_restante || 0),
+        estado: Number(b.saldo_restante || 0) === 0 ? 'Pagada' : 'Pendiente',
       })),
     ];
 
-    // Ordenar por fecha de venta (mas recientes primero)
-    boletas.sort((a, b) => new Date(b.fecha_venta || 0) - new Date(a.fecha_venta || 0));
-
     // Calcular totales
-    const totalAbonado = boletas.reduce((s, b) => s + Number(b.total_abonado || 0), 0);
-    const totalPendiente = boletas.reduce((s, b) => s + Number(b.saldo_restante || 0), 0);
+    const totalAbonado = boletas.reduce((s, b) => s + b.total_abonado, 0);
+    const totalPendiente = boletas.reduce((s, b) => s + b.saldo_restante, 0);
 
     res.status(200).json({
       cliente: {
@@ -106,6 +106,6 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Error en mis-boletas:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    res.status(500).json({ error: error.message || 'Error interno del servidor' });
   }
 }
