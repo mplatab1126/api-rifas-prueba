@@ -25,7 +25,7 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  const { accion, tipo, contrasena, fechaSorteo, horaCierre, loteria, ganadores, totalPagadoGanadores, modoPremio, totalBoletasPremio } = req.body;
+  const { accion, tipo, contrasena, fechaSorteo, horaCierre, loteria, ganadores, totalPagadoGanadores, modoPremio, totalBoletasPremio, numeroGanador } = req.body;
 
   // ─────────────────────────────────────────────────────────────────────
   // POST obtener_historial — historial de rifas por tipo
@@ -161,6 +161,7 @@ export default async function handler(req, res) {
         total_pagado_ganadores: nPagado,
         ganancia_neta:        ganancia,
         loteria:              loteria || '',
+        numero_ganador:       numeroGanador || '',
         creado_por:           nombreAsesor
       };
       if (configActual?.modo_premio) {
