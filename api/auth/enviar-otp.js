@@ -96,43 +96,16 @@ export default async function handler(req, res) {
 
     if (errInsert) throw errInsert;
 
-    // 5. Enviar por WhatsApp usando ChateaPro
-    const TOKEN = process.env.CHATEA_TOKEN_LINEA_1;
-    const mensaje = `🔐 Tu codigo de verificacion para la app Los Plata es: *${codigo}*\n\nEste codigo expira en 5 minutos. No lo compartas con nadie.`;
+    // 5. Enviar por SMS usando Twilio
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const from = process.env.TWILIO_PHONE_NUMBER;
+    const to = '+' + telefonoLimpio;
 
-    // Primero buscar el suscriptor por telefono en ChateaPro
-    const buscarResp = await fetch(
-      `https://chateapro.app/api/subscribers?phone=${telefonoLimpio}&limit=1`,
-      { headers: { accept: 'application/json', Authorization: `Bearer ${TOKEN}` } }
-    );
-    const buscarData = await buscarResp.json();
-
-    let enviado = false;
-
-    if (buscarData.data && buscarData.data.length > 0) {
-      // Suscriptor existe en ChateaPro - enviar mensaje directo
-      const userNs = buscarData.data[0].user_ns;
-      const enviarResp = await fetch('https://chateapro.app/api/subscriber/send-text', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${TOKEN}`,
-        },
-        body: JSON.stringify({
-          user_ns: userNs,
-          text: mensaje,
-        }),
-      });
-      enviado = enviarResp.ok;
-    }
-
-    // Fallback: enviar por Twilio SMS si WhatsApp fallo
-    if (!enviado && process.env.TWILIO_ACCOUNT_SID) {
-      const accountSid = process.env.TWILIO_ACCOUNT_SID;
-      const authToken = process.env.TWILIO_AUTH_TOKEN;
-      const from = process.env.TWILIO_PHONE_NUMBER;
-      const to = '+' + telefonoLimpio;
-
+    if (!accountSid || !authToken || !from) {
+      console.error('Faltan credenciales de Twilio para enviar SMS');
+      // El codigo queda en la DB, se puede verificar manualmente
+    } else {
       const smsResp = await fetch(
         `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
         {
@@ -144,17 +117,15 @@ export default async function handler(req, res) {
           body: new URLSearchParams({
             From: from,
             To: to,
-            Body: `Tu codigo Los Plata: ${codigo}. Expira en 5 minutos.`,
+            Body: `Los Plata - Tu codigo de verificacion es: ${codigo}. Expira en 5 minutos.`,
           }),
         }
       );
-      enviado = smsResp.ok;
-    }
 
-    if (!enviado) {
-      // Si ni WhatsApp ni SMS funcionaron, logear pero no bloquear
-      // (el codigo queda en la base de datos y se puede verificar)
-      console.error('No se pudo enviar OTP por ningun canal a:', telefonoLimpio);
+      if (!smsResp.ok) {
+        const smsError = await smsResp.text();
+        console.error('Error enviando SMS:', smsError);
+      }
     }
 
     res.status(200).json({ enviado: true });
