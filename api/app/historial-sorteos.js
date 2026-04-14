@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     // 1. Historial de rifas diarias (de historial_rifas)
     const { data: historial, error: errHistorial } = await supabase
       .from('historial_rifas')
-      .select('id, fecha_guardado, loteria, vendidas, total_boletas, recaudo_total, ganadores, total_pagado_ganadores, ganancia_neta')
+      .select('id, fecha_guardado, loteria, vendidas, total_boletas, recaudo_total, ganadores, total_pagado_ganadores, ganancia_neta, tipo')
       .order('fecha_guardado', { ascending: false })
       .limit(limite);
 
