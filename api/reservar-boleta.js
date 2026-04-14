@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
 
-  const { numeros, nombre, apellido, ciudad, telefono, indicativo } = req.body;
+  const { numeros, nombre, apellido, ciudad, telefono, indicativo, origen } = req.body;
 
   if (!numeros || numeros.length === 0 || !nombre || !telefono) {
     return res.status(400).json({ error: 'Faltan datos para la reserva' });
@@ -79,7 +79,7 @@ export default async function handler(req, res) {
         estado: 'Reservado',
         total_abonado: 0,
         saldo_restante: checkData[0]?.precio_total || 0,
-        asesor: 'web-perla-roja',
+        asesor: origen === 'app' ? 'App' : 'web-perla-roja',
         fecha_venta: fechaVenta
       })
       .in('numero', numeros)
@@ -112,9 +112,9 @@ export default async function handler(req, res) {
     // 6. Bitácora
     await supabase.from('registro_movimientos').insert({
       asesor: 'web-perla-roja',
-      accion: 'Reserva Web',
+      accion: origen === 'app' ? 'Reserva App' : 'Reserva Web',
       boleta: numeros.join(', '),
-      detalle: `Reserva desde perla-roja.html por ${telefonoLimpio} - ${numeros.length} boleta(s)`
+      detalle: `Reserva desde ${origen === 'app' ? 'App Movil' : 'perla-roja.html'} por ${telefonoLimpio} - ${numeros.length} boleta(s)`
     });
 
     // 7. Armar WhatsApp
