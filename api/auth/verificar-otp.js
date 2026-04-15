@@ -56,7 +56,11 @@ export default async function handler(req, res) {
         twilioMessage: checkData.message,
         to: '+' + telefonoLimpio,
       }));
-      return res.status(401).json({ error: 'Codigo incorrecto o expirado' });
+      // 20404 = verificacion no encontrada (expiro o se cancelo por demasiados intentos)
+      if (checkData.code === 20404) {
+        return res.status(401).json({ error: 'El codigo expiro o fue cancelado. Vuelve atras y pide un codigo nuevo.' });
+      }
+      return res.status(401).json({ error: 'Codigo incorrecto. Verifica bien los 6 digitos.' });
     }
 
     // 2. Generar token de sesion
