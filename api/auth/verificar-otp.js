@@ -49,6 +49,13 @@ export default async function handler(req, res) {
     const checkData = await checkResp.json();
 
     if (!checkResp.ok || checkData.status !== 'approved') {
+      console.error('Twilio Verify check fallido:', JSON.stringify({
+        httpStatus: checkResp.status,
+        twilioStatus: checkData.status,
+        twilioCode: checkData.code,
+        twilioMessage: checkData.message,
+        to: '+' + telefonoLimpio,
+      }));
       return res.status(401).json({ error: 'Codigo incorrecto o expirado' });
     }
 
