@@ -1,7 +1,7 @@
 /**
  * POST /api/auth/verificar-otp
  *
- * Verifica el codigo OTP usando Twilio Verify.
+ * Verifica el codigo OTP contra la tabla otp_codes en Supabase.
  * Si es correcto, crea una sesion y devuelve un token.
  *
  * Body: { telefono: "3101234567", codigo: "123456" }
@@ -26,47 +26,35 @@ export default async function handler(req, res) {
   const telefonoLimpio = limpiarTelefono(telefono);
 
   try {
-    // 1. Verificar codigo con Twilio Verify
-    const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    const authToken = process.env.TWILIO_AUTH_TOKEN;
-    const verifySid = process.env.TWILIO_VERIFY_SID;
+    // 1. Buscar codigo valido en la base de datos
+    const { data: otpRecord, error: errOtp } = await supabase
+      .from('otp_codes')
+      .select('id, codigo, expires_at')
+      .eq('telefono', telefonoLimpio)
+      .eq('codigo', codigo)
+      .eq('used', false)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
 
-    const checkResp = await fetch(
-      `https://verify.twilio.com/v2/Services/${verifySid}/VerificationChecks`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64'),
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          To: '+' + telefonoLimpio,
-          Code: codigo,
-        }),
-      }
-    );
-
-    const checkData = await checkResp.json();
-
-    if (!checkResp.ok || checkData.status !== 'approved') {
-      console.error('Twilio Verify check fallido:', JSON.stringify({
-        httpStatus: checkResp.status,
-        twilioStatus: checkData.status,
-        twilioCode: checkData.code,
-        twilioMessage: checkData.message,
-        to: '+' + telefonoLimpio,
-      }));
-      // 20404 = verificacion no encontrada (expiro o se cancelo por demasiados intentos)
-      if (checkData.code === 20404) {
-        return res.status(401).json({ error: 'El codigo expiro o fue cancelado. Vuelve atras y pide un codigo nuevo.' });
-      }
+    if (errOtp || !otpRecord) {
       return res.status(401).json({ error: 'Codigo incorrecto. Verifica bien los 6 digitos.' });
     }
 
-    // 2. Generar token de sesion
+    // 2. Verificar que no haya expirado
+    if (new Date(otpRecord.expires_at) < new Date()) {
+      // Marcar como usado para que no se pueda reutilizar
+      await supabase.from('otp_codes').update({ used: true }).eq('id', otpRecord.id);
+      return res.status(401).json({ error: 'El codigo expiro. Vuelve atras y pide uno nuevo.' });
+    }
+
+    // 3. Marcar codigo como usado
+    await supabase.from('otp_codes').update({ used: true }).eq('id', otpRecord.id);
+
+    // 4. Generar token de sesion
     const token = crypto.randomUUID();
 
-    // 3. Crear sesion
+    // 5. Crear sesion
     const { error: errSesion } = await supabase
       .from('sesiones_app')
       .insert({
@@ -78,7 +66,7 @@ export default async function handler(req, res) {
 
     if (errSesion) throw errSesion;
 
-    // 4. Traer datos del cliente
+    // 6. Traer datos del cliente
     const last10 = telefonoLimpio.slice(-10);
     const { data: cliente } = await supabase
       .from('clientes')

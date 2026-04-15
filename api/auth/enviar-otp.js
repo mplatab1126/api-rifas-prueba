@@ -1,19 +1,23 @@
 /**
  * POST /api/auth/enviar-otp
  *
- * Envia un codigo de verificacion por SMS al cliente usando Twilio Verify.
- * El cliente debe existir en la tabla "clientes" (debe tener al menos
- * una boleta comprada).
+ * Genera un codigo de 6 digitos, lo guarda en la tabla otp_codes
+ * y lo envia por SMS al cliente usando Twilio.
+ *
+ * El cliente debe tener al menos una boleta comprada.
  *
  * Body: { telefono: "3101234567" }
  * Responde: { enviado: true }
- *
- * Rate limit: maximo 3 intentos por telefono cada 10 minutos.
  */
 
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
 import { limpiarTelefono } from '../lib/telefono.js';
+
+// Generar codigo aleatorio de 6 digitos
+function generarCodigo() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST', 'Content-Type, Authorization')) return;
@@ -65,18 +69,51 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2. Enviar verificacion con Twilio Verify
+    // 2. Rate limit: maximo 3 codigos por telefono en los ultimos 10 minutos
+    const { count } = await supabase
+      .from('otp_codes')
+      .select('id', { count: 'exact', head: true })
+      .eq('telefono', telefonoLimpio)
+      .gte('created_at', new Date(Date.now() - 10 * 60 * 1000).toISOString());
+
+    if (count >= 3) {
+      return res.status(429).json({
+        error: 'Demasiados intentos. Espera 10 minutos antes de pedir otro codigo.'
+      });
+    }
+
+    // 3. Invalidar codigos anteriores no usados para este telefono
+    await supabase
+      .from('otp_codes')
+      .update({ used: true })
+      .eq('telefono', telefonoLimpio)
+      .eq('used', false);
+
+    // 4. Generar y guardar nuevo codigo (expira en 10 minutos)
+    const codigo = generarCodigo();
+
+    const { error: errInsert } = await supabase
+      .from('otp_codes')
+      .insert({
+        telefono: telefonoLimpio,
+        codigo,
+        expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      });
+
+    if (errInsert) throw errInsert;
+
+    // 5. Enviar SMS con Twilio
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
-    const verifySid = process.env.TWILIO_VERIFY_SID;
+    const smsFrom = process.env.TWILIO_SMS_FROM || '+19189181157';
 
-    if (!accountSid || !authToken || !verifySid) {
-      console.error('Faltan credenciales de Twilio Verify');
+    if (!accountSid || !authToken) {
+      console.error('Faltan credenciales de Twilio');
       return res.status(500).json({ error: 'Error de configuracion del servidor' });
     }
 
-    const verifyResp = await fetch(
-      `https://verify.twilio.com/v2/Services/${verifySid}/Verifications`,
+    const smsResp = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
       {
         method: 'POST',
         headers: {
@@ -84,17 +121,20 @@ export default async function handler(req, res) {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
+          From: smsFrom,
           To: '+' + telefonoLimpio,
-          Channel: 'sms',
+          Body: `Tu codigo de verificacion para Los Plata es: ${codigo}. Expira en 10 minutos.`,
         }),
       }
     );
 
-    const verifyData = await verifyResp.json();
+    const smsData = await smsResp.json();
 
-    if (!verifyResp.ok) {
-      console.error('Error Twilio Verify:', verifyData);
-      return res.status(500).json({ error: 'No pudimos enviar el codigo. Intenta de nuevo.' });
+    if (!smsResp.ok) {
+      console.error('Error enviando SMS:', JSON.stringify(smsData));
+      // Borrar el codigo si el SMS fallo
+      await supabase.from('otp_codes').delete().eq('telefono', telefonoLimpio).eq('codigo', codigo);
+      return res.status(500).json({ error: 'No pudimos enviar el codigo por SMS. Intenta de nuevo.' });
     }
 
     res.status(200).json({ enviado: true });
