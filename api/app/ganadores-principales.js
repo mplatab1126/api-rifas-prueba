@@ -32,7 +32,7 @@ export default async function handler(req, res) {
       .select(`
         id, nombre_ganador, ciudad, numero_boleta,
         premio_nombre, premio_descripcion, premio_imagen_url, premio_valor,
-        loteria, fecha_sorteo, orden,
+        loteria, fecha_sorteo, orden, video_url,
         rifas ( nombre )
       `)
       .order('fecha_sorteo', { ascending: false })
