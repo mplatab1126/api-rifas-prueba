@@ -1,7 +1,7 @@
 /**
  * POST /api/auth/enviar-otp
  *
- * Genera un codigo OTP de 6 digitos y lo envia al cliente por WhatsApp.
+ * Envia un codigo de verificacion por SMS al cliente usando Twilio Verify.
  * El cliente debe existir en la tabla "clientes" (debe tener al menos
  * una boleta comprada).
  *
@@ -39,7 +39,6 @@ export default async function handler(req, res) {
 
     if (errBoletas) throw errBoletas;
 
-    // Si no tiene boletas de 4 cifras, buscar en diarias
     let clienteExiste = boletas && boletas.length > 0;
 
     if (!clienteExiste) {
@@ -66,66 +65,36 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2. Rate limit: maximo 3 OTPs en los ultimos 10 minutos
-    const hace10min = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-    const { count, error: errCount } = await supabase
-      .from('otp_codes')
-      .select('*', { count: 'exact', head: true })
-      .eq('telefono', telefonoLimpio)
-      .gte('created_at', hace10min);
-
-    if (errCount) throw errCount;
-
-    if (count >= 3) {
-      return res.status(429).json({
-        error: 'Demasiados intentos. Espera 10 minutos antes de solicitar otro codigo.'
-      });
-    }
-
-    // 3. Generar codigo de 6 digitos
-    const codigo = String(Math.floor(100000 + Math.random() * 900000));
-
-    // 4. Guardar en base de datos
-    const { error: errInsert } = await supabase
-      .from('otp_codes')
-      .insert({
-        telefono: telefonoLimpio,
-        codigo,
-        expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-      });
-
-    if (errInsert) throw errInsert;
-
-    // 5. Enviar por SMS usando Twilio
+    // 2. Enviar verificacion con Twilio Verify
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
-    const from = process.env.TWILIO_PHONE_NUMBER;
-    const to = '+' + telefonoLimpio;
+    const verifySid = process.env.TWILIO_VERIFY_SID;
 
-    if (!accountSid || !authToken || !from) {
-      console.error('Faltan credenciales de Twilio para enviar SMS');
-      // El codigo queda en la DB, se puede verificar manualmente
-    } else {
-      const smsResp = await fetch(
-        `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64'),
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({
-            From: from,
-            To: to,
-            Body: `Los Plata - Tu codigo de verificacion es: ${codigo}. Expira en 5 minutos.`,
-          }),
-        }
-      );
+    if (!accountSid || !authToken || !verifySid) {
+      console.error('Faltan credenciales de Twilio Verify');
+      return res.status(500).json({ error: 'Error de configuracion del servidor' });
+    }
 
-      if (!smsResp.ok) {
-        const smsError = await smsResp.text();
-        console.error('Error enviando SMS:', smsError);
+    const verifyResp = await fetch(
+      `https://verify.twilio.com/v2/Services/${verifySid}/Verifications`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64'),
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          To: '+' + telefonoLimpio,
+          Channel: 'sms',
+        }),
       }
+    );
+
+    const verifyData = await verifyResp.json();
+
+    if (!verifyResp.ok) {
+      console.error('Error Twilio Verify:', verifyData);
+      return res.status(500).json({ error: 'No pudimos enviar el codigo. Intenta de nuevo.' });
     }
 
     res.status(200).json({ enviado: true });

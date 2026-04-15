@@ -1,7 +1,7 @@
 /**
  * POST /api/auth/verificar-otp
  *
- * Verifica el codigo OTP que el cliente recibio por WhatsApp.
+ * Verifica el codigo OTP usando Twilio Verify.
  * Si es correcto, crea una sesion y devuelve un token.
  *
  * Body: { telefono: "3101234567", codigo: "123456" }
@@ -26,48 +26,48 @@ export default async function handler(req, res) {
   const telefonoLimpio = limpiarTelefono(telefono);
 
   try {
-    // 1. Buscar OTP valido
-    const { data: otp, error: errOtp } = await supabase
-      .from('otp_codes')
-      .select('id, codigo, expires_at')
-      .eq('telefono', telefonoLimpio)
-      .eq('codigo', codigo)
-      .eq('used', false)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+    // 1. Verificar codigo con Twilio Verify
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const verifySid = process.env.TWILIO_VERIFY_SID;
 
-    if (errOtp || !otp) {
+    const checkResp = await fetch(
+      `https://verify.twilio.com/v2/Services/${verifySid}/VerificationChecks`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64'),
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          To: '+' + telefonoLimpio,
+          Code: codigo,
+        }),
+      }
+    );
+
+    const checkData = await checkResp.json();
+
+    if (!checkResp.ok || checkData.status !== 'approved') {
       return res.status(401).json({ error: 'Codigo incorrecto o expirado' });
     }
 
-    // 2. Verificar que no haya expirado
-    if (new Date(otp.expires_at) < new Date()) {
-      return res.status(401).json({ error: 'El codigo ha expirado. Solicita uno nuevo.' });
-    }
-
-    // 3. Marcar OTP como usado
-    await supabase
-      .from('otp_codes')
-      .update({ used: true })
-      .eq('id', otp.id);
-
-    // 4. Generar token de sesion (UUID aleatorio)
+    // 2. Generar token de sesion
     const token = crypto.randomUUID();
 
-    // 5. Crear sesion
+    // 3. Crear sesion
     const { error: errSesion } = await supabase
       .from('sesiones_app')
       .insert({
         token,
         telefono: telefonoLimpio,
         dispositivo: dispositivo || null,
-        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 dias
+        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       });
 
     if (errSesion) throw errSesion;
 
-    // 6. Traer datos del cliente
+    // 4. Traer datos del cliente
     const last10 = telefonoLimpio.slice(-10);
     const { data: cliente } = await supabase
       .from('clientes')
