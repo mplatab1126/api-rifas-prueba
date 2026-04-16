@@ -17,24 +17,21 @@ export default async function handler(req, res) {
 
     let seleccionados = [];
 
-    // 3. Hacemos un recorrido exacto del 0 al 9
+    // Recorremos cada serie del 0 al 9, excluyendo los que se mostraron en la llamada anterior
     for (let i = 0; i <= 9; i++) {
-      // Le pedimos a Supabase específicamente boletas que empiecen con el número 'i'
       const { data: libresSerie, error } = await supabase
         .from('boletas')
         .select('numero')
         .is('telefono_cliente', null)
-        .like('numero', `${i}%`) // Filtro mágico: busca que empiece por i (ej. 0%, 1%, etc)
-        .limit(50); // Traemos hasta 50 opciones de esta serie para que haya variedad
+        .eq('mostrado', false)
+        .like('numero', `${i}%`)
+        .limit(50);
 
       if (error) throw error;
 
       if (libresSerie && libresSerie.length > 0) {
-        // Barajamos solo estas opciones de la serie actual
         libresSerie.sort(() => 0.5 - Math.random());
-        // Agarramos las 5 primeras
         const elegidos = libresSerie.slice(0, 5).map(b => b.numero);
-        // Las guardamos en nuestra bolsa principal
         seleccionados.push(...elegidos);
       }
     }
@@ -43,13 +40,13 @@ export default async function handler(req, res) {
       return res.status(200).json({ numeros_disponibles: "No hay boletas disponibles en este momento." });
     }
 
-    // 4. Ordenamos todos los 50 números recolectados matemáticamente de menor a mayor
-    seleccionados.sort((a, b) => parseInt(a) - parseInt(b));
+    // Limpiamos las marcas anteriores y marcamos los nuevos
+    await supabase.from('boletas').update({ mostrado: false }).eq('mostrado', true);
+    await supabase.from('boletas').update({ mostrado: true }).in('numero', seleccionados);
 
-    // 5. Los unimos todos con un guión
+    seleccionados.sort((a, b) => parseInt(a) - parseInt(b));
     const textoFinal = seleccionados.join(' - ');
 
-    // 6. Se lo enviamos a Chatea Pro
     res.status(200).json({
       numeros_disponibles: textoFinal
     });
