@@ -19,6 +19,11 @@ const GERENCIA_DEFAULT = ['mateo', 'alejo p', 'alejo plata'];
 const SOLO_MATEO_DEFAULT = ['mateo'];
 const SOLO_ALEJO_DEFAULT = ['alejo p', 'alejo plata'];
 
+function listarTodosLosAsesores() {
+  const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
+  return [...new Set(Object.values(asesores))].sort();
+}
+
 function defaultPermitido(asesorNombre, paginaId) {
   const name = asesorNombre.toLowerCase().trim();
   if (['admin', 'caja', 'rifas-menu'].includes(paginaId)) return true;
@@ -67,7 +72,7 @@ export default async function handler(req, res) {
       return res.status(403).json({ status: 'error', mensaje: 'Solo administradores pueden ver todos los permisos.' });
     }
 
-    const todosAsesores = [...new Set(Object.values(asesores))].sort();
+    const todosAsesores = listarTodosLosAsesores();
 
     const { data, error } = await supabase
       .from('permisos_asesores')
@@ -125,7 +130,7 @@ export default async function handler(req, res) {
       return res.status(403).json({ status: 'error', mensaje: 'Solo administradores pueden inicializar permisos.' });
     }
 
-    const todosAsesores = [...new Set(Object.values(asesores))];
+    const todosAsesores = listarTodosLosAsesores();
     const rows = [];
     for (const asesor of todosAsesores) {
       for (const pagina of PAGINAS) {
