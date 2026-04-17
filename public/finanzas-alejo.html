@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finanzas · Alejo Plata</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared-nav.css">
+  <script>
+    if (!localStorage.getItem('asesor_pwd') || !localStorage.getItem('asesor_nombre')) {
+      window.location.href = '/admin';
+    } else {
+      document.documentElement.classList.add('snav-authed');
+    }
+  </script>
+  <style>
+    :root{
+      --ink:#2b3a35;
+      --ink-2:#52665e;
+      --muted:#8ba89d;
+      --bg:#f7fcf9;
+      --card:#ffffff;
+      --ring:#e6eee9;
+      --ring-strong:#d1e3da;
+      --pill:#f0f7f3;
+      --accent:#4eb082;
+      --accent-2:#3a946a;
+      --danger:#d95a53;
+      --gasto:#d95a53;
+      --ingreso:#4eb082;
+      --deuda-cobrar:#D4AF37;
+      --deuda-pagar:#8B1A2B;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0}
+    body{
+      background:var(--bg);
+      font-family:'Poppins',system-ui,sans-serif;
+      color:var(--ink);
+      font-size:14px;
+    }
+
+    .page{
+      max-width:1200px;
+      margin:0 auto;
+      padding:24px 20px 40px;
+    }
+
+    /* Header */
+    .header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:24px;
+    }
+    .title{
+      font-family:'Montserrat',sans-serif;
+      font-weight:700;
+      font-size:1.6rem;
+      letter-spacing:-0.01em;
+      margin:0;
+    }
+    .subtitle{
+      color:var(--muted);
+      font-size:0.85rem;
+      margin-top:2px;
+      font-weight:400;
+    }
+    .user-chip{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      background:var(--card);
+      border:1px solid var(--ring);
+      border-radius:100px;
+      padding:8px 14px;
+      font-weight:500;
+      font-size:0.85rem;
+    }
+    .user-chip .dot{
+      width:8px;height:8px;border-radius:50%;background:var(--accent);
+    }
+
+    /* Resumen cards */
+    .summary{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:12px;
+      margin-bottom:24px;
+    }
+    .stat{
+      background:var(--card);
+      border:1px solid var(--ring);
+      border-radius:16px;
+      padding:16px 18px;
+    }
+    .stat-label{
+      font-size:0.72rem;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:0.06em;
+      font-weight:500;
+      margin-bottom:6px;
+    }
+    .stat-value{
+      font-family:'Montserrat',sans-serif;
+      font-weight:700;
+      font-size:1.25rem;
+      letter-spacing:-0.01em;
+    }
+    .stat-value.pos{color:var(--ingreso)}
+    .stat-value.neg{color:var(--gasto)}
+    .stat-sub{
+      font-size:0.72rem;
+      color:var(--muted);
+      margin-top:4px;
+    }
+
+    /* Layout split */
+    .split{
+      display:grid;
+      grid-template-columns:1fr 1.1fr;
+      gap:20px;
+      min-height:560px;
+    }
+    @media (max-width:900px){
+      .summary{grid-template-columns:repeat(2,1fr)}
+      .split{grid-template-columns:1fr}
+    }
+
+    /* Card base */
+    .panel{
+      background:var(--card);
+      border:1px solid var(--ring);
+      border-radius:20px;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+    .panel-head{
+      padding:16px 20px;
+      border-bottom:1px solid var(--ring);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .panel-title{
+      font-weight:600;
+      font-size:0.95rem;
+      margin:0;
+    }
+    .panel-hint{
+      font-size:0.72rem;
+      color:var(--muted);
+    }
+
+    /* Chat */
+    .chat-body{
+      flex:1;
+      padding:20px;
+      overflow-y:auto;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      max-height:560px;
+    }
+    .msg{
+      max-width:82%;
+      padding:10px 14px;
+      border-radius:14px;
+      font-size:0.88rem;
+      line-height:1.45;
+      white-space:pre-wrap;
+    }
+    .msg.user{
+      align-self:flex-end;
+      background:var(--accent);
+      color:#fff;
+      border-bottom-right-radius:4px;
+    }
+    .msg.ai{
+      align-self:flex-start;
+      background:var(--pill);
+      color:var(--ink);
+      border-bottom-left-radius:4px;
+    }
+    .msg .tag{
+      display:inline-block;
+      font-size:0.68rem;
+      padding:2px 8px;
+      border-radius:100px;
+      margin-top:6px;
+      font-weight:500;
+      background:rgba(255,255,255,0.25);
+    }
+    .msg.ai .tag{
+      background:#fff;
+      color:var(--ink-2);
+      border:1px solid var(--ring);
+    }
+
+    .chat-input{
+      border-top:1px solid var(--ring);
+      padding:12px;
+      display:flex;
+      gap:8px;
+      background:var(--card);
+    }
+    .chat-input textarea{
+      flex:1;
+      border:1px solid var(--ring);
+      border-radius:12px;
+      padding:10px 14px;
+      font-family:inherit;
+      font-size:0.88rem;
+      resize:none;
+      outline:none;
+      color:var(--ink);
+      min-height:42px;
+      max-height:120px;
+      background:var(--bg);
+    }
+    .chat-input textarea:focus{border-color:var(--accent)}
+    .chat-send{
+      background:var(--ink);
+      color:#fff;
+      border:none;
+      border-radius:12px;
+      padding:0 18px;
+      font-family:inherit;
+      font-weight:600;
+      font-size:0.85rem;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .chat-send:hover{background:var(--accent-2)}
+
+    /* Tabla */
+    .table-wrap{
+      overflow-y:auto;
+      max-height:560px;
+    }
+    table{width:100%;border-collapse:collapse;font-size:0.85rem}
+    thead th{
+      position:sticky;top:0;
+      background:var(--card);
+      text-align:left;
+      font-weight:500;
+      color:var(--muted);
+      text-transform:uppercase;
+      font-size:0.68rem;
+      letter-spacing:0.06em;
+      padding:12px 16px;
+      border-bottom:1px solid var(--ring);
+    }
+    tbody td{
+      padding:14px 16px;
+      border-bottom:1px solid var(--ring);
+      vertical-align:middle;
+    }
+    tbody tr:last-child td{border-bottom:none}
+    tbody tr:hover{background:var(--bg)}
+    .mono{font-variant-numeric:tabular-nums}
+    .monto{font-weight:600;font-family:'Montserrat',sans-serif}
+    .monto.neg{color:var(--gasto)}
+    .monto.pos{color:var(--ingreso)}
+    .monto.amber{color:var(--deuda-cobrar)}
+    .monto.red{color:var(--deuda-pagar)}
+
+    .pill{
+      display:inline-block;
+      font-size:0.7rem;
+      padding:3px 9px;
+      border-radius:100px;
+      font-weight:500;
+      letter-spacing:0.02em;
+    }
+    .pill.gasto{background:#fcf2f2;color:var(--gasto)}
+    .pill.ingreso{background:#ecf7f1;color:var(--accent-2)}
+    .pill.deuda-cobrar{background:#fcf8e8;color:#a88a1f}
+    .pill.deuda-pagar{background:#f9ebec;color:var(--deuda-pagar)}
+    .cat{
+      font-size:0.78rem;
+      color:var(--ink-2);
+    }
+    .desc{
+      color:var(--muted);
+      font-size:0.75rem;
+      margin-top:2px;
+    }
+
+    /* Scrollbar sutil */
+    .chat-body::-webkit-scrollbar,
+    .table-wrap::-webkit-scrollbar{width:6px}
+    .chat-body::-webkit-scrollbar-thumb,
+    .table-wrap::-webkit-scrollbar-thumb{background:var(--ring-strong);border-radius:10px}
+  </style>
+</head>
+<body>
+ <div class="snav-page-content">
+  <div class="page">
+
+    <div class="header">
+      <div>
+        <h1 class="title">Finanzas personales</h1>
+        <div class="subtitle">Tu asesor financiero privado</div>
+      </div>
+      <div class="user-chip">
+        <span class="dot"></span>
+        Alejo Plata
+      </div>
+    </div>
+
+    <div class="summary">
+      <div class="stat">
+        <div class="stat-label">Ingresos del mes</div>
+        <div class="stat-value pos" id="statIngresos">$ 0</div>
+        <div class="stat-sub" id="statMes">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Gastos del mes</div>
+        <div class="stat-value neg" id="statGastos">$ 0</div>
+        <div class="stat-sub">Mes en curso</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Me deben</div>
+        <div class="stat-value" id="statDeudas">$ 0</div>
+        <div class="stat-sub" id="statDeudasSub">Sin deudas activas</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Saldo total</div>
+        <div class="stat-value" id="statSaldo">$ 0</div>
+        <div class="stat-sub" id="statSaldoSub">Todas las cuentas</div>
+      </div>
+    </div>
+
+    <div class="split">
+
+      <!-- Chat -->
+      <div class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Chat con Claude</h2>
+          <span class="panel-hint">Escribe movimientos o preguntas</span>
+        </div>
+        <div class="chat-body" id="chatBody">
+          <div class="msg ai">Hola Alejo. Cuéntame un movimiento o pregúntame lo que quieras sobre tus finanzas.</div>
+        </div>
+        <div class="chat-input">
+          <textarea id="chatInput" placeholder="Ej: gasté 45 mil en gasolina" rows="1"></textarea>
+          <button class="chat-send" onclick="enviar()">Enviar</button>
+        </div>
+      </div>
+
+      <!-- Tabla -->
+      <div class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Movimientos recientes</h2>
+          <span class="panel-hint">Últimos 12</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Detalle</th>
+                <th style="text-align:right">Monto</th>
+              </tr>
+            </thead>
+            <tbody id="movTbody">
+              <tr><td colspan="4" style="text-align:center; padding:30px; color:var(--muted)">Cargando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+ </div>
+
+  <script>
+    const input = document.getElementById('chatInput');
+    const body = document.getElementById('chatBody');
+    const sendBtn = document.querySelector('.chat-send');
+
+    const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const TIPO_LABEL = {
+      gasto: { label: 'Gasto', cls: 'gasto', signo: '−', monto: 'neg' },
+      ingreso: { label: 'Ingreso', cls: 'ingreso', signo: '', monto: 'pos' },
+      deuda_cobrar: { label: 'Me deben', cls: 'deuda-cobrar', signo: '', monto: 'amber' },
+      deuda_pagar: { label: 'Yo debo', cls: 'deuda-pagar', signo: '', monto: 'red' },
+      transferencia: { label: 'Transfer.', cls: 'gasto', signo: '', monto: '' },
+      otro: { label: 'Otro', cls: 'gasto', signo: '', monto: '' }
+    };
+
+    function fmtCOP(n) {
+      return '$' + (Math.round(Number(n)||0)).toLocaleString('es-CO');
+    }
+    function fmtFecha(yyyymmdd) {
+      if (!yyyymmdd) return '';
+      const [y,m,d] = yyyymmdd.split('-');
+      return d + ' ' + MESES[parseInt(m,10)-1];
+    }
+    function nombreMesActual() {
+      const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+      const d = new Date();
+      return meses[d.getMonth()] + ' ' + d.getFullYear();
+    }
+
+    async function cargarDashboard() {
+      const pwd = localStorage.getItem('asesor_pwd');
+      try {
+        const r = await fetch('/api/finanzas-alejo/dashboard', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contrasena: pwd })
+        });
+        const data = await r.json();
+        if (data.status !== 'ok') return;
+
+        document.getElementById('statIngresos').textContent = fmtCOP(data.resumen.ingresos_mes);
+        document.getElementById('statGastos').textContent = fmtCOP(data.resumen.gastos_mes);
+        document.getElementById('statDeudas').textContent = fmtCOP(data.resumen.me_deben);
+        document.getElementById('statSaldo').textContent = fmtCOP(data.resumen.saldo_total);
+        document.getElementById('statMes').textContent = nombreMesActual();
+
+        const tbody = document.getElementById('movTbody');
+        if (!data.movimientos.length) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px; color:var(--muted)">Aún no hay movimientos. Regístralos en el chat.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = data.movimientos.map(m => {
+          const t = TIPO_LABEL[m.tipo] || TIPO_LABEL.otro;
+          const detalle = [m.categoria_nombre, m.deudor_nombre].filter(Boolean).join(' · ') || m.cuenta_nombre || '—';
+          const desc = m.descripcion || (m.cuenta_nombre && m.categoria_nombre ? m.cuenta_nombre : '');
+          return `
+            <tr>
+              <td class="mono">${fmtFecha(m.fecha)}</td>
+              <td><span class="pill ${t.cls}">${t.label}</span></td>
+              <td><div class="cat">${detalle}</div>${desc ? `<div class="desc">${desc}</div>` : ''}</td>
+              <td style="text-align:right"><span class="monto ${t.monto} mono">${t.signo}${fmtCOP(m.monto)}</span></td>
+            </tr>
+          `;
+        }).join('');
+      } catch (e) {
+        console.error('dashboard error', e);
+      }
+    }
+
+    cargarDashboard();
+
+    input.addEventListener('input', () => {
+      input.style.height = 'auto';
+      input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+    });
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); }
+    });
+
+    function addMsg(rol, texto, tag) {
+      const el = document.createElement('div');
+      el.className = 'msg ' + (rol === 'user' ? 'user' : 'ai');
+      el.textContent = texto;
+      if (tag) {
+        const t = document.createElement('span');
+        t.className = 'tag';
+        t.textContent = tag;
+        el.appendChild(t);
+      }
+      body.appendChild(el);
+      body.scrollTop = body.scrollHeight;
+      return el;
+    }
+
+    async function enviar(){
+      const txt = input.value.trim();
+      if (!txt) return;
+      const pwd = localStorage.getItem('asesor_pwd');
+      if (!pwd) { alert('Sesión no iniciada'); return; }
+
+      addMsg('user', txt);
+      input.value = ''; input.style.height='auto';
+
+      sendBtn.disabled = true;
+      const thinking = addMsg('ai', 'Pensando…');
+
+      try {
+        const r = await fetch('/api/finanzas-alejo/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contrasena: pwd, mensaje: txt })
+        });
+        const data = await r.json();
+        thinking.remove();
+
+        if (data.status === 'ok') {
+          const tag = (data.herramientas_usadas && data.herramientas_usadas.length)
+            ? data.herramientas_usadas.join(' · ')
+            : null;
+          addMsg('ai', data.respuesta || '(sin respuesta)', tag);
+          cargarDashboard();
+        } else {
+          addMsg('ai', 'Error: ' + (data.mensaje || 'desconocido'));
+        }
+      } catch (e) {
+        thinking.remove();
+        addMsg('ai', 'Error de red: ' + e.message);
+      } finally {
+        sendBtn.disabled = false;
+      }
+    }
+  </script>
+  <script src="shared-nav.js"></script>
+</body>
+</html>

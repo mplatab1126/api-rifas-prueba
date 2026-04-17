@@ -9,6 +9,7 @@
 
   const GERENCIA = ['mateo', 'alejo p', 'alejo plata'];
   const SOLO_MATEO = ['mateo'];
+  const SOLO_ALEJO = ['alejo p', 'alejo plata'];
 
   const PAGES = [
     { id: 'admin',       label: 'Panel de Ventas',       href: '/admin',                  section: 'principal', roles: 'todos' },
@@ -42,6 +43,7 @@
         { id: 'estado-division', label: 'División Socios',      href: '/estado-resultados?tab=division' },
       ]
     },
+    { id: 'finanzas-alejo', label: 'Finanzas personales', href: '/finanzas-alejo',       section: 'finanzas',  roles: 'alejo' },
     { id: 'sorteo',      label: 'Sorteo en Vivo',         href: '/sorteo',                section: 'admin',     roles: 'gerencia' },
     { id: 'permisos',    label: 'Permisos',              href: '/permisos',              section: 'admin',     roles: 'mateo' },
   ];
@@ -105,6 +107,7 @@
     if (page.roles === 'todos') return true;
     if (page.roles === 'gerencia') return GERENCIA.includes(name);
     if (page.roles === 'mateo') return SOLO_MATEO.includes(name);
+    if (page.roles === 'alejo') return SOLO_ALEJO.includes(name);
     return false;
   }
 
