@@ -86,10 +86,11 @@
     /* Resumen cards */
     .summary{
       display:grid;
-      grid-template-columns:repeat(4,1fr);
+      grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));
       gap:12px;
       margin-bottom:24px;
     }
+    .stat-value.amber{color:var(--deuda-cobrar)}
     .stat{
       background:var(--card);
       border:1px solid var(--ring);
@@ -126,7 +127,6 @@
       min-height:560px;
     }
     @media (max-width:900px){
-      .summary{grid-template-columns:repeat(2,1fr)}
       .split{grid-template-columns:1fr}
     }
 
@@ -156,86 +156,142 @@
       color:var(--muted);
     }
 
-    /* Chat */
+    /* Chat — tema oscuro estilo app de mensajeria */
+    .chat-panel{
+      background:#0f1316;
+      border-color:#1f2629;
+      color:#e5e7eb;
+    }
+    .chat-panel .panel-head{
+      border-bottom-color:#1f2629;
+      background:#13181c;
+    }
+    .chat-panel .panel-head .panel-title{
+      color:#fff;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .chat-panel .panel-head .panel-title::before{
+      content:'C';
+      width:28px;
+      height:28px;
+      border-radius:50%;
+      background:#e6584f;
+      color:#fff;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-family:'Montserrat',sans-serif;
+      font-weight:700;
+      font-size:0.78rem;
+    }
+    .chat-panel .panel-hint{
+      color:#7a8087;
+    }
     .chat-body{
       flex:1;
-      padding:20px;
+      padding:20px 16px;
       overflow-y:auto;
       display:flex;
       flex-direction:column;
-      gap:12px;
+      gap:10px;
       max-height:560px;
+      background:#0f1316;
     }
     .msg{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:flex-end;
+      gap:10px;
       max-width:82%;
-      padding:10px 14px;
-      border-radius:14px;
+      padding:9px 14px 8px;
+      border-radius:18px;
       font-size:0.88rem;
-      line-height:1.45;
-      white-space:pre-wrap;
+      line-height:1.4;
     }
     .msg.user{
       align-self:flex-end;
-      background:var(--accent);
+      background:#e6584f;
       color:#fff;
-      border-bottom-right-radius:4px;
     }
     .msg.ai{
       align-self:flex-start;
-      background:var(--pill);
-      color:var(--ink);
-      border-bottom-left-radius:4px;
+      background:#1c2226;
+      color:#e5e7eb;
+    }
+    .msg-text{
+      white-space:pre-wrap;
+      flex:1 1 auto;
+      min-width:0;
+    }
+    .msg-time{
+      font-size:0.65rem;
+      opacity:0.7;
+      font-variant-numeric:tabular-nums;
+      white-space:nowrap;
+      flex-shrink:0;
+      letter-spacing:0.02em;
     }
     .msg .tag{
+      flex-basis:100%;
       display:inline-block;
-      font-size:0.68rem;
+      font-size:0.62rem;
       padding:2px 8px;
       border-radius:100px;
-      margin-top:6px;
       font-weight:500;
-      background:rgba(255,255,255,0.25);
+      width:fit-content;
+      background:rgba(255,255,255,0.18);
+      color:#fff;
     }
     .msg.ai .tag{
-      background:#fff;
-      color:var(--ink-2);
-      border:1px solid var(--ring);
+      background:rgba(255,255,255,0.06);
+      color:#cbd5d1;
+      border:1px solid rgba(255,255,255,0.08);
     }
 
     .chat-input{
-      border-top:1px solid var(--ring);
+      border-top:1px solid #1f2629;
       padding:12px;
       display:flex;
-      gap:8px;
-      background:var(--card);
+      gap:10px;
+      align-items:center;
+      background:#13181c;
     }
     .chat-input textarea{
       flex:1;
-      border:1px solid var(--ring);
-      border-radius:12px;
-      padding:10px 14px;
+      border:1px solid #2a3236;
+      border-radius:100px;
+      padding:11px 18px;
       font-family:inherit;
       font-size:0.88rem;
       resize:none;
       outline:none;
-      color:var(--ink);
+      color:#fff;
       min-height:42px;
       max-height:120px;
-      background:var(--bg);
+      background:#1c2226;
     }
-    .chat-input textarea:focus{border-color:var(--accent)}
+    .chat-input textarea::placeholder{color:#6b7378}
+    .chat-input textarea:focus{border-color:#e6584f}
     .chat-send{
-      background:var(--ink);
+      background:#e6584f;
       color:#fff;
       border:none;
-      border-radius:12px;
-      padding:0 18px;
-      font-family:inherit;
-      font-weight:600;
-      font-size:0.85rem;
+      border-radius:50%;
+      width:42px;
+      height:42px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
       cursor:pointer;
-      white-space:nowrap;
+      flex-shrink:0;
+      transition:background 0.15s, transform 0.1s;
     }
-    .chat-send:hover{background:var(--accent-2)}
+    .chat-send:hover{background:#d44a42}
+    .chat-send:active{transform:scale(0.94)}
+    .chat-send:disabled{opacity:0.5;cursor:default}
+    .chat-send svg{display:block}
 
     /* Tabla */
     .table-wrap{
@@ -291,10 +347,157 @@
       margin-top:2px;
     }
 
+    /* Panel desplegable */
+    .panel.collapsible{align-self:start}
+    .panel.collapsible .panel-head{
+      cursor:pointer;
+      user-select:none;
+      transition:background 0.15s;
+    }
+    .panel.collapsible .panel-head:hover{background:var(--pill)}
+    .panel-hint-group{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      color:var(--muted);
+    }
+    .panel-hint-group .chevron{
+      width:18px;
+      height:18px;
+      color:var(--muted);
+      transition:transform 0.2s ease;
+    }
+    .panel.collapsible.collapsed .panel-hint-group .chevron{
+      transform:rotate(-90deg);
+    }
+    .panel.collapsible.collapsed .panel-head{
+      border-bottom:none;
+    }
+    .panel.collapsible.collapsed .table-wrap{display:none}
+    .panel.collapsible.collapsed .summary{display:none}
+    .panel.collapsible.collapsed .distribucion-body{display:none}
+
+    /* Mini barra de progreso (fondo de emergencia) */
+    .progress{
+      margin-top:8px;
+      height:5px;
+      background:var(--ring);
+      border-radius:100px;
+      overflow:hidden;
+    }
+    .progress > span{
+      display:block;
+      height:100%;
+      border-radius:100px;
+      background:var(--accent);
+      transition:width 0.3s ease;
+    }
+    .progress.alerta > span{background:var(--gasto)}
+    .progress.tibio > span{background:var(--deuda-cobrar)}
+
+    /* Distribución por categoría */
+    .distribucion-body{
+      padding:18px 20px 20px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .dist-row{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:6px 14px;
+      align-items:baseline;
+    }
+    .dist-cat{
+      font-size:0.85rem;
+      font-weight:500;
+      color:var(--ink);
+    }
+    .dist-monto{
+      font-family:'Montserrat',sans-serif;
+      font-weight:600;
+      font-size:0.85rem;
+      color:var(--ink);
+      font-variant-numeric:tabular-nums;
+    }
+    .dist-bar{
+      grid-column:1 / -1;
+      height:6px;
+      background:var(--ring);
+      border-radius:100px;
+      overflow:hidden;
+    }
+    .dist-bar > span{
+      display:block;
+      height:100%;
+      background:var(--gasto);
+      border-radius:100px;
+    }
+    .dist-pct{
+      grid-column:1 / -1;
+      font-size:0.7rem;
+      color:var(--muted);
+      margin-top:-2px;
+    }
+    .dist-empty{
+      text-align:center;
+      color:var(--muted);
+      padding:20px;
+      font-size:0.85rem;
+    }
+
+    /* Variante sin fondo para agrupar secciones como "Panorama" */
+    .panel.bare{
+      background:transparent;
+      border:none;
+      border-radius:0;
+      overflow:visible;
+      gap:14px;
+    }
+    .panel.bare .panel-head{
+      padding:8px 4px;
+      border:none;
+      border-radius:12px;
+    }
+    .panel.bare .panel-head:hover{background:rgba(255,255,255,0.5)}
+    .panel.bare .panel-title{
+      font-size:1rem;
+      font-family:'Montserrat',sans-serif;
+      letter-spacing:-0.01em;
+    }
+    .panel.bare.collapsible.collapsed .panel-head{border:none}
+
+    /* Acciones rapidas en el chat */
+    .chat-actions{
+      padding:8px 12px 0;
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      background:#13181c;
+    }
+    .chat-action{
+      background:rgba(230,88,79,0.12);
+      color:#ffb3ad;
+      border:1px solid rgba(230,88,79,0.25);
+      border-radius:100px;
+      padding:6px 14px;
+      font-family:inherit;
+      font-size:0.78rem;
+      font-weight:500;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      transition:all 0.15s;
+    }
+    .chat-action:hover{background:rgba(230,88,79,0.22);color:#fff}
+    .chat-action:disabled{opacity:0.5;cursor:default}
+    .chat-action svg{width:14px;height:14px}
+
     /* Scrollbar sutil */
     .chat-body::-webkit-scrollbar,
     .table-wrap::-webkit-scrollbar{width:6px}
-    .chat-body::-webkit-scrollbar-thumb,
+    .chat-body::-webkit-scrollbar-thumb{background:#2a3236;border-radius:10px}
     .table-wrap::-webkit-scrollbar-thumb{background:var(--ring-strong);border-radius:10px}
   </style>
 </head>
@@ -313,53 +516,103 @@
       </div>
     </div>
 
-    <div class="summary">
-      <div class="stat">
-        <div class="stat-label">Ingresos del mes</div>
-        <div class="stat-value pos" id="statIngresos">$ 0</div>
-        <div class="stat-sub" id="statMes">—</div>
+    <div class="panel bare collapsible collapsed" id="panelPanorama" style="margin-bottom:24px">
+      <div class="panel-head" onclick="togglePanorama()" role="button" aria-expanded="false" aria-controls="panoramaBody">
+        <h2 class="panel-title">Panorama</h2>
+        <div class="panel-hint-group">
+          <span class="panel-hint" id="panoramaHint">Toca para ver</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
       </div>
-      <div class="stat">
-        <div class="stat-label">Gastos del mes</div>
-        <div class="stat-value neg" id="statGastos">$ 0</div>
-        <div class="stat-sub">Mes en curso</div>
+      <div class="summary" id="panoramaBody">
+        <div class="stat">
+          <div class="stat-label">Ingresos del mes</div>
+          <div class="stat-value pos" id="statIngresos">$ 0</div>
+          <div class="stat-sub" id="statMes">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Gastos del mes</div>
+          <div class="stat-value neg" id="statGastos">$ 0</div>
+          <div class="stat-sub">Mes en curso</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Ahorro del mes</div>
+          <div class="stat-value" id="statAhorro">$ 0</div>
+          <div class="stat-sub" id="statAhorroSub">Tasa: —</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Me deben</div>
+          <div class="stat-value" id="statDeudas">$ 0</div>
+          <div class="stat-sub" id="statDeudasSub">Sin deudas activas</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Saldo líquido</div>
+          <div class="stat-value" id="statSaldo">$ 0</div>
+          <div class="stat-sub" id="statSaldoSub">Cuentas activas</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Capital</div>
+          <div class="stat-value amber" id="statCapital">$ 0</div>
+          <div class="stat-sub" id="statCapitalSub">Sin activos aún</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Fondo de emergencia</div>
+          <div class="stat-value" id="statFondo">—</div>
+          <div class="stat-sub" id="statFondoSub">Calculando…</div>
+          <div class="progress" id="progFondo"><span style="width:0%"></span></div>
+        </div>
       </div>
-      <div class="stat">
-        <div class="stat-label">Me deben</div>
-        <div class="stat-value" id="statDeudas">$ 0</div>
-        <div class="stat-sub" id="statDeudasSub">Sin deudas activas</div>
+    </div>
+
+    <div class="panel collapsible collapsed" id="panelDistribucion" style="margin-bottom:24px">
+      <div class="panel-head" onclick="toggleDistribucion()" role="button" aria-expanded="false" aria-controls="distribucionBody">
+        <h2 class="panel-title">Distribución del mes</h2>
+        <div class="panel-hint-group">
+          <span class="panel-hint" id="distHint">Toca para ver en qué se va tu plata</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
       </div>
-      <div class="stat">
-        <div class="stat-label">Saldo total</div>
-        <div class="stat-value" id="statSaldo">$ 0</div>
-        <div class="stat-sub" id="statSaldoSub">Todas las cuentas</div>
+      <div class="distribucion-body" id="distribucionBody">
+        <div class="dist-empty">Cargando…</div>
       </div>
     </div>
 
     <div class="split">
 
       <!-- Chat -->
-      <div class="panel">
+      <div class="panel chat-panel">
         <div class="panel-head">
-          <h2 class="panel-title">Chat con Claude</h2>
-          <span class="panel-hint">Escribe movimientos o preguntas</span>
+          <h2 class="panel-title">Claude</h2>
+          <span class="panel-hint">Tu asesor · en linea</span>
         </div>
-        <div class="chat-body" id="chatBody">
-          <div class="msg ai">Hola Alejo. Cuéntame un movimiento o pregúntame lo que quieras sobre tus finanzas.</div>
+        <div class="chat-body" id="chatBody"></div>
+        <div class="chat-actions">
+          <button class="chat-action" onclick="pedirConsejo()" id="btnConsejo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.39 6.95H22l-6 4.36 2.39 6.95L12 16.9l-6.39 3.36L8 13.31 2 8.95h7.61L12 2z"/></svg>
+            Consejo del mes
+          </button>
         </div>
         <div class="chat-input">
-          <textarea id="chatInput" placeholder="Ej: gasté 45 mil en gasolina" rows="1"></textarea>
-          <button class="chat-send" onclick="enviar()">Enviar</button>
+          <textarea id="chatInput" placeholder="Escribe un mensaje…" rows="1"></textarea>
+          <button class="chat-send" onclick="enviar()" aria-label="Enviar">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
         </div>
       </div>
 
       <!-- Tabla -->
-      <div class="panel">
-        <div class="panel-head">
+      <div class="panel collapsible collapsed" id="panelMovimientos">
+        <div class="panel-head" onclick="toggleMovimientos()" role="button" aria-expanded="false" aria-controls="movimientosWrap">
           <h2 class="panel-title">Movimientos recientes</h2>
-          <span class="panel-hint">Últimos 12</span>
+          <div class="panel-hint-group">
+            <span class="panel-hint" id="movHint">Toca para ver</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
         </div>
-        <div class="table-wrap">
+        <div class="table-wrap" id="movimientosWrap">
           <table>
             <thead>
               <tr>
@@ -384,6 +637,9 @@
     const input = document.getElementById('chatInput');
     const body = document.getElementById('chatBody');
     const sendBtn = document.querySelector('.chat-send');
+
+    // Memoria del chat dentro de la sesion (se borra al recargar la pagina).
+    const historialChat = [];
 
     const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     const TIPO_LABEL = {
@@ -420,14 +676,77 @@
         const data = await r.json();
         if (data.status !== 'ok') return;
 
-        document.getElementById('statIngresos').textContent = fmtCOP(data.resumen.ingresos_mes);
-        document.getElementById('statGastos').textContent = fmtCOP(data.resumen.gastos_mes);
-        document.getElementById('statDeudas').textContent = fmtCOP(data.resumen.me_deben);
-        document.getElementById('statSaldo').textContent = fmtCOP(data.resumen.saldo_total);
+        const resumen = data.resumen;
+        document.getElementById('statIngresos').textContent = fmtCOP(resumen.ingresos_mes);
+        document.getElementById('statGastos').textContent = fmtCOP(resumen.gastos_mes);
+        document.getElementById('statDeudas').textContent = fmtCOP(resumen.me_deben);
+        document.getElementById('statSaldo').textContent = fmtCOP(resumen.saldo_total);
+        document.getElementById('statCapital').textContent = fmtCOP(resumen.capital || 0);
+        const nActivos = Array.isArray(data.activos) ? data.activos.length : 0;
+        document.getElementById('statCapitalSub').textContent = nActivos
+          ? `${nActivos} activo${nActivos===1?'':'s'} vigente${nActivos===1?'':'s'}`
+          : 'Sin activos aún';
         document.getElementById('statMes').textContent = nombreMesActual();
 
+        // Ahorro del mes + tasa
+        const ahorroEl = document.getElementById('statAhorro');
+        const ahorroSubEl = document.getElementById('statAhorroSub');
+        const ahorro = Number(resumen.ahorro_mes || 0);
+        ahorroEl.textContent = (ahorro < 0 ? '−' : '') + fmtCOP(Math.abs(ahorro));
+        ahorroEl.classList.remove('pos','neg');
+        if (ahorro > 0) ahorroEl.classList.add('pos');
+        else if (ahorro < 0) ahorroEl.classList.add('neg');
+        if (resumen.tasa_ahorro == null) {
+          ahorroSubEl.textContent = 'Sin ingresos este mes';
+        } else {
+          const t = Math.round(resumen.tasa_ahorro * 10) / 10;
+          let nota = '';
+          if (t >= 20) nota = ' · saludable';
+          else if (t >= 1) nota = ' · ajustado';
+          else if (t < 0) nota = ' · gastando más de lo que entra';
+          else nota = ' · sin margen';
+          ahorroSubEl.textContent = `Tasa ${t}%${nota}`;
+        }
+
+        // Fondo de emergencia
+        const fondoEl = document.getElementById('statFondo');
+        const fondoSubEl = document.getElementById('statFondoSub');
+        const progEl = document.getElementById('progFondo');
+        const meses = resumen.meses_fondo_emergencia;
+        if (meses == null) {
+          fondoEl.textContent = '—';
+          fondoSubEl.textContent = (resumen.meses_base_promedio || 0) === 0
+            ? 'Aún sin historial de gastos'
+            : 'Sin gasto promedio';
+          progEl.firstElementChild.style.width = '0%';
+          progEl.classList.remove('alerta','tibio');
+        } else {
+          const m = Math.round(meses * 10) / 10;
+          fondoEl.textContent = m + ' meses';
+          let estado = 'Saludable (3-6 meses)';
+          progEl.classList.remove('alerta','tibio');
+          if (m < 1) { estado = 'Crítico — menos de 1 mes'; progEl.classList.add('alerta'); }
+          else if (m < 3) { estado = 'Bajo — apunta a 3 meses'; progEl.classList.add('tibio'); }
+          else if (m > 6) { estado = 'Excedente — listo para invertir'; }
+          fondoSubEl.textContent = estado;
+          const pct = Math.min(100, (m / 6) * 100);
+          progEl.firstElementChild.style.width = pct + '%';
+        }
+
+        renderDistribucion(data.distribucion_gastos || [], resumen.gastos_mes);
+        actualizarPanoramaHint();
+
         const tbody = document.getElementById('movTbody');
-        if (!data.movimientos.length) {
+        const hint = document.getElementById('movHint');
+        const panel = document.getElementById('panelMovimientos');
+        const n = data.movimientos.length;
+        if (hint) {
+          const colapsado = panel && panel.classList.contains('collapsed');
+          hint.textContent = n === 0
+            ? (colapsado ? 'Sin movimientos' : 'Sin movimientos aún')
+            : (colapsado ? `${n} movimiento${n===1?'':'s'} · toca para ver` : `Últimos ${n}`);
+        }
+        if (!n) {
           tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px; color:var(--muted)">Aún no hay movimientos. Regístralos en el chat.</td></tr>';
           return;
         }
@@ -449,6 +768,99 @@
       }
     }
 
+    function actualizarPanoramaHint() {
+      const panel = document.getElementById('panelPanorama');
+      const hint = document.getElementById('panoramaHint');
+      if (!panel || !hint) return;
+      const colapsado = panel.classList.contains('collapsed');
+      if (!colapsado) {
+        hint.textContent = 'Resumen de tus cuentas';
+        return;
+      }
+      const saldoEl = document.getElementById('statSaldo');
+      const saldoTxt = saldoEl ? saldoEl.textContent.trim() : '';
+      hint.textContent = (saldoTxt && saldoTxt !== '$ 0')
+        ? 'Saldo ' + saldoTxt + ' · toca para ver'
+        : 'Toca para ver';
+    }
+
+    function togglePanorama() {
+      const panel = document.getElementById('panelPanorama');
+      panel.classList.toggle('collapsed');
+      const colapsado = panel.classList.contains('collapsed');
+      panel.querySelector('.panel-head').setAttribute('aria-expanded', (!colapsado).toString());
+      actualizarPanoramaHint();
+    }
+
+    function renderDistribucion(rows, totalGastos) {
+      const body = document.getElementById('distribucionBody');
+      const hint = document.getElementById('distHint');
+      if (!rows.length || !totalGastos) {
+        body.innerHTML = '<div class="dist-empty">Sin gastos registrados este mes.</div>';
+        hint.textContent = 'Sin gastos este mes';
+        return;
+      }
+      // Agrupar todo lo de menos de 5% como "Otros" para no saturar
+      const visibles = [];
+      let otrosMonto = 0;
+      for (const r of rows) {
+        if (r.porcentaje >= 5 || visibles.length < 5) visibles.push(r);
+        else otrosMonto += Number(r.monto);
+      }
+      if (otrosMonto > 0) {
+        visibles.push({
+          categoria_nombre: `Otros (${rows.length - visibles.length} categorías)`,
+          monto: otrosMonto,
+          porcentaje: (otrosMonto / totalGastos) * 100
+        });
+      }
+      body.innerHTML = visibles.map(r => {
+        const pct = Math.round(r.porcentaje * 10) / 10;
+        return `
+          <div class="dist-row">
+            <div class="dist-cat">${r.categoria_nombre}</div>
+            <div class="dist-monto">${fmtCOP(r.monto)}</div>
+            <div class="dist-bar"><span style="width:${Math.min(100, pct)}%"></span></div>
+            <div class="dist-pct">${pct}% del gasto del mes</div>
+          </div>
+        `;
+      }).join('');
+      const top = visibles[0];
+      hint.textContent = `Top: ${top.categoria_nombre} (${Math.round(top.porcentaje)}%)`;
+    }
+
+    function toggleDistribucion() {
+      const panel = document.getElementById('panelDistribucion');
+      panel.classList.toggle('collapsed');
+      const colapsado = panel.classList.contains('collapsed');
+      panel.querySelector('.panel-head').setAttribute('aria-expanded', (!colapsado).toString());
+    }
+
+    async function pedirConsejo() {
+      const btn = document.getElementById('btnConsejo');
+      if (btn) btn.disabled = true;
+      const input = document.getElementById('chatInput');
+      input.value = 'Dame el consejo del mes: corre generar_resumen_mensual y detectar_patrones, y dame en máximo 6 líneas: 1) cómo voy este mes vs el anterior, 2) el patrón más fuerte (subida o bajada), 3) una recomendación concreta de qué hacer estos próximos días con la plata.';
+      try { await enviar(); } finally { if (btn) btn.disabled = false; }
+    }
+
+    function toggleMovimientos() {
+      const panel = document.getElementById('panelMovimientos');
+      const hint = document.getElementById('movHint');
+      panel.classList.toggle('collapsed');
+      const colapsado = panel.classList.contains('collapsed');
+      panel.querySelector('.panel-head').setAttribute('aria-expanded', (!colapsado).toString());
+      if (hint) {
+        const m = (hint.textContent.match(/\d+/) || [])[0];
+        if (m !== undefined) {
+          const n = parseInt(m, 10);
+          hint.textContent = colapsado
+            ? `${n} movimiento${n===1?'':'s'} · toca para ver`
+            : `Últimos ${n}`;
+        }
+      }
+    }
+
     cargarDashboard();
 
     input.addEventListener('input', () => {
@@ -459,20 +871,41 @@
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); }
     });
 
+    function fmtHora(d = new Date()) {
+      let h = d.getHours();
+      const m = String(d.getMinutes()).padStart(2, '0');
+      const ampm = h >= 12 ? 'pm' : 'am';
+      h = h % 12 || 12;
+      return h + ':' + m + ' ' + ampm;
+    }
+
     function addMsg(rol, texto, tag) {
       const el = document.createElement('div');
       el.className = 'msg ' + (rol === 'user' ? 'user' : 'ai');
-      el.textContent = texto;
+
+      const txt = document.createElement('span');
+      txt.className = 'msg-text';
+      txt.textContent = texto;
+      el.appendChild(txt);
+
+      const tm = document.createElement('span');
+      tm.className = 'msg-time';
+      tm.textContent = fmtHora();
+      el.appendChild(tm);
+
       if (tag) {
         const t = document.createElement('span');
         t.className = 'tag';
         t.textContent = tag;
         el.appendChild(t);
       }
+
       body.appendChild(el);
       body.scrollTop = body.scrollHeight;
       return el;
     }
+
+    addMsg('ai', 'Hola Alejo. Cuéntame un movimiento o pregúntame lo que quieras sobre tus finanzas.');
 
     async function enviar(){
       const txt = input.value.trim();
@@ -490,16 +923,19 @@
         const r = await fetch('/api/finanzas-alejo/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contrasena: pwd, mensaje: txt })
+          body: JSON.stringify({ contrasena: pwd, mensaje: txt, historial: historialChat })
         });
         const data = await r.json();
         thinking.remove();
 
         if (data.status === 'ok') {
+          const respuesta = data.respuesta || '(sin respuesta)';
           const tag = (data.herramientas_usadas && data.herramientas_usadas.length)
             ? data.herramientas_usadas.join(' · ')
             : null;
-          addMsg('ai', data.respuesta || '(sin respuesta)', tag);
+          addMsg('ai', respuesta, tag);
+          historialChat.push({ rol: 'user', contenido: txt });
+          historialChat.push({ rol: 'assistant', contenido: respuesta });
           cargarDashboard();
         } else {
           addMsg('ai', 'Error: ' + (data.mensaje || 'desconocido'));
