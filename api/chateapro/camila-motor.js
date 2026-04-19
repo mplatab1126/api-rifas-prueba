@@ -333,6 +333,19 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: false, error: 'Sin mensajes en el historial' });
     }
 
+    // Si el último mensaje es del bot/asesor, no hay nada que responder.
+    // Esto ocurre cuando el motor se dispara sin que haya llegado un mensaje
+    // nuevo del cliente (por ejemplo, en pruebas manuales después de que
+    // ya se envió una respuesta). En producción, el webhook solo debería
+    // dispararse con mensajes entrantes del cliente.
+    if (historial[historial.length - 1].role !== 'user') {
+      return res.status(200).json({
+        ok: true,
+        motivo: 'sin_mensaje_pendiente',
+        detalle: 'El último mensaje de la conversación es del bot. No hay nada nuevo del cliente que responder.',
+      });
+    }
+
     // 2. Traer boletas (depende del teléfono que vino de subInfo)
     const boletaExistente = await traerBoletasCliente(subInfo.telefono);
 
