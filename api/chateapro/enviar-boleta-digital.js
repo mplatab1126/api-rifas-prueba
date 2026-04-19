@@ -66,7 +66,7 @@ async function enviarTexto(token, user_ns, texto) {
       'Content-Type': 'application/json',
       Accept: 'application/json',
     },
-    body: JSON.stringify({ user_ns, text: texto }),
+    body: JSON.stringify({ user_ns, content: texto }),
   });
   const data = await r.json().catch(() => ({}));
   return { ok: r.ok, status: r.status, data };

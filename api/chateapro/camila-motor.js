@@ -125,7 +125,7 @@ async function chateaPostText(token, user_ns, text) {
   const r = await fetch('https://chateapro.app/api/subscriber/send-text', {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ user_ns, text }),
+    body: JSON.stringify({ user_ns, content: text }),
   });
   const data = await r.json().catch(() => ({}));
   return { ok: r.ok, status: r.status, data };

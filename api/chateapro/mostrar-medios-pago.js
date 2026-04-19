@@ -86,7 +86,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         user_ns,
-        text: texto,
+        content: texto,
       }),
     });
     const data = await r.json();
