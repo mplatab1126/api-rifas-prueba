@@ -1135,9 +1135,6 @@ function setupEvents() {
     state.organicSocial = button.dataset.social;
     render();
   });
-
-  refs.syncMetaAds.addEventListener("click", cargarDataReal);
-  refs.syncInstagram.addEventListener("click", cargarDataReal);
 }
 
 populateFilters();
@@ -1145,6 +1142,31 @@ setupEvents();
 render();
 
 // ─── Conexión con data real de Meta ────────────────────────────────────────
+
+const CACHE_TTL_MS = 15 * 60 * 1000;
+
+function cacheKey(start, end) {
+  return `rc_${start}_${end}`;
+}
+
+function readCache(start, end) {
+  try {
+    const raw = localStorage.getItem(cacheKey(start, end));
+    if (!raw) return null;
+    const entry = JSON.parse(raw);
+    if (Date.now() - entry.ts > CACHE_TTL_MS) {
+      localStorage.removeItem(cacheKey(start, end));
+      return null;
+    }
+    return entry;
+  } catch { return null; }
+}
+
+function writeCache(start, end, json) {
+  try {
+    localStorage.setItem(cacheKey(start, end), JSON.stringify({ ts: Date.now(), json }));
+  } catch { /* localStorage lleno, ignorar */ }
+}
 
 const statusBanner = document.createElement("div");
 statusBanner.id = "statusBanner";
@@ -1163,9 +1185,58 @@ function hideBanner() {
   statusBanner.style.opacity = "0";
 }
 
-async function cargarDataReal() {
+function setLoadingState(loading) {
+  const els = [refs.syncMetaAds, refs.syncInstagram, refs.applyFilters, refs.resetFilters];
+  els.forEach((el) => { if (el) el.disabled = loading; });
+  document.querySelectorAll(".range-chip").forEach((c) => { c.disabled = loading; });
+  if (refs.syncMetaAds) refs.syncMetaAds.textContent = loading ? "Sincronizando..." : "Sync Meta Ads";
+  if (refs.syncInstagram) refs.syncInstagram.textContent = loading ? "Sincronizando..." : "Sync Instagram";
+}
+
+function applyData(json) {
+  dataSource = {
+    campaigns: json.campaigns?.length ? json.campaigns : ["all"],
+    ads: json.ads || [],
+    organic: json.organic || [],
+    copies: json.copies || [],
+    followersGained: json.followersGained || { instagram: 0, facebook: 0 },
+    organicSummary: json.organicSummary || {},
+  };
+  const realCampaigns = new Set((dataSource.campaigns || []).filter((c) => c && c !== "all"));
+  for (const sel of [...state.filters.campaigns]) {
+    if (!realCampaigns.has(sel)) state.filters.campaigns.delete(sel);
+  }
+  populateFilters();
+  render();
+}
+
+function updateLastSyncLabel(ts) {
+  if (!refs.lastSyncTime) return;
+  const mins = Math.round((Date.now() - ts) / 60000);
+  const label =
+    mins < 1 ? "hace menos de 1 min" :
+    mins === 1 ? "hace 1 min" :
+    mins < 60 ? `hace ${mins} min` :
+    `hace ${Math.floor(mins / 60)}h`;
+  refs.lastSyncTime.textContent = `Última sync: ${label}`;
+}
+
+async function cargarDataReal(forceRefresh = false) {
   const { dateStart, dateEnd } = state.filters;
-  setBanner("Cargando data real de Meta...", "#2563eb");
+
+  if (!forceRefresh) {
+    const cached = readCache(dateStart, dateEnd);
+    if (cached) {
+      applyData(cached.json);
+      updateLastSyncLabel(cached.ts);
+      setBanner("Datos del caché — Sync para refrescar", "#0369a1");
+      setTimeout(hideBanner, 2000);
+      return;
+    }
+  }
+
+  setLoadingState(true);
+  setBanner("Sincronizando con Meta...", "#2563eb");
 
   try {
     const esLocal = /^localhost|^127\.0\.0\.1/.test(window.location.hostname);
@@ -1174,7 +1245,7 @@ async function cargarDataReal() {
       window.location.href = "/admin";
       return;
     }
-    const r = await fetch(`/api/contenido/datos`, {
+    const r = await fetch("/api/contenido/datos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ contrasena, dateStart, dateEnd }),
@@ -1186,74 +1257,43 @@ async function cargarDataReal() {
     }
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const json = await r.json();
+    if (!json || !Array.isArray(json.ads)) throw new Error("Respuesta inválida del servidor");
 
-    if (!json || !Array.isArray(json.ads)) {
-      throw new Error("Respuesta inválida del servidor");
-    }
-
-    dataSource = {
-      campaigns: json.campaigns && json.campaigns.length ? json.campaigns : ["all"],
-      ads: json.ads || [],
-      organic: json.organic || [],
-      copies: json.copies || [],
-      followersGained: json.followersGained || { instagram: 0, facebook: 0 },
-      organicSummary: json.organicSummary || {},
-    };
-
-    // Preservar solo las campañas seleccionadas que sigan existiendo en la nueva data
-    const campañasReales = new Set((dataSource.campaigns || []).filter((c) => c && c !== "all"));
-    for (const sel of [...state.filters.campaigns]) {
-      if (!campañasReales.has(sel)) state.filters.campaigns.delete(sel);
-    }
-    // Re-poblar el filtro de campañas con las reales
-    populateFilters();
-    render();
+    const now = Date.now();
+    writeCache(dateStart, dateEnd, json);
+    applyData(json);
+    updateLastSyncLabel(now);
 
     const total = dataSource.ads.length + dataSource.organic.length;
-    setBanner(`✅ Data real conectada (${total} elementos)`, "#15803d");
+    setBanner(`✅ Sincronizado (${total} elementos)`, "#15803d");
     setTimeout(hideBanner, 2500);
   } catch (err) {
     console.warn("No se pudo cargar data real, usando mock:", err);
     setBanner("⚠️ Sin conexión a Meta — mostrando ejemplo", "#b91c1c");
     setTimeout(hideBanner, 4000);
+  } finally {
+    setLoadingState(false);
   }
 }
 
-// Recargar cuando el usuario aplica filtros
+// Los botones Sync fuerzan refresco ignorando el caché
+refs.syncMetaAds.addEventListener("click", () => cargarDataReal(true));
+refs.syncInstagram.addEventListener("click", () => cargarDataReal(true));
+
+// Aplicar/limpiar filtros: usa caché si las fechas no cambiaron
 refs.applyFilters.addEventListener("click", cargarDataReal);
 refs.resetFilters.addEventListener("click", cargarDataReal);
 
-// Atajos rapidos de rango
 function aplicarRangoRapido(range) {
   const hoy = new Date();
   const iso = (d) => d.toISOString().slice(0, 10);
   let start, end;
   switch (range) {
-    case "today": {
-      start = end = iso(hoy);
-      break;
-    }
-    case "yesterday": {
-      const y = new Date(hoy);
-      y.setDate(y.getDate() - 1);
-      start = end = iso(y);
-      break;
-    }
-    case "last7": {
-      const s = new Date(hoy);
-      s.setDate(s.getDate() - 6);
-      start = iso(s);
-      end = iso(hoy);
-      break;
-    }
-    case "month": {
-      const s = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-      start = iso(s);
-      end = iso(hoy);
-      break;
-    }
-    default:
-      return;
+    case "today": { start = end = iso(hoy); break; }
+    case "yesterday": { const y = new Date(hoy); y.setDate(y.getDate() - 1); start = end = iso(y); break; }
+    case "last7": { const s = new Date(hoy); s.setDate(s.getDate() - 6); start = iso(s); end = iso(hoy); break; }
+    case "month": { const s = new Date(hoy.getFullYear(), hoy.getMonth(), 1); start = iso(s); end = iso(hoy); break; }
+    default: return;
   }
   refs.dateStart.value = start;
   refs.dateEnd.value = end;
@@ -1269,7 +1309,6 @@ document.querySelectorAll(".range-chip").forEach((btn) => {
   btn.addEventListener("click", () => aplicarRangoRapido(btn.dataset.range));
 });
 
-// Si el usuario cambia fechas manualmente o aplica/limpia, desactivar el chip
 function limpiarChipActivo() {
   document.querySelectorAll(".range-chip.active").forEach((c) => c.classList.remove("active"));
 }
