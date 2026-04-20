@@ -6,7 +6,7 @@ Este documento es la fuente de verdad del agente **Camila** (atención al client
 
 ---
 
-## Versión actual: v2 — 19 de abril de 2026
+## Versión actual: v3 — 19 de abril de 2026 (arquitectura híbrida)
 
 ### Modelo
 Claude Sonnet 4.6 (`claude-sonnet-4-6`)
@@ -71,12 +71,14 @@ Cuando escales, NO envíes mensaje al cliente. La tool asigna al asesor humano.
 
 # HERRAMIENTAS DISPONIBLES
 
-- `consultar_numeros_disponibles` → cuando el cliente quiera ver qué boletas hay libres.
-- `registrar_datos_cliente(nombre, apellido, ciudad)` → cuando el cliente envíe sus datos.
-- `mostrar_medios_pago` → cuando el cliente ya tiene número + datos y está listo para pagar.
-- `enviar_boleta_digital` → solo después de que un humano confirme el pago.
-- `consultar_boleta_existente(telefono)` → cuando el cliente ya tiene boleta o pregunta su saldo.
-- `escalar_a_humano(razón)` → según las reglas de escalamiento.
+Tienes 4 tools:
+
+1. `consultar_numeros_disponibles` → devuelve lista de boletas libres. Incluye la lista en tu respuesta de texto al cliente.
+2. `consultar_boleta_existente` → refresca datos del cliente si sospechas que el contexto está desactualizado.
+3. `registrar_datos_cliente(nombre, apellido, ciudad)` → registra datos cuando el cliente los comparta.
+4. `escalar_a_humano(razon)` → pausa el bot y asigna a humano. NO envíes texto después.
+
+Los medios de pago y los links de boletas existentes van en tu texto normal (no son tools — los datos están en la base de conocimiento y en el contexto dinámico).
 
 NUNCA inventes datos. Si no tienes un dato, llama a la tool correspondiente o escala.
 
@@ -114,6 +116,12 @@ Si el sistema te indica que el cliente ya tiene boleta activa, NO intentes vende
 
 ## Historial de cambios
 
+### v3 — 19 de abril de 2026 (refactor arquitectónico)
+
+- **QUÉ CAMBIÓ:** El motor ya NO lee contexto de la API de Chatea Pro ni envía mensajes directamente. Ahora recibe todo el contexto en el Body del Request HTTP (lo pasa el subflujo de Chatea Pro) y devuelve un JSON con `texto` y `comandos` para que Chatea Pro los ejecute con nodos nativos (Send Message, set user field, pause bot, add tag). Se eliminaron las tools `mostrar_medios_pago` y `enviar_boleta_digital` — Claude ahora genera ese texto directamente desde la base de conocimiento y el contexto dinámico.
+- **POR QUÉ:** La medición empírica del rate limit de Chatea Pro reveló que v2 consumía 4-7 llamadas a la API pública por cada mensaje del cliente. Con 1000 clientes/día × 7 mensajes promedio = ~28.000 llamadas/día, muy por encima del límite de 1000/hora. Insostenible sin subir el plan de Chatea Pro. La arquitectura híbrida hace 0 llamadas a la API pública (Chatea Pro es quien invoca al motor y quien envía los mensajes al cliente con nodos nativos que no cuentan para el rate limit).
+- **CÓMO PREVENIR:** Antes de decidir arquitectura, medir siempre el consumo de rate limit con una prueba real (como hicimos: leer headers `x-ratelimit-remaining` antes y después). Para operaciones de volumen medio-alto, preferir que el servicio externo (Chatea Pro) sea el que invoca al motor y procesa las respuestas, en lugar de que el motor haga llamadas entrantes a la API pública.
+
 ### v2 — 19 de abril de 2026
 
 - **QUÉ CAMBIÓ:** Se eliminó del prompt la línea `Hora límite de transferencia` y su variable `{{HORA_MAXIMA}}` (leía el bot field `Hora máxima para realizar transferencia`).
@@ -140,6 +148,9 @@ Si el sistema te indica que el cliente ya tiene boleta activa, NO intentes vende
 1. **No reusar bot fields existentes sin confirmar su uso real con Mateo.** Un nombre sugerente (ej: `Hora máxima para realizar transferencia`) no garantiza que el bot field se use para lo que parece. Si un bot field ya existe en Chatea Pro, preguntar primero qué significa en el flujo actual. Si se necesita una variable para Camila, crear un bot field dedicado con nombre claro (ej: prefijado `[Camila]` o `[Rifa 1]`).
    *(Lección de v2.)*
 
+2. **Medir rate limit antes de diseñar la arquitectura.** La primera arquitectura del motor (v1-v2) hacía 4-7 llamadas a la API pública de Chatea Pro por cada mensaje del cliente. Con volumen real (1000+ clientes/día), eso consumía el cupo de 1000/hora en minutos. La lección: antes de elegir si el motor es "controlador" (hace todas las llamadas) o "asesor" (Chatea Pro es controlador), medir el consumo esperado con una prueba real leyendo los headers `x-ratelimit-remaining`. Para volúmenes medio-altos, preferir arquitectura híbrida donde Chatea Pro invoca al motor y procesa las respuestas con nodos nativos.
+   *(Lección de v3.)*
+
 ---
 
 ## Métricas (se actualizan con análisis de conversaciones)
@@ -164,19 +175,30 @@ Si el sistema te indica que el cliente ya tiene boleta activa, NO intentes vende
 
 ---
 
-## Arquitectura del motor
+## Arquitectura del motor (v3 — híbrida)
 
-- **Archivo del prompt:** `api/chateapro/camila-prompt.js` (exporta `construirSystemPrompt(botFields)`).
-- **Motor:** `api/chateapro/camila-motor.js` — endpoint `POST /api/chateapro/camila-motor`.
-- **Tools (6):** están como endpoints separados en `api/chateapro/` y en `api/` (disponibles, cliente).
+- **Prompt:** `api/chateapro/camila-prompt.js`
+- **Motor:** `api/chateapro/camila-motor.js` — endpoint `POST /api/chateapro/camila-motor`
+- **Tools para Claude (4):** 2 se ejecutan realmente (consultar_numeros_disponibles, consultar_boleta_existente — hacen consultas a Supabase) y 2 solo registran comandos para que Chatea Pro los ejecute (registrar_datos_cliente, escalar_a_humano).
 
-Cada llamada al motor:
-1. Lee el historial completo de la conversación en Chatea Pro.
-2. Lee los bot fields actuales de la rifa (premio, precio, fecha, etc.).
-3. Lee si el cliente ya tiene boleta en Supabase.
-4. Llama a Claude Sonnet 4.6 con el prompt + historial + las 6 tools.
-5. Si Claude usa una tool, el motor la ejecuta y le devuelve el resultado. Hasta 5 iteraciones.
-6. Envía la respuesta final al cliente por WhatsApp (o deja pausado si escaló).
+**Flujo por cada mensaje del cliente:**
+
+1. Cliente escribe → Chatea Pro recibe.
+2. El subflujo de Chatea Pro arma el Body con el contexto (mensaje actual, historial, nombre, teléfono, tags, bot fields) y hace POST al motor.
+3. Motor lee el Body. Consulta Supabase si necesita boletas del cliente.
+4. Motor llama a Claude Sonnet 4.6 con prompt + historial + tools.
+5. Si Claude usa una tool:
+   - `consultar_numeros_disponibles` → motor consulta `/api/disponibles`, devuelve lista.
+   - `consultar_boleta_existente` → motor consulta Supabase, devuelve datos.
+   - `registrar_datos_cliente` → motor lo guarda en `comandos.registrar_datos`, devuelve OK.
+   - `escalar_a_humano` → motor lo guarda en `comandos.escalar`, devuelve OK.
+6. Motor devuelve JSON con `texto` (respuesta para el cliente) y `comandos` (acciones que Chatea Pro debe ejecutar).
+7. Chatea Pro:
+   - Si `comandos.escalar` → subflujo nativo (pause bot + add tag "Escalado" + set user field "Motivo de Camila"). NO envía texto.
+   - Si `comandos.registrar_datos` → nodos nativos que setean `[LPR] Nombre del cliente`, `[LPR] Apellido del cliente`, `[LPR] Ciudad del cliente`.
+   - Si hay `texto` y no escaló → nodo Send Message nativo con el texto.
+
+**Consumo de rate limit de Chatea Pro:** 0 por mensaje (el motor no hace llamadas entrantes).
 
 ---
 
@@ -191,23 +213,63 @@ Cada llamada al motor:
 
 ---
 
-## Cómo activar a Camila desde Chatea Pro
+## Cómo activar a Camila desde Chatea Pro (v3)
 
-En el flow de L1, reemplazar el disparador actual del Agente de IA nativo por un Action que llame al motor:
+El subflow que dispara a Camila debe:
 
-1. **Entrar al flow editor** en Chatea Pro (L1).
-2. **En el subflow donde hoy se activa el Agente de IA** (después del audio + las 10 imágenes de contacto inicial), **reemplazar** ese Action por:
-   - **Action → Request HTTP**
-   - Método: `POST`
-   - URL: `https://api-rifas-prueba.vercel.app/api/chateapro/camila-motor`
-   - Headers:
-     - `Authorization: Bearer <valor de CAMILA_TOOLS_SECRET>`
-     - `Content-Type: application/json`
-   - Body (JSON): `{ "user_ns": "{{user_ns}}" }`
-3. **Agregar un Trigger "Mensaje entrante"** al mismo flow, que dispare el Request HTTP en cada respuesta del cliente (para que Camila responda a cada mensaje, no solo al primero).
-4. **Guardar el flow** y activarlo.
+### 1. Hacer el Request HTTP con contexto completo
 
-Con un cliente de prueba (un número de WhatsApp solo tuyo), escribirle para ver que Camila responda.
+- **Método:** POST
+- **URL:** `https://api-rifas-prueba.vercel.app/api/chateapro/camila-motor`
+- **Headers:**
+  - `Authorization: Bearer <CAMILA_TOOLS_SECRET>`
+  - `Content-Type: application/json`
+- **Body (JSON):**
+  ```json
+  {
+    "user_ns": "{{user_ns}}",
+    "mensaje_cliente": "{{last_user_message}}",
+    "historial": "{{conversation_history}}",
+    "nombre_cliente": "{{first_name}} {{last_name}}",
+    "telefono": "{{phone}}",
+    "tags": "{{tags}}",
+    "bot_fields": {
+      "NOMBRE_RIFA": "{{[Rifa 1] Nombre de la rifa}}",
+      "VALOR_BOLETA": "{{[Rifa 1] Valor de la boleta}}",
+      "INFO_PREMIO_MAYOR": "{{[Rifa 1] Información del premio mayor}}",
+      "PREMIOS_RIFA": "{{[Rifa 1] Premios de la rifa}}",
+      "CONDICIONES_PREMIOS": "{{[Rifa 1] Condiciones para los premios}}",
+      "FLEXIBILIDAD_PREMIOS": "{{[Rifa 1] Flexibilidad en los premios}}",
+      "FECHA_SORTEO": "{{[Rifa 1] Fecha del sorteo}}"
+    }
+  }
+  ```
+
+### 2. Extraer campos de la respuesta (pestaña "Respuesta" del Request HTTP)
+
+| Ruta JSON | Guardar en variable |
+|---|---|
+| `$.texto` | `camila_texto` |
+| `$.comandos.escalar.razon` | `camila_escalar_razon` |
+| `$.comandos.registrar_datos.nombre` | `camila_nombre` |
+| `$.comandos.registrar_datos.apellido` | `camila_apellido` |
+| `$.comandos.registrar_datos.ciudad` | `camila_ciudad` |
+
+### 3. Después del Request HTTP, agregar condicionales en este orden
+
+1. **Si `camila_escalar_razon` no está vacío** → subflow de escalamiento:
+   - Set user field `Motivo de Camila` = `{{camila_escalar_razon}}`
+   - Add tag `Escalado`
+   - Pause bot
+   - FIN (no enviar mensaje)
+2. **Si `camila_nombre` no está vacío** → Set user field `[LPR] Nombre del cliente` = `{{camila_nombre}}`
+3. **Si `camila_apellido` no está vacío** → Set user field `[LPR] Apellido del cliente` = `{{camila_apellido}}`
+4. **Si `camila_ciudad` no está vacío** → Set user field `[LPR] Ciudad del cliente` = `{{camila_ciudad}}`
+5. **Si `camila_texto` no está vacío** → nodo Send Message con `{{camila_texto}}`
+
+### 4. Trigger "Mensaje entrante"
+
+El subflow se dispara cada vez que el cliente envía un mensaje (después del contacto inicial).
 
 ---
 

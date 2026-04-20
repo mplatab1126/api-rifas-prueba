@@ -1,89 +1,96 @@
 import { aplicarCors } from '../lib/cors.js';
+import { supabase } from '../lib/supabase.js';
 import { construirSystemPrompt, CAMILA_MODELO, CAMILA_PROMPT_VERSION } from './camila-prompt.js';
 
 /**
- * Motor del agente Camila. Webhook único al que llama Chatea Pro cuando
- * el cliente envía un mensaje.
+ * Motor de Camila — arquitectura híbrida (v3).
  *
- * Flujo:
- *   1. Recibe el webhook con `user_ns`.
- *   2. Trae en paralelo: historial de mensajes, info del suscriptor,
- *      bot fields de la rifa, datos del cliente en Supabase (si tiene boleta).
- *   3. Construye el system prompt con los bot fields actuales.
- *   4. Arma los messages desde el historial.
- *   5. Loop con Claude Sonnet 4.6 (tool use): hasta 5 iteraciones donde
- *      Claude puede pedir ejecutar tools. El motor las ejecuta y le
- *      devuelve los resultados, hasta que Claude responda con texto final.
- *   6. Envía la respuesta final al cliente vía /subscriber/send-text.
+ * Chatea Pro llama a este endpoint por cada mensaje entrante del cliente,
+ * pasando TODO el contexto en el Body. El motor:
+ *   1. NO consulta nada a la API pública de Chatea Pro (cero rate limit).
+ *   2. Sí consulta Supabase para boletas y números disponibles (esas llamadas
+ *      van a nuestro propio Vercel, no a Chatea Pro).
+ *   3. Llama a Claude Sonnet 4.6 con el prompt + historial + tools.
+ *   4. Devuelve un JSON con `texto` (para que Chatea Pro lo envíe con nodo
+ *      Send Message nativo) y `comandos` (para que Chatea Pro ejecute
+ *      acciones como escalar o registrar datos con nodos nativos).
  *
  * Seguridad: header Authorization: Bearer <CAMILA_TOOLS_SECRET>
  *
- * Body JSON esperado desde Chatea Pro:
- *   { "user_ns": "f159929u602921253" }
+ * Body JSON esperado (lo arma el subflujo de Chatea Pro):
+ *   {
+ *     "user_ns": "f159929u602921253",              // obligatorio
+ *     "mensaje_cliente": "quiero ver los números",  // último mensaje del cliente
+ *     "historial": "CLIENTE: hola\nBOT: ¡Qué bueno!\nCLIENTE: ...",  // opcional
+ *     "nombre_cliente": "Mateo Plata",              // opcional
+ *     "telefono": "+573123354789",                  // opcional
+ *     "tags": "La perla roja, [LPR] ...",           // opcional
+ *     "bot_fields": {                               // recomendado
+ *       "NOMBRE_RIFA": "La Perla Roja",
+ *       "VALOR_BOLETA": "80 mil pesos",
+ *       "INFO_PREMIO_MAYOR": "...",
+ *       "PREMIOS_RIFA": "...",
+ *       "CONDICIONES_PREMIOS": "...",
+ *       "FLEXIBILIDAD_PREMIOS": "...",
+ *       "FECHA_SORTEO": "..."
+ *     }
+ *   }
  *
- * Variables de entorno requeridas:
- *   - CAMILA_TOOLS_SECRET     → auth compartido con las tools
- *   - ANTHROPIC_API_KEY       → clave de Anthropic (ya existe para el clasificador)
- *   - CHATEA_TOKEN_LINEA_1    → token API de L1 (ya existe)
- *   - API_BASE_URL            → URL base del proyecto (ej: "https://api-rifas-prueba.vercel.app")
+ * Respuesta JSON:
+ *   {
+ *     "ok": true,
+ *     "version_prompt": "v3",
+ *     "modelo": "claude-sonnet-4-6",
+ *     "texto": "Respuesta de Camila (vacío si escaló)",
+ *     "comandos": {
+ *       "escalar": null | { "razon": "..." },
+ *       "registrar_datos": null | { "nombre": "...", "apellido": "...", "ciudad": "..." }
+ *     },
+ *     "llamadas_tools": [...]  // para debug
+ *   }
+ *
+ * Variables de entorno requeridas en Vercel:
+ *   - CAMILA_TOOLS_SECRET
+ *   - ANTHROPIC_API_KEY
+ *   - API_BASE_URL        (para llamadas a /api/disponibles y /api/cliente)
  */
 
 const MAX_TOKENS_RESPUESTA = 500;
 const MAX_ITERACIONES_TOOL_USE = 5;
-const LIMITE_MENSAJES_HISTORIAL = 25;
-const BOT_FIELDS_REQUERIDOS = {
-  'NOMBRE_RIFA': '[Rifa 1] Nombre de la rifa',
-  'VALOR_BOLETA': '[Rifa 1] Valor de la boleta',
-  'INFO_PREMIO_MAYOR': '[Rifa 1] Información del premio mayor',
-  'PREMIOS_RIFA': '[Rifa 1] Premios de la rifa',
-  'CONDICIONES_PREMIOS': '[Rifa 1] Condiciones para los premios',
-  'FLEXIBILIDAD_PREMIOS': '[Rifa 1] Flexibilidad en los premios',
-  'FECHA_SORTEO': '[Rifa 1] Fecha del sorteo',
-};
 
 // ────── Definiciones de tools para Claude ──────
 
 const TOOLS_DEFINICION = [
   {
     name: 'consultar_numeros_disponibles',
-    description: 'Obtiene la lista de boletas de 4 cifras que están libres para comprar. Úsala cuando el cliente pida ver los números disponibles.',
+    description: 'Obtiene la lista de boletas de 4 cifras que están libres para comprar. Úsala cuando el cliente pida ver los números disponibles. Después de recibir la lista, inclúyela en tu respuesta al cliente (no uses comandos ni nada extra).',
+    input_schema: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'consultar_boleta_existente',
+    description: 'Consulta boletas, saldo y deuda del cliente actual. Úsala si necesitas datos frescos (aunque el contexto inicial ya suele incluirlos). Devuelve el estado actual en Supabase.',
     input_schema: { type: 'object', properties: {}, required: [] },
   },
   {
     name: 'registrar_datos_cliente',
-    description: 'Guarda nombre, apellido y/o ciudad del cliente en el sistema. Llama a esta tool cuando el cliente comparta cualquiera de esos datos (aunque sea solo uno).',
+    description: 'Registra en el sistema los datos del cliente (nombre, apellido y/o ciudad). Llámala cuando el cliente te comparta estos datos. No ejecuta directamente — el subflujo de Chatea Pro se encarga de guardarlos en los user fields después de tu respuesta.',
     input_schema: {
       type: 'object',
       properties: {
-        nombre: { type: 'string', description: 'Primer y segundo nombre del cliente' },
-        apellido: { type: 'string', description: 'Uno o dos apellidos del cliente' },
-        ciudad: { type: 'string', description: 'Ciudad (y departamento si lo mencionó)' },
+        nombre: { type: 'string', description: 'Primer y segundo nombre' },
+        apellido: { type: 'string', description: 'Uno o dos apellidos' },
+        ciudad: { type: 'string', description: 'Ciudad (y departamento si lo dio)' },
       },
       required: [],
     },
   },
   {
-    name: 'mostrar_medios_pago',
-    description: 'Envía al cliente los medios de pago (Nequi, Daviplata, Bancolombia). Úsala SOLO cuando el cliente ya tiene número elegido y datos registrados, y está listo para pagar.',
-    input_schema: { type: 'object', properties: {}, required: [] },
-  },
-  {
-    name: 'enviar_boleta_digital',
-    description: 'Envía al cliente el link de su boleta digital. Úsala solo cuando el cliente ya tiene una boleta activa (el humano verificó el pago) y pregunta por su boleta.',
-    input_schema: { type: 'object', properties: {}, required: [] },
-  },
-  {
-    name: 'consultar_boleta_existente',
-    description: 'Consulta las boletas, saldo y deuda del cliente que escribe. Úsala cuando el cliente pregunte por su saldo, cuánto debe, cuánto ha abonado o su estado de cuenta.',
-    input_schema: { type: 'object', properties: {}, required: [] },
-  },
-  {
     name: 'escalar_a_humano',
-    description: 'Pausa el bot, aplica el tag "Escalado" y guarda la razón para que un asesor humano tome la conversación. Úsala en los casos definidos: comprobante de pago, rifa diaria 2/3 cifras, cliente inconforme, pide asesor, pregunta fuera de base, consulta número específico.',
+    description: 'Marca la conversación para que un asesor humano la atienda. Úsala según las reglas de escalamiento del prompt (comprobante, rifa diaria 2/3 cifras, inconformidad, pide asesor, fuera de base, consulta número específico). Cuando escales, NO incluyas texto de respuesta al cliente — el bot queda en pausa y el humano retoma.',
     input_schema: {
       type: 'object',
       properties: {
-        razon: { type: 'string', description: 'Motivo corto del escalamiento (ej: "Posible comprobante", "Cliente inconforme")' },
+        razon: { type: 'string', description: 'Motivo corto (ej: "Posible comprobante", "Cliente inconforme")' },
       },
       required: ['razon'],
     },
@@ -91,18 +98,6 @@ const TOOLS_DEFINICION = [
 ];
 
 // ────── Helpers ──────
-
-function tokenDeLinea(userNs) {
-  if (typeof userNs !== 'string') return null;
-  if (userNs.startsWith('f159929')) return process.env.CHATEA_TOKEN_LINEA_1;
-  if (userNs.startsWith('f166221')) return process.env.CHATEA_TOKEN_LINEA_2;
-  return null;
-}
-
-function extraerUserNs(body) {
-  if (!body || typeof body !== 'object') return '';
-  return String(body.user_ns ?? body.userNs ?? body.subscriber_ns ?? '').trim();
-}
 
 function authOk(req) {
   const secret = process.env.CAMILA_TOOLS_SECRET;
@@ -112,160 +107,94 @@ function authOk(req) {
   return bearer === secret;
 }
 
-async function chateaGet(token, path) {
-  const r = await fetch(`https://chateapro.app/api${path}`, {
-    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-  });
-  if (!r.ok) throw new Error(`ChateaPro GET ${path}: ${r.status}`);
-  return r.json();
-}
-
-async function chateaPostText(token, user_ns, text) {
-  const r = await fetch('https://chateapro.app/api/subscriber/send-text', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ user_ns, content: text }),
-  });
-  const data = await r.json().catch(() => ({}));
-  return { ok: r.ok, status: r.status, data };
-}
-
-// ────── Traer contexto ──────
-
-async function traerHistorial(token, user_ns) {
-  const d = await chateaGet(token, `/subscriber/chat-messages?user_ns=${encodeURIComponent(user_ns)}&limit=${LIMITE_MENSAJES_HISTORIAL}`);
-  const msgs = (d.data || []).slice().reverse(); // cronológico
-
-  // Convertir a formato Claude: user (cliente) / assistant (bot)
-  const mensajes = [];
-  for (const m of msgs) {
-    const role = m.type === 'in' ? 'user' : 'assistant';
-    let texto;
-    if (m.msg_type === 'image') {
-      texto = '[imagen adjunta]';
-    } else {
-      texto = m.content || m.payload?.text || `[${m.msg_type || 'media'}]`;
-    }
-    texto = String(texto).slice(0, 2000);
-    if (!texto.trim()) continue;
-
-    // Consolidar con el mensaje anterior si es del mismo rol
-    const ultimo = mensajes[mensajes.length - 1];
-    if (ultimo && ultimo.role === role && typeof ultimo.content === 'string') {
-      ultimo.content += '\n' + texto;
-    } else {
-      mensajes.push({ role, content: texto });
-    }
-  }
-
-  // Claude requiere que el primer mensaje sea 'user'. Si arranca con assistant, lo quitamos.
-  while (mensajes.length > 0 && mensajes[0].role !== 'user') mensajes.shift();
-
-  return mensajes;
-}
-
-async function traerInfoSuscriptor(token, user_ns) {
-  try {
-    const d = await chateaGet(token, `/subscriber/get-info?user_ns=${encodeURIComponent(user_ns)}`);
-    const s = d.data ?? d;
-    return {
-      nombre: s.name || [s.first_name, s.last_name].filter(Boolean).join(' ').trim() || null,
-      telefono: s.phone || null,
-      first_name: s.first_name || null,
-      last_name: s.last_name || null,
-    };
-  } catch {
-    return { nombre: null, telefono: null, first_name: null, last_name: null };
-  }
-}
-
-async function traerBotFields(token) {
-  const valores = {};
-  const nombreANuestraKey = Object.fromEntries(
-    Object.entries(BOT_FIELDS_REQUERIDOS).map(([k, v]) => [v, k])
-  );
-  for (let page = 1; page <= 5; page++) {
-    const d = await chateaGet(token, `/flow/bot-fields?limit=50&page=${page}`);
-    const arr = d.data || [];
-    for (const f of arr) {
-      const clave = nombreANuestraKey[f.name];
-      if (clave) valores[clave] = f.value ?? '';
-    }
-    if (!d.links?.next) break;
-  }
-  return valores;
-}
-
 async function traerBoletasCliente(telefono) {
   if (!telefono) return null;
   try {
-    const API_BASE = process.env.API_BASE_URL;
-    if (!API_BASE) return null;
-    const r = await fetch(`${API_BASE}/api/cliente?telefono=${encodeURIComponent(telefono)}`);
-    if (!r.ok) return null;
-    const d = await r.json();
-    if (!d.boletas_cliente) return null;
+    const last10 = String(telefono).replace(/\D/g, '').slice(-10);
+    const { data, error } = await supabase
+      .from('boletas')
+      .select('numero, saldo_restante, total_abonado, clientes(nombre)')
+      .like('telefono_cliente', '%' + last10);
+    if (error || !data || data.length === 0) return null;
+    const nombre = data[0].clientes?.nombre || null;
+    const deuda = data.reduce((s, b) => s + Number(b.saldo_restante || 0), 0);
+    const abonado = Math.min(...data.map((b) => Number(b.total_abonado || 0)));
+    const enlaces = data
+      .map((b) => `🎟️ *Boleta ${b.numero}:* https://www.losplata.com.co/boleta/${b.numero}`)
+      .join('\n');
     return {
-      boletas: d.boletas_cliente,
-      deuda: d.deuda_cliente,
-      abonado: d.abonado_cliente,
-      nombre: d.nombre_cliente,
-      resumen: d.resumen,
-      fecha_ultimo_abono: d.fecha_ultimo_abono,
+      boletas: data.map((b) => b.numero).join(', '),
+      deuda,
+      abonado,
+      nombre,
+      enlaces,
     };
   } catch {
     return null;
   }
 }
 
+function parseHistorial(historial) {
+  // Chatea Pro lo pasa como string tipo "CLIENTE: ...\nBOT: ...\n..."
+  // Lo convertimos a formato Claude (role/content)
+  if (!historial || typeof historial !== 'string') return [];
+  const lineas = historial.split('\n').filter((l) => l.trim());
+  const mensajes = [];
+  let buffer = null;
+  for (const linea of lineas) {
+    const m = linea.match(/^(CLIENTE|BOT|ASESOR|AGENTE):\s*(.*)$/i);
+    if (m) {
+      const role = m[1].toUpperCase() === 'CLIENTE' ? 'user' : 'assistant';
+      const content = (m[2] || '').trim();
+      if (!content) continue;
+      if (buffer && buffer.role === role) {
+        buffer.content += '\n' + content;
+      } else {
+        if (buffer) mensajes.push(buffer);
+        buffer = { role, content };
+      }
+    } else if (buffer) {
+      // Línea de continuación del mensaje anterior
+      buffer.content += '\n' + linea.trim();
+    }
+  }
+  if (buffer) mensajes.push(buffer);
+  while (mensajes.length && mensajes[0].role !== 'user') mensajes.shift();
+  return mensajes;
+}
+
 // ────── Ejecutar tools ──────
 
-async function ejecutarTool(toolName, toolInput, { user_ns, telefono }) {
+async function ejecutarTool(toolName, toolInput, ctx) {
   const API_BASE = process.env.API_BASE_URL;
-  const SECRET = process.env.CAMILA_TOOLS_SECRET;
-  const headersAuth = { Authorization: `Bearer ${SECRET}`, 'Content-Type': 'application/json' };
 
   switch (toolName) {
     case 'consultar_numeros_disponibles': {
-      const r = await fetch(`${API_BASE}/api/disponibles`);
-      return await r.json();
+      try {
+        const r = await fetch(`${API_BASE}/api/disponibles`);
+        return await r.json();
+      } catch (e) {
+        return { ok: false, error: String(e.message) };
+      }
     }
     case 'consultar_boleta_existente': {
-      if (!telefono) return { ok: false, error: 'No hay teléfono del cliente' };
-      const r = await fetch(`${API_BASE}/api/cliente?telefono=${encodeURIComponent(telefono)}`);
-      return await r.json();
+      const boletas = await traerBoletasCliente(ctx.telefono);
+      if (!boletas) return { tiene_boleta: false };
+      return { tiene_boleta: true, ...boletas };
     }
     case 'registrar_datos_cliente': {
-      const r = await fetch(`${API_BASE}/api/chateapro/registrar-datos-cliente`, {
-        method: 'POST',
-        headers: headersAuth,
-        body: JSON.stringify({ user_ns, ...toolInput }),
-      });
-      return await r.json();
-    }
-    case 'mostrar_medios_pago': {
-      const r = await fetch(`${API_BASE}/api/chateapro/mostrar-medios-pago`, {
-        method: 'POST',
-        headers: headersAuth,
-        body: JSON.stringify({ user_ns, ...toolInput }),
-      });
-      return await r.json();
-    }
-    case 'enviar_boleta_digital': {
-      const r = await fetch(`${API_BASE}/api/chateapro/enviar-boleta-digital`, {
-        method: 'POST',
-        headers: headersAuth,
-        body: JSON.stringify({ user_ns, telefono }),
-      });
-      return await r.json();
+      // NO ejecuta — registra el comando para que Chatea Pro lo haga
+      ctx.comandos.registrar_datos = {
+        nombre: toolInput.nombre || null,
+        apellido: toolInput.apellido || null,
+        ciudad: toolInput.ciudad || null,
+      };
+      return { ok: true, registrado: 'Chatea Pro guardará los datos en los user fields' };
     }
     case 'escalar_a_humano': {
-      const r = await fetch(`${API_BASE}/api/chateapro/escalar-a-humano`, {
-        method: 'POST',
-        headers: headersAuth,
-        body: JSON.stringify({ user_ns, razon: toolInput?.razon || 'Sin razón' }),
-      });
-      return await r.json();
+      // NO ejecuta — registra el comando para que Chatea Pro lo haga
+      ctx.comandos.escalar = { razon: String(toolInput.razon || 'Sin razón').slice(0, 500) };
+      return { ok: true, escalado: 'Chatea Pro pausará el bot y aplicará el tag. NO envíes texto al cliente.' };
     }
     default:
       return { ok: false, error: `Tool desconocida: ${toolName}` };
@@ -314,57 +243,34 @@ export default async function handler(req, res) {
     return res.status(500).json({ ok: false, error: 'Falta API_BASE_URL' });
   }
 
-  const user_ns = extraerUserNs(req.body);
-  if (!user_ns) return res.status(400).json({ ok: false, error: 'Falta user_ns' });
+  const body = req.body || {};
+  const { user_ns, mensaje_cliente, historial, nombre_cliente, telefono, tags, bot_fields } = body;
 
-  const token = tokenDeLinea(user_ns);
-  if (!token) return res.status(400).json({ ok: false, error: 'user_ns no reconocido o token no configurado' });
+  if (!user_ns) return res.status(400).json({ ok: false, error: 'Falta user_ns' });
+  if (!mensaje_cliente || !String(mensaje_cliente).trim()) {
+    return res.status(400).json({ ok: false, error: 'Falta mensaje_cliente' });
+  }
 
   try {
-    // 1. Traer contexto en paralelo
-    const [historial, subInfo, botFields] = await Promise.all([
-      traerHistorial(token, user_ns),
-      traerInfoSuscriptor(token, user_ns),
-      traerBotFields(token),
-    ]);
+    // 1. Traer boletas del cliente (Supabase, 0 rate limit en Chatea Pro)
+    const boletaExistente = telefono ? await traerBoletasCliente(telefono) : null;
 
-    if (historial.length === 0) {
-      return res.status(200).json({ ok: false, error: 'Sin mensajes en el historial' });
-    }
-
-    // Si el último mensaje es del bot/asesor, no hay nada que responder.
-    // Esto ocurre cuando el motor se dispara sin que haya llegado un mensaje
-    // nuevo del cliente (por ejemplo, en pruebas manuales después de que
-    // ya se envió una respuesta). En producción, el webhook solo debería
-    // dispararse con mensajes entrantes del cliente.
-    if (historial[historial.length - 1].role !== 'user') {
-      return res.status(200).json({
-        ok: true,
-        motivo: 'sin_mensaje_pendiente',
-        detalle: 'El último mensaje de la conversación es del bot. No hay nada nuevo del cliente que responder.',
-      });
-    }
-
-    // 2. Traer boletas (depende del teléfono que vino de subInfo)
-    const boletaExistente = await traerBoletasCliente(subInfo.telefono);
-
-    // 3. Construir system prompt (cacheable) + contexto dinámico (no cacheable)
-    const systemPrompt = construirSystemPrompt(botFields);
-
+    // 2. System prompt + contexto dinámico
+    const systemPrompt = construirSystemPrompt(bot_fields || {});
     const fechaHoy = new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota', dateStyle: 'full', timeStyle: 'short' });
-    let contextoDinamico = `# CONTEXTO ACTUAL\n\nFecha y hora: ${fechaHoy}\n\n`;
-    if (subInfo.first_name || subInfo.last_name) {
-      contextoDinamico += `Nombre del cliente según Chatea Pro: ${[subInfo.first_name, subInfo.last_name].filter(Boolean).join(' ')}\n`;
-    }
-    if (subInfo.telefono) contextoDinamico += `Teléfono: ${subInfo.telefono}\n`;
+
+    let contextoDinamico = `# CONTEXTO ACTUAL\n\nFecha y hora: ${fechaHoy}\n`;
+    if (nombre_cliente) contextoDinamico += `Nombre del cliente según Chatea Pro: ${nombre_cliente}\n`;
+    if (telefono) contextoDinamico += `Teléfono: ${telefono}\n`;
+    if (tags) contextoDinamico += `Tags actuales del cliente: ${tags}\n`;
     if (boletaExistente) {
       contextoDinamico += `\n**ATENCIÓN: este cliente YA TIENE BOLETA.** No intentes venderle otra.\n`;
       contextoDinamico += `Boleta(s): ${boletaExistente.boletas}\n`;
       contextoDinamico += `Deuda actual: $${Number(boletaExistente.deuda).toLocaleString('es-CO')}\n`;
       contextoDinamico += `Ya abonó: $${Number(boletaExistente.abonado).toLocaleString('es-CO')}\n`;
-      if (boletaExistente.fecha_ultimo_abono) contextoDinamico += `Último abono: ${boletaExistente.fecha_ultimo_abono}\n`;
+      if (boletaExistente.enlaces) contextoDinamico += `Links:\n${boletaExistente.enlaces}\n`;
     } else {
-      contextoDinamico += `\nCliente SIN boleta aún (es venta nueva).\n`;
+      contextoDinamico += `\nCliente SIN boleta (es venta nueva).\n`;
     }
 
     const systemBlocks = [
@@ -372,11 +278,32 @@ export default async function handler(req, res) {
       { type: 'text', text: contextoDinamico },
     ];
 
+    // 3. Mensajes: parsear historial + agregar el mensaje actual si no está
+    const mensajesPrevios = parseHistorial(historial);
+    const ultimoPrevio = mensajesPrevios[mensajesPrevios.length - 1];
+    const mensajeActualEsUltimo =
+      ultimoPrevio && ultimoPrevio.role === 'user' &&
+      ultimoPrevio.content.trim() === String(mensaje_cliente).trim();
+
+    const messages = mensajesPrevios.slice();
+    if (!mensajeActualEsUltimo) {
+      // Agregar el mensaje actual al final
+      if (messages.length > 0 && messages[messages.length - 1].role === 'user') {
+        // Consolidar con el anterior si también es user
+        messages[messages.length - 1].content += '\n' + String(mensaje_cliente);
+      } else {
+        messages.push({ role: 'user', content: String(mensaje_cliente) });
+      }
+    }
+
+    if (messages.length === 0) {
+      return res.status(400).json({ ok: false, error: 'No hay mensaje del cliente para responder' });
+    }
+
     // 4. Loop de tool use
-    const messages = historial.map((m) => ({ role: m.role, content: m.content }));
+    const ctx = { telefono, comandos: {} };
     const llamadasTools = [];
-    let textoFinal = null;
-    let escaloAHumano = false;
+    let textoFinal = '';
 
     for (let iter = 0; iter < MAX_ITERACIONES_TOOL_USE; iter++) {
       const resp = await llamarClaude(systemBlocks, messages);
@@ -395,9 +322,8 @@ export default async function handler(req, res) {
         const toolUses = (resp.content || []).filter((c) => c.type === 'tool_use');
         const resultados = await Promise.all(
           toolUses.map(async (tu) => {
-            const resultado = await ejecutarTool(tu.name, tu.input || {}, { user_ns, telefono: subInfo.telefono });
-            llamadasTools.push({ name: tu.name, input: tu.input, resultado });
-            if (tu.name === 'escalar_a_humano' && resultado?.ok) escaloAHumano = true;
+            const resultado = await ejecutarTool(tu.name, tu.input || {}, ctx);
+            llamadasTools.push({ name: tu.name, input: tu.input });
             return { tool_use_id: tu.id, resultado };
           })
         );
@@ -412,26 +338,22 @@ export default async function handler(req, res) {
         continue;
       }
 
-      // stop_reason inesperado (max_tokens, etc.)
       break;
     }
 
-    // 5. Enviar respuesta al cliente
-    //    Si escaló a humano, NO enviar mensaje (la tool ya pausó el bot).
-    let enviado = false;
-    if (!escaloAHumano && textoFinal) {
-      const e = await chateaPostText(token, user_ns, textoFinal);
-      enviado = e.ok;
-    }
+    // 5. Si escaló, suprimir texto (el prompt lo dice pero por seguridad)
+    if (ctx.comandos.escalar) textoFinal = '';
 
     return res.status(200).json({
       ok: true,
       version_prompt: CAMILA_PROMPT_VERSION,
       modelo: CAMILA_MODELO,
-      texto_enviado: escaloAHumano ? null : textoFinal,
-      enviado,
-      escalado: escaloAHumano,
-      llamadas_tools: llamadasTools.map((t) => ({ name: t.name, input: t.input })),
+      texto: textoFinal,
+      comandos: {
+        escalar: ctx.comandos.escalar || null,
+        registrar_datos: ctx.comandos.registrar_datos || null,
+      },
+      llamadas_tools: llamadasTools,
     });
   } catch (e) {
     console.error('[camila-motor]', e);
