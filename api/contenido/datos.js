@@ -171,27 +171,57 @@ function agruparAds(insights) {
   return [...map.values()];
 }
 
+function chunk(arr, size) {
+  const result = [];
+  for (let i = 0; i < arr.length; i += size) result.push(arr.slice(i, i + size));
+  return result;
+}
+
 async function enrichCreativos(ads) {
-  const promises = ads.map(async (ad) => {
+  if (!ads.length) return ads;
+
+  // Paso 1: un solo request por lote de 50 para traer todos los creativos
+  const grupos = chunk(ads, 50);
+  await Promise.all(grupos.map(async (grupo) => {
+    const ids = grupo.map((a) => a.id).join(',');
     const r = await metaFetch(
-      `${GRAPH}/${ad.id}?fields=creative{body,object_type,video_id,thumbnail_url,image_url,effective_object_story_id}&access_token=${TOKEN}`
+      `${GRAPH}?ids=${ids}&fields=creative{body,object_type,video_id,thumbnail_url,image_url}&access_token=${TOKEN}`
     );
-    if (r && r.creative) {
-      ad.copyText = r.creative.body || '';
-      ad.thumbnail = r.creative.thumbnail_url || r.creative.image_url || null;
-      const ot = (r.creative.object_type || '').toUpperCase();
+    if (!r || r.error) return;
+    for (const ad of grupo) {
+      const d = r[ad.id];
+      if (!d?.creative) continue;
+      const c = d.creative;
+      ad.copyText = c.body || '';
+      ad.thumbnail = c.thumbnail_url || c.image_url || null;
+      const ot = (c.object_type || '').toUpperCase();
       if (ot.includes('VIDEO')) ad.format = 'Video';
       else if (ot.includes('CAROUSEL')) ad.format = 'Carrusel';
       else if (ot.includes('PHOTO') || ot.includes('IMAGE')) ad.format = 'Imagen';
-      if (r.creative.video_id) {
-        const vr = await metaFetch(`${GRAPH}/${r.creative.video_id}?fields=length,picture&access_token=${TOKEN}`);
-        if (vr && vr.length) ad.videoDurationSec = Math.round(parseFloat(vr.length));
-        if (vr && vr.picture && !ad.thumbnail) ad.thumbnail = vr.picture;
-      }
+      if (c.video_id) ad._videoId = c.video_id;
     }
-    return ad;
-  });
-  return Promise.all(promises);
+  }));
+
+  // Paso 2: un solo request por lote de 50 para traer detalles de videos
+  const videoAds = ads.filter((a) => a._videoId);
+  if (videoAds.length) {
+    const uniqueIds = [...new Set(videoAds.map((a) => a._videoId))];
+    const videoData = {};
+    await Promise.all(chunk(uniqueIds, 50).map(async (vids) => {
+      const vr = await metaFetch(
+        `${GRAPH}?ids=${vids.join(',')}&fields=length,picture&access_token=${TOKEN}`
+      );
+      if (vr && !vr.error) Object.assign(videoData, vr);
+    }));
+    for (const ad of videoAds) {
+      const v = videoData[ad._videoId];
+      if (v?.length) ad.videoDurationSec = Math.round(parseFloat(v.length));
+      if (v?.picture && !ad.thumbnail) ad.thumbnail = v.picture;
+      delete ad._videoId;
+    }
+  }
+
+  return ads;
 }
 
 async function traerAds(since, until) {
