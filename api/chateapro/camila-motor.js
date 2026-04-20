@@ -39,7 +39,6 @@ const BOT_FIELDS_REQUERIDOS = {
   'CONDICIONES_PREMIOS': '[Rifa 1] Condiciones para los premios',
   'FLEXIBILIDAD_PREMIOS': '[Rifa 1] Flexibilidad en los premios',
   'FECHA_SORTEO': '[Rifa 1] Fecha del sorteo',
-  'HORA_MAXIMA': 'Hora máxima para realizar transferencia',
 };
 
 // ────── Definiciones de tools para Claude ──────

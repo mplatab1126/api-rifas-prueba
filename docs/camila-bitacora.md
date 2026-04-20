@@ -6,7 +6,7 @@ Este documento es la fuente de verdad del agente **Camila** (atención al client
 
 ---
 
-## Versión actual: v1 — 19 de abril de 2026
+## Versión actual: v2 — 19 de abril de 2026
 
 ### Modelo
 Claude Sonnet 4.6 (`claude-sonnet-4-6`)
@@ -40,7 +40,6 @@ Tu trabajo es convertir a cada cliente que te escribe en una boleta vendida. Cad
 - **Condiciones:** {{CONDICIONES_PREMIOS}}
 - **Flexibilidad en premios:** {{FLEXIBILIDAD_PREMIOS}}
 - **Fecha del sorteo:** {{FECHA_SORTEO}}
-- **Hora límite de transferencia:** {{HORA_MAXIMA}}
 - **Plan de pago:** Se puede separar desde $20.000 y abonar al ritmo que pueda.
 - **Formato:** Boleta de 4 cifras, sin serie. El cliente la elige (no es al azar).
 - **Medios de pago:** Nequi, Daviplata, Bancolombia.
@@ -110,11 +109,16 @@ Si el sistema te indica que el cliente ya tiene boleta activa, NO intentes vende
 | `{{CONDICIONES_PREMIOS}}` | `[Rifa 1] Condiciones para los premios` |
 | `{{FLEXIBILIDAD_PREMIOS}}` | `[Rifa 1] Flexibilidad en los premios` |
 | `{{FECHA_SORTEO}}` | `[Rifa 1] Fecha del sorteo` |
-| `{{HORA_MAXIMA}}` | `Hora máxima para realizar transferencia` |
 
 ---
 
 ## Historial de cambios
+
+### v2 — 19 de abril de 2026
+
+- **QUÉ CAMBIÓ:** Se eliminó del prompt la línea `Hora límite de transferencia` y su variable `{{HORA_MAXIMA}}` (leía el bot field `Hora máxima para realizar transferencia`).
+- **POR QUÉ:** Ese bot field existe en Chatea Pro pero Mateo lo usa para otro proceso, no para el plazo de transferencia de Camila. En la prueba real de v1, Camila le dijo al cliente "Tienes hasta las *8 p.m.* para transferir" tomando ese valor — información falsa porque el campo no significa eso.
+- **CÓMO PREVENIR:** Si en el futuro se necesita un plazo horario real para pagos de la rifa, crear un bot field específico (ej: `[Rifa 1] Hora límite de pago`) y reintroducirlo en el prompt. No reusar bot fields existentes sin confirmar con Mateo qué significan realmente.
 
 ### v1 — 19 de abril de 2026 (primera versión)
 
@@ -133,7 +137,8 @@ Si el sistema te indica que el cliente ya tiene boleta activa, NO intentes vende
 
 ## Errores aprendidos (NO repetir)
 
-_Aún no hay errores registrados. Esta sección se va llenando con cada iteración._
+1. **No reusar bot fields existentes sin confirmar su uso real con Mateo.** Un nombre sugerente (ej: `Hora máxima para realizar transferencia`) no garantiza que el bot field se use para lo que parece. Si un bot field ya existe en Chatea Pro, preguntar primero qué significa en el flujo actual. Si se necesita una variable para Camila, crear un bot field dedicado con nombre claro (ej: prefijado `[Camila]` o `[Rifa 1]`).
+   *(Lección de v2.)*
 
 ---
 

@@ -11,7 +11,7 @@
  * pueden volver a cometer errores ya resueltos.
  */
 
-export const CAMILA_PROMPT_VERSION = 'v1';
+export const CAMILA_PROMPT_VERSION = 'v2';
 export const CAMILA_MODELO = 'claude-sonnet-4-6';
 
 /**
@@ -27,7 +27,6 @@ export const CAMILA_MODELO = 'claude-sonnet-4-6';
  *     - CONDICIONES_PREMIOS
  *     - FLEXIBILIDAD_PREMIOS
  *     - FECHA_SORTEO
- *     - HORA_MAXIMA
  */
 export function construirSystemPrompt(botFields) {
   const {
@@ -38,7 +37,6 @@ export function construirSystemPrompt(botFields) {
     CONDICIONES_PREMIOS = '(sin configurar)',
     FLEXIBILIDAD_PREMIOS = '(sin configurar)',
     FECHA_SORTEO = '(sin configurar)',
-    HORA_MAXIMA = '(sin configurar)',
   } = botFields || {};
 
   return `# IDENTIDAD
@@ -62,7 +60,6 @@ Tu trabajo es convertir a cada cliente que te escribe en una boleta vendida. Cad
 - **Condiciones:** ${CONDICIONES_PREMIOS}
 - **Flexibilidad en premios:** ${FLEXIBILIDAD_PREMIOS}
 - **Fecha del sorteo:** ${FECHA_SORTEO}
-- **Hora límite de transferencia:** ${HORA_MAXIMA}
 - **Plan de pago:** Se puede separar desde $20.000 y abonar al ritmo que pueda.
 - **Formato:** Boleta de 4 cifras, sin serie. El cliente la elige (no es al azar).
 - **Medios de pago:** Nequi, Daviplata, Bancolombia.
