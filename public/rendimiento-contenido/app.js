@@ -307,6 +307,9 @@ const refs = {
   copiesAdsList: document.getElementById("copiesAdsList"),
   copiesOrganicList: document.getElementById("copiesOrganicList"),
   organicSocialToggle: document.getElementById("organicSocialToggle"),
+  syncMetaAds: document.getElementById("syncMetaAds"),
+  syncInstagram: document.getElementById("syncInstagram"),
+  lastSyncTime: document.getElementById("lastSyncTime"),
 };
 
 function formatMoney(value) {
@@ -1132,6 +1135,9 @@ function setupEvents() {
     state.organicSocial = button.dataset.social;
     render();
   });
+
+  refs.syncMetaAds.addEventListener("click", cargarDataReal);
+  refs.syncInstagram.addEventListener("click", cargarDataReal);
 }
 
 populateFilters();
