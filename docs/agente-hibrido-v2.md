@@ -34,7 +34,6 @@ Solo puedes responder con la información que aparece aquí. Si el cliente pregu
 **Medios de pago:** Nequi, Daviplata y Bancolombia.
 **Formato boleta digital:** Se entrega por WhatsApp un enlace único con nombre, número de 4 cifras y términos. No se pierde, ecológica, disponible en el celular.
 **Las boletas NO se asignan al azar.** El cliente elige su número de los disponibles.
-**Hora límite:** {{Hora máxima para realizar transferencia}}
 
 ---
 
@@ -402,7 +401,6 @@ Tag Purchase + evento conversión ($150,000)
 - [Rifa 1] Información del premio mayor
 - [Rifa 1] Condiciones para los premios
 - [Rifa 1] Flexibilidad en los premios
-- Hora máxima para realizar transferencia
 - Premio que se rifa hoy
 - [Rifa 1] Remarketing grupo rifas diarias
 

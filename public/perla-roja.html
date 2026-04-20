@@ -1657,8 +1657,15 @@
           telInput.parentElement.insertAdjacentElement('afterend', ayuda);
         }
 
-        const telValido = tel.length === digitosRequeridos;
-        if (tel.length > 0 && !telValido) {
+        // Colombia (+57): los móviles reales siempre empiezan con 3. Si empieza con 57
+        // es porque el cliente escribió el código de país por error.
+        const colombiaMalEscrito = indicativo === '+57' && tel.length >= 2 && tel.startsWith('57');
+        const telValido = tel.length === digitosRequeridos && !colombiaMalEscrito;
+
+        if (colombiaMalEscrito) {
+          ayuda.textContent = '✗ No escribas el código de país (57). Solo tu celular, empezando con 3.';
+          ayuda.style.color = '#f87171';
+        } else if (tel.length > 0 && !telValido) {
           ayuda.textContent = `Faltan ${digitosRequeridos - tel.length} dígito${digitosRequeridos - tel.length !== 1 ? 's' : ''} (necesitas ${digitosRequeridos} en total)`;
           ayuda.style.color = '#f87171';
         } else if (telValido) {

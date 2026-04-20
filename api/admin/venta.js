@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 import { PRECIOS } from '../config/precios.js';
-import { limpiarTelefono } from '../lib/telefono.js';
+import { limpiarTelefono, esTelefonoValido } from '../lib/telefono.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -11,14 +11,28 @@ export default async function handler(req, res) {
   const {
     numeroBoleta, nombre, apellido, ciudad, telefono,
     primerAbono, referenciaAbono, metodoPago, referencia,
-    contrasena, esPendiente, idTransferencia, esPagoInteligente, esPremioRifa
+    contrasena, esPendiente, idTransferencia, esPagoInteligente, esPremioRifa,
+    esColombia, permitirExceso
   } = req.body;
 
   const nombreAsesor = validarAsesor(contrasena);
   if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
   if (!numeroBoleta || !telefono) return res.status(400).json({ status: 'error', mensaje: 'Faltan datos' });
 
-  const telefonoLimpio = limpiarTelefono(telefono);
+  // Si esColombia no viene en el body (compatibilidad con peticiones viejas), asumir true.
+  const esColombiaFlag = esColombia !== false;
+  let telefonoLimpio;
+  if (esColombiaFlag) {
+    telefonoLimpio = limpiarTelefono(telefono);
+    if (!esTelefonoValido(telefonoLimpio)) {
+      return res.status(400).json({ status: 'error', mensaje: `🚫 El teléfono "${telefono}" no es válido. Revisa que sea un número celular colombiano correcto (10 dígitos empezando con 3, sin el 57 adelante).` });
+    }
+  } else {
+    telefonoLimpio = String(telefono).replace(/\D/g, '');
+    if (telefonoLimpio.length < 7 || telefonoLimpio.length > 15) {
+      return res.status(400).json({ status: 'error', mensaje: `🚫 El teléfono extranjero "${telefono}" no es válido. Debe tener entre 7 y 15 dígitos incluyendo el código del país.` });
+    }
+  }
   const numeroLimpio = String(numeroBoleta).trim();
   let abonoNum = Number(primerAbono) || 0;
 
@@ -109,11 +123,17 @@ export default async function handler(req, res) {
     let totalComprado = (clienteActual?.total_comprado || 0) + ((esPremioRifa || referenciaAbono === 'premio_rifa_diaria') ? 0 : abonoNum);
 
     const fmt = n => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
-    if (abonoNum > precioTotal) {
-      return res.status(400).json({ status: 'error', mensaje: `🚫 El abono de ${fmt(abonoNum)} supera el precio total de la boleta ${numeroLimpio} (${fmt(precioTotal)}). Ajusta el valor.` });
+    if (abonoNum > precioTotal && !permitirExceso) {
+      return res.status(400).json({
+        status: 'error',
+        codigo: 'EXCESO_SALDO',
+        mensaje: `🚫 El abono de ${fmt(abonoNum)} supera el precio total de la boleta ${numeroLimpio} (${fmt(precioTotal)}). Ajusta el valor.`,
+        datos: { saldoRestante: precioTotal, montoAbono: abonoNum, exceso: abonoNum - precioTotal, numeroBoleta: numeroLimpio }
+      });
     }
 
-    const saldoRestante = precioTotal - abonoNum;
+    // Si el asesor autorizó exceso, el saldo queda en 0 (no negativo)
+    const saldoRestante = abonoNum > precioTotal ? 0 : (precioTotal - abonoNum);
 
     // Guard absoluto: nunca persistir un saldo negativo
     if (saldoRestante < 0) {

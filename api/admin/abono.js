@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  const { numeroBoleta, valorAbono, metodoPago, referencia, contrasena, esPendiente, idTransferencia, esPagoInteligente, esPremioRifa } = req.body;
+  const { numeroBoleta, valorAbono, metodoPago, referencia, contrasena, esPendiente, idTransferencia, esPagoInteligente, esPremioRifa, permitirExceso } = req.body;
 
   const ASESORES_INDEPENDIENTES = ['alejandra plata', 'joaquín', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
   const esIndependiente = (nombre) => nombre && ASESORES_INDEPENDIENTES.some(ind => nombre.toLowerCase().includes(ind));
@@ -91,12 +91,18 @@ export default async function handler(req, res) {
       monto = saldoActual;
     }
 
-    if (monto > saldoActual) {
-      return res.status(400).json({ status: 'error', mensaje: `🚫 El abono de ${fmt(monto)} supera el saldo restante de ${fmt(saldoActual)} de la boleta ${numeroLimpio}. Ajusta el valor para no exceder lo que debe el cliente.` });
+    if (monto > saldoActual && !permitirExceso) {
+      return res.status(400).json({
+        status: 'error',
+        codigo: 'EXCESO_SALDO',
+        mensaje: `🚫 El abono de ${fmt(monto)} supera el saldo restante de ${fmt(saldoActual)} de la boleta ${numeroLimpio}. Ajusta el valor para no exceder lo que debe el cliente.`,
+        datos: { saldoRestante: saldoActual, montoAbono: monto, exceso: monto - saldoActual, numeroBoleta: numeroLimpio }
+      });
     }
 
     const nuevoTotalAbonado = abonadoActual + monto;
-    const nuevoSaldoRestante = saldoActual - monto;
+    // Si el asesor autorizó exceso, el saldo queda en 0 (no negativo)
+    const nuevoSaldoRestante = monto > saldoActual ? 0 : (saldoActual - monto);
 
     // Guard absoluto: nunca persistir un saldo negativo
     if (nuevoSaldoRestante < 0) {

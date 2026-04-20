@@ -3,6 +3,9 @@ import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 import { PRECIOS } from '../config/precios.js';
 
+const ASESORES_INDEPENDIENTES = ['alejandra plata', 'joaquín', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
+const esIndependiente = (nombre) => nombre && ASESORES_INDEPENDIENTES.some(ind => nombre.toLowerCase().includes(ind));
+
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
 
@@ -29,9 +32,19 @@ export default async function handler(req, res) {
 
     const { data: boletaActual } = await supabase
       .from(tablaConsulta)
-      .select('telefono_cliente, saldo_restante')
+      .select('telefono_cliente, saldo_restante, asesor')
       .eq('numero', numeroBoleta)
       .single();
+
+    // Validar grupo de asesores: no puedes liberar boletas de otro grupo
+    const asesorBoleta = boletaActual?.asesor || '';
+    if (asesorBoleta) {
+      const grupoAsesor = esIndependiente(nombreAsesor) ? 'independiente' : 'regular';
+      const grupoBoleta = esIndependiente(asesorBoleta) ? 'independiente' : 'regular';
+      if (grupoAsesor !== grupoBoleta) {
+        return res.status(400).json({ status: 'error', mensaje: `🚫 Esta boleta pertenece al equipo "${grupoBoleta}". Tu equipo (${grupoAsesor}) no puede liberarla.` });
+      }
+    }
 
     if (boletaActual?.telefono_cliente) {
       const { data: clienteActual } = await supabase

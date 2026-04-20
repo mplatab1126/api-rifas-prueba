@@ -917,9 +917,13 @@
           alert("⚠️ ATENCIÓN:\n\nDebes completar nombre, apellido, ciudad y un celular de 10 dígitos.");
           return;
         }
+        if (telefono.startsWith('57')) {
+          alert("⚠️ ATENCIÓN:\n\nNo escribas el código de país (57). Escribe solo tu celular, empezando con 3.\n\nEjemplo correcto: 3001234567");
+          return;
+        }
 
         document.getElementById('msg-carga').style.display = 'block';
-        document.querySelector('.btn-confirmar').disabled = true; 
+        document.querySelector('.btn-confirmar').disabled = true;
 
         fetch('/api/diarias3/reservar', {
           method: 'POST',

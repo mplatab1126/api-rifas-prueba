@@ -376,6 +376,14 @@
     .panel.collapsible.collapsed .table-wrap{display:none}
     .panel.collapsible.collapsed .summary{display:none}
     .panel.collapsible.collapsed .distribucion-body{display:none}
+    .panel.collapsible.collapsed .chat-body,
+    .panel.collapsible.collapsed .chat-actions,
+    .panel.collapsible.collapsed .chat-input{display:none}
+
+    /* Override de hover y chevron para el panel oscuro del chat */
+    .chat-panel.collapsible .panel-head:hover{background:#1c2226}
+    .chat-panel .panel-hint-group{color:#7a8087}
+    .chat-panel .panel-hint-group .chevron{color:#7a8087}
 
     /* Mini barra de progreso (fondo de emergencia) */
     .progress{
@@ -580,10 +588,13 @@
     <div class="split">
 
       <!-- Chat -->
-      <div class="panel chat-panel">
-        <div class="panel-head">
+      <div class="panel chat-panel collapsible" id="panelChat">
+        <div class="panel-head" onclick="toggleChat()" role="button" aria-expanded="true" aria-controls="chatBody">
           <h2 class="panel-title">Claude</h2>
-          <span class="panel-hint">Tu asesor · en linea</span>
+          <div class="panel-hint-group">
+            <span class="panel-hint">Tu asesor · en linea</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
         </div>
         <div class="chat-body" id="chatBody"></div>
         <div class="chat-actions">
@@ -831,6 +842,13 @@
 
     function toggleDistribucion() {
       const panel = document.getElementById('panelDistribucion');
+      panel.classList.toggle('collapsed');
+      const colapsado = panel.classList.contains('collapsed');
+      panel.querySelector('.panel-head').setAttribute('aria-expanded', (!colapsado).toString());
+    }
+
+    function toggleChat() {
+      const panel = document.getElementById('panelChat');
       panel.classList.toggle('collapsed');
       const colapsado = panel.classList.contains('collapsed');
       panel.querySelector('.panel-head').setAttribute('aria-expanded', (!colapsado).toString());

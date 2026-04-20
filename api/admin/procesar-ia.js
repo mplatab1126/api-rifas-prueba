@@ -34,11 +34,11 @@ export default async function handler(req, res) {
         Formato exacto esperado:
         {
           "tipo": "ingreso" o "egreso",
-          "plataforma": "Nombre del banco o app (Ej: Bancolombia, Nequi, Daviplata)",
+          "plataforma": "Decide SIEMPRE mirando el texto del campo 'Descripción' del movimiento (NO el logo del encabezado). Reglas: si la descripción contiene 'nequi' → 'Nequi'; si contiene 'daviplata' → 'Daviplata'; si contiene 'corresponsal' → 'Corresponsal'; en cualquier otro caso en un comprobante de Bancolombia → 'Bancolombia'. Importante: aunque el logo diga Bancolombia, si la descripción dice 'Transferencia nequi bancolombi...', la plataforma es 'Nequi'.",
           "monto": "Solo el número absoluto sin símbolos ni signos (Ej: 3000000). NUNCA incluyas el signo negativo.",
-          "referencia": "Código de comprobante o referencia. Si no hay, pon '0'",
+          "referencia": "SOLO el código o número alfanumérico del campo 'Referencia 1' (o 'Referencia' / 'No. de aprobación' / 'Código de transacción' según el banco). NO incluyas la descripción ni texto antes o después. Ejemplos correctos: '3186425497', 'M02245028', '46750265189'. Si el comprobante muestra 'Transferencia nequi bancolombi 3186425497', la referencia es solo '3186425497'. Si no hay, pon '0'.",
           "fecha_pago": "La fecha exacta en formato YYYY-MM-DD",
-          "hora_pago": "La hora EXACTA tal cual aparece, en formato HH:MM:SS (24h). Incluye los segundos REALES del comprobante, NO los redondees a 00. Ej: si dice 15:00:27, pon '15:00:27'. Si no hay hora visible, pon '12:00:00'",
+          "hora_pago": "La hora del MOVIMIENTO BANCARIO, es decir, cuando se hizo/recibió la transferencia. IMPORTANTE: NO extraigas la hora de descarga, generación o consulta del comprobante (frases como 'Descargado el...', 'Generado el...', 'Consulta realizada el...', 'Fecha de consulta', 'Impreso el...'), esa hora es cuando el asesor descargó el PDF, no cuando ocurrió el pago. En Bancolombia suelen aparecer AMBAS horas: debes extraer la que está asociada al detalle del movimiento (junto al monto, referencia o tipo de transacción), NO la de arriba/encabezado del comprobante. En Nequi y Daviplata normalmente solo hay una hora y esa es la correcta. Formato HH:MM:SS (24h). Incluye los segundos REALES del comprobante, NO los redondees a 00. Ej: si dice 15:00:27, pon '15:00:27'. Si no hay hora del movimiento visible, pon '12:00:00'",
           "descripcion_movimiento": "El campo 'Descripción' del comprobante bancario, TAL CUAL aparece (Ej: 'Valor iva', 'Compra POS', 'Transferencia a terceros'). Si no hay, pon ''",
           "valor_original": "El valor TAL CUAL aparece en el comprobante, con signos y símbolos incluidos (Ej: 'COP $ 180.000,00' o 'COP -$ 538,07' o '-21,478.00'). Cópialo exacto."
         }
@@ -97,10 +97,24 @@ export default async function handler(req, res) {
       }
     }
 
-    // Corrección de plataforma: consignaciones corresponsal → "Corresponsal"
+    // Normalización de plataforma según la descripción del movimiento.
+    // La IA o el parser pueden equivocarse mirando el logo; la descripción es la fuente de verdad.
     const descLower = (datos.descripcion_movimiento || '').toLowerCase();
     if (descLower.includes('corresponsal')) {
       datos.plataforma = 'Corresponsal';
+    } else if (descLower.includes('nequi')) {
+      datos.plataforma = 'Nequi';
+    } else if (descLower.includes('daviplata')) {
+      datos.plataforma = 'Daviplata';
+    }
+
+    // Limpieza de referencia: si viene con descripción mezclada (ej: "Transferencia nequi bancolombi 3186425497"),
+    // nos quedamos solo con el último código alfanumérico largo (número de referencia real).
+    if (datos.referencia) {
+      const refStr = String(datos.referencia).trim();
+      const tokens = refStr.match(/[A-Za-z0-9]+/g) || [];
+      const codigo = tokens.reverse().find(t => t.length >= 4 && /\d/.test(t));
+      if (codigo) datos.referencia = codigo;
     }
 
     // El asesor elige manualmente si sube ingresos o egresos.

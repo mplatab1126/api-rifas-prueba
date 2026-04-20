@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rendimiento de Contenido | Los Plata</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/shared-nav.css" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script>
+      // Pre-cargar estado de sesion para evitar flash del login
+      if (localStorage.getItem('asesor_pwd') && localStorage.getItem('asesor_nombre')) {
+        document.documentElement.classList.add('snav-authed');
+      } else if (!/^localhost|^127\.0\.0\.1/.test(window.location.hostname)) {
+        // Sin sesion en produccion → al login principal
+        window.location.href = '/admin';
+      }
+    </script>
+  </head>
+  <body>
+    <main class="main snav-page-content">
+      <header class="topbar">
+        <div>
+          <h1>Rendimiento de Contenido</h1>
+          <p>Anuncios + orgánico centralizados para decisiones rápidas.</p>
+        </div>
+        <div class="top-actions">
+          <button class="btn btn-ghost">Sync Meta Ads</button>
+          <button class="btn btn-primary">Sync Instagram</button>
+        </div>
+      </header>
+
+      <section class="filters card">
+        <div class="quick-ranges" id="quickRanges">
+          <button type="button" class="range-chip" data-range="today">Hoy</button>
+          <button type="button" class="range-chip" data-range="yesterday">Ayer</button>
+          <button type="button" class="range-chip" data-range="last7">Últimos 7 días</button>
+          <button type="button" class="range-chip" data-range="month">Este mes</button>
+        </div>
+        <div class="field">
+          <label for="dateStart">Desde</label>
+          <input id="dateStart" type="date" />
+        </div>
+        <div class="field">
+          <label for="dateEnd">Hasta</label>
+          <input id="dateEnd" type="date" />
+        </div>
+        <div class="field">
+          <label>Campañas</label>
+          <div class="multi-select" id="campaignMulti">
+            <button type="button" class="multi-select-trigger" id="campaignTrigger" aria-haspopup="true" aria-expanded="false">
+              <span id="campaignTriggerLabel">Todas</span>
+              <span class="multi-select-arrow" aria-hidden="true">▾</span>
+            </button>
+            <div class="multi-select-panel" id="campaignPanel" hidden>
+              <div class="multi-select-list" id="campaignList"></div>
+            </div>
+          </div>
+        </div>
+        <div class="field field-actions">
+          <button id="applyFilters" class="btn btn-primary">Aplicar filtros</button>
+          <button id="resetFilters" class="btn btn-ghost">Limpiar</button>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <h2>1. Rendimiento de Anuncios</h2>
+          <div class="inline-control">
+            <label for="adsSort">Ordenar por</label>
+            <select id="adsSort">
+              <option value="roas_desc">Mejor ROAS</option>
+              <option value="sales_desc">Mas ventas</option>
+              <option value="cpa_asc">Menor costo por compra</option>
+            </select>
+          </div>
+        </div>
+        <div id="adsMetrics" class="metric-grid"></div>
+        <div class="card table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre del anuncio</th>
+                <th>Inversion</th>
+                <th>Compras</th>
+                <th>CPA</th>
+                <th>ROAS</th>
+                <th>CTR</th>
+                <th>Hook rate</th>
+                <th>Hold rate</th>
+              </tr>
+            </thead>
+            <tbody id="adsTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>2. Rendimiento Organico</h2>
+        <div class="social-toggle" id="organicSocialToggle">
+          <button class="social-btn active" data-social="instagram" aria-label="Instagram">
+            <span class="social-icon instagram" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M7.75 2h8.5A5.75 5.75 0 0 1 22 7.75v8.5A5.75 5.75 0 0 1 16.25 22h-8.5A5.75 5.75 0 0 1 2 16.25v-8.5A5.75 5.75 0 0 1 7.75 2Zm0 1.8A3.95 3.95 0 0 0 3.8 7.75v8.5a3.95 3.95 0 0 0 3.95 3.95h8.5a3.95 3.95 0 0 0 3.95-3.95v-8.5a3.95 3.95 0 0 0-3.95-3.95h-8.5Zm8.75 2.6a1.15 1.15 0 1 1 0 2.3 1.15 1.15 0 0 1 0-2.3Zm-4.5 1.2a4.4 4.4 0 1 1 0 8.8 4.4 4.4 0 0 1 0-8.8Zm0 1.8a2.6 2.6 0 1 0 0 5.2 2.6 2.6 0 0 0 0-5.2Z"
+                />
+              </svg>
+            </span>
+          </button>
+          <button class="social-btn" data-social="facebook" aria-label="Facebook">
+            <span class="social-icon facebook" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M13.7 22v-8.6h2.9l.44-3.4h-3.34V7.83c0-.98.27-1.65 1.67-1.65H17.2V3.14A24.3 24.3 0 0 0 14.52 3c-2.66 0-4.48 1.62-4.48 4.6V10H7.2v3.4h2.84V22h3.66Z"
+                />
+              </svg>
+            </span>
+          </button>
+        </div>
+        <div id="organicFollowersHighlight" class="organic-highlight"></div>
+        <div id="organicMetrics" class="metric-grid"></div>
+        <div id="organicList" class="card organic-list"></div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <h2>3. Top Contenidos</h2>
+          <div class="inline-control">
+            <label for="topRange">Periodo</label>
+            <select id="topRange">
+              <option value="7">Ultimos 7 dias</option>
+              <option value="30">Ultimos 30 dias</option>
+            </select>
+          </div>
+        </div>
+        <div class="top-content-split">
+          <div class="top-content-block">
+            <h3 class="top-content-title">Pagos (Ads)</h3>
+            <div id="topAdsGrid" class="content-grid"></div>
+          </div>
+          <div class="top-content-block">
+            <h3 class="top-content-title">Organico</h3>
+            <div id="topOrganicGrid" class="content-grid"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>4. Copys Ganadores</h2>
+        <div class="top-content-split">
+          <div class="top-content-block">
+            <h3 class="top-content-title">Ads</h3>
+            <div id="copiesAdsList" class="copies-grid"></div>
+          </div>
+          <div class="top-content-block">
+            <h3 class="top-content-title">Organico</h3>
+            <div id="copiesOrganicList" class="copies-grid"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>5. Insights Automaticos</h2>
+        <div id="insightsGrid" class="insights-grid"></div>
+      </section>
+
+      <section class="section">
+        <h2>6. Alertas y Tendencias</h2>
+        <div class="signals-grid">
+          <div class="signal-block">
+            <h3 class="top-content-title">Alertas</h3>
+            <div id="alertsList"></div>
+          </div>
+          <div class="signal-block">
+            <h3 class="top-content-title">Tendencias</h3>
+            <div id="trendsList"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/shared-nav.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

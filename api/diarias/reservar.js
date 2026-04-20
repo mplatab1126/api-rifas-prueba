@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
 import { PRECIOS } from '../config/precios.js';
-import { limpiarTelefono } from '../lib/telefono.js';
+import { limpiarTelefono, esTelefonoValido } from '../lib/telefono.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -14,6 +14,9 @@ export default async function handler(req, res) {
   }
 
   const telefonoLimpio = limpiarTelefono(telefono);
+  if (!esTelefonoValido(telefonoLimpio)) {
+    return res.status(400).json({ error: 'El número de teléfono no es válido. Escribe solo tu número celular, sin el código de país (57).' });
+  }
   const nombreCompleto = `${nombre} ${apellido}`.trim();
 
   try {

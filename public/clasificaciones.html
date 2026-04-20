@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitor IA — Los Plata</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="shared-nav.css">
+  <style>
+    :root {
+      --ink:#0f2010; --ink-2:#2d3a2a; --accent:#2d6b25; --muted:#6a7a6b;
+      --bg:#f5f7f3; --pill:#e8ede6; --ring:#cdd8cb; --danger:#d95a53; --ok:#4caf50; --warn:#e09b00;
+    }
+    body { margin:0; font-family:'Poppins', system-ui; background:var(--bg); color:var(--ink); }
+    .wrap { max-width:1400px; margin:0 auto; padding:30px 20px; }
+    h1 { font-size:1.5rem; font-weight:600; margin:0 0 24px 0; }
+    .kpis { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:14px; margin-bottom:24px; }
+    .kpi { background:#fff; border-radius:12px; padding:18px; box-shadow:0 1px 3px rgba(0,0,0,0.05); border:1px solid var(--ring); }
+    .kpi-label { font-size:0.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; }
+    .kpi-value { font-size:1.8rem; font-weight:700; color:var(--ink); }
+    .kpi-sub { font-size:0.8rem; color:var(--muted); margin-top:4px; }
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px; }
+    .card { background:#fff; border-radius:12px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,0.05); border:1px solid var(--ring); }
+    .card h3 { margin:0 0 14px 0; font-size:1rem; font-weight:600; }
+    .filtros { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; align-items:center; }
+    .filtros select, .filtros input { padding:8px 12px; border-radius:8px; border:1px solid var(--ring); font-family:inherit; font-size:0.9rem; }
+    .filtros button { padding:8px 18px; border-radius:8px; border:none; background:var(--accent); color:#fff; font-weight:600; cursor:pointer; font-family:inherit; }
+    .filtros label { display:flex; gap:6px; align-items:center; font-size:0.85rem; color:var(--ink-2); }
+    table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+    th { background:var(--pill); text-align:left; padding:10px; font-weight:600; position:sticky; top:0; }
+    td { padding:10px; border-top:1px solid var(--ring); vertical-align:top; }
+    tr:hover td { background:#fafbf9; }
+    .tag { display:inline-block; padding:2px 8px; border-radius:12px; font-size:0.72rem; font-weight:600; }
+    .tag-ok { background:#dff5e0; color:#1a5c1e; }
+    .tag-err { background:#f8d7d5; color:#8a2620; }
+    .tag-pend { background:#fff2cc; color:#7a5a00; }
+    .mini { font-size:0.72rem; color:var(--muted); }
+    .loading { padding:40px; text-align:center; color:var(--muted); }
+    #login { position:fixed; inset:0; background:linear-gradient(160deg,#0f2010 0%,#2d6b25 100%); display:flex; align-items:center; justify-content:center; z-index:1000; }
+    #login .box { background:rgba(255,255,255,0.08); backdrop-filter:blur(8px); padding:40px; border-radius:16px; text-align:center; }
+    #login input { padding:14px 20px; border-radius:100px; border:none; width:280px; font-size:1rem; text-align:center; margin-bottom:10px; }
+    #login button { padding:14px 40px; border-radius:100px; border:none; background:rgba(255,255,255,0.2); color:#fff; font-weight:600; cursor:pointer; font-family:inherit; font-size:1rem; }
+    #login .err { color:#ff9a9a; font-size:0.85rem; min-height:18px; margin-top:8px; }
+    #login h2 { color:#fff; margin:0 0 20px 0; font-weight:400; letter-spacing:0.1em; }
+  </style>
+</head>
+<body>
+  <div id="login">
+    <div class="box">
+      <h2>MONITOR IA — LOS PLATA</h2>
+      <input id="pwd" type="password" placeholder="Contraseña" onkeydown="if(event.key==='Enter')entrar()">
+      <div><button onclick="entrar()">Entrar</button></div>
+      <div class="err" id="loginErr"></div>
+    </div>
+  </div>
+
+  <div class="snav-page-content" id="pageContent" style="display:none;">
+    <div class="wrap">
+      <h1>🤖 Monitor IA — Clasificaciones de difusiones</h1>
+
+      <div style="margin-bottom:20px;">
+        <button onclick="abrirPlantillas()" style="padding:10px 20px; border-radius:10px; border:1px solid var(--ring); background:#fff; cursor:pointer; font-family:inherit; font-weight:600;">📝 Gestionar plantillas de difusión</button>
+        <span class="mini" style="margin-left:10px;">Define qué plantilla recibió cada grupo de clientes (por tag) para mejorar la clasificación.</span>
+      </div>
+
+      <!-- Modal de plantillas -->
+      <div id="plantillasModal" style="display:none; position:fixed; inset:0; z-index:2000; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); padding:30px; overflow:auto;" onclick="if(event.target===this)cerrarPlantillas()">
+        <div style="max-width:1000px; margin:0 auto; background:#fff; border-radius:16px; padding:28px; box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+            <h2 style="margin:0; font-size:1.2rem;">📝 Plantillas de difusión</h2>
+            <button onclick="cerrarPlantillas()" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:#666;">✕</button>
+          </div>
+          <p class="mini">Cada plantilla se vincula a un tag de Chatea Pro. Cuando un cliente responde y tiene ese tag, el clasificador usa esa plantilla como contexto.</p>
+
+          <table style="width:100%; margin-top:12px; font-size:0.85rem;">
+            <thead><tr>
+              <th>Activa</th><th>Nombre</th><th>Tag</th><th>Línea</th><th>Texto (preview)</th><th>Acciones</th>
+            </tr></thead>
+            <tbody id="plantillasTbody"><tr><td colspan="6" class="loading">Cargando...</td></tr></tbody>
+          </table>
+
+          <hr style="margin:20px 0;">
+
+          <h3 style="margin-top:0;">Agregar plantilla</h3>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div>
+              <label class="mini">Nombre (ej: "1er adicional - 2do aviso")</label>
+              <input id="pd_nombre" type="text" style="width:100%; padding:8px; border:1px solid var(--ring); border-radius:6px; margin-top:4px;">
+            </div>
+            <div>
+              <label class="mini">Tag(s) de Chatea Pro — marca la(s) línea(s)</label>
+              <div id="pd_tags" style="max-height:260px; overflow-y:auto; border:1px solid var(--ring); border-radius:6px; padding:8px; margin-top:4px; background:#fafafa;">
+                Cargando tags...
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:10px;">
+            <label class="mini">Texto completo de la plantilla (pega aquí el mensaje HSM)</label>
+            <textarea id="pd_texto" rows="7" style="width:100%; padding:10px; border:1px solid var(--ring); border-radius:6px; font-family:inherit; margin-top:4px;" placeholder="Hoy te podrías ganar lo que una persona promedio se gana en todo un año..."></textarea>
+          </div>
+          <div style="margin-top:12px; display:flex; justify-content:flex-end; gap:10px;">
+            <button onclick="crearPlantilla()" style="padding:10px 20px; border-radius:8px; border:none; background:var(--accent); color:#fff; font-weight:600; cursor:pointer;">Crear plantilla</button>
+          </div>
+          <div id="pd_status" class="mini" style="margin-top:10px;"></div>
+        </div>
+      </div>
+
+      <div class="filtros">
+        <label>Últimos
+          <select id="dias">
+            <option value="1">1 día</option>
+            <option value="3">3 días</option>
+            <option value="7" selected>7 días</option>
+            <option value="14">14 días</option>
+            <option value="30">30 días</option>
+          </select>
+        </label>
+        <label>Línea
+          <select id="linea"><option value="">Todas</option><option value="L1">L1</option><option value="L2">L2</option></select>
+        </label>
+        <label>Categoría
+          <select id="categoria">
+            <option value="">Todas</option>
+            <option>PAGO</option><option>MEDIO DE PAGO</option><option>CONSULTA</option><option>PROMESA</option>
+            <option>SALUDO</option><option>OTRO</option><option>ASESOR</option><option>NINGUNO</option>
+          </select>
+        </label>
+        <label><input type="checkbox" id="soloErrores"> Solo errores</label>
+        <button onclick="cargar()">Aplicar</button>
+        <button style="background:#666" onclick="descargarCSV()">Descargar CSV</button>
+        <button id="btnAnalizar" style="background:#c48b00" onclick="analizarYEvaluar()" title="Evalúa pendientes + analiza patrones de error con Claude Sonnet">🧠 Analizar con IA</button>
+        <label style="font-size:0.8rem; color:var(--ink-2);"><input type="checkbox" id="reanalizarTodo"> Re-analizar todo (incluir ya analizadas)</label>
+        <span id="evalStatus" class="mini" style="margin-left:8px;"></span>
+      </div>
+
+      <!-- Modal reporte del analista -->
+      <div id="reporteModal" style="display:none; position:fixed; inset:0; z-index:2000; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); padding:30px; overflow:auto;" onclick="if(event.target===this)cerrarReporte()">
+        <div style="max-width:900px; margin:0 auto; background:#fff; border-radius:16px; padding:32px; box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 style="margin:0; font-size:1.3rem;">🧠 Análisis del clasificador</h2>
+            <button onclick="cerrarReporte()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:#666;">✕</button>
+          </div>
+          <div id="reporteContent" style="font-size:0.95rem; line-height:1.6; white-space:pre-wrap;"></div>
+          <div style="margin-top:24px; display:flex; gap:10px; justify-content:flex-end;">
+            <button onclick="copiarReporte()" style="padding:10px 20px; border-radius:8px; border:1px solid #ccc; background:#fff; cursor:pointer;">📋 Copiar</button>
+            <button onclick="cerrarReporte()" style="padding:10px 20px; border-radius:8px; border:none; background:#2d6b25; color:#fff; cursor:pointer;">Cerrar</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="kpis" class="kpis"></div>
+
+      <div class="grid-2">
+        <div class="card"><h3>Precisión por categoría</h3><canvas id="chartCat"></canvas></div>
+        <div class="card"><h3>Clasificaciones por día</h3><canvas id="chartDia"></canvas></div>
+      </div>
+
+      <div class="card">
+        <h3>Detalle <span class="mini" id="tblCount"></span></h3>
+        <div style="max-height:600px; overflow:auto;">
+          <table>
+            <thead><tr>
+              <th>Fecha</th><th>Línea</th><th>Cliente</th><th>Teléfono</th>
+              <th>Mensaje</th><th>Bot dijo</th><th>Eval</th><th>Correcto</th><th>Razón</th>
+            </tr></thead>
+            <tbody id="tbody"><tr><td colspan="9" class="loading">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const PWD_KEY = 'asesor_pwd';
+    let datos = null, chartCat = null, chartDia = null;
+
+    async function entrar() {
+      const pwd = document.getElementById('pwd').value.trim();
+      if (!pwd) return;
+      const r = await fetch('/api/admin/clasificaciones-stats', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ contrasena: pwd, dias: 1 })
+      });
+      const d = await r.json();
+      if (d.status !== 'ok') {
+        document.getElementById('loginErr').textContent = d.mensaje || 'Error';
+        return;
+      }
+      localStorage.setItem(PWD_KEY, pwd);
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('pageContent').style.display = 'block';
+      cargar();
+    }
+
+    async function cargar() {
+      const pwd = localStorage.getItem(PWD_KEY) || '';
+      const body = {
+        contrasena: pwd,
+        dias: +document.getElementById('dias').value,
+        linea: document.getElementById('linea').value || null,
+        categoria: document.getElementById('categoria').value || null,
+        solo_errores: document.getElementById('soloErrores').checked,
+      };
+      document.getElementById('tbody').innerHTML = '<tr><td colspan="9" class="loading">Cargando...</td></tr>';
+      try {
+        const r = await fetch('/api/admin/clasificaciones-stats', {
+          method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+        });
+        const d = await r.json();
+        if (d.status !== 'ok') {
+          document.getElementById('tbody').innerHTML = `<tr><td colspan="9" class="loading">${d.mensaje}</td></tr>`;
+          return;
+        }
+        datos = d;
+        renderKpis(d.kpis);
+        renderChartCat(d.por_categoria);
+        renderChartDia(d.por_dia);
+        renderTabla(d.filas);
+      } catch (e) {
+        document.getElementById('tbody').innerHTML = `<tr><td colspan="9" class="loading">Error: ${e.message}</td></tr>`;
+      }
+    }
+
+    function renderKpis(k) {
+      const precision = k.precision_pct !== null ? `${k.precision_pct}%` : '—';
+      const color = k.precision_pct === null ? '#999' : k.precision_pct >= 90 ? '#1a5c1e' : k.precision_pct >= 75 ? '#7a5a00' : '#8a2620';
+      document.getElementById('kpis').innerHTML = `
+        <div class="kpi"><div class="kpi-label">Total clasificaciones</div><div class="kpi-value">${k.total}</div></div>
+        <div class="kpi"><div class="kpi-label">Evaluadas por IA</div><div class="kpi-value">${k.evaluadas}</div><div class="kpi-sub">Pendientes: ${k.pendientes_evaluacion}</div></div>
+        <div class="kpi"><div class="kpi-label">Precisión</div><div class="kpi-value" style="color:${color}">${precision}</div></div>
+        <div class="kpi"><div class="kpi-label">Correctas</div><div class="kpi-value" style="color:#1a5c1e">${k.correctas}</div></div>
+        <div class="kpi"><div class="kpi-label">Incorrectas</div><div class="kpi-value" style="color:#8a2620">${k.incorrectas}</div></div>
+      `;
+    }
+
+    function renderChartCat(pc) {
+      const labels = Object.keys(pc);
+      const correctas = labels.map(l => pc[l].correctas);
+      const incorrectas = labels.map(l => pc[l].incorrectas);
+      if (chartCat) chartCat.destroy();
+      chartCat = new Chart(document.getElementById('chartCat'), {
+        type:'bar',
+        data:{ labels, datasets:[
+          { label:'Correctas', data:correctas, backgroundColor:'#4caf50' },
+          { label:'Incorrectas', data:incorrectas, backgroundColor:'#d95a53' },
+        ]},
+        options:{ responsive:true, scales:{ x:{ stacked:true }, y:{ stacked:true, beginAtZero:true } } }
+      });
+    }
+
+    function renderChartDia(pd) {
+      const labels = Object.keys(pd).sort();
+      const totales = labels.map(l => pd[l].total);
+      const incorrectas = labels.map(l => pd[l].incorrectas);
+      if (chartDia) chartDia.destroy();
+      chartDia = new Chart(document.getElementById('chartDia'), {
+        type:'line',
+        data:{ labels, datasets:[
+          { label:'Total', data:totales, borderColor:'#2d6b25', backgroundColor:'rgba(45,107,37,0.1)', tension:0.3, fill:true },
+          { label:'Incorrectas', data:incorrectas, borderColor:'#d95a53', tension:0.3 },
+        ]},
+        options:{ responsive:true, scales:{ y:{ beginAtZero:true } } }
+      });
+    }
+
+    function renderTabla(rows) {
+      document.getElementById('tblCount').textContent = `(${rows.length} registros)`;
+      if (rows.length === 0) {
+        document.getElementById('tbody').innerHTML = '<tr><td colspan="9" class="loading">Sin datos</td></tr>';
+        return;
+      }
+      document.getElementById('tbody').innerHTML = rows.map(r => {
+        const fecha = new Date(r.created_at).toLocaleString('es-CO', { dateStyle:'short', timeStyle:'short' });
+        let evalTag = '<span class="tag tag-pend">Pendiente</span>';
+        if (r.evaluacion_correcta === true) evalTag = '<span class="tag tag-ok">Correcto</span>';
+        if (r.evaluacion_correcta === false) evalTag = '<span class="tag tag-err">Error</span>';
+        return `<tr>
+          <td>${fecha}</td>
+          <td>${r.linea || ''}</td>
+          <td>${escapeHtml(r.nombre || '')}</td>
+          <td>${r.telefono || ''}</td>
+          <td title="${escapeHtml(r.mensaje_analizado || '')}">${escapeHtml((r.mensaje_analizado || '').substring(0, 80))}${(r.mensaje_analizado || '').length > 80 ? '…' : ''}</td>
+          <td><b>${r.categoria || ''}</b></td>
+          <td>${evalTag}</td>
+          <td>${r.evaluacion_categoria_correcta || '—'}</td>
+          <td class="mini">${escapeHtml(r.evaluacion_razon || '')}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+
+    let reporteActual = '';
+
+    // Flujo único: primero evalúa los pendientes con Sonnet, luego analiza patrones
+    async function analizarYEvaluar() {
+      const btn = document.getElementById('btnAnalizar');
+      const status = document.getElementById('evalStatus');
+      const pwd = localStorage.getItem(PWD_KEY) || '';
+      const horas = +document.getElementById('dias').value * 24;
+      const incluirAnalizadas = document.getElementById('reanalizarTodo').checked;
+
+      btn.disabled = true;
+      btn.style.opacity = 0.6;
+      status.textContent = '';
+
+      try {
+        // FASE 1 — Evaluar pendientes con Sonnet (en loop hasta que no queden)
+        btn.textContent = '⏳ Evaluando pendientes...';
+        let totalEval = 0, totalCorr = 0, totalInc = 0;
+        for (let i = 0; i < 10; i++) {
+          const r = await fetch('/api/admin/evaluar-pendientes', {
+            method: 'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ contrasena: pwd, batch: 30 })
+          });
+          const d = await r.json();
+          if (d.status !== 'ok') { status.textContent = '❌ Fase 1: ' + (d.mensaje || 'error'); return; }
+          totalEval += d.evaluadas || 0;
+          totalCorr += d.correctas || 0;
+          totalInc += d.incorrectas || 0;
+          btn.textContent = `⏳ Evaluando ${totalEval}...`;
+          if (d.restantes === 0 || d.evaluadas === 0) break;
+        }
+
+        // FASE 2 — Analizar patrones con Sonnet
+        btn.textContent = '⏳ Analizando patrones...';
+        const r = await fetch('/api/admin/analizar-errores', {
+          method: 'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ contrasena: pwd, horas, incluir_analizadas: incluirAnalizadas })
+        });
+        const d = await r.json();
+        if (d.status !== 'ok') {
+          status.textContent = '❌ Fase 2: ' + (d.mensaje || 'error');
+          return;
+        }
+        if (!d.stats) {
+          status.textContent = 'ℹ️ ' + (d.mensaje || 'Sin patrones para analizar');
+          cargar();
+          return;
+        }
+        reporteActual = d.reporte_markdown || d.mensaje || 'Sin datos';
+        document.getElementById('reporteContent').innerHTML = mdToHtml(reporteActual);
+        document.getElementById('reporteModal').style.display = 'block';
+        const nuevas = d.analizadas_ahora ? ` | ${d.analizadas_ahora} nuevas analizadas` : '';
+        status.textContent = `✅ ${d.stats.errores} errores | precisión ${d.stats.precision_pct}%${nuevas}`;
+        cargar(); // refrescar tabla
+      } catch (e) {
+        status.textContent = '❌ ' + e.message;
+      } finally {
+        btn.disabled = false;
+        btn.style.opacity = 1;
+        btn.textContent = '🧠 Analizar con IA';
+      }
+    }
+
+    function mdToHtml(md) {
+      // Markdown básico → HTML
+      return escapeHtml(md)
+        .replace(/^## (.+)$/gm, '<h3 style="margin-top:18px; margin-bottom:8px;">$1</h3>')
+        .replace(/^### (.+)$/gm, '<h4 style="margin-top:14px;">$1</h4>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/^- (.+)$/gm, '<li>$1</li>')
+        .replace(/`([^`]+)`/g, '<code style="background:#f0f0f0; padding:2px 6px; border-radius:4px; font-size:0.9em;">$1</code>')
+        .replace(/\n\n/g, '<br><br>');
+    }
+
+    function cerrarReporte() {
+      document.getElementById('reporteModal').style.display = 'none';
+    }
+
+    function copiarReporte() {
+      navigator.clipboard.writeText(reporteActual).then(() => {
+        alert('Reporte copiado al portapapeles');
+      });
+    }
+
+    // ═══ PLANTILLAS DE DIFUSIÓN ═══
+    async function abrirPlantillas() {
+      document.getElementById('plantillasModal').style.display = 'block';
+      await Promise.all([cargarPlantillas(), cargarTags()]);
+    }
+    function cerrarPlantillas() {
+      document.getElementById('plantillasModal').style.display = 'none';
+    }
+    async function cargarPlantillas() {
+      const pwd = localStorage.getItem(PWD_KEY) || '';
+      const tbody = document.getElementById('plantillasTbody');
+      try {
+        const r = await fetch('/api/admin/plantillas-difusion', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ contrasena: pwd, accion: 'listar' })
+        });
+        const d = await r.json();
+        if (d.status !== 'ok') { tbody.innerHTML = `<tr><td colspan="6" class="loading">${d.mensaje}</td></tr>`; return; }
+        const pl = d.plantillas || [];
+        if (pl.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="loading">Sin plantillas aún. Agrega una abajo.</td></tr>'; return; }
+        tbody.innerHTML = pl.map(p => `
+          <tr>
+            <td><input type="checkbox" ${p.activa?'checked':''} onchange="toggleActiva(${p.id})"></td>
+            <td><b>${escapeHtml(p.nombre)}</b></td>
+            <td class="mini">${escapeHtml(p.tag_nombre||'')}<br><span style="color:#999">${p.tag_ns}</span></td>
+            <td>${p.linea||'—'}</td>
+            <td class="mini" style="max-width:300px;">${escapeHtml((p.texto_plantilla||'').substring(0,100))}${(p.texto_plantilla||'').length>100?'…':''}</td>
+            <td>
+              <button onclick="verPlantilla(${p.id})" style="padding:4px 10px; margin-right:4px; background:#eef; border:1px solid #99c; border-radius:4px; cursor:pointer; font-size:0.75rem;">👁 Ver</button>
+              <button onclick="eliminarPlantilla(${p.id})" style="padding:4px 10px; background:#fee; border:1px solid #c99; border-radius:4px; cursor:pointer; font-size:0.75rem;">🗑</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) { tbody.innerHTML = `<tr><td colspan="6" class="loading">Error: ${e.message}</td></tr>`; }
+    }
+    async function cargarTags() {
+      const pwd = localStorage.getItem(PWD_KEY) || '';
+      const cont = document.getElementById('pd_tags');
+      cont.innerHTML = 'Cargando tags...';
+      try {
+        const r = await fetch('/api/admin/tags-chateapro', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ contrasena: pwd, linea:'all', filtro:'LPR' })
+        });
+        const d = await r.json();
+        if (d.status !== 'ok') { cont.innerHTML = `<span class="mini">Error: ${d.mensaje}</span>`; return; }
+        const tags = d.tags || [];
+        // Agrupar por nombre (sin importar línea)
+        const grupos = {};
+        for (const t of tags) {
+          if (!grupos[t.name]) grupos[t.name] = {};
+          grupos[t.name][t.linea] = t.tag_ns;
+        }
+        // Ordenar por nombre
+        const nombres = Object.keys(grupos).sort();
+        if (nombres.length === 0) { cont.innerHTML = '<span class="mini">Sin tags [LPR]</span>'; return; }
+        cont.innerHTML = nombres.map((nombre, i) => {
+          const g = grupos[nombre];
+          const cbL1 = g.L1 ? `<label style="display:inline-flex; align-items:center; gap:4px; margin-right:10px; font-size:0.82rem;"><input type="checkbox" class="pd_tag_cb" data-tagns="${g.L1}" data-nombre="${escapeHtml(nombre)}" data-linea="L1"> L1</label>` : '<span style="display:inline-block; width:52px; margin-right:10px;"></span>';
+          const cbL2 = g.L2 ? `<label style="display:inline-flex; align-items:center; gap:4px; margin-right:10px; font-size:0.82rem;"><input type="checkbox" class="pd_tag_cb" data-tagns="${g.L2}" data-nombre="${escapeHtml(nombre)}" data-linea="L2"> L2</label>` : '<span style="display:inline-block; width:52px; margin-right:10px;"></span>';
+          return `<div style="padding:6px 4px; border-bottom:1px solid #eee; display:flex; align-items:center;">${cbL1}${cbL2}<span style="font-size:0.85rem;">${escapeHtml(nombre)}</span></div>`;
+        }).join('');
+      } catch (e) { cont.innerHTML = `<span class="mini">Error: ${e.message}</span>`; }
+    }
+    async function crearPlantilla() {
+      const pwd = localStorage.getItem(PWD_KEY) || '';
+      const nombre = document.getElementById('pd_nombre').value.trim();
+      const texto = document.getElementById('pd_texto').value.trim();
+      const status = document.getElementById('pd_status');
+      const seleccionados = [...document.querySelectorAll('.pd_tag_cb:checked')].map(cb => ({
+        tag_ns: cb.dataset.tagns,
+        tag_nombre: cb.dataset.nombre,
+        linea: cb.dataset.linea,
+      }));
+      if (!nombre || seleccionados.length === 0 || !texto) {
+        status.textContent = '❌ Completa nombre, texto y marca al menos un tag (L1 o L2)';
+        return;
+      }
+      status.textContent = '⏳ Guardando ' + seleccionados.length + ' plantilla(s)...';
+      let creadas = 0, errores = [];
+      for (const sel of seleccionados) {
+        try {
+          const r = await fetch('/api/admin/plantillas-difusion', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ contrasena: pwd, accion:'crear', data: {
+              nombre: seleccionados.length > 1 ? `${nombre} (${sel.linea})` : nombre,
+              tag_ns: sel.tag_ns,
+              tag_nombre: sel.tag_nombre,
+              linea: sel.linea,
+              texto_plantilla: texto,
+              activa: true,
+            } })
+          });
+          const d = await r.json();
+          if (d.status === 'ok') creadas++;
+          else errores.push(`${sel.linea}: ${d.mensaje}`);
+        } catch (e) { errores.push(`${sel.linea}: ${e.message}`); }
+      }
+      if (errores.length === 0) {
+        status.textContent = `✅ ${creadas} plantilla(s) creada(s)`;
+        document.getElementById('pd_nombre').value = '';
+        document.getElementById('pd_texto').value = '';
+        document.querySelectorAll('.pd_tag_cb').forEach(cb => cb.checked = false);
+      } else {
+        status.textContent = `⚠️ ${creadas} creada(s), ${errores.length} error(es): ${errores.join(' | ')}`;
+      }
+      cargarPlantillas();
+    }
+    async function toggleActiva(id) {
+      const pwd = localStorage.getItem(PWD_KEY) || '';
+      await fetch('/api/admin/plantillas-difusion', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ contrasena: pwd, accion:'toggle-activa', id })
+      });
+      cargarPlantillas();
+    }
+    async function eliminarPlantilla(id) {
+      if (!confirm('¿Eliminar esta plantilla?')) return;
+      const pwd = localStorage.getItem(PWD_KEY) || '';
+      await fetch('/api/admin/plantillas-difusion', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ contrasena: pwd, accion:'eliminar', id })
+      });
+      cargarPlantillas();
+    }
+    async function verPlantilla(id) {
+      const pwd = localStorage.getItem(PWD_KEY) || '';
+      const r = await fetch('/api/admin/plantillas-difusion', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ contrasena: pwd, accion:'listar' })
+      });
+      const d = await r.json();
+      const p = (d.plantillas || []).find(x => x.id === id);
+      if (p) alert(p.texto_plantilla);
+    }
+
+    function descargarCSV() {
+      if (!datos || !datos.filas) return;
+      const header = 'fecha,linea,nombre,telefono,mensaje,categoria_bot,evaluacion,categoria_correcta,razon';
+      const csvRows = datos.filas.map(r => [
+        r.created_at, r.linea, r.nombre, r.telefono, r.mensaje_analizado,
+        r.categoria, r.evaluacion_correcta === true ? 'CORRECTO' : r.evaluacion_correcta === false ? 'INCORRECTO' : 'PENDIENTE',
+        r.evaluacion_categoria_correcta || '', r.evaluacion_razon || ''
+      ].map(v => {
+        const s = String(v ?? '');
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      }).join(',')).join('\n');
+      const blob = new Blob(['\uFEFF' + header + '\n' + csvRows], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `clasificaciones-${new Date().toISOString().substring(0, 10)}.csv`;
+      a.click();
+    }
+
+    // Auto-login si tengo pwd guardada
+    const saved = localStorage.getItem(PWD_KEY);
+    if (saved) {
+      document.getElementById('pwd').value = saved;
+      entrar();
+    }
+  </script>
+  <script src="shared-nav.js"></script>
+</body>
+</html>

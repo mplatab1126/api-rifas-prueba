@@ -4,7 +4,7 @@ const $ = id => document.getElementById(id);
     const appShell = $('appShell');
 
     function activateAppMode() { topBar.classList.remove('hero-mode'); appShell.classList.add('visible'); const bg = $('heroBg'); if(bg){ bg.style.opacity='0'; setTimeout(()=>{ bg.style.display='none'; }, 500); } }
-    function activateHeroMode() { topBar.classList.add('hero-mode'); appShell.classList.remove('visible'); $('smartInput').value = ''; $('smartInput').focus(); setMode('separar'); resetOcrZone('ocrDrop', 'ocrStatus'); resetOcrZone('ocrDropAbono', 'ocrStatusAbono'); const bg = $('heroBg'); if(bg){ bg.style.display='block'; setTimeout(()=>{ bg.style.opacity='1'; }, 10); } }
+    function activateHeroMode() { boletaBloqueadaPorGrupo = false; topBar.classList.add('hero-mode'); appShell.classList.remove('visible'); $('smartInput').value = ''; $('smartInput').focus(); setMode('separar'); resetOcrZone('ocrDrop', 'ocrStatus'); resetOcrZone('ocrDropAbono', 'ocrStatusAbono'); const bg = $('heroBg'); if(bg){ bg.style.display='block'; setTimeout(()=>{ bg.style.opacity='1'; }, 10); } }
 
     function resetOcrZone(dropId, statusId) {
         const el = document.getElementById(dropId);
@@ -789,6 +789,22 @@ $('btnRegistrarVenta').onclick = async ()=>{
        const nums = Array.from(numList.querySelectorAll('input')).map(i=>i.value).filter(v=>v.length===3||v.length===4);
        if(!nums.length) return alert('Agrega al menos una boleta válida (3 o 4 dígitos)');
 
+       // Validación de teléfono: si es de Colombia, exigir formato colombiano.
+       // Si es extranjero, permitir entre 7 y 15 dígitos (estándar internacional E.164).
+       const esColombia = $('v_esColombia') ? !!$('v_esColombia').checked : true;
+       const telRaw = String($('v_telefono').value || '').replace(/\D/g, '');
+       if (esColombia) {
+           const telOk10 = telRaw.length === 10 && telRaw.startsWith('3');
+           const telOk12 = telRaw.length === 12 && telRaw.startsWith('573');
+           if (!telOk10 && !telOk12) {
+               return alert('🚫 El teléfono no es válido.\n\nDebe ser un celular colombiano de 10 dígitos que empiece con 3 (ej: 3001234567).\n\nNo escribas el 57 adelante ni dejes el doble 57.\n\nSi el cliente es extranjero, desmarca la casilla "¿Es de Colombia?".');
+           }
+       } else {
+           if (telRaw.length < 7 || telRaw.length > 15) {
+               return alert('🚫 El teléfono internacional no es válido.\n\nDebe tener entre 7 y 15 dígitos incluyendo el código del país (ej: 13055551234 para USA).');
+           }
+       }
+
        const esVentaPremioRifa = modoVenta === 'premio_rifa';
        const esVentaEfectivo = modoVenta === 'efectivo';
        const esMiEquipoVenta = nombreAsesorActual && !esAsesorIndependiente(nombreAsesorActual);
@@ -813,12 +829,13 @@ $('btnRegistrarVenta').onclick = async ()=>{
 
        const perNum = Math.floor(totalMoney/nums.length);
        const idTransVenta = (esVentaPremioRifa || esVentaEfectivo) ? '' : $('v_idTransferencia').value;
-       const baseData = { 
-           nombre: $('v_nombre').value, 
-           apellido: $('v_apellido').value, 
-           ciudad: $('v_ciudad').value, 
-           telefono: $('v_telefono').value, 
-           primerAbono: perNum, 
+       const baseData = {
+           nombre: $('v_nombre').value,
+           apellido: $('v_apellido').value,
+           ciudad: $('v_ciudad').value,
+           telefono: $('v_telefono').value,
+           esColombia: esColombia,
+           primerAbono: perNum,
            referenciaAbono: ref, 
            metodoPago: metodo, 
            esPendiente: (esVentaPremioRifa || esVentaEfectivo) ? false : esVentaPendiente, 
@@ -840,8 +857,20 @@ $('btnRegistrarVenta').onclick = async ()=>{
                    numeroBoleta: nums[i],
                    idTransferencia: i === 0 ? baseData.idTransferencia : ''
                };
-               const req = await fetch('/api/admin/venta', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(ventaPayload) });
-               const res = await req.json();
+               let req = await fetch('/api/admin/venta', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(ventaPayload) });
+               let res = await req.json();
+
+               // Si el abono inicial supera el precio de la boleta, preguntar al asesor si quiere forzar
+               if (res.status === 'error' && res.codigo === 'EXCESO_SALDO') {
+                   const fmtC = n => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
+                   const d = res.datos || {};
+                   const aceptar = confirm(`⚠️ AVISO — Boleta ${d.numeroBoleta || nums[i]}\n\nEl abono (${fmtC(d.montoAbono)}) supera el precio total (${fmtC(d.saldoRestante)}) en ${fmtC(d.exceso)}.\n\n¿Registrar la venta igual?\n\nLos pesos de más NO quedarán en contra de la boleta. Se reflejarán en el total abonado y el saldo restante quedará en $0.`);
+                   if (aceptar) {
+                       req = await fetch('/api/admin/venta', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ ...ventaPayload, permitirExceso: true }) });
+                       res = await req.json();
+                   }
+               }
+
                if(res.status === 'ok') { ok++; } else { fails++; detalleErrores.push(`Boleta ${nums[i]}: ${res.mensaje}`); }
            } catch(e) { fails++; detalleErrores.push(`Boleta ${nums[i]}: Error de conexión`); }
        }
@@ -953,8 +982,19 @@ $('btnRegistrarVenta').onclick = async ()=>{
                    valorAbono: montosPorBoleta[boletasTarget[i]],
                    idTransferencia: i === 0 ? basePayload.idTransferencia : ''
                };
-               const req = await fetch('/api/admin/abono', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-               const res = await req.json();
+               let req = await fetch('/api/admin/abono', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+               let res = await req.json();
+
+               // Si el abono supera el saldo restante, preguntar al asesor si quiere forzar
+               if (res.status === 'error' && res.codigo === 'EXCESO_SALDO') {
+                   const fmtC = n => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
+                   const d = res.datos || {};
+                   const aceptar = confirm(`⚠️ AVISO — Boleta ${d.numeroBoleta || boletasTarget[i]}\n\nEl abono (${fmtC(d.montoAbono)}) supera el saldo restante (${fmtC(d.saldoRestante)}) en ${fmtC(d.exceso)}.\n\n¿Registrar el abono igual?\n\nLos pesos de más NO quedarán en contra de la boleta. Se reflejarán en el total abonado y el saldo restante quedará en $0.`);
+                   if (aceptar) {
+                       req = await fetch('/api/admin/abono', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ ...payload, permitirExceso: true }) });
+                       res = await req.json();
+                   }
+               }
 
                if(res.status === 'ok') { ok++; } else { fails++; detalleErrores.push(`Boleta ${boletasTarget[i]}: ${res.mensaje}`); }
             } catch(e) { fails++; detalleErrores.push(`Boleta ${boletasTarget[i]}: Error de conexión del servidor`); }
@@ -1085,11 +1125,41 @@ $('btnRegistrarVenta').onclick = async ()=>{
        document.getElementById('cliente-info-render').innerHTML = html;
 
        if(boletasStr.length > 0) cargarHistorialAbonos(boletasStr[0]);
-       
+
+       // Si la boleta pertenece a otro grupo, bloquear TODAS las acciones
+       boletaBloqueadaPorGrupo = esBolotaDeOtroGrupo(lista);
+       if (boletaBloqueadaPorGrupo) {
+           var zonaPagos = document.getElementById('zona-pagos');
+           if (zonaPagos) zonaPagos.style.display = 'none';
+
+           var avisoHtml = '<div style="background:var(--danger); color:#fff; padding:16px 20px; border-radius:12px; margin-bottom:20px; text-align:center; font-size:0.9rem; line-height:1.5;">';
+           avisoHtml += '<b>🚫 Esta boleta no es de tu equipo</b><br>';
+           avisoHtml += 'Solo puedes verla. No puedes abonar, liberar, borrar abonos ni modificar datos.';
+           avisoHtml += '</div>';
+           document.getElementById('cliente-info-render').insertAdjacentHTML('afterbegin', avisoHtml);
+
+           // Deshabilitar todos los botones de acción dentro del panel
+           document.querySelectorAll('#cliente-info-render button').forEach(function(btn) {
+               btn.disabled = true;
+               btn.style.opacity = '0.4';
+               btn.style.pointerEvents = 'none';
+           });
+           // Deshabilitar checkboxes de selección de boletas
+           document.querySelectorAll('#cliente-info-render input[type="checkbox"]').forEach(function(cb) {
+               cb.disabled = true;
+           });
+           // Deshabilitar campos de texto editables
+           document.querySelectorAll('#cliente-info-render input[type="text"]:not([disabled])').forEach(function(inp) {
+               inp.disabled = true;
+               inp.style.opacity = '0.6';
+           });
+           return;
+       }
+
        verificarSeleccionAbonos();
-       verificarReclamarBoleta(lista);
     }
 
+    let boletaBloqueadaPorGrupo = false; // Se activa cuando la boleta es de otro grupo
     let modoDistribucionAbono = 'uniforme'; // 'uniforme' | 'manual'
     let modoAbonoPago = 'inteligente'; // 'inteligente' | 'efectivo' | 'premio_rifa'
     let ubicacionEfectivo = ''; // 'oficina' | 'calle' | '' (sin elegir)
@@ -1363,50 +1433,14 @@ $('btnRegistrarVenta').onclick = async ()=>{
         }
     }
 
-    function verificarReclamarBoleta(lista) {
-        if (!nombreAsesorActual || !lista || lista.length === 0) return;
+    function esBolotaDeOtroGrupo(lista) {
+        if (!nombreAsesorActual || !lista || lista.length === 0) return false;
         const grupoActual = esAsesorIndependiente(nombreAsesorActual) ? 'independiente' : 'regular';
-
-        // Boletas cuyo asesor es de un grupo DIFERENTE al logueado
-        const boletasAReclamar = lista
-            .filter(b => {
-                if (!b.asesor) return false;
-                const grupoBoleta = esAsesorIndependiente(b.asesor) ? 'independiente' : 'regular';
-                return grupoBoleta !== grupoActual;
-            })
-            .map(b => b.numero);
-
-        if (boletasAReclamar.length === 0) return;
-
-        const modal = document.getElementById('modalReclamarBoleta');
-        modal.style.display = 'flex';
-
-        document.getElementById('btnReclamarCancelar').onclick = () => {
-            modal.style.display = 'none';
-        };
-        document.getElementById('btnReclamarSi').onclick = async () => {
-            modal.style.display = 'none';
-            await reclamarBoleta(boletasAReclamar);
-        };
-    }
-
-    async function reclamarBoleta(numeros) {
-        try {
-            const req = await fetch('/api/admin/reclamar-boleta', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contrasena: localStorage.getItem(STORAGE_KEY), numeros })
-            });
-            const res = await req.json();
-            if (res.status === 'ok') {
-                showModal('✅ Boleta reclamada', `La boleta ahora está asignada a ${nombreAsesorActual}.`);
-                runSearch();
-            } else {
-                showModal('Error', res.mensaje);
-            }
-        } catch (e) {
-            showModal('Error', 'No se pudo reclamar la boleta.');
-        }
+        return lista.some(b => {
+            if (!b.asesor) return false;
+            const grupoBoleta = esAsesorIndependiente(b.asesor) ? 'independiente' : 'regular';
+            return grupoBoleta !== grupoActual;
+        });
     }
 
     async function copiarLinkBoleta(numero) {
@@ -1455,7 +1489,8 @@ $('btnRegistrarVenta').onclick = async ()=>{
                         <td style="padding:10px 4px; text-align:right; white-space:nowrap;">
                             ${urlFoto ? `<button style="background:transparent; border:none; color:var(--accent-2); font-size:0.8rem; cursor:pointer; font-weight:500; font-family:inherit; padding:0; margin-right:10px;" 
                                 onclick="mostrarFoto('${urlFoto}')">Ver foto</button>` : ''}
-                            <button style="background:transparent; border:none; color:var(--danger); font-size:0.8rem; cursor:pointer; font-weight:500; font-family:inherit; padding:0;" 
+                            <button style="background:transparent; border:none; color:var(--danger); font-size:0.8rem; cursor:pointer; font-weight:500; font-family:inherit; padding:0;${boletaBloqueadaPorGrupo ? ' opacity:0.4; pointer-events:none;' : ''}"
+                                ${boletaBloqueadaPorGrupo ? 'disabled' : ''}
                                 onclick="confirmarEliminarAbono('${a.id}', this)">Borrar</button>
                         </td>
                     </tr>`;
@@ -2717,9 +2752,26 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
             }
             if (!fechaPago) return null;
 
-            // Hora: HH:MM:SS (buscar en todo el texto)
-            const horaMatch = t.match(/\b(\d{1,2}:\d{2}:\d{2})\b/);
-            const horaPago = horaMatch ? horaMatch[1].padStart(8, '0') : '12:00:00';
+            // Hora del movimiento: buscar específicamente junto a "Fecha de aplicación".
+            // En Bancolombia el layout es: "Fecha de aplicación" → "17 abr 2026" → "10:34:08".
+            // NO usamos la primera hora del texto porque también aparece la hora de descarga
+            // en el encabezado ("Viernes, 17 de abril de 2026, 4:51:05 p.m.") y se confundirían.
+            let horaPago = '12:00:00';
+            const idxAplicacion = lineas.findIndex(l =>
+                l.toLowerCase().includes('fecha de aplicación') ||
+                l.toLowerCase().includes('fecha de aplicacion')
+            );
+            if (idxAplicacion !== -1) {
+                // Revisar las 2 líneas siguientes (por si el orden es fecha→hora o hora→fecha)
+                for (let k = 1; k <= 2; k++) {
+                    const linea = (lineas[idxAplicacion + k] || '').trim();
+                    const m = linea.match(/^(\d{1,2}):(\d{2}):(\d{2})$/);
+                    if (m) {
+                        horaPago = `${m[1].padStart(2, '0')}:${m[2]}:${m[3]}`;
+                        break;
+                    }
+                }
+            }
 
             // Descripción
             const descripcion = buscarCampo('Descripción') || buscarCampo('Descripcion') || '';

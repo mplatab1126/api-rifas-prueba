@@ -9,6 +9,12 @@
     },
     "api/admin/conciliar-consolidado.js": {
       "maxDuration": 30
+    },
+    "api/admin/evaluar-pendientes.js": {
+      "maxDuration": 60
+    },
+    "api/admin/analizar-errores.js": {
+      "maxDuration": 60
     }
   },
   "crons": [],
@@ -28,6 +34,10 @@
     {
       "source": "/rendimiento",
       "destination": "/rendimiento.html"
+    },
+    {
+      "source": "/rendimiento-contenido",
+      "destination": "/rendimiento-contenido/index.html"
     },
     {
       "source": "/rifas",
@@ -56,6 +66,10 @@
     {
       "source": "/permisos",
       "destination": "/permisos.html"
+    },
+    {
+      "source": "/clasificaciones",
+      "destination": "/clasificaciones.html"
     }
   ]
 }

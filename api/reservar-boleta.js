@@ -1,6 +1,6 @@
 import { supabase } from './lib/supabase.js';
 import { aplicarCors } from './lib/cors.js';
-import { limpiarTelefono } from './lib/telefono.js';
+import { limpiarTelefono, esTelefonoValido } from './lib/telefono.js';
 
 const WHATSAPP = '573107334957';
 
@@ -19,6 +19,9 @@ export default async function handler(req, res) {
   }
 
   const telefonoLimpio = limpiarTelefono(telefono, indicativo || '57');
+  if (!esTelefonoValido(telefonoLimpio, indicativo || '57')) {
+    return res.status(400).json({ error: 'El número de teléfono no es válido. Escribe solo tu número celular, sin el código de país (57).' });
+  }
   const nombreCompleto = `${nombre} ${apellido || ''}`.trim();
 
   try {
