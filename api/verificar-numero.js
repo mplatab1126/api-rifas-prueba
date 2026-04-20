@@ -71,7 +71,7 @@ export default async function handler(req, res) {
       return res.status(200).json({
         numero,
         disponible: true,
-        mensaje: `¡Sí! El número *${numero}* está disponible. 🍀\n\n¿Quieres apartarlo?`,
+        mensaje: `¡Sí! El número *${numero}* está disponible. 🍀`,
       });
     }
 
@@ -79,7 +79,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       numero,
       disponible: false,
-      mensaje: `El número *${numero}* ya no está disponible. 😔\n\n¿Te muestro otros?`,
+      mensaje: `El número *${numero}* ya no está disponible. 😔`,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
