@@ -1159,13 +1159,13 @@ function readCache(start, end) {
       return null;
     }
     return entry;
-  } catch { return null; }
+  } catch (e) { return null; }
 }
 
 function writeCache(start, end, json) {
   try {
     localStorage.setItem(cacheKey(start, end), JSON.stringify({ ts: Date.now(), json }));
-  } catch { /* localStorage lleno, ignorar */ }
+  } catch (e) { /* localStorage lleno, ignorar */ }
 }
 
 const statusBanner = document.createElement("div");
@@ -1186,11 +1186,13 @@ function hideBanner() {
 }
 
 function setLoadingState(loading) {
-  const els = [refs.syncMetaAds, refs.syncInstagram, refs.applyFilters, refs.resetFilters];
-  els.forEach((el) => { if (el) el.disabled = loading; });
-  document.querySelectorAll(".range-chip").forEach((c) => { c.disabled = loading; });
+  // Los botones Sync nunca se deshabilitan — siempre deben responder al clic
   if (refs.syncMetaAds) refs.syncMetaAds.textContent = loading ? "Sincronizando..." : "Sync Meta Ads";
   if (refs.syncInstagram) refs.syncInstagram.textContent = loading ? "Sincronizando..." : "Sync Instagram";
+  // Los filtros sí se bloquean para evitar envíos dobles
+  const filterEls = [refs.applyFilters, refs.resetFilters];
+  filterEls.forEach((el) => { if (el) el.disabled = loading; });
+  document.querySelectorAll(".range-chip").forEach((c) => { c.disabled = loading; });
 }
 
 function applyData(json) {
@@ -1277,8 +1279,8 @@ async function cargarDataReal(forceRefresh = false) {
 }
 
 // Los botones Sync fuerzan refresco ignorando el caché
-refs.syncMetaAds.addEventListener("click", () => cargarDataReal(true));
-refs.syncInstagram.addEventListener("click", () => cargarDataReal(true));
+if (refs.syncMetaAds) refs.syncMetaAds.addEventListener("click", () => cargarDataReal(true));
+if (refs.syncInstagram) refs.syncInstagram.addEventListener("click", () => cargarDataReal(true));
 
 // Aplicar/limpiar filtros: usa caché si las fechas no cambiaron
 refs.applyFilters.addEventListener("click", cargarDataReal);
