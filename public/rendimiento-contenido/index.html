@@ -72,13 +72,21 @@
       <section class="section">
         <div class="section-head">
           <h2>1. Rendimiento de Anuncios</h2>
-          <div class="inline-control">
-            <label for="adsSort">Ordenar por</label>
-            <select id="adsSort">
-              <option value="roas_desc">Mejor ROAS</option>
-              <option value="sales_desc">Mas ventas</option>
-              <option value="cpa_asc">Menor costo por compra</option>
-            </select>
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+            <div class="inline-control">
+              <label for="adsSectionCampaignFilter">Campaña</label>
+              <select id="adsSectionCampaignFilter">
+                <option value="">Todas</option>
+              </select>
+            </div>
+            <div class="inline-control">
+              <label for="adsSort">Ordenar por</label>
+              <select id="adsSort">
+                <option value="roas_desc">Mejor ROAS</option>
+                <option value="sales_desc">Mas ventas</option>
+                <option value="cpa_asc">Menor costo por compra</option>
+              </select>
+            </div>
           </div>
         </div>
         <div id="adsMetrics" class="metric-grid"></div>
@@ -90,10 +98,10 @@
                 <th>Inversion</th>
                 <th>Compras</th>
                 <th>CPA</th>
-                <th>ROAS</th>
-                <th>CTR</th>
                 <th>Hook rate</th>
-                <th>Hold rate</th>
+                <th>Estado</th>
+                <th>Presupuesto diario</th>
+                <th>Editar</th>
               </tr>
             </thead>
             <tbody id="adsTableBody"></tbody>
@@ -102,37 +110,7 @@
       </section>
 
       <section class="section">
-        <div class="section-head">
-          <h2>2. Presupuestos por Conjunto</h2>
-          <button type="button" id="presupuestosToggle" class="btn btn-ghost">Ver ▼</button>
-        </div>
-        <div id="presupuestosContent" hidden>
-          <div class="inline-control" style="margin-bottom:14px;">
-            <label for="presupuestosCampaignFilter">Campaña</label>
-            <select id="presupuestosCampaignFilter">
-              <option value="">Todas las campañas</option>
-            </select>
-          </div>
-          <div id="presupuestosWrap" class="card table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Campaña</th>
-                  <th>Conjunto de anuncios</th>
-                  <th>Estado</th>
-                  <th>Presupuesto diario</th>
-                  <th>Compras</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="presupuestosTableBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <section class="section">
-        <h2>3. Rendimiento Organico</h2>
+        <h2>2. Rendimiento Organico</h2>
         <div class="social-toggle" id="organicSocialToggle">
           <button class="social-btn active" data-social="instagram" aria-label="Instagram">
             <span class="social-icon instagram" aria-hidden="true">
@@ -160,7 +138,7 @@
 
       <section class="section">
         <div class="section-head">
-          <h2>4. Top Contenidos</h2>
+          <h2>3. Top Contenidos</h2>
           <div class="inline-control">
             <label for="topRange">Periodo</label>
             <select id="topRange">
@@ -182,7 +160,7 @@
       </section>
 
       <section class="section">
-        <h2>5. Copys Ganadores</h2>
+        <h2>4. Copys Ganadores</h2>
         <div class="top-content-split">
           <div class="top-content-block">
             <h3 class="top-content-title">Ads</h3>
@@ -196,12 +174,12 @@
       </section>
 
       <section class="section">
-        <h2>6. Insights Automaticos</h2>
+        <h2>5. Insights Automaticos</h2>
         <div id="insightsGrid" class="insights-grid"></div>
       </section>
 
       <section class="section">
-        <h2>7. Alertas y Tendencias</h2>
+        <h2>6. Alertas y Tendencias</h2>
         <div class="signals-grid">
           <div class="signal-block">
             <h3 class="top-content-title">Alertas</h3>

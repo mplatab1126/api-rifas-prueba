@@ -95,6 +95,8 @@ function transformarAd(item) {
   return {
     id: item.ad_id || item.id,
     name: item.ad_name || 'Sin nombre',
+    adsetId: item.adset_id || null,
+    adsetName: item.adset_name || '',
     date: item.date_start || new Date().toISOString().slice(0, 10),
     campaign: item.campaign_name || 'Sin campaña',
     spend: Math.round(parseFloat(item.spend) || 0),
@@ -126,6 +128,8 @@ function agruparAds(insights) {
       map.set(key, {
         ad_id: row.ad_id,
         ad_name: row.ad_name,
+        adset_id: row.adset_id,
+        adset_name: row.adset_name,
         campaign_name: row.campaign_name,
         date_start: row.date_start,
         date_stop: row.date_stop,
@@ -230,6 +234,8 @@ async function traerAds(since, until) {
   const fields = [
     'ad_id',
     'ad_name',
+    'adset_id',
+    'adset_name',
     'campaign_name',
     'spend',
     'impressions',

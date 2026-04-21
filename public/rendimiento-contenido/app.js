@@ -19,8 +19,7 @@ const state = {
   topRangeDays: 7,
   organicSocial: "instagram",
   favorites: new Set(),
-  presupuestosFilter: '',
-  presupuestosOpen: false,
+  adsSectionCampaignFilter: '',
 };
 
 let dataSource = {
@@ -312,10 +311,7 @@ const refs = {
   syncMetaAds: document.getElementById("syncMetaAds"),
   syncInstagram: document.getElementById("syncInstagram"),
   lastSyncTime: document.getElementById("lastSyncTime"),
-  presupuestosTableBody: document.getElementById("presupuestosTableBody"),
-  presupuestosToggle: document.getElementById("presupuestosToggle"),
-  presupuestosContent: document.getElementById("presupuestosContent"),
-  presupuestosCampaignFilter: document.getElementById("presupuestosCampaignFilter"),
+  adsSectionCampaignFilter: document.getElementById("adsSectionCampaignFilter"),
 };
 
 function formatMoney(value) {
@@ -711,7 +707,23 @@ function renderAdsSection(ads) {
     },
   ]);
 
-  const sorted = [...ads].sort((a, b) => {
+  // Poblar filtro de campaña de la sección
+  if (refs.adsSectionCampaignFilter) {
+    const campaigns = [...new Set(ads.map((a) => a.campaign).filter(Boolean))].sort();
+    const cur = state.adsSectionCampaignFilter;
+    refs.adsSectionCampaignFilter.innerHTML =
+      `<option value="">Todas</option>` +
+      campaigns.map((c) =>
+        `<option value="${c.replace(/"/g, "&quot;")}" ${cur === c ? "selected" : ""}>${c}</option>`
+      ).join("");
+  }
+
+  // Filtrar tabla por campaña seleccionada en la sección
+  const tableAds = state.adsSectionCampaignFilter
+    ? ads.filter((a) => a.campaign === state.adsSectionCampaignFilter)
+    : ads;
+
+  const sorted = [...tableAds].sort((a, b) => {
     if (state.adsSort === "sales_desc") return b.revenue - a.revenue;
     if (state.adsSort === "cpa_asc") return a.cpa - b.cpa;
     return b.roas - a.roas;
@@ -722,22 +734,70 @@ function renderAdsSection(ads) {
     return;
   }
 
-  refs.adsTableBody.innerHTML = sorted
-    .map(
-      (ad, index) => `
-      <tr class="${index === 0 ? "top-row" : ""}">
+  refs.adsTableBody.innerHTML = sorted.map((ad, index) => {
+    const adset = (dataSource.adsets || []).find((a) => a.id === ad.adsetId);
+    const estadoBadge = adset
+      ? (adset.status === "ACTIVE"
+          ? `<span style="color:#15803d;font-weight:600;">Activo</span>`
+          : `<span style="color:#92400e;font-weight:600;">Pausado</span>`)
+      : "—";
+    const esTotal = adset && adset.dailyBudget === 0 && adset.lifetimeBudget > 0;
+    const presupuestoTexto = adset
+      ? (esTotal ? `${formatMoney(adset.lifetimeBudget)} (total)` : formatMoney(adset.dailyBudget))
+      : "—";
+    const canEdit = adset && !esTotal;
+    const editBtn = canEdit
+      ? `<button class="btn btn-ghost btn-editar-ad" style="font-size:13px;padding:6px 10px;"
+           data-adset-id="${adset.id}" data-presupuesto-actual="${adset.dailyBudget}">Editar</button>`
+      : `<span style="font-size:12px;color:#94a3b8;">—</span>`;
+
+    return `
+      <tr class="${index === 0 ? "top-row" : ""}" data-adset-id="${ad.adsetId || ""}">
         <td>${ad.name}</td>
         <td>${formatMoney(ad.spend)}</td>
         <td>${formatNumber(ad.purchases)}</td>
         <td>${formatMoney(ad.cpa)}</td>
-        <td>${ad.roas.toFixed(2)}</td>
-        <td>${formatPct(ad.ctr)}</td>
         <td>${ad.hookRate !== null ? formatPct(ad.hookRate) : "—"}</td>
-        <td>${ad.holdRate !== null ? formatPct(ad.holdRate) : "—"}</td>
-      </tr>
-    `
-    )
-    .join("");
+        <td>${estadoBadge}</td>
+        <td class="celda-presupuesto-ad">${presupuestoTexto}</td>
+        <td>${editBtn}</td>
+      </tr>`;
+  }).join("");
+
+  // Wiring botón Editar dentro de la tabla de anuncios
+  refs.adsTableBody.querySelectorAll(".btn-editar-ad").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const adsetId = btn.dataset.adsetId;
+      const actual = parseInt(btn.dataset.presupuestoActual);
+      const fila = btn.closest("tr");
+      if (!fila) return;
+
+      fila.querySelector(".celda-presupuesto-ad").innerHTML = `
+        <input type="number" class="input-presupuesto" value="${actual}" min="4000" step="1000"
+          style="width:120px;padding:5px 7px;border:1px solid #c5d5f5;border-radius:8px;font-size:13px;font-weight:600;">
+        <span style="font-size:12px;color:#64748b;margin-left:4px;">COP/día</span>
+      `;
+      fila.querySelector("td:last-child").innerHTML = `
+        <button class="btn btn-primary btn-guardar-presupuesto" style="font-size:12px;padding:5px 9px;margin-right:4px;">Guardar</button>
+        <button class="btn btn-ghost btn-cancelar-presupuesto" style="font-size:12px;padding:5px 9px;">Cancelar</button>
+      `;
+
+      fila.querySelector(".btn-guardar-presupuesto").addEventListener("click", () => {
+        const nuevo = parseInt(fila.querySelector(".input-presupuesto").value);
+        if (isNaN(nuevo) || nuevo < 4000) {
+          alert("El presupuesto mínimo es $4.000 COP");
+          return;
+        }
+        if (nuevo === actual) { render(); return; }
+        if (!confirm(`¿Cambiar presupuesto a ${formatMoney(nuevo)}/día?`)) return;
+        actualizarPresupuesto(adsetId, nuevo, fila);
+      });
+
+      fila.querySelector(".btn-cancelar-presupuesto").addEventListener("click", () => {
+        render();
+      });
+    });
+  });
 }
 
 function renderOrganicSection(organic) {
@@ -1018,7 +1078,7 @@ async function actualizarPresupuesto(adsetId, nuevoPresupuesto, fila) {
     // Actualizar localmente para reflejar el cambio sin re-sincronizar
     const adset = dataSource.adsets.find((a) => a.id === adsetId);
     if (adset) adset.dailyBudget = parseInt(nuevoPresupuesto);
-    renderPresupuestos();
+    render();
   } catch (err) {
     alert("Error de conexión: " + err.message);
     if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = "Guardar"; }
@@ -1026,97 +1086,6 @@ async function actualizarPresupuesto(adsetId, nuevoPresupuesto, fila) {
   }
 }
 
-function renderPresupuestos() {
-  const tbody = refs.presupuestosTableBody;
-  if (!tbody) return;
-  const allAdsets = dataSource.adsets || [];
-
-  // Poblar el filtro de campañas
-  if (refs.presupuestosCampaignFilter) {
-    const campaigns = [...new Set(allAdsets.map((a) => a.campaignName).filter(Boolean))].sort();
-    const cur = state.presupuestosFilter;
-    refs.presupuestosCampaignFilter.innerHTML =
-      `<option value="">Todas las campañas</option>` +
-      campaigns.map((c) =>
-        `<option value="${c.replace(/"/g, "&quot;")}" ${cur === c ? "selected" : ""}>${c}</option>`
-      ).join("");
-  }
-
-  // Aplicar filtro de campaña
-  const adsets = state.presupuestosFilter
-    ? allAdsets.filter((a) => a.campaignName === state.presupuestosFilter)
-    : allAdsets;
-
-  if (!adsets.length) {
-    tbody.innerHTML = `<tr><td colspan="6" class="empty">Sin conjuntos activos o pausados.</td></tr>`;
-    return;
-  }
-
-  const sorted = [...adsets].sort((a, b) => b.dailyBudget - a.dailyBudget);
-
-  tbody.innerHTML = sorted.map((a) => {
-    const esPresupuestoTotal = a.dailyBudget === 0 && a.lifetimeBudget > 0;
-    const presupuestoTexto = esPresupuestoTotal
-      ? `${formatMoney(a.lifetimeBudget)} (total)`
-      : formatMoney(a.dailyBudget);
-    const presupuestoValor = esPresupuestoTotal ? a.lifetimeBudget : a.dailyBudget;
-    const estadoBadge = a.status === "ACTIVE"
-      ? `<span style="color:#15803d;font-weight:600;">Activo</span>`
-      : `<span style="color:#92400e;font-weight:600;">Pausado</span>`;
-    const comprasTexto = (a.purchases > 0) ? formatNumber(a.purchases) : "—";
-
-    return `
-      <tr data-adset-id="${a.id}">
-        <td>${a.campaignName || "—"}</td>
-        <td>${a.name}</td>
-        <td>${estadoBadge}</td>
-        <td class="celda-presupuesto">${presupuestoTexto}</td>
-        <td>${comprasTexto}</td>
-        <td>
-          ${esPresupuestoTotal
-            ? `<span style="font-size:12px;color:#94a3b8;">Presupuesto total — no editable desde aquí</span>`
-            : `<button class="btn btn-ghost btn-editar-presupuesto" style="font-size:13px;padding:6px 10px;"
-                data-adset-id="${a.id}" data-presupuesto-actual="${presupuestoValor}">Editar</button>`
-          }
-        </td>
-      </tr>`;
-  }).join("");
-
-  // Wiring del botón Editar
-  tbody.querySelectorAll(".btn-editar-presupuesto").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const adsetId = btn.dataset.adsetId;
-      const actual = parseInt(btn.dataset.presupuestoActual);
-      const fila = tbody.querySelector(`tr[data-adset-id="${adsetId}"]`);
-      if (!fila) return;
-
-      fila.querySelector(".celda-presupuesto").innerHTML = `
-        <input type="number" class="input-presupuesto" value="${actual}" min="4000" step="1000"
-          style="width:130px;padding:6px 8px;border:1px solid #c5d5f5;border-radius:8px;font-size:14px;font-weight:600;">
-        <span style="font-size:12px;color:#64748b;margin-left:4px;">COP/día</span>
-      `;
-      fila.querySelector("td:last-child").innerHTML = `
-        <button class="btn btn-primary btn-guardar-presupuesto" style="font-size:13px;padding:6px 10px;margin-right:6px;">Guardar</button>
-        <button class="btn btn-ghost btn-cancelar-presupuesto" style="font-size:13px;padding:6px 10px;">Cancelar</button>
-      `;
-
-      fila.querySelector(".btn-guardar-presupuesto").addEventListener("click", () => {
-        const nuevo = parseInt(fila.querySelector(".input-presupuesto").value);
-        if (isNaN(nuevo) || nuevo < 4000) {
-          alert("El presupuesto mínimo es $4.000 COP");
-          return;
-        }
-        if (nuevo === actual) { renderPresupuestos(); return; }
-        if (!confirm(`¿Cambiar presupuesto a ${formatMoney(nuevo)}/día?`)) return;
-        actualizarPresupuesto(adsetId, nuevo, fila);
-      });
-
-      fila.querySelector(".btn-cancelar-presupuesto").addEventListener("click", () => {
-        renderPresupuestos();
-      });
-    });
-  });
-}
 
 function render() {
   const { ads, organic, copies } = getFilteredData();
@@ -1126,7 +1095,6 @@ function render() {
   renderOrganicSection(organic);
   renderTopContent(ads, organic);
   renderCopies(copies);
-  renderPresupuestos();
 }
 
 function populateFilters() {
@@ -1237,19 +1205,10 @@ function setupEvents() {
     render();
   });
 
-  if (refs.presupuestosToggle) {
-    refs.presupuestosToggle.addEventListener("click", (e) => {
-      e.stopPropagation();
-      state.presupuestosOpen = !state.presupuestosOpen;
-      if (refs.presupuestosContent) refs.presupuestosContent.hidden = !state.presupuestosOpen;
-      refs.presupuestosToggle.textContent = state.presupuestosOpen ? "Ocultar ▲" : "Ver ▼";
-    });
-  }
-
-  if (refs.presupuestosCampaignFilter) {
-    refs.presupuestosCampaignFilter.addEventListener("change", (e) => {
-      state.presupuestosFilter = e.target.value;
-      renderPresupuestos();
+  if (refs.adsSectionCampaignFilter) {
+    refs.adsSectionCampaignFilter.addEventListener("change", (e) => {
+      state.adsSectionCampaignFilter = e.target.value;
+      renderAdsSection(getFilteredData().ads);
     });
   }
 }
