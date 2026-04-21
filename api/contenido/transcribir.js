@@ -34,14 +34,17 @@ const ACCESO_PERMITIDO = ['mateo', 'alejo p', 'alejo plata', 'valeria'];
  * @param {string} [adId]   - ID del anuncio (opcional, habilita intento extra vía post)
  */
 async function getMetaVideoUrl(videoId, adId) {
+  const log = []; // acumula detalles para debug en el mensaje de error
+
   // Intento 1: endpoint directo del video (requiere video_upload en el token)
   try {
     const r = await fetch(`${GRAPH}/${videoId}?fields=source&access_token=${META_TOKEN}`);
     const json = await r.json();
     if (!json.error && json.source) return { url: json.source };
-  } catch (e) { /* continuar */ }
+    log.push(`v1:${json.error?.code ?? 'sin_source'}`);
+  } catch (e) { log.push(`v1:exc`); }
 
-  // Intento 2: via librería de videos con parámetro video_ids (más directo)
+  // Intento 2: via librería de videos con parámetro video_ids
   if (AD_ACCOUNT_ID) {
     try {
       const r = await fetch(
@@ -50,10 +53,11 @@ async function getMetaVideoUrl(videoId, adId) {
       const json = await r.json();
       const found = (json.data || []).find((v) => String(v.id) === String(videoId));
       if (found?.source) return { url: found.source };
-    } catch (e) { /* continuar */ }
+      log.push(`v2:${json.error?.code ?? (json.data?.length === 0 ? 'empty' : 'no_source')}`);
+    } catch (e) { log.push(`v2:exc`); }
   }
 
-  // Intento 3: via librería con filtering correctamente URL-encoded
+  // Intento 3: via librería con filtering URL-encoded
   if (AD_ACCOUNT_ID) {
     try {
       const filterStr = encodeURIComponent(
@@ -65,11 +69,11 @@ async function getMetaVideoUrl(videoId, adId) {
       const json = await r.json();
       const found = (json.data || []).find((v) => String(v.id) === String(videoId));
       if (found?.source) return { url: found.source };
-    } catch (e) { /* continuar */ }
+      log.push(`v3:${json.error?.code ?? (json.data?.length === 0 ? 'empty' : 'no_source')}`);
+    } catch (e) { log.push(`v3:exc`); }
   }
 
-  // Intento 4: via el post del anuncio → no requiere video_upload
-  // Obtiene el effective_object_story_id del creativo y extrae el video del post
+  // Intento 4: via post del anuncio → effective_object_story_id → attachments
   if (adId) {
     try {
       const r1 = await fetch(
@@ -84,11 +88,35 @@ async function getMetaVideoUrl(videoId, adId) {
         const j2 = await r2.json();
         const source = j2?.attachments?.data?.[0]?.media?.source;
         if (source) return { url: source };
+        log.push(`v4:story=${storyId},err=${j2.error?.code ?? 'no_source'}`);
+      } else {
+        log.push(`v4:no_story(${j1.error?.code ?? 'ok'})`);
       }
-    } catch (e) { /* continuar */ }
+    } catch (e) { log.push(`v4:exc`); }
   }
 
-  return { error: 'Meta no devolvió URL de descarga para este video. El token puede necesitar permiso video_upload.' };
+  // Intento 5: via Instagram media ID del creativo → media_url (misma vía que orgánicos)
+  if (adId) {
+    try {
+      const r1 = await fetch(
+        `${GRAPH}/${adId}?fields=creative%7Beffective_instagram_media_id%7D&access_token=${META_TOKEN}`
+      );
+      const j1 = await r1.json();
+      const igMediaId = j1?.creative?.effective_instagram_media_id;
+      if (igMediaId) {
+        const r2 = await fetch(
+          `${GRAPH}/${igMediaId}?fields=media_url,media_type&access_token=${META_TOKEN}`
+        );
+        const j2 = await r2.json();
+        if (j2?.media_type === 'VIDEO' && j2?.media_url) return { url: j2.media_url };
+        log.push(`v5:ig=${igMediaId},type=${j2.media_type ?? '?'},err=${j2.error?.code ?? 'no_url'}`);
+      } else {
+        log.push(`v5:no_ig_id(${j1.error?.code ?? 'ok'})`);
+      }
+    } catch (e) { log.push(`v5:exc`); }
+  }
+
+  return { error: `Meta no devolvió URL del video [${log.join(' | ')}]. Token puede necesitar video_upload.` };
 }
 
 /** Descarga un video desde una URL y lo transcribe con Whisper */
