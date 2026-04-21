@@ -1,6 +1,9 @@
 {
   "cleanUrls": true,
   "functions": {
+    "api/contenido/transcribir.js": {
+      "maxDuration": 120
+    },
     "api/admin/llamadas-automaticas.js": {
       "maxDuration": 60
     },

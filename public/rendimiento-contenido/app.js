@@ -1067,10 +1067,10 @@ async function generarTranscripciones() {
 
     // Top 3 ads con video, ordenados por compras
     const adsVideos = allAds
-      .filter((a) => a.videoUrl)
+      .filter((a) => a.videoId)
       .sort((a, b) => b.purchases - a.purchases)
       .slice(0, 3)
-      .map((a) => ({ id: a.id, videoUrl: a.videoUrl, name: a.name, purchases: a.purchases, spend: a.spend }));
+      .map((a) => ({ id: a.id, videoId: a.videoId, videoUrl: a.videoUrl || null, name: a.name, purchases: a.purchases, spend: a.spend }));
 
     // Top 3 videos orgánicos (cualquier red) por interacciones
     const organicVideos = (dataSource.organic || [])
