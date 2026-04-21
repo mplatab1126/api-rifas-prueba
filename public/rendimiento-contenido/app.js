@@ -1063,7 +1063,10 @@ async function generarTranscripciones() {
 
   try {
     const contrasena = localStorage.getItem("asesor_pwd");
-    const allAds = getFilteredData().ads;
+
+    // Usar todos los datos cargados (lo que trajo el último Sync),
+    // no el subconjunto del filtro de fechas activo en la UI
+    const allAds = (dataSource.ads || []).map(calcAdsRecord);
 
     // Top 3 ads con video, ordenados por compras
     const adsVideos = allAds
