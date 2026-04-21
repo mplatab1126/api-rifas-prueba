@@ -427,6 +427,112 @@ function getPreviousPeriodData() {
   });
 }
 
+// ─── SVG / HTML helpers (ported from charts.jsx) ─────────────────────────────
+
+function svgBarChart(data, height, labels) {
+  const max = Math.max(...data, 1);
+  const n = data.length || 1;
+  const vw = 400;
+  const labelH = 16;
+  const totalH = height + labelH + 4;
+  const gap = 3;
+  const barW = (vw - gap * (n - 1)) / n;
+  const maxVal = Math.max(...data);
+
+  const grid = [0.25, 0.5, 0.75, 1].map(r => {
+    const y = ((1 - r) * height).toFixed(1);
+    return `<line x1="0" x2="${vw}" y1="${y}" y2="${y}" stroke="var(--border)" stroke-width="0.5"/>`;
+  }).join('');
+
+  const bars = data.map((v, i) => {
+    const h = (v / max) * height;
+    const x = (i * (barW + gap)).toFixed(1);
+    const y = (height - h).toFixed(1);
+    const isMax = v === maxVal && v > 0;
+    return `<rect x="${x}" y="${y}" width="${barW.toFixed(1)}" height="${Math.max(h, 0).toFixed(1)}" rx="2" fill="${isMax ? 'var(--fg)' : 'var(--accent)'}" opacity="${isMax ? '1' : '0.75'}"/>`;
+  }).join('');
+
+  const lbs = (labels || []).map((l, i) => {
+    const x = (i * (barW + gap) + barW / 2).toFixed(1);
+    return `<text x="${x}" y="${height + 14}" text-anchor="middle" font-size="9" fill="var(--fg-faint)" font-family="JetBrains Mono, monospace">${l}</text>`;
+  }).join('');
+
+  return `<svg viewBox="0 0 ${vw} ${totalH}" preserveAspectRatio="none" style="width:100%;height:${height}px;display:block;overflow:visible;">${grid}${bars}${lbs}</svg>`;
+}
+
+function svgDonut(segments, size, thickness, centerValue, centerLabel) {
+  const total = segments.reduce((s, x) => s + x.value, 0) || 1;
+  const r = (size - thickness) / 2;
+  const c = 2 * Math.PI * r;
+  let offset = 0;
+
+  const circles = segments.map(seg => {
+    const frac = seg.value / total;
+    const len = frac * c;
+    const el = `<circle cx="${size/2}" cy="${size/2}" r="${r.toFixed(2)}" fill="none" stroke="${seg.color}" stroke-width="${thickness}" stroke-dasharray="${len.toFixed(2)} ${(c - len).toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}" stroke-linecap="butt"/>`;
+    offset += len;
+    return el;
+  }).join('');
+
+  const cx = size / 2, cy = size / 2;
+  let center = '';
+  if (centerValue || centerLabel) {
+    center = `<g transform="rotate(90 ${cx} ${cy})">`;
+    if (centerValue) {
+      const fs = size < 90 ? 12 : 15;
+      const yv = centerLabel ? cy - 6 : cy + (fs / 3);
+      center += `<text x="${cx}" y="${yv}" text-anchor="middle" font-size="${fs}" font-weight="600" fill="var(--fg)" font-family="JetBrains Mono, monospace">${centerValue}</text>`;
+    }
+    if (centerLabel) {
+      center += `<text x="${cx}" y="${cy + 11}" text-anchor="middle" font-size="7.5" fill="var(--fg-subtle)" font-family="Inter, sans-serif" letter-spacing="0.8">${centerLabel.toUpperCase()}</text>`;
+    }
+    center += '</g>';
+  }
+
+  return `<svg width="${size}" height="${size}" style="transform:rotate(-90deg);display:block;flex-shrink:0;"><circle cx="${cx}" cy="${cy}" r="${r.toFixed(2)}" fill="none" stroke="var(--border)" stroke-width="${thickness}"/>${circles}${center}</svg>`;
+}
+
+function htmlHBar(label, sub, value, max, color, suffix) {
+  const pct = max > 0 ? ((value / max) * 100).toFixed(1) : '0';
+  return `<div class="hbar">
+    <div class="hbar-meta">
+      <div class="hbar-labels"><span class="hbar-label">${label}</span><span class="hbar-sub">${sub}</span></div>
+      <span class="hbar-value tabular">${value}${suffix || ''}</span>
+    </div>
+    <div class="hbar-track"><div class="hbar-fill" style="width:${pct}%;background:${color};"></div></div>
+  </div>`;
+}
+
+function miniKpiHtml(label, value, delta, isAccent) {
+  const isUp = delta.direction === 'up';
+  const isDown = delta.direction === 'down';
+  const col = isUp ? 'var(--green)' : isDown ? 'var(--red)' : 'var(--fg-faint)';
+  const arrow = isUp ? '↑' : isDown ? '↓' : '•';
+  return `<div class="mini-kpi${isAccent ? ' mini-kpi--accent' : ''}">
+    <div class="mini-kpi-label">${label}</div>
+    <div class="mini-kpi-value tabular">${value}</div>
+    <div class="mini-kpi-delta" style="color:${col}">${arrow} ${delta.label} <span class="mini-kpi-period">vs ant.</span></div>
+  </div>`;
+}
+
+function computeDailySpend(ads) {
+  const days = Math.min(14, getRangeDays(state.filters.dateStart, state.filters.dateEnd));
+  const endDate = new Date(`${state.filters.dateEnd}T00:00:00`);
+  const byDate = {};
+  ads.forEach(ad => { byDate[ad.date] = (byDate[ad.date] || 0) + ad.spend; });
+  const data = [], labels = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(endDate);
+    d.setDate(d.getDate() - i);
+    const iso = d.toISOString().slice(0, 10);
+    data.push(byDate[iso] || 0);
+    labels.push(String(d.getDate()).padStart(2, '0'));
+  }
+  return { data, labels };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function renderMetricCards(target, metrics) {
   target.innerHTML = metrics
     .map((m) => {
@@ -687,26 +793,8 @@ function renderAdsSection(ads) {
   const summary = getAdsSummary(ads);
   const prevSummary = getAdsSummary(getPreviousPeriodData().ads);
 
-  renderMetricCards(refs.adsMetrics, [
-    {
-      title: "Gasto total",
-      value: formatMoney(summary.spend),
-      note: "Inversion en anuncios",
-      delta: computeDelta(summary.spend, prevSummary.spend, { inverse: true }),
-    },
-    {
-      title: "Costo por compra",
-      value: formatMoney(summary.cpa),
-      note: "Promedio por conversion",
-      delta: computeDelta(summary.cpa, prevSummary.cpa, { inverse: true }),
-    },
-    {
-      title: "Compras",
-      value: formatNumber(summary.purchases),
-      note: "Conversiones totales",
-      delta: computeDelta(summary.purchases, prevSummary.purchases),
-    },
-  ]);
+  // Limpiar clase metric-grid para poder usar la nueva estructura
+  refs.adsMetrics.className = '';
 
   // Poblar filtro de campaña de la sección
   if (refs.adsSectionCampaignFilter) {
@@ -719,7 +807,116 @@ function renderAdsSection(ads) {
       ).join("");
   }
 
-  // Filtrar tabla por campaña seleccionada en la sección
+  // ── Deltas ────────────────────────────────────────────────────────────────
+  const spendDelta     = computeDelta(summary.spend,     prevSummary.spend,     { inverse: true });
+  const purchasesDelta = computeDelta(summary.purchases, prevSummary.purchases);
+  const cpaDelta       = computeDelta(summary.cpa,       prevSummary.cpa,       { inverse: true });
+  const roasDelta      = computeDelta(summary.roas,      prevSummary.roas);
+  const ctrDelta       = computeDelta(summary.ctr,       prevSummary.ctr);
+
+  // ── Chart data ────────────────────────────────────────────────────────────
+  const { data: spendData, labels: spendLabels } = computeDailySpend(ads);
+
+  // ── Hook rate distribution ────────────────────────────────────────────────
+  const adsWithHook   = ads.filter(a => a.hookRate !== null);
+  const hookExcellent = adsWithHook.filter(a => a.hookRate >= 40).length;
+  const hookGood      = adsWithHook.filter(a => a.hookRate >= 25 && a.hookRate < 40).length;
+  const hookLow       = adsWithHook.filter(a => a.hookRate < 25).length;
+  const hookTotal     = Math.max(adsWithHook.length, 1);
+
+  // ── Status / budget ───────────────────────────────────────────────────────
+  const adsets         = dataSource.adsets || [];
+  const activeCount    = adsets.length ? adsets.filter(a => a.status === 'ACTIVE').length  : ads.length;
+  const pausedCount    = adsets.length ? adsets.filter(a => a.status !== 'ACTIVE').length  : 0;
+  const totalAdsCount  = activeCount + pausedCount || ads.length;
+  const totalDailyBudget = adsets.reduce((s, a) => s + (a.dailyBudget || 0), 0);
+  const budgetUsedPct    = totalDailyBudget > 0
+    ? Math.min(100, Math.round((summary.spend / totalDailyBudget) * 100))
+    : null;
+
+  // ── Budget card content ───────────────────────────────────────────────────
+  const budgetInner = budgetUsedPct !== null
+    ? `${svgDonut([
+         { value: budgetUsedPct,       color: 'var(--accent)' },
+         { value: 100 - budgetUsedPct, color: 'var(--bg-elev-2)' },
+       ], 88, 12, budgetUsedPct + '%', 'Usado')}
+       <div>
+         <div class="ads-strip-label">Presupuesto del día</div>
+         <div class="ads-strip-big tabular">${formatMoney(totalDailyBudget)}</div>
+         <div class="ads-strip-sub">Gasto: ${formatMoney(summary.spend)}</div>
+       </div>`
+    : `<div>
+         <div class="ads-strip-label">Gasto del periodo</div>
+         <div class="ads-strip-big tabular">${formatMoney(summary.spend)}</div>
+         <div class="ads-strip-sub">${ads.length} anuncio${ads.length !== 1 ? 's' : ''} · sin presupuesto diario</div>
+       </div>`;
+
+  // ── Hero + Strip HTML ─────────────────────────────────────────────────────
+  refs.adsMetrics.innerHTML = `
+    <div class="ads-hero">
+      <div class="card ads-hero-chart">
+        <div class="ads-hero-header">
+          <div class="ads-hero-label">Gasto total en anuncios</div>
+          <div class="ads-hero-value-row">
+            <span class="ads-hero-currency tabular">$</span>
+            <span class="ads-hero-number tabular">${formatNumber(summary.spend)}</span>
+            <span class="ads-hero-delta ${spendDelta.direction === 'up' ? 'delta-up' : spendDelta.direction === 'down' ? 'delta-down' : 'delta-flat'}">
+              ${spendDelta.direction === 'up' ? '↑' : spendDelta.direction === 'down' ? '↓' : '•'} ${spendDelta.label}
+            </span>
+          </div>
+          <div class="ads-hero-sub">Periodo seleccionado · ${ads.length} anuncio${ads.length !== 1 ? 's' : ''}</div>
+        </div>
+        <div class="ads-chart-wrap">
+          ${svgBarChart(spendData, 150, spendLabels)}
+        </div>
+      </div>
+
+      <div class="ads-mini-kpis">
+        ${miniKpiHtml('Compras',      formatNumber(summary.purchases),          purchasesDelta, true)}
+        ${miniKpiHtml('Costo/compra', formatMoney(summary.cpa),                 cpaDelta,       false)}
+        ${miniKpiHtml('ROAS',         summary.roas.toFixed(2) + '×',            roasDelta,      true)}
+        ${miniKpiHtml('CTR',          summary.ctr.toFixed(2) + '%',             ctrDelta,       false)}
+      </div>
+    </div>
+
+    <div class="ads-strip">
+      <div class="card ads-strip-card ads-strip-budget">${budgetInner}</div>
+
+      <div class="card ads-strip-card">
+        <div class="ads-strip-label">Distribución por hook rate</div>
+        <div class="hbars">
+          ${htmlHBar('Excelente', '≥40%',   hookExcellent, hookTotal, 'var(--accent)',                    ' ads')}
+          ${htmlHBar('Bueno',     '25–40%', hookGood,      hookTotal, 'oklch(0.55 0.19 265 / 0.55)',      ' ads')}
+          ${htmlHBar('Bajo',      '<25%',   hookLow,       hookTotal, 'var(--yellow)',                    ' ads')}
+        </div>
+      </div>
+
+      <div class="card ads-strip-card ads-strip-status">
+        <div class="ads-strip-label">Estado de anuncios</div>
+        <div class="ads-strip-status-inner">
+          ${svgDonut([
+            { value: activeCount,              color: 'var(--green)' },
+            { value: Math.max(pausedCount, 0), color: 'var(--yellow)' },
+          ], 76, 10, String(totalAdsCount), 'Total')}
+          <div class="ads-status-legend">
+            <div class="legend-row">
+              <span class="legend-dot" style="background:var(--green)"></span>
+              <span class="legend-label">Activos</span>
+              <span class="legend-val tabular">${activeCount}</span>
+            </div>
+            ${pausedCount > 0 ? `
+            <div class="legend-row">
+              <span class="legend-dot" style="background:var(--yellow)"></span>
+              <span class="legend-label">Pausados</span>
+              <span class="legend-val tabular">${pausedCount}</span>
+            </div>` : ''}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // ── Tabla ─────────────────────────────────────────────────────────────────
   const tableAds = state.adsSectionCampaignFilter
     ? ads.filter((a) => a.campaign === state.adsSectionCampaignFilter)
     : ads;
@@ -731,7 +928,7 @@ function renderAdsSection(ads) {
   });
 
   if (!sorted.length) {
-    refs.adsTableBody.innerHTML = `<tr><td colspan="8" class="empty">Sin datos para los filtros seleccionados.</td></tr>`;
+    refs.adsTableBody.innerHTML = `<tr><td colspan="10" class="empty">Sin datos para los filtros seleccionados.</td></tr>`;
     return;
   }
 
@@ -739,33 +936,49 @@ function renderAdsSection(ads) {
     const adset = (dataSource.adsets || []).find((a) => a.id === ad.adsetId);
     const estadoBadge = adset
       ? (adset.status === "ACTIVE"
-          ? `<span style="color:#15803d;font-weight:600;">Activo</span>`
-          : `<span style="color:#92400e;font-weight:600;">Pausado</span>`)
+          ? `<span class="badge-active">Activo</span>`
+          : `<span class="badge-paused">Pausado</span>`)
       : "—";
     const esTotal = adset && adset.dailyBudget === 0 && adset.lifetimeBudget > 0;
     const presupuestoTexto = adset
-      ? (esTotal ? `${formatMoney(adset.lifetimeBudget)} (total)` : formatMoney(adset.dailyBudget))
+      ? (esTotal
+          ? `${formatMoney(adset.lifetimeBudget)} <span style="color:var(--fg-faint);font-size:11px;">(total)</span>`
+          : formatMoney(adset.dailyBudget))
       : "—";
     const canEdit = adset && !esTotal;
     const editBtn = canEdit
-      ? `<button class="btn btn-ghost btn-editar-ad" style="font-size:13px;padding:6px 10px;"
+      ? `<button class="btn btn-ghost btn-sm btn-editar-ad"
            data-adset-id="${adset.id}" data-presupuesto-actual="${adset.dailyBudget}">Editar</button>`
-      : `<span style="font-size:12px;color:#94a3b8;">—</span>`;
+      : `<span style="font-size:12px;color:var(--fg-faint);">—</span>`;
+
+    const hookBarPct = ad.hookRate !== null ? Math.min(100, ad.hookRate * 2) : 0;
+    const hookColor  = ad.hookRate >= 40 ? 'var(--accent)'
+                     : ad.hookRate >= 25 ? 'oklch(0.55 0.19 265 / 0.7)'
+                     : 'var(--yellow)';
+    const roasColor  = ad.roas >= 20 ? 'var(--green)' : ad.roas >= 10 ? 'var(--fg)' : 'var(--fg-dim)';
+    const isTop      = index === 0;
 
     return `
-      <tr class="${index === 0 ? "top-row" : ""}" data-adset-id="${ad.adsetId || ""}">
-        <td>${ad.name}</td>
-        <td>${formatMoney(ad.spend)}</td>
-        <td>${formatNumber(ad.purchases)}</td>
-        <td>${formatMoney(ad.cpa)}</td>
-        <td>${ad.hookRate !== null ? formatPct(ad.hookRate) : "—"}</td>
+      <tr data-adset-id="${ad.adsetId || ""}">
+        <td class="td-rank${isTop ? ' td-rank--top' : ''}">${String(index + 1).padStart(2, '0')}</td>
+        <td>${isTop ? '<span class="top-badge">TOP</span> ' : ''}${ad.name}</td>
+        <td class="td-num">${formatMoney(ad.spend)}</td>
+        <td class="td-num">${formatNumber(ad.purchases)}</td>
+        <td class="td-num">${formatMoney(ad.cpa)}</td>
+        <td>
+          <div class="hookrate-cell">
+            <div class="hookrate-bar-track"><div class="hookrate-bar-fill" style="width:${hookBarPct}%;background:${hookColor};"></div></div>
+            <span class="tabular td-num-sm">${ad.hookRate !== null ? formatPct(ad.hookRate) : '—'}</span>
+          </div>
+        </td>
+        <td class="td-num" style="color:${roasColor};font-weight:500;">${ad.roas > 0 ? ad.roas.toFixed(2) + '×' : '—'}</td>
         <td>${estadoBadge}</td>
-        <td class="celda-presupuesto-ad">${presupuestoTexto}</td>
+        <td class="celda-presupuesto-ad td-num">${presupuestoTexto}</td>
         <td>${editBtn}</td>
       </tr>`;
   }).join("");
 
-  // Wiring botón Editar dentro de la tabla de anuncios
+  // Wiring botón Editar
   refs.adsTableBody.querySelectorAll(".btn-editar-ad").forEach((btn) => {
     btn.addEventListener("click", () => {
       const adsetId = btn.dataset.adsetId;
@@ -775,28 +988,23 @@ function renderAdsSection(ads) {
 
       fila.querySelector(".celda-presupuesto-ad").innerHTML = `
         <input type="number" class="input-presupuesto" value="${actual}" min="4000" step="1000"
-          style="width:120px;padding:5px 7px;border:1px solid #c5d5f5;border-radius:8px;font-size:13px;font-weight:600;">
-        <span style="font-size:12px;color:#64748b;margin-left:4px;">COP/día</span>
+          style="width:120px;padding:5px 7px;border:1px solid var(--accent-border);border-radius:8px;font-size:13px;font-weight:600;">
+        <span style="font-size:12px;color:var(--fg-faint);margin-left:4px;">COP/día</span>
       `;
       fila.querySelector("td:last-child").innerHTML = `
-        <button class="btn btn-primary btn-guardar-presupuesto" style="font-size:12px;padding:5px 9px;margin-right:4px;">Guardar</button>
-        <button class="btn btn-ghost btn-cancelar-presupuesto" style="font-size:12px;padding:5px 9px;">Cancelar</button>
+        <button class="btn btn-primary btn-sm btn-guardar-presupuesto" style="margin-right:4px;">Guardar</button>
+        <button class="btn btn-ghost btn-sm btn-cancelar-presupuesto">Cancelar</button>
       `;
 
       fila.querySelector(".btn-guardar-presupuesto").addEventListener("click", () => {
         const nuevo = parseInt(fila.querySelector(".input-presupuesto").value);
-        if (isNaN(nuevo) || nuevo < 4000) {
-          alert("El presupuesto mínimo es $4.000 COP");
-          return;
-        }
+        if (isNaN(nuevo) || nuevo < 4000) { alert("El presupuesto mínimo es $4.000 COP"); return; }
         if (nuevo === actual) { render(); return; }
         if (!confirm(`¿Cambiar presupuesto a ${formatMoney(nuevo)}/día?`)) return;
         actualizarPresupuesto(adsetId, nuevo, fila);
       });
 
-      fila.querySelector(".btn-cancelar-presupuesto").addEventListener("click", () => {
-        render();
-      });
+      fila.querySelector(".btn-cancelar-presupuesto").addEventListener("click", () => render());
     });
   });
 }
