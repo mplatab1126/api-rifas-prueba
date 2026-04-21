@@ -19,6 +19,8 @@ const state = {
   topRangeDays: 7,
   organicSocial: "instagram",
   favorites: new Set(),
+  presupuestosFilter: '',
+  presupuestosOpen: false,
 };
 
 let dataSource = {
@@ -311,6 +313,9 @@ const refs = {
   syncInstagram: document.getElementById("syncInstagram"),
   lastSyncTime: document.getElementById("lastSyncTime"),
   presupuestosTableBody: document.getElementById("presupuestosTableBody"),
+  presupuestosToggle: document.getElementById("presupuestosToggle"),
+  presupuestosContent: document.getElementById("presupuestosContent"),
+  presupuestosCampaignFilter: document.getElementById("presupuestosCampaignFilter"),
 };
 
 function formatMoney(value) {
@@ -1024,9 +1029,26 @@ async function actualizarPresupuesto(adsetId, nuevoPresupuesto, fila) {
 function renderPresupuestos() {
   const tbody = refs.presupuestosTableBody;
   if (!tbody) return;
-  const adsets = dataSource.adsets || [];
+  const allAdsets = dataSource.adsets || [];
+
+  // Poblar el filtro de campañas
+  if (refs.presupuestosCampaignFilter) {
+    const campaigns = [...new Set(allAdsets.map((a) => a.campaignName).filter(Boolean))].sort();
+    const cur = state.presupuestosFilter;
+    refs.presupuestosCampaignFilter.innerHTML =
+      `<option value="">Todas las campañas</option>` +
+      campaigns.map((c) =>
+        `<option value="${c.replace(/"/g, "&quot;")}" ${cur === c ? "selected" : ""}>${c}</option>`
+      ).join("");
+  }
+
+  // Aplicar filtro de campaña
+  const adsets = state.presupuestosFilter
+    ? allAdsets.filter((a) => a.campaignName === state.presupuestosFilter)
+    : allAdsets;
+
   if (!adsets.length) {
-    tbody.innerHTML = `<tr><td colspan="5" class="empty">Sin conjuntos activos o pausados.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="empty">Sin conjuntos activos o pausados.</td></tr>`;
     return;
   }
 
@@ -1041,6 +1063,7 @@ function renderPresupuestos() {
     const estadoBadge = a.status === "ACTIVE"
       ? `<span style="color:#15803d;font-weight:600;">Activo</span>`
       : `<span style="color:#92400e;font-weight:600;">Pausado</span>`;
+    const comprasTexto = (a.purchases > 0) ? formatNumber(a.purchases) : "—";
 
     return `
       <tr data-adset-id="${a.id}">
@@ -1048,6 +1071,7 @@ function renderPresupuestos() {
         <td>${a.name}</td>
         <td>${estadoBadge}</td>
         <td class="celda-presupuesto">${presupuestoTexto}</td>
+        <td>${comprasTexto}</td>
         <td>
           ${esPresupuestoTotal
             ? `<span style="font-size:12px;color:#94a3b8;">Presupuesto total — no editable desde aquí</span>`
@@ -1066,7 +1090,6 @@ function renderPresupuestos() {
       const fila = tbody.querySelector(`tr[data-adset-id="${adsetId}"]`);
       if (!fila) return;
 
-      // Reemplazar celda de presupuesto con input + botones
       fila.querySelector(".celda-presupuesto").innerHTML = `
         <input type="number" class="input-presupuesto" value="${actual}" min="4000" step="1000"
           style="width:130px;padding:6px 8px;border:1px solid #c5d5f5;border-radius:8px;font-size:14px;font-weight:600;">
@@ -1213,6 +1236,22 @@ function setupEvents() {
     state.organicSocial = button.dataset.social;
     render();
   });
+
+  if (refs.presupuestosToggle) {
+    refs.presupuestosToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      state.presupuestosOpen = !state.presupuestosOpen;
+      if (refs.presupuestosContent) refs.presupuestosContent.hidden = !state.presupuestosOpen;
+      refs.presupuestosToggle.textContent = state.presupuestosOpen ? "Ocultar ▲" : "Ver ▼";
+    });
+  }
+
+  if (refs.presupuestosCampaignFilter) {
+    refs.presupuestosCampaignFilter.addEventListener("change", (e) => {
+      state.presupuestosFilter = e.target.value;
+      renderPresupuestos();
+    });
+  }
 }
 
 populateFilters();

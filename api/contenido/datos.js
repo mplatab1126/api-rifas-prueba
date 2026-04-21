@@ -442,12 +442,12 @@ function derivarCopies(ads, organic) {
   return copies;
 }
 
-async function traerAdsets() {
+async function traerAdsets(since, until) {
   if (!AD_ACCOUNT_ID) return [];
   const url = `${GRAPH}/act_${AD_ACCOUNT_ID}/adsets?fields=id,name,daily_budget,lifetime_budget,status,campaign_id,campaign{name}&limit=200&access_token=${TOKEN}`;
   const r = await metaFetch(url);
   if (!r.data) return [];
-  return r.data
+  const adsets = r.data
     .filter((a) => a.status === 'ACTIVE' || a.status === 'PAUSED')
     .map((a) => ({
       id: a.id,
@@ -457,7 +457,41 @@ async function traerAdsets() {
       status: a.status,
       campaignId: a.campaign_id,
       campaignName: a.campaign?.name || '',
+      purchases: 0,
     }));
+
+  // Traer compras por conjunto para el rango de fechas
+  if (since && until && adsets.length) {
+    const PURCHASE_TYPES = [
+      'omni_purchase',
+      'onsite_conversion.purchase',
+      'onsite_web_purchase',
+      'offsite_conversion.fb_pixel_purchase',
+      'purchase',
+    ];
+    const timeRange = encodeURIComponent(JSON.stringify({ since, until }));
+    const ir = await metaFetch(
+      `${GRAPH}/act_${AD_ACCOUNT_ID}/insights?level=adset&fields=adset_id,actions&time_range=${timeRange}&limit=500&access_token=${TOKEN}`
+    );
+    if (ir.data) {
+      const purchaseMap = new Map();
+      for (const row of ir.data) {
+        let purchases = 0;
+        for (const t of PURCHASE_TYPES) {
+          const p = (row.actions || []).find((a) => a.action_type === t);
+          if (p) { purchases = parseInt(p.value) || 0; break; }
+        }
+        if (purchases > 0) {
+          purchaseMap.set(row.adset_id, (purchaseMap.get(row.adset_id) || 0) + purchases);
+        }
+      }
+      for (const adset of adsets) {
+        adset.purchases = purchaseMap.get(adset.id) || 0;
+      }
+    }
+  }
+
+  return adsets;
 }
 
 function defaultRange() {
@@ -499,7 +533,7 @@ export default async function handler(req, res) {
       traerFollowersInstagram(since, until),
       traerFollowersPage(since, until),
       traerPageReach(since, until),
-      traerAdsets(),
+      traerAdsets(since, until),
     ]);
 
     ig.sort((a, b) => (b.reach || 0) - (a.reach || 0));
