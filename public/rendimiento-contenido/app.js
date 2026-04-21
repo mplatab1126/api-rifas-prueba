@@ -498,11 +498,13 @@ function getOrganicSummary(organic) {
 }
 
 function renderInsightsAndSignals(ads, organic, copies) {
+  if (!refs.insightsGrid && !refs.alertsList && !refs.trendsList) return;
   renderAutomaticInsights(ads, organic, copies);
   renderAlertsAndTrends(ads, organic);
 }
 
 function renderAutomaticInsights(ads, organic, copies) {
+  if (!refs.insightsGrid) return;
   const bestContentType = getGroupBest(ads, "contentType", (item) => item.roas);
   const bestHook = getGroupBest(ads, "hookType", (item) => item.ctr);
   const bestFormat = getGroupBest(ads, "format", (item) => (item.clicks ? (item.purchases / item.clicks) * 100 : 0));
@@ -579,6 +581,7 @@ function renderAutomaticInsights(ads, organic, copies) {
 }
 
 function renderAlertsAndTrends(ads, organic) {
+  if (!refs.alertsList && !refs.trendsList) return;
   const adSummary = getAdsSummary(ads);
   const organicSummary = getOrganicSummary(organic);
   const previous = getPreviousPeriodData();
