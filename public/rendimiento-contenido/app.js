@@ -286,11 +286,6 @@ const apiConnectors = {
 const refs = {
   dateStart: document.getElementById("dateStart"),
   dateEnd: document.getElementById("dateEnd"),
-  campaignMulti: document.getElementById("campaignMulti"),
-  campaignTrigger: document.getElementById("campaignTrigger"),
-  campaignTriggerLabel: document.getElementById("campaignTriggerLabel"),
-  campaignPanel: document.getElementById("campaignPanel"),
-  campaignList: document.getElementById("campaignList"),
   applyFilters: document.getElementById("applyFilters"),
   resetFilters: document.getElementById("resetFilters"),
   insightsGrid: document.getElementById("insightsGrid"),
@@ -1100,65 +1095,8 @@ function render() {
 function populateFilters() {
   refs.dateStart.value = state.filters.dateStart;
   refs.dateEnd.value = state.filters.dateEnd;
-  renderCampaignOptions();
 }
 
-function renderCampaignOptions() {
-  // Lista de campañas reales (sin "all", que aqui manejamos como "ninguna marcada")
-  const realCampaigns = (dataSource.campaigns || []).filter((c) => c && c !== "all");
-  const selected = state.filters.campaigns;
-  const allChecked = selected.size === 0;
-
-  const rows = [];
-  rows.push(`
-    <label class="multi-select-option all-option">
-      <input type="checkbox" data-campaign="__all__" ${allChecked ? "checked" : ""} />
-      <span>Todas las campañas</span>
-    </label>
-  `);
-  for (const c of realCampaigns) {
-    const isChecked = selected.has(c);
-    rows.push(`
-      <label class="multi-select-option">
-        <input type="checkbox" data-campaign="${c.replace(/"/g, "&quot;")}" ${isChecked ? "checked" : ""} />
-        <span>${c}</span>
-      </label>
-    `);
-  }
-  refs.campaignList.innerHTML = rows.join("");
-  updateCampaignTriggerLabel();
-
-  // Wire checkboxes
-  refs.campaignList.querySelectorAll("input[type=checkbox]").forEach((cb) => {
-    cb.addEventListener("change", handleCampaignCheckbox);
-  });
-}
-
-function updateCampaignTriggerLabel() {
-  const n = state.filters.campaigns.size;
-  if (n === 0) refs.campaignTriggerLabel.textContent = "Todas";
-  else if (n === 1) refs.campaignTriggerLabel.textContent = [...state.filters.campaigns][0];
-  else refs.campaignTriggerLabel.textContent = `${n} campañas`;
-}
-
-function handleCampaignCheckbox(event) {
-  const cb = event.currentTarget;
-  const key = cb.dataset.campaign;
-  if (key === "__all__") {
-    state.filters.campaigns = new Set();
-  } else {
-    if (cb.checked) state.filters.campaigns.add(key);
-    else state.filters.campaigns.delete(key);
-  }
-  renderCampaignOptions();
-  render();
-}
-
-function abrirPanelCampanas(open) {
-  refs.campaignPanel.hidden = !open;
-  refs.campaignMulti.dataset.open = open ? "true" : "false";
-  refs.campaignTrigger.setAttribute("aria-expanded", open ? "true" : "false");
-}
 
 function setupEvents() {
   refs.applyFilters.addEventListener("click", () => {
@@ -1175,18 +1113,8 @@ function setupEvents() {
     };
     refs.dateStart.value = state.filters.dateStart;
     refs.dateEnd.value = state.filters.dateEnd;
-    renderCampaignOptions();
     render();
   });
-
-  // Toggle panel de campañas
-  refs.campaignTrigger.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const open = refs.campaignPanel.hidden;
-    abrirPanelCampanas(open);
-  });
-  refs.campaignPanel.addEventListener("click", (e) => e.stopPropagation());
-  document.addEventListener("click", () => abrirPanelCampanas(false));
 
   refs.adsSort.addEventListener("change", (event) => {
     state.adsSort = event.target.value;
