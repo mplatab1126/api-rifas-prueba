@@ -24,7 +24,9 @@ const META_TOKEN = process.env.CONTENIDO_META_TOKEN;
 const AD_ACCOUNT_ID = process.env.CONTENIDO_AD_ACCOUNT_ID;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const WHISPER_URL = 'https://api.openai.com/v1/audio/transcriptions';
-const MAX_SIZE_BYTES = 25 * 1024 * 1024; // 25 MB
+// Whisper acepta hasta 25 MB, pero el envelope multipart añade ~500 bytes de overhead.
+// Descargamos hasta 24 MB para quedar bien por debajo del límite.
+const MAX_SIZE_BYTES = 24 * 1024 * 1024; // 24 MB
 const ACCESO_PERMITIDO = ['mateo', 'alejo p', 'alejo plata', 'valeria'];
 
 /**
