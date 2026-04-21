@@ -121,17 +121,25 @@ async function getMetaVideoUrl(videoId, adId) {
 
 /** Descarga un video desde una URL y lo transcribe con Whisper */
 async function transcribir(videoUrl) {
-  let videoRes;
+  let buffer;
   try {
-    videoRes = await fetch(videoUrl);
-    if (!videoRes.ok) return { error: `No se pudo descargar el video (HTTP ${videoRes.status})` };
+    // Usar Range para limitar la descarga a 25 MB.
+    // Los videos de Instagram/Meta son MP4 faststart (moov atom al inicio),
+    // por lo que el fragmento inicial es un archivo válido que Whisper puede procesar.
+    const res = await fetch(videoUrl, {
+      headers: { Range: `bytes=0-${MAX_SIZE_BYTES - 1}` },
+    });
+    // 200 OK (servidor ignoró Range) o 206 Partial Content son ambos válidos
+    if (!res.ok && res.status !== 206) {
+      return { error: `No se pudo descargar el video (HTTP ${res.status})` };
+    }
+    buffer = await res.arrayBuffer();
   } catch (e) {
     return { error: `Error de red al descargar: ${e.message}` };
   }
 
-  const buffer = await videoRes.arrayBuffer();
   if (buffer.byteLength > MAX_SIZE_BYTES) {
-    return { error: 'El video supera los 25 MB permitidos por Whisper' };
+    return { error: `El video pesa ${Math.round(buffer.byteLength / 1024 / 1024)} MB y el CDN no soportó descarga parcial` };
   }
 
   try {
