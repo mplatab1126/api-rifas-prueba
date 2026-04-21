@@ -404,26 +404,30 @@ select:focus {
 
 /* Organic: 4 métricas con sus colores */
 #organicMetrics .metric-card:nth-child(1) {
-  border-top-color: #6366F1;
-  background: linear-gradient(175deg, rgba(99,102,241,0.05) 0%, transparent 50%), var(--bg-elev);
+  border: 1px solid rgba(99,102,241,0.25);
+  border-top: 3px solid #6366F1;
+  background: linear-gradient(160deg, rgba(99,102,241,0.13) 0%, rgba(99,102,241,0.04) 70%), var(--bg-elev);
 }
 #organicMetrics .metric-card:nth-child(1) .metric-title { color: #6366F1; }
 
 #organicMetrics .metric-card:nth-child(2) {
-  border-top-color: #0EA5E9;
-  background: linear-gradient(175deg, rgba(14,165,233,0.06) 0%, transparent 50%), var(--bg-elev);
+  border: 1px solid rgba(14,165,233,0.25);
+  border-top: 3px solid #0EA5E9;
+  background: linear-gradient(160deg, rgba(14,165,233,0.13) 0%, rgba(14,165,233,0.04) 70%), var(--bg-elev);
 }
 #organicMetrics .metric-card:nth-child(2) .metric-title { color: #0369A1; }
 
 #organicMetrics .metric-card:nth-child(3) {
-  border-top-color: #8B5CF6;
-  background: linear-gradient(175deg, rgba(139,92,246,0.06) 0%, transparent 50%), var(--bg-elev);
+  border: 1px solid rgba(139,92,246,0.25);
+  border-top: 3px solid #8B5CF6;
+  background: linear-gradient(160deg, rgba(139,92,246,0.13) 0%, rgba(139,92,246,0.04) 70%), var(--bg-elev);
 }
 #organicMetrics .metric-card:nth-child(3) .metric-title { color: #7C3AED; }
 
 #organicMetrics .metric-card:nth-child(4) {
-  border-top-color: #EC4899;
-  background: linear-gradient(175deg, rgba(236,72,153,0.06) 0%, transparent 50%), var(--bg-elev);
+  border: 1px solid rgba(236,72,153,0.25);
+  border-top: 3px solid #EC4899;
+  background: linear-gradient(160deg, rgba(236,72,153,0.13) 0%, rgba(236,72,153,0.04) 70%), var(--bg-elev);
 }
 #organicMetrics .metric-card:nth-child(4) .metric-title { color: #BE185D; }
 
@@ -952,9 +956,9 @@ tbody tr:last-child td {
 }
 
 .social-icon {
-  width: 18px;
-  height: 18px;
-  border-radius: 5px;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -962,8 +966,8 @@ tbody tr:last-child td {
 }
 
 .social-icon svg {
-  width: 12px;
-  height: 12px;
+  width: 17px;
+  height: 17px;
   fill: #fff;
 }
 
