@@ -429,7 +429,9 @@ function getPreviousPeriodData() {
 
 // ─── SVG / HTML helpers (ported from charts.jsx) ─────────────────────────────
 
-function svgBarChart(data, height, labels) {
+// highlightIdx: índice de la barra a resaltar (día seleccionado en modo contexto)
+// Si no se pasa, se resalta automáticamente la barra de mayor valor
+function svgBarChart(data, height, labels, highlightIdx) {
   const max = Math.max(...data, 1);
   const n = data.length || 1;
   const vw = 400;
@@ -438,6 +440,7 @@ function svgBarChart(data, height, labels) {
   const gap = 3;
   const barW = (vw - gap * (n - 1)) / n;
   const maxVal = Math.max(...data);
+  const hasExplicitHighlight = highlightIdx !== undefined && highlightIdx !== null;
 
   const grid = [0.25, 0.5, 0.75, 1].map(r => {
     const y = ((1 - r) * height).toFixed(1);
@@ -448,13 +451,19 @@ function svgBarChart(data, height, labels) {
     const h = (v / max) * height;
     const x = (i * (barW + gap)).toFixed(1);
     const y = (height - h).toFixed(1);
-    const isMax = v === maxVal && v > 0;
-    return `<rect x="${x}" y="${y}" width="${barW.toFixed(1)}" height="${Math.max(h, 0).toFixed(1)}" rx="2" fill="${isMax ? 'var(--fg)' : 'var(--accent)'}" opacity="${isMax ? '1' : '0.75'}"/>`;
+    // Modo contexto: día seleccionado en oscuro, contexto en índigo tenue
+    // Modo normal: barra de mayor valor en oscuro, resto en índigo
+    const isSelected = hasExplicitHighlight ? i === highlightIdx : (v === maxVal && v > 0);
+    const fill    = isSelected ? 'var(--fg)' : 'var(--accent)';
+    const opacity = isSelected ? '1' : (hasExplicitHighlight ? '0.30' : '0.75');
+    return `<rect x="${x}" y="${y}" width="${barW.toFixed(1)}" height="${Math.max(h, 0).toFixed(1)}" rx="2" fill="${fill}" opacity="${opacity}"/>`;
   }).join('');
 
   const lbs = (labels || []).map((l, i) => {
+    const isSelected = hasExplicitHighlight ? i === highlightIdx : false;
+    const fill = isSelected ? 'var(--fg)' : 'var(--fg-faint)';
     const x = (i * (barW + gap) + barW / 2).toFixed(1);
-    return `<text x="${x}" y="${height + 14}" text-anchor="middle" font-size="9" fill="var(--fg-faint)" font-family="JetBrains Mono, monospace">${l}</text>`;
+    return `<text x="${x}" y="${height + 14}" text-anchor="middle" font-size="9" fill="${fill}" font-weight="${isSelected ? '600' : '400'}" font-family="JetBrains Mono, monospace">${l}</text>`;
   }).join('');
 
   return `<svg viewBox="0 0 ${vw} ${totalH}" preserveAspectRatio="none" style="width:100%;height:${height}px;display:block;overflow:visible;">${grid}${bars}${lbs}</svg>`;
@@ -896,14 +905,14 @@ function renderAdsSection(ads) {
           <div class="ads-hero-sub">${contextMode ? 'Últimos 10 días (vista de contexto)' : `Periodo seleccionado · ${ads.length} anuncio${ads.length !== 1 ? 's' : ''}`}</div>
         </div>
         <div class="ads-chart-wrap">
-          ${svgBarChart(spendData, 150, spendLabels)}
+          ${svgBarChart(spendData, 150, spendLabels, contextMode ? spendData.length - 1 : undefined)}
         </div>
       </div>
 
       <div class="ads-mini-kpis">
         ${miniKpiHtml('Compras',      formatNumber(summary.purchases),          purchasesDelta, true)}
-        ${miniKpiHtml('Costo/compra', formatMoney(summary.cpa),                 cpaDelta,       false)}
-        ${miniKpiHtml('ROAS',         summary.roas.toFixed(2) + '×',            roasDelta,      true)}
+        ${miniKpiHtml('Costo/compra', formatMoney(summary.cpa),                 cpaDelta,       true)}
+        ${miniKpiHtml('ROAS',         summary.roas.toFixed(2) + '×',            roasDelta,      false)}
         ${miniKpiHtml('CTR',          summary.ctr.toFixed(2) + '%',             ctrDelta,       false)}
       </div>
     </div>

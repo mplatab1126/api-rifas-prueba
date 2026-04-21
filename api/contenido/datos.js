@@ -505,8 +505,8 @@ async function traerAdsets(since, until) {
   return adsets;
 }
 
-// Siempre trae gasto diario de los últimos 14 días (nivel cuenta, muy ligero)
-// Se usa para la gráfica del hero cuando el filtro activo es un solo día
+// Siempre trae gasto diario de los últimos 14 días (nivel ad, más fiable que account)
+// Agrega el gasto de todos los ads por día — se usa en la gráfica de contexto
 async function traerSpendDiario() {
   if (!AD_ACCOUNT_ID) return [];
   const until = new Date().toISOString().slice(0, 10);
@@ -514,14 +514,17 @@ async function traerSpendDiario() {
   d.setDate(d.getDate() - 13);
   const since = d.toISOString().slice(0, 10);
   const timeRange = encodeURIComponent(JSON.stringify({ since, until }));
-  const url = `${GRAPH}/act_${AD_ACCOUNT_ID}/insights?level=account&fields=spend,date_start&time_range=${timeRange}&time_increment=1&limit=50&access_token=${TOKEN}`;
+  const url = `${GRAPH}/act_${AD_ACCOUNT_ID}/insights?level=ad&fields=spend,date_start&time_range=${timeRange}&time_increment=1&limit=500&access_token=${TOKEN}`;
   try {
     const r = await metaFetch(url);
-    if (!r.data) return [];
-    return r.data.map(row => ({
-      date: row.date_start,
-      spend: Math.round(parseFloat(row.spend) || 0),
-    }));
+    if (!r || r.error || !r.data) return [];
+    const byDate = {};
+    for (const row of r.data) {
+      if (row.date_start) {
+        byDate[row.date_start] = (byDate[row.date_start] || 0) + Math.round(parseFloat(row.spend) || 0);
+      }
+    }
+    return Object.entries(byDate).map(([date, spend]) => ({ date, spend }));
   } catch (err) {
     return [];
   }

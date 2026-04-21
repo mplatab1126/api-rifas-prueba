@@ -559,6 +559,7 @@ select:focus {
 .mini-kpi {
   background: var(--bg-elev);
   border: 1px solid var(--border);
+  border-top: 2px solid transparent;
   border-radius: var(--radius);
   padding: 14px 16px;
   display: flex;
@@ -568,8 +569,9 @@ select:focus {
 }
 
 .mini-kpi--accent {
-  background: linear-gradient(135deg, var(--accent-dim), transparent 80%), var(--bg-elev);
-  border-color: var(--accent-border);
+  background: linear-gradient(160deg, rgba(99,102,241,0.13) 0%, rgba(99,102,241,0.04) 70%), var(--bg-elev);
+  border-color: rgba(99,102,241,0.28);
+  border-top-color: var(--accent);
 }
 
 .mini-kpi-label {
