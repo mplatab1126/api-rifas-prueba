@@ -417,6 +417,20 @@ function getFilteredData() {
 }
 
 function getPreviousPeriodData() {
+  // Si la API trajo datos del período anterior, usarlos directamente
+  if (dataSource.adsPrevio && dataSource.adsPrevio.length > 0) {
+    const selected = state.filters.campaigns instanceof Set
+      ? state.filters.campaigns
+      : new Set(state.filters.campaigns || []);
+    const ads = dataSource.adsPrevio
+      .filter(ad => selected.size === 0 || selected.has(ad.campaign))
+      .map(calcAdsRecord);
+    const organic = (dataSource.organicPrevio || []).filter(
+      p => p.social === state.organicSocial
+    );
+    return { ads, organic, copies: [] };
+  }
+  // Fallback: filtrar desde dataSource.ads (útil con datos mock en desarrollo)
   const days = getRangeDays(state.filters.dateStart, state.filters.dateEnd);
   const previousEnd = addDays(state.filters.dateStart, -1);
   const previousStart = addDays(previousEnd, -(days - 1));
@@ -1531,6 +1545,8 @@ function applyData(json) {
     adsets: json.adsets || [],
     inventario: json.inventario || null,
     spendDiario: json.spendDiario || [],
+    adsPrevio: json.adsPrevio || [],
+    organicPrevio: json.organicPrevio || [],
   };
   const realCampaigns = new Set((dataSource.campaigns || []).filter((c) => c && c !== "all"));
   for (const sel of [...state.filters.campaigns]) {

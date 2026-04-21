@@ -505,6 +505,42 @@ async function traerAdsets(since, until) {
   return adsets;
 }
 
+// Versión ligera de traerAds: sin enrichCreativos (thumbnails/videos)
+// Se usa para el período anterior — solo necesitamos números para deltas
+async function traerAdsSummary(since, until) {
+  if (!AD_ACCOUNT_ID) return [];
+  const timeRange = encodeURIComponent(JSON.stringify({ since, until }));
+  const fields = [
+    'ad_id', 'ad_name', 'adset_id', 'adset_name', 'campaign_name',
+    'spend', 'impressions', 'inline_link_clicks', 'clicks',
+    'actions', 'action_values', 'video_avg_time_watched_actions',
+  ].join(',');
+  let url = `${GRAPH}/act_${AD_ACCOUNT_ID}/insights?level=ad&fields=${fields}&time_range=${timeRange}&time_increment=1&limit=500&access_token=${TOKEN}`;
+  const allRows = [];
+  while (url) {
+    const r = await metaFetch(url);
+    if (r.data) allRows.push(...r.data);
+    url = r.paging?.next || null;
+  }
+  const grouped = agruparAds(allRows);
+  return grouped.map(transformarAd);
+}
+
+// Calcula las fechas del período anterior (misma cantidad de días, justo antes de 'since')
+function calcPrevPeriod(since, until) {
+  const sinceDate = new Date(`${since}T00:00:00Z`);
+  const untilDate = new Date(`${until}T00:00:00Z`);
+  const rangeDays = Math.round((untilDate - sinceDate) / (1000 * 60 * 60 * 24)) + 1;
+  const prevUntilDate = new Date(sinceDate);
+  prevUntilDate.setDate(prevUntilDate.getDate() - 1);
+  const prevSinceDate = new Date(prevUntilDate);
+  prevSinceDate.setDate(prevSinceDate.getDate() - (rangeDays - 1));
+  return {
+    prevSince: prevSinceDate.toISOString().slice(0, 10),
+    prevUntil: prevUntilDate.toISOString().slice(0, 10),
+  };
+}
+
 // Siempre trae gasto diario de los últimos 14 días (nivel ad, más fiable que account)
 // Agrega el gasto de todos los ads por día — se usa en la gráfica de contexto
 async function traerSpendDiario() {
@@ -578,8 +614,15 @@ export default async function handler(req, res) {
   const since = dateStart || def.since;
   const until = dateEnd || def.until;
 
+  const { prevSince, prevUntil } = calcPrevPeriod(since, until);
+
   try {
-    const [adsResult, ig, page, igFollowers, fbFollowers, fbReachTotal, adsets, inventario, spendDiario] = await Promise.all([
+    const [
+      adsResult, ig, page,
+      igFollowers, fbFollowers, fbReachTotal,
+      adsets, inventario, spendDiario,
+      adsPrevio, igPrevio, pagePrevio,
+    ] = await Promise.all([
       traerAds(since, until),
       traerInstagram(since, until),
       traerPagePosts(since, until),
@@ -589,6 +632,10 @@ export default async function handler(req, res) {
       traerAdsets(since, until),
       traerInventarioBoletas(),
       traerSpendDiario(),
+      // Período anterior — solo métricas (sin thumbnails), se usa para comparaciones
+      traerAdsSummary(prevSince, prevUntil),
+      traerInstagram(prevSince, prevUntil),
+      traerPagePosts(prevSince, prevUntil),
     ]);
 
     ig.sort((a, b) => (b.reach || 0) - (a.reach || 0));
@@ -596,6 +643,10 @@ export default async function handler(req, res) {
     const organic = [...ig, ...page];
     const copies = derivarCopies(adsResult.ads, organic);
     const campaigns = ['all', ...adsResult.campaigns];
+
+    igPrevio.sort((a, b) => (b.reach || 0) - (a.reach || 0));
+    pagePrevio.sort((a, b) => (b.reach || 0) - (a.reach || 0));
+    const organicPrevio = [...igPrevio, ...pagePrevio];
 
     return res.status(200).json({
       status: 'ok',
@@ -608,7 +659,9 @@ export default async function handler(req, res) {
       adsets,
       inventario,
       spendDiario,
-      meta: { since, until },
+      adsPrevio,
+      organicPrevio,
+      meta: { since, until, prevSince, prevUntil },
     });
   } catch (err) {
     return res.status(500).json({ status: 'error', mensaje: err.message });
