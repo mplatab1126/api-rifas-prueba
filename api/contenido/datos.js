@@ -505,6 +505,28 @@ async function traerAdsets(since, until) {
   return adsets;
 }
 
+// Siempre trae gasto diario de los últimos 14 días (nivel cuenta, muy ligero)
+// Se usa para la gráfica del hero cuando el filtro activo es un solo día
+async function traerSpendDiario() {
+  if (!AD_ACCOUNT_ID) return [];
+  const until = new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  d.setDate(d.getDate() - 13);
+  const since = d.toISOString().slice(0, 10);
+  const timeRange = encodeURIComponent(JSON.stringify({ since, until }));
+  const url = `${GRAPH}/act_${AD_ACCOUNT_ID}/insights?level=account&fields=spend,date_start&time_range=${timeRange}&time_increment=1&limit=50&access_token=${TOKEN}`;
+  try {
+    const r = await metaFetch(url);
+    if (!r.data) return [];
+    return r.data.map(row => ({
+      date: row.date_start,
+      spend: Math.round(parseFloat(row.spend) || 0),
+    }));
+  } catch (err) {
+    return [];
+  }
+}
+
 async function traerInventarioBoletas() {
   try {
     const OBJETIVO = 10000;
@@ -554,7 +576,7 @@ export default async function handler(req, res) {
   const until = dateEnd || def.until;
 
   try {
-    const [adsResult, ig, page, igFollowers, fbFollowers, fbReachTotal, adsets, inventario] = await Promise.all([
+    const [adsResult, ig, page, igFollowers, fbFollowers, fbReachTotal, adsets, inventario, spendDiario] = await Promise.all([
       traerAds(since, until),
       traerInstagram(since, until),
       traerPagePosts(since, until),
@@ -563,6 +585,7 @@ export default async function handler(req, res) {
       traerPageReach(since, until),
       traerAdsets(since, until),
       traerInventarioBoletas(),
+      traerSpendDiario(),
     ]);
 
     ig.sort((a, b) => (b.reach || 0) - (a.reach || 0));
@@ -581,6 +604,7 @@ export default async function handler(req, res) {
       organicSummary: { facebook: { reach: fbReachTotal } },
       adsets,
       inventario,
+      spendDiario,
       meta: { since, until },
     });
   } catch (err) {

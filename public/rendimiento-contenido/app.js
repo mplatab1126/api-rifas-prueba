@@ -516,7 +516,35 @@ function miniKpiHtml(label, value, delta, isAccent) {
 }
 
 function computeDailySpend(ads) {
-  const days = Math.min(14, getRangeDays(state.filters.dateStart, state.filters.dateEnd));
+  const rangeDays = getRangeDays(state.filters.dateStart, state.filters.dateEnd);
+  const isSingleDay = rangeDays === 1;
+
+  // Día único → mostrar 10 días de contexto usando el historial de gasto diario
+  if (isSingleDay) {
+    const historical = dataSource.spendDiario || [];
+    const endDate = new Date(`${state.filters.dateEnd}T00:00:00`);
+    const byDate = {};
+
+    // Preferir datos históricos del API; completar con ads disponibles si falta alguno
+    historical.forEach(d => { byDate[d.date] = d.spend; });
+    ads.forEach(ad => {
+      if (!byDate[ad.date]) byDate[ad.date] = 0;
+      byDate[ad.date] += ad.spend;
+    });
+
+    const data = [], labels = [];
+    for (let i = 9; i >= 0; i--) {
+      const d = new Date(endDate);
+      d.setDate(d.getDate() - i);
+      const iso = d.toISOString().slice(0, 10);
+      data.push(byDate[iso] || 0);
+      labels.push(String(d.getDate()).padStart(2, '0'));
+    }
+    return { data, labels, contextMode: true };
+  }
+
+  // Rango de varios días → mostrar solo los días seleccionados (máx 14)
+  const days = Math.min(14, rangeDays);
   const endDate = new Date(`${state.filters.dateEnd}T00:00:00`);
   const byDate = {};
   ads.forEach(ad => { byDate[ad.date] = (byDate[ad.date] || 0) + ad.spend; });
@@ -528,7 +556,7 @@ function computeDailySpend(ads) {
     data.push(byDate[iso] || 0);
     labels.push(String(d.getDate()).padStart(2, '0'));
   }
-  return { data, labels };
+  return { data, labels, contextMode: false };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -815,7 +843,7 @@ function renderAdsSection(ads) {
   const ctrDelta       = computeDelta(summary.ctr,       prevSummary.ctr);
 
   // ── Chart data ────────────────────────────────────────────────────────────
-  const { data: spendData, labels: spendLabels } = computeDailySpend(ads);
+  const { data: spendData, labels: spendLabels, contextMode } = computeDailySpend(ads);
 
   // ── Hook rate distribution ────────────────────────────────────────────────
   const adsWithHook   = ads.filter(a => a.hookRate !== null);
@@ -865,7 +893,7 @@ function renderAdsSection(ads) {
               ${spendDelta.direction === 'up' ? '↑' : spendDelta.direction === 'down' ? '↓' : '•'} ${spendDelta.label}
             </span>
           </div>
-          <div class="ads-hero-sub">Periodo seleccionado · ${ads.length} anuncio${ads.length !== 1 ? 's' : ''}</div>
+          <div class="ads-hero-sub">${contextMode ? 'Últimos 10 días (vista de contexto)' : `Periodo seleccionado · ${ads.length} anuncio${ads.length !== 1 ? 's' : ''}`}</div>
         </div>
         <div class="ads-chart-wrap">
           ${svgBarChart(spendData, 150, spendLabels)}
@@ -1493,6 +1521,7 @@ function applyData(json) {
     organicSummary: json.organicSummary || {},
     adsets: json.adsets || [],
     inventario: json.inventario || null,
+    spendDiario: json.spendDiario || [],
   };
   const realCampaigns = new Set((dataSource.campaigns || []).filter((c) => c && c !== "all"));
   for (const sel of [...state.filters.campaigns]) {
