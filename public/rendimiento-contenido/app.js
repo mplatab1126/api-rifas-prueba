@@ -310,6 +310,7 @@ const refs = {
   syncMetaAds: document.getElementById("syncMetaAds"),
   syncInstagram: document.getElementById("syncInstagram"),
   lastSyncTime: document.getElementById("lastSyncTime"),
+  presupuestosTableBody: document.getElementById("presupuestosTableBody"),
 };
 
 function formatMoney(value) {
@@ -692,46 +693,16 @@ function renderAdsSection(ads) {
       delta: computeDelta(summary.spend, prevSummary.spend, { inverse: true }),
     },
     {
-      title: "Ventas generadas",
-      value: formatMoney(summary.revenue),
-      note: "Ingresos atribuidos",
-      delta: computeDelta(summary.revenue, prevSummary.revenue),
-    },
-    {
       title: "Costo por compra",
       value: formatMoney(summary.cpa),
       note: "Promedio por conversion",
       delta: computeDelta(summary.cpa, prevSummary.cpa, { inverse: true }),
     },
     {
-      title: "ROAS",
-      value: summary.roas.toFixed(2),
-      note: "Retorno por gasto",
-      delta: computeDelta(summary.roas, prevSummary.roas),
-    },
-    {
-      title: "CTR",
-      value: formatPct(summary.ctr),
-      note: "Clicks / impresiones",
-      delta: computeDelta(summary.ctr, prevSummary.ctr),
-    },
-    {
-      title: "Hook rate",
-      value: summary.hookRate ? formatPct(summary.hookRate) : "—",
-      note: "Views 3s / impresiones",
-      delta: summary.hookRate ? computeDelta(summary.hookRate, prevSummary.hookRate) : null,
-    },
-    {
-      title: "Hold rate",
-      value: summary.holdRate ? formatPct(summary.holdRate) : "—",
-      note: "Tiempo visto / duracion",
-      delta: summary.holdRate ? computeDelta(summary.holdRate, prevSummary.holdRate) : null,
-    },
-    {
-      title: "CPM",
-      value: formatMoney(summary.cpm),
-      note: "Costo por mil impresiones",
-      delta: computeDelta(summary.cpm, prevSummary.cpm, { inverse: true }),
+      title: "Compras",
+      value: formatNumber(summary.purchases),
+      note: "Conversiones totales",
+      delta: computeDelta(summary.purchases, prevSummary.purchases),
     },
   ]);
 
@@ -1018,6 +989,112 @@ function renderCopiesByType(copies, emptyMessage) {
     .join("");
 }
 
+async function actualizarPresupuesto(adsetId, nuevoPresupuesto, fila) {
+  const contrasena = localStorage.getItem("asesor_pwd");
+  const btnGuardar = fila.querySelector(".btn-guardar-presupuesto");
+  const btnCancelar = fila.querySelector(".btn-cancelar-presupuesto");
+  if (btnGuardar) btnGuardar.disabled = true;
+  if (btnCancelar) btnCancelar.disabled = true;
+  if (btnGuardar) btnGuardar.textContent = "Guardando...";
+
+  try {
+    const r = await fetch("/api/contenido/presupuesto", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contrasena, adsetId, nuevoPresupuesto }),
+    });
+    const json = await r.json();
+    if (!r.ok || json.status !== "ok") {
+      alert("Error al actualizar: " + (json.mensaje || "Error desconocido"));
+      if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = "Guardar"; }
+      if (btnCancelar) btnCancelar.disabled = false;
+      return;
+    }
+    // Actualizar localmente para reflejar el cambio sin re-sincronizar
+    const adset = dataSource.adsets.find((a) => a.id === adsetId);
+    if (adset) adset.dailyBudget = parseInt(nuevoPresupuesto);
+    renderPresupuestos();
+  } catch (err) {
+    alert("Error de conexión: " + err.message);
+    if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = "Guardar"; }
+    if (btnCancelar) btnCancelar.disabled = false;
+  }
+}
+
+function renderPresupuestos() {
+  const tbody = refs.presupuestosTableBody;
+  if (!tbody) return;
+  const adsets = dataSource.adsets || [];
+  if (!adsets.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="empty">Sin conjuntos activos o pausados.</td></tr>`;
+    return;
+  }
+
+  const sorted = [...adsets].sort((a, b) => b.dailyBudget - a.dailyBudget);
+
+  tbody.innerHTML = sorted.map((a) => {
+    const esPresupuestoTotal = a.dailyBudget === 0 && a.lifetimeBudget > 0;
+    const presupuestoTexto = esPresupuestoTotal
+      ? `${formatMoney(a.lifetimeBudget)} (total)`
+      : formatMoney(a.dailyBudget);
+    const presupuestoValor = esPresupuestoTotal ? a.lifetimeBudget : a.dailyBudget;
+    const estadoBadge = a.status === "ACTIVE"
+      ? `<span style="color:#15803d;font-weight:600;">Activo</span>`
+      : `<span style="color:#92400e;font-weight:600;">Pausado</span>`;
+
+    return `
+      <tr data-adset-id="${a.id}">
+        <td>${a.campaignName || "—"}</td>
+        <td>${a.name}</td>
+        <td>${estadoBadge}</td>
+        <td class="celda-presupuesto">${presupuestoTexto}</td>
+        <td>
+          ${esPresupuestoTotal
+            ? `<span style="font-size:12px;color:#94a3b8;">Presupuesto total — no editable desde aquí</span>`
+            : `<button class="btn btn-ghost btn-editar-presupuesto" style="font-size:13px;padding:6px 10px;"
+                data-adset-id="${a.id}" data-presupuesto-actual="${presupuestoValor}">Editar</button>`
+          }
+        </td>
+      </tr>`;
+  }).join("");
+
+  // Wiring del botón Editar
+  tbody.querySelectorAll(".btn-editar-presupuesto").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const adsetId = btn.dataset.adsetId;
+      const actual = parseInt(btn.dataset.presupuestoActual);
+      const fila = tbody.querySelector(`tr[data-adset-id="${adsetId}"]`);
+      if (!fila) return;
+
+      // Reemplazar celda de presupuesto con input + botones
+      fila.querySelector(".celda-presupuesto").innerHTML = `
+        <input type="number" class="input-presupuesto" value="${actual}" min="4000" step="1000"
+          style="width:130px;padding:6px 8px;border:1px solid #c5d5f5;border-radius:8px;font-size:14px;font-weight:600;">
+        <span style="font-size:12px;color:#64748b;margin-left:4px;">COP/día</span>
+      `;
+      fila.querySelector("td:last-child").innerHTML = `
+        <button class="btn btn-primary btn-guardar-presupuesto" style="font-size:13px;padding:6px 10px;margin-right:6px;">Guardar</button>
+        <button class="btn btn-ghost btn-cancelar-presupuesto" style="font-size:13px;padding:6px 10px;">Cancelar</button>
+      `;
+
+      fila.querySelector(".btn-guardar-presupuesto").addEventListener("click", () => {
+        const nuevo = parseInt(fila.querySelector(".input-presupuesto").value);
+        if (isNaN(nuevo) || nuevo < 4000) {
+          alert("El presupuesto mínimo es $4.000 COP");
+          return;
+        }
+        if (nuevo === actual) { renderPresupuestos(); return; }
+        if (!confirm(`¿Cambiar presupuesto a ${formatMoney(nuevo)}/día?`)) return;
+        actualizarPresupuesto(adsetId, nuevo, fila);
+      });
+
+      fila.querySelector(".btn-cancelar-presupuesto").addEventListener("click", () => {
+        renderPresupuestos();
+      });
+    });
+  });
+}
+
 function render() {
   const { ads, organic, copies } = getFilteredData();
   renderInsightsAndSignals(ads, organic, copies);
@@ -1026,6 +1103,7 @@ function render() {
   renderOrganicSection(organic);
   renderTopContent(ads, organic);
   renderCopies(copies);
+  renderPresupuestos();
 }
 
 function populateFilters() {
@@ -1203,6 +1281,7 @@ function applyData(json) {
     copies: json.copies || [],
     followersGained: json.followersGained || { instagram: 0, facebook: 0 },
     organicSummary: json.organicSummary || {},
+    adsets: json.adsets || [],
   };
   const realCampaigns = new Set((dataSource.campaigns || []).filter((c) => c && c !== "all"));
   for (const sel of [...state.filters.campaigns]) {

@@ -442,6 +442,24 @@ function derivarCopies(ads, organic) {
   return copies;
 }
 
+async function traerAdsets() {
+  if (!AD_ACCOUNT_ID) return [];
+  const url = `${GRAPH}/act_${AD_ACCOUNT_ID}/adsets?fields=id,name,daily_budget,lifetime_budget,status,campaign_id,campaign{name}&limit=200&access_token=${TOKEN}`;
+  const r = await metaFetch(url);
+  if (!r.data) return [];
+  return r.data
+    .filter((a) => a.status === 'ACTIVE' || a.status === 'PAUSED')
+    .map((a) => ({
+      id: a.id,
+      name: a.name,
+      dailyBudget: parseInt(a.daily_budget) || 0,
+      lifetimeBudget: parseInt(a.lifetime_budget) || 0,
+      status: a.status,
+      campaignId: a.campaign_id,
+      campaignName: a.campaign?.name || '',
+    }));
+}
+
 function defaultRange() {
   const until = new Date().toISOString().slice(0, 10);
   const d = new Date();
@@ -474,13 +492,14 @@ export default async function handler(req, res) {
   const until = dateEnd || def.until;
 
   try {
-    const [adsResult, ig, page, igFollowers, fbFollowers, fbReachTotal] = await Promise.all([
+    const [adsResult, ig, page, igFollowers, fbFollowers, fbReachTotal, adsets] = await Promise.all([
       traerAds(since, until),
       traerInstagram(since, until),
       traerPagePosts(since, until),
       traerFollowersInstagram(since, until),
       traerFollowersPage(since, until),
       traerPageReach(since, until),
+      traerAdsets(),
     ]);
 
     ig.sort((a, b) => (b.reach || 0) - (a.reach || 0));
@@ -497,6 +516,7 @@ export default async function handler(req, res) {
       campaigns,
       followersGained: { instagram: igFollowers, facebook: fbFollowers },
       organicSummary: { facebook: { reach: fbReachTotal } },
+      adsets,
       meta: { since, until },
     });
   } catch (err) {
