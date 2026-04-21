@@ -4,40 +4,25 @@
  * POST /api/contenido/transcribir
  * Body: {
  *   contrasena,
- *   adsVideos:     [{ id, videoId, name, roas, spend }],   // top ads por ROAS
+ *   adsVideos:     [{ id, videoUrl, name, purchases, spend }],
  *   organicVideos: [{ id, mediaUrl, title, social, interactions }]
  * }
  *
+ * La videoUrl de ads viene pre-cargada desde el Sync (campo source del video de Meta).
  * Usa OpenAI Whisper (whisper-1) para transcribir el audio.
  * Variable requerida: OPENAI_API_KEY
- * Variable de Meta: CONTENIDO_META_TOKEN (para obtener la URL del video de ads)
  */
 
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 
-const GRAPH = 'https://graph.facebook.com/v19.0';
-const META_TOKEN = process.env.CONTENIDO_META_TOKEN;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const WHISPER_URL = 'https://api.openai.com/v1/audio/transcriptions';
 const MAX_SIZE_BYTES = 25 * 1024 * 1024; // 25 MB — límite de Whisper
 const ACCESO_PERMITIDO = ['mateo', 'alejo p', 'alejo plata', 'valeria'];
 
-/** Obtiene la URL de descarga de un video de Meta Ads */
-async function getMetaVideoUrl(videoId) {
-  try {
-    const r = await fetch(`${GRAPH}/${videoId}?fields=source&access_token=${META_TOKEN}`);
-    const json = await r.json();
-    if (json.error || !json.source) return null;
-    return json.source;
-  } catch (e) {
-    return null;
-  }
-}
-
-/** Descarga un video y lo transcribe con Whisper */
+/** Descarga un video desde una URL y lo transcribe con Whisper */
 async function transcribir(videoUrl) {
-  // Descargar el video
   let videoRes;
   try {
     videoRes = await fetch(videoUrl);
@@ -51,7 +36,6 @@ async function transcribir(videoUrl) {
     return { error: 'El video supera los 25 MB permitidos por Whisper' };
   }
 
-  // Enviar a Whisper
   try {
     const formData = new FormData();
     const blob = new Blob([buffer], { type: 'video/mp4' });
@@ -92,35 +76,29 @@ export default async function handler(req, res) {
   if (!OPENAI_API_KEY) {
     return res.status(500).json({ status: 'error', mensaje: 'Falta OPENAI_API_KEY en las variables de entorno de Vercel' });
   }
-  if (!META_TOKEN) {
-    return res.status(500).json({ status: 'error', mensaje: 'Falta CONTENIDO_META_TOKEN' });
-  }
 
   const topAds = adsVideos.slice(0, 3);
   const topOrganic = organicVideos.slice(0, 3);
 
   const [adsResults, organicResults] = await Promise.all([
-    // Ads: primero obtenemos la URL de descarga desde Meta, luego transcribimos
     Promise.all(topAds.map(async (ad) => {
-      const videoUrl = await getMetaVideoUrl(ad.videoId);
-      if (!videoUrl) {
-        return { id: ad.id, name: ad.name, roas: ad.roas, spend: ad.spend, transcription: null, error: 'No se pudo obtener la URL del video desde Meta' };
+      if (!ad.videoUrl) {
+        return { id: ad.id, name: ad.name, purchases: ad.purchases, spend: ad.spend, transcription: null, error: 'Sin URL de video — haz Sync para refrescar los datos' };
       }
-      const result = await transcribir(videoUrl);
+      const result = await transcribir(ad.videoUrl);
       return {
         id: ad.id,
         name: ad.name,
-        roas: ad.roas,
+        purchases: ad.purchases,
         spend: ad.spend,
         transcription: result.text || null,
         error: result.error || null,
       };
     })),
 
-    // Orgánico: usamos el mediaUrl que ya viene de Instagram
     Promise.all(topOrganic.map(async (post) => {
       if (!post.mediaUrl) {
-        return { id: post.id, title: post.title, social: post.social, interactions: post.interactions, transcription: null, error: 'Sin URL de video disponible — sincroniza primero' };
+        return { id: post.id, title: post.title, social: post.social, interactions: post.interactions, transcription: null, error: 'Sin URL de video — haz Sync para refrescar los datos' };
       }
       const result = await transcribir(post.mediaUrl);
       return {

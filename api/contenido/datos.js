@@ -98,6 +98,7 @@ function transformarAd(item) {
     adsetId: item.adset_id || null,
     adsetName: item.adset_name || '',
     videoId: null,
+    videoUrl: null,
     date: item.date_start || new Date().toISOString().slice(0, 10),
     campaign: item.campaign_name || 'Sin campaña',
     spend: Math.round(parseFloat(item.spend) || 0),
@@ -214,7 +215,7 @@ async function enrichCreativos(ads) {
     const videoData = {};
     await Promise.all(chunk(uniqueIds, 50).map(async (vids) => {
       const vr = await metaFetch(
-        `${GRAPH}?ids=${vids.join(',')}&fields=length,picture&access_token=${TOKEN}`
+        `${GRAPH}?ids=${vids.join(',')}&fields=length,picture,source&access_token=${TOKEN}`
       );
       if (vr && !vr.error) Object.assign(videoData, vr);
     }));
@@ -222,6 +223,7 @@ async function enrichCreativos(ads) {
       const v = videoData[ad._videoId];
       if (v?.length) ad.videoDurationSec = Math.round(parseFloat(v.length));
       if (v?.picture && !ad.thumbnail) ad.thumbnail = v.picture;
+      if (v?.source) ad.videoUrl = v.source;
       delete ad._videoId;
     }
   }

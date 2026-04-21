@@ -1012,7 +1012,7 @@ function renderTranscripciones() {
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <span class="badge ads">Ad</span>
         <span style="font-size:12px;color:#64748b;">
-          ROAS ${item.roas ? item.roas.toFixed(2) : '—'} &nbsp;|&nbsp; ${item.spend ? formatMoney(item.spend) : '—'}
+          ${item.purchases ? item.purchases + ' compras' : '—'} &nbsp;|&nbsp; ${item.spend ? formatMoney(item.spend) : '—'}
         </span>
       </div>
       <strong style="font-size:14px;">${item.name}</strong>
@@ -1065,12 +1065,12 @@ async function generarTranscripciones() {
     const contrasena = localStorage.getItem("asesor_pwd");
     const allAds = getFilteredData().ads;
 
-    // Top 3 ads con video, ordenados por ROAS
+    // Top 3 ads con video, ordenados por compras
     const adsVideos = allAds
-      .filter((a) => a.videoId)
-      .sort((a, b) => b.roas - a.roas)
+      .filter((a) => a.videoUrl)
+      .sort((a, b) => b.purchases - a.purchases)
       .slice(0, 3)
-      .map((a) => ({ id: a.id, videoId: a.videoId, name: a.name, roas: a.roas, spend: a.spend }));
+      .map((a) => ({ id: a.id, videoUrl: a.videoUrl, name: a.name, purchases: a.purchases, spend: a.spend }));
 
     // Top 3 videos orgánicos (cualquier red) por interacciones
     const organicVideos = (dataSource.organic || [])
