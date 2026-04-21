@@ -364,21 +364,68 @@ select:focus {
 .metric-card {
   background: var(--bg-elev);
   border: 1px solid var(--border);
+  border-top: 3px solid transparent;
   border-radius: var(--radius);
   padding: 16px 18px;
   position: relative;
   overflow: hidden;
-  transition: border-color 150ms;
+  transition: border-color 150ms, box-shadow 150ms;
 }
 
 .metric-card:hover {
-  border-color: var(--border-strong);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
 }
 
 .metric-card.accent {
   background: linear-gradient(180deg, var(--accent-dim) 0%, transparent 60%), var(--bg-elev);
   border-color: var(--accent-border);
 }
+
+/* === METRIC CARD COLORS (por posición) === */
+
+/* Ads: Gasto → indigo, CPA → amber, Compras → green */
+#adsMetrics .metric-card:nth-child(1) {
+  border-top-color: #6366F1;
+  background: linear-gradient(175deg, rgba(99,102,241,0.05) 0%, transparent 50%), var(--bg-elev);
+}
+#adsMetrics .metric-card:nth-child(1) .metric-title { color: #6366F1; }
+
+#adsMetrics .metric-card:nth-child(2) {
+  border-top-color: #F59E0B;
+  background: linear-gradient(175deg, rgba(245,158,11,0.06) 0%, transparent 50%), var(--bg-elev);
+}
+#adsMetrics .metric-card:nth-child(2) .metric-title { color: #B45309; }
+
+#adsMetrics .metric-card:nth-child(3) {
+  border-top-color: #16A34A;
+  background: linear-gradient(175deg, rgba(22,163,74,0.06) 0%, transparent 50%), var(--bg-elev);
+}
+#adsMetrics .metric-card:nth-child(3) .metric-title { color: #15803D; }
+
+/* Organic: 4 métricas con sus colores */
+#organicMetrics .metric-card:nth-child(1) {
+  border-top-color: #6366F1;
+  background: linear-gradient(175deg, rgba(99,102,241,0.05) 0%, transparent 50%), var(--bg-elev);
+}
+#organicMetrics .metric-card:nth-child(1) .metric-title { color: #6366F1; }
+
+#organicMetrics .metric-card:nth-child(2) {
+  border-top-color: #0EA5E9;
+  background: linear-gradient(175deg, rgba(14,165,233,0.06) 0%, transparent 50%), var(--bg-elev);
+}
+#organicMetrics .metric-card:nth-child(2) .metric-title { color: #0369A1; }
+
+#organicMetrics .metric-card:nth-child(3) {
+  border-top-color: #8B5CF6;
+  background: linear-gradient(175deg, rgba(139,92,246,0.06) 0%, transparent 50%), var(--bg-elev);
+}
+#organicMetrics .metric-card:nth-child(3) .metric-title { color: #7C3AED; }
+
+#organicMetrics .metric-card:nth-child(4) {
+  border-top-color: #EC4899;
+  background: linear-gradient(175deg, rgba(236,72,153,0.06) 0%, transparent 50%), var(--bg-elev);
+}
+#organicMetrics .metric-card:nth-child(4) .metric-title { color: #BE185D; }
 
 .metric-title {
   margin: 0 0 10px;
