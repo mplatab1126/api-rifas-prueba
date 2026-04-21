@@ -20,6 +20,7 @@
 
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
+import { supabase } from '../lib/supabase.js';
 
 const GRAPH = 'https://graph.facebook.com/v19.0';
 const TOKEN = process.env.CONTENIDO_META_TOKEN;
@@ -504,6 +505,23 @@ async function traerAdsets(since, until) {
   return adsets;
 }
 
+async function traerInventarioBoletas() {
+  try {
+    const OBJETIVO = 10000;
+    // Disponibles = sin teléfono asignado (igual que el endpoint /disponibles)
+    const { count: disponibles, error } = await supabase
+      .from('boletas')
+      .select('numero', { count: 'exact', head: true })
+      .is('telefono_cliente', null);
+    if (error) throw error;
+    const disp = disponibles ?? 0;
+    const vendidas = Math.max(0, OBJETIVO - disp);
+    return { vendidas, disponibles: disp, total: OBJETIVO, objetivo: OBJETIVO };
+  } catch (err) {
+    return null; // no bloquear el resto de la carga si falla
+  }
+}
+
 function defaultRange() {
   const until = new Date().toISOString().slice(0, 10);
   const d = new Date();
@@ -536,7 +554,7 @@ export default async function handler(req, res) {
   const until = dateEnd || def.until;
 
   try {
-    const [adsResult, ig, page, igFollowers, fbFollowers, fbReachTotal, adsets] = await Promise.all([
+    const [adsResult, ig, page, igFollowers, fbFollowers, fbReachTotal, adsets, inventario] = await Promise.all([
       traerAds(since, until),
       traerInstagram(since, until),
       traerPagePosts(since, until),
@@ -544,6 +562,7 @@ export default async function handler(req, res) {
       traerFollowersPage(since, until),
       traerPageReach(since, until),
       traerAdsets(since, until),
+      traerInventarioBoletas(),
     ]);
 
     ig.sort((a, b) => (b.reach || 0) - (a.reach || 0));
@@ -561,6 +580,7 @@ export default async function handler(req, res) {
       followersGained: { instagram: igFollowers, facebook: fbFollowers },
       organicSummary: { facebook: { reach: fbReachTotal } },
       adsets,
+      inventario,
       meta: { since, until },
     });
   } catch (err) {

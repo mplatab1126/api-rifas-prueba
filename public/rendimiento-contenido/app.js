@@ -825,14 +825,15 @@ function renderAdsSection(ads) {
   const hookTotal     = Math.max(adsWithHook.length, 1);
 
   // ── Status / budget ───────────────────────────────────────────────────────
-  const adsets         = dataSource.adsets || [];
-  const activeCount    = adsets.length ? adsets.filter(a => a.status === 'ACTIVE').length  : ads.length;
-  const pausedCount    = adsets.length ? adsets.filter(a => a.status !== 'ACTIVE').length  : 0;
-  const totalAdsCount  = activeCount + pausedCount || ads.length;
+  const adsets           = dataSource.adsets || [];
   const totalDailyBudget = adsets.reduce((s, a) => s + (a.dailyBudget || 0), 0);
   const budgetUsedPct    = totalDailyBudget > 0
     ? Math.min(100, Math.round((summary.spend / totalDailyBudget) * 100))
     : null;
+
+  // ── Inventario de boletas ─────────────────────────────────────────────────
+  const inv      = dataSource.inventario;
+  const invPct   = inv ? Math.round((inv.vendidas / inv.objetivo) * 100) : 0;
 
   // ── Budget card content ───────────────────────────────────────────────────
   const budgetInner = budgetUsedPct !== null
@@ -892,26 +893,32 @@ function renderAdsSection(ads) {
       </div>
 
       <div class="card ads-strip-card ads-strip-status">
-        <div class="ads-strip-label">Estado de anuncios</div>
+        <div class="ads-strip-label">Progreso de ventas</div>
+        ${inv ? `
         <div class="ads-strip-status-inner">
           ${svgDonut([
-            { value: activeCount,              color: 'var(--green)' },
-            { value: Math.max(pausedCount, 0), color: 'var(--yellow)' },
-          ], 76, 10, String(totalAdsCount), 'Total')}
+            { value: inv.vendidas,                       color: 'var(--accent)' },
+            { value: Math.max(inv.objetivo - inv.vendidas, 0), color: 'var(--border)' },
+          ], 76, 10, invPct + '%', 'de meta')}
           <div class="ads-status-legend">
             <div class="legend-row">
-              <span class="legend-dot" style="background:var(--green)"></span>
-              <span class="legend-label">Activos</span>
-              <span class="legend-val tabular">${activeCount}</span>
+              <span class="legend-dot" style="background:var(--accent)"></span>
+              <span class="legend-label">Vendidas</span>
+              <span class="legend-val tabular">${formatNumber(inv.vendidas)}</span>
             </div>
-            ${pausedCount > 0 ? `
             <div class="legend-row">
-              <span class="legend-dot" style="background:var(--yellow)"></span>
-              <span class="legend-label">Pausados</span>
-              <span class="legend-val tabular">${pausedCount}</span>
-            </div>` : ''}
+              <span class="legend-dot" style="background:var(--bg-elev-2);border:1px solid var(--border-strong)"></span>
+              <span class="legend-label">Disponibles</span>
+              <span class="legend-val tabular">${formatNumber(inv.disponibles)}</span>
+            </div>
+            <div style="margin-top:6px;font-size:10px;color:var(--fg-faint);letter-spacing:0.04em;">
+              Meta: ${formatNumber(inv.objetivo)} boletas
+            </div>
           </div>
-        </div>
+        </div>` : `
+        <div style="font-size:12px;color:var(--fg-faint);margin-top:8px;">
+          Haz Sync para ver el progreso de ventas
+        </div>`}
       </div>
     </div>
   `;
@@ -1485,6 +1492,7 @@ function applyData(json) {
     followersGained: json.followersGained || { instagram: 0, facebook: 0 },
     organicSummary: json.organicSummary || {},
     adsets: json.adsets || [],
+    inventario: json.inventario || null,
   };
   const realCampaigns = new Set((dataSource.campaigns || []).filter((c) => c && c !== "all"));
   for (const sel of [...state.filters.campaigns]) {
