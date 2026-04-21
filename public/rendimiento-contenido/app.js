@@ -20,6 +20,7 @@ const state = {
   organicSocial: "instagram",
   favorites: new Set(),
   adsSectionCampaignFilter: '',
+  transcripciones: null,
 };
 
 let dataSource = {
@@ -300,8 +301,10 @@ const refs = {
   topRange: document.getElementById("topRange"),
   topAdsGrid: document.getElementById("topAdsGrid"),
   topOrganicGrid: document.getElementById("topOrganicGrid"),
-  copiesAdsList: document.getElementById("copiesAdsList"),
-  copiesOrganicList: document.getElementById("copiesOrganicList"),
+  btnGenerarTranscripciones: document.getElementById("btnGenerarTranscripciones"),
+  transcripcionesStatus: document.getElementById("transcripcionesStatus"),
+  transcripcionesAds: document.getElementById("transcripcionesAds"),
+  transcripcionesOrganic: document.getElementById("transcripcionesOrganic"),
   organicSocialToggle: document.getElementById("organicSocialToggle"),
   syncMetaAds: document.getElementById("syncMetaAds"),
   syncInstagram: document.getElementById("syncInstagram"),
@@ -990,63 +993,119 @@ function renderTopCards(items, emptyMessage) {
     .join("");
 }
 
-function renderCopies(copies) {
-  const adsCopies = copies.filter((copy) => copy.type === "Ads");
-  const organicCopies = copies.filter((copy) => copy.type !== "Ads");
+function renderTranscripciones() {
+  if (!refs.transcripcionesAds || !refs.transcripcionesOrganic) return;
+  const trans = state.transcripciones;
 
-  refs.copiesAdsList.innerHTML = renderCopiesByType(adsCopies, "Sin copys de Ads para los filtros activos.");
-  refs.copiesOrganicList.innerHTML = renderCopiesByType(organicCopies, "Sin copys organicos para los filtros activos.");
+  const placeholder = `<div class="card empty" style="padding:20px;color:#64748b;font-size:13px;">
+    Haz clic en <strong>Generar transcripciones ▶</strong> para obtener el texto de los videos más ganadores del periodo seleccionado.
+  </div>`;
 
-  document.querySelectorAll(".copy-btn").forEach((btn) => {
-    btn.addEventListener("click", async (event) => {
-      const { copyId } = event.currentTarget.dataset;
-      const item = dataSource.copies.find((copy) => copy.id === copyId);
-      if (!item) return;
-      try {
-        await navigator.clipboard.writeText(item.text);
-        event.currentTarget.textContent = "Copiado";
-        setTimeout(() => {
-          event.currentTarget.textContent = "Copiar texto";
-        }, 1200);
-      } catch (_error) {
-        event.currentTarget.textContent = "No se pudo copiar";
+  if (!trans) {
+    refs.transcripcionesAds.innerHTML = placeholder;
+    refs.transcripcionesOrganic.innerHTML = placeholder;
+    return;
+  }
+
+  refs.transcripcionesAds.innerHTML = (trans.ads || []).map((item) => `
+    <article class="copy-card" style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span class="badge ads">Ad</span>
+        <span style="font-size:12px;color:#64748b;">
+          ROAS ${item.roas ? item.roas.toFixed(2) : '—'} &nbsp;|&nbsp; ${item.spend ? formatMoney(item.spend) : '—'}
+        </span>
+      </div>
+      <strong style="font-size:14px;">${item.name}</strong>
+      ${item.transcription
+        ? `<p class="copy-text" style="margin-top:8px;white-space:pre-wrap;">${item.transcription}</p>
+           <button class="btn btn-ghost" style="margin-top:8px;font-size:12px;" data-trans-text="${item.transcription.replace(/"/g, '&quot;')}">Copiar texto</button>`
+        : `<p style="margin-top:8px;font-size:13px;color:#b91c1c;">⚠ ${item.error || 'No disponible'}</p>`
       }
-    });
-  });
+    </article>
+  `).join('') || `<div class="card empty">Sin anuncios de video en este periodo.</div>`;
 
-  document.querySelectorAll(".fav-btn").forEach((btn) => {
-    btn.addEventListener("click", (event) => {
-      const { favId } = event.currentTarget.dataset;
-      if (state.favorites.has(favId)) state.favorites.delete(favId);
-      else state.favorites.add(favId);
-      render();
+  refs.transcripcionesOrganic.innerHTML = (trans.organic || []).map((item) => `
+    <article class="copy-card" style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span class="badge organic">${(item.social || 'ig').toUpperCase()}</span>
+        <span style="font-size:12px;color:#64748b;">${item.interactions ? formatNumber(item.interactions) + ' interacciones' : ''}</span>
+      </div>
+      <strong style="font-size:14px;">${item.title}</strong>
+      ${item.transcription
+        ? `<p class="copy-text" style="margin-top:8px;white-space:pre-wrap;">${item.transcription}</p>
+           <button class="btn btn-ghost" style="margin-top:8px;font-size:12px;" data-trans-text="${item.transcription.replace(/"/g, '&quot;')}">Copiar texto</button>`
+        : `<p style="margin-top:8px;font-size:13px;color:#b91c1c;">⚠ ${item.error || 'No disponible'}</p>`
+      }
+    </article>
+  `).join('') || `<div class="card empty">Sin videos orgánicos en este periodo.</div>`;
+
+  // Botones copiar transcripción
+  [refs.transcripcionesAds, refs.transcripcionesOrganic].forEach((container) => {
+    container.querySelectorAll("[data-trans-text]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(btn.dataset.transText);
+          btn.textContent = "Copiado ✓";
+          setTimeout(() => { btn.textContent = "Copiar texto"; }, 1500);
+        } catch (e) {
+          btn.textContent = "No se pudo copiar";
+        }
+      });
     });
   });
 }
 
-function renderCopiesByType(copies, emptyMessage) {
-  if (!copies.length) {
-    return `<div class="card empty">${emptyMessage}</div>`;
-  }
+async function generarTranscripciones() {
+  const btn = refs.btnGenerarTranscripciones;
+  const statusEl = refs.transcripcionesStatus;
+  if (btn) { btn.disabled = true; btn.textContent = "Generando..."; }
+  if (statusEl) statusEl.textContent = "Procesando videos — puede tomar hasta 60 segundos...";
 
-  return copies
-    .map((copy) => {
-      const isFav = state.favorites.has(copy.id);
-      return `
-        <article class="copy-card ${isFav ? "favorite" : ""}">
-          <span class="badge ${copy.type === "Ads" ? "ads" : "organic"}">${copy.type}</span>
-          <p class="copy-text">${copy.text}</p>
-          <p class="copy-meta">${copy.metrics} | ${copy.date}</p>
-          <div class="copy-actions">
-            <button class="btn btn-ghost copy-btn" data-copy-id="${copy.id}">Copiar texto</button>
-            <button class="btn btn-primary fav-btn" data-fav-id="${copy.id}">
-              ${isFav ? "Quitar favorito" : "Marcar favorito"}
-            </button>
-          </div>
-        </article>
-      `;
-    })
-    .join("");
+  try {
+    const contrasena = localStorage.getItem("asesor_pwd");
+    const allAds = getFilteredData().ads;
+
+    // Top 3 ads con video, ordenados por ROAS
+    const adsVideos = allAds
+      .filter((a) => a.videoId)
+      .sort((a, b) => b.roas - a.roas)
+      .slice(0, 3)
+      .map((a) => ({ id: a.id, videoId: a.videoId, name: a.name, roas: a.roas, spend: a.spend }));
+
+    // Top 3 videos orgánicos (cualquier red) por interacciones
+    const organicVideos = (dataSource.organic || [])
+      .filter((p) => p.type === "video" && p.mediaUrl)
+      .sort((a, b) => (b.interactions || 0) - (a.interactions || 0))
+      .slice(0, 3)
+      .map((p) => ({ id: p.id, mediaUrl: p.mediaUrl, title: p.title, social: p.social, interactions: p.interactions }));
+
+    if (!adsVideos.length && !organicVideos.length) {
+      if (statusEl) statusEl.textContent = "No hay videos disponibles en el periodo seleccionado. Prueba con otro rango de fechas.";
+      return;
+    }
+
+    const r = await fetch("/api/contenido/transcribir", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contrasena, adsVideos, organicVideos }),
+    });
+
+    const json = await r.json();
+    if (!r.ok || json.status !== "ok") {
+      if (statusEl) statusEl.textContent = "Error: " + (json.mensaje || "No se pudo generar la transcripción");
+      return;
+    }
+
+    state.transcripciones = { ads: json.ads, organic: json.organic };
+
+    const total = (json.ads || []).filter((x) => x.transcription).length + (json.organic || []).filter((x) => x.transcription).length;
+    if (statusEl) statusEl.textContent = `✅ ${total} transcripción(es) generada(s) — ${new Date().toLocaleTimeString("es-CO")}`;
+    renderTranscripciones();
+  } catch (err) {
+    if (statusEl) statusEl.textContent = "Error de conexión: " + err.message;
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "Generar transcripciones ▶"; }
+  }
 }
 
 async function actualizarPresupuesto(adsetId, nuevoPresupuesto, fila) {
@@ -1089,7 +1148,7 @@ function render() {
   renderAdsSection(ads);
   renderOrganicSection(organic);
   renderTopContent(ads, organic);
-  renderCopies(copies);
+  renderTranscripciones();
 }
 
 function populateFilters() {
@@ -1138,6 +1197,10 @@ function setupEvents() {
       state.adsSectionCampaignFilter = e.target.value;
       renderAdsSection(getFilteredData().ads);
     });
+  }
+
+  if (refs.btnGenerarTranscripciones) {
+    refs.btnGenerarTranscripciones.addEventListener("click", generarTranscripciones);
   }
 }
 

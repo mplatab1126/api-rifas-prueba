@@ -97,6 +97,7 @@ function transformarAd(item) {
     name: item.ad_name || 'Sin nombre',
     adsetId: item.adset_id || null,
     adsetName: item.adset_name || '',
+    videoId: null,
     date: item.date_start || new Date().toISOString().slice(0, 10),
     campaign: item.campaign_name || 'Sin campaña',
     spend: Math.round(parseFloat(item.spend) || 0),
@@ -202,7 +203,7 @@ async function enrichCreativos(ads) {
       if (ot.includes('VIDEO')) ad.format = 'Video';
       else if (ot.includes('CAROUSEL')) ad.format = 'Carrusel';
       else if (ot.includes('PHOTO') || ot.includes('IMAGE')) ad.format = 'Imagen';
-      if (c.video_id) ad._videoId = c.video_id;
+      if (c.video_id) { ad._videoId = c.video_id; ad.videoId = c.video_id; }
     }
   }));
 
@@ -310,6 +311,7 @@ async function traerInstagram(since, until) {
       transcription: '',
       permalink: m.permalink || null,
       thumbnail: thumbnail || null,
+      mediaUrl: esVideo ? (m.media_url || null) : null,
     };
   });
 }
