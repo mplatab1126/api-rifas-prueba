@@ -474,9 +474,10 @@ function svgBarChart(data, height, labels, highlightIdx) {
     const opacity = isSelected ? '1' : (hasExplicitHighlight ? '0.30' : '0.75');
     const lbl = labels && labels[i] != null ? labels[i] : i + 1;
     const tip = v > 0 ? `${lbl}  ·  ${fmtCOP.format(v)}` : `${lbl}  ·  Sin gasto`;
-    // Barra visible
+    const delay = (i * 0.04).toFixed(2);
+    // Barra visible — anima desde abajo hacia arriba con SVG animate
     const visibleBar = h > 0
-      ? `<rect x="${x}" y="${y}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${fill}" opacity="${opacity}"/>`
+      ? `<rect x="${x}" y="${height}" width="${barW.toFixed(1)}" height="0" rx="2" fill="${fill}" opacity="${opacity}"><animate attributeName="height" from="0" to="${h.toFixed(1)}" begin="${delay}s" dur="0.55s" calcMode="spline" keyTimes="0;1" keySplines="0.16 1 0.3 1" fill="freeze"/><animate attributeName="y" from="${height}" to="${y}" begin="${delay}s" dur="0.55s" calcMode="spline" keyTimes="0;1" keySplines="0.16 1 0.3 1" fill="freeze"/></rect>`
       : '';
     // Barra invisible de hover — cubre toda la altura de la columna para facilitar el hover
     const hoverBar = `<rect x="${x}" y="0" width="${barW.toFixed(1)}" height="${height}" class="bar-hover" data-tip="${tip}"/>`;
@@ -536,14 +537,48 @@ function htmlHBar(label, sub, value, max, color, suffix) {
   </div>`;
 }
 
-function miniKpiHtml(label, value, delta, isAccent) {
+// ─── Animación count-up para números clave ────────────────────────────────
+function countUp(el, target, fmt, delayMs) {
+  const fmtFn = {
+    money: v => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(Math.round(v)),
+    int:   v => new Intl.NumberFormat('es-CO').format(Math.round(v)),
+    roas:  v => v.toFixed(2) + '×',
+    pct:   v => v.toFixed(2) + '%',
+  }[fmt] || (v => new Intl.NumberFormat('es-CO').format(Math.round(v)));
+
+  const DURATION = 700;
+  let startTime = null;
+
+  function tick(now) {
+    if (!startTime) startTime = now;
+    const t = Math.min((now - startTime) / DURATION, 1);
+    const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+    el.textContent = fmtFn(target * eased);
+    if (t < 1) requestAnimationFrame(tick);
+    else el.textContent = fmtFn(target);
+  }
+
+  setTimeout(() => requestAnimationFrame(tick), delayMs || 0);
+}
+
+function runCountUps(container) {
+  container.querySelectorAll('[data-raw]').forEach((el, i) => {
+    const raw = parseFloat(el.dataset.raw);
+    if (!raw || isNaN(raw)) return;
+    countUp(el, raw, el.dataset.fmt || 'int', i * 70);
+  });
+}
+
+function miniKpiHtml(label, value, delta, isAccent, rawValue, fmtType, animDelay) {
   const isUp = delta.direction === 'up';
   const isDown = delta.direction === 'down';
   const col = isUp ? 'var(--green)' : isDown ? 'var(--red)' : 'var(--fg-faint)';
   const arrow = isUp ? '↑' : isDown ? '↓' : '•';
-  return `<div class="mini-kpi${isAccent ? ' mini-kpi--accent' : ''}">
+  const rawAttr = rawValue != null ? `data-raw="${rawValue}" data-fmt="${fmtType || 'int'}"` : '';
+  const delay = animDelay != null ? `animation-delay:${animDelay}ms` : '';
+  return `<div class="mini-kpi${isAccent ? ' mini-kpi--accent' : ''} anim-in" style="${delay}">
     <div class="mini-kpi-label">${label}</div>
-    <div class="mini-kpi-value tabular">${value}</div>
+    <div class="mini-kpi-value tabular" ${rawAttr}>${value}</div>
     <div class="mini-kpi-delta" style="color:${col}">${arrow} ${delta.label} <span class="mini-kpi-period">vs ant.</span></div>
   </div>`;
 }
@@ -596,16 +631,17 @@ function computeDailySpend(ads) {
 
 function renderMetricCards(target, metrics) {
   target.innerHTML = metrics
-    .map((m) => {
+    .map((m, i) => {
       const deltaHtml = m.delta
         ? `<span class="metric-delta ${m.delta.direction}">${
             m.delta.direction === "up" ? "↑" : m.delta.direction === "down" ? "↓" : "•"
           } ${m.delta.label}</span>`
         : "";
+      const rawAttr = m.rawValue != null ? `data-raw="${m.rawValue}" data-fmt="${m.fmtType || 'int'}"` : '';
       return `
-        <article class="metric-card">
+        <article class="metric-card anim-in" style="animation-delay:${i * 80}ms">
           <p class="metric-title">${m.title}</p>
-          <p class="metric-value">${m.value}</p>
+          <p class="metric-value" ${rawAttr}>${m.value}</p>
           <div class="metric-foot">
             <span class="metric-note">${m.note}</span>
             ${deltaHtml}
@@ -921,7 +957,7 @@ function renderAdsSection(ads) {
           <div class="ads-hero-label">Gasto total en anuncios</div>
           <div class="ads-hero-value-row">
             <span class="ads-hero-currency tabular">$</span>
-            <span class="ads-hero-number tabular">${formatNumber(summary.spend)}</span>
+            <span class="ads-hero-number tabular" data-raw="${summary.spend}" data-fmt="int">${formatNumber(summary.spend)}</span>
             <span class="ads-hero-delta ${spendDelta.direction === 'up' ? 'delta-up' : spendDelta.direction === 'down' ? 'delta-down' : 'delta-flat'}">
               ${spendDelta.direction === 'up' ? '↑' : spendDelta.direction === 'down' ? '↓' : '•'} ${spendDelta.label}
             </span>
@@ -934,10 +970,10 @@ function renderAdsSection(ads) {
       </div>
 
       <div class="ads-mini-kpis">
-        ${miniKpiHtml('Compras',      formatNumber(summary.purchases),          purchasesDelta, true)}
-        ${miniKpiHtml('Costo/compra', formatMoney(summary.cpa),                 cpaDelta,       true)}
-        ${miniKpiHtml('ROAS',         summary.roas.toFixed(2) + '×',            roasDelta,      false)}
-        ${miniKpiHtml('CTR',          summary.ctr.toFixed(2) + '%',             ctrDelta,       false)}
+        ${miniKpiHtml('Compras',      formatNumber(summary.purchases),  purchasesDelta, true,  summary.purchases, 'int',   0)}
+        ${miniKpiHtml('Costo/compra', formatMoney(summary.cpa),         cpaDelta,       true,  summary.cpa,       'money', 80)}
+        ${miniKpiHtml('ROAS',         summary.roas.toFixed(2) + '×',   roasDelta,      false, summary.roas,      'roas',  160)}
+        ${miniKpiHtml('CTR',          summary.ctr.toFixed(2) + '%',    ctrDelta,       false, summary.ctr,       'pct',   240)}
       </div>
     </div>
 
@@ -983,6 +1019,8 @@ function renderAdsSection(ads) {
       </div>
     </div>
   `;
+
+  runCountUps(refs.adsMetrics);
 
   // ── Tabla ─────────────────────────────────────────────────────────────────
   const tableAds = state.adsSectionCampaignFilter
@@ -1118,26 +1156,35 @@ function renderOrganicSection(organic) {
       value: formatNumber(reachTotal),
       note: "Cuentas alcanzadas",
       delta: computeDelta(reachTotal, prevTotals.reach),
+      rawValue: reachTotal,
+      fmtType: 'int',
     },
     {
       title: "Interacciones",
       value: formatNumber(totals.interactions),
       note: "Likes, comentarios y mas",
       delta: computeDelta(totals.interactions, prevTotals.interactions),
+      rawValue: totals.interactions,
+      fmtType: 'int',
     },
     {
       title: "Guardados",
       value: formatNumber(totals.saves),
       note: "Interes de valor futuro",
       delta: computeDelta(totals.saves, prevTotals.saves),
+      rawValue: totals.saves,
+      fmtType: 'int',
     },
     {
       title: "Compartidos",
       value: formatNumber(totals.shares),
       note: "Contenido viralizado",
       delta: computeDelta(totals.shares, prevTotals.shares),
+      rawValue: totals.shares,
+      fmtType: 'int',
     },
   ]);
+  runCountUps(refs.organicMetrics);
 
   if (!organic.length) {
     refs.organicList.innerHTML = `<div class="empty">No hay publicaciones para estos filtros.</div>`;
