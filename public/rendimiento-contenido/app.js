@@ -9,14 +9,19 @@ function isoMinusDays(days) {
 const DEFAULT_DATE_END = TODAY.toISOString().slice(0, 10);
 const DEFAULT_DATE_START = isoMinusDays(22);
 
+const DEFAULT_ORGANIC_DATE_START = isoMinusDays(14); // 15 días (14 días atrás + hoy)
+
 const state = {
   filters: {
     dateStart: DEFAULT_DATE_START,
     dateEnd: DEFAULT_DATE_END,
     campaigns: new Set(), // Set vacio = "Todas"
   },
+  organicFilters: {
+    dateStart: DEFAULT_ORGANIC_DATE_START,
+    dateEnd: DEFAULT_DATE_END,
+  },
   adsSort: "roas_desc",
-  topRangeDays: 7,
   organicSocial: "instagram",
   favorites: new Set(),
   adsSectionCampaignFilter: '',
@@ -298,7 +303,10 @@ const refs = {
   organicMetrics: document.getElementById("organicMetrics"),
   organicList: document.getElementById("organicList"),
   organicFollowersHighlight: document.getElementById("organicFollowersHighlight"),
-  topRange: document.getElementById("topRange"),
+  organicDateStart: document.getElementById("organicDateStart"),
+  organicDateEnd: document.getElementById("organicDateEnd"),
+  applyOrganicFilters: document.getElementById("applyOrganicFilters"),
+  organicQuickRanges: document.getElementById("organicQuickRanges"),
   topAdsGrid: document.getElementById("topAdsGrid"),
   topOrganicGrid: document.getElementById("topOrganicGrid"),
   btnGenerarTranscripciones: document.getElementById("btnGenerarTranscripciones"),
@@ -414,6 +422,15 @@ function getDataByFilters(filters) {
 
 function getFilteredData() {
   return getDataByFilters(state.filters);
+}
+
+// Filtro independiente para secciones Orgánico y Top Contenidos
+function getOrganicFilteredData() {
+  return getDataByFilters({
+    dateStart: state.organicFilters.dateStart,
+    dateEnd: state.organicFilters.dateEnd,
+    campaigns: new Set(), // sin filtro de campaña para orgánico
+  });
 }
 
 function getPreviousPeriodData() {
@@ -1256,12 +1273,7 @@ function renderOrganicSocialButtons() {
 }
 
 function renderTopContent(ads, organic) {
-  const topSince = new Date(TODAY);
-  topSince.setDate(topSince.getDate() - state.topRangeDays);
-  const topSinceIso = topSince.toISOString().slice(0, 10);
-
   const adItems = ads
-    .filter((ad) => ad.date >= topSinceIso)
     .map((ad) => ({
       id: ad.id,
       kind: "Ads",
@@ -1274,7 +1286,6 @@ function renderTopContent(ads, organic) {
     }));
 
   const organicItems = organic
-    .filter((post) => post.date >= topSinceIso)
     .map((post) => ({
       id: post.id,
       kind: "Organico",
@@ -1472,17 +1483,36 @@ async function actualizarPresupuesto(adsetId, nuevoPresupuesto, fila) {
 
 function render() {
   const { ads, organic, copies } = getFilteredData();
+  const { ads: orgAds, organic: orgOrganic } = getOrganicFilteredData();
   renderInsightsAndSignals(ads, organic, copies);
   renderOrganicSocialButtons();
   renderAdsSection(ads);
-  renderOrganicSection(organic);
-  renderTopContent(ads, organic);
+  renderOrganicSection(orgOrganic);
+  renderTopContent(orgAds, orgOrganic);
   renderTranscripciones();
 }
 
 function populateFilters() {
   refs.dateStart.value = state.filters.dateStart;
   refs.dateEnd.value = state.filters.dateEnd;
+  populateOrganicFilters();
+}
+
+function populateOrganicFilters() {
+  if (refs.organicDateStart) refs.organicDateStart.value = state.organicFilters.dateStart;
+  if (refs.organicDateEnd)   refs.organicDateEnd.value   = state.organicFilters.dateEnd;
+  // Resaltar chip activo según días de diferencia
+  const days = getRangeDays(state.organicFilters.dateStart, state.organicFilters.dateEnd);
+  document.querySelectorAll('[data-organic-range]').forEach(btn => {
+    btn.classList.toggle('active', Number(btn.dataset.organicRange) === days);
+  });
+}
+
+function applyOrganicRange(days) {
+  state.organicFilters.dateStart = isoMinusDays(days - 1);
+  state.organicFilters.dateEnd   = DEFAULT_DATE_END;
+  populateOrganicFilters();
+  render();
 }
 
 
@@ -1509,10 +1539,29 @@ function setupEvents() {
     render();
   });
 
-  refs.topRange.addEventListener("change", (event) => {
-    state.topRangeDays = Number(event.target.value);
-    render();
-  });
+  // Filtro orgánico: chips de rango rápido
+  if (refs.organicQuickRanges) {
+    refs.organicQuickRanges.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-organic-range]");
+      if (!btn) return;
+      applyOrganicRange(Number(btn.dataset.organicRange));
+    });
+  }
+
+  // Filtro orgánico: fechas manuales
+  if (refs.applyOrganicFilters) {
+    refs.applyOrganicFilters.addEventListener("click", () => {
+      const start = refs.organicDateStart?.value;
+      const end   = refs.organicDateEnd?.value;
+      if (start && end && start <= end) {
+        state.organicFilters.dateStart = start;
+        state.organicFilters.dateEnd   = end;
+        // Quitar chip activo (rango personalizado)
+        document.querySelectorAll('[data-organic-range]').forEach(b => b.classList.remove('active'));
+        render();
+      }
+    });
+  }
 
   refs.organicSocialToggle.addEventListener("click", (event) => {
     const button = event.target.closest(".social-btn");

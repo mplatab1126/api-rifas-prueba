@@ -99,6 +99,25 @@
         </div>
       </section>
 
+      <!-- Filtro independiente: Orgánico + Top contenidos -->
+      <div class="organic-filter-bar">
+        <span class="organic-filter-label">Orgánico &amp; Top</span>
+        <div class="quick-ranges" id="organicQuickRanges">
+          <button type="button" class="range-chip" data-organic-range="7">7 días</button>
+          <button type="button" class="range-chip active" data-organic-range="15">15 días</button>
+          <button type="button" class="range-chip" data-organic-range="30">30 días</button>
+        </div>
+        <div class="field">
+          <label for="organicDateStart">Desde</label>
+          <input id="organicDateStart" type="date" />
+        </div>
+        <div class="field">
+          <label for="organicDateEnd">Hasta</label>
+          <input id="organicDateEnd" type="date" />
+        </div>
+        <button id="applyOrganicFilters" class="btn btn-ghost btn-sm">Aplicar</button>
+      </div>
+
       <section class="section">
         <h2>2. Rendimiento Organico</h2>
         <div class="social-toggle" id="organicSocialToggle">
@@ -129,13 +148,6 @@
       <section class="section">
         <div class="section-head">
           <h2>3. Top Contenidos</h2>
-          <div class="inline-control">
-            <label for="topRange">Periodo</label>
-            <select id="topRange">
-              <option value="7">Ultimos 7 dias</option>
-              <option value="30">Ultimos 30 dias</option>
-            </select>
-          </div>
         </div>
         <div class="top-content-split">
           <div class="top-content-block">

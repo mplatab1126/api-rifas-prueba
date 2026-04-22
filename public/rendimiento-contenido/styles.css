@@ -280,6 +280,30 @@ select:focus {
   gap: 8px;
 }
 
+/* === MINI FILTRO ORGÁNICO === */
+.organic-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  margin: 28px 0 0;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+}
+
+.organic-filter-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--accent);
+  white-space: nowrap;
+  margin-right: 2px;
+}
+
 /* === CARD === */
 .card {
   background: var(--bg-elev);
