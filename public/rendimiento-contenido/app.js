@@ -461,6 +461,8 @@ function svgBarChart(data, height, labels, highlightIdx) {
     return `<line x1="0" x2="${vw}" y1="${y}" y2="${y}" stroke="var(--border)" stroke-width="0.5"/>`;
   }).join('');
 
+  const fmtCOP = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+
   const bars = data.map((v, i) => {
     const h = (v / max) * height;
     const x = (i * (barW + gap)).toFixed(1);
@@ -470,7 +472,15 @@ function svgBarChart(data, height, labels, highlightIdx) {
     const isSelected = hasExplicitHighlight ? i === highlightIdx : (v === maxVal && v > 0);
     const fill    = isSelected ? 'var(--fg)' : 'var(--accent)';
     const opacity = isSelected ? '1' : (hasExplicitHighlight ? '0.30' : '0.75');
-    return `<rect x="${x}" y="${y}" width="${barW.toFixed(1)}" height="${Math.max(h, 0).toFixed(1)}" rx="2" fill="${fill}" opacity="${opacity}"/>`;
+    const lbl = labels && labels[i] != null ? labels[i] : i + 1;
+    const tip = v > 0 ? `${lbl}  ·  ${fmtCOP.format(v)}` : `${lbl}  ·  Sin gasto`;
+    // Barra visible
+    const visibleBar = h > 0
+      ? `<rect x="${x}" y="${y}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${fill}" opacity="${opacity}"/>`
+      : '';
+    // Barra invisible de hover — cubre toda la altura de la columna para facilitar el hover
+    const hoverBar = `<rect x="${x}" y="0" width="${barW.toFixed(1)}" height="${height}" class="bar-hover" data-tip="${tip}"/>`;
+    return visibleBar + hoverBar;
   }).join('');
 
   const lbs = (labels || []).map((l, i) => {
@@ -1661,5 +1671,32 @@ function limpiarChipActivo() {
 refs.dateStart.addEventListener("change", limpiarChipActivo);
 refs.dateEnd.addEventListener("change", limpiarChipActivo);
 refs.resetFilters.addEventListener("click", limpiarChipActivo);
+
+// ─── Tooltip flotante para gráfica de barras ─────────────────────────────
+(function () {
+  const tip = document.createElement('div');
+  tip.id = 'chart-tip';
+  document.body.appendChild(tip);
+
+  document.addEventListener('mousemove', (e) => {
+    const el = e.target.closest('[data-tip]');
+    if (el) {
+      tip.textContent = el.dataset.tip;
+      tip.style.display = 'block';
+      // Posicionar sin salirse de los bordes de la pantalla
+      const r = tip.getBoundingClientRect();
+      let left = e.clientX + 14;
+      let top  = e.clientY - 44;
+      if (left + r.width > window.innerWidth - 8) left = e.clientX - r.width - 14;
+      if (top < 8) top = e.clientY + 16;
+      tip.style.left = left + 'px';
+      tip.style.top  = top  + 'px';
+    } else {
+      tip.style.display = 'none';
+    }
+  });
+
+  document.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+})();
 
 cargarDataReal();
