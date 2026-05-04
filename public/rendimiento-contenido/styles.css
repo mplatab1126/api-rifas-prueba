@@ -1569,3 +1569,213 @@ article.copy-card p.copy-text {
 .anim-in {
   animation: animIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   GENERADOR DE COPY — Sección 4
+   ═══════════════════════════════════════════════════════════ */
+
+/* Botones de tipo de contenido */
+.copy-tipo-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 700px) {
+  .copy-tipo-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+.copy-tipo-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  background: var(--bg-elev);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  text-align: center;
+}
+
+.copy-tipo-btn:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-dim);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.copy-tipo-btn:active {
+  transform: scale(0.98);
+}
+
+.copy-tipo-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.copy-tipo-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg-dim);
+  line-height: 1.3;
+}
+
+/* Chat */
+.copy-chat {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  min-height: 360px;
+  max-height: 560px;
+}
+
+.copy-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scroll-behavior: smooth;
+}
+
+/* Mensajes */
+.copy-msg {
+  display: flex;
+  flex-direction: column;
+  max-width: 78%;
+  gap: 4px;
+  animation: animIn 0.3s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+.copy-msg--user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.copy-msg--ai {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.copy-bubble {
+  padding: 11px 14px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.copy-msg--user .copy-bubble {
+  background: var(--accent);
+  color: #fff;
+  border-bottom-right-radius: 3px;
+}
+
+.copy-msg--ai .copy-bubble {
+  background: var(--bg-elev-2);
+  color: var(--fg);
+  border-bottom-left-radius: 3px;
+  border: 1px solid var(--border);
+}
+
+.copy-msg-copy-btn {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg-subtle);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.copy-msg-copy-btn:hover {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+
+/* Indicador de escritura */
+.copy-msg--typing .copy-bubble {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 14px 16px;
+}
+
+.typing-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--fg-faint);
+  animation: typingBounce 1.2s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30%           { transform: translateY(-5px); opacity: 1; }
+}
+
+/* Mensaje de bienvenida */
+.copy-welcome {
+  text-align: center;
+  color: var(--fg-faint);
+  font-size: 13px;
+  padding: 24px 16px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.copy-welcome p { margin: 0; }
+
+/* Área de input */
+.copy-input-area {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-elev);
+}
+
+.copy-textarea {
+  flex: 1;
+  resize: none;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 9px 12px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  background: var(--bg);
+  color: var(--fg);
+  outline: none;
+  min-height: 40px;
+  max-height: 120px;
+  overflow-y: auto;
+  transition: border-color 0.15s;
+}
+
+.copy-textarea:focus {
+  border-color: var(--accent-border);
+}
+
+.copy-textarea::placeholder {
+  color: var(--fg-faint);
+}
+
+.copy-send-btn {
+  flex-shrink: 0;
+  height: 40px;
+  padding: 0 18px;
+}
