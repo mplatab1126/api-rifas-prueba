@@ -161,9 +161,51 @@
         </div>
       </section>
 
+      <section class="section" id="copyGenSection">
+        <div class="section-head">
+          <div>
+            <h2>4. Generador de Copy</h2>
+            <p style="margin:2px 0 0;font-size:13px;color:var(--fg-subtle);">IA entrenada en la voz de Los Plata. Copies listos para usar.</p>
+          </div>
+          <button id="copyResetBtn" class="btn btn-ghost btn-sm">Limpiar chat</button>
+        </div>
+
+        <div class="copy-tipo-row">
+          <button class="copy-tipo-btn" data-tipo="whatsapp">
+            <span class="copy-tipo-icon">📱</span>
+            <span class="copy-tipo-label">Plantilla WhatsApp</span>
+          </button>
+          <button class="copy-tipo-btn" data-tipo="anuncio">
+            <span class="copy-tipo-icon">📣</span>
+            <span class="copy-tipo-label">Copy Facebook / IG</span>
+          </button>
+          <button class="copy-tipo-btn" data-tipo="guion">
+            <span class="copy-tipo-icon">🎬</span>
+            <span class="copy-tipo-label">Guion de Video</span>
+          </button>
+          <button class="copy-tipo-btn" data-tipo="organico">
+            <span class="copy-tipo-icon">🌿</span>
+            <span class="copy-tipo-label">Video Orgánico</span>
+          </button>
+          <button class="copy-tipo-btn" data-tipo="otro">
+            <span class="copy-tipo-icon">✍️</span>
+            <span class="copy-tipo-label">Otro</span>
+          </button>
+        </div>
+
+        <div class="card copy-chat">
+          <div class="copy-chat-messages" id="copyMessages"></div>
+          <div class="copy-input-area">
+            <textarea id="copyInput" class="copy-textarea" rows="1"
+              placeholder="Escribe lo que necesitas o usa los botones de arriba…"></textarea>
+            <button id="copySendBtn" class="btn btn-primary copy-send-btn">Enviar</button>
+          </div>
+        </div>
+      </section>
+
       <section class="section">
         <div class="section-head">
-          <h2>4. Transcripciones de Videos Ganadores</h2>
+          <h2>5. Transcripciones de Videos Ganadores</h2>
           <button id="btnGenerarTranscripciones" class="btn btn-primary">Generar transcripciones ▶</button>
         </div>
         <p id="transcripcionesStatus" style="font-size:13px;color:#64748b;margin:4px 0 16px;min-height:18px;"></p>

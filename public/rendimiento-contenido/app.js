@@ -1796,3 +1796,164 @@ refs.resetFilters.addEventListener("click", limpiarChipActivo);
 })();
 
 cargarDataReal();
+
+// ─── Generador de Copy (Sección 4) ───────────────────────────────────────────
+(function initCopyGen() {
+  const section    = document.getElementById('copyGenSection');
+  const messagesEl = document.getElementById('copyMessages');
+  const inputEl    = document.getElementById('copyInput');
+  const sendBtn    = document.getElementById('copySendBtn');
+  const resetBtn   = document.getElementById('copyResetBtn');
+
+  if (!section || !messagesEl || !inputEl) return;
+
+  // Control de acceso: solo Mateo, Valeria, Alejo
+  const nombreLocal = (localStorage.getItem('asesor_nombre') || '').toLowerCase().trim();
+  const COPY_ALLOWED = ['mateo', 'valeria', 'alejo'];
+  const tieneAcceso = COPY_ALLOWED.some(n => nombreLocal.includes(n));
+
+  if (!tieneAcceso) {
+    section.style.display = 'none';
+    return;
+  }
+
+  let historial = []; // [{role:'user'|'assistant', content:string}]
+
+  function scrollDown() {
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function appendMsg(role, text) {
+    const wrap = document.createElement('div');
+    wrap.className = 'copy-msg copy-msg--' + (role === 'user' ? 'user' : 'ai');
+
+    const bubble = document.createElement('div');
+    bubble.className = 'copy-bubble';
+    bubble.textContent = text;
+    wrap.appendChild(bubble);
+
+    if (role === 'assistant') {
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'copy-msg-copy-btn';
+      copyBtn.textContent = 'Copiar';
+      copyBtn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(text);
+          copyBtn.textContent = '✓ Copiado';
+          setTimeout(() => { copyBtn.textContent = 'Copiar'; }, 1500);
+        } catch (_) {
+          copyBtn.textContent = 'No se pudo copiar';
+        }
+      });
+      wrap.appendChild(copyBtn);
+    }
+
+    const welcome = messagesEl.querySelector('.copy-welcome');
+    if (welcome) welcome.remove();
+
+    messagesEl.appendChild(wrap);
+    scrollDown();
+    return wrap;
+  }
+
+  function showTyping() {
+    const wrap = document.createElement('div');
+    wrap.className = 'copy-msg copy-msg--ai copy-msg--typing';
+    wrap.innerHTML = '<div class="copy-bubble"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>';
+    messagesEl.appendChild(wrap);
+    scrollDown();
+    return wrap;
+  }
+
+  function showWelcome() {
+    const div = document.createElement('div');
+    div.className = 'copy-welcome';
+    div.innerHTML = '<p>Usa los botones de arriba para generar un tipo de contenido, o escribe directamente lo que necesitas.</p>';
+    messagesEl.appendChild(div);
+  }
+
+  async function sendMessage(texto) {
+    if (!texto.trim()) return;
+
+    appendMsg('user', texto.trim());
+    historial.push({ role: 'user', content: texto.trim() });
+
+    inputEl.value = '';
+    inputEl.style.height = 'auto';
+    if (sendBtn) sendBtn.disabled = true;
+
+    const typingEl = showTyping();
+
+    try {
+      const contrasena = localStorage.getItem('asesor_pwd');
+      const r = await fetch('/api/contenido/copy-gen', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contrasena, messages: historial })
+      });
+      const json = await r.json();
+
+      typingEl.remove();
+
+      if (!r.ok || json.error) {
+        appendMsg('assistant', '⚠ ' + (json.error || 'Error al generar. Intenta de nuevo.'));
+        historial.pop();
+        return;
+      }
+
+      appendMsg('assistant', json.content);
+      historial.push({ role: 'assistant', content: json.content });
+
+    } catch (e) {
+      typingEl.remove();
+      appendMsg('assistant', '⚠ Error de conexión. Verifica tu internet e intenta de nuevo.');
+      historial.pop();
+    } finally {
+      if (sendBtn) sendBtn.disabled = false;
+      inputEl.focus();
+    }
+  }
+
+  const TIPO_PROMPTS = {
+    whatsapp: 'Quiero generar una plantilla de WhatsApp.',
+    anuncio:  'Quiero generar un copy de Facebook / Instagram.',
+    guion:    'Quiero generar un guion de video.',
+    organico: 'Quiero generar un guion de video orgánico.',
+    otro:     null
+  };
+
+  document.querySelectorAll('[data-tipo]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const tipo = btn.dataset.tipo;
+      const prompt = TIPO_PROMPTS[tipo];
+      if (!prompt) { inputEl.focus(); return; }
+      sendMessage(prompt);
+    });
+  });
+
+  if (sendBtn) {
+    sendBtn.addEventListener('click', function() { sendMessage(inputEl.value); });
+  }
+
+  inputEl.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage(inputEl.value);
+    }
+  });
+
+  inputEl.addEventListener('input', function() {
+    inputEl.style.height = 'auto';
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+  });
+
+  if (resetBtn) {
+    resetBtn.addEventListener('click', function() {
+      historial = [];
+      messagesEl.innerHTML = '';
+      showWelcome();
+    });
+  }
+
+  showWelcome();
+})();
