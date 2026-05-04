@@ -1700,6 +1700,25 @@ article.copy-card p.copy-text {
   border-color: var(--accent-border);
 }
 
+/* Markdown en burbujas AI */
+.copy-msg--ai .copy-bubble strong {
+  font-weight: 600;
+  color: var(--fg);
+}
+.copy-sep {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin: 12px 0 6px;
+}
+.copy-hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 10px 0;
+}
+
 /* Indicador de escritura */
 .copy-msg--typing .copy-bubble {
   display: flex;

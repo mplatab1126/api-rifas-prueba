@@ -1823,13 +1823,33 @@ cargarDataReal();
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
+  function renderMarkdown(text) {
+    let h = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    // **negrita**
+    h = h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // separadores tipo ── OPCIÓN A ──
+    h = h.replace(/^──+\s*(.*?)\s*──+\s*$/gm, '<div class="copy-sep">$1</div>');
+    // línea --- como divisor
+    h = h.replace(/^---\s*$/gm, '<hr class="copy-hr">');
+    // saltos de línea
+    h = h.replace(/\n/g, '<br>');
+    return h;
+  }
+
   function appendMsg(role, text) {
     const wrap = document.createElement('div');
     wrap.className = 'copy-msg copy-msg--' + (role === 'user' ? 'user' : 'ai');
 
     const bubble = document.createElement('div');
     bubble.className = 'copy-bubble';
-    bubble.textContent = text;
+    if (role === 'assistant') {
+      bubble.innerHTML = renderMarkdown(text);
+    } else {
+      bubble.textContent = text;
+    }
     wrap.appendChild(bubble);
 
     if (role === 'assistant') {
