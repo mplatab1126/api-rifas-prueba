@@ -1921,7 +1921,27 @@ cargarDataReal();
         return;
       }
 
-      appendMsg('assistant', json.content);
+      // Separar OPCIÓN A y OPCIÓN B en burbujas distintas si existen
+      const reA = /──+\s*OPCI[ÓO]N\s+A\s*──+/i;
+      const reB = /──+\s*OPCI[ÓO]N\s+B\s*──+/i;
+      const mA = reA.exec(json.content);
+      const mB = reB.exec(json.content);
+
+      if (mA && mB) {
+        const optA = json.content.slice(mA.index, mB.index).trim();
+        const rest  = json.content.slice(mB.index).trim();
+        // Separar frase de cierre (después de --- o "Por favor escógeme")
+        const splitIdx = rest.search(/\n---\s*\n|\nPor favor escógeme/i);
+        const optB    = splitIdx > 0 ? rest.slice(0, splitIdx).trim() : rest;
+        const closing = splitIdx > 0 ? rest.slice(splitIdx).replace(/^\n?---\s*\n?/, '').trim() : null;
+
+        appendMsg('assistant', optA);
+        appendMsg('assistant', optB);
+        if (closing) appendMsg('assistant', closing);
+      } else {
+        appendMsg('assistant', json.content);
+      }
+
       historial.push({ role: 'assistant', content: json.content });
 
     } catch (e) {
