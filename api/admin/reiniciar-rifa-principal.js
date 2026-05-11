@@ -53,19 +53,42 @@ export default async function handler(req, res) {
   const nombreRifa = rifaNombre.trim();
 
   try {
+    // ── 2.5 Idempotencia: si quedaron rastros de un intento anterior para
+    //        esta misma rifa, los limpiamos antes de volver a archivar. Así
+    //        es seguro reintentar si la primera ejecución falló a medias.
+    await supabase.from('historial_boletas_principal').delete().eq('rifa_nombre', nombreRifa);
+    await supabase.from('historial_abonos_principal').delete().eq('rifa_nombre', nombreRifa);
+
     // ── 3. Snapshot de boletas vendidas ─────────────────────────────────
+    // La tabla `boletas` no tiene `nombre_cliente`: el nombre vive en
+    // `clientes` y se cruza por `telefono`. Lo dejamos null en el snapshot
+    // (se recupera con JOIN si hace falta). Hacemos un cruce con clientes
+    // para llenar nombre_cliente igualmente (mejor experiencia de consulta).
     const { data: boletasVendidas, error: errBoletas } = await supabase
       .from('boletas')
-      .select('*')
+      .select('numero, telefono_cliente, estado, total_abonado, saldo_restante, precio_total, asesor, mostrado')
       .not('telefono_cliente', 'is', null);
     if (errBoletas) throw new Error('Leer boletas vendidas: ' + errBoletas.message);
+
+    // Cargar nombres de clientes en bulk para mapear sin N+1.
+    const telefonosUnicos = [...new Set((boletasVendidas || []).map(b => b.telefono_cliente).filter(Boolean))];
+    const nombrePorTelefono = {};
+    if (telefonosUnicos.length > 0) {
+      const { data: clientesData } = await supabase
+        .from('clientes')
+        .select('telefono, nombre, apellido')
+        .in('telefono', telefonosUnicos);
+      for (const c of clientesData || []) {
+        nombrePorTelefono[c.telefono] = [c.nombre || '', c.apellido || ''].filter(Boolean).join(' ').trim();
+      }
+    }
 
     const snapshotBoletas = (boletasVendidas || []).map(b => ({
       rifa_id:          rifaId || null,
       rifa_nombre:      nombreRifa,
       numero:           b.numero,
       estado:           b.estado,
-      nombre_cliente:   b.nombre_cliente,
+      nombre_cliente:   nombrePorTelefono[b.telefono_cliente] || null,
       telefono_cliente: b.telefono_cliente,
       total_abonado:   Number(b.total_abonado || 0),
       saldo_restante:  Number(b.saldo_restante || 0),
@@ -126,14 +149,17 @@ export default async function handler(req, res) {
     // ── 6. Reset de las 10.000 filas de `boletas` ──────────────────────
     // El UPDATE toca TODAS las filas (.neq('numero','') es siempre verdadero
     // pero satisface el requisito de Supabase de tener un filtro).
+    // Importante: `boletas` NO tiene columna `nombre_cliente`; los nombres
+    // viven en la tabla `clientes`. Solo seteamos los campos que existen
+    // (mismo patrón que el cleanup de reservar-boleta.js).
     const resetPayload = {
-      estado:           'Disponible',
-      nombre_cliente:   '',
       telefono_cliente: null,
+      estado:           null,
       total_abonado:    0,
       saldo_restante:   precio,
       precio_total:     precio,
       asesor:           null,
+      fecha_venta:      null,
       mostrado:         false
     };
     const { error: errReset } = await supabase
