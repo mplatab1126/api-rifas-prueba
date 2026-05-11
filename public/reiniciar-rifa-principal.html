@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <title>Reiniciar Rifa Principal — Los Plata</title>
+  <link rel="icon" type="image/png" href="https://losplata.s3.us-east-2.amazonaws.com/Logo.png">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared-nav.css">
+  <style>
+    :root {
+      --ink: #1e293b; --ink-2: #64748b; --muted: #94a3b8;
+      --bg: #f1f5f9; --card: #fff; --ring: #e2e8f0; --ring-strong: #cbd5e1;
+      --accent: #10b981; --accent-hover: #059669;
+      --danger: #dc2626; --warn: #b45309;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+    .page-wrapper {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 20px;
+    }
+    .card {
+      background: var(--card); border-radius: 20px; padding: 32px;
+      max-width: 520px; width: 100%;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.1);
+    }
+    .card h2 {
+      color: var(--danger); font-weight: 900; font-size: 1.4rem; margin-bottom: 4px;
+    }
+    .card .subtitle {
+      color: var(--ink-2); font-size: 0.85rem; margin-bottom: 16px;
+    }
+    .card p.desc {
+      color: var(--ink-2); font-size: 0.9rem; margin-bottom: 20px; line-height: 1.5;
+    }
+    .warning-box {
+      background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px;
+      padding: 14px; margin-bottom: 16px; font-size: 0.85rem; color: #b91c1c;
+      font-weight: 600; line-height: 1.5;
+    }
+    .info-box {
+      background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px;
+      padding: 14px; margin-bottom: 20px; font-size: 0.82rem; color: #065f46;
+      line-height: 1.6;
+    }
+    .info-box b { color: #064e3b; }
+    .info-box ul { margin: 6px 0 0 18px; }
+    .info-box li { margin-bottom: 2px; }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      font-size: 0.78rem; font-weight: 800; color: var(--muted);
+      text-transform: uppercase; display: block; margin-bottom: 6px;
+    }
+    .form-group input {
+      width: 100%; border: 1px solid var(--ring-strong); border-radius: 10px;
+      padding: 12px 14px; font-family: inherit; font-size: 0.95rem; font-weight: 600;
+      outline: none; background: #fff; color: var(--ink);
+    }
+    .form-group input:focus {
+      border-color: var(--accent); box-shadow: 0 0 0 3px rgba(16,185,129,0.1);
+    }
+    .form-hint {
+      font-size: 0.74rem; color: var(--muted); margin-top: 4px; line-height: 1.4;
+    }
+
+    .btn-row { display: flex; gap: 10px; margin-top: 20px; }
+    .btn {
+      flex: 1; padding: 12px; border-radius: 12px; font-family: inherit;
+      font-size: 0.95rem; font-weight: 700; cursor: pointer; border: none;
+      transition: all 0.15s;
+    }
+    .btn:disabled { opacity: 0.5; cursor: default; }
+    .btn-cancel { background: transparent; border: 1px solid var(--ring-strong); color: var(--ink); }
+    .btn-cancel:hover { background: var(--bg); }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-danger:hover:not(:disabled) { background: #b91c1c; }
+    .btn-back { background: transparent; border: 1px solid var(--ring-strong); color: var(--ink); }
+
+    .resumen-box {
+      background: var(--bg); border: 1px solid var(--ring); border-radius: 12px;
+      padding: 16px; margin-bottom: 16px; font-size: 0.9rem; line-height: 1.9;
+    }
+    .resumen-box div { display: flex; justify-content: space-between; gap: 12px; }
+    .resumen-box strong { color: var(--ink); }
+
+    .confirm-text {
+      font-size: 0.9rem; color: #b91c1c; font-weight: 700;
+      margin: 16px 0 8px; line-height: 1.5;
+    }
+    .confirm-input {
+      width: 100%; border: 1.5px solid var(--danger); border-radius: 10px;
+      padding: 12px 14px; font-family: inherit; font-size: 0.95rem; font-weight: 600;
+      outline: none; background: #fff; color: var(--ink); text-align: center;
+      letter-spacing: 0.05em;
+    }
+
+    .msg { margin-top: 12px; font-size: 0.85rem; font-weight: 700; text-align: center; min-height: 20px; }
+    .msg.error { color: var(--danger); }
+    .msg.ok { color: var(--accent-hover); }
+
+    .success-icon {
+      width: 64px; height: 64px; background: #d1fae5; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;
+      font-size: 2rem;
+    }
+    .success-stat {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 14px; background: var(--bg); border-radius: 10px; margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+    .success-stat strong { font-weight: 800; color: var(--accent-hover); }
+
+    #loginOverlay {
+      position: fixed; inset: 0; z-index: 1500; display: flex;
+      flex-direction: column; align-items: center; justify-content: center;
+      background: linear-gradient(160deg, #0f2010 0%, #1e4a1a 40%, #2d6b25 70%, #1a3a14 100%);
+    }
+    #loginOverlay input {
+      width: 100%; padding: 16px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.08); color: #fff; font-size: 1rem; font-family: inherit;
+      text-align: center; outline: none;
+    }
+    #loginOverlay button {
+      width: 100%; padding: 16px; border-radius: 100px; border: none;
+      background: rgba(255,255,255,0.18); color: #fff; font-size: 1rem; font-weight: 600;
+      font-family: inherit; cursor: pointer; transition: background 0.2s;
+    }
+    #loginOverlay button:hover { background: rgba(255,255,255,0.28); }
+    .top-back {
+      position: fixed; top: 20px; left: 20px;
+      background: rgba(255,255,255,0.9); border: 1px solid var(--ring-strong);
+      padding: 8px 14px; border-radius: 10px; cursor: pointer; font-weight: 600;
+      font-family: inherit; font-size: 0.85rem; color: var(--ink);
+      text-decoration: none; z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+<div id="loginOverlay">
+  <div style="text-align:center; margin-bottom:32px;">
+    <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata S.A.S." style="height:140px; width:auto; display:block; margin:0 auto; filter:drop-shadow(0 8px 24px rgba(0,0,0,0.45));">
+    <p style="color:rgba(255,255,255,0.6); font-size:0.9rem; margin:14px 0 0; letter-spacing:0.15em; text-transform:uppercase;">Reiniciar Rifa Principal · Solo gerencia</p>
+  </div>
+  <div style="width:90%; max-width:400px; display:flex; flex-direction:column; gap:14px;">
+    <input id="loginPwd" type="password" placeholder="Contraseña..." onkeydown="if(event.key==='Enter') verificarLogin()">
+    <button onclick="verificarLogin()">Ingresar</button>
+    <div id="loginMsg" style="color:rgba(255,120,120,0.9); font-size:0.9rem; min-height:20px; text-align:center;"></div>
+  </div>
+</div>
+
+<a href="/admin" class="top-back" style="display:none" id="topBack">← Volver al admin</a>
+
+<div class="snav-page-content" id="snavPageContent" style="display:none">
+  <div class="page-wrapper">
+
+    <!-- ─── Paso 1: formulario ─────────────────────────────────────── -->
+    <div class="card" id="paso1">
+      <h2>🔁 Reiniciar Rifa Principal</h2>
+      <div class="subtitle">Cierra la rifa actual y deja el panel listo para arrancar la siguiente</div>
+
+      <div class="warning-box">
+        ⚠️ Esta acción es <strong>irreversible</strong>. Asegúrate de que el sorteo ya jugó, ya no hay abonos en curso y los premios fueron entregados.
+      </div>
+
+      <div class="info-box">
+        <b>Qué hace este botón:</b>
+        <ul>
+          <li>Guarda en histórico las boletas vendidas + sus abonos.</li>
+          <li>Deja los 10.000 números 0000–9999 como <b>Disponibles</b>.</li>
+          <li>Cambia el precio de cada boleta al nuevo valor.</li>
+        </ul>
+        <b style="display:block; margin-top:8px;">Qué NO toca (para el cierre contable):</b>
+        <ul>
+          <li><b>Clientes</b> (siguen ahí con todos sus datos).</li>
+          <li><b>Transferencias</b>, <b>gastos</b> y <b>movimientos contables</b>.</li>
+          <li>La rifa como entidad y sus premios/capitalización.</li>
+        </ul>
+      </div>
+
+      <div class="form-group">
+        <label>📛 Nombre de la rifa que cierra</label>
+        <input type="text" id="rrpNombre" placeholder="Ej: Perla Roja" autocomplete="off">
+        <div class="form-hint">Solo para que el histórico quede etiquetado y puedas consultar después qué clientes compraron en esa rifa.</div>
+      </div>
+
+      <div class="form-group">
+        <label>💰 Nuevo precio de la boleta (COP)</label>
+        <input type="number" id="rrpPrecio" placeholder="Ej: 150000" min="1000" step="1000" value="150000">
+        <div class="form-hint">Se aplicará a los 10.000 números de la rifa nueva.</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-cancel" onclick="window.location.href='/admin'">Cancelar</button>
+        <button class="btn btn-danger" onclick="pasarAConfirmacion()">Continuar →</button>
+      </div>
+    </div>
+
+    <!-- ─── Paso 2: confirmación ──────────────────────────────────── -->
+    <div class="card" id="paso2" style="display:none;">
+      <h2>⚠️ Confirma la operación</h2>
+      <div class="subtitle">Última oportunidad para revisar antes de ejecutar</div>
+
+      <div class="resumen-box">
+        <div><span>Rifa que cierra:</span> <strong id="rrpResumenNombre">—</strong></div>
+        <div><span>Nuevo precio boleta:</span> <strong id="rrpResumenPrecio">—</strong></div>
+        <div><span>Asesor:</span> <strong id="rrpResumenAsesor">—</strong></div>
+      </div>
+
+      <p class="confirm-text">Para confirmar, escribe abajo el nombre exacto de la rifa que cierra:</p>
+      <input type="text" id="rrpConfirmInput" class="confirm-input" placeholder="Nombre de la rifa..." autocomplete="off" oninput="actualizarBotonConfirmar()">
+
+      <div class="btn-row">
+        <button class="btn btn-back" onclick="volverAPaso1()">← Atrás</button>
+        <button class="btn btn-danger" id="btnConfirmar" disabled onclick="ejecutarReinicio()" style="flex:2;">🔁 Sí, reiniciar rifa</button>
+      </div>
+      <p id="rrpMsg" class="msg"></p>
+    </div>
+
+    <!-- ─── Paso 3: éxito ─────────────────────────────────────────── -->
+    <div class="card" id="pasoExito" style="display:none;">
+      <div class="success-icon">✅</div>
+      <h2 style="color: var(--accent-hover); text-align:center;">¡Rifa archivada!</h2>
+      <p style="text-align:center; color: var(--ink-2); margin-bottom: 20px;">El panel está listo para la nueva rifa.</p>
+
+      <div id="rrpExitoStats" style="margin-bottom: 20px;"></div>
+
+      <button class="btn btn-cancel" style="background: var(--accent); color: white; border:none; width:100%;" onclick="window.location.href='/admin'">Ir al panel de ventas</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ─── Auth simple por contraseña (mismo patrón que reiniciar-rifa.html) ─
+  function verificarLogin() {
+    const pwd = document.getElementById('loginPwd').value.trim();
+    const msg = document.getElementById('loginMsg');
+    if (!pwd) { msg.textContent = 'Escribe tu contraseña'; return; }
+    msg.textContent = 'Verificando…';
+    fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contrasena: pwd })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'ok') {
+        const nombreLower = (data.nombre || '').toLowerCase().trim();
+        if (!['mateo', 'alejo p', 'alejo plata'].includes(nombreLower)) {
+          msg.textContent = 'Esta página es solo para gerencia.';
+          return;
+        }
+        localStorage.setItem('asesor_pwd', pwd);
+        localStorage.setItem('asesor_nombre', data.nombre);
+        mostrarPanel();
+      } else {
+        msg.textContent = data.mensaje || 'Contraseña incorrecta';
+      }
+    })
+    .catch(() => { msg.textContent = 'Error de conexión'; });
+  }
+
+  function mostrarPanel() {
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('snavPageContent').style.display = 'block';
+    document.getElementById('topBack').style.display = 'inline-block';
+    document.documentElement.classList.add('snav-authed');
+  }
+
+  // Si ya tiene sesión, saltar el login
+  (function() {
+    const pwd = localStorage.getItem('asesor_pwd');
+    const nombre = (localStorage.getItem('asesor_nombre') || '').toLowerCase().trim();
+    if (pwd && ['mateo', 'alejo p', 'alejo plata'].includes(nombre)) {
+      mostrarPanel();
+    }
+  })();
+
+  // ─── Navegación entre pasos ───────────────────────────────────────────
+  function pasarAConfirmacion() {
+    const nombre = document.getElementById('rrpNombre').value.trim();
+    const precio = Number(document.getElementById('rrpPrecio').value);
+    if (!nombre) { alert('Escribe el nombre de la rifa que cierra.'); return; }
+    if (!precio || precio < 1000) { alert('El precio debe ser mayor a $1.000.'); return; }
+
+    document.getElementById('rrpResumenNombre').textContent = nombre;
+    document.getElementById('rrpResumenPrecio').textContent = '$' + precio.toLocaleString('es-CO');
+    document.getElementById('rrpResumenAsesor').textContent = localStorage.getItem('asesor_nombre') || '—';
+
+    document.getElementById('rrpConfirmInput').value = '';
+    document.getElementById('btnConfirmar').disabled = true;
+    document.getElementById('rrpMsg').textContent = '';
+
+    document.getElementById('paso1').style.display = 'none';
+    document.getElementById('paso2').style.display = 'block';
+  }
+
+  function volverAPaso1() {
+    document.getElementById('paso2').style.display = 'none';
+    document.getElementById('paso1').style.display = 'block';
+  }
+
+  function actualizarBotonConfirmar() {
+    const esperado = document.getElementById('rrpNombre').value.trim();
+    const ingresado = document.getElementById('rrpConfirmInput').value.trim();
+    const igual = esperado && ingresado && esperado.toLowerCase() === ingresado.toLowerCase();
+    document.getElementById('btnConfirmar').disabled = !igual;
+  }
+
+  // ─── Ejecutar el reinicio ─────────────────────────────────────────────
+  async function ejecutarReinicio() {
+    const btn = document.getElementById('btnConfirmar');
+    const msg = document.getElementById('rrpMsg');
+    btn.disabled = true;
+    btn.textContent = '⏳ Procesando…';
+    msg.className = 'msg';
+    msg.textContent = '';
+
+    const payload = {
+      contrasena: localStorage.getItem('asesor_pwd'),
+      rifaNombre: document.getElementById('rrpNombre').value.trim(),
+      nuevoPrecio: Number(document.getElementById('rrpPrecio').value)
+    };
+
+    try {
+      const r = await fetch('/api/admin/reiniciar-rifa-principal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await r.json();
+
+      if (data.status === 'ok') {
+        const s = data.resumen || {};
+        document.getElementById('rrpExitoStats').innerHTML = `
+          <div class="success-stat"><span>Boletas archivadas en histórico</span><strong>${(s.boletas_archivadas || 0).toLocaleString('es-CO')}</strong></div>
+          <div class="success-stat"><span>Abonos archivados</span><strong>${(s.abonos_archivados || 0).toLocaleString('es-CO')}</strong></div>
+          <div class="success-stat"><span>Nuevo precio boleta</span><strong>$${(s.nuevo_precio || 0).toLocaleString('es-CO')}</strong></div>
+        `;
+        document.getElementById('paso2').style.display = 'none';
+        document.getElementById('pasoExito').style.display = 'block';
+      } else {
+        msg.className = 'msg error';
+        msg.textContent = '❌ ' + (data.mensaje || 'Error desconocido');
+        btn.disabled = false;
+        btn.textContent = '🔁 Sí, reiniciar rifa';
+      }
+    } catch (e) {
+      msg.className = 'msg error';
+      msg.textContent = '❌ Error de red: ' + e.message;
+      btn.disabled = false;
+      btn.textContent = '🔁 Sí, reiniciar rifa';
+    }
+  }
+</script>
+</body>
+</html>

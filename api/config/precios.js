@@ -11,7 +11,7 @@
  */
 
 export const PRECIOS = {
-  RIFA_4_CIFRAS: 80000,
+  RIFA_4_CIFRAS: 150000,
   RIFA_2_CIFRAS: 20000,
   RIFA_3_CIFRAS: 5000,
 };
