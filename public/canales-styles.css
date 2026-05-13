@@ -49,7 +49,7 @@
 .canales-topbar-title {
   flex: 1;
   font-family: var(--sans);
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 600;
   color: rgba(250, 250, 247, 0.95);
   letter-spacing: -0.01em;
@@ -63,7 +63,7 @@
   margin: 0 auto;
 }
 .canales-hero-sub {
-  font-size: 15px;
+  font-size: 17px;
   color: rgba(250, 250, 247, 0.78);
   line-height: 1.5;
   margin: 14px 0 0;
@@ -91,7 +91,7 @@
   color: rgba(250, 250, 247, 0.7);
   padding: 10px 14px;
   border-radius: 100px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.01em;
   font-family: inherit;
@@ -108,7 +108,7 @@
   color: var(--green-900);
 }
 .canales-tab-count {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   background: rgba(10, 10, 10, 0.08);
   color: inherit;
@@ -138,7 +138,7 @@
 }
 .canales-sec-head-left { min-width: 0; }
 .canales-sec-eyebrow {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -155,7 +155,7 @@
   justify-content: center;
   background: var(--green-900);
   color: var(--cream-50);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0;
   width: 24px; height: 24px;
@@ -163,7 +163,7 @@
 }
 .canales-sec-titulo {
   font-family: var(--sans);
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.022em;
   color: var(--green-900);
@@ -223,7 +223,7 @@
   margin: 0 0 2px;
 }
 .canal-handle {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--green-900);
@@ -250,7 +250,7 @@
   text-overflow: ellipsis;
 }
 .canal-cta {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -286,7 +286,7 @@
 }
 .canal-wa-numero {
   font-family: var(--sans);
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--green-900);
@@ -295,7 +295,7 @@
   white-space: nowrap;
 }
 .canal-wa-name {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -323,14 +323,14 @@
   border-radius: 50%;
   background: var(--green-900);
   color: var(--cream-50);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0;
   flex-shrink: 0;
 }
 .cuenta-grupo-info { min-width: 0; }
 .cuenta-grupo-eyebrow {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -339,7 +339,7 @@
   line-height: 1.2;
 }
 .cuenta-grupo-titular {
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--green-900);
@@ -379,7 +379,7 @@
   margin-bottom: 12px;
 }
 .cuenta-head-simple .cuenta-banco-name {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.01em;
   margin: 0;
@@ -424,7 +424,7 @@
 }
 .cuenta-banco-info { flex: 1; min-width: 0; }
 .cuenta-banco-name {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: -0.01em;
   margin: 0;
@@ -455,7 +455,7 @@
 }
 .cuenta-numero-text { flex: 1; min-width: 0; }
 .cuenta-numero-label {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -465,7 +465,7 @@
 .cuenta-corp .cuenta-numero-label { color: rgba(250, 250, 247, 0.6); }
 .cuenta-numero {
   font-family: var(--sans);
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 700;
   letter-spacing: -0.015em;
   font-variant-numeric: tabular-nums;
@@ -475,7 +475,7 @@
 }
 .cuenta-titular-block {}
 .cuenta-titular-label {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -484,7 +484,7 @@
 }
 .cuenta-corp .cuenta-titular-label { color: rgba(250, 250, 247, 0.6); }
 .cuenta-titular {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   letter-spacing: -0.01em;
   margin: 0;
@@ -507,7 +507,7 @@
   color: var(--cream-50);
   border: 0;
   padding: 0 16px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -543,7 +543,7 @@
 
 /* ─── Note legal junto a cuentas ─── */
 .canales-note {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--ink-mute);
   line-height: 1.55;
   margin: 12px 4px 0;
@@ -578,7 +578,7 @@
 }
 .canales-pending-title {
   font-family: var(--sans);
-  font-size: 19px;
+  font-size: 21px;
   font-weight: 700;
   letter-spacing: -0.018em;
   color: var(--green-900);
@@ -603,7 +603,7 @@
   color: var(--cream-50);
   padding: 12px 20px;
   border-radius: 100px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.01em;
   box-shadow: 0 12px 32px rgba(0,0,0,.25);
@@ -637,6 +637,6 @@
 /* Small phones */
 @media (max-width: 360px) {
   .canales { padding: 16px 14px 96px; }
-  .cuenta-numero { font-size: 21px; }
-  .canal-handle { font-size: 14px; }
+  .cuenta-numero { font-size: 23px; }
+  .canal-handle { font-size: 16px; }
 }

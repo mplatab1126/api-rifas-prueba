@@ -52,7 +52,7 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-wrap: pretty;
-  font-size: 18px;
+  font-size: 20px;
 }
 img { max-width: 100%; display: block; }
 a { color: inherit; text-decoration: none; }
@@ -99,7 +99,7 @@ input { font-family: inherit; }
 .cb-topbar-title {
   flex: 1;
   font-family: var(--sans);
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 600;
   color: rgba(250,250,247,0.95);
   letter-spacing: -0.01em;
@@ -118,7 +118,7 @@ input { font-family: inherit; }
 .cb-hero-eyebrow {
   text-align: center;
   padding: 18px 18px 6px;
-  font-size: 12px;
+  font-size: 14px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   font-weight: 700;
@@ -154,7 +154,7 @@ input { font-family: inherit; }
 }
 .cb-hero-edicion {
   text-align: center;
-  font-size: 13px;
+  font-size: 15px;
   color: rgba(250,250,247,0.6);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -200,7 +200,7 @@ input { font-family: inherit; }
   justify-content: center;
   color: rgba(250,250,247,0.35);
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: 15px;
   text-align: center;
   background:
     repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0 8px, transparent 8px 16px),
@@ -217,7 +217,7 @@ input { font-family: inherit; }
 }
 .cb-carousel-tipo {
   display: inline-block;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   font-weight: 700;
@@ -233,7 +233,7 @@ input { font-family: inherit; }
 }
 .cb-carousel-nombre {
   font-family: var(--sans);
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.02em;
   letter-spacing: -0.02em;
@@ -241,13 +241,13 @@ input { font-family: inherit; }
   line-height: 1.1;
 }
 .cb-carousel-desc {
-  font-size: 14px;
+  font-size: 16px;
   color: rgba(250,250,247,0.85);
   margin: 0 0 4px;
   line-height: 1.4;
 }
 .cb-carousel-fecha {
-  font-size: 12px;
+  font-size: 14px;
   color: rgba(250,250,247,0.6);
   letter-spacing: 0.04em;
   margin: 4px 0 0;
@@ -304,7 +304,7 @@ input { font-family: inherit; }
   color: var(--cream-50);
 }
 .cb-countdown-label {
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: rgba(250,250,247,0.6);
@@ -335,7 +335,7 @@ input { font-family: inherit; }
   letter-spacing: -0.025em;
 }
 .cb-countdown-unit {
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgba(250,250,247,0.6);
@@ -359,14 +359,14 @@ input { font-family: inherit; }
   margin-bottom: 10px;
 }
 .cb-disp-label {
-  font-size: 13px;
+  font-size: 15px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 700;
   color: var(--ink-mute);
 }
 .cb-disp-num {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--black-900);
   font-variant-numeric: tabular-nums;
@@ -394,7 +394,7 @@ input { font-family: inherit; }
   background: linear-gradient(90deg, transparent, rgba(155,250,176,0.4));
 }
 .cb-disp-percent {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--ink-soft);
   margin: 8px 0 0;
   text-align: center;
@@ -406,7 +406,7 @@ input { font-family: inherit; }
   margin: 32px 18px 0;
 }
 .cb-section-eyebrow {
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   font-weight: 700;
@@ -442,7 +442,7 @@ input { font-family: inherit; }
   background: var(--black-900);
   color: var(--mint);
   font-family: var(--sans);
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
@@ -453,7 +453,7 @@ input { font-family: inherit; }
 .cb-paso-content { flex: 1; }
 .cb-paso-titulo {
   font-family: var(--sans);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--black-900);
@@ -461,7 +461,7 @@ input { font-family: inherit; }
   line-height: 1.2;
 }
 .cb-paso-desc {
-  font-size: 16px;
+  font-size: 18px;
   color: var(--ink-soft);
   margin: 0;
   line-height: 1.45;
@@ -476,7 +476,7 @@ input { font-family: inherit; }
   margin-bottom: 14px;
 }
 .cb-cta-precio-eyebrow {
-  font-size: 12px;
+  font-size: 14px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   font-weight: 700;
@@ -493,7 +493,7 @@ input { font-family: inherit; }
   line-height: 1;
 }
 .cb-cta-precio-unit {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--ink-mute);
   margin-left: 4px;
   font-weight: 500;
@@ -510,7 +510,7 @@ input { font-family: inherit; }
   color: var(--black-900);
   border: none;
   border-radius: var(--r-md);
-  font-size: 19px;
+  font-size: 21px;
   font-weight: 700;
   letter-spacing: -0.01em;
   transition: background .15s, transform .1s;
@@ -566,7 +566,7 @@ input { font-family: inherit; }
 .cb-confirm-note-titulo {
   margin: 0 0 8px;
   font-family: var(--sans);
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--ink);
   letter-spacing: -0.01em;
@@ -588,7 +588,7 @@ input { font-family: inherit; }
 /* Tagline bajo el botón WhatsApp en paso 3 */
 .cb-confirm-tagline {
   margin: 10px 0 0;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--ink-mute);
   text-align: center;
   letter-spacing: 0.01em;
@@ -605,7 +605,7 @@ input { font-family: inherit; }
   color: var(--black-900);
   border: 2px solid var(--black-900);
   border-radius: var(--r-md);
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
@@ -615,7 +615,7 @@ input { font-family: inherit; }
   background: transparent;
   border: none;
   color: var(--black-900);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 4px;
@@ -655,14 +655,14 @@ input { font-family: inherit; }
 }
 .cb-anti-t {
   font-family: var(--sans);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   margin: 0 0 4px;
   color: var(--black-900);
   letter-spacing: -0.01em;
 }
 .cb-anti-d {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--ink-soft);
   margin: 0;
   line-height: 1.5;
@@ -687,7 +687,7 @@ input { font-family: inherit; }
   align-items: center;
   gap: 16px;
   font-family: var(--sans);
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 600;
   color: var(--black-900);
   letter-spacing: -0.01em;
@@ -710,7 +710,7 @@ input { font-family: inherit; }
 }
 .cb-faq-a {
   padding: 0 0 18px;
-  font-size: 16px;
+  font-size: 18px;
   color: var(--ink-soft);
   line-height: 1.55;
 }
@@ -727,19 +727,19 @@ input { font-family: inherit; }
 .cb-footer-logo img { height: 60px; width: auto; margin: 0 auto 12px; }
 .cb-footer-nombre {
   font-family: var(--sans);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--cream-50);
   margin: 0 0 4px;
 }
 .cb-footer-line {
-  font-size: 13px;
+  font-size: 15px;
   color: rgba(250,250,247,0.6);
   margin: 0 0 2px;
 }
 .cb-footer-bend {
   font-family: var(--sans);
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
   color: rgba(250,250,247,0.85);
   margin: 14px 0 4px;
@@ -794,7 +794,7 @@ input { font-family: inherit; }
   margin: 8px 0 24px;
 }
 .cb-intro-eyebrow {
-  font-size: 12px;
+  font-size: 14px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   font-weight: 700;
@@ -811,7 +811,7 @@ input { font-family: inherit; }
   line-height: 1.15;
 }
 .cb-intro-mensaje {
-  font-size: 17px;
+  font-size: 19px;
   color: var(--ink-soft);
   margin: 0 0 16px;
   line-height: 1.5;
@@ -827,7 +827,7 @@ input { font-family: inherit; }
   margin-bottom: 20px;
 }
 .cb-cantidad-label {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--black-900);
   margin: 0 0 12px;
@@ -848,7 +848,7 @@ input { font-family: inherit; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   transition: background .15s, color .15s;
   flex-shrink: 0;
@@ -875,7 +875,7 @@ input { font-family: inherit; }
 }
 .cb-cantidad-help {
   text-align: center;
-  font-size: 13px;
+  font-size: 15px;
   color: var(--ink-mute);
   margin: 12px 0 0;
 }
@@ -888,7 +888,7 @@ input { font-family: inherit; }
   border-top: 1px solid var(--gray-200);
 }
 .cb-cantidad-total-label {
-  font-size: 14px;
+  font-size: 16px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   font-weight: 700;
@@ -896,7 +896,7 @@ input { font-family: inherit; }
 }
 .cb-cantidad-total-val {
   font-family: var(--sans);
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 800;
   color: var(--black-900);
   font-variant-numeric: tabular-nums;
@@ -922,7 +922,7 @@ input { font-family: inherit; }
   background: transparent;
   border: none;
   border-radius: var(--r-sm);
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--ink-soft);
   letter-spacing: -0.005em;
@@ -953,7 +953,7 @@ input { font-family: inherit; }
   padding: 0 16px 0 48px;
   border: 2px solid var(--gray-200);
   border-radius: var(--r-md);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 500;
   background: white;
   font-variant-numeric: tabular-nums;
@@ -982,7 +982,7 @@ input { font-family: inherit; }
   border-radius: var(--r-md);
   padding: 14px 6px;
   font-family: var(--sans);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--black-900);
   font-variant-numeric: tabular-nums;
@@ -1019,7 +1019,7 @@ input { font-family: inherit; }
   border: 2px dashed var(--gray-300);
   border-radius: var(--r-md);
   color: var(--ink-soft);
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
   margin-bottom: 12px;
   transition: border-color .15s, color .15s;
@@ -1040,14 +1040,14 @@ input { font-family: inherit; }
 }
 .cb-aleatorio-titulo {
   font-family: var(--sans);
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.02em;
   margin: 0 0 6px;
   color: var(--mint);
 }
 .cb-aleatorio-desc {
-  font-size: 15px;
+  font-size: 17px;
   color: rgba(250,250,247,0.75);
   margin: 0 0 18px;
   line-height: 1.45;
@@ -1064,7 +1064,7 @@ input { font-family: inherit; }
   background: var(--mint);
   color: var(--black-900);
   font-family: var(--sans);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   padding: 8px 14px;
   border-radius: var(--r-sm);
@@ -1087,7 +1087,7 @@ input { font-family: inherit; }
   color: var(--cream-50);
   border: 1px solid rgba(255,255,255,0.18);
   border-radius: var(--r-md);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   letter-spacing: -0.005em;
   transition: background .15s;
@@ -1109,7 +1109,7 @@ input { font-family: inherit; }
   margin-bottom: 10px;
 }
 .cb-seleccion-label {
-  font-size: 13px;
+  font-size: 15px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-weight: 700;
@@ -1119,7 +1119,7 @@ input { font-family: inherit; }
   background: transparent;
   border: none;
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   text-decoration: underline;
 }
@@ -1135,7 +1135,7 @@ input { font-family: inherit; }
   background: var(--black-900);
   color: var(--mint);
   font-family: var(--sans);
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   padding: 8px 8px 8px 12px;
   border-radius: 100px;
@@ -1158,7 +1158,7 @@ input { font-family: inherit; }
   text-align: center;
   padding: 14px 0;
   color: var(--ink-mute);
-  font-size: 14px;
+  font-size: 16px;
 }
 
 /* ───── Selector de abono parcial (paso 3) ───── */
@@ -1209,20 +1209,20 @@ input { font-family: inherit; }
 }
 .cb-abono-content { flex: 1; }
 .cb-abono-titulo {
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 700;
   color: var(--black-900);
   margin: 0 0 4px;
   letter-spacing: -0.01em;
 }
 .cb-abono-desc {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--ink-soft);
   margin: 0;
   line-height: 1.4;
 }
 .cb-abono-monto {
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 700;
   color: var(--black-900);
   font-variant-numeric: tabular-nums;
@@ -1237,7 +1237,7 @@ input { font-family: inherit; }
   margin-top: 4px;
 }
 .cb-abono-custom-label {
-  font-size: 13px;
+  font-size: 15px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 700;
@@ -1259,7 +1259,7 @@ input { font-family: inherit; }
   align-items: center;
   justify-content: center;
   padding: 0 14px;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--ink-mute);
   background: var(--cream-100);
@@ -1271,7 +1271,7 @@ input { font-family: inherit; }
   background: transparent;
   height: 56px;
   padding: 0 14px;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--black-900);
@@ -1280,7 +1280,7 @@ input { font-family: inherit; }
 }
 .cb-monto-input:focus { outline: none; }
 .cb-abono-help {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--ink-mute);
   margin: 8px 0 0;
 }
@@ -1296,19 +1296,19 @@ input { font-family: inherit; }
   justify-content: space-between;
   align-items: baseline;
   padding: 6px 0;
-  font-size: 15px;
+  font-size: 17px;
   color: var(--ink-soft);
 }
 .cb-abono-resumen-row strong {
   color: var(--black-900);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  font-size: 17px;
+  font-size: 19px;
   letter-spacing: -0.01em;
 }
 .cb-abono-resumen-row strong.saldo { color: var(--ink-mute); }
 .cb-abono-reparto {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--ink-soft);
   margin: 8px 0 0;
   line-height: 1.45;
@@ -1316,7 +1316,7 @@ input { font-family: inherit; }
   border-top: 1px solid var(--gray-200);
 }
 .cb-abono-reminder {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--ink-soft);
   margin: 10px 0 0;
   line-height: 1.45;
@@ -1352,7 +1352,7 @@ input { font-family: inherit; }
   margin: 0 0 12px;
 }
 .cb-sticky-label {
-  font-size: 13px;
+  font-size: 15px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-weight: 700;
@@ -1360,7 +1360,7 @@ input { font-family: inherit; }
 }
 .cb-sticky-value {
   font-family: var(--sans);
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 800;
   color: var(--black-900);
   font-variant-numeric: tabular-nums;
@@ -1375,7 +1375,7 @@ input { font-family: inherit; }
 }
 .cb-field-label {
   display: block;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--black-900);
   margin: 0 0 8px;
@@ -1387,7 +1387,7 @@ input { font-family: inherit; }
   padding: 0 16px;
   border: 2px solid var(--gray-200);
   border-radius: var(--r-md);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 500;
   background: white;
   color: var(--black-900);
@@ -1414,18 +1414,18 @@ input { font-family: inherit; }
   background: white;
   border: 2px solid var(--gray-200);
   border-radius: var(--r-md);
-  font-size: 16px;
+  font-size: 18px;
   color: var(--black-900);
   font-weight: 600;
   flex-shrink: 0;
 }
-.cb-flag { font-size: 22px; }
+.cb-flag { font-size: 24px; }
 
 /* Botón de tipo de documento (mismo patrón que el botón de país) */
 .cb-doc-btn {
   min-width: 78px;
   justify-content: center;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -1442,7 +1442,7 @@ input { font-family: inherit; }
   border: 1px solid var(--gray-200);
   border-radius: 8px;
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--ink);
@@ -1462,7 +1462,7 @@ input { font-family: inherit; }
   gap: 18px;
 }
 .ab-sheet-custom-help {
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.5;
   color: var(--ink-soft);
   margin: 0;
@@ -1485,7 +1485,7 @@ input { font-family: inherit; }
   border-color: var(--black-900);
 }
 .ab-sheet-custom-prefix {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--ink);
 }
@@ -1494,7 +1494,7 @@ input { font-family: inherit; }
   border: none;
   outline: none;
   background: transparent;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--ink);
   letter-spacing: 0.04em;
@@ -1509,7 +1509,7 @@ input { font-family: inherit; }
   background: none;
   border: none;
   padding: 8px 0;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--ink-mute);
   cursor: pointer;
@@ -1524,7 +1524,7 @@ input { font-family: inherit; }
   height: 52px;
   border-radius: 999px;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 17px;
   cursor: pointer;
 }
 .ab-sheet-custom-ok:disabled {
@@ -1542,7 +1542,7 @@ input { font-family: inherit; }
   box-shadow: var(--shadow-sm);
 }
 .cb-resumen-eyebrow {
-  font-size: 12px;
+  font-size: 14px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   font-weight: 700;
@@ -1551,7 +1551,7 @@ input { font-family: inherit; }
 }
 .cb-resumen-titulo {
   font-family: var(--sans);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--black-900);
   margin: 0 0 14px;
@@ -1563,7 +1563,7 @@ input { font-family: inherit; }
   align-items: baseline;
   padding: 10px 0;
   border-bottom: 1px solid var(--gray-100);
-  font-size: 16px;
+  font-size: 18px;
 }
 .cb-resumen-row:last-child { border-bottom: none; }
 .cb-resumen-row.total {
@@ -1580,14 +1580,14 @@ input { font-family: inherit; }
   text-align: right;
 }
 .cb-resumen-row.total .label {
-  font-size: 13px;
+  font-size: 15px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 700;
   color: var(--ink-mute);
 }
 .cb-resumen-row.total .value {
-  font-size: 24px;
+  font-size: 26px;
   letter-spacing: -0.025em;
 }
 .cb-resumen-nums {
@@ -1600,7 +1600,7 @@ input { font-family: inherit; }
   background: var(--cream-100);
   color: var(--black-900);
   font-family: var(--sans);
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   padding: 6px 10px;
   border-radius: var(--r-sm);
@@ -1646,14 +1646,14 @@ input { font-family: inherit; }
 .cb-pago-content { flex: 1; }
 .cb-pago-titulo {
   font-family: var(--sans);
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 700;
   color: var(--black-900);
   margin: 0 0 4px;
   letter-spacing: -0.01em;
 }
 .cb-pago-desc {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--ink-soft);
   margin: 0;
   line-height: 1.4;
@@ -1704,7 +1704,7 @@ input { font-family: inherit; }
   margin-bottom: 18px;
 }
 .cb-cuenta-eyebrow {
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   font-weight: 700;
@@ -1713,7 +1713,7 @@ input { font-family: inherit; }
 }
 .cb-cuenta-banco {
   font-family: var(--sans);
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.02em;
   margin: 0 0 12px;
@@ -1723,7 +1723,7 @@ input { font-family: inherit; }
   justify-content: space-between;
   padding: 8px 0;
   border-bottom: 1px solid rgba(255,255,255,0.1);
-  font-size: 15px;
+  font-size: 17px;
 }
 .cb-cuenta-row:last-child { border-bottom: none; }
 .cb-cuenta-row .label { color: rgba(250,250,247,0.6); }
@@ -1742,7 +1742,7 @@ input { font-family: inherit; }
   border: none;
   border-radius: 100px;
   padding: 10px 18px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: -0.005em;
   width: 100%;
@@ -1789,7 +1789,7 @@ input { font-family: inherit; }
   margin: 0 0 10px;
 }
 .cb-exito-msg {
-  font-size: 17px;
+  font-size: 19px;
   color: var(--ink-soft);
   margin: 0 0 28px;
   line-height: 1.5;
@@ -1802,7 +1802,7 @@ input { font-family: inherit; }
   padding: 12px 14px;
   background: var(--cream-100);
   border-radius: var(--r-sm);
-  font-size: 14px;
+  font-size: 16px;
   color: var(--ink-soft);
   margin: 16px 0 0;
   line-height: 1.4;
@@ -1817,11 +1817,11 @@ input { font-family: inherit; }
 
 /* Small phones */
 @media (max-width: 360px) {
-  body { font-size: 17px; }
+  body { font-size: 19px; }
   .cb-hero-titulo { font-size: 38px; }
   .cb-cantidad-num { font-size: 40px; }
   .cb-grid { grid-template-columns: repeat(3, 1fr); }
-  .cb-num { font-size: 16px; padding: 12px 4px; }
+  .cb-num { font-size: 18px; padding: 12px 4px; }
   .cb-countdown-num { font-size: 26px; }
 }
 
@@ -1866,7 +1866,7 @@ input { font-family: inherit; }
 }
 .ab-sheet-title {
   font-family: var(--sans);
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.02em;
   margin: 0 0 12px;
@@ -1878,7 +1878,7 @@ input { font-family: inherit; }
   padding: 0 16px;
   border: 2px solid var(--gray-200);
   border-radius: var(--r-md);
-  font-size: 17px;
+  font-size: 19px;
   background: white;
 }
 .ab-sheet-search:focus {
@@ -1899,7 +1899,7 @@ input { font-family: inherit; }
   background: transparent;
   border: none;
   text-align: left;
-  font-size: 18px;
+  font-size: 20px;
   color: var(--black-900);
   border-bottom: 1px solid var(--gray-100);
   transition: background .1s;

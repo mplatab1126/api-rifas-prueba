@@ -55,7 +55,7 @@ window.HouseLanding = function HouseLanding({ rifa, onComprar, tweaks }) {
           Comprar mi boleta
           <CompIcon name="arrowRight" size={20} />
         </button>
-        <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--ink-mute)", textAlign: "center", letterSpacing: 0.2 }}>
+        <p style={{ margin: "10px 0 0", fontSize: 14, color: "var(--ink-mute)", textAlign: "center", letterSpacing: 0.2 }}>
           o abone desde {window.formatCOP(rifa.abonoMinimo)} y termine de pagar antes del sorteo
         </p>
       </div>
@@ -265,7 +265,7 @@ function HouseHeroSlider({ items }) {
                     </svg>
                   </span>
                   <span style={{
-                    fontSize: 15, fontWeight: 600, color: "white",
+                    fontSize: 17, fontWeight: 600, color: "white",
                     letterSpacing: "0.02em", textShadow: "0 2px 8px rgba(0,0,0,0.6)"
                   }}>
                     Ver video de la casa
@@ -384,7 +384,7 @@ function VideoLightbox({ videoId, titulo, onClose }) {
           position: "fixed", top: 16, right: 16,
           width: 42, height: 42, borderRadius: "50%",
           border: 0, background: "rgba(255,255,255,0.15)",
-          color: "white", fontSize: 20, cursor: "pointer",
+          color: "white", fontSize: 22, cursor: "pointer",
           backdropFilter: "blur(8px)",
           display: "flex", alignItems: "center", justifyContent: "center"
         }}

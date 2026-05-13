@@ -49,7 +49,7 @@ function NavDrawer({ open, onClose }) {
             >
               <span className="nav-drawer-label">
                 {it.label}
-                {it.proximamente && <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.7 }}>· Pronto</span>}
+                {it.proximamente && <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.7 }}>· Pronto</span>}
               </span>
               <span className="nav-drawer-arrow" aria-hidden="true">→</span>
             </a>

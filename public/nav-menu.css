@@ -110,7 +110,7 @@
   padding: 16px 20px;
   text-decoration: none;
   color: #FAFAF7;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 500;
   letter-spacing: 0.005em;
   border-bottom: 1px solid rgba(250,250,247,0.06);
@@ -120,7 +120,7 @@
 .nav-drawer-item:active { background: rgba(255,255,255,0.06); }
 .nav-drawer-arrow {
   color: rgba(250,250,247,0.4);
-  font-size: 18px;
+  font-size: 20px;
   transition: transform 0.18s ease, color 0.18s ease;
 }
 .nav-drawer-item:active .nav-drawer-arrow {
@@ -133,14 +133,14 @@
 }
 .nav-drawer-rs {
   margin: 0;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: rgba(250,250,247,0.85);
   letter-spacing: 0.02em;
 }
 .nav-drawer-nit {
   margin: 2px 0 0;
-  font-size: 12px;
+  font-size: 14px;
   color: rgba(250,250,247,0.5);
   letter-spacing: 0.02em;
 }

@@ -401,7 +401,7 @@ window.StepEscoger = function StepEscoger({ rifa, seleccionadas, setSeleccionada
           </span>
           <div style={{ textAlign: "right" }}>
             <span className="cb-sticky-value">{window.formatCOP(total)}</span>
-            <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--ink-mute)", fontWeight: 500, letterSpacing: 0 }}>
+            <p style={{ margin: "2px 0 0", fontSize: 13, color: "var(--ink-mute)", fontWeight: 500, letterSpacing: 0 }}>
               o abone desde {window.formatCOP(20000)}
             </p>
           </div>
@@ -574,7 +574,7 @@ window.StepDatos = function StepDatos({ datos, setDatos, seleccionadas, rifa, on
           </span>
           <div style={{ textAlign: "right" }}>
             <span className="cb-sticky-value">{window.formatCOP(total)}</span>
-            <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--ink-mute)", fontWeight: 500, letterSpacing: 0 }}>
+            <p style={{ margin: "2px 0 0", fontSize: 13, color: "var(--ink-mute)", fontWeight: 500, letterSpacing: 0 }}>
               o abone desde {window.formatCOP(20000)}
             </p>
           </div>

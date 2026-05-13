@@ -62,7 +62,7 @@ body {
   -webkit-font-smoothing: antialiased;
   text-wrap: pretty;
   /* MUY IMPORTANTE: tipografía base más grande para adultos mayores */
-  font-size: 17px;
+  font-size: 19px;
 }
 img { max-width: 100%; display: block; }
 a { color: inherit; text-decoration: none; }
@@ -207,7 +207,7 @@ button { font-family: inherit; cursor: pointer; }
   padding: 16px 20px;
   text-decoration: none;
   color: #FAFAF7;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 500;
   letter-spacing: 0.005em;
   border-bottom: 1px solid rgba(250,250,247,0.06);
@@ -217,7 +217,7 @@ button { font-family: inherit; cursor: pointer; }
 .nav-drawer-item:active { background: rgba(255,255,255,0.06); }
 .nav-drawer-arrow {
   color: rgba(250,250,247,0.4);
-  font-size: 18px;
+  font-size: 20px;
   transition: transform 0.18s ease, color 0.18s ease;
 }
 .nav-drawer-item:active .nav-drawer-arrow {
@@ -230,14 +230,14 @@ button { font-family: inherit; cursor: pointer; }
 }
 .nav-drawer-rs {
   margin: 0;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: rgba(250,250,247,0.85);
   letter-spacing: 0.02em;
 }
 .nav-drawer-nit {
   margin: 2px 0 0;
-  font-size: 12px;
+  font-size: 14px;
   color: rgba(250,250,247,0.5);
   letter-spacing: 0.02em;
 }
@@ -252,13 +252,13 @@ button { font-family: inherit; cursor: pointer; }
   letter-spacing: 0.02em;
 }
 .hub-brand-line {
-  font-size: 13px;
+  font-size: 15px;
   color: rgba(250, 250, 247, 0.6);
   margin: 2px 0 4px;
   letter-spacing: 0.02em;
 }
 .hub-brand-trust {
-  font-size: 12px;
+  font-size: 14px;
   color: rgba(250, 250, 247, 0.75);
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -279,7 +279,7 @@ button { font-family: inherit; cursor: pointer; }
 }
 .evento-titulo {
   font-family: var(--serif);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -334,7 +334,7 @@ button { font-family: inherit; cursor: pointer; }
 .sb-tag {
   position: absolute;
   top: 12px; left: 12px;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.14em;
   font-weight: 700;
   background: var(--gold);
@@ -364,7 +364,7 @@ button { font-family: inherit; cursor: pointer; }
   gap: 0;
 }
 .sb-edicion {
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgba(247, 243, 234, 0.7);
@@ -390,13 +390,13 @@ button { font-family: inherit; cursor: pointer; }
 .sb-premios li {
   display: flex;
   flex-direction: column;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.25;
   padding-left: 10px;
   border-left: 2px solid var(--gold);
 }
 .sb-premio-label {
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   font-weight: 600;
@@ -404,7 +404,7 @@ button { font-family: inherit; cursor: pointer; }
   margin-bottom: 2px;
 }
 .sb-premio-val {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--cream-50);
   letter-spacing: -0.01em;
@@ -420,19 +420,19 @@ button { font-family: inherit; cursor: pointer; }
   border-radius: 100px;
   margin-top: 4px;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 17px;
   letter-spacing: -0.01em;
 }
 .sb-cta-text { letter-spacing: -0.01em; }
 .sb-fecha {
-  font-size: 12px;
+  font-size: 14px;
   margin: 12px 0 0;
   color: rgba(247, 243, 234, 0.7);
   letter-spacing: 0.02em;
   text-align: center;
 }
 .sb-arrow {
-  font-size: 18px;
+  font-size: 20px;
   color: var(--green-900);
   font-weight: 700;
 }
@@ -443,7 +443,7 @@ button { font-family: inherit; cursor: pointer; }
   padding: 0 4px;
 }
 .hs-greet {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--ink-mute);
   margin: 0 0 4px;
   letter-spacing: 0.06em;
@@ -461,7 +461,7 @@ button { font-family: inherit; cursor: pointer; }
   letter-spacing: -0.01em;
 }
 .hs-sub {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--ink-mute);
   margin: 0;
 }
@@ -526,7 +526,7 @@ button { font-family: inherit; cursor: pointer; }
 }
 .tarjeta-titulo {
   font-family: var(--serif);
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 600;
   letter-spacing: -0.015em;
   color: var(--green-900);
@@ -552,7 +552,7 @@ button { font-family: inherit; cursor: pointer; }
   align-items: center;
   justify-content: center;
   color: var(--green-700);
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
 }
 .tarjeta-badge {
@@ -589,7 +589,7 @@ button { font-family: inherit; cursor: pointer; }
   align-items: flex-start;
 }
 .tarjeta-destacada .tarjeta-titulo {
-  font-size: 24px;
+  font-size: 26px;
   color: var(--cream-50);
   margin-bottom: 4px;
 }
@@ -603,7 +603,7 @@ button { font-family: inherit; cursor: pointer; }
   background: var(--gold);
   color: var(--green-900);
   width: 36px; height: 36px;
-  font-size: 18px;
+  font-size: 20px;
   flex-shrink: 0;
 }
 .tarjeta-destacada .tarjeta-badge {
@@ -656,7 +656,7 @@ button { font-family: inherit; cursor: pointer; }
 }
 .hub-aviso-t {
   font-family: var(--sans);
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 700;
   letter-spacing: -0.015em;
   color: var(--green-900);
@@ -664,7 +664,7 @@ button { font-family: inherit; cursor: pointer; }
   line-height: 1.2;
 }
 .hub-aviso-d {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--ink-soft);
   line-height: 1.55;
   margin: 0;
@@ -687,14 +687,14 @@ button { font-family: inherit; cursor: pointer; }
 .hf-info { margin-bottom: 18px; }
 .hf-nombre {
   font-family: var(--serif);
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 600;
   letter-spacing: -0.015em;
   color: var(--cream-50);
   margin: 0 0 4px;
 }
 .hf-line {
-  font-size: 13px;
+  font-size: 15px;
   color: rgba(247, 243, 234, 0.65);
   margin: 0 0 2px;
 }
@@ -723,20 +723,20 @@ button { font-family: inherit; cursor: pointer; }
 .hf-bend {
   font-family: var(--serif);
   font-style: normal;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
   letter-spacing: -0.01em;
   color: rgba(250, 250, 247, 0.85);
   margin: 14px 0 8px;
 }
 .hf-legal {
-  font-size: 11px;
+  font-size: 13px;
   color: rgba(247, 243, 234, 0.55);
   margin: 0 0 4px;
   letter-spacing: 0.04em;
 }
 .hf-copy {
-  font-size: 11px;
+  font-size: 13px;
   color: rgba(247, 243, 234, 0.4);
   margin: 0;
 }
@@ -782,7 +782,7 @@ button { font-family: inherit; cursor: pointer; }
     gap: 14px;
   }
   .tarjeta { min-height: 170px; }
-  .tarjeta-titulo { font-size: 20px; }
+  .tarjeta-titulo { font-size: 22px; }
 }
 
 @media (min-width: 1200px) {
@@ -798,7 +798,7 @@ button { font-family: inherit; cursor: pointer; }
 @media (max-width: 360px) {
   .hub { padding: 16px 14px 96px; }
   .tarjeta { padding: 16px 14px; min-height: 140px; }
-  .tarjeta-titulo { font-size: 17px; }
+  .tarjeta-titulo { font-size: 19px; }
   .tarjeta-subtitulo { font-size: 11.5px; }
   .tarjeta-icono { width: 56px; height: 56px; }
   .tarjeta-icono.tarjeta-icono-3d { width: 76px; height: 76px; }

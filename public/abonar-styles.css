@@ -53,7 +53,7 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-wrap: pretty;
-  font-size: 20px; /* base más grande para abuelitos */
+  font-size: 22px; /* base más grande para abuelitos */
 }
 img { max-width: 100%; display: block; }
 a { color: inherit; text-decoration: none; }
@@ -103,7 +103,7 @@ input { font-family: inherit; }
 .ab-topbar-title {
   flex: 1;
   font-family: var(--sans);
-  font-size: 19px;
+  font-size: 21px;
   font-weight: 600;
   color: rgba(250,250,247,0.95);
   letter-spacing: -0.01em;
@@ -130,7 +130,7 @@ input { font-family: inherit; }
 .ab-step-label {
   display: block;
   text-align: center;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--ink-mute);
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -149,7 +149,7 @@ input { font-family: inherit; }
   margin: 8px 0 24px;
 }
 .ab-eyebrow {
-  font-size: 14px;
+  font-size: 16px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   font-weight: 700;
@@ -166,7 +166,7 @@ input { font-family: inherit; }
   line-height: 1.15;
 }
 .ab-mensaje {
-  font-size: 19px;
+  font-size: 21px;
   color: var(--ink-soft);
   margin: 0 0 16px;
   line-height: 1.5;
@@ -195,7 +195,7 @@ input { font-family: inherit; }
   justify-content: center;
 }
 .ab-aviso-t {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   margin: 0 0 4px;
   color: var(--mint);
@@ -203,7 +203,7 @@ input { font-family: inherit; }
   text-transform: uppercase;
 }
 .ab-aviso-d {
-  font-size: 18px;
+  font-size: 20px;
   margin: 0;
   color: rgba(250,250,247,0.9);
   line-height: 1.5;
@@ -217,14 +217,14 @@ input { font-family: inherit; }
 }
 .ab-label {
   display: block;
-  font-size: 19px;
+  font-size: 21px;
   font-weight: 600;
   color: var(--black-900);
   margin: 0 0 10px;
   letter-spacing: -0.01em;
 }
 .ab-help {
-  font-size: 16px;
+  font-size: 18px;
   color: var(--ink-mute);
   margin: 6px 0 0;
 }
@@ -244,7 +244,7 @@ input { font-family: inherit; }
   background: white;
   border: 2px solid var(--gray-200);
   border-radius: var(--r-md);
-  font-size: 20px;
+  font-size: 22px;
   color: var(--black-900);
   font-weight: 600;
   flex-shrink: 0;
@@ -260,7 +260,7 @@ input { font-family: inherit; }
   line-height: 1;
 }
 .ab-country-code {
-  font-size: 19px;
+  font-size: 21px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -275,7 +275,7 @@ input { font-family: inherit; }
   padding: 0 18px;
   border: 2px solid var(--gray-200);
   border-radius: var(--r-md);
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 500;
   color: var(--black-900);
   background: white;
@@ -334,7 +334,7 @@ input { font-family: inherit; }
 }
 .ab-sheet-title {
   font-family: var(--sans);
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 700;
   letter-spacing: -0.02em;
   margin: 0 0 12px;
@@ -346,7 +346,7 @@ input { font-family: inherit; }
   padding: 0 16px;
   border: 2px solid var(--gray-200);
   border-radius: var(--r-md);
-  font-size: 19px;
+  font-size: 21px;
   background: white;
 }
 .ab-sheet-search:focus {
@@ -367,7 +367,7 @@ input { font-family: inherit; }
   background: transparent;
   border: none;
   text-align: left;
-  font-size: 20px;
+  font-size: 22px;
   color: var(--black-900);
   border-bottom: 1px solid var(--gray-100);
   transition: background .1s;
@@ -396,7 +396,7 @@ input { font-family: inherit; }
   color: white;
   border: none;
   border-radius: var(--r-md);
-  font-size: 21px;
+  font-size: 23px;
   font-weight: 700;
   letter-spacing: -0.01em;
   transition: background .15s, transform .1s;
@@ -427,7 +427,7 @@ input { font-family: inherit; }
   color: var(--black-900);
   border: 2px solid var(--black-900);
   border-radius: var(--r-md);
-  font-size: 19px;
+  font-size: 21px;
   font-weight: 600;
   letter-spacing: -0.01em;
   transition: background .15s;
@@ -450,7 +450,7 @@ input { font-family: inherit; }
   box-shadow: var(--shadow-sm);
 }
 .ab-cliente-eyebrow {
-  font-size: 14px;
+  font-size: 16px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   font-weight: 700;
@@ -459,7 +459,7 @@ input { font-family: inherit; }
 }
 .ab-cliente-nombre {
   font-family: var(--sans);
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--black-900);
@@ -467,7 +467,7 @@ input { font-family: inherit; }
   line-height: 1.15;
 }
 .ab-cliente-ciudad {
-  font-size: 18px;
+  font-size: 20px;
   color: var(--ink-mute);
   margin: 0;
   display: inline-flex;
@@ -477,7 +477,7 @@ input { font-family: inherit; }
 
 .ab-section-titulo {
   font-family: var(--sans);
-  font-size: 19px;
+  font-size: 21px;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--black-900);
@@ -545,7 +545,7 @@ input { font-family: inherit; }
 }
 .ab-boleta-numero {
   font-family: var(--sans);
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 700;
   color: var(--black-900);
   letter-spacing: -0.015em;
@@ -554,7 +554,7 @@ input { font-family: inherit; }
   display: inline-block;
 }
 .ab-boleta-numero-prefix {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--ink-mute);
   letter-spacing: 0.06em;
@@ -563,7 +563,7 @@ input { font-family: inherit; }
   display: inline-block;
 }
 .ab-boleta-status {
-  font-size: 13px;
+  font-size: 15px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   font-weight: 700;
@@ -593,7 +593,7 @@ input { font-family: inherit; }
   flex-direction: column;
 }
 .ab-amount-label {
-  font-size: 14px;
+  font-size: 16px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-mute);
@@ -601,7 +601,7 @@ input { font-family: inherit; }
   margin-bottom: 2px;
 }
 .ab-amount-value {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--black-900);
   font-variant-numeric: tabular-nums;
@@ -612,7 +612,7 @@ input { font-family: inherit; }
 }
 
 .ab-boleta-paga-msg {
-  font-size: 17px;
+  font-size: 19px;
   color: var(--ink-soft);
   margin: 8px 0 0;
   line-height: 1.4;
@@ -624,7 +624,7 @@ input { font-family: inherit; }
   background: transparent;
   border: none;
   color: var(--black-900);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   padding: 12px 0 0;
   text-decoration: underline;
@@ -643,7 +643,7 @@ input { font-family: inherit; }
   border: 1px solid var(--gray-200);
 }
 .ab-historial-titulo {
-  font-size: 14px;
+  font-size: 16px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   font-weight: 700;
@@ -655,7 +655,7 @@ input { font-family: inherit; }
   grid-template-columns: 1fr auto;
   padding: 10px 0;
   border-bottom: 1px solid var(--gray-200);
-  font-size: 17px;
+  font-size: 19px;
   align-items: baseline;
 }
 .ab-historial-row:last-child { border-bottom: none; }
@@ -683,7 +683,7 @@ input { font-family: inherit; }
   margin: 0 0 10px;
 }
 .ab-resumen-label {
-  font-size: 15px;
+  font-size: 17px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-mute);
@@ -710,7 +710,7 @@ input { font-family: inherit; }
   border-radius: var(--r-md);
   padding: 14px 16px;
   text-align: center;
-  font-size: 19px;
+  font-size: 21px;
   font-weight: 700;
   color: var(--black-900);
   font-variant-numeric: tabular-nums;
@@ -737,7 +737,7 @@ input { font-family: inherit; }
 }
 .ab-monto-opt-label {
   display: block;
-  font-size: 14px;
+  font-size: 16px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-mute);
@@ -764,7 +764,7 @@ input { font-family: inherit; }
   align-items: center;
   justify-content: center;
   padding: 0 14px;
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 700;
   color: var(--ink-mute);
   background: var(--cream-100);
@@ -776,7 +776,7 @@ input { font-family: inherit; }
   background: transparent;
   height: 60px;
   padding: 0 14px;
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--black-900);
@@ -798,7 +798,7 @@ input { font-family: inherit; }
   align-items: baseline;
   padding: 12px 0;
   border-bottom: 1px solid var(--gray-100);
-  font-size: 18px;
+  font-size: 20px;
 }
 .ab-confirm-row:last-child { border-bottom: none; }
 .ab-confirm-row.total {
@@ -817,7 +817,7 @@ input { font-family: inherit; }
   text-align: right;
 }
 .ab-confirm-row.total .ab-confirm-label {
-  font-size: 16px;
+  font-size: 18px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 700;
@@ -848,7 +848,7 @@ input { font-family: inherit; }
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 20px;
+  font-size: 22px;
   letter-spacing: -0.02em;
   flex-shrink: 0;
 }
@@ -857,13 +857,13 @@ input { font-family: inherit; }
 }
 .ab-wompi-t {
   font-family: var(--sans);
-  font-size: 19px;
+  font-size: 21px;
   font-weight: 700;
   margin: 0 0 4px;
   letter-spacing: -0.015em;
 }
 .ab-wompi-d {
-  font-size: 16px;
+  font-size: 18px;
   margin: 0;
   color: rgba(250,250,247,0.75);
   line-height: 1.4;
@@ -883,7 +883,7 @@ input { font-family: inherit; }
   color: var(--black-900);
   padding: 8px 14px;
   border-radius: 100px;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   letter-spacing: -0.005em;
   border: 1px solid var(--gray-200);
@@ -896,7 +896,7 @@ input { font-family: inherit; }
   padding: 12px 14px;
   background: var(--cream-100);
   border-radius: var(--r-sm);
-  font-size: 16px;
+  font-size: 18px;
   color: var(--ink-soft);
   margin: 16px 0 0;
   line-height: 1.4;
@@ -920,7 +920,7 @@ input { font-family: inherit; }
 }
 .ab-empty-titulo {
   font-family: var(--sans);
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--black-900);
@@ -928,7 +928,7 @@ input { font-family: inherit; }
   line-height: 1.2;
 }
 .ab-empty-msg {
-  font-size: 18px;
+  font-size: 20px;
   color: var(--ink-soft);
   margin: 0 auto 24px;
   max-width: 320px;
@@ -1003,7 +1003,7 @@ input { font-family: inherit; }
   margin: 0 0 10px;
 }
 .ab-success-msg {
-  font-size: 19px;
+  font-size: 21px;
   color: var(--ink-soft);
   margin: 0 0 28px;
   line-height: 1.5;
@@ -1016,9 +1016,9 @@ input { font-family: inherit; }
 
 /* Small phones */
 @media (max-width: 360px) {
-  body { font-size: 19px; }
+  body { font-size: 21px; }
   .ab-titulo { font-size: 30px; }
-  .ab-cliente-nombre { font-size: 24px; }
+  .ab-cliente-nombre { font-size: 26px; }
   .ab-boleta-numero { font-size: 26px; }
   .ab-resumen-value { font-size: 26px; }
 }

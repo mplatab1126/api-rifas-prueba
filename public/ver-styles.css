@@ -59,7 +59,7 @@
 }
 .vb-hero-sub {
   font-family: 'Inter', system-ui, sans-serif;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   letter-spacing: 0.01em;
   color: rgba(10, 10, 10, 0.55);
@@ -99,7 +99,7 @@
   padding: 18px 20px;
   cursor: pointer;
   font-family: 'Inter', system-ui, sans-serif;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
   color: #0A0A0A;
   -webkit-tap-highlight-color: transparent;
@@ -131,7 +131,7 @@
 .vb-clausula:last-of-type { border-bottom: 0; }
 .vb-clausula-num {
   font-family: 'Inter', system-ui, sans-serif;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -139,7 +139,7 @@
   margin: 0 0 6px;
 }
 .vb-clausula p {
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.55;
   color: rgba(10, 10, 10, 0.72);
   margin: 0 0 6px;
@@ -150,7 +150,7 @@
   padding-left: 18px;
 }
 .vb-clausula li {
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.55;
   color: rgba(10, 10, 10, 0.72);
   margin-bottom: 6px;
@@ -166,7 +166,7 @@
 }
 .vb-clausula a:hover, .vb-link:hover { text-decoration-thickness: 2px; }
 .vb-terminos-meta {
-  font-size: 12px;
+  font-size: 14px;
   color: rgba(10, 10, 10, 0.45);
   margin: 14px 0 0;
   padding-top: 12px;
@@ -199,7 +199,7 @@
 .vb-stamp img { width: 26px; height: 26px; }
 .vb-stamp span {
   font-family: 'Inter', system-ui, sans-serif;
-  font-size: 12px; font-weight: 800;
+  font-size: 14px; font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: #9BFAB0;
@@ -245,7 +245,7 @@
   color: var(--mint);
   border: none;
   border-radius: var(--r-md);
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.005em;
   cursor: pointer;
@@ -255,7 +255,7 @@
 .vb-li-btn:active { transform: scale(0.985); }
 
 .vb-premio-bonus {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--ink-soft);
   margin: 8px 0 0;
   line-height: 1.45;
@@ -276,7 +276,7 @@
   border: 1px solid var(--black-700);
 }
 .vb-comprar-eyebrow {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -285,7 +285,7 @@
 }
 .vb-comprar-titulo {
   font-family: var(--sans);
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--cream-50);
@@ -293,7 +293,7 @@
   line-height: 1.2;
 }
 .vb-comprar-desc {
-  font-size: 15px;
+  font-size: 17px;
   color: rgba(250, 250, 247, 0.75);
   margin: 0 0 16px;
   line-height: 1.5;
@@ -308,7 +308,7 @@
   text-align: center;
   margin-top: 12px;
   color: rgba(250, 250, 247, 0.85);
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -327,7 +327,7 @@
   border-radius: var(--r-md);
   text-decoration: none;
   color: var(--black-900);
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
   transition: border-color .15s, background .15s;
 }
@@ -370,7 +370,7 @@
   text-align: center;
 }
 .vb-hero-eyebrow {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -390,7 +390,7 @@
 .vb-hero-rifa {
   font-family: var(--serif);
   font-style: italic;
-  font-size: 22px;
+  font-size: 24px;
   color: var(--mint);
   margin: 10px 0 0;
   letter-spacing: -0.005em;
@@ -403,7 +403,7 @@
   gap: 18px 14px;
 }
 .vb-grid-label {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -411,7 +411,7 @@
   margin: 0 0 4px;
 }
 .vb-grid-val {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--black-900);
   margin: 0;
@@ -422,7 +422,7 @@
 /* Premios */
 .vb-premio { padding: 4px 0; }
 .vb-premio-titulo {
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 700;
   color: var(--black-900);
   margin: 0 0 4px;
@@ -430,13 +430,13 @@
   line-height: 1.25;
 }
 .vb-premio-desc {
-  font-size: 15px;
+  font-size: 17px;
   color: var(--ink-soft);
   margin: 0 0 6px;
   line-height: 1.45;
 }
 .vb-premio-fecha {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--black-900);
   margin: 0;
@@ -453,7 +453,7 @@
   text-align: center;
 }
 .vb-canjear-eye {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -461,7 +461,7 @@
   margin: 0 0 4px;
 }
 .vb-canjear-monto {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 800;
   color: var(--black-900);
   letter-spacing: -0.025em;
@@ -476,7 +476,7 @@
 }
 
 .vb-cond {
-  font-size: 15px;
+  font-size: 17px;
   color: var(--ink-soft);
   margin: 0;
   line-height: 1.5;
@@ -495,7 +495,7 @@
 }
 
 .vb-legal {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--ink-mute);
   text-align: center;
   margin: 24px 4px 8px;
@@ -521,7 +521,7 @@
   padding: 10px 0;
   cursor: pointer;
   font-family: 'Inter', sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--black-900);
   user-select: none;
@@ -563,7 +563,7 @@
   font-weight: 500;
 }
 .vb-historial-monto {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--black-900);
   font-variant-numeric: tabular-nums;
@@ -620,7 +620,7 @@
   color: #FAFAF7;
   border-radius: 999px;
   font-family: 'Inter', sans-serif;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.01em;
   backdrop-filter: blur(8px);
@@ -656,7 +656,7 @@
   color: #FAFAF7;
   border-radius: 999px;
   font-family: 'Inter', sans-serif;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
@@ -690,6 +690,6 @@
   background: #9BFAB0;
 }
 @media (max-width: 380px) {
-  .vb-carousel-cap { font-size: 11px; padding: 5px 10px; }
+  .vb-carousel-cap { font-size: 13px; padding: 5px 10px; }
   .vb-carousel-arrow { width: 32px; height: 32px; }
 }
