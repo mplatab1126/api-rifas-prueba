@@ -229,29 +229,20 @@ function HouseHeroSlider({ items }) {
         {items.map((it, i) => (
           <div className={"hhs-slide" + (i === idx ? " active" : "")} key={i}>
             {it.tipo === "video" ? (
-              <button
-                type="button"
-                onClick={() => setVideoOpen(true)}
-                aria-label={`Ver: ${it.titulo}`}
-                style={{
-                  width: "100%", height: "100%", border: 0, padding: 0,
-                  position: "relative", cursor: "pointer",
-                  backgroundColor: "#0A0A0A",
-                  backgroundImage: `url(${it.posterUrl})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center"
-                }}
-              >
-                <span aria-hidden="true" style={{
-                  position: "absolute", inset: 0,
-                  background: "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.6) 100%)"
-                }} />
-                <span style={{
-                  position: "absolute", top: "50%", left: "50%",
-                  transform: "translate(-50%, -50%)",
-                  display: "flex", flexDirection: "column",
-                  alignItems: "center", gap: 14, pointerEvents: "none"
-                }}>
+              <React.Fragment>
+                <img src={it.posterUrl} alt={it.titulo} loading={i === 0 ? "eager" : "lazy"} />
+                <button
+                  type="button"
+                  onClick={() => setVideoOpen(true)}
+                  aria-label={`Ver: ${it.titulo}`}
+                  style={{
+                    position: "absolute", inset: 0,
+                    border: 0, padding: 0, cursor: "pointer",
+                    background: "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.6) 100%)",
+                    display: "flex", flexDirection: "column",
+                    alignItems: "center", justifyContent: "center", gap: 14
+                  }}
+                >
                   <span style={{
                     width: 76, height: 76, borderRadius: "50%",
                     background: "rgba(255, 255, 255, 0.95)",
@@ -268,8 +259,8 @@ function HouseHeroSlider({ items }) {
                   }}>
                     Ver video de la casa
                   </span>
-                </span>
-              </button>
+                </button>
+              </React.Fragment>
             ) : (
               <img src={it.url} alt={it.titulo} loading={i === 0 ? "eager" : "lazy"} />
             )}
