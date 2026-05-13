@@ -377,8 +377,10 @@ window.StepEscoger = function StepEscoger({ rifa, seleccionadas, setSeleccionada
           <CompIcon name="search" size={20} />
         </span>
         <input
-          type="text"
+          type="tel"
           inputMode="numeric"
+          pattern="[0-9]*"
+          autoComplete="off"
           className="cb-search-input"
           placeholder="Buscar número (ej: 1234)"
           value={busqueda}
