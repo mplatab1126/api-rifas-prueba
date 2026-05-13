@@ -1,7 +1,7 @@
 // ver-house-app.jsx — Flujo "Ver mi boleta" para La Plata House
 // Estructura idéntica al de La Perla Roja; cambia la rifa, los premios y las fotos.
 
-const { useState: useStateVerH } = React;
+const { useState: useStateVerH, useEffect: useEffectVerH } = React;
 
 function VerHouseApp() {
   const [step, setStep] = useStateVerH("buscar"); // 'buscar' | 'lista' | 'detalle'
@@ -12,20 +12,31 @@ function VerHouseApp() {
   const [boletaActiva, setBoletaActiva] = useStateVerH(null);
   const [error, setError] = useStateVerH(null);
   const [loading, setLoading] = useStateVerH(false);
+  // Si entramos por deep-link (?telefono=X&boleta=Y desde /boleta), ocultamos
+  // todo hasta que el fetch automático termine, para no mostrar el form parpadeando.
+  const [inicializando, setInicializando] = useStateVerH(() => {
+    if (typeof window === "undefined") return false;
+    return new URLSearchParams(window.location.search).has("telefono");
+  });
 
-  const buscar = async () => {
+  // Acepta opcionales paisArg/telArg/boletaArg para deep-link.
+  // Si no se pasan, usa el state actual (flujo manual del form).
+  const buscar = async (opts) => {
     if (loading) return;
+    const paisUsar = (opts && opts.pais) || pais;
+    const telUsar = (opts && opts.telefono) || telefono;
+    const boletaForzada = opts && opts.boleta;
     setError(null);
     setLoading(true);
     try {
-      const indicativo = (pais.code || "").replace(/\+/g, "");
-      const numeroCompleto = indicativo + telefono;
+      const indicativo = (paisUsar.code || "").replace(/\+/g, "");
+      const numeroCompleto = indicativo + telUsar;
       const res = await fetch("/api/abonar/cliente?telefono=" + encodeURIComponent(numeroCompleto));
       if (!res.ok) throw new Error("HTTP " + res.status);
       const data = await res.json();
 
       if (!data.encontrado || !Array.isArray(data.boletas) || data.boletas.length === 0) {
-        setError(`No encontramos boletas registradas con el número ${pais.code} ${telefono}. Verifica el número o escríbenos por WhatsApp.`);
+        setError(`No encontramos boletas registradas con el número ${paisUsar.code} ${telUsar}. Verifica el número o escríbenos por WhatsApp.`);
         setLoading(false);
         return;
       }
@@ -34,7 +45,7 @@ function VerHouseApp() {
         nombre: data.nombre || "Cliente",
         apellido: data.apellido || "",
         ciudad: data.ciudad || "",
-        telefono: data.telefono ? `${pais.code} ${String(data.telefono).replace(/\D/g, "").slice(-10)}` : `${pais.code} ${telefono}`,
+        telefono: data.telefono ? `${paisUsar.code} ${String(data.telefono).replace(/\D/g, "").slice(-10)}` : `${paisUsar.code} ${telUsar}`,
         documento: (data.documento_tipo || data.documento_numero)
           ? { tipo: data.documento_tipo || "CC", numero: data.documento_numero || "—" }
           : null,
@@ -42,6 +53,17 @@ function VerHouseApp() {
       };
 
       setCliente(found);
+
+      // Si vino una boleta forzada por URL y existe en el cliente, ir al detalle
+      if (boletaForzada) {
+        const b = found.boletas.find(x => String(x.numero) === String(boletaForzada).padStart(4, "0"));
+        if (b) {
+          setBoletaActiva(b);
+          setStep("detalle");
+          return;
+        }
+      }
+
       if (found.boletas.length === 1) {
         setBoletaActiva(found.boletas[0]);
         setStep("detalle");
@@ -56,6 +78,27 @@ function VerHouseApp() {
     }
   };
 
+  // Deep-link: si entró con ?telefono=X (y opcionalmente &boleta=Y), autobuscar
+  useEffectVerH(() => {
+    const params = new URLSearchParams(window.location.search);
+    const telParam = params.get("telefono");
+    const boletaParam = params.get("boleta");
+    if (!telParam) {
+      setInicializando(false);
+      return;
+    }
+    // Limpiar el teléfono recibido. Para Colombia, esperamos los últimos 10 dígitos.
+    const digits = telParam.replace(/\D/g, "");
+    let telCorto = digits;
+    if (digits.startsWith("57") && digits.length === 12) telCorto = digits.slice(2);
+    else if (digits.length > 10) telCorto = digits.slice(-10);
+    const paisInicial = window.PAISES[0]; // Colombia por defecto
+    setPais(paisInicial);
+    setTelefono(telCorto);
+    buscar({ pais: paisInicial, telefono: telCorto, boleta: boletaParam })
+      .finally(() => setInicializando(false));
+  }, []);
+
   const handleBack = () => {
     if (step === "buscar") { window.location.href = "/"; return; }
     if (step === "lista") { setStep("buscar"); return; }
@@ -69,6 +112,26 @@ function VerHouseApp() {
   const titulo = step === "detalle" && boletaActiva
     ? `Boleta N° ${boletaActiva.numero}`
     : step === "lista" ? "Mis boletas" : "Ver mi boleta";
+
+  // Loading inicial (deep-link cargando): pantalla limpia sin form parpadeando
+  if (inicializando) {
+    return (
+      <div style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "var(--cream-50, #FAFAF7)",
+        color: "var(--ink-mute, #6E6E6E)",
+        fontFamily: "Inter, sans-serif",
+        fontSize: 16,
+        padding: 20,
+        textAlign: "center"
+      }}>
+        Cargando tu boleta...
+      </div>
+    );
+  }
 
   return (
     <React.Fragment>

@@ -770,30 +770,22 @@
             body: JSON.stringify({ numero_boleta: boletaParam, telefono: inputPhone })
           });
           if (!response.ok) throw new Error("error");
-          const data = await response.json();
-          animarNumeroBoleta(data.numero);
-          document.getElementById('val-nombre').textContent = data.nombre;
-          document.getElementById('val-apellido').textContent = data.apellido;
-          document.getElementById('val-ciudad').textContent = data.ciudad;
-          document.getElementById('val-telefono').textContent = data.telefono;
-          const fmt = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 });
-          document.getElementById('val-abonado').textContent = fmt.format(data.total);
-          document.getElementById('val-restante').textContent = fmt.format(data.restante);
-          const totalBoleta = Number(data.total || 0) + Number(data.restante || 0);
-          animarProgreso(Number(data.total || 0), totalBoleta);
-
-          var overlay = document.getElementById('security-overlay');
-          overlay.style.transition = "opacity 0.5s ease";
-          overlay.style.opacity = '0';
-          setTimeout(() => overlay.style.display = 'none', 500);
+          // Validación correcta: redirigimos al detalle nuevo (paleta crema/negro/menta)
+          // con telefono + boleta como deep-link. La vista ya implementada en
+          // /ver-mi-boleta-la-plata-house se encarga de cargar y mostrar la boleta.
+          const telLimpio = String(inputPhone).replace(/\D/g, '');
+          const numLimpio = String(boletaParam).padStart(4, '0');
+          window.location.replace(
+            '/ver-mi-boleta-la-plata-house?telefono=' + encodeURIComponent(telLimpio)
+            + '&boleta=' + encodeURIComponent(numLimpio)
+          );
         } catch (error) {
           msgError.style.display = 'block';
-          msgError.textContent = "El numero no coincide con el titular.";
+          msgError.textContent = "El número no coincide con el titular.";
           var box = document.querySelector('.sec-box');
           box.style.transform = 'translateX(5px)';
           setTimeout(() => box.style.transform = 'translateX(-5px)', 100);
           setTimeout(() => box.style.transform = 'translateX(0)', 200);
-        } finally {
           btn.textContent = "Ver mi boleta";
           btn.disabled = false;
         }
