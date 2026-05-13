@@ -198,15 +198,110 @@ window.HouseLanding = function HouseLanding({ rifa, onComprar, tweaks }) {
       </div>
 
       {/* CTA final */}
-      <div className="cb-cta-wrap" style={{ marginTop: 32 }}>
+      <div className="cb-cta-wrap" style={{ marginTop: 32, marginBottom: 100 }}>
         <button className="cb-btn-primary dark" onClick={onComprar}>
           Comprar mi boleta ahora
           <CompIcon name="arrowRight" size={20} color="var(--house-accent)" />
         </button>
       </div>
+
+      {/* Barra inferior sticky: aparece al scrollear para que el CTA esté
+          siempre a un tap de distancia, sin tener que volver arriba */}
+      <StickyBuyBar onComprar={onComprar} rifa={rifa} />
     </React.Fragment>
   );
 };
+
+// ─── Sticky buy bar (aparece al scrollear, ocupada solo durante la landing) ───
+function StickyBuyBar({ onComprar, rifa }) {
+  const [visible, setVisible] = useHL(false);
+  useHE(() => {
+    const handler = () => setVisible(window.scrollY > 520);
+    handler();
+    window.addEventListener("scroll", handler, { passive: true });
+    return () => window.removeEventListener("scroll", handler);
+  }, []);
+
+  return (
+    <div
+      aria-hidden={!visible}
+      style={{
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        background: "rgba(250, 250, 247, 0.92)",
+        backdropFilter: "blur(14px) saturate(150%)",
+        WebkitBackdropFilter: "blur(14px) saturate(150%)",
+        borderTop: "1px solid rgba(10,10,10,0.08)",
+        padding: "12px 16px calc(12px + env(safe-area-inset-bottom, 0px))",
+        boxShadow: "0 -10px 30px rgba(0,0,0,0.08)",
+        transform: visible ? "translateY(0)" : "translateY(110%)",
+        transition: "transform 0.34s cubic-bezier(.3,.7,.4,1), opacity 0.34s",
+        opacity: visible ? 1 : 0,
+        zIndex: 90,
+        pointerEvents: visible ? "auto" : "none"
+      }}
+    >
+      <div style={{
+        maxWidth: 480,
+        margin: "0 auto",
+        display: "flex",
+        alignItems: "center",
+        gap: 14
+      }}>
+        <div style={{ flex: "0 0 auto", lineHeight: 1.1 }}>
+          <div style={{
+            fontSize: 12,
+            fontWeight: 600,
+            color: "#6E6E6E",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            marginBottom: 2
+          }}>
+            Cada boleta
+          </div>
+          <div style={{
+            fontSize: 19,
+            fontWeight: 800,
+            color: "#0A0A0A",
+            letterSpacing: "-0.01em"
+          }}>
+            {window.formatCOP(rifa.precioBoleta)}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onComprar}
+          style={{
+            flex: 1,
+            padding: "14px 16px",
+            background: "#9BFAB0",
+            color: "#0A0A0A",
+            border: 0,
+            borderRadius: 100,
+            fontFamily: "Inter, sans-serif",
+            fontWeight: 700,
+            fontSize: 16,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            whiteSpace: "nowrap",
+            boxShadow: "0 8px 20px rgba(155,250,176,0.4)",
+            transition: "background 0.18s, transform 0.18s"
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = "#C4FBD0"}
+          onMouseLeave={e => e.currentTarget.style.background = "#9BFAB0"}
+        >
+          Comprar mi boleta
+          <CompIcon name="arrowRight" size={18} />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // ─── Slider full-width del hero (foto + caption pill) ───
 function HouseHeroSlider({ items }) {
