@@ -969,10 +969,17 @@ Por favor envíenme la información para realizar el pago. ¡Gracias!`
           className="cb-btn-primary cb-btn-wa"
           onClick={reservarYAbrirWA}
           disabled={reservando}
-          style={reservando ? { opacity: 0.7, cursor: "not-allowed" } : undefined}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            whiteSpace: "nowrap",
+            ...(reservando ? { opacity: 0.7, cursor: "not-allowed" } : {})
+          }}
         >
-          <CompIcon name="wa" size={20} color="currentColor" />
-          {reservando ? "Apartando su boleta..." : "Reclamar mi boleta por WhatsApp"}
+          <CompIcon name="wa" size={22} color="currentColor" />
+          <span>{reservando ? "Apartando..." : "Apartar mi boleta"}</span>
         </button>
         <p className="cb-confirm-tagline">
           Le respondemos en pocos minutos en horario hábil.
