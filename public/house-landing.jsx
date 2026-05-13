@@ -105,6 +105,7 @@ window.HouseLanding = function HouseLanding({ rifa, onComprar, tweaks }) {
               <img className="hp-icon" src={window.ICONS_3D.money} alt="" />
               <h3 className="hp-prize">$5.000.000</h3>
               <p className="hp-prize-sub">cada sábado</p>
+              <p className="hp-loteria">Juega con Lotería de Boyacá</p>
             </div>
           </article>
 
@@ -119,6 +120,7 @@ window.HouseLanding = function HouseLanding({ rifa, onComprar, tweaks }) {
               <p className="hp-prize-name">El Sueldazo</p>
               <h3 className="hp-prize">$1.500.000</h3>
               <p className="hp-prize-sub">cada mes · durante 6 meses</p>
+              <p className="hp-loteria">Juega con Lotería de Manizales</p>
             </div>
           </article>
 
@@ -133,6 +135,7 @@ window.HouseLanding = function HouseLanding({ rifa, onComprar, tweaks }) {
               <p className="hp-prize-name">La Plata House</p>
               <h3 className="hp-prize">Una casa</h3>
               <p className="hp-prize-sub">o $300.000.000 en efectivo</p>
+              <p className="hp-loteria">Juega con Lotería de Boyacá</p>
             </div>
           </article>
         </div>
