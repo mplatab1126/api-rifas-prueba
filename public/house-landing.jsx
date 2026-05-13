@@ -209,6 +209,7 @@ window.HouseLanding = function HouseLanding({ rifa, onComprar, tweaks }) {
 // ─── Slider full-width del hero (foto + caption pill) ───
 function HouseHeroSlider({ items }) {
   const [idx, setIdx] = useHL(0);
+  const [videoOpen, setVideoOpen] = useHL(false);
   const total = items.length;
   const go = (dir) => setIdx(prev => (prev + dir + total) % total);
 
@@ -228,15 +229,47 @@ function HouseHeroSlider({ items }) {
         {items.map((it, i) => (
           <div className={"hhs-slide" + (i === idx ? " active" : "")} key={i}>
             {it.tipo === "video" ? (
-              <iframe
-                src={`https://www.youtube-nocookie.com/embed/${it.videoId}?rel=0&modestbranding=1&playsinline=1`}
-                title={it.titulo}
-                style={{ width: "100%", height: "100%", border: 0, display: "block", background: "#0A0A0A" }}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                referrerPolicy="strict-origin-when-cross-origin"
-                allowFullScreen
-                loading={i === 0 ? "eager" : "lazy"}
-              />
+              <button
+                type="button"
+                onClick={() => setVideoOpen(true)}
+                aria-label={`Ver: ${it.titulo}`}
+                style={{
+                  width: "100%", height: "100%", border: 0, padding: 0,
+                  position: "relative", cursor: "pointer",
+                  backgroundColor: "#0A0A0A",
+                  backgroundImage: `url(${it.posterUrl})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center"
+                }}
+              >
+                <span aria-hidden="true" style={{
+                  position: "absolute", inset: 0,
+                  background: "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.6) 100%)"
+                }} />
+                <span style={{
+                  position: "absolute", top: "50%", left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  display: "flex", flexDirection: "column",
+                  alignItems: "center", gap: 14, pointerEvents: "none"
+                }}>
+                  <span style={{
+                    width: 76, height: 76, borderRadius: "50%",
+                    background: "rgba(255, 255, 255, 0.95)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    boxShadow: "0 10px 28px rgba(0,0,0,0.35)"
+                  }}>
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="#0A0A0A" aria-hidden="true">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  </span>
+                  <span style={{
+                    fontSize: 15, fontWeight: 600, color: "white",
+                    letterSpacing: "0.02em", textShadow: "0 2px 8px rgba(0,0,0,0.6)"
+                  }}>
+                    Ver video de la casa
+                  </span>
+                </span>
+              </button>
             ) : (
               <img src={it.url} alt={it.titulo} loading={i === 0 ? "eager" : "lazy"} />
             )}
@@ -263,6 +296,73 @@ function HouseHeroSlider({ items }) {
             aria-label={`Ir a la foto ${i + 1}`}
           />
         ))}
+      </div>
+
+      {videoOpen && (() => {
+        const v = items.find(it => it.tipo === "video");
+        return v ? <VideoLightbox videoId={v.videoId} titulo={v.titulo} onClose={() => setVideoOpen(false)} /> : null;
+      })()}
+    </div>
+  );
+}
+
+// ─── Lightbox del video (pantalla completa, aspect 16:9 correcto) ───
+function VideoLightbox({ videoId, titulo, onClose }) {
+  useHE(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, []);
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0,
+        background: "rgba(0,0,0,0.94)",
+        zIndex: 9999,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "0 12px"
+      }}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Cerrar video"
+        style={{
+          position: "fixed", top: 16, right: 16,
+          width: 42, height: 42, borderRadius: "50%",
+          border: 0, background: "rgba(255,255,255,0.15)",
+          color: "white", fontSize: 20, cursor: "pointer",
+          backdropFilter: "blur(8px)",
+          display: "flex", alignItems: "center", justifyContent: "center"
+        }}
+      >
+        ✕
+      </button>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "100%", maxWidth: 960,
+          aspectRatio: "16 / 9",
+          borderRadius: 12, overflow: "hidden",
+          boxShadow: "0 24px 64px rgba(0,0,0,0.5)",
+          background: "#000"
+        }}
+      >
+        <iframe
+          src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&autoplay=1&playsinline=1`}
+          title={titulo}
+          style={{ width: "100%", height: "100%", border: 0, display: "block" }}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerPolicy="strict-origin-when-cross-origin"
+          allowFullScreen
+        />
       </div>
     </div>
   );
