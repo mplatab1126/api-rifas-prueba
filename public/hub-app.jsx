@@ -54,11 +54,15 @@ function HubSaludo() {
 
 function TarjetaHub({ tarjeta, destacada }) {
   const isExternal = tarjeta.href.startsWith('http');
+  const proximamente = !!tarjeta.proximamente;
   return (
     <a
       href={tarjeta.href}
       target={isExternal ? "_blank" : undefined}
       rel={isExternal ? "noreferrer" : undefined}
+      onClick={proximamente ? (e) => e.preventDefault() : undefined}
+      aria-disabled={proximamente ? "true" : undefined}
+      style={proximamente ? { opacity: 0.55, cursor: 'not-allowed' } : undefined}
       className={`tarjeta tarjeta-${tarjeta.color} ${destacada ? 'tarjeta-destacada' : ''}`}
     >
       <div className="tarjeta-icono tarjeta-icono-3d">

@@ -27,14 +27,18 @@ const HUB_TARJETAS = [
     titulo: "Oficina y documentos",
     icono3d: "assets/icon-3d-shield.png",
     color: "teal",
-    href: "#oficina"
+    href: "#",
+    proximamente: true,
+    badge: "Próximamente"
   },
   {
     id: "ganadores",
     titulo: "Ganadores anteriores",
     icono3d: "assets/icon-3d-trophy.png",
     color: "amber",
-    href: "#ganadores"
+    href: "#",
+    proximamente: true,
+    badge: "Próximamente"
   }
 ];
 
