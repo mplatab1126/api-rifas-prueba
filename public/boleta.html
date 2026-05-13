@@ -5,20 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0A0A0A">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Boleta Digital - La Perla Roja</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <title>Boleta Digital - La Plata House</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
       :root {
         --dark: #0A0A0A;
         --card: #111111;
+        --card-soft: #161616;
         --border: rgba(255,255,255,0.06);
+        --border-warm: rgba(201,169,97,0.18);
         --white: #ffffff;
         --gray: #888;
         --light-gray: #bbb;
-        --accent: #C41E3A;
+        --accent: #C9A961;
+        --accent-soft: #d8be7c;
+        --green: #22c55e;
+        --red: #ef4444;
       }
       * { margin: 0; padding: 0; box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
       body {
         background: var(--dark);
         font-family: 'Montserrat', sans-serif;
@@ -39,15 +47,27 @@
         text-align: center;
         padding-bottom: 2rem;
       }
-      .hero-img {
+      .hero-img-wrap {
+        position: relative;
         width: 100%;
-        height: 340px;
-        object-fit: cover;
+        height: 360px;
+        overflow: hidden;
         mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
         -webkit-mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
       }
+      .hero-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        animation: kenburns 24s ease-in-out infinite alternate;
+        transform-origin: center center;
+      }
+      @keyframes kenburns {
+        0%   { transform: scale(1.02) translate(0, 0); }
+        100% { transform: scale(1.12) translate(-1.5%, -1.5%); }
+      }
       .hero-content {
-        margin-top: -100px;
+        margin-top: -110px;
         position: relative;
         z-index: 2;
         padding: 0 20px;
@@ -66,30 +86,32 @@
         font-weight: 600;
       }
       .hero-number {
-        font-family: 'Playfair Display', serif;
-        font-size: 4.5rem;
-        font-weight: 700;
+        font-family: 'Cormorant Garamond', 'Playfair Display', serif;
+        font-size: 4.8rem;
+        font-weight: 600;
         line-height: 1;
         margin: 4px 0;
         color: var(--white);
+        letter-spacing: 0.02em;
       }
       .hero-rifa {
-        font-family: 'Playfair Display', serif;
+        font-family: 'Cormorant Garamond', 'Playfair Display', serif;
         font-style: italic;
-        font-size: 1rem;
+        font-size: 1.15rem;
         color: var(--accent);
-        margin-top: 2px;
+        margin-top: 4px;
+        letter-spacing: 0.03em;
       }
 
-      /* DATOS */
-      .datos {
-        margin: 0 20px 24px;
+      /* SECCIONES BASE */
+      .section { margin: 0 20px 24px; }
+      .section-card {
         padding: 20px;
         background: var(--card);
-        border-radius: 12px;
+        border-radius: 14px;
         border: 1px solid var(--border);
       }
-      .datos-title {
+      .section-title {
         font-size: 10px;
         letter-spacing: 2px;
         text-transform: uppercase;
@@ -98,6 +120,8 @@
         margin-bottom: 16px;
         font-weight: 600;
       }
+
+      /* DATOS */
       .datos-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -114,17 +138,88 @@
         display: flex;
         justify-content: space-between;
       }
-      .dato-green { color: #22c55e; font-size: 1.1rem; font-weight: 700; }
-      .dato-red { color: #ef4444; font-size: 1.1rem; font-weight: 700; }
+      .dato-green { color: var(--green); font-size: 1.1rem; font-weight: 700; }
+      .dato-red { color: var(--red); font-size: 1.1rem; font-weight: 700; }
+
+      /* PROGRESO DE PAGO */
+      .progress-wrap { margin-top: 14px; }
+      .progress-track {
+        height: 6px;
+        background: rgba(255,255,255,0.06);
+        border-radius: 100px;
+        overflow: hidden;
+      }
+      .progress-fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, var(--accent), var(--accent-soft));
+        border-radius: 100px;
+        transition: width 1.1s cubic-bezier(.22,.61,.36,1);
+      }
+      .progress-meta {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 8px;
+        font-size: 10px;
+        color: var(--gray);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+      .progress-percent { color: var(--accent); font-weight: 700; }
+
+      /* DETALLES DE LA CASA */
+      .casa-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+      .casa-item {
+        background: var(--card-soft);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 8px;
+        text-align: center;
+      }
+      .casa-icon {
+        width: 26px;
+        height: 26px;
+        margin: 0 auto 6px;
+        display: block;
+        stroke: var(--accent);
+        fill: none;
+        stroke-width: 1.6;
+      }
+      .casa-num {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.4rem;
+        font-weight: 600;
+        line-height: 1;
+      }
+      .casa-cap {
+        font-size: 9px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--gray);
+        margin-top: 4px;
+      }
+      .casa-ubicacion {
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--light-gray);
+      }
+      .casa-ubicacion svg { stroke: var(--accent); }
 
       /* GALERIA */
-      .gallery {
-        padding: 0 20px 24px;
-      }
       .gallery-viewer {
         width: 100%;
-        height: 300px;
-        border-radius: 12px;
+        height: 320px;
+        border-radius: 14px;
         overflow: hidden;
         margin-bottom: 12px;
         position: relative;
@@ -134,18 +229,35 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: opacity 0.3s;
+        transition: opacity 0.3s, transform 8s ease-out;
       }
+      .gallery-viewer img.zooming { transform: scale(1.06); }
       .gallery-hint {
         position: absolute;
         bottom: 12px;
         left: 50%;
         transform: translateX(-50%);
         background: rgba(0,0,0,0.6);
-        padding: 4px 14px;
+        padding: 5px 14px;
         border-radius: 20px;
         font-size: 11px;
-        color: rgba(255,255,255,0.7);
+        color: rgba(255,255,255,0.75);
+        letter-spacing: 0.5px;
+        backdrop-filter: blur(4px);
+      }
+      .gallery-caption {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        background: rgba(0,0,0,0.55);
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--accent);
+        font-weight: 600;
+        backdrop-filter: blur(4px);
       }
       .thumbs {
         display: flex;
@@ -156,44 +268,28 @@
       }
       .thumbs::-webkit-scrollbar { display: none; }
       .th {
-        flex: 0 0 56px;
-        height: 56px;
+        flex: 0 0 60px;
+        height: 60px;
         border-radius: 8px;
         overflow: hidden;
         opacity: 0.4;
-        transition: 0.3s;
+        transition: opacity 0.3s, border-color 0.3s, transform 0.3s;
         cursor: pointer;
         border: 2px solid transparent;
       }
       .th img { width: 100%; height: 100%; object-fit: cover; }
-      .th.active { opacity: 1; border-color: var(--accent); }
+      .th.active { opacity: 1; border-color: var(--accent); transform: scale(1.04); }
 
       /* PREMIOS */
-      .premios {
-        margin: 0 20px 24px;
-        padding: 20px;
-        background: var(--card);
-        border-radius: 12px;
-        border: 1px solid var(--border);
-      }
-      .premios-title {
-        font-size: 10px;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        color: var(--gray);
-        text-align: center;
-        margin-bottom: 16px;
-        font-weight: 600;
-      }
       .premio {
-        padding: 12px 0;
+        padding: 14px 0;
         border-bottom: 1px solid var(--border);
       }
       .premio:last-child { border-bottom: none; }
       .premio-name {
         font-size: 15px;
         font-weight: 700;
-        margin-bottom: 2px;
+        margin-bottom: 3px;
       }
       .premio-detail {
         font-size: 12px;
@@ -204,7 +300,20 @@
         font-size: 11px;
         color: var(--accent);
         font-weight: 600;
-        margin-top: 4px;
+        margin-top: 5px;
+        letter-spacing: 0.5px;
+      }
+      .premio-mayor {
+        background: linear-gradient(180deg, rgba(201,169,97,0.06), rgba(201,169,97,0));
+        border: 1px solid var(--border-warm);
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 10px;
+      }
+      .premio-mayor .premio-name {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.5rem;
+        font-weight: 600;
       }
       .efectivo {
         margin-top: 16px;
@@ -212,6 +321,7 @@
         text-align: center;
         border: 1px solid var(--border);
         border-radius: 10px;
+        background: var(--card-soft);
       }
       .efectivo-label {
         font-size: 11px;
@@ -220,32 +330,19 @@
         text-transform: uppercase;
       }
       .efectivo-amount {
-        font-size: 1.4rem;
-        font-weight: 800;
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.7rem;
+        font-weight: 700;
         margin-top: 4px;
+        color: var(--accent);
       }
 
       /* CONDICIONES */
-      .condiciones {
-        margin: 0 20px 24px;
-        padding: 20px;
-        background: var(--card);
-        border-radius: 12px;
-        border: 1px solid var(--border);
-      }
-      .condiciones-title {
-        font-size: 10px;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        color: var(--gray);
-        margin-bottom: 12px;
-        font-weight: 600;
-      }
       .condicion {
         font-size: 13px;
         color: var(--light-gray);
         line-height: 1.5;
-        padding: 8px 0;
+        padding: 10px 0;
         border-bottom: 1px solid var(--border);
       }
       .condicion:last-child { border-bottom: none; }
@@ -253,7 +350,7 @@
 
       /* FOOTER */
       .footer {
-        padding: 24px 20px 90px;
+        padding: 24px 20px 100px;
         text-align: center;
       }
       .footer-logo {
@@ -303,6 +400,14 @@
       }
       .btn-download:active { transform: scale(0.97); }
 
+      /* SCROLL REVEAL */
+      .reveal {
+        opacity: 0;
+        transform: translateY(18px);
+        transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+      }
+      .reveal.is-visible { opacity: 1; transform: translateY(0); }
+
       /* SEGURIDAD */
       #security-overlay {
         position: fixed;
@@ -326,9 +431,10 @@
       }
       .sec-icon { font-size: 2.5rem; margin-bottom: 16px; display: block; }
       .sec-title {
-        font-family: 'Playfair Display', serif;
-        font-size: 1.3rem;
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.4rem;
         margin-bottom: 8px;
+        font-weight: 600;
       }
       .sec-desc { font-size: 13px; color: var(--gray); margin-bottom: 20px; line-height: 1.5; }
       .sec-input {
@@ -360,7 +466,7 @@
         text-transform: uppercase;
       }
       .sec-error {
-        color: #ef4444;
+        color: var(--red);
         font-size: 12px;
         margin-top: 10px;
         display: none;
@@ -371,6 +477,14 @@
         font-size: 11px;
       }
       .sec-help a { color: var(--accent); text-decoration: none; }
+
+      /* MOTION REDUCED */
+      @media (prefers-reduced-motion: reduce) {
+        .hero-img { animation: none; }
+        .reveal { opacity: 1; transform: none; transition: none; }
+        .progress-fill { transition: none; }
+        html { scroll-behavior: auto; }
+      }
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -394,84 +508,151 @@
 
       <!-- HERO -->
       <section class="hero">
-        <img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+11.png" class="hero-img" crossOrigin="anonymous">
+        <div class="hero-img-wrap">
+          <img src="https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Cocina.jpg" class="hero-img" crossOrigin="anonymous" alt="">
+        </div>
         <div class="hero-content">
           <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata" class="hero-logo">
           <div class="hero-label">Boleta digital</div>
           <div class="hero-number" id="val-numero">0000</div>
-          <div class="hero-rifa">La Perla Roja</div>
+          <div class="hero-rifa">La Plata House</div>
         </div>
       </section>
 
       <!-- DATOS DEL TITULAR -->
-      <section class="datos">
-        <div class="datos-title">Titular de la boleta</div>
-        <div class="datos-grid">
-          <div><div class="dato-label">Nombre</div><div class="dato-value"><span id="val-nombre">---</span> <span id="val-apellido"></span></div></div>
-          <div><div class="dato-label">Ciudad</div><div class="dato-value"><span id="val-ciudad">---</span></div></div>
-          <div><div class="dato-label">Celular</div><div class="dato-value"><span id="val-telefono">---</span></div></div>
-          <div><div class="dato-label">Sorteo</div><div class="dato-value">Loteria de Boyaca</div></div>
+      <section class="section reveal">
+        <div class="section-card">
+          <div class="section-title">Titular de la boleta</div>
+          <div class="datos-grid">
+            <div><div class="dato-label">Nombre</div><div class="dato-value"><span id="val-nombre">---</span> <span id="val-apellido"></span></div></div>
+            <div><div class="dato-label">Ciudad</div><div class="dato-value"><span id="val-ciudad">---</span></div></div>
+            <div><div class="dato-label">Celular</div><div class="dato-value"><span id="val-telefono">---</span></div></div>
+            <div><div class="dato-label">Sorteo</div><div class="dato-value">Loteria de Boyaca</div></div>
+          </div>
+          <hr class="datos-divider">
+          <div class="datos-financial">
+            <div><div class="dato-label">Abonado</div><div class="dato-green" id="val-abonado">$0</div></div>
+            <div style="text-align:right"><div class="dato-label">Saldo pendiente</div><div class="dato-red" id="val-restante">$0</div></div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="progress-meta">
+              <span>Avance de tu boleta</span>
+              <span class="progress-percent" id="progressLabel">0%</span>
+            </div>
+          </div>
         </div>
-        <hr class="datos-divider">
-        <div class="datos-financial">
-          <div><div class="dato-label">Abonado</div><div class="dato-green" id="val-abonado">$0</div></div>
-          <div style="text-align:right"><div class="dato-label">Saldo pendiente</div><div class="dato-red" id="val-restante">$0</div></div>
+      </section>
+
+      <!-- DETALLES DE LA CASA -->
+      <section class="section reveal">
+        <div class="section-card">
+          <div class="section-title">Detalles de la casa</div>
+          <div class="casa-grid">
+            <div class="casa-item">
+              <svg class="casa-icon" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a2 2 0 01-2 2h-3v-7H8v7H5a2 2 0 01-2-2v-9z"/></svg>
+              <div class="casa-num">120</div>
+              <div class="casa-cap">m² construidos</div>
+            </div>
+            <div class="casa-item">
+              <svg class="casa-icon" viewBox="0 0 24 24"><path d="M3 18v-7a2 2 0 012-2h14a2 2 0 012 2v7M3 18h18M6 9V7a2 2 0 012-2h8a2 2 0 012 2v2"/></svg>
+              <div class="casa-num">3</div>
+              <div class="casa-cap">Habitaciones</div>
+            </div>
+            <div class="casa-item">
+              <svg class="casa-icon" viewBox="0 0 24 24"><path d="M4 13h16v3a4 4 0 01-4 4H8a4 4 0 01-4-4v-3zM7 13V6a2 2 0 014 0M12 8h4"/></svg>
+              <div class="casa-num">3</div>
+              <div class="casa-cap">Baños</div>
+            </div>
+            <div class="casa-item">
+              <svg class="casa-icon" viewBox="0 0 24 24"><path d="M3 5h18v13H3zM3 8h18M7 5V3m10 2V3M9 12l4 2-4 2v-4z"/></svg>
+              <div class="casa-num">1</div>
+              <div class="casa-cap">Sala de cine</div>
+            </div>
+            <div class="casa-item">
+              <svg class="casa-icon" viewBox="0 0 24 24"><path d="M3 14l1.5-5A2 2 0 016.5 7.5h11a2 2 0 011.94 1.5L21 14M3 14v4h3v-2h12v2h3v-4M3 14h18M7 17a1 1 0 100-2 1 1 0 000 2zm10 0a1 1 0 100-2 1 1 0 000 2z"/></svg>
+              <div class="casa-num">2</div>
+              <div class="casa-cap">Parqueaderos</div>
+            </div>
+            <div class="casa-item">
+              <svg class="casa-icon" viewBox="0 0 24 24"><path d="M4 7h16v12H4zM8 11h8M8 15h5M8 3v4M16 3v4"/></svg>
+              <div class="casa-num">2</div>
+              <div class="casa-cap">Pisos</div>
+            </div>
+          </div>
+          <div class="casa-ubicacion">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span>Chinchiná, Caldas · Conjunto cerrado</span>
+          </div>
         </div>
       </section>
 
       <!-- GALERIA -->
-      <section class="gallery">
+      <section class="section reveal">
         <div class="gallery-viewer" id="mainImageViewer">
-          <img id="activeImage" src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+11.png" crossOrigin="anonymous">
+          <img id="activeImage" src="https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Comedor+foto+1.jpg" crossOrigin="anonymous" alt="">
+          <div class="gallery-caption" id="galleryCaption">Comedor</div>
           <div class="gallery-hint">Desliza para ver mas</div>
         </div>
         <div class="thumbs" id="thumbCarousel">
-          <div class="th active"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+11.png" crossOrigin="anonymous"></div>
-          <div class="th"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+3.png" crossOrigin="anonymous"></div>
-          <div class="th"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+5.png" crossOrigin="anonymous"></div>
-          <div class="th"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+1.png" crossOrigin="anonymous"></div>
-          <div class="th"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+2.png" crossOrigin="anonymous"></div>
-          <div class="th"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+6.png" crossOrigin="anonymous"></div>
-          <div class="th"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+8.png" crossOrigin="anonymous"></div>
-          <div class="th"><img src="https://losplata.s3.us-east-2.amazonaws.com/La+perla+roja/Perla+10.png" crossOrigin="anonymous"></div>
+          <div class="th active" data-caption="Comedor"><img src="https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Comedor+foto+1.jpg" crossOrigin="anonymous"></div>
+          <div class="th" data-caption="Habitación principal"><img src="https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Habitacio%CC%81n+principal+foto+1.jpg" crossOrigin="anonymous"></div>
+          <div class="th" data-caption="Habitación principal"><img src="https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Habitacio%CC%81n+principal+foto+2.jpg" crossOrigin="anonymous"></div>
+          <div class="th" data-caption="Sala de cine"><img src="https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Cine+foto+1.jpg" crossOrigin="anonymous"></div>
+          <div class="th" data-caption="Escaleras"><img src="https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Escaleras.jpg" crossOrigin="anonymous"></div>
+          <div class="th" data-caption="Habitación secundaria"><img src="https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Habitacio%CC%81n+secundaria+foto+1.jpg" crossOrigin="anonymous"></div>
+          <div class="th" data-caption="Baño habitación principal"><img src="https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Ban%CC%83o+habitacio%CC%81n+principal.jpg" crossOrigin="anonymous"></div>
+          <div class="th" data-caption="Baño social piso 2"><img src="https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Ban%CC%83o+social+piso+2.jpg" crossOrigin="anonymous"></div>
+          <div class="th" data-caption="Baño social piso 1"><img src="https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Ban%CC%83o+social+piso+1.jpg" crossOrigin="anonymous"></div>
         </div>
       </section>
 
       <!-- PREMIOS -->
-      <section class="premios">
-        <div class="premios-title">Premios</div>
+      <section class="section reveal">
+        <div class="section-card">
+          <div class="section-title">Premios</div>
 
-        <div class="premio">
-          <div class="premio-name">Nissan Frontier 2023 + KTM Duke 200</div>
-          <div class="premio-detail">Camioneta totalmente equipada y moto 0km modelo 2026.</div>
-          <div class="premio-date">Premio Mayor — 2 de mayo</div>
-        </div>
+          <div class="premio-mayor">
+            <div class="premio-name">La Plata House — Casa Santa Teresita</div>
+            <div class="premio-detail">Casa de 2 pisos totalmente equipada en Chinchiná, Caldas. Sala de cine, 3 habitaciones, 3 baños y parqueaderos.</div>
+            <div class="premio-date">Premio Mayor — Sábado 4 de julio · Lotería de Boyacá</div>
+          </div>
 
-        <div class="premio">
-          <div class="premio-name">Yamaha NMAX 2026</div>
-          <div class="premio-detail">Moto 0 kilometros. Abona minimo $40.000 y ya participas.</div>
-          <div class="premio-date">Premio Anticipado — 18 de abril</div>
-        </div>
+          <div class="premio">
+            <div class="premio-name">El Sueldazo</div>
+            <div class="premio-detail">$1.500.000 mensuales durante 6 meses ($9.000.000 totales).</div>
+            <div class="premio-date">Premio Adicional — Miércoles 3 de junio · Lotería de Manizales</div>
+          </div>
 
-        <div class="efectivo">
-          <div class="efectivo-label">O recibe en efectivo</div>
-          <div class="efectivo-amount">120 MILLONES</div>
+          <div class="premio">
+            <div class="premio-name">Sábado de Premios</div>
+            <div class="premio-detail">$5.000.000 en efectivo cada sábado durante los 7 sábados previos al sorteo mayor.</div>
+            <div class="premio-date">Todos los sábados · Lotería de Boyacá</div>
+          </div>
+
+          <div class="efectivo">
+            <div class="efectivo-label">O recibe en efectivo</div>
+            <div class="efectivo-amount">$300 MILLONES</div>
+          </div>
         </div>
       </section>
 
       <!-- CONDICIONES -->
-      <section class="condiciones">
-        <div class="condiciones-title">Condiciones para ganar</div>
-        <div class="condicion"><strong>NMAX (18 de abril):</strong> Abona minimo $40.000 antes de esa fecha.</div>
-        <div class="condicion"><strong>Frontier + Duke (2 de mayo):</strong> Boleta 100% pagada ($80.000).</div>
-        <div class="condicion">Todos los sorteos juegan con la <strong>Loteria de Boyaca</strong> (ultimas 4 cifras).</div>
+      <section class="section reveal">
+        <div class="section-card">
+          <div class="section-title">Condiciones para ganar</div>
+          <div class="condicion"><strong>Sábados ($5.000.000):</strong> Debes abonar mínimo $20.000 en esa semana. El abono no se acumula entre semanas.</div>
+          <div class="condicion"><strong>Sueldazo (3 de junio):</strong> Abona mínimo $50.000 antes de esa fecha.</div>
+          <div class="condicion"><strong>La Plata House (4 de julio):</strong> Boleta 100% pagada ($150.000) al momento del sorteo.</div>
+          <div class="condicion">El número ganador son las <strong>últimas 4 cifras</strong> del resultado oficial de la lotería (Boyacá para Mayor y Semanales · Manizales para el Sueldazo).</div>
+        </div>
       </section>
 
       <!-- FOOTER -->
       <footer class="footer">
         <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata" class="footer-logo">
         <div class="footer-text">Los Plata S.A.S.</div>
-        <div class="footer-legal">Documento oficial de participacion en la Rifa "La Perla Roja". Premio mayor: 02 de mayo de 2026 con Loteria de Boyaca. Aplican terminos y condiciones.</div>
+        <div class="footer-legal">Documento oficial de participación en la Rifa "La Plata House" (Casa Santa Teresita). LOS PLATA S.A.S. · NIT 902.003.134-4. Premio mayor: sábado 4 de julio de 2026 con Lotería de Boyacá. Aplican términos y condiciones.</div>
       </footer>
 
     </div>
@@ -492,6 +673,38 @@
       }
       document.getElementById('lbl-boleta').textContent = boletaParam;
 
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      function animarNumeroBoleta(targetStr) {
+        const el = document.getElementById('val-numero');
+        const target = parseInt(targetStr, 10);
+        if (prefersReduced || isNaN(target)) {
+          el.textContent = String(targetStr).padStart(4, '0');
+          return;
+        }
+        const duration = 1100;
+        const start = performance.now();
+        function tick(now) {
+          const t = Math.min(1, (now - start) / duration);
+          const eased = 1 - Math.pow(1 - t, 3);
+          const val = Math.floor(eased * target);
+          el.textContent = String(val).padStart(4, '0');
+          if (t < 1) requestAnimationFrame(tick);
+          else el.textContent = String(targetStr).padStart(4, '0');
+        }
+        requestAnimationFrame(tick);
+      }
+
+      function animarProgreso(abonado, total) {
+        const fill = document.getElementById('progressFill');
+        const label = document.getElementById('progressLabel');
+        const pct = total > 0 ? Math.min(100, Math.round((abonado / total) * 100)) : 0;
+        setTimeout(() => {
+          fill.style.width = pct + '%';
+          label.textContent = pct + '%';
+        }, 250);
+      }
+
       async function verificarIdentidad() {
         const inputPhone = document.getElementById('inputPhone').value;
         const btn = document.getElementById('btnVerificar');
@@ -507,7 +720,7 @@
           });
           if (!response.ok) throw new Error("error");
           const data = await response.json();
-          document.getElementById('val-numero').textContent = data.numero;
+          animarNumeroBoleta(data.numero);
           document.getElementById('val-nombre').textContent = data.nombre;
           document.getElementById('val-apellido').textContent = data.apellido;
           document.getElementById('val-ciudad').textContent = data.ciudad;
@@ -515,6 +728,9 @@
           const fmt = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 });
           document.getElementById('val-abonado').textContent = fmt.format(data.total);
           document.getElementById('val-restante').textContent = fmt.format(data.restante);
+          const totalBoleta = Number(data.total || 0) + Number(data.restante || 0);
+          animarProgreso(Number(data.total || 0), totalBoleta);
+
           var overlay = document.getElementById('security-overlay');
           overlay.style.transition = "opacity 0.5s ease";
           overlay.style.opacity = '0';
@@ -532,21 +748,62 @@
         }
       }
 
+      // PREVIEW MODE: agrega ?preview=1 a la URL para ver la boleta con datos demo
+      // (no toca el backend, solo es para revisar el diseño)
+      if (urlParams.has('preview')) {
+        const numeroDemo = boletaParam !== '0000' ? boletaParam : '5560';
+        animarNumeroBoleta(numeroDemo);
+        document.getElementById('val-nombre').textContent = 'Alejandro';
+        document.getElementById('val-apellido').textContent = 'Plata';
+        document.getElementById('val-ciudad').textContent = 'Chinchiná';
+        document.getElementById('val-telefono').textContent = '3138602023';
+        const fmtPv = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 });
+        const abonadoDemo = 30000;
+        const restanteDemo = 50000;
+        document.getElementById('val-abonado').textContent = fmtPv.format(abonadoDemo);
+        document.getElementById('val-restante').textContent = fmtPv.format(restanteDemo);
+        animarProgreso(abonadoDemo, abonadoDemo + restanteDemo);
+        document.getElementById('security-overlay').style.display = 'none';
+      }
+
+      // SCROLL REVEAL
+      (function(){
+        if (prefersReduced) {
+          document.querySelectorAll('.reveal').forEach(el => el.classList.add('is-visible'));
+          return;
+        }
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach(e => {
+            if (e.isIntersecting) {
+              e.target.classList.add('is-visible');
+              io.unobserve(e.target);
+            }
+          });
+        }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+        document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+      })();
+
       // GALERIA
       (function(){
         const mainImg = document.getElementById('activeImage');
+        const caption = document.getElementById('galleryCaption');
         const viewer = document.getElementById('mainImageViewer');
         const thumbs = document.querySelectorAll('.th');
         let ci = 0;
         const total = thumbs.length;
         function set(i) {
-          mainImg.style.opacity = 0.5;
+          if (i === ci) return;
+          mainImg.classList.remove('zooming');
+          mainImg.style.opacity = 0.4;
           setTimeout(() => {
-            mainImg.src = thumbs[i].querySelector('img').src;
+            const t = thumbs[i];
+            mainImg.src = t.querySelector('img').src;
+            caption.textContent = t.dataset.caption || '';
             mainImg.style.opacity = 1;
-            thumbs.forEach(t => t.classList.remove('active'));
-            thumbs[i].classList.add('active');
-            thumbs[i].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            requestAnimationFrame(() => mainImg.classList.add('zooming'));
+            thumbs.forEach(x => x.classList.remove('active'));
+            t.classList.add('active');
+            t.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
             ci = i;
           }, 150);
         }
@@ -554,6 +811,10 @@
         let sx = 0, ex = 0;
         viewer.addEventListener('touchstart', e => { sx = e.changedTouches[0].screenX; }, {passive: true});
         viewer.addEventListener('touchend', e => { ex = e.changedTouches[0].screenX; const d = 50; if (ex < sx - d) set((ci+1)%total); if (ex > sx + d) set((ci-1+total)%total); }, {passive: true});
+        // Activa el zoom Ken Burns suave en la primera imagen tras cargar
+        if (!prefersReduced) {
+          mainImg.addEventListener('load', () => requestAnimationFrame(() => mainImg.classList.add('zooming')), { once: true });
+        }
       })();
 
       // DESCARGA
@@ -568,11 +829,15 @@
           const num = document.getElementById('val-numero').textContent || boletaParam;
           const hint = document.querySelector('.gallery-hint');
           if(hint) hint.style.display = 'none';
+          // Asegura que la imagen del hero quede quieta para captura
+          const heroImg = document.querySelector('.hero-img');
+          const prevAnim = heroImg.style.animation;
+          heroImg.style.animation = 'none';
           try {
             await new Promise(r => setTimeout(r, 300));
             const canvas = await html2canvas(area, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: "#0A0A0A", scrollY: 0, windowHeight: area.scrollHeight + 100, onclone: d => { d.getElementById('activeImage').style.opacity = 1; } });
             const link = document.createElement('a');
-            link.download = `Boleta_PerlaRoja_N${num}.png`;
+            link.download = `Boleta_CasaSantaTeresita_N${num}.png`;
             link.href = canvas.toDataURL('image/png', 0.9);
             link.click();
             btn.textContent = 'Guardada!';
@@ -580,6 +845,7 @@
             btn.textContent = 'Error. Intenta de nuevo.';
           } finally {
             if(hint) hint.style.display = 'block';
+            heroImg.style.animation = prevAnim;
             setTimeout(() => { btn.disabled = false; btn.textContent = orig; btn.style.opacity = 1; }, 3000);
           }
         });
