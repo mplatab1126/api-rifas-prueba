@@ -8,7 +8,7 @@
     <title>Boleta Digital - La Plata House</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
       :root {
@@ -408,75 +408,119 @@
       }
       .reveal.is-visible { opacity: 1; transform: translateY(0); }
 
-      /* SEGURIDAD */
+      /* SEGURIDAD — rediseño paleta crema/negro/menta del brand nuevo */
       #security-overlay {
         position: fixed;
         top: 0; left: 0;
         width: 100%; height: 100%;
-        background: var(--dark);
+        background: #0A0A0A;
         z-index: 99999;
         display: flex;
         justify-content: center;
         align-items: center;
         padding: 20px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
       }
       .sec-box {
-        background: var(--card);
-        padding: 32px 24px;
-        border-radius: 16px;
-        max-width: 320px;
-        width: 85%;
+        background: #FAFAF7;
+        padding: 36px 26px 28px;
+        border-radius: 20px;
+        max-width: 380px;
+        width: 100%;
         text-align: center;
-        border: 1px solid var(--border);
+        box-shadow: 0 24px 64px rgba(0,0,0,0.45);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
       }
-      .sec-icon { font-size: 2.5rem; margin-bottom: 16px; display: block; }
+      .sec-logo {
+        width: 88px;
+        display: block;
+        margin: 0 auto 22px;
+      }
+      .sec-icon-wrap {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: #F2F1EC;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 18px;
+      }
+      .sec-icon-wrap svg { color: #0A0A0A; }
       .sec-title {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 1.4rem;
-        margin-bottom: 8px;
-        font-weight: 600;
+        font-family: 'Inter', sans-serif;
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #0A0A0A;
+        margin: 0 0 10px;
       }
-      .sec-desc { font-size: 13px; color: var(--gray); margin-bottom: 20px; line-height: 1.5; }
+      .sec-desc {
+        font-size: 15px;
+        color: #6E6E6E;
+        margin: 0 0 22px;
+        line-height: 1.5;
+      }
+      .sec-desc strong {
+        color: #0A0A0A;
+        font-weight: 700;
+      }
       .sec-input {
         width: 100%;
-        padding: 12px;
-        font-size: 16px;
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 10px;
+        padding: 14px 16px;
+        font-size: 17px;
+        border: 1px solid #E5E3DA;
+        border-radius: 100px;
         text-align: center;
         margin-bottom: 12px;
-        background: rgba(255,255,255,0.04);
-        color: var(--white);
-        font-family: 'Montserrat', sans-serif;
+        background: #FFFFFF;
+        color: #0A0A0A;
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
         outline: none;
         box-sizing: border-box;
+        transition: border-color 0.18s, box-shadow 0.18s;
       }
-      .sec-input:focus { border-color: var(--accent); }
+      .sec-input::placeholder { color: #B5B0A4; font-weight: 400; }
+      .sec-input:focus {
+        border-color: #0A0A0A;
+        box-shadow: 0 0 0 3px rgba(155, 250, 176, 0.45);
+      }
       .sec-btn {
         width: 100%;
-        padding: 12px;
-        background: var(--white);
-        color: var(--dark);
+        padding: 15px 20px;
+        background: #9BFAB0;
+        color: #0A0A0A;
         border: none;
-        border-radius: 50px;
+        border-radius: 100px;
+        font-family: 'Inter', sans-serif;
         font-weight: 700;
-        font-size: 14px;
+        font-size: 16px;
         cursor: pointer;
-        letter-spacing: 1px;
-        text-transform: uppercase;
+        letter-spacing: 0;
+        transition: background 0.18s, transform 0.18s;
       }
+      .sec-btn:hover { background: #C4FBD0; }
+      .sec-btn:active { transform: scale(0.98); }
       .sec-error {
-        color: var(--red);
-        font-size: 12px;
-        margin-top: 10px;
+        color: #B91C1C;
+        font-size: 14px;
+        margin: 14px 0 0;
         display: none;
         font-weight: 600;
       }
       .sec-help {
-        margin-top: 16px;
-        font-size: 11px;
+        margin-top: 18px;
+        font-size: 14px;
+        color: #6E6E6E;
       }
-      .sec-help a { color: var(--accent); text-decoration: none; }
+      .sec-help a {
+        color: #0A0A0A;
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 3px;
+        font-weight: 500;
+      }
 
       /* MOTION REDUCED */
       @media (prefers-reduced-motion: reduce) {
@@ -493,14 +537,19 @@
 
     <div id="security-overlay">
       <div class="sec-box">
-        <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="Los Plata" style="width:70px;display:block;margin:0 auto 16px;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.4));">
-        <span class="sec-icon">&#128274;</span>
-        <h2 class="sec-title">Verificacion</h2>
-        <p class="sec-desc">Ingresa el celular registrado en la boleta <strong id="lbl-boleta" style="color:var(--accent);">---</strong></p>
-        <input type="tel" id="inputPhone" class="sec-input" placeholder="Tu numero de celular" inputmode="numeric">
+        <img src="https://losplata.s3.us-east-2.amazonaws.com/Logo.png" alt="LOS PLATA" class="sec-logo">
+        <div class="sec-icon-wrap" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="11" width="16" height="10" rx="2"/>
+            <path d="M8 11V8a4 4 0 0 1 8 0v3"/>
+          </svg>
+        </div>
+        <h2 class="sec-title">Verificación</h2>
+        <p class="sec-desc">Ingresa el celular registrado en la boleta <strong id="lbl-boleta">---</strong></p>
+        <input type="tel" id="inputPhone" class="sec-input" placeholder="Tu número de celular" inputmode="numeric" autocomplete="tel" pattern="[0-9]*">
         <button class="sec-btn" id="btnVerificar" onclick="verificarIdentidad()">Ver mi boleta</button>
-        <p id="errorMsg" class="sec-error">El numero no coincide.</p>
-        <p class="sec-help"><a href="https://wa.me/573107334957">Necesitas ayuda?</a></p>
+        <p id="errorMsg" class="sec-error">El número no coincide.</p>
+        <p class="sec-help"><a href="https://wa.me/573107334957" target="_blank" rel="noreferrer">¿Necesitas ayuda?</a></p>
       </div>
     </div>
 
