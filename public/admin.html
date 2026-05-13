@@ -50,7 +50,7 @@
       <span class="nav-item" onclick="activateAppMode(); switchView('view-referencias')">Referencia</span>
       <span class="nav-item" onclick="activateAppMode(); switchView('view-carga-masiva'); cargarPendientes();">Carga IA</span>
       <span class="nav-item" onclick="activateAppMode(); switchView('view-movimientos'); cargarUltimosMovimientos();">Movimientos</span>
-      <span class="nav-item" onclick="activateAppMode(); switchView('view-lista-boletas'); cargarListaBoletas();">Lista Boletas</span>
+      <span class="nav-item" onclick="activateAppMode(); switchView('view-lista-boletas'); cargarListaBoletas();">Lista de Morosos</span>
       <span id="btnLlamadas" class="nav-item" style="display:none;"></span>
       <span id="btnFinanzas" class="nav-item" style="display:none;"></span>
       <span class="nav-item" onclick="activateAppMode(); switchView('view-bitacora'); cargarBitacora();" style="position:relative;">🔔 <span id="notifBadge" style="display:none; position:absolute; top:-2px; right:-4px; background:#d95a53; color:#fff; font-size:0.65rem; font-weight:700; min-width:16px; height:16px; border-radius:50%; display:none; align-items:center; justify-content:center; line-height:1;">0</span></span>
@@ -224,6 +224,19 @@
         <div class="vertical-form">
           <div><label>Nombre</label><div class="field"><input id="v_nombre" class="pill" type="text"></div></div>
           <div><label>Apellido</label><div class="field"><input id="v_apellido" class="pill" type="text"></div></div>
+          <div>
+            <label>Documento <span style="font-weight:normal;color:var(--muted);font-size:0.85rem;">(opcional)</span></label>
+            <div class="field" style="display:flex;gap:8px;">
+              <select id="v_doc_tipo" class="pill" style="max-width:110px;flex:0 0 auto;">
+                <option value="">Tipo</option>
+                <option value="CC">CC</option>
+                <option value="CE">CE</option>
+                <option value="NIT">NIT</option>
+                <option value="PA">PA</option>
+              </select>
+              <input id="v_doc_numero" class="pill" type="text" style="flex:1;" placeholder="Número de documento" autocomplete="off">
+            </div>
+          </div>
           <div>
             <label>Teléfono celular</label>
             <div class="field"><input id="v_telefono" class="pill" type="tel"></div>
@@ -452,8 +465,8 @@
 
     <div id="view-lista-boletas" class="view-section">
       <div class="section-card">
-        <div class="section-title">📋 Lista de Boletas Vendidas</div>
-        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0;">Todas las boletas asignadas, ordenadas de la más antigua a la más reciente.</p>
+        <div class="section-title">📋 Lista de Morosos</div>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0;">Clientes con boletas separadas que aún no han abonado nada (total abonado = $0). Ordenados de la más antigua a la más reciente.</p>
 
         <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px;">
           <div class="field" style="flex:1; min-width:150px;">
@@ -478,7 +491,7 @@
 
         <div id="lb-contador" style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;"></div>
         <div id="lb-tabla-render" style="margin-top:5px;">
-          <p style="text-align:center; color:var(--muted); font-size:0.85rem; padding:30px 0;">Presiona "Lista Boletas" para cargar.</p>
+          <p style="text-align:center; color:var(--muted); font-size:0.85rem; padding:30px 0;">Presiona "Lista de Morosos" para cargar.</p>
         </div>
       </div>
     </div>

@@ -829,6 +829,9 @@ $('btnRegistrarVenta').onclick = async ()=>{
 
        const perNum = Math.floor(totalMoney/nums.length);
        const idTransVenta = (esVentaPremioRifa || esVentaEfectivo) ? '' : $('v_idTransferencia').value;
+       const docTipoVenta = ($('v_doc_tipo') && $('v_doc_tipo').value || '').trim();
+       const docNumeroVenta = ($('v_doc_numero') && $('v_doc_numero').value || '').trim();
+
        const baseData = {
            nombre: $('v_nombre').value,
            apellido: $('v_apellido').value,
@@ -836,13 +839,15 @@ $('btnRegistrarVenta').onclick = async ()=>{
            telefono: $('v_telefono').value,
            esColombia: esColombia,
            primerAbono: perNum,
-           referenciaAbono: ref, 
-           metodoPago: metodo, 
-           esPendiente: (esVentaPremioRifa || esVentaEfectivo) ? false : esVentaPendiente, 
+           referenciaAbono: ref,
+           metodoPago: metodo,
+           esPendiente: (esVentaPremioRifa || esVentaEfectivo) ? false : esVentaPendiente,
            contrasena: localStorage.getItem(STORAGE_KEY),
            idTransferencia: idTransVenta,
            esPagoInteligente: !esVentaPremioRifa && !esVentaEfectivo && !!(idTransVenta && idTransVenta.trim() !== ''),
-           esPremioRifa: esVentaPremioRifa
+           esPremioRifa: esVentaPremioRifa,
+           documento_tipo: docTipoVenta || null,
+           documento_numero: docNumeroVenta || null
        };
   
        let ok=0, fails=0;
@@ -3022,7 +3027,9 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
 
         let html = `<label style="display:flex; gap:8px; margin-bottom:8px; cursor:pointer; color:var(--ink); font-weight:600;">
             <input type="checkbox" id="lb-chk-all" checked onchange="lbToggleAllAsesores(this)" style="accent-color:var(--accent);"> Seleccionar Todos
-        </label><hr style="border:0; border-top:1px solid var(--ring); margin:8px 0;">`;
+        </label>
+        <button type="button" onclick="lbSeleccionarMiEquipo()" style="display:block; width:100%; margin-bottom:8px; padding:6px 10px; border-radius:8px; border:1px solid var(--ring-strong); background:var(--accent); color:#fff; cursor:pointer; font-family:inherit; font-size:0.85rem; font-weight:600;">👥 Mi equipo</button>
+        <hr style="border:0; border-top:1px solid var(--ring); margin:8px 0;">`;
 
         asesoresUnicos.forEach(a => {
             html += `<label style="display:flex; gap:8px; margin-bottom:6px; cursor:pointer; font-size:0.85rem; color:var(--ink-2);">
@@ -3036,6 +3043,17 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
 
     function lbToggleAllAsesores(source) {
         document.querySelectorAll('.lb-asesor-chk').forEach(chk => chk.checked = source.checked);
+        lbActualizarLabel();
+        filtrarListaBoletas();
+    }
+
+    // Marca solo los asesores de "mi equipo" (excluye independientes)
+    function lbSeleccionarMiEquipo() {
+        document.querySelectorAll('.lb-asesor-chk').forEach(chk => {
+            chk.checked = !esAsesorIndependiente(chk.value);
+        });
+        const chkAll = document.getElementById('lb-chk-all');
+        if (chkAll) chkAll.checked = false;
         lbActualizarLabel();
         filtrarListaBoletas();
     }
