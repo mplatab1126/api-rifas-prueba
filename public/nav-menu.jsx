@@ -1,12 +1,14 @@
 // nav-menu.jsx — Menú hamburguesa + drawer compartido entre todas las páginas
 
 const NAV_ITEMS = [
-  { id: "inicio",    label: "Inicio",                 href: "Pagina de inicio.html" },
-  { id: "ver",       label: "Ver mi boleta",          href: "Ver mi boleta La Plata House.html" },
-  { id: "abonar",    label: "Abonar a mi boleta",     href: "Abonar.html" },
-  { id: "canales",   label: "Canales oficiales",      href: "Canales oficiales.html" },
-  { id: "oficina",   label: "Oficina y documentos",   href: "#" },
-  { id: "ganadores", label: "Ganadores anteriores",   href: "#" },
+  { id: "inicio",    label: "Inicio",                 href: "/" },
+  { id: "comprar",   label: "Comprar boleta",         href: "/comprar-la-plata-house" },
+  { id: "ver",       label: "Ver mi boleta",          href: "/ver-mi-boleta-la-plata-house" },
+  { id: "abonar",    label: "Abonar a mi boleta",     href: "/abonar" },
+  { id: "canales",   label: "Canales oficiales",      href: "/canales-oficiales" },
+  { id: "terminos",  label: "Términos y condiciones", href: "/terminos-y-condiciones" },
+  { id: "oficina",   label: "Oficina y documentos",   href: "#", proximamente: true },
+  { id: "ganadores", label: "Ganadores anteriores",   href: "#", proximamente: true },
 ];
 
 function NavDrawer({ open, onClose }) {
@@ -37,8 +39,18 @@ function NavDrawer({ open, onClose }) {
         </div>
         <nav className="nav-drawer-list">
           {NAV_ITEMS.map(it => (
-            <a key={it.id} href={it.href} className="nav-drawer-item">
-              <span className="nav-drawer-label">{it.label}</span>
+            <a
+              key={it.id}
+              href={it.href}
+              className="nav-drawer-item"
+              onClick={it.proximamente ? (e) => e.preventDefault() : undefined}
+              aria-disabled={it.proximamente ? "true" : undefined}
+              style={it.proximamente ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
+            >
+              <span className="nav-drawer-label">
+                {it.label}
+                {it.proximamente && <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.7 }}>· Pronto</span>}
+              </span>
               <span className="nav-drawer-arrow" aria-hidden="true">→</span>
             </a>
           ))}
