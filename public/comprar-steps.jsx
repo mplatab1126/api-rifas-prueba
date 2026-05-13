@@ -270,20 +270,34 @@ window.StepEscoger = function StepEscoger({ rifa, seleccionadas, setSeleccionada
   const [visibles, setVisibles] = useS(50); // boletas mostradas en la grilla (5 por serie x 10 series)
   const [disponibles, setDisponibles] = useS([]);
   const [loading, setLoading] = useS(true);
+  const [sinMas, setSinMas] = useS(false);
 
-  const cargarBoletas = React.useCallback(async () => {
+  // Carga inicial: pide 50 sin exclusiones
+  const cargarInicial = React.useCallback(async () => {
     setLoading(true);
-    const nuevas = await window.fetchBoletasDisponibles();
-    setDisponibles(prev => {
-      const acumulado = new Set(prev);
-      nuevas.forEach(n => acumulado.add(n));
-      return Array.from(acumulado).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
-    });
-    setVisibles(prev => prev + 50);
+    setSinMas(false);
+    const nuevas = await window.fetchBoletasDisponibles([]);
+    setDisponibles(nuevas);
+    setVisibles(50);
     setLoading(false);
   }, []);
 
-  useE(() => { cargarBoletas(); }, [cargarBoletas]);
+  // "Mostrar más": pide 50 frescos excluyendo los que ya están y reemplaza
+  const mostrarMas = React.useCallback(async () => {
+    setLoading(true);
+    const anteriores = disponibles.slice();
+    const nuevas = await window.fetchBoletasDisponibles(anteriores);
+    if (nuevas.length === 0) {
+      setSinMas(true);
+    } else {
+      setDisponibles(nuevas);
+      setVisibles(50);
+      setSinMas(nuevas.length < 50);
+    }
+    setLoading(false);
+  }, [disponibles]);
+
+  useE(() => { cargarInicial(); }, [cargarInicial]);
 
   const filtradas = useM(() => {
     if (!busqueda) return disponibles;
@@ -364,16 +378,16 @@ window.StepEscoger = function StepEscoger({ rifa, seleccionadas, setSeleccionada
         </div>
       )}
 
-      {filtradas.length > visibles && (
-        <button className="cb-load-more" onClick={() => setVisibles(v => v + 50)}>
-          Cargar otros números ({filtradas.length - visibles} restantes)
+      {!loading && disponibles.length > 0 && !busqueda && !sinMas && (
+        <button className="cb-load-more" onClick={mostrarMas}>
+          Mostrar más números disponibles
         </button>
       )}
 
-      {!loading && disponibles.length > 0 && filtradas.length <= visibles && !busqueda && (
-        <button className="cb-load-more" onClick={cargarBoletas}>
-          Mostrar más números disponibles
-        </button>
+      {!loading && sinMas && (
+        <div style={{ textAlign: "center", padding: "12px 20px", color: "var(--ink-mute)", fontSize: 14 }}>
+          Ya no quedan más números para mostrar. Escríbenos por WhatsApp si necesitas otro.
+        </div>
       )}
 
       {/* Sticky bar — muestra los chips de números seleccionados arriba del precio */}

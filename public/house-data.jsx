@@ -125,10 +125,15 @@ window.formatCOP = window.formatCOP || function(n) {
   return "$" + n.toLocaleString("es-CO");
 };
 
-// Boletas disponibles — llama a la API real (/api/disponibles) y cae a mock si falla
-window.fetchBoletasDisponibles = async function() {
+// Boletas disponibles — llama a la API real (/api/disponibles).
+// excluir: array opcional de números que ya están en pantalla y NO queremos repetir.
+window.fetchBoletasDisponibles = async function(excluir) {
   try {
-    const res = await fetch("/api/disponibles");
+    let url = "/api/disponibles";
+    if (Array.isArray(excluir) && excluir.length > 0) {
+      url += "?exclude=" + encodeURIComponent(excluir.join(","));
+    }
+    const res = await fetch(url);
     if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
     const texto = data && data.numeros_disponibles;

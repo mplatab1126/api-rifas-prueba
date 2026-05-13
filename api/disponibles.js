@@ -15,9 +15,25 @@ export default async function handler(req, res) {
       return res.status(200).json({ total: count || 0 });
     }
 
+    const TOTAL_DESEADO = 50;
+    const POR_SERIE = 5;
     let seleccionados = [];
 
-    // Recorremos cada serie del 0 al 9, excluyendo los que se mostraron en la llamada anterior
+    // Lista de números que el cliente ya tiene en pantalla y NO queremos repetir.
+    // Llega como ?exclude=0123,0456,0789 desde el frontend.
+    const excludeRaw = req.query.exclude || '';
+    const excluidos = new Set(
+      excludeRaw
+        .split(',')
+        .map(s => s.trim())
+        .filter(s => /^\d{1,4}$/.test(s))
+        .map(s => s.padStart(4, '0'))
+    );
+
+    // 1) Intento de "variedad": tomar hasta 5 de cada serie 0-9
+    //    Si una serie está agotada (caso real: series 0,1,2 ya vendidas) devuelve menos.
+    //    Pedimos más candidatos por serie para tener margen tras filtrar excluidos.
+    const LIMITE_POR_SERIE = excluidos.size > 0 ? 200 : 50;
     for (let i = 0; i <= 9; i++) {
       const { data: libresSerie, error } = await supabase
         .from('boletas')
@@ -25,14 +41,40 @@ export default async function handler(req, res) {
         .is('telefono_cliente', null)
         .eq('mostrado', false)
         .like('numero', `${i}%`)
-        .limit(50);
+        .limit(LIMITE_POR_SERIE);
 
       if (error) throw error;
 
       if (libresSerie && libresSerie.length > 0) {
-        libresSerie.sort(() => 0.5 - Math.random());
-        const elegidos = libresSerie.slice(0, 5).map(b => b.numero);
+        const candidatosSerie = libresSerie.filter(b => !excluidos.has(b.numero));
+        candidatosSerie.sort(() => 0.5 - Math.random());
+        const elegidos = candidatosSerie.slice(0, POR_SERIE).map(b => b.numero);
         seleccionados.push(...elegidos);
+      }
+    }
+
+    // 2) Si después del paso 1 no llegamos a 50 (porque hay series agotadas o
+    //    excluidos comieron mucho), completamos con cualquier disponible.
+    if (seleccionados.length < TOTAL_DESEADO) {
+      const faltan = TOTAL_DESEADO - seleccionados.length;
+      const yaSelectos = new Set(seleccionados);
+
+      const { data: pool, error: errPool } = await supabase
+        .from('boletas')
+        .select('numero')
+        .is('telefono_cliente', null)
+        .eq('mostrado', false)
+        .limit(2000);
+
+      if (errPool) throw errPool;
+
+      if (pool && pool.length > 0) {
+        const candidatosExtra = pool.filter(
+          b => !yaSelectos.has(b.numero) && !excluidos.has(b.numero)
+        );
+        candidatosExtra.sort(() => 0.5 - Math.random());
+        const adicionales = candidatosExtra.slice(0, faltan).map(b => b.numero);
+        seleccionados.push(...adicionales);
       }
     }
 
