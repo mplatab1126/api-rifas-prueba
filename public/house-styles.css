@@ -1,0 +1,1110 @@
+/* house-styles.css — Estilos específicos de La Plata House
+   Se carga DESPUÉS de comprar-styles.css y solo añade/sobreescribe lo necesario. */
+
+/* ── Variable de acento (tweak) ── */
+:root {
+  --house-accent: #9BFAB0;
+  --house-accent-ink: #0A0A0A;
+}
+
+/* ── Hero override: foto + nombre + ubicación ── */
+.cb-hero-ubicacion {
+  margin: 6px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(250,250,247,0.6);
+}
+
+/* ── Premio mayor (visual: casa | $300M) ── */
+.house-premio-mayor {
+  margin: 4px 16px 28px;
+  background: var(--cream-100);
+  border: 1px solid var(--cream-200);
+  border-radius: 20px;
+  padding: 22px 18px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 14px;
+  align-items: stretch;
+  position: relative;
+}
+.hpm-intro {
+  grid-column: 1 / -1;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-align: center;
+  margin: 2px 0 14px;
+  padding: 0 4px 14px;
+  border-bottom: 1px solid var(--cream-200);
+}
+.hpm-opt {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 6px;
+}
+.hpm-icon {
+  width: 88px; height: 88px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 6px;
+}
+.hpm-icon img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 14px rgba(10,10,10,0.18));
+}
+.hpm-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin: 0;
+}
+.hpm-titulo {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 4px 0 2px;
+  color: var(--ink);
+  line-height: 1.15;
+}
+.hpm-desc {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+  margin: 0;
+}
+.hpm-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.hpm-divider::before {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0; left: 50%;
+  width: 1px;
+  background: var(--cream-200);
+}
+.hpm-divider span {
+  position: relative;
+  z-index: 1;
+  background: var(--cream-100);
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--cream-200);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
+/* ── Datos del sorteo (4 mini-cards) ── */
+.house-datos {
+  margin: 0 16px 28px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.hd-card {
+  background: white;
+  border: 1px solid var(--cream-200);
+  border-radius: 16px;
+  padding: 18px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+}
+.hd-icon {
+  width: 64px; height: 64px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 10px rgba(10,10,10,0.15));
+  margin: 0 auto 10px;
+  display: block;
+}
+.hd-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin: 0 0 2px;
+}
+.hd-value {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  margin: 0;
+  line-height: 1.2;
+}
+.hd-meta {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin: 2px 0 0;
+}
+
+/* ── Los tres premios — sección negra unificada ── */
+.house-premios {
+  margin: 32px 16px 28px;
+  background: var(--black-900, #0A0A0A);
+  color: var(--cream-50);
+  border-radius: 24px;
+  padding: 32px 18px 28px;
+  position: relative;
+  overflow: hidden;
+}
+.house-premios::before {
+  content: "";
+  position: absolute;
+  top: -80px; right: -80px;
+  width: 260px; height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--house-accent) 0%, transparent 70%);
+  opacity: 0.14;
+  pointer-events: none;
+}
+.house-premios::after {
+  content: "";
+  position: absolute;
+  bottom: -120px; left: -80px;
+  width: 280px; height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--house-accent) 0%, transparent 70%);
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.hp-head {
+  text-align: center;
+  padding: 0 6px 22px;
+  position: relative;
+  z-index: 1;
+}
+.hp-eyebrow {
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--house-accent);
+  margin: 0 0 10px;
+}
+.hp-titulo {
+  font-family: var(--sans);
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--cream-50);
+  line-height: 1.1;
+  margin: 0 0 8px;
+}
+.hp-lead {
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(250,250,247,0.7);
+  margin: 0;
+}
+
+.hp-list {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.hp-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  padding: 18px 18px 20px;
+  position: relative;
+  overflow: hidden;
+}
+.hp-card-featured {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(155,250,176,0.22);
+}
+.hp-card-main {
+  background: var(--house-accent);
+  color: var(--house-accent-ink, #0A0A0A);
+  border-color: transparent;
+}
+
+.hp-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.hp-badge {
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(250,250,247,0.55);
+}
+.hp-when {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgba(250,250,247,0.78);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.hp-card-main .hp-badge {
+  color: rgba(10,10,10,0.6);
+}
+.hp-card-main .hp-when {
+  background: rgba(10,10,10,0.1);
+  border-color: rgba(10,10,10,0.15);
+  color: rgba(10,10,10,0.85);
+}
+
+.hp-card-body {
+  text-align: center;
+  padding-top: 6px;
+}
+.hp-icon {
+  width: 72px; height: 72px;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 14px rgba(0,0,0,0.35));
+  margin: 0 auto 10px;
+  display: block;
+}
+.hp-card-main .hp-icon {
+  filter: drop-shadow(0 6px 14px rgba(0,0,0,0.18));
+}
+.hp-prize-name {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--house-accent);
+  margin: 0 0 4px;
+}
+.hp-card-main .hp-prize-name {
+  color: rgba(10,10,10,0.75);
+}
+.hp-prize {
+  font-family: var(--sans);
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.028em;
+  line-height: 1.05;
+  margin: 0 0 4px;
+  color: inherit;
+}
+.hp-prize-sub {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(250,250,247,0.75);
+  margin: 0 0 4px;
+}
+.hp-card-main .hp-prize-sub {
+  color: rgba(10,10,10,0.7);
+}
+.hp-desc {
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(250,250,247,0.7);
+  margin: 0 auto;
+  max-width: 32ch;
+}
+.hp-card-main .hp-desc {
+  color: rgba(10,10,10,0.7);
+}
+.hp-desc strong {
+  color: var(--cream-50);
+  font-weight: 700;
+}
+.hp-card-main .hp-desc strong {
+  color: #0A0A0A;
+}
+
+@media (min-width: 600px) {
+  .hp-titulo { font-size: 32px; }
+  .hp-prize { font-size: 40px; }
+}
+@media (max-width: 360px) {
+  .hp-prize { font-size: 30px; }
+  .hp-card-top { flex-wrap: wrap; }
+}
+
+/* ── Quiénes somos ── */
+.house-quienes {
+  margin: 16px 16px 24px;
+  padding: 22px 18px 18px;
+  border-radius: 20px;
+  background: white;
+  border: 1px solid var(--cream-200);
+}
+.hq-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin: 0 0 6px;
+}
+.hq-titulo {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.022em;
+  margin: 0 0 8px;
+  color: var(--ink);
+  line-height: 1.15;
+}
+.hq-lead {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  margin: 0 0 18px;
+}
+.hq-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.hq-item {
+  background: var(--cream-50);
+  border: 1px solid var(--cream-200);
+  border-radius: 14px;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.hq-ico {
+  width: 56px; height: 56px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 10px rgba(10,10,10,0.15));
+  margin: 0 auto 10px;
+  display: block;
+}
+.hq-l {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin: 0 0 2px;
+}
+.hq-v {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 0;
+  line-height: 1.25;
+}
+
+/* ── Canales oficiales (anti-estafa) ── */
+/* ── Canales oficiales (anti-estafa) — usa el mismo aviso que la página de inicio ── */
+.hub-aviso {
+  margin: 8px 16px 24px;
+  background: var(--cream-100);
+  border: 1px solid rgba(15, 61, 46, 0.08);
+  border-left: 4px solid var(--house-accent, #9BFAB0);
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.hub-aviso-icon {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: var(--green-700, #0F3D2E);
+  color: var(--cream-50);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.hub-aviso-icon.hub-aviso-icon-3d {
+  width: 56px; height: 56px;
+  background: transparent;
+  border-radius: 0;
+}
+.hub-aviso-icon.hub-aviso-icon-3d img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 10px rgba(10, 10, 10, 0.18));
+}
+.hub-aviso-t {
+  font-family: var(--sans);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--green-900, #0A2419);
+  margin: 0 0 4px;
+  line-height: 1.2;
+}
+.hub-aviso-d {
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+  margin: 0;
+}
+.hub-aviso-d strong { color: var(--ink); font-weight: 700; }
+
+/* Mecánica: ícono 3D dentro del círculo */
+.house-mec-icon img {
+  width: 56px; height: 56px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 10px rgba(10,10,10,0.15));
+}
+.house-mec-icon {
+  background: transparent !important;
+  color: inherit;
+}
+
+/* ── Hero slim (sin carrusel embebido) ── */
+.cb-hero.house-hero-slim {
+  padding-bottom: 18px;
+}
+
+/* ── Slider full-width del hero (aspect ratio natural) ── */
+.house-hero-slider {
+  position: relative;
+  width: 100%;
+  background: var(--black-900, #0A0A0A);
+  overflow: hidden;
+  margin: 0 0 28px;
+}
+.hhs-track {
+  position: relative;
+  width: 100%;
+}
+.hhs-slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .35s ease;
+}
+.hhs-slide.active {
+  position: relative;
+  opacity: 1;
+  pointer-events: auto;
+}
+.hhs-slide img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.hhs-cap {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  background: rgba(10,10,10,0.7);
+  color: var(--cream-50, #FAFAF7);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 7px 14px;
+  border-radius: 100px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 2;
+}
+.hhs-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 100px;
+  background: rgba(10,10,10,0.55);
+  border: 0;
+  color: var(--cream-50, #FAFAF7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 3;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .15s ease;
+}
+.hhs-arrow:hover { background: rgba(10,10,10,0.75); }
+.hhs-arrow:active { transform: translateY(-50%) scale(0.94); }
+.hhs-arrow.prev { left: 12px; }
+.hhs-arrow.next { right: 12px; }
+.hhs-counter {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: rgba(10,10,10,0.6);
+  color: var(--cream-50, #FAFAF7);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 5px 10px;
+  border-radius: 100px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 2;
+}
+.hhs-dots {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 2;
+}
+.hhs-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(250,250,247,0.45);
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  transition: width .25s ease, background .25s ease;
+}
+.hhs-dot.active {
+  background: var(--house-accent, #9BFAB0);
+  width: 22px;
+  border-radius: 100px;
+}
+
+@media (max-width: 360px) {
+  .hhs-arrow { width: 38px; height: 38px; }
+}
+
+/* ── Carrusel: imagen full-bleed sin overlay ── */
+.cb-carousel.house-mode .cb-carousel-img {
+  aspect-ratio: 4 / 3;
+}
+.cb-carousel.house-mode .cb-carousel-img img {
+  object-fit: cover;
+}
+
+/* Variante "editorial": pie de foto debajo, nada encima */
+.cb-carousel.style-editorial .cb-carousel-overlay {
+  position: static;
+  background: transparent;
+  padding: 14px 4px 0;
+}
+.cb-carousel.style-editorial .cb-carousel-overlay .cb-carousel-tipo {
+  background: transparent;
+  color: var(--ink-mute);
+  padding: 0;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+}
+.cb-carousel.style-editorial .cb-carousel-overlay .cb-carousel-nombre {
+  color: var(--cream-50);
+  font-size: 22px;
+  margin-top: 6px;
+}
+.cb-carousel.style-editorial .cb-carousel-overlay .cb-carousel-desc,
+.cb-carousel.style-editorial .cb-carousel-overlay .cb-carousel-fecha {
+  color: rgba(250,250,247,0.7);
+}
+
+/* Variante "magazine": número grande + título encima de la foto */
+.cb-carousel.style-magazine .cb-carousel-slide {
+  position: relative;
+}
+.cb-carousel.style-magazine .cb-carousel-counter {
+  position: absolute;
+  top: 14px; left: 14px;
+  z-index: 4;
+  font-family: var(--serif, "Cormorant Garamond", serif);
+  font-size: 56px;
+  line-height: 1;
+  color: rgba(250,250,247,0.95);
+  font-weight: 500;
+  text-shadow: 0 2px 14px rgba(0,0,0,.45);
+}
+.cb-carousel.style-magazine .cb-carousel-overlay {
+  background: linear-gradient(180deg, rgba(10,10,10,0) 0%, rgba(10,10,10,.85) 100%);
+}
+
+/* Variante "stack": tarjetas escaladas, la activa al frente */
+.cb-carousel.style-stack {
+  perspective: 1200px;
+}
+.cb-carousel.style-stack .cb-carousel-track {
+  transition: transform .55s cubic-bezier(.2,.8,.25,1);
+}
+
+/* ── La opción $300M — card destacada bajo el hero ── */
+.house-alt-card {
+  margin: 0 16px 24px;
+  background: var(--black-900);
+  color: var(--cream-50);
+  border-radius: 20px;
+  padding: 22px 22px 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.house-alt-card::before {
+  content: "";
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 160px; height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--house-accent) 0%, transparent 70%);
+  opacity: 0.18;
+  pointer-events: none;
+}
+.house-alt-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(250,250,247,0.6);
+  margin: 0 0 10px;
+}
+.house-alt-titulo {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 8px;
+  line-height: 1.2;
+}
+.house-alt-titulo .accent { color: var(--cream-50); border-bottom: 2px solid var(--house-accent); padding-bottom: 1px; }
+.house-alt-desc {
+  font-size: 14px;
+  line-height: 1.55;
+  color: rgba(250,250,247,0.78);
+  margin: 0 0 16px;
+}
+.house-alt-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 12px;
+  align-items: center;
+}
+.house-alt-opt {
+  background: rgba(250,250,247,0.06);
+  border: 1px solid rgba(250,250,247,0.12);
+  border-radius: 14px;
+  padding: 14px 12px;
+  text-align: center;
+}
+.house-alt-opt .label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(250,250,247,0.55);
+  margin-bottom: 6px;
+}
+.house-alt-opt .value {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--cream-50);
+}
+.house-alt-opt .value.cash {
+  font-family: var(--serif, "Cormorant Garamond", serif);
+  font-weight: 500;
+  font-size: 24px;
+  letter-spacing: -0.01em;
+}
+.house-alt-divider {
+  width: 28px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: rgba(250,250,247,0.4);
+  text-transform: uppercase;
+}
+
+/* ── Mecánica semanal — banda destacada ── */
+.house-mecanica {
+  margin: 8px 16px 28px;
+  background: var(--cream-100);
+  border-radius: 20px;
+  padding: 22px 20px 24px;
+  border: 1px solid var(--cream-200);
+}
+.house-mec-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin: 0 0 8px;
+}
+.house-mec-titulo {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.018em;
+  margin: 0 0 14px;
+  color: var(--ink);
+  line-height: 1.2;
+}
+.house-mec-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.house-mec-item {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+.house-mec-icon {
+  width: 56px; height: 56px;
+  border-radius: 14px;
+  background: var(--black-900);
+  color: var(--cream-50);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif, "Cormorant Garamond", serif);
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.house-mec-icon.accent {
+  background: var(--house-accent);
+  color: var(--house-accent-ink);
+}
+.house-mec-item h3 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 4px 0 4px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.house-mec-item p {
+  font-size: 14px;
+  line-height: 1.55;
+  margin: 0;
+  color: var(--ink-soft);
+}
+.house-mec-item p strong { color: var(--ink); }
+
+/* ── Galería ── */
+.house-galeria {
+  margin: 0 16px 32px;
+}
+.house-galeria-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.house-galeria-item {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--cream-200);
+  aspect-ratio: 4 / 5;
+  cursor: pointer;
+  transition: transform .2s;
+}
+.house-galeria-item:active { transform: scale(0.98); }
+.house-galeria-item.wide {
+  grid-column: span 2;
+  aspect-ratio: 16 / 10;
+}
+.house-galeria-item img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.house-galeria-cap {
+  position: absolute;
+  left: 10px; bottom: 10px;
+  background: rgba(10,10,10,0.7);
+  color: var(--cream-50);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 5px 10px;
+  border-radius: 100px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* Lightbox */
+.house-lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(10,10,10,0.96);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+}
+.house-lb-close {
+  position: absolute;
+  top: 16px; right: 16px;
+  width: 40px; height: 40px;
+  border-radius: 100px;
+  background: rgba(250,250,247,0.12);
+  border: 0;
+  color: var(--cream-50);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+}
+.house-lb-img {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 12px 12px;
+}
+.house-lb-img img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+.house-lb-cap {
+  text-align: center;
+  color: var(--cream-50);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 12px 20px 24px;
+  letter-spacing: 0.02em;
+}
+.house-lb-nav {
+  position: absolute;
+  top: 50%; transform: translateY(-50%);
+  width: 44px; height: 44px;
+  border-radius: 100px;
+  background: rgba(250,250,247,0.12);
+  border: 0;
+  color: var(--cream-50);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.house-lb-nav.prev { left: 12px; }
+.house-lb-nav.next { right: 12px; }
+.house-lb-nav:disabled { opacity: 0.3; }
+
+/* ── Plantas / espacios ── */
+.house-espacios {
+  margin: 0 16px 32px;
+}
+.house-planta {
+  background: white;
+  border-radius: 18px;
+  border: 1px solid var(--cream-200);
+  padding: 20px 18px;
+  margin-bottom: 12px;
+}
+.house-planta-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.house-planta-num {
+  font-family: var(--serif, "Cormorant Garamond", serif);
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--house-accent-ink);
+  letter-spacing: -0.02em;
+}
+.house-planta-num::before {
+  content: "";
+  display: inline-block;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--house-accent);
+  margin-right: 10px;
+  vertical-align: middle;
+  position: relative;
+  top: -3px;
+}
+.house-planta-titulo {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin: 0;
+}
+.house-espacios-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.house-espacios-list li {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+  padding: 10px 0;
+  border-top: 1px solid var(--cream-200);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.house-espacios-list li:first-child { border-top: 0; }
+.house-espacios-list li::before {
+  content: "";
+  display: inline-block;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--ink);
+  flex-shrink: 0;
+}
+
+/* ── Tweak override: color del CTA primario ── */
+.cb .cb-btn-primary:not(.dark) {
+  background: var(--house-accent);
+  color: var(--house-accent-ink);
+}
+.cb .cb-btn-primary.dark {
+  background: var(--black-900);
+  color: var(--cream-50);
+}
+.cb .cb-btn-primary.dark svg { color: var(--house-accent); }
+
+/* ── Header eyebrow encima del título de evento ── */
+.cb-evento-strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(250,250,247,0.65);
+  margin-bottom: 14px;
+}
+.cb-evento-strip::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--house-accent);
+  box-shadow: 0 0 0 0 rgba(155,250,176,0.6);
+  animation: housePulse 1.8s ease-out infinite;
+}
+@keyframes housePulse {
+  0%   { box-shadow: 0 0 0 0 rgba(155,250,176,0.5); }
+  70%  { box-shadow: 0 0 0 10px rgba(155,250,176,0); }
+  100% { box-shadow: 0 0 0 0 rgba(155,250,176,0); }
+}
+
+/* Section titles override (re-uso clases existentes pero ajusto márgenes) */
+.house-section-wrap {
+  padding: 0 16px;
+  margin-bottom: 8px;
+}
+.house-section-wrap h2 {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.022em;
+  margin: 0 0 6px;
+  color: var(--ink);
+  line-height: 1.15;
+}
+.house-section-wrap p.eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin: 0 0 8px;
+}
+.house-section-wrap p.lead {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  margin: 0 0 18px;
+}
+
+/* Separación adicional cuando una sección viene después del CTA */
+.house-section-wrap.house-section-spaced {
+  margin-top: 40px;
+  padding-top: 4px;
+}
+
+/* ── Título del topbar (junto a flecha + hamburguesa) un poco más grande ── */
+.cb .cb-topbar-title {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+/* ── Premio mayor: título centrado y más llamativo (primer bloque tras fotos) ── */
+.house-section-wrap.house-premio-intro {
+  text-align: center;
+  padding: 36px 20px 24px;
+  margin-bottom: 4px;
+}
+.house-section-wrap.house-premio-intro p.eyebrow {
+  margin: 0 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-mute);
+}
+.house-section-wrap.house-premio-intro p.eyebrow::before,
+.house-section-wrap.house-premio-intro p.eyebrow::after {
+  content: "";
+  display: inline-block;
+  width: 22px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.4;
+}
+.house-section-wrap.house-premio-intro h2 {
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 38px;
+  line-height: 1.05;
+  letter-spacing: -0.028em;
+  margin: 0 auto 10px;
+  max-width: 16ch;
+}
+.house-section-wrap.house-premio-intro p.lead {
+  font-size: 16px;
+  line-height: 1.5;
+  max-width: 32ch;
+  margin: 0 auto 4px;
+  color: var(--ink-soft);
+}
+
+@media (min-width: 600px) {
+  .house-section-wrap.house-premio-intro h2 { font-size: 46px; }
+}
+@media (max-width: 360px) {
+  .house-section-wrap.house-premio-intro h2 { font-size: 32px; }
+}

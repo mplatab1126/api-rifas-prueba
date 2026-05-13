@@ -1,0 +1,450 @@
+// house-landing.jsx — Landing custom para La Plata House
+// Define window.HouseLanding (lo consume house-app.jsx)
+
+const { useState: useHL, useEffect: useHE, useRef: useHR } = React;
+
+window.HouseLanding = function HouseLanding({ rifa, onComprar, tweaks }) {
+  const carruselStyle = (tweaks && tweaks.carruselStyle) || "editorial";
+  const accent = (tweaks && tweaks.accent) || "#9BFAB0";
+
+  // Aplicar acento como CSS variable
+  useHE(() => {
+    const root = document.documentElement;
+    root.style.setProperty("--house-accent", accent);
+    // Si el acento es muy oscuro, ink debe ser claro
+    const dark = ["#0A0A0A", "#1F8A5B", "#2A6FDB"].includes(accent.toUpperCase());
+    root.style.setProperty("--house-accent-ink", dark ? "#FAFAF7" : "#0A0A0A");
+  }, [accent]);
+
+  return (
+    <React.Fragment>
+      {/* PREMIO MAYOR — primero, antes de las fotos */}
+      <div className="house-section-wrap house-premio-intro">
+        <p className="eyebrow">El premio mayor</p>
+        <h2>Una casa de dos plantas.</h2>
+        <p className="lead">Si no la quiere, se la compramos en $300.000.000 en efectivo.</p>
+      </div>
+
+      {/* HERO — el carrusel después del título */}
+      <HouseHeroSlider items={(rifa.galeria || []).filter(g => g.vertical !== false)} />
+      <div className="house-premio-mayor">
+        <p className="hpm-intro">Si gana el premio mayor, tiene dos opciones:</p>
+        <div className="hpm-opt">
+          <div className="hpm-icon"><img src={window.ICONS_3D.key} alt="" /></div>
+          <p className="hpm-eyebrow">Opción 1</p>
+          <p className="hpm-titulo">Quédese con la casa</p>
+          <p className="hpm-desc">Le entregamos La Plata House tal cual la ve en las fotos, con todo lo que tiene por dentro.</p>
+        </div>
+        <div className="hpm-divider"><span>o</span></div>
+        <div className="hpm-opt">
+          <div className="hpm-icon"><img src={window.ICONS_3D.moneyBag} alt="" /></div>
+          <p className="hpm-eyebrow">Opción 2</p>
+          <p className="hpm-titulo">Se la compramos</p>
+          <p className="hpm-desc">Le pagamos $300.000.000 en efectivo por la casa.</p>
+        </div>
+      </div>
+
+      {/* CTA principal — sube acá, justo después de las opciones */}
+      <div className="cb-cta-wrap">
+        <div className="cb-cta-precio">
+          <p className="cb-cta-precio-eyebrow">Cada boleta vale</p>
+          <span className="cb-cta-precio-num">{window.formatCOP(rifa.precioBoleta)}</span>
+          <span className="cb-cta-precio-unit"> COP</span>
+        </div>
+        <button className="cb-btn-primary" onClick={onComprar}>
+          Comprar mi boleta
+          <CompIcon name="arrowRight" size={20} />
+        </button>
+        <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--ink-mute)", textAlign: "center", letterSpacing: 0.2 }}>
+          o abone desde {window.formatCOP(rifa.abonoMinimo)} y termine de pagar antes del sorteo
+        </p>
+      </div>
+
+      {/* DATOS DEL SORTEO — 4 mini-cards */}
+      <div className="house-section-wrap house-section-spaced">
+        <p className="eyebrow">Datos del sorteo</p>
+        <h2>Todo lo que debe saber</h2>
+      </div>
+      <div className="house-datos">
+        <div className="hd-card">
+          <img className="hd-icon" src={window.ICONS_3D.calendar} alt="" />
+          <p className="hd-label">Fecha del premio mayor</p>
+          <p className="hd-value">4 de julio de 2026</p>
+        </div>
+        <div className="hd-card">
+          <img className="hd-icon" src={window.ICONS_3D.target} alt="" />
+          <p className="hd-label">Juega con</p>
+          <p className="hd-value">Lotería de Boyacá</p>
+        </div>
+        <div className="hd-card">
+          <img className="hd-icon" src={window.ICONS_3D.location} alt="" />
+          <p className="hd-label">Ubicación de la casa</p>
+          <p className="hd-value">Chinchiná, Caldas</p>
+        </div>
+        <div className="hd-card">
+          <img className="hd-icon" src={window.ICONS_3D.trophy} alt="" />
+          <p className="hd-label">Cuántos ganadores</p>
+          <p className="hd-value">8 ganadores</p>
+        </div>
+      </div>
+
+      {/* LOS TRES PREMIOS — sección negra destacada */}
+      <div className="house-premios">
+        <div className="hp-head">
+          <h2 className="hp-titulo">Nueve oportunidades de ganar.</h2>
+          <p className="hp-lead">Con una sola boleta participa en las nueve oportunidades.</p>
+        </div>
+
+        <div className="hp-list">
+          {/* 1 — Semanales */}
+          <article className="hp-card">
+            <div className="hp-card-top">
+              <span className="hp-badge">01 · Semanal</span>
+              <span className="hp-when">7 sábados</span>
+            </div>
+            <div className="hp-card-body">
+              <img className="hp-icon" src={window.ICONS_3D.money} alt="" />
+              <h3 className="hp-prize">$5.000.000</h3>
+              <p className="hp-prize-sub">cada sábado</p>
+            </div>
+          </article>
+
+          {/* 2 — El Sueldazo */}
+          <article className="hp-card hp-card-featured">
+            <div className="hp-card-top">
+              <span className="hp-badge">02 · Premio adicional</span>
+              <span className="hp-when">Miércoles 3 de junio</span>
+            </div>
+            <div className="hp-card-body">
+              <img className="hp-icon" src={window.ICONS_3D.moneyBag} alt="" />
+              <p className="hp-prize-name">El Sueldazo</p>
+              <h3 className="hp-prize">$1.500.000</h3>
+              <p className="hp-prize-sub">cada mes · durante 6 meses</p>
+            </div>
+          </article>
+
+          {/* 3 — Premio mayor */}
+          <article className="hp-card hp-card-main">
+            <div className="hp-card-top">
+              <span className="hp-badge">03 · Premio mayor</span>
+              <span className="hp-when">Sábado 4 de julio</span>
+            </div>
+            <div className="hp-card-body">
+              <img className="hp-icon" src={window.ICONS_3D.key} alt="" />
+              <p className="hp-prize-name">La Plata House</p>
+              <h3 className="hp-prize">Una casa</h3>
+              <p className="hp-prize-sub">o $300.000.000 en efectivo</p>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      {/* QUIÉNES SOMOS — proof points visuales */}
+      <div className="house-quienes">
+        <p className="hq-eyebrow">Quiénes somos</p>
+        <h2 className="hq-titulo">LOS PLATA S.A.S.</h2>
+        <p className="hq-lead">Empresa colombiana de rifas legalmente constituida, con oficina en Chinchiná, Caldas.</p>
+        <div className="hq-grid">
+          <div className="hq-item">
+            <img className="hq-ico" src={window.ICONS_3D.shield} alt="" />
+            <p className="hq-l">Empresa legal</p>
+            <p className="hq-v">NIT 902.003.134-4</p>
+          </div>
+          <div className="hq-item">
+            <img className="hq-ico" src={window.ICONS_3D.fileText} alt="" />
+            <p className="hq-l">Autorización oficial</p>
+            <p className="hq-v">Autorizados por EDSA</p>
+          </div>
+        </div>
+      </div>
+
+      {/* CANALES OFICIALES (anti-estafa) — match home page aviso */}
+      <div className="hub-aviso">
+        <div className="hub-aviso-icon hub-aviso-icon-3d">
+          <img src="assets/icon-3d-lock.png" alt="" />
+        </div>
+        <div>
+          <p className="hub-aviso-t">Cuídese de las estafas</p>
+          <p className="hub-aviso-d">Solo aceptamos pagos a cuentas a nombre de <strong>LOS PLATA S.A.S.</strong> Si tiene dudas, escríbanos al WhatsApp oficial <strong>+57 310 733 4957</strong>.</p>
+        </div>
+      </div>
+
+      {/* FAQ — reducido a esenciales */}
+      <div className="cb-faq">
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 8 }}>
+          <img src={window.ICONS_3D.chat} alt="" style={{ width: 48, height: 48 }} />
+          <div>
+            <p className="cb-section-eyebrow" style={{ margin: 0 }}>Preguntas frecuentes</p>
+            <h2 className="cb-section-titulo" style={{ margin: 0 }}>Dudas comunes</h2>
+          </div>
+        </div>
+        <FAQItem q="¿Cómo sé que el sorteo es real?">
+          Somos <strong>LOS PLATA S.A.S.</strong> (NIT 902.003.134-4), empresa colombiana legalmente constituida con oficina en Chinchiná. Cada sorteo cuenta con <strong>resolución de EDSA</strong> (consultable en su página oficial) y se rige por la <strong>Ley 643 de 2001</strong>. Jugamos con la <strong>{rifa.loteria}</strong>.
+        </FAQItem>
+        <FAQItem q="¿Qué pasa si gano y prefiero el dinero?">
+          Le pagamos <strong>$300.000.000 en efectivo</strong> a la cuenta que usted indique, una vez verificada su identidad.
+        </FAQItem>
+        <FAQItem q="¿Cómo recibo mi boleta?">
+          Por WhatsApp, máximo dos horas después del primer pago, con su nombre y número asignado.
+        </FAQItem>
+        <FAQItem q="¿Tengo que pagar impuestos si gano?">
+          Como con cualquier bien que cambia de dueño en Colombia, el ganador asume la <strong>ganancia ocasional</strong> ante la DIAN y los gastos de <strong>escrituración</strong>. Lo acompañamos en cada paso.
+        </FAQItem>
+        <FAQItem q="¿Cuánto tiempo tengo para reclamar mi premio?">
+          <strong>30 días hábiles</strong> desde la fecha del sorteo.
+        </FAQItem>
+      </div>
+
+      {/* CTA final */}
+      <div className="cb-cta-wrap" style={{ marginTop: 32 }}>
+        <button className="cb-btn-primary dark" onClick={onComprar}>
+          Comprar mi boleta ahora
+          <CompIcon name="arrowRight" size={20} color="var(--house-accent)" />
+        </button>
+      </div>
+    </React.Fragment>
+  );
+};
+
+// ─── Slider full-width del hero (foto + caption pill) ───
+function HouseHeroSlider({ items }) {
+  const [idx, setIdx] = useHL(0);
+  const total = items.length;
+  const go = (dir) => setIdx(prev => (prev + dir + total) % total);
+
+  // Swipe táctil
+  const startX = useHR(null);
+  const onTouchStart = (e) => { startX.current = e.touches[0].clientX; };
+  const onTouchEnd = (e) => {
+    if (startX.current == null) return;
+    const dx = e.changedTouches[0].clientX - startX.current;
+    if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
+    startX.current = null;
+  };
+
+  return (
+    <div className="house-hero-slider natural" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <div className="hhs-track">
+        {items.map((it, i) => (
+          <div className={"hhs-slide" + (i === idx ? " active" : "")} key={i}>
+            <img src={it.url} alt={it.titulo} loading={i === 0 ? "eager" : "lazy"} />
+            <span className="hhs-cap">{it.titulo}</span>
+          </div>
+        ))}
+      </div>
+
+      <button className="hhs-arrow prev" onClick={() => go(-1)} aria-label="Anterior">
+        <CompIcon name="arrowLeft" size={20} />
+      </button>
+      <button className="hhs-arrow next" onClick={() => go(1)} aria-label="Siguiente">
+        <CompIcon name="arrowRight" size={20} />
+      </button>
+
+      <div className="hhs-counter">{idx + 1} / {total}</div>
+
+      <div className="hhs-dots">
+        {items.map((_, i) => (
+          <button
+            key={i}
+            className={"hhs-dot" + (i === idx ? " active" : "")}
+            onClick={() => setIdx(i)}
+            aria-label={`Ir a la foto ${i + 1}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Carrusel del hero (3 estilos) ───
+function HouseCarousel({ imagenes, galeria, variant }) {
+  const [idx, setIdx] = useHL(0);
+  const total = imagenes.length;
+  const go = (dir) => setIdx(prev => Math.max(0, Math.min(total - 1, prev + dir)));
+
+  // título asociado a la foto (busco en galería)
+  const tituloDe = (url) => {
+    const found = galeria.find(g => g.url === url);
+    return found ? found.titulo : "";
+  };
+
+  return (
+    <div className={"cb-carousel house-mode style-" + variant}>
+      <div className="cb-carousel-track" style={{ transform: `translateX(-${idx * 100}%)` }}>
+        {imagenes.map((url, i) => (
+          <div className="cb-carousel-slide" key={i}>
+            {variant === "magazine" && (
+              <div className="cb-carousel-counter">{String(i + 1).padStart(2, "0")}</div>
+            )}
+            <div className="cb-carousel-img">
+              <img src={url} alt={tituloDe(url)} />
+            </div>
+            {variant !== "minimal" && (
+              <div className="cb-carousel-overlay">
+                <span className="cb-carousel-tipo">Su nueva casa</span>
+                <h3 className="cb-carousel-nombre">{tituloDe(url)}</h3>
+                {variant === "editorial" ? (
+                  <p className="cb-carousel-desc">Foto {i + 1} de {total}</p>
+                ) : (
+                  <p className="cb-carousel-fecha">Sorteo: 4 de julio de 2026</p>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <button className="cb-carousel-arrow prev" onClick={() => go(-1)} disabled={idx === 0} aria-label="Anterior">
+        <CompIcon name="arrowLeft" size={20} />
+      </button>
+      <button className="cb-carousel-arrow next" onClick={() => go(1)} disabled={idx === total - 1} aria-label="Siguiente">
+        <CompIcon name="arrowRight" size={20} />
+      </button>
+
+      <div className="cb-carousel-dots">
+        {imagenes.map((_, i) => (
+          <button
+            key={i}
+            className={"cb-carousel-dot" + (i === idx ? " active" : "")}
+            onClick={() => setIdx(i)}
+            aria-label={`Ir a la foto ${i + 1}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Countdown ───
+function Countdown({ fechaObjetivo }) {
+  const [now, setNow] = useHL(Date.now());
+  useHE(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const target = new Date(fechaObjetivo).getTime();
+  const diff = Math.max(0, target - now);
+  const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const horas = Math.floor((diff / (1000 * 60 * 60)) % 24);
+  const mins = Math.floor((diff / (1000 * 60)) % 60);
+  const segs = Math.floor((diff / 1000) % 60);
+  const pad = (n) => String(n).padStart(2, "0");
+
+  return (
+    <div className="cb-countdown">
+      <p className="cb-countdown-label">Faltan para el sorteo de la casa</p>
+      <div className="cb-countdown-grid">
+        <div className="cb-countdown-cell">
+          <span className="cb-countdown-num">{pad(dias)}</span>
+          <span className="cb-countdown-unit">Días</span>
+        </div>
+        <div className="cb-countdown-cell">
+          <span className="cb-countdown-num">{pad(horas)}</span>
+          <span className="cb-countdown-unit">Horas</span>
+        </div>
+        <div className="cb-countdown-cell">
+          <span className="cb-countdown-num">{pad(mins)}</span>
+          <span className="cb-countdown-unit">Min</span>
+        </div>
+        <div className="cb-countdown-cell">
+          <span className="cb-countdown-num">{pad(segs)}</span>
+          <span className="cb-countdown-unit">Seg</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── FAQ Item ───
+function FAQItem({ q, children }) {
+  const [open, setOpen] = useHL(false);
+  return (
+    <div className={"cb-faq-item" + (open ? " open" : "")}>
+      <button className="cb-faq-q" onClick={() => setOpen(!open)}>
+        <span>{q}</span>
+        <span className="cb-faq-icon">
+          <CompIcon name={open ? "minus" : "plus"} size={16} />
+        </span>
+      </button>
+      {open && <div className="cb-faq-a">{children}</div>}
+    </div>
+  );
+}
+
+// ─── Galería ───
+function Galeria({ items }) {
+  const [open, setOpen] = useHL(-1);
+
+  // Patrón: 1ª wide, luego pares, cada 5 una wide
+  const layout = items.map((_, i) => (i === 0 || i % 5 === 0) ? "wide" : "");
+
+  const close = () => setOpen(-1);
+  const prev = () => setOpen(i => Math.max(0, i - 1));
+  const next = () => setOpen(i => Math.min(items.length - 1, i + 1));
+
+  useHE(() => {
+    if (open < 0) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") close();
+      else if (e.key === "ArrowLeft") prev();
+      else if (e.key === "ArrowRight") next();
+    };
+    window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
+  return (
+    <React.Fragment>
+      <div className="house-galeria-grid">
+        {items.map((item, i) => (
+          <div
+            key={i}
+            className={"house-galeria-item " + layout[i]}
+            onClick={() => setOpen(i)}
+          >
+            <img src={item.url} alt={item.titulo} loading="lazy" />
+            <span className="house-galeria-cap">{item.titulo}</span>
+          </div>
+        ))}
+      </div>
+
+      {open >= 0 && (
+        <div className="house-lightbox" onClick={close}>
+          <button className="house-lb-close" onClick={(e) => { e.stopPropagation(); close(); }} aria-label="Cerrar">
+            <CompIcon name="x" size={18} />
+          </button>
+          <div className="house-lb-img" onClick={(e) => e.stopPropagation()}>
+            <img src={items[open].url} alt={items[open].titulo} />
+          </div>
+          <div className="house-lb-cap">
+            {items[open].titulo} · {open + 1} de {items.length}
+          </div>
+          <button
+            className="house-lb-nav prev"
+            onClick={(e) => { e.stopPropagation(); prev(); }}
+            disabled={open === 0}
+            aria-label="Anterior"
+          >
+            <CompIcon name="arrowLeft" size={20} />
+          </button>
+          <button
+            className="house-lb-nav next"
+            onClick={(e) => { e.stopPropagation(); next(); }}
+            disabled={open === items.length - 1}
+            aria-label="Siguiente"
+          >
+            <CompIcon name="arrowRight" size={20} />
+          </button>
+        </div>
+      )}
+    </React.Fragment>
+  );
+}
+
+// Exponer también el FAQItem para que comprar-steps pueda reusarlo si quiere
+window.HouseFAQItem = FAQItem;

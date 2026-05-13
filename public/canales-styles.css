@@ -1,0 +1,642 @@
+/* canales-styles.css — Página "Canales oficiales" LOS PLATA */
+
+/* ─── Estructura de página ─── */
+.canales {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 20px 18px 96px;
+  position: relative;
+}
+
+/* ─── Top bar con back ─── */
+.canales-topbar {
+  background: #0A0A0A;
+  margin: -20px -18px 0;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  padding: 18px 18px 22px;
+  color: var(--cream-50);
+}
+.canales-topbar-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: 480px;
+  margin: 0 auto 18px;
+}
+.canales-back {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: rgba(250, 250, 247, 0.08);
+  border: 1px solid rgba(250, 250, 247, 0.14);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(250, 250, 247, 0.95);
+  flex-shrink: 0;
+  transition: background .15s ease;
+}
+.canales-back:hover { background: rgba(250, 250, 247, 0.14); }
+.canales-back:active { transform: scale(0.96); }
+
+.canales-topbar-logo {
+  height: 36px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.canales-topbar-title {
+  flex: 1;
+  font-family: var(--sans);
+  font-size: 17px;
+  font-weight: 600;
+  color: rgba(250, 250, 247, 0.95);
+  letter-spacing: -0.01em;
+  margin: 0;
+  text-align: center;
+}
+
+/* ─── Hero del header ─── */
+.canales-hero {
+  max-width: 480px;
+  margin: 0 auto;
+}
+.canales-hero-sub {
+  font-size: 15px;
+  color: rgba(250, 250, 247, 0.78);
+  line-height: 1.5;
+  margin: 14px 0 0;
+}
+.canales-hero-sub strong {
+  color: var(--cream-50);
+  font-weight: 600;
+}
+
+/* ─── Pestañas oficial / revendedores ─── */
+.canales-tabs {
+  display: flex;
+  gap: 6px;
+  background: rgba(250, 250, 247, 0.06);
+  border: 1px solid rgba(250, 250, 247, 0.1);
+  border-radius: 100px;
+  padding: 4px;
+  margin: 22px auto 0;
+  max-width: 480px;
+}
+.canales-tab {
+  flex: 1;
+  background: transparent;
+  border: 0;
+  color: rgba(250, 250, 247, 0.7);
+  padding: 10px 14px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.canales-tab:hover { color: var(--cream-50); }
+.canales-tab.is-active {
+  background: var(--cream-50);
+  color: var(--green-900);
+}
+.canales-tab-count {
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(10, 10, 10, 0.08);
+  color: inherit;
+  padding: 2px 7px;
+  border-radius: 100px;
+  letter-spacing: 0.02em;
+  opacity: .85;
+}
+.canales-tab.is-active .canales-tab-count {
+  background: rgba(10, 10, 10, 0.08);
+}
+
+/* ─── Cuerpo ─── */
+.canales-body { margin-top: 26px; }
+
+/* ─── Sección genérica ─── */
+.canales-sec {
+  margin-bottom: 30px;
+}
+.canales-sec-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 0 4px;
+}
+.canales-sec-head-left { min-width: 0; }
+.canales-sec-eyebrow {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--green-900);
+  margin: 0 0 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  line-height: 1.1;
+}
+.canales-sec-eyebrow .num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--green-900);
+  color: var(--cream-50);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+}
+.canales-sec-titulo {
+  font-family: var(--sans);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.022em;
+  color: var(--green-900);
+  margin: 0;
+  line-height: 1.15;
+}
+.canales-sec-meta {
+  font-size: 11.5px;
+  color: var(--ink-mute);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding-bottom: 2px;
+}
+
+/* ─── Lista vertical de tarjetas ─── */
+.canales-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ─── Tarjeta de canal (base) ─── */
+.canal {
+  background: white;
+  border: 1px solid rgba(10, 10, 10, 0.08);
+  border-radius: var(--r-md);
+  padding: 14px 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+  color: inherit;
+  transition: transform .15s ease, box-shadow .2s ease, border-color .2s ease;
+  position: relative;
+}
+.canal:active { transform: scale(0.985); }
+.canal:hover {
+  box-shadow: var(--shadow-md);
+  border-color: rgba(10, 10, 10, 0.16);
+}
+.canal-icon {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: white;
+}
+.canal-body { flex: 1; min-width: 0; }
+.canal-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 2px;
+}
+.canal-handle {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--green-900);
+  margin: 0;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.canal-verif {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--green-900);
+}
+.canal-desc {
+  font-size: 12.5px;
+  color: var(--ink-mute);
+  margin: 0;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.canal-cta {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--green-900);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 6px 10px;
+  background: var(--cream-100);
+  border-radius: 100px;
+  transition: background .2s ease;
+}
+.canal:hover .canal-cta {
+  background: var(--green-900);
+  color: var(--cream-50);
+}
+
+/* Iconos de red social — colores oficiales como sólido */
+.canal-icon.is-instagram {
+  background: linear-gradient(135deg, #f9ce34 0%, #ee2a7b 50%, #6228d7 100%);
+}
+.canal-icon.is-facebook {
+  background: #1877F2;
+}
+
+/* ─── WhatsApp tarjeta ─── */
+.canal-wa {
+  /* base canal style + */
+}
+.canal-wa .canal-icon {
+  background: #25D366;
+}
+.canal-wa-numero {
+  font-family: var(--sans);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--green-900);
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+  white-space: nowrap;
+}
+.canal-wa-name {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--green-900);
+  margin: 0 0 4px;
+}
+
+/* ─── Cuenta de pago — bloque expandido ─── */
+.cuenta-grupo {
+  margin-bottom: 14px;
+}
+.cuenta-grupo:last-child { margin-bottom: 0; }
+.cuenta-grupo-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px;
+  margin: 0 0 10px;
+}
+.cuenta-grupo-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--green-900);
+  color: var(--cream-50);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  flex-shrink: 0;
+}
+.cuenta-grupo-info { min-width: 0; }
+.cuenta-grupo-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin: 0 0 2px;
+  line-height: 1.2;
+}
+.cuenta-grupo-titular {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--green-900);
+  margin: 0;
+  line-height: 1.15;
+}
+.cuenta-grupo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cuenta {
+  background: white;
+  border: 1px solid rgba(10, 10, 10, 0.08);
+  border-radius: var(--r-md);
+  padding: 16px 16px 14px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+.cuenta-corp {
+  background: var(--green-900);
+  color: var(--cream-50);
+  border: none;
+}
+.cuenta-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed rgba(10, 10, 10, 0.12);
+}
+.cuenta-head-simple {
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+}
+.cuenta-head-simple .cuenta-banco-name {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.cuenta-corp .cuenta-head {
+  border-bottom-color: rgba(250, 250, 247, 0.16);
+}
+.cuenta-banco-logo {
+  width: 42px; height: 42px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: white;
+  color: var(--green-900);
+  overflow: hidden;
+  padding: 6px;
+  border: 1px solid rgba(10, 10, 10, 0.06);
+}
+.cuenta-banco-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.cuenta-corp .cuenta-banco-logo {
+  background: var(--cream-50);
+  border: 1px solid rgba(250, 250, 247, 0.18);
+}
+.cuenta-banco-logo.is-bancolombia {
+  background: #FDDA24;
+}
+.cuenta-corp .cuenta-banco-logo.is-bancolombia {
+  background: #FDDA24;
+  border-color: #FDDA24;
+}
+.cuenta-banco-logo.is-nequi {
+  background: #FFFFFF;
+}
+.cuenta-banco-logo.is-daviplata {
+  background: #FFFFFF;
+}
+.cuenta-banco-info { flex: 1; min-width: 0; }
+.cuenta-banco-name {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0;
+  line-height: 1.2;
+}
+.cuenta-banco-tipo {
+  font-size: 11.5px;
+  color: var(--ink-mute);
+  margin: 1px 0 0;
+}
+.cuenta-corp .cuenta-banco-tipo { color: rgba(250, 250, 247, 0.6); }
+.cuenta-tag {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: var(--gold);
+  color: var(--green-900);
+  padding: 4px 8px;
+  border-radius: 100px;
+  flex-shrink: 0;
+}
+.cuenta-numero-block {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.cuenta-numero-text { flex: 1; min-width: 0; }
+.cuenta-numero-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin: 0 0 4px;
+}
+.cuenta-corp .cuenta-numero-label { color: rgba(250, 250, 247, 0.6); }
+.cuenta-numero {
+  font-family: var(--sans);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+  line-height: 1.05;
+  word-break: break-all;
+}
+.cuenta-titular-block {}
+.cuenta-titular-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin: 0 0 2px;
+}
+.cuenta-corp .cuenta-titular-label { color: rgba(250, 250, 247, 0.6); }
+.cuenta-titular {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+  line-height: 1.25;
+}
+.cuenta-titular-meta {
+  font-size: 11.5px;
+  color: var(--ink-mute);
+  margin: 1px 0 0;
+}
+.cuenta-corp .cuenta-titular-meta { color: rgba(250, 250, 247, 0.65); }
+
+.cuenta-copy-btn {
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--green-900);
+  color: var(--cream-50);
+  border: 0;
+  padding: 0 16px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all .15s ease;
+  min-width: 92px;
+}
+.cuenta-copy-btn:active { transform: scale(0.97); }
+.cuenta-corp .cuenta-copy-btn {
+  background: var(--gold);
+  color: var(--green-900);
+}
+.cuenta-copy-btn.is-copied {
+  background: var(--gold);
+  color: var(--green-900);
+}
+
+/* ─── Tarjeta hero corporativa (la principal) ─── */
+.cuenta-hero {
+  background: linear-gradient(160deg, #0A0A0A 0%, #1F1F1F 100%);
+}
+.cuenta-hero::before {
+  content: "";
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 160px; height: 160px;
+  background: radial-gradient(circle, rgba(155, 250, 176, 0.18) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ─── Note legal junto a cuentas ─── */
+.canales-note {
+  font-size: 12px;
+  color: var(--ink-mute);
+  line-height: 1.55;
+  margin: 12px 4px 0;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.canales-note svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--green-900);
+  opacity: .55;
+}
+.canales-note strong { color: var(--ink-soft); font-weight: 600; }
+
+/* ─── Pendiente / placeholder ─── */
+.canales-pending {
+  background: var(--cream-100);
+  border: 1px dashed rgba(10, 10, 10, 0.18);
+  border-radius: var(--r-lg);
+  padding: 26px 22px;
+  text-align: center;
+}
+.canales-pending-eyebrow {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin: 0 0 10px;
+}
+.canales-pending-title {
+  font-family: var(--sans);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.018em;
+  color: var(--green-900);
+  margin: 0 0 8px;
+}
+.canales-pending-desc {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+  margin: 0;
+  max-width: 36ch;
+  margin-inline: auto;
+}
+
+/* ─── Toast copy ─── */
+.canales-toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--green-900);
+  color: var(--cream-50);
+  padding: 12px 20px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  box-shadow: 0 12px 32px rgba(0,0,0,.25);
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease, transform .25s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.canales-toast.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.canales-toast svg {
+  color: var(--gold);
+}
+
+/* ─── Adapt tablet/desktop ─── */
+@media (min-width: 600px) {
+  .canales { max-width: 560px; padding: 32px 24px 120px; }
+}
+@media (min-width: 900px) {
+  body { background: linear-gradient(180deg, var(--cream-50) 0%, var(--cream-100) 100%); }
+  .canales { max-width: 720px; padding: 48px 32px 140px; }
+  .canales-list-pago { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .canales-list-pago .cuenta-hero { grid-column: 1 / -1; }
+}
+
+/* Small phones */
+@media (max-width: 360px) {
+  .canales { padding: 16px 14px 96px; }
+  .cuenta-numero { font-size: 21px; }
+  .canal-handle { font-size: 14px; }
+}
