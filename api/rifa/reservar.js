@@ -29,11 +29,15 @@ export default async function handler(req, res) {
     return res.status(405).json({ exito: false, error: 'Método no permitido' });
   }
 
-  const { numeros, nombre, apellido, ciudad, telefono } = req.body || {};
+  const { numeros, nombre, apellido, ciudad, telefono, documento_tipo, documento_numero } = req.body || {};
 
   if (!Array.isArray(numeros) || numeros.length === 0 || !nombre || !apellido || !ciudad || !telefono) {
     return res.status(400).json({ exito: false, error: 'Faltan datos para la reserva.' });
   }
+
+  // Documento opcional — solo se persiste si viene con valor (no sobrescribe lo ya guardado)
+  const docTipoLimpio = documento_tipo ? String(documento_tipo).trim().toUpperCase() : null;
+  const docNumeroLimpio = documento_numero ? String(documento_numero).trim() : null;
 
   // Limpiamos datos del cliente
   const telefonoLimpio = String(telefono).replace(/\D/g, '').slice(-10);
@@ -92,7 +96,7 @@ export default async function handler(req, res) {
       .eq('telefono', telefonoLimpio)
       .single();
 
-    const { error: upsertError } = await supabase.from('clientes').upsert({
+    const clientePayload = {
       telefono: telefonoLimpio,
       nombre: nombre,
       apellido: apellido,
@@ -100,7 +104,11 @@ export default async function handler(req, res) {
       total_comprado: clienteActual?.total_comprado || 0,
       boletas_diarias_compradas: clienteActual?.boletas_diarias_compradas || 0,
       boletas_grandes_compradas: clienteActual?.boletas_grandes_compradas || 0,
-    }, { onConflict: 'telefono' });
+    };
+    if (docTipoLimpio) clientePayload.documento_tipo = docTipoLimpio;
+    if (docNumeroLimpio) clientePayload.documento_numero = docNumeroLimpio;
+
+    const { error: upsertError } = await supabase.from('clientes').upsert(clientePayload, { onConflict: 'telefono' });
     if (upsertError) throw upsertError;
 
     // 4. Marcamos las boletas como "Ocupada" (separadas sin pago todavía)
@@ -117,16 +125,20 @@ export default async function handler(req, res) {
 
     for (const b of checkData) {
       const precio = Number(b.precio_total) || PRECIOS.RIFA_4_CIFRAS;
+      const boletaPayload = {
+        telefono_cliente: telefonoLimpio,
+        estado: 'Ocupada',
+        total_abonado: 0,
+        saldo_restante: precio,
+        asesor: 'Pagina Web',
+        fecha_venta: fechaVenta,
+      };
+      if (docTipoLimpio) boletaPayload.documento_tipo = docTipoLimpio;
+      if (docNumeroLimpio) boletaPayload.documento_numero = docNumeroLimpio;
+
       const { error: upErr } = await supabase
         .from('boletas')
-        .update({
-          telefono_cliente: telefonoLimpio,
-          estado: 'Ocupada',
-          total_abonado: 0,
-          saldo_restante: precio,
-          asesor: 'Pagina Web',
-          fecha_venta: fechaVenta,
-        })
+        .update(boletaPayload)
         .eq('numero', b.numero);
 
       if (upErr) throw upErr;

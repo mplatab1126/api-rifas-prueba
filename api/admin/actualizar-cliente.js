@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  const { telefono, nombre, apellido, ciudad, contrasena } = req.body;
+  const { telefono, nombre, apellido, ciudad, contrasena, documento_tipo, documento_numero } = req.body;
 
   if (!validarAsesor(contrasena)) return res.status(401).json({ status: 'error', mensaje: 'Contraseña de asesor incorrecta' });
 
@@ -19,16 +19,24 @@ export default async function handler(req, res) {
     return res.status(400).json({ status: 'error', mensaje: `🚫 El teléfono "${telefono}" no es válido (debe ser 12 dígitos: 57 + celular colombiano que empieza con 3). Corrígelo antes de guardar.` });
   }
 
+  // Documento opcional — solo se persiste si viene con valor
+  const docTipoLimpio = documento_tipo ? String(documento_tipo).trim().toUpperCase() : null;
+  const docNumeroLimpio = documento_numero ? String(documento_numero).trim() : null;
+
   try {
+    const payload = {
+      telefono: telefono,
+      nombre: nombre || '',
+      apellido: apellido || '',
+      ciudad: ciudad || ''
+    };
+    if (docTipoLimpio) payload.documento_tipo = docTipoLimpio;
+    if (docNumeroLimpio) payload.documento_numero = docNumeroLimpio;
+
     // Upsert: crea el registro si no existe, o actualiza si ya existe
     const { error } = await supabase
       .from('clientes')
-      .upsert({
-        telefono: telefono,
-        nombre: nombre || '',
-        apellido: apellido || '',
-        ciudad: ciudad || ''
-      }, { onConflict: 'telefono' });
+      .upsert(payload, { onConflict: 'telefono' });
 
     if (error) throw error;
 

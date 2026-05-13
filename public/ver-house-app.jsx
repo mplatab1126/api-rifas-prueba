@@ -35,6 +35,9 @@ function VerHouseApp() {
         apellido: data.apellido || "",
         ciudad: data.ciudad || "",
         telefono: data.telefono ? `${pais.code} ${String(data.telefono).replace(/\D/g, "").slice(-10)}` : `${pais.code} ${telefono}`,
+        documento: (data.documento_tipo || data.documento_numero)
+          ? { tipo: data.documento_tipo || "CC", numero: data.documento_numero || "—" }
+          : null,
         boletas: data.boletas
       };
 

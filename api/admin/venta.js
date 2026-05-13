@@ -12,8 +12,13 @@ export default async function handler(req, res) {
     numeroBoleta, nombre, apellido, ciudad, telefono,
     primerAbono, referenciaAbono, metodoPago, referencia,
     contrasena, esPendiente, idTransferencia, esPagoInteligente, esPremioRifa,
-    esColombia, permitirExceso
+    esColombia, permitirExceso,
+    documento_tipo, documento_numero
   } = req.body;
+
+  // Documento opcional — solo se persiste si viene con valor (no sobrescribe lo ya guardado)
+  const docTipoLimpio = documento_tipo ? String(documento_tipo).trim().toUpperCase() : null;
+  const docNumeroLimpio = documento_numero ? String(documento_numero).trim() : null;
 
   const nombreAsesor = validarAsesor(contrasena);
   if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
@@ -147,17 +152,21 @@ export default async function handler(req, res) {
     }
 
     // 4. Guardar/Actualizar el cliente con sus nuevos números
+    const clientePayload = {
+      telefono: telefonoLimpio,
+      nombre: nombre || 'Sin Nombre',
+      apellido: apellido || '',
+      ciudad: ciudad || '',
+      total_comprado: totalComprado,
+      boletas_diarias_compradas: diariasCompradas,
+      boletas_grandes_compradas: grandesCompradas
+    };
+    if (docTipoLimpio) clientePayload.documento_tipo = docTipoLimpio;
+    if (docNumeroLimpio) clientePayload.documento_numero = docNumeroLimpio;
+
     const { error: clienteError } = await supabase
       .from('clientes')
-      .upsert({
-        telefono: telefonoLimpio,
-        nombre: nombre || 'Sin Nombre',
-        apellido: apellido || '',
-        ciudad: ciudad || '',
-        total_comprado: totalComprado,
-        boletas_diarias_compradas: diariasCompradas,
-        boletas_grandes_compradas: grandesCompradas
-      }, { onConflict: 'telefono' });
+      .upsert(clientePayload, { onConflict: 'telefono' });
 
     if (clienteError) throw clienteError;
 
@@ -219,6 +228,9 @@ export default async function handler(req, res) {
     updatePayload.asesor = nombreAsesor;
     if (!esDiaria) {
         updatePayload.fecha_venta = fechaVentaColombia;
+        // Documento solo aplica para boletas de 4 cifras (las diarias no lo soportan en su tabla)
+        if (docTipoLimpio) updatePayload.documento_tipo = docTipoLimpio;
+        if (docNumeroLimpio) updatePayload.documento_numero = docNumeroLimpio;
     }
 
     const { error: updateError } = await supabase.from(tabla).update(updatePayload).eq('numero', numeroLimpio);
