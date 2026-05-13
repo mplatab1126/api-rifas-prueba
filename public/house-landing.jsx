@@ -18,37 +18,14 @@ window.HouseLanding = function HouseLanding({ rifa, onComprar, tweaks }) {
 
   return (
     <React.Fragment>
-      {/* PREMIO MAYOR — primero, antes del video y las fotos */}
+      {/* PREMIO MAYOR — primero, antes de las fotos */}
       <div className="house-section-wrap house-premio-intro">
         <p className="eyebrow">El premio mayor</p>
         <h2>Una casa de dos plantas.</h2>
         <p className="lead">Si no la quiere, se la compramos en $300.000.000 en efectivo.</p>
       </div>
 
-      {/* VIDEO de la casa — antes del carrusel de fotos */}
-      <div style={{ maxWidth: 480, margin: "8px auto 0", padding: "0 16px" }}>
-        <div style={{
-          position: "relative",
-          width: "100%",
-          aspectRatio: "16 / 9",
-          background: "var(--green-900, #0A0A0A)",
-          borderRadius: "var(--r-lg, 20px)",
-          overflow: "hidden",
-          boxShadow: "var(--shadow-md, 0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.05))"
-        }}>
-          <iframe
-            src="https://www.youtube-nocookie.com/embed/IPrU-sQlkV4?rel=0&modestbranding=1"
-            title="La Plata House — Video oficial"
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0 }}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            referrerPolicy="strict-origin-when-cross-origin"
-            allowFullScreen
-            loading="lazy"
-          />
-        </div>
-      </div>
-
-      {/* HERO — el carrusel después del video */}
+      {/* HERO — carrusel: video oficial + fotos verticales */}
       <HouseHeroSlider items={(rifa.galeria || []).filter(g => g.vertical !== false)} />
       <div className="house-premio-mayor">
         <p className="hpm-intro">Si gana el premio mayor, tiene dos opciones:</p>
@@ -250,8 +227,20 @@ function HouseHeroSlider({ items }) {
       <div className="hhs-track">
         {items.map((it, i) => (
           <div className={"hhs-slide" + (i === idx ? " active" : "")} key={i}>
-            <img src={it.url} alt={it.titulo} loading={i === 0 ? "eager" : "lazy"} />
-            <span className="hhs-cap">{it.titulo}</span>
+            {it.tipo === "video" ? (
+              <iframe
+                src={`https://www.youtube-nocookie.com/embed/${it.videoId}?rel=0&modestbranding=1&playsinline=1`}
+                title={it.titulo}
+                style={{ width: "100%", height: "100%", border: 0, display: "block", background: "#0A0A0A" }}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+                loading={i === 0 ? "eager" : "lazy"}
+              />
+            ) : (
+              <img src={it.url} alt={it.titulo} loading={i === 0 ? "eager" : "lazy"} />
+            )}
+            {it.titulo && it.tipo !== "video" && <span className="hhs-cap">{it.titulo}</span>}
           </div>
         ))}
       </div>

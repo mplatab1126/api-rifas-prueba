@@ -14,8 +14,9 @@ window.RIFA_INFO = {
   premioAnticipadoMonto: 5000000,
   alternativaCash: 300000000, // $300M si no quiere la casa
 
-  // Galería completa de la casa (orden curado: zonas sociales → habitaciones → servicios)
+  // Galería completa de la casa (orden curado: video oficial → zonas sociales → habitaciones → servicios)
   galeria: [
+    { tipo: "video", videoId: "IPrU-sQlkV4", titulo: "Video oficial", vertical: true  },
     { url: "https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Comedor+foto+1.jpg",                  titulo: "Comedor",                planta: 1, vertical: true  },
     { url: "https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Cocina.jpg",                          titulo: "Cocina",                 planta: 1, vertical: false },
     { url: "https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Escaleras.jpg",                       titulo: "Escaleras",              planta: 1, vertical: true  },
