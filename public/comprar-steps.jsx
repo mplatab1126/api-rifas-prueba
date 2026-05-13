@@ -271,6 +271,7 @@ window.StepEscoger = function StepEscoger({ rifa, seleccionadas, setSeleccionada
   const [disponibles, setDisponibles] = useS([]);
   const [loading, setLoading] = useS(true);
   const [sinMas, setSinMas] = useS(false);
+  const [busquedaEstado, setBusquedaEstado] = useS(null); // null | 'buscando' | 'tomada' | 'no-existe'
 
   // Carga inicial: pide 50 sin exclusiones
   const cargarInicial = React.useCallback(async () => {
@@ -298,6 +299,44 @@ window.StepEscoger = function StepEscoger({ rifa, seleccionadas, setSeleccionada
   }, [disponibles]);
 
   useE(() => { cargarInicial(); }, [cargarInicial]);
+
+  // Cuando el cliente escribe 4 dígitos completos, consultar la API real
+  // para verificar disponibilidad en TODA la rifa (no solo en la muestra de 50)
+  useE(() => {
+    const num = busqueda.trim();
+    if (!/^\d{4}$/.test(num)) {
+      setBusquedaEstado(null);
+      return;
+    }
+    // Si ya lo tenemos en la lista actual, no hace falta consultar
+    if (disponibles.includes(num)) {
+      setBusquedaEstado(null);
+      return;
+    }
+    let cancelado = false;
+    setBusquedaEstado('buscando');
+    fetch('/api/rifa/verificar?numero=' + encodeURIComponent(num))
+      .then(r => r.json())
+      .then(data => {
+        if (cancelado) return;
+        if (!data || !data.existe) {
+          setBusquedaEstado('no-existe');
+        } else if (data.disponible) {
+          // Está libre — lo agrego a la lista para que el cliente lo pueda tocar
+          setDisponibles(prev => {
+            if (prev.includes(num)) return prev;
+            return [...prev, num].sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+          });
+          setBusquedaEstado(null);
+        } else {
+          setBusquedaEstado('tomada');
+        }
+      })
+      .catch(() => {
+        if (!cancelado) setBusquedaEstado(null);
+      });
+    return () => { cancelado = true; };
+  }, [busqueda, disponibles]);
 
   const filtradas = useM(() => {
     if (!busqueda) return disponibles;
@@ -366,9 +405,27 @@ window.StepEscoger = function StepEscoger({ rifa, seleccionadas, setSeleccionada
         </div>
       )}
 
-      {!loading && filtradas.length === 0 && busqueda && (
+      {busquedaEstado === 'buscando' && (
         <div style={{ textAlign: "center", padding: "20px", color: "var(--ink-mute)" }}>
-          No hay números disponibles que comiencen por "{busqueda}".
+          Verificando el número {busqueda}...
+        </div>
+      )}
+
+      {busquedaEstado === 'tomada' && (
+        <div style={{ textAlign: "center", padding: "20px 24px", color: "var(--ink-soft)", lineHeight: 1.5 }}>
+          El número <strong>{busqueda}</strong> ya fue asignado a otra persona. Escoja otro o búsquelo en la lista.
+        </div>
+      )}
+
+      {busquedaEstado === 'no-existe' && (
+        <div style={{ textAlign: "center", padding: "20px 24px", color: "var(--ink-soft)", lineHeight: 1.5 }}>
+          El número <strong>{busqueda}</strong> no está en esta rifa.
+        </div>
+      )}
+
+      {!loading && !busquedaEstado && filtradas.length === 0 && busqueda && busqueda.length < 4 && (
+        <div style={{ textAlign: "center", padding: "20px", color: "var(--ink-mute)" }}>
+          No hay números disponibles que comiencen por "{busqueda}" en la muestra actual.
         </div>
       )}
 
