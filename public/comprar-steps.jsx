@@ -267,7 +267,7 @@ function FAQItem({ q, children }) {
 window.StepEscoger = function StepEscoger({ rifa, seleccionadas, setSeleccionadas, onContinuar }) {
   const [modo, setModo] = useS("manual"); // 'manual' | 'aleatorio'
   const [busqueda, setBusqueda] = useS("");
-  const [visibles, setVisibles] = useS(40); // boletas mostradas en la grilla
+  const [visibles, setVisibles] = useS(50); // boletas mostradas en la grilla (5 por serie x 10 series)
   const [disponibles, setDisponibles] = useS([]);
   const [loading, setLoading] = useS(true);
 
@@ -279,6 +279,7 @@ window.StepEscoger = function StepEscoger({ rifa, seleccionadas, setSeleccionada
       nuevas.forEach(n => acumulado.add(n));
       return Array.from(acumulado).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
     });
+    setVisibles(prev => prev + 50);
     setLoading(false);
   }, []);
 
@@ -364,7 +365,7 @@ window.StepEscoger = function StepEscoger({ rifa, seleccionadas, setSeleccionada
       )}
 
       {filtradas.length > visibles && (
-        <button className="cb-load-more" onClick={() => setVisibles(v => v + 40)}>
+        <button className="cb-load-more" onClick={() => setVisibles(v => v + 50)}>
           Cargar otros números ({filtradas.length - visibles} restantes)
         </button>
       )}
