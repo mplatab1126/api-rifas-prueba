@@ -815,6 +815,9 @@ window.StepPago = function StepPago({ datos, seleccionadas, rifa, onReservar }) 
   const total = seleccionadas.length * rifa.precioBoleta;
   const WA_NUMBER = "573107334957"; // LOS PLATA WhatsApp oficial
 
+  const [reservando, setReservando] = useS(false);
+  const [errorReserva, setErrorReserva] = useS(null);
+
   const tipoDocLabel = (window.TIPOS_DOCUMENTO || []).find(t => t.code === datos.tipoDoc)?.code || datos.tipoDoc;
 
   const waMsg = encodeURIComponent(
@@ -832,6 +835,58 @@ window.StepPago = function StepPago({ datos, seleccionadas, rifa, onReservar }) 
 Por favor envíenme la información para realizar el pago. ¡Gracias!`
   );
   const waLink = `https://wa.me/${WA_NUMBER}?text=${waMsg}`;
+
+  const reservarYAbrirWA = async () => {
+    if (reservando) return;
+    setReservando(true);
+    setErrorReserva(null);
+
+    const esColombia = datos.pais && datos.pais.iso === "CO";
+    const telefonoParaApi = esColombia
+      ? datos.celular
+      : (datos.pais.code || "").replace(/\+/g, "") + datos.celular;
+
+    try {
+      const res = await fetch("/api/rifa/reservar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          numeros: seleccionadas,
+          nombre: datos.nombre,
+          apellido: datos.apellido,
+          ciudad: datos.ciudad,
+          telefono: telefonoParaApi,
+          esColombia: esColombia,
+          documento_tipo: datos.tipoDoc,
+          documento_numero: datos.cedula
+        })
+      });
+      const data = await res.json();
+
+      if (!data.exito) {
+        setErrorReserva(data.error || "No pudimos apartar la boleta. Inténtalo de nuevo.");
+        setReservando(false);
+        return;
+      }
+
+      // Reserva exitosa: abrimos WhatsApp y mostramos la pantalla de éxito
+      // Importante: el window.open debe pasarse en el mismo tick del clic
+      // para no ser bloqueado como popup. Usamos un anchor sintético.
+      const a = document.createElement("a");
+      a.href = waLink;
+      a.target = "_blank";
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      if (onReservar) onReservar();
+    } catch (e) {
+      console.error("[reservar]", e);
+      setErrorReserva("Hubo un problema de conexión. Inténtalo de nuevo o escríbenos por WhatsApp.");
+      setReservando(false);
+    }
+  };
 
   return (
     <React.Fragment>
@@ -902,16 +957,23 @@ Por favor envíenme la información para realizar el pago. ¡Gracias!`
           <span className="cb-sticky-label">Total a pagar</span>
           <span className="cb-sticky-value">{window.formatCOP(total)}</span>
         </div>
-        <a
+
+        {errorReserva && (
+          <div style={{ padding: "12px 14px", marginBottom: 10, background: "rgba(127,31,31,0.08)", color: "#7A1F1F", borderRadius: 10, fontSize: 14, lineHeight: 1.45 }}>
+            {errorReserva}
+          </div>
+        )}
+
+        <button
+          type="button"
           className="cb-btn-primary cb-btn-wa"
-          href={waLink}
-          target="_blank"
-          rel="noopener"
-          onClick={() => { if (onReservar) onReservar(); }}
+          onClick={reservarYAbrirWA}
+          disabled={reservando}
+          style={reservando ? { opacity: 0.7, cursor: "not-allowed" } : undefined}
         >
           <CompIcon name="wa" size={20} color="currentColor" />
-          Reclamar mi boleta por WhatsApp
-        </a>
+          {reservando ? "Apartando su boleta..." : "Reclamar mi boleta por WhatsApp"}
+        </button>
         <p className="cb-confirm-tagline">
           Le respondemos en pocos minutos en horario hábil.
         </p>

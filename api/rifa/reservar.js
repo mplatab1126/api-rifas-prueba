@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ exito: false, error: 'Método no permitido' });
   }
 
-  const { numeros, nombre, apellido, ciudad, telefono, documento_tipo, documento_numero } = req.body || {};
+  const { numeros, nombre, apellido, ciudad, telefono, documento_tipo, documento_numero, esColombia } = req.body || {};
 
   if (!Array.isArray(numeros) || numeros.length === 0 || !nombre || !apellido || !ciudad || !telefono) {
     return res.status(400).json({ exito: false, error: 'Faltan datos para la reserva.' });
@@ -39,10 +39,23 @@ export default async function handler(req, res) {
   const docTipoLimpio = documento_tipo ? String(documento_tipo).trim().toUpperCase() : null;
   const docNumeroLimpio = documento_numero ? String(documento_numero).trim() : null;
 
+  // País del cliente (default: Colombia para compatibilidad con reservas viejas)
+  const esColombiaFlag = esColombia !== false;
+
   // Limpiamos datos del cliente
-  const telefonoLimpio = String(telefono).replace(/\D/g, '').slice(-10);
-  if (telefonoLimpio.length !== 10) {
-    return res.status(400).json({ exito: false, error: 'El celular debe tener 10 dígitos.' });
+  // Para Colombia exigimos 10 dígitos (regla histórica de la tabla clientes).
+  // Para clientes extranjeros aceptamos entre 7 y 15 dígitos (formato E.164 sin +).
+  let telefonoLimpio;
+  if (esColombiaFlag) {
+    telefonoLimpio = String(telefono).replace(/\D/g, '').slice(-10);
+    if (telefonoLimpio.length !== 10) {
+      return res.status(400).json({ exito: false, error: 'El celular debe tener 10 dígitos.' });
+    }
+  } else {
+    telefonoLimpio = String(telefono).replace(/\D/g, '');
+    if (telefonoLimpio.length < 7 || telefonoLimpio.length > 15) {
+      return res.status(400).json({ exito: false, error: 'El celular extranjero debe tener entre 7 y 15 dígitos incluyendo el código del país.' });
+    }
   }
   const nombreCompleto = `${nombre} ${apellido}`.trim();
 
