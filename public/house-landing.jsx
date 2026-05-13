@@ -33,7 +33,7 @@ window.HouseLanding = function HouseLanding({ rifa, onComprar, tweaks }) {
           <div className="hpm-icon"><img src={window.ICONS_3D.key} alt="" /></div>
           <p className="hpm-eyebrow">Opción 1</p>
           <p className="hpm-titulo">Quédese con la casa</p>
-          <p className="hpm-desc">Le entregamos La Plata House tal cual la ve en las fotos, con todo lo que tiene por dentro.</p>
+          <p className="hpm-desc">Le entregamos La Plata House tal cual la ve en las fotos.</p>
         </div>
         <div className="hpm-divider"><span>o</span></div>
         <div className="hpm-opt">
