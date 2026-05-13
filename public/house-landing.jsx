@@ -223,6 +223,17 @@ function HouseHeroSlider({ items }) {
     startX.current = null;
   };
 
+  // Auto-scroll de la tira de miniaturas para mantener la activa centrada
+  const thumbsRef = useHR(null);
+  useHE(() => {
+    const container = thumbsRef.current;
+    if (!container) return;
+    const activeThumb = container.children[idx];
+    if (!activeThumb) return;
+    const targetLeft = activeThumb.offsetLeft - container.clientWidth / 2 + activeThumb.clientWidth / 2;
+    container.scrollTo({ left: Math.max(0, targetLeft), behavior: "smooth" });
+  }, [idx]);
+
   return (
     <div className="house-hero-slider natural" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <div className="hhs-track">
@@ -278,15 +289,59 @@ function HouseHeroSlider({ items }) {
 
       <div className="hhs-counter">{idx + 1} / {total}</div>
 
-      <div className="hhs-dots">
-        {items.map((_, i) => (
-          <button
-            key={i}
-            className={"hhs-dot" + (i === idx ? " active" : "")}
-            onClick={() => setIdx(i)}
-            aria-label={`Ir a la foto ${i + 1}`}
-          />
-        ))}
+      <div
+        ref={thumbsRef}
+        style={{
+          display: "flex",
+          gap: 8,
+          overflowX: "auto",
+          overflowY: "hidden",
+          padding: "14px 16px 6px",
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+          WebkitOverflowScrolling: "touch"
+        }}
+      >
+        {items.map((it, i) => {
+          const isActive = i === idx;
+          const thumbSrc = it.tipo === "video" ? it.posterUrl : it.url;
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setIdx(i)}
+              aria-label={`Ir a la foto ${i + 1}${it.titulo ? ": " + it.titulo : ""}`}
+              style={{
+                flex: "0 0 auto",
+                width: 52, height: 68,
+                padding: 0, border: 0, cursor: "pointer",
+                borderRadius: 8,
+                overflow: "hidden",
+                position: "relative",
+                opacity: isActive ? 1 : 0.5,
+                boxShadow: isActive
+                  ? "0 0 0 2px var(--gold, #9BFAB0), 0 4px 12px rgba(0,0,0,0.18)"
+                  : "0 0 0 1px rgba(0,0,0,0.08)",
+                transform: isActive ? "translateY(-2px)" : "none",
+                transition: "opacity 0.18s, transform 0.18s, box-shadow 0.18s",
+                background: "var(--cream-100, #F2F1EC)"
+              }}
+            >
+              <img src={thumbSrc} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+              {it.tipo === "video" && (
+                <span aria-hidden="true" style={{
+                  position: "absolute", inset: 0,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: "rgba(0,0,0,0.32)"
+                }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {videoOpen && (() => {
