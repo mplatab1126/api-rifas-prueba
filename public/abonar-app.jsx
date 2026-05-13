@@ -36,6 +36,9 @@ function AbonarApp() {
   const [buscando, setBuscando] = useState_app(false);
   const [pagando, setPagando] = useState_app(false);
 
+  // Menú lateral (hamburger)
+  const [menuOpen, setMenuOpen] = useState_app(false);
+
   // Datos de transacción Wompi (cuando regresa)
   const [txWompi, setTxWompi] = useState_app(null);
   const [cargandoTx, setCargandoTx] = useState_app(!!wompiTxId);
@@ -152,9 +155,10 @@ function AbonarApp() {
           <button className="ab-back" onClick={handleBack} aria-label="Volver">
             <AbIcon name="back" size={22} />
           </button>
-          <img src="assets/logo-losplata.png" alt="LOS PLATA" className="ab-topbar-logo" />
           <h1 className="ab-topbar-title">Abonar boleta</h1>
+          <HamburgerBtn onClick={() => setMenuOpen(true)} />
         </div>
+        <NavDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
 
         {/* Stepper */}
         {step !== "exito" && step !== "exito-pago" && (
