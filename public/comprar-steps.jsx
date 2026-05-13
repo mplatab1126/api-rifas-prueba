@@ -869,17 +869,9 @@ Por favor envíenme la información para realizar el pago. ¡Gracias!`
         return;
       }
 
-      // Reserva exitosa: abrimos WhatsApp y mostramos la pantalla de éxito
-      // Importante: el window.open debe pasarse en el mismo tick del clic
-      // para no ser bloqueado como popup. Usamos un anchor sintético.
-      const a = document.createElement("a");
-      a.href = waLink;
-      a.target = "_blank";
-      a.rel = "noopener";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-
+      // Reserva exitosa: mostramos la pantalla de éxito. El cliente decide
+      // cuándo ir a WhatsApp desde ahí — no abrimos otra app automáticamente
+      // para que el flujo se sienta claro y no se pierda contexto.
       if (onReservar) onReservar();
     } catch (e) {
       console.error("[reservar]", e);
@@ -1006,8 +998,12 @@ window.StepExitoCompra = function StepExitoCompra({ datos, seleccionadas, rifa, 
 
   const tipoDocLabel = (window.TIPOS_DOCUMENTO || []).find(t => t.code === datos.tipoDoc)?.code || datos.tipoDoc;
 
+  const boletasTexto = seleccionadas.length === 1
+    ? `la boleta N° ${seleccionadas[0]}`
+    : `las boletas N° ${seleccionadas.join(", N° ")}`;
+
   const waMsg = encodeURIComponent(
-    `Hola, ya solicité apartar mi boleta de *${rifa.nombre}*.
+    `Hola, acabo de reservar ${boletasTexto} en la página web de *${rifa.nombre}*.
 
 *Datos del titular*
 • Nombre: ${datos.nombre} ${datos.apellido}
@@ -1015,10 +1011,9 @@ window.StepExitoCompra = function StepExitoCompra({ datos, seleccionadas, rifa, 
 • Celular: ${datos.pais.code} ${datos.celular}
 • Ciudad: ${datos.ciudad}
 
-*Boleta(s):* N° ${seleccionadas.join(", N° ")}
-*Valor total:* ${window.formatCOP(total)}
+*Valor total a pagar:* ${window.formatCOP(total)}
 
-Quisiera continuar con el pago. ¡Gracias!`
+Por favor envíenme los datos para realizar el pago. ¡Gracias!`
   );
   const waLink = `https://wa.me/${WA_NUMBER}?text=${waMsg}`;
 
@@ -1028,9 +1023,9 @@ Quisiera continuar con el pago. ¡Gracias!`
         <div className="cb-exito-icon cb-exito-icon-3d">
           <img src="assets/icon-3d-tick.png" alt="" />
         </div>
-        <h1 className="cb-exito-titulo">¡Su boleta está apartada!</h1>
+        <h1 className="cb-exito-titulo">¡Su boleta ha sido apartada!</h1>
         <p className="cb-exito-msg">
-          Apartamos {seleccionadas.length === 1 ? "su número" : "sus números"} a su nombre por <strong>24 horas</strong>. La conversación continúa en WhatsApp: ahí le enviamos los datos de la cuenta para el pago y, una vez confirmado, su boleta digital.
+          Reservamos {seleccionadas.length === 1 ? "su número" : "sus números"} a su nombre por <strong>24 horas</strong>. Para recibir los datos de pago y la boleta digital, reclámela por WhatsApp con un solo toque.
         </p>
       </div>
 
@@ -1069,9 +1064,16 @@ Quisiera continuar con el pago. ¡Gracias!`
         href={waLink}
         target="_blank"
         rel="noopener"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 10,
+          whiteSpace: "nowrap"
+        }}
       >
-        <CompIcon name="wa" size={20} color="currentColor" />
-        Volver a abrir WhatsApp
+        <CompIcon name="wa" size={22} color="currentColor" />
+        <span>Reclamar boleta</span>
       </a>
 
       <button className="cb-btn-secondary" onClick={onVolver} style={{ marginTop: 12 }}>
