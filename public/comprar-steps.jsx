@@ -820,8 +820,12 @@ window.StepPago = function StepPago({ datos, seleccionadas, rifa, onReservar }) 
 
   const tipoDocLabel = (window.TIPOS_DOCUMENTO || []).find(t => t.code === datos.tipoDoc)?.code || datos.tipoDoc;
 
+  const boletasTextoMsg = seleccionadas.length === 1
+    ? `la boleta N° ${seleccionadas[0]}`
+    : `las boletas N° ${seleccionadas.join(", N° ")}`;
+
   const waMsg = encodeURIComponent(
-    `Hola, quiero apartar mi boleta de *${rifa.nombre}*.
+    `Hola, acabo de reservar ${boletasTextoMsg} en la página web de *${rifa.nombre}*.
 
 *Datos del titular*
 • Nombre: ${datos.nombre} ${datos.apellido}
@@ -829,10 +833,9 @@ window.StepPago = function StepPago({ datos, seleccionadas, rifa, onReservar }) 
 • Celular: ${datos.pais.code} ${datos.celular}
 • Ciudad: ${datos.ciudad}
 
-*Boleta(s) escogida(s):* N° ${seleccionadas.join(", N° ")}
-*Valor total:* ${window.formatCOP(total)}
+*Valor total a pagar:* ${window.formatCOP(total)}
 
-Por favor envíenme la información para realizar el pago. ¡Gracias!`
+Por favor envíenme los datos para realizar el pago. ¡Gracias!`
   );
   const waLink = `https://wa.me/${WA_NUMBER}?text=${waMsg}`;
 
@@ -869,9 +872,22 @@ Por favor envíenme la información para realizar el pago. ¡Gracias!`
         return;
       }
 
-      // Reserva exitosa: mostramos la pantalla de éxito. El cliente decide
-      // cuándo ir a WhatsApp desde ahí — no abrimos otra app automáticamente
-      // para que el flujo se sienta claro y no se pierda contexto.
+      // Reserva exitosa: abrimos WhatsApp inmediatamente para que el cliente
+      // escriba al asesor con el mensaje "acabo de reservar...". Si no llega
+      // a WhatsApp, la boleta queda reservada en BD pero el asesor no se
+      // enteraría — por eso lo redirigimos de una. El anchor sintético se
+      // dispara en el mismo tick del clic para no ser bloqueado en mobile.
+      const a = document.createElement("a");
+      a.href = waLink;
+      a.target = "_blank";
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      // También cambiamos la vista a "éxito" para que, si el cliente vuelve
+      // a la pestaña de la página, vea la confirmación con su resumen y el
+      // botón para reabrir WhatsApp si se cerró antes de escribir.
       if (onReservar) onReservar();
     } catch (e) {
       console.error("[reservar]", e);
