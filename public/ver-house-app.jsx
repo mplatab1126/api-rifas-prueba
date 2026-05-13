@@ -11,20 +11,45 @@ function VerHouseApp() {
   const [cliente, setCliente] = useStateVerH(null);
   const [boletaActiva, setBoletaActiva] = useStateVerH(null);
   const [error, setError] = useStateVerH(null);
+  const [loading, setLoading] = useStateVerH(false);
 
-  const buscar = () => {
+  const buscar = async () => {
+    if (loading) return;
     setError(null);
-    const found = window.MOCK_CLIENTES_HOUSE[telefono];
-    if (!found) {
-      setError(`No encontramos boletas registradas con el número ${pais.code} ${telefono}. Verifica el número o escríbenos por WhatsApp.`);
-      return;
-    }
-    setCliente(found);
-    if (found.boletas.length === 1) {
-      setBoletaActiva(found.boletas[0]);
-      setStep("detalle");
-    } else {
-      setStep("lista");
+    setLoading(true);
+    try {
+      const indicativo = (pais.code || "").replace(/\+/g, "");
+      const numeroCompleto = indicativo + telefono;
+      const res = await fetch("/api/abonar/cliente?telefono=" + encodeURIComponent(numeroCompleto));
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+
+      if (!data.encontrado || !Array.isArray(data.boletas) || data.boletas.length === 0) {
+        setError(`No encontramos boletas registradas con el número ${pais.code} ${telefono}. Verifica el número o escríbenos por WhatsApp.`);
+        setLoading(false);
+        return;
+      }
+
+      const found = {
+        nombre: data.nombre || "Cliente",
+        apellido: data.apellido || "",
+        ciudad: data.ciudad || "",
+        telefono: data.telefono ? `${pais.code} ${String(data.telefono).replace(/\D/g, "").slice(-10)}` : `${pais.code} ${telefono}`,
+        boletas: data.boletas
+      };
+
+      setCliente(found);
+      if (found.boletas.length === 1) {
+        setBoletaActiva(found.boletas[0]);
+        setStep("detalle");
+      } else {
+        setStep("lista");
+      }
+    } catch (err) {
+      console.error("[ver-boleta buscar]", err);
+      setError("No pudimos consultar tu boleta en este momento. Inténtalo de nuevo o escríbenos por WhatsApp.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -60,7 +85,7 @@ function VerHouseApp() {
           {step === "buscar" && (
             <StepBuscarVerH pais={pais} setPais={setPais}
               telefono={telefono} setTelefono={setTelefono}
-              error={error} onContinuar={buscar} />
+              error={error} loading={loading} onContinuar={buscar} />
           )}
           {step === "lista" && cliente && (
             <StepListaVerH cliente={cliente}
@@ -82,10 +107,10 @@ function VerHouseApp() {
 }
 
 // ─── Paso 1: Buscar ─────────────────────────────────────────────
-function StepBuscarVerH({ pais, setPais, telefono, setTelefono, error, onContinuar }) {
+function StepBuscarVerH({ pais, setPais, telefono, setTelefono, error, loading, onContinuar }) {
   const [openSheet, setOpenSheet] = useStateVerH(false);
   const maxLen = pais.digits;
-  const valid = telefono.length === maxLen;
+  const valid = telefono.length === maxLen && !loading;
 
   const handlePhoneChange = (e) => {
     const digits = e.target.value.replace(/\D/g, "").slice(0, maxLen);
@@ -177,8 +202,8 @@ function StepBuscarVerH({ pais, setPais, telefono, setTelefono, error, onContinu
         )}
 
         <button type="submit" className="ab-btn-primary" disabled={!valid}>
-          Ver mi boleta
-          <span style={{ marginLeft: 4 }}>→</span>
+          {loading ? "Consultando..." : "Ver mi boleta"}
+          {!loading && <span style={{ marginLeft: 4 }}>→</span>}
         </button>
       </form>
 

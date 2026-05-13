@@ -124,7 +124,27 @@ window.formatCOP = window.formatCOP || function(n) {
   return "$" + n.toLocaleString("es-CO");
 };
 
-// Boletas disponibles — mock (10 mil)
+// Boletas disponibles — llama a la API real (/api/disponibles) y cae a mock si falla
+window.fetchBoletasDisponibles = async function() {
+  try {
+    const res = await fetch("/api/disponibles");
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    const texto = data && data.numeros_disponibles;
+    if (typeof texto !== "string" || !texto.includes(" - ")) return [];
+    return texto
+      .split(" - ")
+      .map(n => String(n).trim())
+      .filter(n => /^\d{1,4}$/.test(n))
+      .map(n => n.padStart(4, "0"))
+      .sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+  } catch (e) {
+    console.error("[fetchBoletasDisponibles]", e);
+    return [];
+  }
+};
+
+// Fallback sin conexión — solo se usa si el fetch falla y queremos algo en pantalla
 window.generarBoletasDisponibles = window.generarBoletasDisponibles || function() {
   const total = 10000;
   const set = new Set();

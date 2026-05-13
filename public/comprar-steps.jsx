@@ -268,8 +268,21 @@ window.StepEscoger = function StepEscoger({ rifa, seleccionadas, setSeleccionada
   const [modo, setModo] = useS("manual"); // 'manual' | 'aleatorio'
   const [busqueda, setBusqueda] = useS("");
   const [visibles, setVisibles] = useS(40); // boletas mostradas en la grilla
+  const [disponibles, setDisponibles] = useS([]);
+  const [loading, setLoading] = useS(true);
 
-  const disponibles = useM(() => window.generarBoletasDisponibles(), []);
+  const cargarBoletas = React.useCallback(async () => {
+    setLoading(true);
+    const nuevas = await window.fetchBoletasDisponibles();
+    setDisponibles(prev => {
+      const acumulado = new Set(prev);
+      nuevas.forEach(n => acumulado.add(n));
+      return Array.from(acumulado).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+    });
+    setLoading(false);
+  }, []);
+
+  useE(() => { cargarBoletas(); }, [cargarBoletas]);
 
   const filtradas = useM(() => {
     if (!busqueda) return disponibles;
@@ -332,15 +345,33 @@ window.StepEscoger = function StepEscoger({ rifa, seleccionadas, setSeleccionada
         ))}
       </div>
 
-      {filtradas.length === 0 && (
+      {loading && disponibles.length === 0 && (
+        <div style={{ textAlign: "center", padding: "20px", color: "var(--ink-mute)" }}>
+          Cargando números disponibles...
+        </div>
+      )}
+
+      {!loading && filtradas.length === 0 && busqueda && (
         <div style={{ textAlign: "center", padding: "20px", color: "var(--ink-mute)" }}>
           No hay números disponibles que comiencen por "{busqueda}".
+        </div>
+      )}
+
+      {!loading && disponibles.length === 0 && !busqueda && (
+        <div style={{ textAlign: "center", padding: "20px", color: "var(--ink-mute)" }}>
+          No hay boletas disponibles en este momento. Escríbanos por WhatsApp.
         </div>
       )}
 
       {filtradas.length > visibles && (
         <button className="cb-load-more" onClick={() => setVisibles(v => v + 40)}>
           Cargar otros números ({filtradas.length - visibles} restantes)
+        </button>
+      )}
+
+      {!loading && disponibles.length > 0 && filtradas.length <= visibles && !busqueda && (
+        <button className="cb-load-more" onClick={cargarBoletas}>
+          Mostrar más números disponibles
         </button>
       )}
 
