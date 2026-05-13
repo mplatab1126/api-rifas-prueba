@@ -91,8 +91,7 @@ window.HouseLanding = function HouseLanding({ rifa, onComprar, tweaks }) {
       {/* LOS TRES PREMIOS — sección negra destacada */}
       <div className="house-premios">
         <div className="hp-head">
-          <h2 className="hp-titulo">Nueve oportunidades de ganar.</h2>
-          <p className="hp-lead">Con una sola boleta participa en las nueve oportunidades.</p>
+          <h2 className="hp-titulo">Con una sola boleta participa en las nueve oportunidades.</h2>
         </div>
 
         <div className="hp-list">
