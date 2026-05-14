@@ -66,7 +66,7 @@ function HouseApp() {
 
   return (
     <React.Fragment>
-      <div className="cb">
+      <div className={"cb" + (vista === "exito" ? " cb--exito" : "")}>
         <div className="cb-topbar">
           <button className="cb-back" onClick={handleBack} aria-label="Volver">
             <CompIcon name="back" size={22} />
