@@ -841,6 +841,14 @@ Por favor envíenme los datos para realizar el pago. ¡Gracias!`
 
   const reservarYAbrirWA = async () => {
     if (reservando) return;
+
+    // PRE-ABRIR la pestaña de WhatsApp SÍNCRONAMENTE para preservar el "user
+    // gesture". Si esperamos a que termine el fetch, Safari iOS pierde el
+    // gesto y bloquea window.open/anchor.click como popup no deseado.
+    // Esta pestaña queda en "about:blank" mientras se hace la reserva, y se
+    // redirige a wa.me cuando llega la respuesta.
+    const waWindow = window.open("about:blank", "_blank");
+
     setReservando(true);
     setErrorReserva(null);
 
@@ -867,30 +875,28 @@ Por favor envíenme los datos para realizar el pago. ¡Gracias!`
       const data = await res.json();
 
       if (!data.exito) {
+        if (waWindow && !waWindow.closed) waWindow.close();
         setErrorReserva(data.error || "No pudimos apartar la boleta. Inténtalo de nuevo.");
         setReservando(false);
         return;
       }
 
-      // Reserva exitosa: abrimos WhatsApp inmediatamente para que el cliente
-      // escriba al asesor con el mensaje "acabo de reservar...". Si no llega
-      // a WhatsApp, la boleta queda reservada en BD pero el asesor no se
-      // enteraría — por eso lo redirigimos de una. El anchor sintético se
-      // dispara en el mismo tick del clic para no ser bloqueado en mobile.
-      const a = document.createElement("a");
-      a.href = waLink;
-      a.target = "_blank";
-      a.rel = "noopener";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      // Reserva OK: redirigimos la pestaña ya abierta a WhatsApp.
+      if (waWindow && !waWindow.closed) {
+        waWindow.location.href = waLink;
+      } else {
+        // Plan B: el navegador bloqueó la pre-apertura. Redirigimos la pestaña
+        // actual a WhatsApp para que el cliente igual llegue al asesor.
+        window.location.href = waLink;
+      }
 
-      // También cambiamos la vista a "éxito" para que, si el cliente vuelve
-      // a la pestaña de la página, vea la confirmación con su resumen y el
-      // botón para reabrir WhatsApp si se cerró antes de escribir.
+      // Cambiamos la vista a "éxito" para que, si el cliente vuelve a la
+      // pestaña del sitio, vea la confirmación con su resumen y el botón
+      // para reabrir WhatsApp si se cerró antes de escribir.
       if (onReservar) onReservar();
     } catch (e) {
       console.error("[reservar]", e);
+      if (waWindow && !waWindow.closed) waWindow.close();
       setErrorReserva("Hubo un problema de conexión. Inténtalo de nuevo o escríbenos por WhatsApp.");
       setReservando(false);
     }
