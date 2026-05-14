@@ -2,7 +2,7 @@
 // Reusa StepEscoger / StepDatos / StepPago / StepExitoCompra de comprar-steps.jsx
 // pero usa su propia landing (HouseLanding).
 
-const { useState: useStateApp } = React;
+const { useState: useStateApp, useEffect: useEffectApp } = React;
 
 const HOUSE_TWEAKS_DEFAULT = /*EDITMODE-BEGIN*/{
   "carruselStyle": "editorial",
@@ -40,6 +40,15 @@ function HouseApp() {
   ];
 
   const rifa = window.RIFA_INFO;
+
+  // Cuando estamos en "exito", pintamos el body de negro para que el fondo
+  // negro cubra todo el ancho del viewport (no solo la columna central).
+  useEffectApp(() => {
+    if (vista === "exito") {
+      document.body.classList.add("cb-body-exito");
+      return () => document.body.classList.remove("cb-body-exito");
+    }
+  }, [vista]);
 
   const handleBack = () => {
     if (vista === "landing") {

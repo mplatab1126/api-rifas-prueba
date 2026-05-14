@@ -1862,6 +1862,9 @@ input { font-family: inherit; }
 
 /* ───── Variante "éxito": fondo negro para diferenciar visualmente
    de las pantallas de reserva (mismas tipografías y tamaños). ───── */
+body.cb-body-exito {
+  background: var(--black-900);
+}
 .cb.cb--exito {
   background: var(--black-900);
 }
