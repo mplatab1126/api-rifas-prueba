@@ -900,17 +900,24 @@ Por favor envíenme los datos para realizar el pago. ¡Gracias!`
     <React.Fragment>
       <div className="cb-intro">
         <p className="cb-intro-eyebrow">Paso 3 de 3</p>
-        <h1 className="cb-intro-titulo">Confirme su compra</h1>
-        <p className="cb-intro-mensaje">
-          Revise sus datos. Al reclamar la boleta por WhatsApp, la apartaremos a su nombre y le enviaremos la boleta digital con los datos para el pago.
-        </p>
+        <h1 className="cb-intro-titulo">Confirme su reserva</h1>
       </div>
 
       {/* Resumen del pedido */}
       <div className="cb-resumen-card">
-        <p className="cb-resumen-eyebrow">Su pedido</p>
-        <p className="cb-resumen-titulo">{rifa.nombre}</p>
+        <div className="cb-resumen-hero">
+          <p className="cb-resumen-hero-eyebrow">
+            Está reservando {seleccionadas.length === 1 ? "la boleta" : `${seleccionadas.length} boletas`}
+          </p>
+          <div className="cb-resumen-nums-hero">
+            {seleccionadas.map(n => (
+              <span key={n} className="cb-resumen-num-hero">N° {n}</span>
+            ))}
+          </div>
+          <p className="cb-resumen-hero-rifa">{rifa.nombre}</p>
+        </div>
 
+        <p className="cb-resumen-datos-label">Sus datos</p>
         <div className="cb-resumen-row">
           <span className="label">Titular</span>
           <span className="value">{datos.nombre} {datos.apellido}</span>
@@ -926,21 +933,6 @@ Por favor envíenme los datos para realizar el pago. ¡Gracias!`
         <div className="cb-resumen-row">
           <span className="label">Ciudad</span>
           <span className="value">{datos.ciudad}</span>
-        </div>
-
-        <div className="cb-resumen-row">
-          <span className="label">Boletas ({seleccionadas.length})</span>
-          <span className="value">{window.formatCOP(rifa.precioBoleta)} c/u</span>
-        </div>
-        <div className="cb-resumen-nums">
-          {seleccionadas.map(n => (
-            <span key={n} className="cb-resumen-num">N° {n}</span>
-          ))}
-        </div>
-
-        <div className="cb-resumen-row total">
-          <span className="label">Valor total</span>
-          <span className="value">{window.formatCOP(total)}</span>
         </div>
       </div>
 
@@ -987,10 +979,10 @@ Por favor envíenme los datos para realizar el pago. ¡Gracias!`
           }}
         >
           <CompIcon name="wa" size={22} color="currentColor" />
-          <span>{reservando ? "Apartando..." : "Apartar mi boleta"}</span>
+          <span>{reservando ? "Confirmando..." : "Confirmar mi reserva"}</span>
         </button>
         <p className="cb-confirm-tagline">
-          Le respondemos en pocos minutos en horario hábil.
+          Respondemos en minutos (horario hábil).
         </p>
       </div>
 
@@ -998,7 +990,7 @@ Por favor envíenme los datos para realizar el pago. ¡Gracias!`
       <div className="cb-secure-note">
         <CompIcon name="shield" size={18} />
         <span>
-          <strong>LOS PLATA S.A.S.</strong> nunca le pedirá su clave o tarjeta por WhatsApp. Solo pague en la cuenta oficial Bancolombia <strong>706-000025-93</strong>.
+          Pague solo a Bancolombia <strong>706-000025-93</strong>. Nunca le pediremos clave ni tarjeta por WhatsApp.
         </span>
       </div>
     </React.Fragment>

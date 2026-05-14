@@ -1592,6 +1592,55 @@ input { font-family: inherit; }
   font-size: 26px;
   letter-spacing: -0.025em;
 }
+.cb-resumen-hero {
+  text-align: center;
+  padding: 4px 0 16px;
+  margin: 0 0 14px;
+  border-bottom: 1px solid var(--gray-200);
+}
+.cb-resumen-hero-eyebrow {
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ink-mute);
+  margin: 0 0 12px;
+}
+.cb-resumen-nums-hero {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+.cb-resumen-num-hero {
+  display: inline-block;
+  background: var(--black-900);
+  color: var(--cream-50);
+  font-family: var(--sans);
+  font-size: 26px;
+  font-weight: 800;
+  padding: 10px 20px;
+  border-radius: var(--r-md);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.cb-resumen-hero-rifa {
+  font-family: var(--sans);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--black-900);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.cb-resumen-datos-label {
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ink-mute);
+  margin: 0 0 8px;
+}
 .cb-resumen-nums {
   display: flex;
   flex-wrap: wrap;
