@@ -188,9 +188,6 @@ function StepBuscarVerH({ pais, setPais, telefono, setTelefono, error, loading, 
       <div className="ab-intro">
         <p className="ab-eyebrow">Consultar boleta</p>
         <h1 className="ab-titulo">Encontremos tu boleta</h1>
-        <p className="ab-mensaje">
-          Te mostraremos tu boleta de la rifa <strong>La Plata House</strong>.
-        </p>
       </div>
 
       <div className="ab-aviso">
@@ -200,7 +197,7 @@ function StepBuscarVerH({ pais, setPais, telefono, setTelefono, error, loading, 
         <div>
           <p className="ab-aviso-t">Importante</p>
           <p className="ab-aviso-d">
-            Usa el mismo número de teléfono con el que compraste tu boleta.
+            Usa el número con el que compraste.
           </p>
         </div>
       </div>
@@ -235,7 +232,7 @@ function StepBuscarVerH({ pais, setPais, telefono, setTelefono, error, loading, 
           </div>
           <p className="ab-help">
             {pais.iso === "CO"
-              ? "Sin el 57 al inicio. Ejemplo: 3107334957"
+              ? "Ejemplo: 3107334957"
               : `Ingresa los ${maxLen} dígitos de tu número en ${pais.name}.`}
           </p>
         </div>
