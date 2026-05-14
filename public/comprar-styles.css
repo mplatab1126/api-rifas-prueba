@@ -72,10 +72,12 @@ input { font-family: inherit; }
 /* ───── Top bar negro full-width ───── */
 .cb-topbar {
   background: var(--black-900);
-  padding: 14px 18px;
-  position: sticky;
-  top: 0;
-  z-index: 50;
+  /* Sale del padre (max-width 480px) y se extiende a todo el viewport.
+     El padding lateral crece en pantallas anchas para mantener el contenido
+     centrado en la columna de 480px. */
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding: 14px max(18px, calc(50vw - 240px));
   display: flex;
   align-items: center;
   gap: 12px;
