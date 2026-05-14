@@ -7,11 +7,13 @@ function HubHeader() {
   return (
     <React.Fragment>
       <header className="hub-header">
-        <span className="hub-menu-spacer" aria-hidden="true"></span>
-        <div className="hub-brand">
-          <img src="assets/logo-losplata-tight.png" alt="LOS PLATA" />
+        <div className="hub-header-inner">
+          <span className="hub-menu-spacer" aria-hidden="true"></span>
+          <div className="hub-brand">
+            <img src="assets/logo-losplata-tight.png" alt="LOS PLATA" />
+          </div>
+          <HamburgerBtn onClick={openMenu} />
         </div>
-        <HamburgerBtn onClick={openMenu} />
       </header>
       <NavDrawer open={open} onClose={closeMenu} />
     </React.Fragment>

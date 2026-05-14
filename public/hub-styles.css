@@ -78,15 +78,21 @@ button { font-family: inherit; cursor: pointer; }
 /* ─── Header ─── */
 .hub-header {
   background: #0A0A0A;
-  margin: -20px -18px 22px;
-  padding: 14px 14px;
+  /* Sale del padding del .hub y se extiende a todo el ancho del viewport */
+  margin: -20px calc(50% - 50vw) 22px;
+  width: 100vw;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.hub-header-inner {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 14px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  position: sticky;
-  top: 0;
-  z-index: 50;
 }
 .hub-brand {
   display: flex;
