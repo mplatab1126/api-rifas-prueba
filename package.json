@@ -2,6 +2,7 @@
   "name": "api-rifas",
   "version": "1.0.0",
   "scripts": {
+    "build": "node scripts/build-jsx.mjs",
     "chateapro:export-subflow": "node scripts/export-chateapro-subflow.mjs"
   },
   "dependencies": {
@@ -9,6 +10,7 @@
     "twilio": "^5.4.0"
   },
   "devDependencies": {
+    "esbuild": "^0.25.0",
     "playwright": "^1.49.0"
   }
 }

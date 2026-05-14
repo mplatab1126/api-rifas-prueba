@@ -1,5 +1,6 @@
 {
   "cleanUrls": true,
+  "buildCommand": "node scripts/build-jsx.mjs",
   "headers": [
     {
       "source": "/assets/(.*)",
