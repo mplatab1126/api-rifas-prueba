@@ -270,10 +270,12 @@ Se entrega por WhatsApp un enlace único y seguro con el nombre completo del cli
 | Orden | Tipo | Configuración |
 |---|---|---|
 | 1 | Start | — |
-| 2 | Solicitud externa (API) | `GET https://api-rifas-prueba.vercel.app/api/disponibles` → Map `$.numeros_disponibles` → `[LPR] Números disponibles` |
+| 2 | Solicitud externa (API) | `GET https://api-rifas-prueba.vercel.app/api/disponibles?canal=chatea` → Map `$.numeros_disponibles` → `[LPR] Números disponibles` |
 | 3 | Send Message | `{{[LPR] Números disponibles}}` |
 
 **Nota:** Inicialmente tenía un 4to nodo con "¿Qué número te gustó?" pero se eliminó en la prueba del 2026-04-20 porque causaba duplicación con la pregunta que Camila hace por diseño del prompt.
+
+**Cambio 2026-05-15:** Se agregó `?canal=chatea` a la URL para separar el "cajón de mostrados" de Camila del de la página web. Antes ambos compartían un único campo `mostrado` (booleano) y se pisaban entre sí: la página web borraba las marcas de Camila al pedir nuevos números, y entonces los mismos números se vendían en ambos canales. Ahora la BD tiene una columna `mostrado_canal` (varchar) que guarda 'web' o 'chatea' independiente. Si esta URL se queda sin `?canal=chatea`, el endpoint asume 'web' por defecto y el problema vuelve.
 
 ### 4.2 `[v2] Extraer Número` ✅ Publicado
 

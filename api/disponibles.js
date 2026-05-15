@@ -15,6 +15,12 @@ export default async function handler(req, res) {
       return res.status(200).json({ total: count || 0 });
     }
 
+    // Canal del que viene la llamada: 'web' (página) o 'chatea' (Camila en WhatsApp).
+    // Cada canal tiene su propio "cajón" de mostrados, así no se pisan entre sí.
+    // Default: 'web' por compatibilidad con llamadas viejas que no manden el parámetro.
+    const canalRaw = String(req.query.canal || 'web').toLowerCase().trim();
+    const canal = (canalRaw === 'chatea' || canalRaw === 'web') ? canalRaw : 'web';
+
     const TOTAL_DESEADO = 50;
     const POR_SERIE = 5;
     let seleccionados = [];
@@ -30,16 +36,18 @@ export default async function handler(req, res) {
         .map(s => s.padStart(4, '0'))
     );
 
-    // 1) Intento de "variedad": tomar hasta 5 de cada serie 0-9
-    //    Si una serie está agotada (caso real: series 0,1,2 ya vendidas) devuelve menos.
-    //    Pedimos más candidatos por serie para tener margen tras filtrar excluidos.
+    // 1) Intento de "variedad": tomar hasta 5 de cada serie 0-9.
+    //    Filtro: boletas libres (telefono_cliente null) que NO estén marcadas
+    //    en NINGÚN canal. Así la web no muestra los que Camila está mostrando,
+    //    ni Camila muestra los de la web. Cada canal libera sus propias marcas
+    //    al final de la función, así un canal saturado no bloquea al otro.
     const LIMITE_POR_SERIE = excluidos.size > 0 ? 200 : 50;
     for (let i = 0; i <= 9; i++) {
       const { data: libresSerie, error } = await supabase
         .from('boletas')
         .select('numero')
         .is('telefono_cliente', null)
-        .eq('mostrado', false)
+        .is('mostrado_canal', null)
         .like('numero', `${i}%`)
         .limit(LIMITE_POR_SERIE);
 
@@ -63,7 +71,7 @@ export default async function handler(req, res) {
         .from('boletas')
         .select('numero')
         .is('telefono_cliente', null)
-        .eq('mostrado', false)
+        .is('mostrado_canal', null)
         .limit(2000);
 
       if (errPool) throw errPool;
@@ -82,9 +90,10 @@ export default async function handler(req, res) {
       return res.status(200).json({ numeros_disponibles: "No hay boletas disponibles en este momento." });
     }
 
-    // Limpiamos las marcas anteriores y marcamos los nuevos
-    await supabase.from('boletas').update({ mostrado: false }).eq('mostrado', true);
-    await supabase.from('boletas').update({ mostrado: true }).in('numero', seleccionados);
+    // Limpiamos las marcas anteriores DE ESTE CANAL únicamente (no tocamos las del otro)
+    // y marcamos los nuevos con el canal correspondiente.
+    await supabase.from('boletas').update({ mostrado_canal: null }).eq('mostrado_canal', canal);
+    await supabase.from('boletas').update({ mostrado_canal: canal }).in('numero', seleccionados);
 
     seleccionados.sort((a, b) => parseInt(a) - parseInt(b));
     const textoFinal = seleccionados.join(' - ');

@@ -16,7 +16,7 @@ window.RIFA_INFO = {
 
   // Galería completa de la casa (orden curado: video oficial → zonas sociales → habitaciones → servicios)
   galeria: [
-    { tipo: "video", videoId: "IPrU-sQlkV4", titulo: "Video oficial", vertical: true, posterUrl: "https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Cine+foto+1.jpg" },
+    { tipo: "video", videoId: "Ke6uvCllQvg", titulo: "Video oficial", vertical: true, posterUrl: "https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Cine+foto+1.jpg" },
     { url: "https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Comedor+foto+1.jpg",                  titulo: "Comedor",                planta: 1, vertical: true  },
     { url: "https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Cocina.jpg",                          titulo: "Cocina",                 planta: 1, vertical: false },
     { url: "https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Escaleras.jpg",                       titulo: "Escaleras",              planta: 1, vertical: true  },
@@ -129,9 +129,10 @@ window.formatCOP = window.formatCOP || function(n) {
 // excluir: array opcional de números que ya están en pantalla y NO queremos repetir.
 window.fetchBoletasDisponibles = async function(excluir) {
   try {
-    let url = "/api/disponibles";
+    // canal=web → separa el "cajón de mostrados" de la página web del de Camila (ChateaPro)
+    let url = "/api/disponibles?canal=web";
     if (Array.isArray(excluir) && excluir.length > 0) {
-      url += "?exclude=" + encodeURIComponent(excluir.join(","));
+      url += "&exclude=" + encodeURIComponent(excluir.join(","));
     }
     const res = await fetch(url);
     if (!res.ok) throw new Error("HTTP " + res.status);

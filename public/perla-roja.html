@@ -1459,7 +1459,7 @@
       container.innerHTML = '<div class="numeros-loading"><div class="spinner"></div><p>Cargando números disponibles...</p></div>';
 
       try {
-        const res = await fetch('/api/disponibles');
+        const res = await fetch('/api/disponibles?canal=web');
         const data = await res.json();
 
         if (data.numeros_disponibles && typeof data.numeros_disponibles === 'string') {

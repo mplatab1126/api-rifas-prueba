@@ -499,7 +499,7 @@ function VideoLightbox({ videoId, titulo, onClose }) {
         }}
       >
         <iframe
-          src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&autoplay=1&playsinline=1`}
+          src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&autoplay=1&playsinline=1&vq=hd1080`}
           title={titulo}
           style={{ width: "100%", height: "100%", border: 0, display: "block" }}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
