@@ -31,11 +31,37 @@ html.snav-authed #loginScreen {
   gap: 12px;
   border-bottom: 1px solid rgba(255,255,255,0.06);
   flex-shrink: 0;
+  position: relative;
 }
 .snav-logo-area img {
   height: 38px;
   width: auto;
   filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
+}
+
+/* Botón para esconder el menú (dentro del sidebar) */
+.snav-collapse-btn {
+  position: absolute;
+  top: 14px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.55);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.snav-collapse-btn:hover {
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.95);
 }
 .snav-logo-text {
   color: rgba(255,255,255,0.85);
@@ -214,7 +240,7 @@ html.snav-authed #loginScreen {
   color: rgba(255,120,110,0.95);
 }
 
-/* Hamburger button (mobile only) */
+/* Hamburger button (mobile, o desktop cuando el menú está colapsado) */
 .snav-hamburger {
   display: none;
   position: fixed;
@@ -236,6 +262,17 @@ html.snav-authed #loginScreen {
 }
 .snav-hamburger:hover {
   background: #1a3525;
+}
+
+/* Estado colapsado en escritorio: esconder sidebar y mostrar hamburger */
+body.snav-collapsed .snav-sidebar {
+  transform: translateX(-100%);
+}
+body.snav-collapsed .snav-hamburger {
+  display: flex;
+}
+body.snav-collapsed .snav-page-content {
+  margin-left: 0;
 }
 
 /* Overlay for mobile */

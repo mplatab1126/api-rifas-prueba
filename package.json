@@ -10,7 +10,7 @@
     "twilio": "^5.4.0"
   },
   "devDependencies": {
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.25.12",
     "playwright": "^1.49.0"
   }
 }

@@ -153,14 +153,18 @@ export default async function handler(req, res) {
           (!clienteBoletasDiarias || clienteBoletasDiarias.length === 0) &&
           (!clienteBoletas3Cifras || clienteBoletas3Cifras.length === 0)) {
         
-        const { data: clienteSolo } = await supabase
+        // Buscamos TODAS las filas que coincidan (puede haber duplicados con/sin el 57 adelante).
+        const { data: clientesEncontrados } = await supabase
           .from('clientes')
           .select('nombre, apellido, ciudad, telefono')
-          .like('telefono', '%' + last10)
-          .maybeSingle();
+          .like('telefono', '%' + last10);
 
-        if (clienteSolo) {
-          return res.status(200).json({ tipo: 'CLIENTE_SIN_BOLETAS', data: clienteSolo });
+        if (clientesEncontrados && clientesEncontrados.length > 0) {
+          // Si hay varios duplicados, preferimos el registro con teléfono "limpio" (10 dígitos sin prefijo).
+          const candidato = clientesEncontrados.find(c =>
+            String(c.telefono || '').replace(/\D/g, '').length === 10
+          ) || clientesEncontrados[0];
+          return res.status(200).json({ tipo: 'CLIENTE_SIN_BOLETAS', data: candidato });
         }
         return res.status(200).json({ tipo: 'NO_EXISTE', mensaje: 'No hay cliente o boletas con este celular en ninguna rifa.' });
       }

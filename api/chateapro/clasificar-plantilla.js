@@ -5,6 +5,19 @@ import {
 } from './clasificador-prompt.js';
 import { aplicarCors } from '../lib/cors.js';
 import { supabase } from '../lib/supabase.js';
+import { limpiarTelefono, esTelefonoValido } from '../lib/telefono.js';
+
+// Normaliza el teléfono al formato canónico de la base ('573...' sin '+').
+// Si ChateaPro envía algo inválido, devolvemos null sin romper.
+function normalizarTelefono(tel) {
+  if (!tel) return null;
+  try {
+    const limpio = limpiarTelefono(tel);
+    return esTelefonoValido(limpio) ? limpio : String(tel).replace(/\D/g, '') || null;
+  } catch {
+    return String(tel).replace(/\D/g, '') || null;
+  }
+}
 
 /**
  * Clasificación de intenciones para el subflujo "Plantilla" (difusiones).
@@ -178,7 +191,7 @@ async function traerDatosSuscriptor(userNs) {
     const tagsNs = tagsRaw.map(t => t.tag_ns).filter(Boolean);
     return {
       nombre: s.name || [s.first_name, s.last_name].filter(Boolean).join(' ').trim() || null,
-      telefono: s.phone || null,
+      telefono: normalizarTelefono(s.phone),
       lpr_tag: lprTag,
       tags_ns: tagsNs,
     };

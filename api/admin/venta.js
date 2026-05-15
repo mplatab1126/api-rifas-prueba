@@ -23,6 +23,10 @@ export default async function handler(req, res) {
   const nombreAsesor = validarAsesor(contrasena);
   if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
   if (!numeroBoleta || !telefono) return res.status(400).json({ status: 'error', mensaje: 'Faltan datos' });
+  // La tabla clientes exige que nombre, apellido y ciudad no estén vacíos.
+  if (!String(nombre || '').trim())   return res.status(400).json({ status: 'error', mensaje: '🚫 Falta el nombre del cliente.' });
+  if (!String(apellido || '').trim()) return res.status(400).json({ status: 'error', mensaje: '🚫 Falta el apellido del cliente.' });
+  if (!String(ciudad || '').trim())   return res.status(400).json({ status: 'error', mensaje: '🚫 Falta la ciudad del cliente.' });
 
   // Si esColombia no viene en el body (compatibilidad con peticiones viejas), asumir true.
   const esColombiaFlag = esColombia !== false;

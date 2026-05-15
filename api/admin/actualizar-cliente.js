@@ -19,6 +19,11 @@ export default async function handler(req, res) {
     return res.status(400).json({ status: 'error', mensaje: `🚫 El teléfono "${telefono}" no es válido (debe ser 12 dígitos: 57 + celular colombiano que empieza con 3). Corrígelo antes de guardar.` });
   }
 
+  // La tabla clientes exige que estos campos no estén vacíos.
+  if (!String(nombre || '').trim())   return res.status(400).json({ status: 'error', mensaje: '🚫 Falta el nombre del cliente.' });
+  if (!String(apellido || '').trim()) return res.status(400).json({ status: 'error', mensaje: '🚫 Falta el apellido del cliente.' });
+  if (!String(ciudad || '').trim())   return res.status(400).json({ status: 'error', mensaje: '🚫 Falta la ciudad del cliente.' });
+
   // Documento opcional — solo se persiste si viene con valor
   const docTipoLimpio = documento_tipo ? String(documento_tipo).trim().toUpperCase() : null;
   const docNumeroLimpio = documento_numero ? String(documento_numero).trim() : null;
@@ -26,9 +31,9 @@ export default async function handler(req, res) {
   try {
     const payload = {
       telefono: telefono,
-      nombre: nombre || '',
-      apellido: apellido || '',
-      ciudad: ciudad || ''
+      nombre: String(nombre).trim(),
+      apellido: String(apellido).trim(),
+      ciudad: String(ciudad).trim()
     };
     if (docTipoLimpio) payload.documento_tipo = docTipoLimpio;
     if (docNumeroLimpio) payload.documento_numero = docNumeroLimpio;

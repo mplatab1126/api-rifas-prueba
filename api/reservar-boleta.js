@@ -10,19 +10,26 @@ export default async function handler(req, res) {
 
   const { numeros, nombre, apellido, ciudad, telefono, indicativo, origen } = req.body;
 
-  if (!numeros || numeros.length === 0 || !nombre || !telefono) {
-    return res.status(400).json({ error: 'Faltan datos para la reserva' });
+  if (!numeros || numeros.length === 0 || !telefono
+      || !String(nombre || '').trim()
+      || !String(apellido || '').trim()
+      || !String(ciudad || '').trim()) {
+    return res.status(400).json({ error: 'Faltan datos para la reserva (nombre, apellido, ciudad y teléfono son obligatorios)' });
   }
 
   if (numeros.length > 10) {
     return res.status(400).json({ error: 'Máximo 10 boletas por reserva' });
   }
 
+  const nombreLimpio = String(nombre).trim();
+  const apellidoLimpio = String(apellido).trim();
+  const ciudadLimpia = String(ciudad).trim();
+
   const telefonoLimpio = limpiarTelefono(telefono, indicativo || '57');
   if (!esTelefonoValido(telefonoLimpio, indicativo || '57')) {
     return res.status(400).json({ error: 'El número de teléfono no es válido. Escribe solo tu número celular, sin el código de país (57).' });
   }
-  const nombreCompleto = `${nombre} ${apellido || ''}`.trim();
+  const nombreCompleto = `${nombreLimpio} ${apellidoLimpio}`.trim();
 
   try {
     // 1. Verificar disponibilidad
@@ -64,9 +71,9 @@ export default async function handler(req, res) {
 
     const { error: clienteError } = await supabase.from('clientes').upsert({
       telefono: telefonoLimpio,
-      nombre: nombre,
-      apellido: apellido || '',
-      ciudad: ciudad || '',
+      nombre: nombreLimpio,
+      apellido: apellidoLimpio,
+      ciudad: ciudadLimpia,
       total_comprado: clienteActual?.total_comprado || 0,
       boletas_diarias_compradas: clienteActual?.boletas_diarias_compradas || 0,
       boletas_grandes_compradas: clienteActual?.boletas_grandes_compradas || 0

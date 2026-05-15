@@ -22,6 +22,7 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
 import { PRECIOS } from '../config/precios.js';
+import { limpiarTelefono, esTelefonoValido } from '../lib/telefono.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -31,9 +32,16 @@ export default async function handler(req, res) {
 
   const { numeros, nombre, apellido, ciudad, telefono, documento_tipo, documento_numero, esColombia } = req.body || {};
 
-  if (!Array.isArray(numeros) || numeros.length === 0 || !nombre || !apellido || !ciudad || !telefono) {
-    return res.status(400).json({ exito: false, error: 'Faltan datos para la reserva.' });
+  if (!Array.isArray(numeros) || numeros.length === 0 || !telefono
+      || !String(nombre || '').trim()
+      || !String(apellido || '').trim()
+      || !String(ciudad || '').trim()) {
+    return res.status(400).json({ exito: false, error: 'Faltan datos para la reserva (nombre, apellido, ciudad y teléfono son obligatorios).' });
   }
+
+  const nombreLimpio = String(nombre).trim();
+  const apellidoLimpio = String(apellido).trim();
+  const ciudadLimpia = String(ciudad).trim();
 
   // Documento opcional — solo se persiste si viene con valor (no sobrescribe lo ya guardado)
   const docTipoLimpio = documento_tipo ? String(documento_tipo).trim().toUpperCase() : null;
@@ -42,14 +50,14 @@ export default async function handler(req, res) {
   // País del cliente (default: Colombia para compatibilidad con reservas viejas)
   const esColombiaFlag = esColombia !== false;
 
-  // Limpiamos datos del cliente
-  // Para Colombia exigimos 10 dígitos (regla histórica de la tabla clientes).
-  // Para clientes extranjeros aceptamos entre 7 y 15 dígitos (formato E.164 sin +).
+  // Limpiamos datos del cliente.
+  // Para Colombia: normalizamos a 12 dígitos (57 + 10) usando limpiarTelefono, igual que admin/venta.js.
+  // Para extranjeros: aceptamos entre 7 y 15 dígitos (formato E.164 sin +).
   let telefonoLimpio;
   if (esColombiaFlag) {
-    telefonoLimpio = String(telefono).replace(/\D/g, '').slice(-10);
-    if (telefonoLimpio.length !== 10) {
-      return res.status(400).json({ exito: false, error: 'El celular debe tener 10 dígitos.' });
+    telefonoLimpio = limpiarTelefono(telefono);
+    if (!esTelefonoValido(telefonoLimpio)) {
+      return res.status(400).json({ exito: false, error: '🚫 El celular no es válido. Debe ser un número celular colombiano de 10 dígitos que empieza con 3 (con o sin el 57 adelante).' });
     }
   } else {
     telefonoLimpio = String(telefono).replace(/\D/g, '');
@@ -57,7 +65,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ exito: false, error: 'El celular extranjero debe tener entre 7 y 15 dígitos incluyendo el código del país.' });
     }
   }
-  const nombreCompleto = `${nombre} ${apellido}`.trim();
+  const nombreCompleto = `${nombreLimpio} ${apellidoLimpio}`.trim();
 
   // Normalizamos los números: siempre 4 cifras con ceros a la izquierda
   const numerosLimpios = numeros
@@ -111,9 +119,9 @@ export default async function handler(req, res) {
 
     const clientePayload = {
       telefono: telefonoLimpio,
-      nombre: nombre,
-      apellido: apellido,
-      ciudad: ciudad,
+      nombre: nombreLimpio,
+      apellido: apellidoLimpio,
+      ciudad: ciudadLimpia,
       total_comprado: clienteActual?.total_comprado || 0,
       boletas_diarias_compradas: clienteActual?.boletas_diarias_compradas || 0,
       boletas_grandes_compradas: clienteActual?.boletas_grandes_compradas || 0,

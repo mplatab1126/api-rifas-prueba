@@ -6,6 +6,7 @@
   const STORAGE_NAME = 'asesor_nombre';
   const PERMISOS_CACHE_KEY = 'asesor_permisos';
   const PERMISOS_CACHE_TTL = 5 * 60 * 1000;
+  const COLLAPSED_KEY = 'snav_collapsed';
 
   const GERENCIA = ['mateo', 'alejo p', 'alejo plata'];
   const SOLO_MATEO = ['mateo'];
@@ -131,6 +132,7 @@
           <div class="snav-logo-text">Los Plata S.A.S.</div>
           <div class="snav-logo-sub">Sistema de Rifas</div>
         </div>
+        <button class="snav-collapse-btn" id="snavCollapseBtn" aria-label="Esconder menú" title="Esconder menú">‹</button>
       </div>
       <div class="snav-links">
         <div class="snav-section-label">Principal</div>
@@ -350,7 +352,19 @@
     document.body.prepend(sidebar);
     document.body.prepend(hamburger);
 
+    // Aplicar estado colapsado guardado (solo aplica en escritorio)
+    if (localStorage.getItem(COLLAPSED_KEY) === '1') {
+      document.body.classList.add('snav-collapsed');
+    }
+
     hamburger.addEventListener('click', () => {
+      // En escritorio, el hamburger reabre el menú (quita el colapso).
+      // En móvil, sigue funcionando como toggle del sidebar.
+      if (window.matchMedia('(min-width: 901px)').matches) {
+        document.body.classList.remove('snav-collapsed');
+        localStorage.removeItem(COLLAPSED_KEY);
+        return;
+      }
       sidebar.classList.toggle('open');
       overlay.classList.toggle('visible');
       hamburger.innerHTML = sidebar.classList.contains('open') ? '✕' : '☰';
@@ -360,6 +374,22 @@
       overlay.classList.remove('visible');
       hamburger.innerHTML = '☰';
     });
+
+    const collapseBtn = document.getElementById('snavCollapseBtn');
+    if (collapseBtn) {
+      collapseBtn.addEventListener('click', () => {
+        // En móvil, solo cerramos el sidebar abierto.
+        if (window.matchMedia('(max-width: 900px)').matches) {
+          sidebar.classList.remove('open');
+          overlay.classList.remove('visible');
+          hamburger.innerHTML = '☰';
+          return;
+        }
+        // En escritorio, colapsamos y guardamos la preferencia.
+        document.body.classList.add('snav-collapsed');
+        localStorage.setItem(COLLAPSED_KEY, '1');
+      });
+    }
 
     sidebar.querySelectorAll('[data-snav-toggle]').forEach(btn => {
       btn.addEventListener('click', () => {

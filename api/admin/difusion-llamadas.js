@@ -424,9 +424,10 @@ export default async function handler(req, res) {
         statusCallbackMethod: 'POST'
       });
 
+      // Guardamos sin el '+' del E.164 para mantener el formato canónico de toda la base ('573...').
       await supabase.from('llamadas_twilio').insert({
         sid: llamada.sid,
-        telefono: telefono_test,
+        telefono: telefonoE164.replace(/^\+/, ''),
         nombre_cliente: 'Llamada de prueba',
         boletas: '0000',
         saldo: 100000,
