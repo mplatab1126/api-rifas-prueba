@@ -805,6 +805,33 @@ $('btnRegistrarVenta').onclick = async ()=>{
            }
        }
 
+       // Validación de documento: si pones uno, pon el otro. Y el número debe tener el largo correcto.
+       const docTipoCheck = ($('v_doc_tipo') && $('v_doc_tipo').value || '').trim();
+       const docNumeroCheck = ($('v_doc_numero') && $('v_doc_numero').value || '').trim();
+       if (docTipoCheck && !docNumeroCheck) {
+           return alert('🚫 Elegiste el tipo de documento (' + docTipoCheck + ') pero no escribiste el número.\n\nEscribe el número o quita el tipo si no lo necesitas.');
+       }
+       if (!docTipoCheck && docNumeroCheck) {
+           return alert('🚫 Escribiste un número de documento pero no elegiste el tipo.\n\nElige CC, CE, NIT o PA.');
+       }
+       if (docTipoCheck && docNumeroCheck) {
+           const reglasDoc = {
+               CC:  { min: 6, max: 10, soloDigitos: true,  nombre: 'Cédula de Ciudadanía (CC)' },
+               CE:  { min: 6, max: 7,  soloDigitos: true,  nombre: 'Cédula de Extranjería (CE)' },
+               NIT: { min: 9, max: 10, soloDigitos: true,  nombre: 'NIT' },
+               PA:  { min: 6, max: 12, soloDigitos: false, nombre: 'Pasaporte (PA)' }
+           };
+           const regla = reglasDoc[docTipoCheck];
+           if (regla) {
+               if (regla.soloDigitos && !/^\d+$/.test(docNumeroCheck)) {
+                   return alert('🚫 El número de ' + regla.nombre + ' solo puede tener dígitos (sin letras ni símbolos).');
+               }
+               if (docNumeroCheck.length < regla.min || docNumeroCheck.length > regla.max) {
+                   return alert('🚫 El número de ' + regla.nombre + ' debe tener entre ' + regla.min + ' y ' + regla.max + ' caracteres.\n\nEscribiste ' + docNumeroCheck.length + '.');
+               }
+           }
+       }
+
        const esVentaPremioRifa = modoVenta === 'premio_rifa';
        const esVentaEfectivo = modoVenta === 'efectivo';
        const esMiEquipoVenta = nombreAsesorActual && !esAsesorIndependiente(nombreAsesorActual);
@@ -1933,15 +1960,35 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
     }
 
     // Arranque automático al cargar la página
-    document.addEventListener('DOMContentLoaded', function() { 
-        initLogin(); 
-        if(typeof addDefaultPill === 'function') addDefaultPill(); 
-        
+    document.addEventListener('DOMContentLoaded', function() {
+        initLogin();
+        if(typeof addDefaultPill === 'function') addDefaultPill();
+
         const pwdInput = document.getElementById('loginPwd');
         if(pwdInput) {
-            pwdInput.addEventListener('keyup', function(e) { 
-                if (e.key === 'Enter') verifyLogin(this.value); 
+            pwdInput.addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') verifyLogin(this.value);
             });
+        }
+
+        // Filtro en vivo del campo "Número de documento" según el tipo elegido.
+        // CC/CE/NIT: solo dígitos. PA: solo letras y dígitos.
+        const docTipoSel = document.getElementById('v_doc_tipo');
+        const docNumInput = document.getElementById('v_doc_numero');
+        if (docTipoSel && docNumInput) {
+            const limpiarDocSegunTipo = function() {
+                const tipo = docTipoSel.value;
+                const valor = docNumInput.value;
+                let limpio = valor;
+                if (tipo === 'CC' || tipo === 'CE' || tipo === 'NIT') {
+                    limpio = valor.replace(/\D/g, '');
+                } else if (tipo === 'PA') {
+                    limpio = valor.replace(/[^A-Za-z0-9]/g, '');
+                }
+                if (limpio !== valor) docNumInput.value = limpio;
+            };
+            docNumInput.addEventListener('input', limpiarDocSegunTipo);
+            docTipoSel.addEventListener('change', limpiarDocSegunTipo);
         }
     });
 
