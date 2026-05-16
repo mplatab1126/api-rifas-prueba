@@ -1135,9 +1135,21 @@ $('btnRegistrarVenta').onclick = async ()=>{
        html += '  <input id="c_nombre" type="text" class="main-input" style="padding:8px 12px;" value="' + c.nombre + '">';
        html += '  <input id="c_apellido" type="text" class="main-input" style="padding:8px 12px;" value="' + c.apellido + '">';
        html += '</div>';
-       html += '<div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:12px;">';
+       html += '<div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">';
        html += '  <input id="c_telefono_display" type="text" class="main-input" style="padding:8px 12px; background:var(--bg); color:var(--muted);" value="' + c.telefono + '" disabled>';
        html += '  <input id="c_ciudad" type="text" class="main-input" style="padding:8px 12px;" value="' + c.ciudad + '">';
+       html += '</div>';
+       var docTipoActual = c.documento_tipo || '';
+       var docNumeroActual = c.documento_numero || '';
+       html += '<div style="display:grid; grid-template-columns: 1fr 2fr; gap:8px; margin-bottom:12px;">';
+       html += '  <select id="c_doc_tipo" class="main-input" style="padding:8px 12px;">';
+       html += '    <option value=""' + (docTipoActual === '' ? ' selected' : '') + '>Tipo</option>';
+       html += '    <option value="CC"' + (docTipoActual === 'CC' ? ' selected' : '') + '>CC</option>';
+       html += '    <option value="CE"' + (docTipoActual === 'CE' ? ' selected' : '') + '>CE</option>';
+       html += '    <option value="NIT"' + (docTipoActual === 'NIT' ? ' selected' : '') + '>NIT</option>';
+       html += '    <option value="PA"' + (docTipoActual === 'PA' ? ' selected' : '') + '>PA</option>';
+       html += '  </select>';
+       html += '  <input id="c_doc_numero" type="text" class="main-input" style="padding:8px 12px;" placeholder="Número de documento" value="' + docNumeroActual + '">';
        html += '</div>';
        html += '<div style="display:flex; gap:10px; flex-wrap:wrap;">';        html += '  <button type="button" onclick="guardarCambiosCliente(\'' + c.telefono + '\', this)" class="cta" style="flex:1; padding:8px 20px; margin:0; font-size:0.85rem;">Guardar cambios</button>';        html += '  <button type="button" onclick="prepararNuevaVentaExistente(\'' + c.telefono + '\')" class="cta" style="flex:1; padding:8px 20px; margin:0; font-size:0.85rem; background:var(--ink);">➕ Agregar Boletas</button>';        html += '</div>';
        html += '</div>';
@@ -1157,6 +1169,27 @@ $('btnRegistrarVenta').onclick = async ()=>{
        html += '</div>';
        
        document.getElementById('cliente-info-render').innerHTML = html;
+
+       // Filtro en vivo del número de documento del cliente según el tipo elegido.
+       // CC/CE/NIT solo dígitos. PA letras y dígitos.
+       (function() {
+           var sel = document.getElementById('c_doc_tipo');
+           var inp = document.getElementById('c_doc_numero');
+           if (!sel || !inp) return;
+           var limpiar = function() {
+               var tipo = sel.value;
+               var val = inp.value;
+               var limpio = val;
+               if (tipo === 'CC' || tipo === 'CE' || tipo === 'NIT') {
+                   limpio = val.replace(/\D/g, '');
+               } else if (tipo === 'PA') {
+                   limpio = val.replace(/[^A-Za-z0-9]/g, '');
+               }
+               if (limpio !== val) inp.value = limpio;
+           };
+           inp.addEventListener('input', limpiar);
+           sel.addEventListener('change', limpiar);
+       })();
 
        if(boletasStr.length > 0) cargarHistorialAbonos(boletasStr[0]);
 
@@ -1564,6 +1597,34 @@ $('btnRegistrarVenta').onclick = async ()=>{
         const nombre = document.getElementById('c_nombre').value;
         const apellido = document.getElementById('c_apellido').value;
         const ciudad = document.getElementById('c_ciudad').value;
+        const docTipo = (document.getElementById('c_doc_tipo') && document.getElementById('c_doc_tipo').value || '').trim();
+        const docNumero = (document.getElementById('c_doc_numero') && document.getElementById('c_doc_numero').value || '').trim();
+
+        // Validación: si pones uno, pon el otro; y el largo debe ser correcto según el tipo.
+        if (docTipo && !docNumero) {
+            return alert('🚫 Elegiste el tipo de documento (' + docTipo + ') pero no escribiste el número.');
+        }
+        if (!docTipo && docNumero) {
+            return alert('🚫 Escribiste un número de documento pero no elegiste el tipo.\n\nElige CC, CE, NIT o PA.');
+        }
+        if (docTipo && docNumero) {
+            const reglasDoc = {
+                CC:  { min: 6, max: 10, soloDigitos: true,  nombre: 'Cédula de Ciudadanía (CC)' },
+                CE:  { min: 6, max: 7,  soloDigitos: true,  nombre: 'Cédula de Extranjería (CE)' },
+                NIT: { min: 9, max: 10, soloDigitos: true,  nombre: 'NIT' },
+                PA:  { min: 6, max: 12, soloDigitos: false, nombre: 'Pasaporte (PA)' }
+            };
+            const regla = reglasDoc[docTipo];
+            if (regla) {
+                if (regla.soloDigitos && !/^\d+$/.test(docNumero)) {
+                    return alert('🚫 El número de ' + regla.nombre + ' solo puede tener dígitos.');
+                }
+                if (docNumero.length < regla.min || docNumero.length > regla.max) {
+                    return alert('🚫 El número de ' + regla.nombre + ' debe tener entre ' + regla.min + ' y ' + regla.max + ' caracteres.\n\nEscribiste ' + docNumero.length + '.');
+                }
+            }
+        }
+
         const originalText = btnElement.innerHTML;
 
         btnElement.innerHTML = 'Guardando...';
@@ -1578,6 +1639,8 @@ $('btnRegistrarVenta').onclick = async ()=>{
                     nombre: nombre,
                     apellido: apellido,
                     ciudad: ciudad,
+                    documento_tipo: docTipo,
+                    documento_numero: docNumero,
                     contrasena: localStorage.getItem(STORAGE_KEY)
                 })
             });

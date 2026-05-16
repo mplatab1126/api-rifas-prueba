@@ -38,7 +38,7 @@ export default async function handler(req, res) {
     if (queryLimpio.length === 4) {
       const { data: boleta, error } = await supabase
         .from('boletas')
-        .select(`numero, total_abonado, saldo_restante, telefono_cliente, asesor, clientes (nombre, apellido, ciudad)`)
+        .select(`numero, total_abonado, saldo_restante, telefono_cliente, asesor, clientes (nombre, apellido, ciudad, documento_tipo, documento_numero)`)
         .eq('numero', queryLimpio)
         .single();
 
@@ -52,7 +52,8 @@ export default async function handler(req, res) {
           tipo: 'BOLETA_OCUPADA',
           data: {
             infoVenta: {
-              numero: boleta.numero, nombre: boleta.clientes?.nombre || '', apellido: boleta.clientes?.apellido || '', ciudad: boleta.clientes?.ciudad || '', telefono: boleta.telefono_cliente, totalAbonos: boleta.total_abonado, restante: boleta.saldo_restante, asesor: boleta.asesor
+              numero: boleta.numero, nombre: boleta.clientes?.nombre || '', apellido: boleta.clientes?.apellido || '', ciudad: boleta.clientes?.ciudad || '', telefono: boleta.telefono_cliente, totalAbonos: boleta.total_abonado, restante: boleta.saldo_restante, asesor: boleta.asesor,
+              documento_tipo: boleta.clientes?.documento_tipo || '', documento_numero: boleta.clientes?.documento_numero || ''
             }
           }
         });
@@ -74,7 +75,7 @@ export default async function handler(req, res) {
       } else {
         const { data: clienteDB } = await supabase
           .from('clientes')
-          .select('nombre, apellido, ciudad')
+          .select('nombre, apellido, ciudad, documento_tipo, documento_numero')
           .eq('telefono', boleta.telefono_cliente)
           .maybeSingle();
         return res.status(200).json({
@@ -88,7 +89,9 @@ export default async function handler(req, res) {
               telefono: boleta.telefono_cliente,
               totalAbonos: boleta.total_abonado || 0,
               restante: boleta.saldo_restante !== null && boleta.saldo_restante !== undefined ? boleta.saldo_restante : PRECIOS.RIFA_2_CIFRAS,
-              asesor: boleta.asesor || ''
+              asesor: boleta.asesor || '',
+              documento_tipo: clienteDB?.documento_tipo || '',
+              documento_numero: clienteDB?.documento_numero || ''
             }
           }
         });
@@ -110,7 +113,7 @@ export default async function handler(req, res) {
       } else {
         const { data: clienteDB } = await supabase
           .from('clientes')
-          .select('nombre, apellido, ciudad')
+          .select('nombre, apellido, ciudad, documento_tipo, documento_numero')
           .eq('telefono', boleta.telefono_cliente)
           .maybeSingle();
         return res.status(200).json({
@@ -124,7 +127,9 @@ export default async function handler(req, res) {
               telefono: boleta.telefono_cliente,
               totalAbonos: boleta.total_abonado || 0,
               restante: boleta.saldo_restante !== null && boleta.saldo_restante !== undefined ? boleta.saldo_restante : PRECIOS.RIFA_3_CIFRAS,
-              asesor: boleta.asesor || ''
+              asesor: boleta.asesor || '',
+              documento_tipo: clienteDB?.documento_tipo || '',
+              documento_numero: clienteDB?.documento_numero || ''
             }
           }
         });
@@ -136,7 +141,7 @@ export default async function handler(req, res) {
 
       const { data: clienteBoletasApto } = await supabase
         .from('boletas')
-        .select(`numero, total_abonado, saldo_restante, telefono_cliente, asesor, clientes (nombre, apellido, ciudad)`)
+        .select(`numero, total_abonado, saldo_restante, telefono_cliente, asesor, clientes (nombre, apellido, ciudad, documento_tipo, documento_numero)`)
         .like('telefono_cliente', '%' + last10);
 
       const { data: clienteBoletasDiarias } = await supabase
@@ -173,14 +178,15 @@ export default async function handler(req, res) {
 
       if (clienteBoletasApto && clienteBoletasApto.length > 0) {
         lista.push(...clienteBoletasApto.map(b => ({
-          numero: b.numero, nombre: b.clientes?.nombre || '', apellido: b.clientes?.apellido || '', ciudad: b.clientes?.ciudad || '', telefono: b.telefono_cliente, totalAbonos: b.total_abonado, restante: b.saldo_restante, asesor: b.asesor
+          numero: b.numero, nombre: b.clientes?.nombre || '', apellido: b.clientes?.apellido || '', ciudad: b.clientes?.ciudad || '', telefono: b.telefono_cliente, totalAbonos: b.total_abonado, restante: b.saldo_restante, asesor: b.asesor,
+          documento_tipo: b.clientes?.documento_tipo || '', documento_numero: b.clientes?.documento_numero || ''
         })));
       }
 
       // Buscamos datos del cliente en la tabla clientes para nombre/apellido/ciudad correctos
       const { data: clienteDB } = await supabase
         .from('clientes')
-        .select('nombre, apellido, ciudad')
+        .select('nombre, apellido, ciudad, documento_tipo, documento_numero')
         .like('telefono', '%' + last10)
         .maybeSingle();
 
@@ -193,7 +199,9 @@ export default async function handler(req, res) {
           telefono: b.telefono_cliente,
           totalAbonos: b.total_abonado || 0,
           restante: b.saldo_restante !== null && b.saldo_restante !== undefined ? b.saldo_restante : PRECIOS.RIFA_2_CIFRAS,
-          asesor: b.asesor || ''
+          asesor: b.asesor || '',
+          documento_tipo: clienteDB?.documento_tipo || '',
+          documento_numero: clienteDB?.documento_numero || ''
         })));
       }
 
@@ -206,7 +214,9 @@ export default async function handler(req, res) {
           telefono: b.telefono_cliente,
           totalAbonos: b.total_abonado || 0,
           restante: b.saldo_restante !== null && b.saldo_restante !== undefined ? b.saldo_restante : PRECIOS.RIFA_3_CIFRAS,
-          asesor: b.asesor || ''
+          asesor: b.asesor || '',
+          documento_tipo: clienteDB?.documento_tipo || '',
+          documento_numero: clienteDB?.documento_numero || ''
         })));
       }
 
