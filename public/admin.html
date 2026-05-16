@@ -516,6 +516,24 @@
     </div>
   </div>
 
+  <div id="modalBoletaExterna" class="modal-overlay">
+    <div class="modal-card">
+      <h3 style="color:var(--ink); font-weight:600; font-size:1.2rem; margin:0 0 10px 0;">Agregar boleta de otro cliente</h3>
+      <p style="color:var(--ink-2); font-size:0.85rem; margin-bottom:14px; line-height:1.5;">
+        Escribe el número de la boleta que quieres agregar al mismo cobro. Se sumará a la lista de boletas a abonar.
+      </p>
+      <div style="display:flex; gap:8px; margin-bottom:14px;">
+        <input id="bExternaNumero" type="text" inputmode="numeric" placeholder="Ej: 1234" class="pill" style="flex:1;" autocomplete="off">
+        <button id="bExternaBtnVerificar" type="button" class="cta" style="margin:0; padding:0 20px;">Verificar</button>
+      </div>
+      <div id="bExternaResultado" style="margin-bottom:14px; min-height:6px;"></div>
+      <div style="display:flex; gap:10px;">
+        <button id="bExternaBtnCancelar" type="button" class="cta" style="flex:1; background:transparent; border:1px solid var(--ring-strong); color:var(--ink-2);">Cancelar</button>
+        <button id="bExternaBtnAgregar" type="button" class="cta" style="flex:1; background:var(--ink);" disabled>Agregar al cobro</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal visor de comprobante simple -->
   <div id="fotoModal" onclick="this.style.display='none'" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.85); backdrop-filter:blur(4px); align-items:center; justify-content:center; cursor:zoom-out;">
     <div onclick="event.stopPropagation()" style="position:relative; max-width:92vw; max-height:92vh;">
