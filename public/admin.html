@@ -522,9 +522,9 @@
       <p style="color:var(--ink-2); font-size:0.85rem; margin-bottom:14px; line-height:1.5;">
         Escribe el número de la boleta que quieres agregar al mismo cobro. Se sumará a la lista de boletas a abonar.
       </p>
-      <div style="display:flex; gap:8px; margin-bottom:14px;">
-        <input id="bExternaNumero" type="text" inputmode="numeric" placeholder="Ej: 1234" class="pill" style="flex:1;" autocomplete="off">
-        <button id="bExternaBtnVerificar" type="button" class="cta" style="margin:0; padding:0 20px;">Verificar</button>
+      <div style="display:flex; gap:8px; margin-bottom:14px; align-items:stretch;">
+        <div class="field" style="flex:1; margin:0;"><input id="bExternaNumero" type="text" inputmode="numeric" placeholder="Ej: 1234" class="pill" autocomplete="off"></div>
+        <button id="bExternaBtnVerificar" type="button" class="cta" style="margin:0; padding:0 20px; flex:0 0 auto;">Verificar</button>
       </div>
       <div id="bExternaResultado" style="margin-bottom:14px; min-height:6px;"></div>
       <div style="display:flex; gap:10px;">
