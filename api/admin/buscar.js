@@ -25,11 +25,11 @@ export default async function handler(req, res) {
     queryLimpio = queryLimpio.slice(2); 
   }
 
-  // 🚨 4. REGLA DE TAMAÑO ACTUALIZADA (Ahora permite 3 cifras)
-  if (queryLimpio.length === 1 || (queryLimpio.length > 4 && queryLimpio.length !== 10)) {
-    return res.status(200).json({ 
-      tipo: 'ERROR_SERVIDOR', 
-      mensaje: `⚠️ Formato incorrecto.\nEscribiste un número de ${queryLimpio.length} cifras.\n\nEl sistema solo permite buscar:\n• 2 cifras (Diaria)\n• 3 cifras (Diaria 3C)\n• 4 cifras (Apto)\n• 10 cifras (Celular)` 
+  // 🚨 4. REGLA DE TAMAÑO: 2/3/4 cifras = boleta. 10 cifras o más = celular (nacional o internacional).
+  if (queryLimpio.length === 1 || (queryLimpio.length > 4 && queryLimpio.length < 10)) {
+    return res.status(200).json({
+      tipo: 'ERROR_SERVIDOR',
+      mensaje: `⚠️ Formato incorrecto.\nEscribiste un número de ${queryLimpio.length} cifras.\n\nEl sistema solo permite buscar:\n• 2 cifras (Diaria)\n• 3 cifras (Diaria 3C)\n• 4 cifras (Apto)\n• 10 o más cifras (Celular nacional o internacional)`
     });
   }
 
