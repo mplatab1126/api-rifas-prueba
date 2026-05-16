@@ -918,9 +918,11 @@ $('btnRegistrarVenta').onclick = async ()=>{
        $('mMsg').style.whiteSpace = 'pre-line'; 
        showModal('Resumen de Venta', mensajeFinal);
        
-       if(fails===0){ 
+       if(fails===0){
            // LIMPIEZA DE DATOS PRINCIPALES
            $('v_nombre').value=''; $('v_apellido').value=''; $('v_telefono').value=''; $('v_ciudad').value=''; $('v_primerAbono').value=0; $('v_referenciaAbono').value=''; $('v_metodoPago').value='';
+           if($('v_doc_tipo')) $('v_doc_tipo').value='';
+           if($('v_doc_numero')) $('v_doc_numero').value='';
            
            // LIMPIEZA DE BÚSQUEDA INTELIGENTE Y OCR
            if(document.getElementById('t_ref')) document.getElementById('t_ref').value=''; 
