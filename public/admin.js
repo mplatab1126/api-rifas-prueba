@@ -152,6 +152,12 @@ const $ = id => document.getElementById(id);
     // ==========================================
     let nombreAsesorActual = '';
 
+    // Cobro compartido entre boletas de varios clientes (solo Mi Equipo).
+    // Mantiene la lista de boletas externas agregadas al cobro actual.
+    let boletasExternasEnCobro = [];
+    let telefonoClienteActualEnVista = '';
+    let boletaExternaTemp = null;
+
     // Asesores cuyas ganancias son propias (independientes)
     const ASESORES_INDEPENDIENTES = ['alejandra plata', 'claudia', 'joaquín', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
 
@@ -718,6 +724,11 @@ const $ = id => document.getElementById(id);
       const q = smartInput.value.trim(); if(!q) return;
       feedback.textContent = "Buscando...";
 
+      // Reset del cobro compartido al iniciar una nueva búsqueda.
+      boletasExternasEnCobro = [];
+      telefonoClienteActualEnVista = '';
+      boletaExternaTemp = null;
+
       // --- NUEVO: LIMPIAR CAJAS DE PAGO INTELIGENTE AL BUSCAR ---
       
       // 1. Limpiamos los campos de la vista de "Boletas a separar" (Ventas)
@@ -993,6 +1004,29 @@ $('btnRegistrarVenta').onclick = async ()=>{
         const textoOriginal = btn.textContent; btn.textContent = 'Procesando...'; btn.disabled = true;
 
         const idTransOriginal = (esEfectivo || esPremioRifa) ? '' : document.getElementById('a_idTransferencia').value;
+
+        // Si hay boletas externas (de otros clientes) seleccionadas, este es un cobro compartido.
+        // Solo aplica con transferencia real (no efectivo ni premio rifa) y exige suma exacta.
+        const numerosExternosSet = new Set(boletasExternasEnCobro.map(b => String(b.numero)));
+        const hayBoletasExternasSel = boletasTarget.some(n => numerosExternosSet.has(String(n)));
+        if (hayBoletasExternasSel && (esEfectivo || esPremioRifa)) {
+            btn.textContent = textoOriginal; btn.disabled = false;
+            return alert('🚫 El cobro compartido entre boletas de varios clientes solo se puede registrar con Transferencia Real.\n\nQuita las boletas externas o cambia el modo a Transferencia.');
+        }
+        if (hayBoletasExternasSel && (!idTransOriginal || idTransOriginal.trim() === '')) {
+            btn.textContent = textoOriginal; btn.disabled = false;
+            return alert('🚫 Para repartir el cobro entre boletas de varios clientes necesitas asignar una transferencia real (busca o pega el comprobante primero).');
+        }
+        if (hayBoletasExternasSel) {
+            const sumaAsignada = boletasTarget.reduce(function(s, n) { return s + (Number(montosPorBoleta[n]) || 0); }, 0);
+            const montoTotalRef = Number(document.getElementById('a_monto').value) || 0;
+            if (sumaAsignada !== montoTotalRef) {
+                const fmtMoney = function(n) { return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n); };
+                btn.textContent = textoOriginal; btn.disabled = false;
+                return alert('🚫 La suma de los montos (' + fmtMoney(sumaAsignada) + ') debe ser EXACTAMENTE igual al monto de la transferencia (' + fmtMoney(montoTotalRef) + ').\n\nUsa el modo "Definir por boleta" si necesitas asignar valores distintos, o un total que sea divisible entre las ' + boletasTarget.length + ' boletas.');
+            }
+        }
+
         const basePayload = {
             metodoPago: metodo,
             referencia: ref || 'efectivo',
@@ -1000,7 +1034,10 @@ $('btnRegistrarVenta').onclick = async ()=>{
             contrasena: localStorage.getItem(STORAGE_KEY),
             idTransferencia: idTransOriginal,
             esPagoInteligente: !esEfectivo && !esPremioRifa && !!(idTransOriginal && idTransOriginal.trim() !== ''),
-            esPremioRifa: esPremioRifa
+            esPremioRifa: esPremioRifa,
+            // Si es cobro compartido, mandamos todas las boletas involucradas para que el backend
+            // marque la transferencia como "ASIGNADA REPARTIDA: a, b, c".
+            boletasRepartidas: hayBoletasExternasSel ? boletasTarget.map(String) : undefined
         };
 
         let ok = 0; let fails = 0;
@@ -1014,7 +1051,9 @@ $('btnRegistrarVenta').onclick = async ()=>{
                    ...basePayload,
                    numeroBoleta: boletasTarget[i],
                    valorAbono: montosPorBoleta[boletasTarget[i]],
-                   idTransferencia: i === 0 ? basePayload.idTransferencia : ''
+                   idTransferencia: i === 0 ? basePayload.idTransferencia : '',
+                   // boletasRepartidas solo viaja en la primera llamada (que es la que marca la transferencia).
+                   boletasRepartidas: i === 0 ? basePayload.boletasRepartidas : undefined
                };
                let req = await fetch('/api/admin/abono', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
                let res = await req.json();
@@ -1069,17 +1108,174 @@ $('btnRegistrarVenta').onclick = async ()=>{
         }
     }
 
+    // ==========================================
+    // COBRO COMPARTIDO ENTRE BOLETAS DE VARIOS CLIENTES
+    // El asesor agrega boletas de otros teléfonos a la lista del cobro actual.
+    // Solo lo usa Mi Equipo. La transferencia queda como "ASIGNADA REPARTIDA: a, b, c".
+    // ==========================================
+
+    function renderBoletaExternaHTML(b, fmt) {
+        var restante = Number(b.restante) || 0;
+        var tagTipo = b.tipo === 'diaria' ? 'Diaria' : (b.tipo === '3cifras' ? '3 Cifras' : 'Apto');
+        var html = '';
+        html += '<label data-boleta-externa="' + b.numero + '" style="display:flex; align-items:center; gap:8px; background:#fff7e0; padding:10px; border-radius:10px; border:1px solid #e0b13f; cursor:pointer; font-size:0.9rem; width:100%;">';
+        html += '<input type="checkbox" value="' + b.numero + '" class="boleta-pay-checkbox" checked onchange="verificarSeleccionAbonos()" style="accent-color: var(--accent); width:16px; height:16px; flex-shrink:0;">';
+        html += '<span style="color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1;"><b>' + b.numero + '</b> <span style="font-size:0.75rem; background:#e0b13f; color:#fff; padding:2px 6px; border-radius:6px; margin-left:4px;">👥 ' + (b.nombre || '') + ' ' + (b.apellido || '') + '</span> <span style="color:var(--muted); font-size:0.8rem;">(' + tagTipo + ' - Resta $' + fmt(restante) + ')</span></span>';
+        html += '<div style="display:flex; gap:6px; flex-shrink:0;">';
+        if (String(b.numero).length === 4) {
+            html += '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); copiarLinkBoleta(\'' + b.numero + '\');" style="background:#fff; border:1px solid var(--ring-strong); color:var(--ink-2); padding:4px 8px; border-radius:6px; font-size:0.75rem; font-weight:500; font-family:inherit; cursor:pointer;">Copiar Link</button>';
+        }
+        html += '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); quitarBoletaExterna(\'' + b.numero + '\');" style="background:transparent; color:var(--danger); border:1px solid var(--danger); padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:500; font-family:inherit; cursor:pointer;">Quitar</button>';
+        html += '</div>';
+        html += '</label>';
+        return html;
+    }
+
+    function abrirModalBoletaExterna() {
+        boletaExternaTemp = null;
+        document.getElementById('bExternaNumero').value = '';
+        document.getElementById('bExternaResultado').innerHTML = '';
+        document.getElementById('bExternaBtnAgregar').disabled = true;
+        document.getElementById('modalBoletaExterna').style.display = 'flex';
+        setTimeout(function() { document.getElementById('bExternaNumero').focus(); }, 50);
+    }
+
+    function cerrarModalBoletaExterna() {
+        document.getElementById('modalBoletaExterna').style.display = 'none';
+        boletaExternaTemp = null;
+    }
+
+    async function verificarBoletaExterna() {
+        const numero = (document.getElementById('bExternaNumero').value || '').trim();
+        const resultado = document.getElementById('bExternaResultado');
+        const btnAgregar = document.getElementById('bExternaBtnAgregar');
+
+        boletaExternaTemp = null;
+        btnAgregar.disabled = true;
+
+        if (!numero) {
+            resultado.innerHTML = '<p style="color:var(--danger); font-size:0.85rem; margin:0;">Escribe el número de boleta.</p>';
+            return;
+        }
+        if (!/^\d+$/.test(numero) || (numero.length !== 2 && numero.length !== 3 && numero.length !== 4)) {
+            resultado.innerHTML = '<p style="color:var(--danger); font-size:0.85rem; margin:0;">El número debe tener 2, 3 o 4 dígitos.</p>';
+            return;
+        }
+
+        resultado.innerHTML = '<p style="color:var(--muted); font-size:0.85rem; margin:0;">Buscando...</p>';
+
+        try {
+            const response = await fetch('/api/admin/buscar?q=' + encodeURIComponent(numero));
+            const res = await response.json();
+
+            if (res.tipo === 'BOLETA_DISPONIBLE') {
+                resultado.innerHTML = '<p style="color:var(--danger); font-size:0.85rem; margin:0;">🚫 Esta boleta no está vendida. No se puede abonar.</p>';
+                return;
+            }
+            if (res.tipo !== 'BOLETA_OCUPADA') {
+                resultado.innerHTML = '<p style="color:var(--danger); font-size:0.85rem; margin:0;">🚫 ' + (res.mensaje || 'Boleta no válida') + '</p>';
+                return;
+            }
+
+            const info = res.data.infoVenta;
+
+            // Validar que NO sea del mismo cliente actual
+            const tCliente = (telefonoClienteActualEnVista || '').replace(/\D/g, '').slice(-10);
+            const tExterna = (info.telefono || '').replace(/\D/g, '').slice(-10);
+            if (tCliente && tCliente === tExterna) {
+                resultado.innerHTML = '<p style="color:var(--danger); font-size:0.85rem; margin:0;">🚫 Esta boleta ya pertenece al cliente actual. No es necesario agregarla por separado.</p>';
+                return;
+            }
+
+            // Validar que no esté ya agregada
+            if (boletasExternasEnCobro.find(function(b){ return String(b.numero) === String(info.numero); })) {
+                resultado.innerHTML = '<p style="color:var(--danger); font-size:0.85rem; margin:0;">🚫 Esta boleta ya fue agregada al cobro.</p>';
+                return;
+            }
+
+            // Validar saldo > 0
+            if (Number(info.restante) <= 0) {
+                resultado.innerHTML = '<p style="color:var(--danger); font-size:0.85rem; margin:0;">🚫 Esta boleta ya está pagada completamente.</p>';
+                return;
+            }
+
+            // Validar grupo (regular vs independiente) — defensa en profundidad. El backend también lo valida.
+            const asesorBoleta = info.asesor || '';
+            if (asesorBoleta) {
+                const grupoAsesor = esAsesorIndependiente(nombreAsesorActual) ? 'independiente' : 'regular';
+                const grupoBoleta = esAsesorIndependiente(asesorBoleta) ? 'independiente' : 'regular';
+                if (grupoAsesor !== grupoBoleta) {
+                    resultado.innerHTML = '<p style="color:var(--danger); font-size:0.85rem; margin:0;">🚫 Esta boleta pertenece a otro equipo, no puedes abonarla.</p>';
+                    return;
+                }
+            }
+
+            boletaExternaTemp = {
+                numero: info.numero,
+                nombre: info.nombre || '',
+                apellido: info.apellido || '',
+                telefono: info.telefono || '',
+                restante: Number(info.restante) || 0,
+                tipo: String(info.numero).length === 2 ? 'diaria' : (String(info.numero).length === 3 ? '3cifras' : 'apto')
+            };
+
+            const fmt = function(n) { return new Intl.NumberFormat('es-CO').format(n); };
+            resultado.innerHTML =
+                '<div style="background:var(--bg); border:1px solid var(--accent-2); border-radius:10px; padding:12px;">' +
+                '<p style="margin:0 0 6px; font-weight:600; color:var(--accent-2); font-size:0.9rem;">✓ Boleta encontrada</p>' +
+                '<p style="margin:0; font-size:0.85rem;"><b>Boleta:</b> ' + info.numero + '</p>' +
+                '<p style="margin:0; font-size:0.85rem;"><b>Cliente:</b> ' + (info.nombre || '') + ' ' + (info.apellido || '') + '</p>' +
+                '<p style="margin:0; font-size:0.85rem;"><b>Teléfono:</b> ' + (info.telefono || '') + '</p>' +
+                '<p style="margin:0; font-size:0.85rem;"><b>Saldo restante:</b> $' + fmt(info.restante) + '</p>' +
+                '</div>';
+            btnAgregar.disabled = false;
+        } catch (e) {
+            resultado.innerHTML = '<p style="color:var(--danger); font-size:0.85rem; margin:0;">Error de conexión.</p>';
+        }
+    }
+
+    function agregarBoletaExternaConfirmada() {
+        if (!boletaExternaTemp) return;
+        boletasExternasEnCobro.push(boletaExternaTemp);
+
+        // Insertar la nueva fila dentro de la lista actual SIN re-renderizar todo el panel.
+        const cont = document.getElementById('boletasListaCobro');
+        if (cont) {
+            const fmt = function(n) { return new Intl.NumberFormat('es-CO').format(n); };
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = renderBoletaExternaHTML(boletaExternaTemp, fmt);
+            // appendChild del label hijo (el wrapper es solo para parsear).
+            while (wrapper.firstChild) cont.appendChild(wrapper.firstChild);
+        }
+
+        cerrarModalBoletaExterna();
+        // Forzar re-evaluación del modo abono (uniforme/manual) por si pasó de 1 a 2+ boletas.
+        if (typeof verificarSeleccionAbonos === 'function') verificarSeleccionAbonos();
+        if (typeof renderMontosManual === 'function' && typeof modoDistribucionAbono !== 'undefined' && modoDistribucionAbono === 'manual') renderMontosManual();
+    }
+
+    function quitarBoletaExterna(numero) {
+        const num = String(numero);
+        boletasExternasEnCobro = boletasExternasEnCobro.filter(function(b){ return String(b.numero) !== num; });
+        const el = document.querySelector('[data-boleta-externa="' + num + '"]');
+        if (el) el.remove();
+        if (typeof verificarSeleccionAbonos === 'function') verificarSeleccionAbonos();
+        if (typeof renderMontosManual === 'function' && typeof modoDistribucionAbono !== 'undefined' && modoDistribucionAbono === 'manual') renderMontosManual();
+    }
+
     function renderClienteInfo(lista){
-       var c = lista[0]; 
+       var c = lista[0];
+       telefonoClienteActualEnVista = c && c.telefono ? String(c.telefono) : '';
        var boletasStr = [];
        var fmt = function(n) { return new Intl.NumberFormat('es-CO').format(n); };
-       
+       var esMiEquipo = nombreAsesorActual && !esAsesorIndependiente(nombreAsesorActual);
+
        var html = '';
-       
+
        // 1. CAJITAS DE SELECCIÓN (Desmarcadas si hay más de 1 boleta)
        html += '<div style="margin-bottom: 20px;">';
        html += '<label style="font-size:0.85rem; color:var(--ink-2); font-weight:600; margin-bottom:10px; display:block;">👇 Selecciona a qué boleta(s) vas a abonar:</label>';
-       html += '<div style="display: flex; flex-direction: column; gap: 8px;">';
+       html += '<div id="boletasListaCobro" style="display: flex; flex-direction: column; gap: 8px;">';
 
        var autoCheck = lista.length === 1 ? 'checked' : '';
 
@@ -1117,7 +1313,20 @@ $('btnRegistrarVenta').onclick = async ()=>{
            
            html += '</label>';
        }
-       html += '</div></div>';
+
+       // Boletas EXTERNAS (de otros clientes) que el asesor agregó al cobro compartido.
+       for (var bi = 0; bi < boletasExternasEnCobro.length; bi++) {
+           html += renderBoletaExternaHTML(boletasExternasEnCobro[bi], fmt);
+       }
+
+       html += '</div>';
+
+       // Botón "+ Agregar boleta de otro cliente" — solo Mi Equipo lo ve.
+       if (esMiEquipo) {
+           html += '<button type="button" onclick="abrirModalBoletaExterna()" style="margin-top:10px; width:100%; background:transparent; border:1.5px dashed var(--accent-2); color:var(--accent-2); padding:10px; border-radius:10px; font-size:0.85rem; font-weight:600; font-family:inherit; cursor:pointer;">+ Agregar boleta de otro cliente al mismo cobro</button>';
+       }
+
+       html += '</div>';
 
        // 2. DATOS DEL CLIENTE
        // Revisamos si las boletas tienen un asesor asignado para mostrarlo
@@ -2054,6 +2263,23 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
             };
             docNumInput.addEventListener('input', limpiarDocSegunTipo);
             docTipoSel.addEventListener('change', limpiarDocSegunTipo);
+        }
+
+        // Modal "Agregar boleta de otro cliente al cobro" — botones y Enter.
+        const bExtVerificar = document.getElementById('bExternaBtnVerificar');
+        const bExtCancelar = document.getElementById('bExternaBtnCancelar');
+        const bExtAgregar = document.getElementById('bExternaBtnAgregar');
+        const bExtNumero = document.getElementById('bExternaNumero');
+        if (bExtVerificar) bExtVerificar.addEventListener('click', verificarBoletaExterna);
+        if (bExtCancelar) bExtCancelar.addEventListener('click', cerrarModalBoletaExterna);
+        if (bExtAgregar) bExtAgregar.addEventListener('click', agregarBoletaExternaConfirmada);
+        if (bExtNumero) {
+            bExtNumero.addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') verificarBoletaExterna();
+            });
+            bExtNumero.addEventListener('input', function() {
+                bExtNumero.value = bExtNumero.value.replace(/\D/g, '');
+            });
         }
     });
 

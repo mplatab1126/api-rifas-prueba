@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  const { numeroBoleta, valorAbono, metodoPago, referencia, contrasena, esPendiente, idTransferencia, esPagoInteligente, esPremioRifa, permitirExceso } = req.body;
+  const { numeroBoleta, valorAbono, metodoPago, referencia, contrasena, esPendiente, idTransferencia, esPagoInteligente, esPremioRifa, permitirExceso, boletasRepartidas } = req.body;
 
   const ASESORES_INDEPENDIENTES = ['alejandra plata', 'joaquín', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
   const esIndependiente = (nombre) => nombre && ASESORES_INDEPENDIENTES.some(ind => nombre.toLowerCase().includes(ind));
@@ -224,8 +224,13 @@ export default async function handler(req, res) {
     if (updateError) throw updateError;
 
     // 7. Amarrar la referencia a la boleta (ASIGNACIÓN SEGURA POR ID)
+    // Si viene `boletasRepartidas`, la transferencia se reparte entre boletas de distintos clientes
+    // y el estado deja constancia de todas las boletas involucradas.
+    const estadoTransferencia = Array.isArray(boletasRepartidas) && boletasRepartidas.length > 1
+      ? `ASIGNADA REPARTIDA: ${boletasRepartidas.map(b => String(b).trim()).filter(Boolean).join(', ')}`
+      : `ASIGNADA a boleta ${numeroLimpio}`;
     if (idTransferencia && idTransferencia.trim() !== '') {
-      await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('id', idTransferencia);
+      await supabase.from('transferencias').update({ estado: estadoTransferencia }).eq('id', idTransferencia);
     } else if (referencia && referencia !== 'Sin Ref' && referencia !== 'efectivo' && referencia !== 'efectivo_oficina' && referencia !== 'premio_rifa_diaria' && referencia !== '0') {
       const { data: transLibre } = await supabase
         .from('transferencias')
