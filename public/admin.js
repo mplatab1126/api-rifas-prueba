@@ -2577,7 +2577,9 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         rifa_santa_teresita: ['Publicidad', 'Adecuación', 'Muebles', 'Electrodomésticos', 'Acabados', 'Premios', 'Devoluciones a Clientes', 'Otros'],
         retiro_ganancia: ['Papá', 'Mateo', 'Alejandro', 'Alejandro y Mateo'],
         retiro_capital:  ['Alejandro', 'Mateo', 'Federico'],
-        pagos_diarias:  ['Rifa de 2 cifras', 'Rifa de 3 cifras']
+        pagos_diarias:  ['Rifa de 2 cifras', 'Rifa de 3 cifras'],
+        // Subcategorías OBLIGATORIAS para Movimiento a Caja: indican a cuál caja entró el efectivo.
+        movimiento_caja: ['Oficina', 'Papá']
     };
 
     function actualizarSubcatsEgreso(id) {
@@ -2595,7 +2597,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         const p = prefix || 'dist';
         const safeDesc = (desc || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const idJs = typeof itemId === 'number' ? itemId : `'${itemId}'`;
-        const catOpts = '<option value="">— Categoría * —</option><option value="operacionales">⚙️ Operacionales</option><option value="rifa_apartamento">🏠 Rifa Apartamento</option><option value="construccion">🏗️ Construcción</option><option value="rifa_camioneta">🚗 Rifa Camioneta</option><option value="rifa_santa_teresita">🏡 Rifa Santa Teresita</option><option value="retiro_ganancia">💸 Retiro Ganancia</option><option value="retiro_capital">🏦 Retiro de Capital</option><option value="pagos_diarias">🎯 Pagos Diarias</option>';
+        const catOpts = '<option value="">— Categoría * —</option><option value="operacionales">⚙️ Operacionales</option><option value="rifa_apartamento">🏠 Rifa Apartamento</option><option value="construccion">🏗️ Construcción</option><option value="rifa_camioneta">🚗 Rifa Camioneta</option><option value="rifa_santa_teresita">🏡 Rifa Santa Teresita</option><option value="retiro_ganancia">💸 Retiro Ganancia</option><option value="retiro_capital">🏦 Retiro de Capital</option><option value="pagos_diarias">🎯 Pagos Diarias</option><option value="movimiento_caja">💵 Movimiento a Caja</option>';
         const removeBtn = idx > 0 ? `<button onclick="eliminarDistFila(${idJs},${idx},'${p}')" style="padding:4px 8px;border-radius:6px;border:1px solid #ef5350;background:#ffebee;color:#c62828;font-weight:700;cursor:pointer;font-size:0.78rem;font-family:inherit;">✕</button>` : '';
         return `<div id="${p}Row_${itemId}_${idx}" class="dist-row" style="border:1px solid #90caf9;border-radius:10px;padding:10px;background:#f8fbff;">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
@@ -2841,7 +2843,153 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
             renderBadgePendientes();
             renderPendientes();
         } catch (_) { pendientesData = []; }
+        // Refrescamos también el saldo de Caja al cargar la sección.
+        cargarSaldoCaja();
     }
+
+    // ── Cajas físicas: Oficina y Papá ────────────────────────────────────
+    // Mantenemos dos saldos independientes en memoria para validación local rápida.
+    let _saldoCajaOficina = 0;
+    let _saldoCajaPapa = 0;
+
+    async function cargarSaldoCaja() {
+        // Pedimos los dos saldos en paralelo y actualizamos los dos widgets.
+        const pwd = localStorage.getItem(STORAGE_KEY) || '';
+        const pedir = async (caja) => {
+            try {
+                const req = await fetch('/api/admin/finanzas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ accion: 'saldo_caja', contrasena: pwd, caja })
+                });
+                const res = await req.json();
+                return res.status === 'ok' ? Number(res.saldo || 0) : null;
+            } catch (_) { return null; }
+        };
+        const [oficina, papa] = await Promise.all([pedir('oficina'), pedir('papa')]);
+        if (oficina !== null) {
+            _saldoCajaOficina = oficina;
+            const el = document.getElementById('saldoCajaOficinaTexto');
+            if (el) el.textContent = _saldoCajaOficina.toLocaleString('es-CO');
+        }
+        if (papa !== null) {
+            _saldoCajaPapa = papa;
+            const el = document.getElementById('saldoCajaPapaTexto');
+            if (el) el.textContent = _saldoCajaPapa.toLocaleString('es-CO');
+        }
+    }
+
+    function abrirModalGastoCaja(caja) {
+        // `caja` puede ser 'oficina' o 'papa'. Default: oficina.
+        const cajaSel = (caja === 'papa' || caja === 'papá') ? 'papa' : 'oficina';
+        const esOficina = cajaSel === 'oficina';
+        const saldoActual = esOficina ? _saldoCajaOficina : _saldoCajaPapa;
+        const etiqueta    = esOficina ? 'Caja Oficina' : 'Caja Papá';
+
+        // Guardamos la caja seleccionada en el input oculto para usarla al enviar.
+        const inputCaja = document.getElementById('gcCajaSeleccionada');
+        if (inputCaja) inputCaja.value = cajaSel;
+
+        // Personalizamos título, subtítulo y saldo mostrado según la caja elegida.
+        const titulo = document.getElementById('modalGastoCajaTitulo');
+        if (titulo) titulo.textContent = `💸 Gastar desde ${etiqueta}`;
+        const subtitulo = document.getElementById('modalGastoCajaSubtitulo');
+        if (subtitulo) subtitulo.textContent = `de la ${etiqueta}`;
+
+        const saldoTxt = document.getElementById('modalSaldoCajaTexto');
+        if (saldoTxt) saldoTxt.textContent = saldoActual.toLocaleString('es-CO');
+
+        // Limpiamos campos por si quedaron datos de un intento anterior.
+        ['gcMonto', 'gcDescripcion', 'gcNotas'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
+        const catSel = document.getElementById('gcCategoria'); if (catSel) catSel.value = '';
+        const subSel = document.getElementById('gcSubcategoria'); if (subSel) subSel.innerHTML = '<option value="">— Sin subcategoría —</option>';
+        const btn = document.getElementById('gcBtnGuardar'); if (btn) { btn.disabled = false; btn.textContent = 'Guardar gasto'; }
+
+        const modal = document.getElementById('modalGastoCaja');
+        if (modal) modal.style.display = 'flex';
+    }
+
+    function cerrarModalGastoCaja() {
+        const modal = document.getElementById('modalGastoCaja');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function actualizarSubcatGastoCaja() {
+        const cat = document.getElementById('gcCategoria')?.value;
+        const subSel = document.getElementById('gcSubcategoria');
+        if (!subSel) return;
+        // Reutilizamos las subcategorías que ya están en SUBCATEGORIAS (definidas en admin.js para distribuciones).
+        const opts = (typeof SUBCATEGORIAS !== 'undefined' && SUBCATEGORIAS[cat]) || [];
+        subSel.innerHTML = '<option value="">— Sin subcategoría —</option>' +
+            opts.map(s => `<option value="${s}">${s}</option>`).join('');
+    }
+
+    async function guardarGastoCaja() {
+        const monto = Number(document.getElementById('gcMonto')?.value || 0);
+        const descripcion = (document.getElementById('gcDescripcion')?.value || '').trim();
+        const categoria = document.getElementById('gcCategoria')?.value;
+        const subcategoria = document.getElementById('gcSubcategoria')?.value || null;
+        const notas = (document.getElementById('gcNotas')?.value || '').trim();
+        const caja = document.getElementById('gcCajaSeleccionada')?.value || 'oficina';
+        const esOficina = caja === 'oficina';
+        const saldoActualLocal = esOficina ? _saldoCajaOficina : _saldoCajaPapa;
+        const etiqueta = esOficina ? 'Caja Oficina' : 'Caja Papá';
+
+        // Validaciones del lado del cliente (el backend también valida).
+        if (!monto || monto <= 0) { alert('Pon un monto válido (mayor a cero).'); return; }
+        if (!descripcion) { alert('Falta la descripción del gasto.'); return; }
+        if (!categoria) { alert('Falta la categoría.'); return; }
+        if (monto > saldoActualLocal) {
+            alert(`🚫 Saldo insuficiente en ${etiqueta}.\n\nSaldo actual: $${saldoActualLocal.toLocaleString('es-CO')}\nIntentas gastar: $${monto.toLocaleString('es-CO')}`);
+            return;
+        }
+
+        const btn = document.getElementById('gcBtnGuardar');
+        if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+
+        try {
+            const pwd = localStorage.getItem(STORAGE_KEY) || '';
+            const req = await fetch('/api/admin/finanzas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    accion: 'crear_gasto_caja',
+                    contrasena: pwd,
+                    caja,
+                    monto, descripcion, categoria, subcategoria, notas
+                })
+            });
+            const res = await req.json();
+
+            if (res.status === 'ok') {
+                cerrarModalGastoCaja();
+                // Actualizamos el saldo en pantalla con el valor que vino del servidor.
+                const saldoNuevo = Number(res.saldo_nuevo) || 0;
+                if (esOficina) {
+                    _saldoCajaOficina = saldoNuevo;
+                    const el = document.getElementById('saldoCajaOficinaTexto');
+                    if (el) el.textContent = saldoNuevo.toLocaleString('es-CO');
+                } else {
+                    _saldoCajaPapa = saldoNuevo;
+                    const el = document.getElementById('saldoCajaPapaTexto');
+                    if (el) el.textContent = saldoNuevo.toLocaleString('es-CO');
+                }
+                alert(`✅ ${res.mensaje}\n\nNuevo saldo en ${etiqueta}: $${saldoNuevo.toLocaleString('es-CO')}`);
+            } else {
+                alert(res.mensaje || 'No se pudo guardar el gasto.');
+                if (btn) { btn.disabled = false; btn.textContent = 'Guardar gasto'; }
+            }
+        } catch (e) {
+            alert('Error de conexión: ' + e.message);
+            if (btn) { btn.disabled = false; btn.textContent = 'Guardar gasto'; }
+        }
+    }
+
+    // Exponer para que los onclick=" " del HTML las encuentren.
+    window.abrirModalGastoCaja = abrirModalGastoCaja;
+    window.cerrarModalGastoCaja = cerrarModalGastoCaja;
+    window.actualizarSubcatGastoCaja = actualizarSubcatGastoCaja;
+    window.guardarGastoCaja = guardarGastoCaja;
 
     function renderBadgePendientes() {
         const badge = document.getElementById('badgePendientes');

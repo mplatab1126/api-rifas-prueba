@@ -10,8 +10,70 @@ const CATEGORIAS = [
   { id: 'rifa_santa_teresita', nombre: 'Rifa Casa Santa Teresita', icono: '🏡', afecta_er: false },
   { id: 'retiro_ganancia',  nombre: 'Retiro de Ganancia',        icono: '💸', afecta_er: false },
   { id: 'retiro_capital',   nombre: 'Retiro de Capital',         icono: '🏦', afecta_er: false },
-  { id: 'pagos_diarias',    nombre: 'Pagos Rifas Diarias',       icono: '🎯', afecta_er: false }
+  { id: 'pagos_diarias',    nombre: 'Pagos Rifas Diarias',       icono: '🎯', afecta_er: false },
+  // Movimiento a Caja: traslado interno (plata pasa de una cuenta bancaria a efectivo físico).
+  // NO es un gasto real — por eso afecta_er=false y el Estado de Resultados debe excluirlo.
+  { id: 'movimiento_caja',  nombre: 'Movimiento a Caja',         icono: '💵', afecta_er: false, es_traslado_interno: true }
 ];
+
+// Categoría usada para identificar movimientos a caja al calcular saldo
+const NOMBRE_MOV_CAJA = 'Movimiento a Caja';
+
+// Dos cajas físicas separadas:
+//   - "Caja Oficina": efectivo en la oficina (asesores), tiene cuadre diario en movimientos_caja
+//   - "Caja Papá":    efectivo que retira el papá para gastos físicos de la rifa (madera, pintura, etc.)
+const PLATAFORMA_CAJA_OFICINA = 'Caja Oficina';
+const PLATAFORMA_CAJA_PAPA    = 'Caja Papá';
+
+// Subcategoría que se guarda cuando justifican un retiro como Movimiento a Caja,
+// para distinguir a qué caja entró el efectivo.
+const SUBCAT_DESTINO_OFICINA = 'Oficina';
+const SUBCAT_DESTINO_PAPA    = 'Papá';
+
+// Calcula el saldo de la Caja Papá (acumulado, sin cuadre diario).
+//   saldo = (Movimientos a Caja con subcategoría='Papá') - (Gastos cuya plataforma='Caja Papá')
+async function calcularSaldoCajaPapa() {
+  const { data: entradas } = await supabase
+    .from('gastos')
+    .select('monto')
+    .eq('categoria', NOMBRE_MOV_CAJA)
+    .eq('subcategoria', SUBCAT_DESTINO_PAPA);
+
+  const { data: salidas } = await supabase
+    .from('gastos')
+    .select('monto')
+    .eq('plataforma', PLATAFORMA_CAJA_PAPA);
+
+  const totalEntradas = (entradas || []).reduce((s, g) => s + Number(g.monto || 0), 0);
+  const totalSalidas  = (salidas  || []).reduce((s, g) => s + Number(g.monto || 0), 0);
+  return { saldo: totalEntradas - totalSalidas, totalEntradas, totalSalidas };
+}
+
+// Calcula el saldo de la Caja Oficina (acumulado, leyendo SOLO de movimientos_caja).
+// movimientos_caja ya tiene base + ingresos + salidas + consignaciones, así que es la fuente única de verdad.
+async function calcularSaldoCajaOficina() {
+  const { data: movs } = await supabase
+    .from('movimientos_caja')
+    .select('tipo, monto');
+
+  let totalEntradas = 0;
+  let totalSalidas  = 0;
+  (movs || []).forEach(m => {
+    const monto = Number(m.monto || 0);
+    if (m.tipo === 'base' || m.tipo === 'ingreso' || m.tipo === 'recepcion') totalEntradas += monto;
+    else if (m.tipo === 'salida' || m.tipo === 'consignacion')                totalSalidas  += monto;
+    // apertura, cierre, condonacion: no afectan saldo
+  });
+
+  return { saldo: totalEntradas - totalSalidas, totalEntradas, totalSalidas };
+}
+
+// Wrapper unificado para mantener compatibilidad con el código que ya llama a saldo de "caja".
+// Por defecto devuelve Caja Oficina.
+async function calcularSaldoCaja(caja = 'oficina') {
+  if (caja === 'papa' || caja === 'papá' || caja === 'papá') return calcularSaldoCajaPapa();
+  return calcularSaldoCajaOficina();
+}
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -26,6 +88,112 @@ export default async function handler(req, res) {
 
     if (accion === 'listar_categorias') {
       return res.status(200).json({ status: 'ok', categorias: CATEGORIAS });
+    }
+
+    // ── Consultar saldo actual de Caja (Oficina o Papá) ─────────────────
+    // payload: { caja: 'oficina' | 'papa' }  (default: oficina)
+    if (accion === 'saldo_caja') {
+      const caja = (payload.caja || 'oficina').toLowerCase();
+      const { saldo, totalEntradas, totalSalidas } = await calcularSaldoCaja(caja);
+      return res.status(200).json({ status: 'ok', caja, saldo, totalEntradas, totalSalidas });
+    }
+
+    // ── Crear un gasto MANUAL desde Caja (sin pantallazo bancario) ──────
+    // Cualquier asesor puede hacerlo. Queda registrado quién lo hizo.
+    // Valida que el saldo de la caja indicada alcance.
+    // Si la caja es 'oficina', además crea una salida en movimientos_caja
+    // para que el cuadre diario lo refleje (mantiene los dos sistemas sincronizados).
+    if (accion === 'crear_gasto_caja') {
+      const { fecha, hora, monto, descripcion, categoria, subcategoria, notas } = payload;
+      const caja = (payload.caja || 'oficina').toLowerCase();
+
+      // Validaciones básicas
+      if (!monto || Number(monto) <= 0) {
+        return res.status(400).json({ status: 'error', mensaje: 'El monto debe ser mayor a cero.' });
+      }
+      if (!descripcion || !String(descripcion).trim()) {
+        return res.status(400).json({ status: 'error', mensaje: 'La descripción es obligatoria.' });
+      }
+      if (!categoria) {
+        return res.status(400).json({ status: 'error', mensaje: 'La categoría es obligatoria.' });
+      }
+      if (caja !== 'oficina' && caja !== 'papa' && caja !== 'papá') {
+        return res.status(400).json({ status: 'error', mensaje: 'Caja inválida. Debe ser "oficina" o "papa".' });
+      }
+
+      const cat = CATEGORIAS.find(c => c.id === categoria || c.nombre === categoria);
+      if (!cat) {
+        return res.status(400).json({ status: 'error', mensaje: `Categoría desconocida: ${categoria}` });
+      }
+      if (cat.id === 'movimiento_caja') {
+        return res.status(400).json({ status: 'error', mensaje: 'Para registrar un retiro a Caja, sube el pantallazo en Carga IA. Este botón es solo para GASTAR plata que ya está en Caja.' });
+      }
+
+      const montoGasto    = Math.round(Number(monto));
+      const plataformaSel = (caja === 'oficina') ? PLATAFORMA_CAJA_OFICINA : PLATAFORMA_CAJA_PAPA;
+      const cajaLabel     = (caja === 'oficina') ? 'Caja Oficina' : 'Caja Papá';
+
+      // Validación de saldo
+      const { saldo: saldoActual } = await calcularSaldoCaja(caja);
+      if (montoGasto > saldoActual) {
+        return res.status(400).json({
+          status: 'error',
+          mensaje: `🚫 Saldo insuficiente en ${cajaLabel}.\n\nSaldo actual: $${saldoActual.toLocaleString('es-CO')}\nIntentas gastar: $${montoGasto.toLocaleString('es-CO')}\n\nFalta: $${(montoGasto - saldoActual).toLocaleString('es-CO')}`
+        });
+      }
+
+      const fechaGasto = fecha || new Date().toISOString().split('T')[0];
+      const horaGasto  = hora  || new Date().toISOString().split('T')[1].substring(0, 8);
+
+      // 1. Registrar en `gastos` (afecta P&L y reportes financieros)
+      const { data: insertado, error: insertError } = await supabase
+        .from('gastos')
+        .insert({
+          fecha: fechaGasto,
+          hora: horaGasto,
+          monto: montoGasto,
+          plataforma: plataformaSel,
+          referencia: null,
+          categoria: cat.nombre,
+          subcategoria: subcategoria || null,
+          descripcion: String(descripcion).trim(),
+          notas: notas ? String(notas).trim() : null,
+          url_comprobante: null,
+          reportado_por: nombreAsesor,
+          categorizado_por: nombreAsesor,
+          fuente: 'gasto_caja_manual'
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        return res.status(500).json({ status: 'error', mensaje: insertError.message });
+      }
+
+      // 2. Si es Caja Oficina, también dejar la salida en movimientos_caja
+      //    para que el cuadre diario lo refleje (mantiene los sistemas en sync).
+      if (caja === 'oficina') {
+        const { error: movError } = await supabase
+          .from('movimientos_caja')
+          .insert({
+            fecha: fechaGasto,
+            tipo: 'salida',
+            monto: montoGasto,
+            descripcion: `${cat.nombre}${subcategoria ? ' · ' + subcategoria : ''} — ${String(descripcion).trim()}`,
+            creado_por: nombreAsesor
+          });
+        // Si falla, no abortamos: el gasto ya quedó en `gastos`. Solo logueamos.
+        if (movError) console.error('[crear_gasto_caja] No se pudo insertar en movimientos_caja:', movError.message);
+      }
+
+      const { saldo: saldoNuevo } = await calcularSaldoCaja(caja);
+      return res.status(200).json({
+        status: 'ok',
+        mensaje: `Gasto desde ${cajaLabel} registrado: $${montoGasto.toLocaleString('es-CO')} en ${cat.nombre}.`,
+        gasto: insertado,
+        caja,
+        saldo_nuevo: saldoNuevo
+      });
     }
 
     // ── Guardar egreso pendiente (cualquier asesor) ──────────────────────
@@ -134,6 +302,13 @@ export default async function handler(req, res) {
           if (!dist.categoria) return res.status(400).json({ status: 'error', mensaje: 'Cada distribución necesita una categoría.' });
           const co = CATEGORIAS.find(c => c.id === dist.categoria);
           if (!co) return res.status(400).json({ status: 'error', mensaje: `Categoría "${dist.categoria}" no válida.` });
+          // Si es Movimiento a Caja, la subcategoría es OBLIGATORIA porque indica a qué caja entró el efectivo.
+          if (co.id === 'movimiento_caja') {
+            const sub = String(dist.subcategoria || '').trim();
+            if (sub !== SUBCAT_DESTINO_OFICINA && sub !== SUBCAT_DESTINO_PAPA) {
+              return res.status(400).json({ status: 'error', mensaje: 'Para "Movimiento a Caja" debes indicar a cuál caja entró el efectivo: Oficina o Papá.' });
+            }
+          }
         }
 
         const { error: delErr } = await supabase.from('gastos').delete().eq('id', id).eq('categoria', 'Pendiente');
@@ -156,6 +331,23 @@ export default async function handler(req, res) {
 
         const { error: insErr } = await supabase.from('gastos').insert(inserts);
         if (insErr) throw insErr;
+
+        // Sincronizar con movimientos_caja: si alguna distribución es "Movimiento a Caja"
+        // con destino "Oficina", también registrar un ingreso en movimientos_caja para que
+        // el cuadre diario refleje el efectivo nuevo.
+        const ingresosOficina = inserts
+          .filter(i => i.categoria === NOMBRE_MOV_CAJA && i.subcategoria === SUBCAT_DESTINO_OFICINA)
+          .map(i => ({
+            fecha: i.fecha,
+            tipo: 'ingreso',
+            monto: i.monto,
+            descripcion: `Retiro a Caja Oficina — ${i.descripcion}`,
+            creado_por: nombreAsesor
+          }));
+        if (ingresosOficina.length > 0) {
+          const { error: mcErr } = await supabase.from('movimientos_caja').insert(ingresosOficina);
+          if (mcErr) console.error('[justificar_pendiente] No se pudo sincronizar con movimientos_caja:', mcErr.message);
+        }
 
         const cats = [...new Set(inserts.map(i => i.categoria))].join(', ');
         return res.status(200).json({ status: 'ok', mensaje: `${inserts.length} distribuciones justificadas: ${cats}` });

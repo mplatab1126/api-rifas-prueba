@@ -113,13 +113,66 @@
               </div>
             </div>
 
-            <!-- Egresos pendientes de justificar -->
-            <div style="margin-top: 16px; display: flex; align-items: center; gap: 10px;">
+            <!-- Egresos pendientes + Saldos de las dos cajas -->
+            <div style="margin-top: 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
               <span id="badgePendientes" onclick="togglePendientes()" style="display:none; align-items:center; gap:6px; padding:6px 14px; border-radius:20px; background:#fff3e0; border:1.5px solid #f57c00; color:#e65100; font-size:0.82rem; font-weight:700; cursor:pointer; transition:background .15s;">⏸️ 0 pendientes</span>
+
+              <!-- Caja Oficina: efectivo que manejan los asesores en la oficina -->
+              <span id="widgetSaldoCajaOficina" style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:20px; background:#e8f5e9; border:1.5px solid #2e7d32; color:#1b5e20; font-size:0.82rem; font-weight:700;">🏢 Caja Oficina: $<span id="saldoCajaOficinaTexto">…</span></span>
+              <button onclick="abrirModalGastoCaja('oficina')" style="padding:6px 14px; border-radius:20px; border:1.5px solid #2e7d32; background:#e8f5e9; color:#1b5e20; font-size:0.82rem; font-weight:700; cursor:pointer; font-family:inherit;">💸 Gastar desde Oficina</button>
+
+              <!-- Caja Papá: efectivo en mano del papá para gastos físicos de la rifa -->
+              <span id="widgetSaldoCajaPapa" style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:20px; background:#fff3e0; border:1.5px solid #ef6c00; color:#e65100; font-size:0.82rem; font-weight:700;">👷 Caja Papá: $<span id="saldoCajaPapaTexto">…</span></span>
+              <button onclick="abrirModalGastoCaja('papa')" style="padding:6px 14px; border-radius:20px; border:1.5px solid #ef6c00; background:#fff3e0; color:#e65100; font-size:0.82rem; font-weight:700; cursor:pointer; font-family:inherit;">💸 Gastar desde Caja Papá</button>
             </div>
             <div id="seccionPendientes" style="display:none; margin-top:12px;">
               <div style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#e65100; margin-bottom:10px;">Egresos pendientes de justificar</div>
               <div id="listaPendientes"></div>
+            </div>
+
+            <!-- Modal: Registrar gasto desde Caja -->
+            <div id="modalGastoCaja" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:1500; align-items:center; justify-content:center; padding:20px;">
+              <div style="background:#fff; border-radius:14px; max-width:480px; width:100%; padding:24px; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                  <h3 id="modalGastoCajaTitulo" style="margin:0; font-size:1.1rem; color:var(--ink);">💸 Gastar desde Caja</h3>
+                  <button onclick="cerrarModalGastoCaja()" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--muted);">✕</button>
+                </div>
+                <p style="margin:0 0 14px 0; font-size:0.85rem; color:var(--muted);">Registra un gasto pagado con efectivo <span id="modalGastoCajaSubtitulo">de la caja</span>. Quedará anotado a tu nombre.</p>
+                <input type="hidden" id="gcCajaSeleccionada" value="oficina">
+                <div id="modalSaldoCajaInfo" style="padding:8px 12px; background:#e8f5e9; border-radius:8px; margin-bottom:14px; font-size:0.82rem; color:#1b5e20; font-weight:700;">Saldo disponible: $<span id="modalSaldoCajaTexto">…</span></div>
+
+                <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--ink-2); margin-bottom:4px;">Monto *</label>
+                <input id="gcMonto" type="number" placeholder="Ej: 500000" style="width:100%; box-sizing:border-box; padding:9px 11px; border-radius:8px; border:1.5px solid var(--ring-strong); margin-bottom:12px; font-family:inherit; font-size:0.95rem;">
+
+                <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--ink-2); margin-bottom:4px;">¿En qué se gastó? *</label>
+                <input id="gcDescripcion" type="text" placeholder="Ej: Almuerzo del equipo" style="width:100%; box-sizing:border-box; padding:9px 11px; border-radius:8px; border:1.5px solid var(--ring-strong); margin-bottom:12px; font-family:inherit; font-size:0.9rem;">
+
+                <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--ink-2); margin-bottom:4px;">Categoría *</label>
+                <select id="gcCategoria" onchange="actualizarSubcatGastoCaja()" style="width:100%; box-sizing:border-box; padding:9px 11px; border-radius:8px; border:1.5px solid var(--ring-strong); margin-bottom:12px; font-family:inherit; font-size:0.9rem;">
+                  <option value="">— Selecciona —</option>
+                  <option value="operacionales">⚙️ Operacionales</option>
+                  <option value="rifa_apartamento">🏠 Rifa Apartamento</option>
+                  <option value="construccion">🏗️ Construcción</option>
+                  <option value="rifa_camioneta">🚗 Rifa Camioneta</option>
+                  <option value="rifa_santa_teresita">🏡 Rifa Santa Teresita</option>
+                  <option value="retiro_ganancia">💸 Retiro de Ganancia</option>
+                  <option value="retiro_capital">🏦 Retiro de Capital</option>
+                  <option value="pagos_diarias">🎯 Pagos Rifas Diarias</option>
+                </select>
+
+                <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--ink-2); margin-bottom:4px;">Subcategoría</label>
+                <select id="gcSubcategoria" style="width:100%; box-sizing:border-box; padding:9px 11px; border-radius:8px; border:1.5px solid var(--ring-strong); margin-bottom:12px; font-family:inherit; font-size:0.9rem;">
+                  <option value="">— Sin subcategoría —</option>
+                </select>
+
+                <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--ink-2); margin-bottom:4px;">Notas (opcional)</label>
+                <textarea id="gcNotas" placeholder="Detalles adicionales…" style="width:100%; box-sizing:border-box; padding:9px 11px; border-radius:8px; border:1.5px solid var(--ring-strong); margin-bottom:16px; font-family:inherit; font-size:0.85rem; min-height:60px; resize:vertical;"></textarea>
+
+                <div style="display:flex; gap:10px;">
+                  <button onclick="cerrarModalGastoCaja()" style="flex:1; padding:11px; border-radius:10px; border:1px solid var(--ring-strong); background:#fff; color:var(--ink-2); font-weight:700; cursor:pointer; font-family:inherit;">Cancelar</button>
+                  <button id="gcBtnGuardar" onclick="guardarGastoCaja()" style="flex:1; padding:11px; border-radius:10px; border:none; background:var(--accent); color:#fff; font-weight:700; cursor:pointer; font-family:inherit;">Guardar gasto</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
