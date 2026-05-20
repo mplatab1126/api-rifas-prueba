@@ -868,17 +868,72 @@
     function pintarBotonesRifas() {
       const cont = document.getElementById('botones-rifas');
       if (!cont) return;
+
+      const formatoCorto = new Intl.NumberFormat('es-CO', { notation: 'compact', maximumFractionDigits: 1 });
+      const formatoFechaCorta = (iso) => {
+        if (!iso) return '';
+        const d = new Date(String(iso).substring(0, 10) + 'T12:00:00');
+        return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' });
+      };
+
       const todas = [
-        ...rifasDisponibles.historicas.map(r => ({ id: r.rifa_id, nombre: nombreCortoRifa(r.nombre), full: r.nombre, recaudo: r.recaudo, esActual: false })),
-        { id: 'actual', nombre: nombreCortoRifa(rifasDisponibles.actual?.nombre || 'Rifa Actual'), full: rifasDisponibles.actual?.nombre || 'Rifa Actual', esActual: true }
+        ...rifasDisponibles.historicas.map(r => ({
+          id: r.rifa_id,
+          nombre: nombreCortoRifa(r.nombre),
+          full: r.nombre,
+          recaudo: r.recaudo,
+          fecha_inicio: r.fecha_inicio,
+          fecha_fin: r.fecha_fin,
+          esActual: false
+        })),
+        {
+          id: 'actual',
+          nombre: nombreCortoRifa(rifasDisponibles.actual?.nombre || 'Rifa Actual'),
+          full: rifasDisponibles.actual?.nombre || 'Rifa Actual',
+          fecha_inicio: rifasDisponibles.actual?.fecha_inicio,
+          fecha_fin: rifasDisponibles.actual?.fecha_fin,
+          esActual: true
+        }
       ];
-      cont.innerHTML = todas.map(r => {
+
+      cont.innerHTML = todas.map((r, idx) => {
         const activo = r.id === rifaIdActiva;
-        const estilo = activo
-          ? 'background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 2px 8px rgba(16,185,129,0.3);'
-          : 'background: #fff; color: var(--ink-2); border-color: var(--ring-strong);';
-        const badge = r.esActual ? '<span style="font-size:0.65rem; background:#3b82f6; color:#fff; padding:2px 7px; border-radius:10px; margin-left:6px; font-weight:800;">EN CURSO</span>' : '';
-        return `<button onclick="seleccionarRifaHistorica('${r.id}')" title="${r.full}" style="${estilo} padding: 9px 18px; border-radius: 10px; border: 1px solid; font-weight: 800; font-size: 0.88rem; cursor: pointer; transition: 0.2s;">🎟️ ${r.nombre}${badge}</button>`;
+        const numero = idx + 1;
+
+        // Subtítulo: rango de fechas o recaudo si está disponible
+        let sub = '';
+        if (r.fecha_inicio && r.fecha_fin) {
+          sub = `${formatoFechaCorta(r.fecha_inicio)} – ${formatoFechaCorta(r.fecha_fin)}`;
+        } else if (r.recaudo) {
+          sub = `$${formatoCorto.format(r.recaudo)}`;
+        } else if (r.esActual) {
+          sub = 'En curso';
+        }
+
+        const cssCard = activo
+          ? 'background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border-color: transparent; box-shadow: 0 6px 16px rgba(16,185,129,0.35); transform: translateY(-1px);'
+          : 'background: #fff; color: var(--ink); border-color: var(--ring-strong); box-shadow: 0 1px 2px rgba(0,0,0,0.04);';
+        const cssNum = activo
+          ? 'background: rgba(255,255,255,0.25); color: #fff;'
+          : 'background: var(--bg); color: var(--muted);';
+        const cssSub = activo ? 'color: rgba(255,255,255,0.85);' : 'color: var(--muted);';
+
+        const badgeCurso = r.esActual
+          ? `<span style="font-size:0.6rem; background:${activo ? 'rgba(255,255,255,0.25)' : '#dbeafe'}; color:${activo ? '#fff' : '#1d4ed8'}; padding:2px 8px; border-radius:20px; font-weight:800; letter-spacing:0.3px; margin-left:8px;">● EN CURSO</span>`
+          : '';
+
+        return `
+          <button onclick="seleccionarRifaHistorica('${r.id}')" title="${r.full}"
+            style="${cssCard} display:flex; align-items:center; gap:12px; padding: 12px 18px; border-radius: 14px; border: 1.5px solid; cursor: pointer; transition: all 0.2s ease; text-align:left; min-width: 200px;"
+            onmouseover="if(!this.dataset.activo) this.style.transform='translateY(-2px)'"
+            onmouseout="if(!this.dataset.activo) this.style.transform='translateY(0)'"
+            ${activo ? 'data-activo="1"' : ''}>
+            <span style="${cssNum} width: 28px; height: 28px; border-radius: 50%; display:flex; align-items:center; justify-content:center; font-size: 0.85rem; font-weight: 900; flex-shrink: 0;">${numero}</span>
+            <span style="display:flex; flex-direction:column; gap:2px;">
+              <span style="font-weight: 800; font-size: 0.92rem; line-height: 1.15; display:flex; align-items:center;">${r.nombre}${badgeCurso}</span>
+              ${sub ? `<span style="${cssSub} font-size: 0.72rem; font-weight: 600; letter-spacing:0.2px;">${sub}</span>` : ''}
+            </span>
+          </button>`;
       }).join('');
     }
 

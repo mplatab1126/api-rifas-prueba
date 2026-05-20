@@ -62,8 +62,10 @@ export default async function handler(req, res) {
       }
     }
 
+    // Orden cronológico ascendente: la primera rifa archivada va primero,
+    // la más reciente al final. La rifa "actual" se mostrará después de estas.
     const historicas = [...mapa.values()]
-      .sort((a, b) => new Date(b.fecha_archivado) - new Date(a.fecha_archivado));
+      .sort((a, b) => new Date(a.fecha_archivado) - new Date(b.fecha_archivado));
 
     return res.status(200).json({
       status: 'ok',
