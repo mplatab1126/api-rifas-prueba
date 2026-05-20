@@ -895,7 +895,30 @@
       // Ocultar Facebook Ads y sincronización para rifas históricas (no aplican)
       const esActual = rifaId === 'actual';
       document.querySelectorAll('.btn-sync-avanzado').forEach(b => { b.style.display = esActual ? 'inline-flex' : 'none'; });
+      ajustarFiltroFechaSegunRifa();
       cargarEstadisticas();
+    }
+
+    // Ajusta los inputs de fecha Desde/Hasta al rango real de la rifa seleccionada.
+    // Para la rifa actual deja "Histórico Total" (sin fechas).
+    function ajustarFiltroFechaSegunRifa() {
+      const inputDesde = document.getElementById('filt-desde');
+      const inputHasta = document.getElementById('filt-hasta');
+      if (!inputDesde || !inputHasta) return;
+
+      if (rifaIdActiva === 'actual') {
+        // Rifa actual: vista completa desde el inicio hasta hoy
+        inputDesde.value = '';
+        inputHasta.value = '';
+        return;
+      }
+
+      // Rifa histórica: buscar su rango en rifasDisponibles.historicas
+      const rifa = (rifasDisponibles.historicas || []).find(r => r.rifa_id === rifaIdActiva);
+      if (!rifa) return;
+      const soloFecha = v => v ? String(v).substring(0, 10) : '';
+      inputDesde.value = soloFecha(rifa.fecha_inicio);
+      inputHasta.value = soloFecha(rifa.fecha_fin);
     }
 
     function volverAlSelector() {
@@ -976,7 +999,13 @@
         document.getElementById('dropdown-asesores').innerHTML = htmlCheckboxes;
         
         actualizarDropdownsFB();
-        setRangoFecha(tipoRifaActual !== '4cifras' ? 'todo' : 'semana');
+        // Si estamos viendo una rifa histórica, los inputs de fecha ya quedaron
+        // ajustados a su rango exacto desde seleccionarRifaHistorica. No los pisamos.
+        if (tipoRifaActual === '4cifras' && rifaIdActiva && rifaIdActiva !== 'actual') {
+            aplicarFiltrosEstadisticas();
+        } else {
+            setRangoFecha(tipoRifaActual !== '4cifras' ? 'todo' : 'semana');
+        }
     }
 
 // Función global y segura para normalizar cualquier fecha a YYYY-MM-DD
