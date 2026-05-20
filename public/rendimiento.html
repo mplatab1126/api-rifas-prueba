@@ -179,6 +179,16 @@
       </div>
     </div>
 
+    <!-- Selector de rifa: solo visible para 4 cifras -->
+    <div id="selectorRifaHistorica" style="display:none; background: linear-gradient(135deg, #f0fdf4 0%, #eff6ff 100%); border: 1px solid #bbf7d0; border-radius: 16px; padding: 16px 20px; margin-bottom: 20px;">
+        <div style="display:flex; align-items:center; gap:14px; flex-wrap: wrap;">
+            <span style="font-size: 0.85rem; font-weight: 800; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.5px;">🎯 Rifa a analizar:</span>
+            <div id="botones-rifas" style="display:flex; gap:8px; flex-wrap:wrap; flex:1;">
+                <span style="color: var(--muted); font-size: 0.9rem;">Cargando rifas...</span>
+            </div>
+        </div>
+    </div>
+
     <div class="filter-zone" id="filtrosGenerales">
         <div class="quick-filters col-100">
             <span style="font-size: 0.85rem; font-weight: 800; color: var(--ink-2); margin-right: 10px; text-transform: uppercase;">⏱️ Tiempos:</span>
@@ -737,6 +747,8 @@
     let globalBoletasDetalle = [];
     let globalEstadoFb = {};
     let chartLinea = null; let chartVentas = null; let chartMix = null; let chartRegistradas = null;
+    let rifaIdActiva = 'actual'; // 'actual' o un UUID de rifa archivada
+    let rifasDisponibles = { actual: null, historicas: [] };
     let tipoRifaActual = null; // '2cifras' | '3cifras' | '4cifras'
     
     let rifaInicioTimestamp = null;
@@ -817,6 +829,7 @@
       document.getElementById('kpis-diarias').style.display = esDiaria ? 'block' : 'none';
       document.getElementById('inventario-boletas').style.display = soloGrande ? 'block' : 'none';
       document.getElementById('charts-evolucion').style.display = soloGrande ? 'block' : 'none';
+      document.getElementById('selectorRifaHistorica').style.display = soloGrande ? 'block' : 'none';
 
       const divRendimiento = document.querySelector('#divider-rendimiento span');
       divRendimiento.textContent = esDiaria ? '1. RIFA ACTUAL' : '🌍 1. RENDIMIENTO GENERAL DE LA OPERACIÓN';
@@ -826,13 +839,63 @@
       });
 
       rifaSeleccionadaId = 'actual';
+      rifaIdActiva = 'actual';
       rifaInicioTimestamp = null;
       configRifaActual = null;
       historialCompleto = [];
 
+      if (soloGrande) cargarRifasDisponibles();
       cargarEstadisticas();
       if (soloGrande) cargarEstadoFacebook();
       if (esDiaria) cargarHistorialRifas();
+    }
+
+    // Carga la lista de rifas disponibles (actual + históricas) y pinta los botones
+    async function cargarRifasDisponibles() {
+      try {
+        const req = await fetch('/api/admin/rifas-disponibles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contrasena: localStorage.getItem(STORAGE_KEY) })
+        });
+        const res = await req.json();
+        if (res.status !== 'ok') return;
+        rifasDisponibles = { actual: res.actual, historicas: res.historicas || [] };
+        pintarBotonesRifas();
+      } catch (e) { console.error('No se pudieron cargar las rifas:', e); }
+    }
+
+    function pintarBotonesRifas() {
+      const cont = document.getElementById('botones-rifas');
+      if (!cont) return;
+      const todas = [
+        ...rifasDisponibles.historicas.map(r => ({ id: r.rifa_id, nombre: nombreCortoRifa(r.nombre), full: r.nombre, recaudo: r.recaudo, esActual: false })),
+        { id: 'actual', nombre: nombreCortoRifa(rifasDisponibles.actual?.nombre || 'Rifa Actual'), full: rifasDisponibles.actual?.nombre || 'Rifa Actual', esActual: true }
+      ];
+      cont.innerHTML = todas.map(r => {
+        const activo = r.id === rifaIdActiva;
+        const estilo = activo
+          ? 'background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 2px 8px rgba(16,185,129,0.3);'
+          : 'background: #fff; color: var(--ink-2); border-color: var(--ring-strong);';
+        const badge = r.esActual ? '<span style="font-size:0.65rem; background:#3b82f6; color:#fff; padding:2px 7px; border-radius:10px; margin-left:6px; font-weight:800;">EN CURSO</span>' : '';
+        return `<button onclick="seleccionarRifaHistorica('${r.id}')" title="${r.full}" style="${estilo} padding: 9px 18px; border-radius: 10px; border: 1px solid; font-weight: 800; font-size: 0.88rem; cursor: pointer; transition: 0.2s;">🎟️ ${r.nombre}${badge}</button>`;
+      }).join('');
+    }
+
+    function nombreCortoRifa(nombre) {
+      if (!nombre) return 'Rifa';
+      // Quita sufijo "- NTA RIFA" y abrevia
+      return nombre.replace(/\s*-\s*\d+(TA|RA|DA|ª)?\s*RIFA\s*$/i, '').trim();
+    }
+
+    function seleccionarRifaHistorica(rifaId) {
+      if (rifaIdActiva === rifaId) return;
+      rifaIdActiva = rifaId;
+      pintarBotonesRifas();
+      // Ocultar Facebook Ads y sincronización para rifas históricas (no aplican)
+      const esActual = rifaId === 'actual';
+      document.querySelectorAll('.btn-sync-avanzado').forEach(b => { b.style.display = esActual ? 'inline-flex' : 'none'; });
+      cargarEstadisticas();
     }
 
     function volverAlSelector() {
@@ -865,10 +928,16 @@
         const div = document.getElementById('leaderboardRender');
         div.innerHTML = '<p style="text-align:center; color:var(--muted); padding:30px; font-weight:600;">Descargando Big Data...</p>';
         try {
+            const body = { contrasena: localStorage.getItem(STORAGE_KEY), tipo: tipoRifaActual || '4cifras' };
+            // Si estamos viendo una rifa histórica, mandamos rifa_id para que el backend
+            // lea de abonos_historico / boletas_historico en lugar de las tablas actuales.
+            if (tipoRifaActual === '4cifras' && rifaIdActiva && rifaIdActiva !== 'actual') {
+                body.rifa_id = rifaIdActiva;
+            }
             const req = await fetch('/api/admin/estadisticas', {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({ contrasena: localStorage.getItem(STORAGE_KEY), tipo: tipoRifaActual || '4cifras' })
+              body: JSON.stringify(body)
             });
             const res = await req.json();
             if (res.status === 'ok') prepararDashboard(res.abonos, res.ventas, res.globales, res.chatea, res.fb, res.boletas_detalle);
