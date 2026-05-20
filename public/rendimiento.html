@@ -893,6 +893,12 @@
           fecha_inicio: rifasDisponibles.actual?.fecha_inicio,
           fecha_fin: rifasDisponibles.actual?.fecha_fin,
           esActual: true
+        },
+        {
+          id: 'todas',
+          nombre: 'Histórico Total',
+          full: 'Suma de todas las rifas (Apartamento + Perla Roja + actual)',
+          esTotal: true
         }
       ];
 
@@ -902,7 +908,9 @@
 
         // Subtítulo: rango de fechas o recaudo si está disponible
         let sub = '';
-        if (r.fecha_inicio && r.fecha_fin) {
+        if (r.esTotal) {
+          sub = 'Suma acumulada de todas';
+        } else if (r.fecha_inicio && r.fecha_fin) {
           sub = `${formatoFechaCorta(r.fecha_inicio)} – ${formatoFechaCorta(r.fecha_fin)}`;
         } else if (r.recaudo) {
           sub = `$${formatoCorto.format(r.recaudo)}`;
@@ -910,17 +918,31 @@
           sub = 'En curso';
         }
 
-        const cssCard = activo
-          ? 'background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border-color: transparent; box-shadow: 0 6px 16px rgba(16,185,129,0.35); transform: translateY(-1px);'
-          : 'background: #fff; color: var(--ink); border-color: var(--ring-strong); box-shadow: 0 1px 2px rgba(0,0,0,0.04);';
-        const cssNum = activo
-          ? 'background: rgba(255,255,255,0.25); color: #fff;'
-          : 'background: var(--bg); color: var(--muted);';
-        const cssSub = activo ? 'color: rgba(255,255,255,0.85);' : 'color: var(--muted);';
+        // El botón "Histórico Total" tiene un look propio (morado) para distinguirse
+        let cssCard, cssNum, cssSub;
+        if (activo && r.esTotal) {
+          cssCard = 'background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); color: #fff; border-color: transparent; box-shadow: 0 6px 16px rgba(124,58,237,0.35); transform: translateY(-1px);';
+          cssNum = 'background: rgba(255,255,255,0.25); color: #fff;';
+          cssSub = 'color: rgba(255,255,255,0.85);';
+        } else if (activo) {
+          cssCard = 'background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border-color: transparent; box-shadow: 0 6px 16px rgba(16,185,129,0.35); transform: translateY(-1px);';
+          cssNum = 'background: rgba(255,255,255,0.25); color: #fff;';
+          cssSub = 'color: rgba(255,255,255,0.85);';
+        } else if (r.esTotal) {
+          cssCard = 'background: #faf5ff; color: #5b21b6; border-color: #d8b4fe; box-shadow: 0 1px 2px rgba(0,0,0,0.04);';
+          cssNum = 'background: #e9d5ff; color: #5b21b6;';
+          cssSub = 'color: #7c3aed;';
+        } else {
+          cssCard = 'background: #fff; color: var(--ink); border-color: var(--ring-strong); box-shadow: 0 1px 2px rgba(0,0,0,0.04);';
+          cssNum = 'background: var(--bg); color: var(--muted);';
+          cssSub = 'color: var(--muted);';
+        }
 
         const badgeCurso = r.esActual
           ? `<span style="font-size:0.6rem; background:${activo ? 'rgba(255,255,255,0.25)' : '#dbeafe'}; color:${activo ? '#fff' : '#1d4ed8'}; padding:2px 8px; border-radius:20px; font-weight:800; letter-spacing:0.3px; margin-left:8px;">● EN CURSO</span>`
           : '';
+
+        const iconoNum = r.esTotal ? '📊' : numero;
 
         return `
           <button onclick="seleccionarRifaHistorica('${r.id}')" title="${r.full}"
@@ -928,7 +950,7 @@
             onmouseover="if(!this.dataset.activo) this.style.transform='translateY(-2px)'"
             onmouseout="if(!this.dataset.activo) this.style.transform='translateY(0)'"
             ${activo ? 'data-activo="1"' : ''}>
-            <span style="${cssNum} width: 28px; height: 28px; border-radius: 50%; display:flex; align-items:center; justify-content:center; font-size: 0.85rem; font-weight: 900; flex-shrink: 0;">${numero}</span>
+            <span style="${cssNum} width: 28px; height: 28px; border-radius: 50%; display:flex; align-items:center; justify-content:center; font-size: 0.85rem; font-weight: 900; flex-shrink: 0;">${iconoNum}</span>
             <span style="display:flex; flex-direction:column; gap:2px;">
               <span style="font-weight: 800; font-size: 0.92rem; line-height: 1.15; display:flex; align-items:center;">${r.nombre}${badgeCurso}</span>
               ${sub ? `<span style="${cssSub} font-size: 0.72rem; font-weight: 600; letter-spacing:0.2px;">${sub}</span>` : ''}
@@ -955,14 +977,14 @@
     }
 
     // Ajusta los inputs de fecha Desde/Hasta al rango real de la rifa seleccionada.
-    // Para la rifa actual deja "Histórico Total" (sin fechas).
+    // Para la rifa actual o el modo "todas" deja los filtros vacíos.
     function ajustarFiltroFechaSegunRifa() {
       const inputDesde = document.getElementById('filt-desde');
       const inputHasta = document.getElementById('filt-hasta');
       if (!inputDesde || !inputHasta) return;
 
-      if (rifaIdActiva === 'actual') {
-        // Rifa actual: vista completa desde el inicio hasta hoy
+      if (rifaIdActiva === 'actual' || rifaIdActiva === 'todas') {
+        // Sin filtro de fecha: vista completa
         inputDesde.value = '';
         inputHasta.value = '';
         return;
@@ -1007,10 +1029,10 @@
         div.innerHTML = '<p style="text-align:center; color:var(--muted); padding:30px; font-weight:600;">Descargando Big Data...</p>';
         try {
             const body = { contrasena: localStorage.getItem(STORAGE_KEY), tipo: tipoRifaActual || '4cifras' };
-            // Si estamos viendo una rifa histórica, mandamos rifa_id para que el backend
-            // lea de abonos_historico / boletas_historico en lugar de las tablas actuales.
+            // Si estamos viendo una rifa histórica o el modo "todas las rifas",
+            // mandamos rifa_id para que el backend use las tablas históricas.
             if (tipoRifaActual === '4cifras' && rifaIdActiva && rifaIdActiva !== 'actual') {
-                body.rifa_id = rifaIdActiva;
+                body.rifa_id = rifaIdActiva; // UUID de rifa histórica o 'todas'
             }
             const req = await fetch('/api/admin/estadisticas', {
               method: 'POST',
@@ -1054,8 +1076,8 @@
         document.getElementById('dropdown-asesores').innerHTML = htmlCheckboxes;
         
         actualizarDropdownsFB();
-        // Si estamos viendo una rifa histórica, los inputs de fecha ya quedaron
-        // ajustados a su rango exacto desde seleccionarRifaHistorica. No los pisamos.
+        // Si estamos viendo una rifa histórica o el modo "todas las rifas",
+        // los inputs de fecha ya quedaron ajustados. No los pisamos.
         if (tipoRifaActual === '4cifras' && rifaIdActiva && rifaIdActiva !== 'actual') {
             aplicarFiltrosEstadisticas();
         } else {

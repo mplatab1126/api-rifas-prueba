@@ -26,6 +26,11 @@ export default async function handler(req, res) {
     return await responderHistorico({ res, rifa_id });
   }
 
+  // ─── Modo "todas las rifas": combina la rifa actual + todas las históricas ───
+  if (rifa_id === 'todas') {
+    return await responderTodasLasRifas({ res });
+  }
+
   // Determinar tabla de boletas según el tipo seleccionado
   const tablaBoletasMap = { '2cifras': 'boletas_diarias', '3cifras': 'boletas_diarias_3cifras', '4cifras': 'boletas' };
   const tablaBoletas = tablaBoletasMap[tipo] || 'boletas';
@@ -226,6 +231,98 @@ async function responderHistorico({ res, rifa_id }) {
         recaudo_boletas,
         recaudo_por_asesor,
         precio_boleta: PRECIO_DEFAULT
+      },
+      boletas_detalle,
+      chatea: [],
+      fb: [],
+      gastos: [],
+      retiros: [],
+      todosGastos: []
+    });
+  } catch (error) {
+    return res.status(500).json({ status: 'error', mensaje: error.message });
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Responder con datos de TODAS las rifas combinadas (rifa actual + históricas).
+// Suma abonos y boletas de las 3 tablas. Para la rifa actual usa el snapshot
+// vivo de `boletas` y los abonos de `abonos`. Para las pasadas, abonos_historico
+// y boletas_historico.
+// ────────────────────────────────────────────────────────────────────────────
+async function responderTodasLasRifas({ res }) {
+  try {
+    // 1. Abonos: actuales (tipo=4cifras) + históricos (todas las rifas)
+    const [abonosActResp, abonosHistResp] = await Promise.all([
+      supabase.from('abonos').select('monto, fecha_pago, asesor, numero_boleta').eq('tipo', '4cifras').limit(100000),
+      supabase.from('abonos_historico').select('monto, fecha_pago, asesor, numero_boleta, rifa_nombre').limit(200000),
+    ]);
+    if (abonosActResp.error)  throw abonosActResp.error;
+    if (abonosHistResp.error) throw abonosHistResp.error;
+
+    const abonos = [
+      ...(abonosActResp.data || []).map(a => ({ ...a, tipo: '4cifras' })),
+      ...(abonosHistResp.data || []).map(a => ({ ...a, tipo: '4cifras' })),
+    ];
+
+    // 2. Boletas: actuales (tabla boletas) + snapshots históricos
+    const [boletasActResp, boletasHistResp] = await Promise.all([
+      supabase.from('boletas').select('numero, estado, total_abonado, telefono_cliente, asesor, fecha_venta').limit(100000),
+      supabase.from('boletas_historico').select('numero, estado, total_abonado, telefono_cliente, asesor, fecha_venta, rifa_nombre').limit(200000),
+    ]);
+    if (boletasActResp.error)  throw boletasActResp.error;
+    if (boletasHistResp.error) throw boletasHistResp.error;
+
+    const boletas = [
+      ...(boletasActResp.data || []),
+      ...(boletasHistResp.data || []),
+    ];
+
+    // 3. Agregados acumulados
+    let registradas = 0, separadas_cero = 0, libres = 0, pagadas = 0, recaudo_boletas = 0;
+    const recaudo_por_asesor = {};
+
+    boletas.forEach(b => {
+      const abonado = Number(b.total_abonado || 0);
+      recaudo_boletas += abonado;
+      const tieneCliente = !!b.telefono_cliente || abonado > 0 || (b.estado && b.estado !== 'LIBRE' && b.estado !== 'Disponible');
+      if (!tieneCliente) {
+        libres++;
+      } else {
+        registradas++;
+        if (b.estado === 'Pagada') pagadas++;
+        if (abonado === 0) separadas_cero++;
+        if (abonado > 0 && b.asesor) {
+          recaudo_por_asesor[b.asesor] = (recaudo_por_asesor[b.asesor] || 0) + abonado;
+        }
+      }
+    });
+
+    const boletas_detalle = boletas
+      .filter(b => Number(b.total_abonado || 0) > 0 || b.estado === 'Pagada' || (b.telefono_cliente && b.estado !== 'Disponible' && b.estado !== 'LIBRE'))
+      .map(b => ({
+        n: b.numero,
+        a: Number(b.total_abonado || 0),
+        s: b.asesor || '',
+        f: b.fecha_venta || null,
+        p: b.estado === 'Pagada'
+      }));
+
+    return res.status(200).json({
+      status: 'ok',
+      modo: 'todas',
+      rifa_nombre: 'Histórico Total (todas las rifas)',
+      abonos,
+      ventas: [],
+      globales: {
+        registradas,
+        separadas_cero,
+        libres,
+        pagadas,
+        total: boletas.length,
+        recaudo_boletas,
+        recaudo_por_asesor,
+        precio_boleta: PRECIOS.RIFA_4_CIFRAS
       },
       boletas_detalle,
       chatea: [],
