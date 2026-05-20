@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
+import { PRECIOS } from '../config/precios.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -109,13 +110,16 @@ export default async function handler(req, res) {
 
     const boletas_detalle = boletasGlobal
         .filter(b => b.telefono_cliente && b.estado !== 'LIBRE')
-        .map(b => ({ n: b.numero, a: Number(b.total_abonado || 0), s: b.asesor || '', f: b.fecha_venta || null }));
+        .map(b => ({ n: b.numero, a: Number(b.total_abonado || 0), s: b.asesor || '', f: b.fecha_venta || null, p: b.estado === 'Pagada' }));
 
-    return res.status(200).json({ 
-        status: 'ok', 
-        abonos: abonos, 
+    const precioMap = { '2cifras': PRECIOS.RIFA_2_CIFRAS, '3cifras': PRECIOS.RIFA_3_CIFRAS, '4cifras': PRECIOS.RIFA_4_CIFRAS };
+    const precio_boleta = precioMap[tipo] || PRECIOS.RIFA_4_CIFRAS;
+
+    return res.status(200).json({
+        status: 'ok',
+        abonos: abonos,
         ventas: ventas,
-        globales: { registradas, separadas_cero, libres, pagadas, total, recaudo_boletas, recaudo_por_asesor },
+        globales: { registradas, separadas_cero, libres, pagadas, total, recaudo_boletas, recaudo_por_asesor, precio_boleta },
         boletas_detalle,
         chatea: chateaData,
         fb: fbData,

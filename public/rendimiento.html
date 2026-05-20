@@ -204,28 +204,54 @@
 
     <div class="saas-divider" id="divider-rendimiento"><span>🌍 1. RENDIMIENTO GENERAL DE LA OPERACIÓN</span></div>
     
-    <!-- KPIs para 4cifras -->
+    <!-- KPIs para 4cifras: Estado de Boletas -->
     <div class="row" id="kpis-4cifras">
-        <div class="col-100 mega-kpi-grid">
-            <div class="mega-kpi kpi-green">
-                <div class="mega-kpi-title">💰 Recaudo Real</div>
-                <div class="mega-kpi-value" id="kpi-gen-recaudo">$0</div>
-                <span class="mega-kpi-sub">Dinero ingresado en bancos</span>
+        <div class="col-100">
+            <div class="card" style="height: auto;">
+                <h3 class="card-title">🎟️ ESTADO DE BOLETAS</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div class="mega-kpi kpi-blue" style="padding: 18px;">
+                        <div class="mega-kpi-title">🧾 Registradas</div>
+                        <div class="mega-kpi-value" id="kpi-inv-registradas" style="font-size: 1.8rem;">0</div>
+                        <span class="mega-kpi-sub">Con cliente asignado</span>
+                    </div>
+                    <div class="mega-kpi kpi-green" style="padding: 18px;">
+                        <div class="mega-kpi-title">✅ Pagadas completo</div>
+                        <div class="mega-kpi-value" id="kpi-inv-pagadas" style="font-size: 1.8rem;">0</div>
+                        <span class="mega-kpi-sub" id="kpi-inv-pagadas-sub">Abono = precio total</span>
+                    </div>
+                    <div class="mega-kpi kpi-orange" style="padding: 18px;">
+                        <div class="mega-kpi-title">💸 Con abono parcial</div>
+                        <div class="mega-kpi-value" id="kpi-inv-parcial" style="font-size: 1.8rem;">0</div>
+                        <span class="mega-kpi-sub" id="kpi-inv-parcial-sub">Pago iniciado, no terminado</span>
+                    </div>
+                    <div class="mega-kpi kpi-red" style="padding: 18px;">
+                        <div class="mega-kpi-title">⚠️ Sin abono inicial</div>
+                        <div class="mega-kpi-value" id="kpi-inv-cero" style="font-size: 1.8rem;">0</div>
+                        <span class="mega-kpi-sub">Separadas con $0</span>
+                    </div>
+                </div>
             </div>
-            <div class="mega-kpi kpi-purple">
-                <div class="mega-kpi-title">🎟️ Ticket Promedio</div>
-                <div class="mega-kpi-value" id="kpi-gen-ticket">$0</div>
-                <span class="mega-kpi-sub">Recaudo / Cantidad Abonos</span>
-            </div>
-            <div class="mega-kpi kpi-blue">
-                <div class="mega-kpi-title">💳 Abonos Recibidos</div>
-                <div class="mega-kpi-value" id="kpi-gen-abonos">0</div>
-                <span class="mega-kpi-sub">Transacciones exitosas</span>
-            </div>
-            <div class="mega-kpi kpi-green">
-                <div class="mega-kpi-title">💵 Boletas con Abono <span id="kpi-gen-con-abono-pct" style="font-size:0.75rem; font-weight:700; background:rgba(255,255,255,0.35); padding:2px 7px; border-radius:20px; margin-left:5px;">0%</span></div>
-                <div class="mega-kpi-value" id="kpi-gen-con-abono">0</div>
-                <span class="mega-kpi-sub">Con total abonado &gt; $0</span>
+        </div>
+    </div>
+
+    <!-- KPIs para 4cifras: Recaudo -->
+    <div class="row" id="bloque-recaudo">
+        <div class="col-100">
+            <div class="card" style="height: auto;">
+                <h3 class="card-title">💰 RECAUDO</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
+                    <div class="mega-kpi kpi-green" style="padding: 18px;">
+                        <div class="mega-kpi-title">💰 Total recaudado</div>
+                        <div class="mega-kpi-value" id="kpi-gen-recaudo" style="font-size: 1.8rem;">$0</div>
+                        <span class="mega-kpi-sub">Dinero ingresado en bancos</span>
+                    </div>
+                    <div class="mega-kpi kpi-blue" style="padding: 18px;">
+                        <div class="mega-kpi-title">💳 Abonos recibidos</div>
+                        <div class="mega-kpi-value" id="kpi-gen-abonos" style="font-size: 1.8rem;">0</div>
+                        <span class="mega-kpi-sub">Cantidad de transacciones</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -261,48 +287,30 @@
         </div>
     </div>
 
+    <!-- Ocupación de la rifa (solo 4 cifras, no se filtra) -->
     <div class="row" id="inventario-boletas">
         <div class="col-100">
             <div class="card" style="height: auto;">
-                <h3 class="card-title" id="inv-card-title">🎟️ INVENTARIO DE BOLETAS</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                    <div class="mega-kpi kpi-dark" style="padding: 18px;">
-                        <div class="mega-kpi-title" id="inv-t-total">📦 Total Boletas</div>
-                        <div class="mega-kpi-value" id="kpi-inv-total" style="font-size: 1.8rem;">0</div>
-                        <span class="mega-kpi-sub">En la rifa</span>
-                    </div>
-                    <div class="mega-kpi kpi-blue" style="padding: 18px;">
-                        <div class="mega-kpi-title" id="inv-t-vendidas">🧾 Vendidas</div>
-                        <div class="mega-kpi-value" id="kpi-inv-registradas" style="font-size: 1.8rem;">0</div>
-                        <span class="mega-kpi-sub">Con cliente asignado</span>
-                    </div>
-                    <div class="mega-kpi kpi-green" style="padding: 18px;">
-                        <div class="mega-kpi-title" id="inv-t-pagadas">✅ Pagadas completo</div>
-                        <div class="mega-kpi-value" id="kpi-inv-pagadas" style="font-size: 1.8rem;">0</div>
-                        <span class="mega-kpi-sub">Sin saldo pendiente</span>
-                    </div>
-                    <div class="mega-kpi kpi-red" style="padding: 18px;">
-                        <div class="mega-kpi-title" id="inv-t-cero">⚠️ Sin abono inicial</div>
-                        <div class="mega-kpi-value" id="kpi-inv-cero" style="font-size: 1.8rem;">0</div>
-                        <span class="mega-kpi-sub">Separadas con $0</span>
-                    </div>
+                <h3 class="card-title">📦 OCUPACIÓN DE LA RIFA <span style="font-size: 0.7rem; font-weight: 600; color: var(--muted); text-transform: none; letter-spacing: 0;">(siempre actual · no se filtra)</span></h3>
+                <div style="display: grid; grid-template-columns: minmax(220px, 1fr) 2fr; gap: 20px; align-items: center;">
                     <div class="mega-kpi kpi-green" style="padding: 18px; background: linear-gradient(135deg,#f0fdf4,#fff);">
-                        <div class="mega-kpi-title" id="inv-t-libres">🟢 Disponibles</div>
+                        <div class="mega-kpi-title">🟢 Disponibles</div>
                         <div class="mega-kpi-value" id="kpi-inv-libres" style="font-size: 1.8rem;">0</div>
                         <span class="mega-kpi-sub">Boletas 100% libres</span>
                     </div>
-                </div>
-                <div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--muted);">Ocupacion de la rifa</span>
-                        <span style="font-size: 0.8rem; font-weight: 800; color: var(--ink);" id="kpi-inv-pct">0%</span>
-                    </div>
-                    <div style="background: var(--ring); border-radius: 99px; height: 10px; overflow: hidden;">
-                        <div id="kpi-inv-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #10b981, #3b82f6); border-radius: 99px; transition: width 0.6s ease;"></div>
-                    </div>
-                    <div style="display: flex; gap: 20px; margin-top: 8px; flex-wrap: wrap;">
-                        <span id="inv-bar-label-v" style="font-size: 0.75rem; color: var(--muted); font-weight: 600;">🔵 Vendidas <strong id="kpi-inv-bar-v" style="color: var(--ink);">0</strong></span>
-                        <span id="inv-bar-label-l" style="font-size: 0.75rem; color: var(--muted); font-weight: 600;">🟢 Disponibles <strong id="kpi-inv-bar-l" style="color: var(--ink);">0</strong></span>
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                            <span style="font-size: 0.8rem; font-weight: 700; color: var(--muted);">Ocupación de la rifa</span>
+                            <span style="font-size: 0.8rem; font-weight: 800; color: var(--ink);" id="kpi-inv-pct">0%</span>
+                        </div>
+                        <div style="background: var(--ring); border-radius: 99px; height: 10px; overflow: hidden;">
+                            <div id="kpi-inv-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #10b981, #3b82f6); border-radius: 99px; transition: width 0.6s ease;"></div>
+                        </div>
+                        <div style="display: flex; gap: 20px; margin-top: 8px; flex-wrap: wrap;">
+                            <span style="font-size: 0.75rem; color: var(--muted); font-weight: 600;">🔵 Vendidas <strong id="kpi-inv-bar-v" style="color: var(--ink);">0</strong></span>
+                            <span style="font-size: 0.75rem; color: var(--muted); font-weight: 600;">🟢 Disponibles <strong id="kpi-inv-bar-l" style="color: var(--ink);">0</strong></span>
+                            <span style="font-size: 0.75rem; color: var(--muted); font-weight: 600;">📦 Total <strong id="kpi-inv-total" style="color: var(--ink);">0</strong></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -322,7 +330,16 @@
     <div class="row">
         <div class="col-100">
             <div class="card" style="height: 350px;">
-                <h3 class="card-title">🛒 Boletas con Abono por Día</h3>
+                <h3 class="card-title">🧾 Boletas Registradas por Día</h3>
+                <canvas id="chartRegistradas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-100">
+            <div class="card" style="height: 350px;">
+                <h3 class="card-title">💸 Boletas con Abono Parcial por Día</h3>
                 <canvas id="chartVentas"></canvas>
             </div>
         </div>
@@ -719,7 +736,7 @@
     let globalAbonos = []; let globalVentas = []; let globalChatea = []; let globalFb = []; let globalesAPI = {};
     let globalBoletasDetalle = [];
     let globalEstadoFb = {};
-    let chartLinea = null; let chartVentas = null; let chartMix = null;
+    let chartLinea = null; let chartVentas = null; let chartMix = null; let chartRegistradas = null;
     let tipoRifaActual = null; // '2cifras' | '3cifras' | '4cifras'
     
     let rifaInicioTimestamp = null;
@@ -796,6 +813,7 @@
       document.getElementById('selectorRifaDiaria').style.display = esDiaria ? 'block' : 'none';
 
       document.getElementById('kpis-4cifras').style.display = soloGrande ? 'block' : 'none';
+      document.getElementById('bloque-recaudo').style.display = soloGrande ? 'block' : 'none';
       document.getElementById('kpis-diarias').style.display = esDiaria ? 'block' : 'none';
       document.getElementById('inventario-boletas').style.display = soloGrande ? 'block' : 'none';
       document.getElementById('charts-evolucion').style.display = soloGrande ? 'block' : 'none';
@@ -1085,15 +1103,10 @@
             const cumpleAsesor = asesoresSeleccionados.includes(b.s);
             return cumpleFecha && cumpleAsesor;
         });
-        const boletasConAbono = boletasF.filter(b => b.a > 0).length;
 
+        // Recaudo y abonos (cuadritos del bloque "RECAUDO")
         document.getElementById('kpi-gen-recaudo').textContent = formatoPlata.format(recaudoReal);
-        document.getElementById('kpi-gen-ticket').textContent = formatoPlata.format(ticketProm);
         document.getElementById('kpi-gen-abonos').textContent = formatoNum.format(totalPagos);
-        const totalBoletasFiltradas = boletasF.length;
-        const pctConAbono = totalBoletasFiltradas > 0 ? ((boletasConAbono / totalBoletasFiltradas) * 100).toFixed(1) : 0;
-        document.getElementById('kpi-gen-con-abono').textContent = formatoNum.format(boletasConAbono);
-        document.getElementById('kpi-gen-con-abono-pct').textContent = pctConAbono + '%';
 
         if (tipoRifaActual !== '4cifras') {
             document.getElementById('kpi-dia-recaudo').textContent = formatoPlata.format(recaudoReal);
@@ -1115,13 +1128,27 @@
             }
         }
 
-        document.getElementById('kpi-inv-total').textContent = formatoNum.format(globalesAPI.total || 0);
-        document.getElementById('kpi-inv-registradas').textContent = formatoNum.format(globalesAPI.registradas);
-        document.getElementById('kpi-inv-pagadas').textContent = formatoNum.format(globalesAPI.pagadas || 0);
-        document.getElementById('kpi-inv-cero').textContent = formatoNum.format(globalesAPI.separadas_cero);
-        document.getElementById('kpi-inv-libres').textContent = formatoNum.format(globalesAPI.libres);
+        // BLOQUE "ESTADO DE BOLETAS" - calculado desde boletasF (responde a filtros)
+        const precioBoleta = globalesAPI.precio_boleta || 150000;
+        const boletasPagadasF = boletasF.filter(b => b.p).length;
+        const boletasParcialF = boletasF.filter(b => !b.p && b.a > 0).length;
+        const boletasCeroF = boletasF.filter(b => !b.p && b.a === 0).length;
 
-        // Barra de progreso de ocupación
+        document.getElementById('kpi-inv-registradas').textContent = formatoNum.format(boletasF.length);
+        document.getElementById('kpi-inv-pagadas').textContent = formatoNum.format(boletasPagadasF);
+        document.getElementById('kpi-inv-parcial').textContent = formatoNum.format(boletasParcialF);
+        document.getElementById('kpi-inv-cero').textContent = formatoNum.format(boletasCeroF);
+
+        // Subtítulos dinámicos con el precio actual
+        const precioTxt = formatoPlata.format(precioBoleta);
+        const subPagadas = document.getElementById('kpi-inv-pagadas-sub');
+        if (subPagadas) subPagadas.textContent = `Abono ≥ ${precioTxt}`;
+        const subParcial = document.getElementById('kpi-inv-parcial-sub');
+        if (subParcial) subParcial.textContent = `Entre $1 y ${formatoPlata.format(precioBoleta - 1)}`;
+
+        // BLOQUE "OCUPACIÓN DE LA RIFA" - siempre global (no se filtra)
+        document.getElementById('kpi-inv-total').textContent = formatoNum.format(globalesAPI.total || 0);
+        document.getElementById('kpi-inv-libres').textContent = formatoNum.format(globalesAPI.libres);
         const pctOcup = globalesAPI.total > 0 ? ((globalesAPI.registradas / globalesAPI.total) * 100) : 0;
         document.getElementById('kpi-inv-pct').textContent = pctOcup.toFixed(1) + '%';
         document.getElementById('kpi-inv-bar').style.width = pctOcup.toFixed(1) + '%';
@@ -1138,8 +1165,12 @@
         asesoresSeleccionados.forEach(a => statsAsesor[a] = { recaudo: 0, nuevas: 0, cantAbonos: 0, chats: 0, tiempos: [] });
 
         let ventasPorDia = {};
+        let registradasPorDia = {};
         ventasF.forEach(v => { const a = v.asesor || 'Sin Asesor'; if(statsAsesor[a]) statsAsesor[a].nuevas++; });
-        boletasF.filter(b => b.a > 0 && b.f).forEach(b => { const f = normalizarFecha(b.f); ventasPorDia[f] = (ventasPorDia[f] || 0) + 1; });
+        // ventasPorDia ahora cuenta SOLO las boletas con abono parcial (>0 y no pagadas)
+        boletasF.filter(b => !b.p && b.a > 0 && b.f).forEach(b => { const f = normalizarFecha(b.f); ventasPorDia[f] = (ventasPorDia[f] || 0) + 1; });
+        // registradasPorDia cuenta TODAS las boletas registradas (con cliente) por día
+        boletasF.filter(b => b.f).forEach(b => { const f = normalizarFecha(b.f); registradasPorDia[f] = (registradasPorDia[f] || 0) + 1; });
         abonosF.forEach(a => { 
             const as = a.asesor || 'Sin Asesor'; const m = Number(a.monto); const f = normalizarFecha(a.fecha_pago);
             recaudoPorDia[f] = (recaudoPorDia[f] || 0) + m;
@@ -1286,20 +1317,32 @@
         // ============================================
         // 3. GRÁFICAS Y ACTUALIZACIÓN IA
         // ============================================
-        const todasLasFechas = [...new Set([...Object.keys(recaudoPorDia), ...Object.keys(ventasPorDia), ...Object.keys(fbRecaudoPorDia)])].sort();
-        
-        // Gráfica Lineal (Solo Recaudo)
+        const todasLasFechas = [...new Set([...Object.keys(recaudoPorDia), ...Object.keys(ventasPorDia), ...Object.keys(registradasPorDia), ...Object.keys(fbRecaudoPorDia)])].sort();
+        const etiquetasFecha = todasLasFechas.map(f => new Date(f + 'T12:00:00').toLocaleDateString('es-CO', {day:'2-digit', month:'short'}));
+
+        // Gráfica 1: Evolución del Recaudo Diario
         if (chartLinea) chartLinea.destroy();
         chartLinea = new Chart(document.getElementById('chartEvolucion').getContext('2d'), {
-            type: 'line', data: { labels: todasLasFechas.map(f => new Date(f + 'T12:00:00').toLocaleDateString('es-CO', {day:'2-digit', month:'short'})), datasets: [{ data: todasLasFechas.map(f => recaudoPorDia[f] || 0), borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 4, tension: 0.4, fill: true, pointBackgroundColor: '#0f172a', pointRadius: 4 }] },
+            type: 'line', data: { labels: etiquetasFecha, datasets: [{ data: todasLasFechas.map(f => recaudoPorDia[f] || 0), borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 4, tension: 0.4, fill: true, pointBackgroundColor: '#0f172a', pointRadius: 4 }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
         });
 
-        // Gráfica Lineal (Ventas Diarias)
+        // Gráfica 2: Boletas Registradas por Día
+        if (chartRegistradas) chartRegistradas.destroy();
+        const canvasReg = document.getElementById('chartRegistradas');
+        if (canvasReg) {
+            chartRegistradas = new Chart(canvasReg.getContext('2d'), {
+                type: 'line',
+                data: { labels: etiquetasFecha, datasets: [{ data: todasLasFechas.map(f => registradasPorDia[f] || 0), borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 4, tension: 0.4, fill: true, pointBackgroundColor: '#0f172a', pointRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } } } }
+            });
+        }
+
+        // Gráfica 3: Boletas con abono parcial por día
         if (chartVentas) chartVentas.destroy();
         chartVentas = new Chart(document.getElementById('chartVentas').getContext('2d'), {
             type: 'line',
-            data: { labels: todasLasFechas.map(f => new Date(f + 'T12:00:00').toLocaleDateString('es-CO', {day:'2-digit', month:'short'})), datasets: [{ data: todasLasFechas.map(f => ventasPorDia[f] || 0), borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', borderWidth: 4, tension: 0.4, fill: true, pointBackgroundColor: '#0f172a', pointRadius: 4 }] },
+            data: { labels: etiquetasFecha, datasets: [{ data: todasLasFechas.map(f => ventasPorDia[f] || 0), borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', borderWidth: 4, tension: 0.4, fill: true, pointBackgroundColor: '#0f172a', pointRadius: 4 }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } } } }
         });
 
@@ -1629,12 +1672,10 @@
       const libres    = totalBol - vendidas;
       const ticketProm = vendidas > 0 ? recaudo / vendidas : 0;
 
-      document.getElementById('kpi-gen-recaudo').textContent = formatoPlata.format(recaudo);
-      document.getElementById('kpi-gen-ticket').textContent = formatoPlata.format(ticketProm);
-      document.getElementById('kpi-gen-abonos').textContent = '—';
-      document.getElementById('kpi-gen-con-abono').textContent = formatoNum.format(pagadas);
-      const pctPag = vendidas > 0 ? ((pagadas / vendidas) * 100).toFixed(1) : 0;
-      document.getElementById('kpi-gen-con-abono-pct').textContent = pctPag + '%';
+      // Solo escribimos en los IDs que existen (algunos pueden estar ocultos según tipo de rifa)
+      const setIfExists = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+      setIfExists('kpi-gen-recaudo', formatoPlata.format(recaudo));
+      setIfExists('kpi-gen-abonos', '—');
 
       if (tipoRifaActual !== '4cifras') {
         document.getElementById('kpi-dia-recaudo').textContent = formatoPlata.format(recaudo);
@@ -1647,11 +1688,12 @@
         document.getElementById('kpi-dia-disponibles').textContent = formatoNum.format(libres);
       }
 
-      document.getElementById('kpi-inv-total').textContent = formatoNum.format(totalBol);
-      document.getElementById('kpi-inv-registradas').textContent = formatoNum.format(vendidas);
-      document.getElementById('kpi-inv-pagadas').textContent = formatoNum.format(pagadas);
-      document.getElementById('kpi-inv-cero').textContent = '—';
-      document.getElementById('kpi-inv-libres').textContent = formatoNum.format(libres);
+      setIfExists('kpi-inv-total', formatoNum.format(totalBol));
+      setIfExists('kpi-inv-registradas', formatoNum.format(vendidas));
+      setIfExists('kpi-inv-pagadas', formatoNum.format(pagadas));
+      setIfExists('kpi-inv-parcial', '—');
+      setIfExists('kpi-inv-cero', '—');
+      setIfExists('kpi-inv-libres', formatoNum.format(libres));
 
       const pctOcup = totalBol > 0 ? ((vendidas / totalBol) * 100) : 0;
       document.getElementById('kpi-inv-pct').textContent = pctOcup.toFixed(1) + '%';

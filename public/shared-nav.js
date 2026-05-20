@@ -32,7 +32,7 @@
       children: [
         { id: 'rend-2cifras', label: 'Rifas 2 Cifras',    href: '/rendimiento?tipo=2cifras' },
         { id: 'rend-3cifras', label: 'Rifas 3 Cifras',    href: '/rendimiento?tipo=3cifras' },
-        { id: 'rend-4cifras', label: 'El Apartamento',    href: '/rendimiento?tipo=4cifras' },
+        { id: 'rend-4cifras', label: 'Rifa de 4 Cifras',  href: '/rendimiento?tipo=4cifras' },
       ]
     },
     { id: 'rendimiento-contenido', label: 'Rendimiento contenido', href: '/rendimiento-contenido', section: 'gerencia', roles: 'rend-contenido' },
