@@ -31,10 +31,9 @@ export default async function handler(req, res) {
     return await responderTodasLasRifas({ res });
   }
 
-  // Determinar tabla de boletas según el tipo seleccionado
-  const tablaBoletasMap = { '2cifras': 'boletas_diarias', '3cifras': 'boletas_diarias_3cifras', '4cifras': 'boletas' };
-  const tablaBoletas = tablaBoletasMap[tipo] || 'boletas';
-  const patronLengthMap = { '2cifras': '__', '3cifras': '___', '4cifras': '____' };
+  // Solo queda la rifa de 4 cifras
+  const tablaBoletas = 'boletas';
+  const patronLength = '____';
 
   try {
     // 1. Traemos los Abonos filtrados por tipo de boleta
@@ -46,7 +45,6 @@ export default async function handler(req, res) {
     if (errAbonos) throw errAbonos;
 
     // 2. Traemos las Ventas filtradas por cifras del número de boleta
-    const patronLength = patronLengthMap[tipo] || '____';
     const { data: ventas, error: errVentas } = await supabase
       .from('registro_movimientos')
       .select('created_at, asesor, boleta, detalle')
@@ -125,8 +123,7 @@ export default async function handler(req, res) {
         .filter(b => b.telefono_cliente && b.estado !== 'LIBRE')
         .map(b => ({ n: b.numero, a: Number(b.total_abonado || 0), s: b.asesor || '', f: b.fecha_venta || null, p: b.estado === 'Pagada' }));
 
-    const precioMap = { '2cifras': PRECIOS.RIFA_2_CIFRAS, '3cifras': PRECIOS.RIFA_3_CIFRAS, '4cifras': PRECIOS.RIFA_4_CIFRAS };
-    const precio_boleta = precioMap[tipo] || PRECIOS.RIFA_4_CIFRAS;
+    const precio_boleta = PRECIOS.RIFA_4_CIFRAS;
 
     return res.status(200).json({
         status: 'ok',

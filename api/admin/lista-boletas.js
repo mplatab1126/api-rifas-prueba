@@ -45,24 +45,6 @@ export default async function handler(req, res) {
 
     if (errGrandes) throw errGrandes;
 
-    // Boletas diarias 2 cifras: solo las separadas sin abono
-    const { data: diarias2, error: errDiarias2 } = await supabase
-      .from('boletas_diarias')
-      .select('numero, telefono_cliente, nombre_cliente, asesor')
-      .not('telefono_cliente', 'is', null)
-      .eq('total_abonado', 0);
-
-    if (errDiarias2) throw errDiarias2;
-
-    // Boletas diarias 3 cifras: solo las separadas sin abono
-    const { data: diarias3, error: errDiarias3 } = await supabase
-      .from('boletas_diarias_3cifras')
-      .select('numero, telefono_cliente, nombre_cliente, asesor')
-      .not('telefono_cliente', 'is', null)
-      .eq('total_abonado', 0);
-
-    if (errDiarias3) throw errDiarias3;
-
     const lista = [];
 
     (grandes || []).forEach(b => {
@@ -74,44 +56,6 @@ export default async function handler(req, res) {
         telefono: b.telefono_cliente || '',
         asesor: b.asesor || movMap[num]?.asesor || '—',
         fecha_venta: b.fecha_venta || movMap[num]?.created_at || null,
-        llamada: avisosSet.has(num),
-        llamada_asesor: avisosInfo[num]?.asesor || null,
-        llamada_fecha: avisosInfo[num]?.fecha || null,
-        cobro: cobrosSet.has(num),
-        cobro_asesor: cobrosInfo[num]?.asesor || null,
-        cobro_fecha: cobrosInfo[num]?.fecha || null
-      });
-    });
-
-    (diarias2 || []).forEach(b => {
-      const num = String(b.numero);
-      const mov = movMap[num];
-      lista.push({
-        numero: b.numero,
-        tipo: 'diaria2',
-        nombre: b.nombre_cliente || 'Sin nombre',
-        telefono: b.telefono_cliente || '',
-        asesor: b.asesor || mov?.asesor || '—',
-        fecha_venta: mov?.created_at || null,
-        llamada: avisosSet.has(num),
-        llamada_asesor: avisosInfo[num]?.asesor || null,
-        llamada_fecha: avisosInfo[num]?.fecha || null,
-        cobro: cobrosSet.has(num),
-        cobro_asesor: cobrosInfo[num]?.asesor || null,
-        cobro_fecha: cobrosInfo[num]?.fecha || null
-      });
-    });
-
-    (diarias3 || []).forEach(b => {
-      const num = String(b.numero);
-      const mov = movMap[num];
-      lista.push({
-        numero: b.numero,
-        tipo: 'diaria3',
-        nombre: b.nombre_cliente || 'Sin nombre',
-        telefono: b.telefono_cliente || '',
-        asesor: b.asesor || mov?.asesor || '—',
-        fecha_venta: mov?.created_at || null,
         llamada: avisosSet.has(num),
         llamada_asesor: avisosInfo[num]?.asesor || null,
         llamada_fecha: avisosInfo[num]?.fecha || null,

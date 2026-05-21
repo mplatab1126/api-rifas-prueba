@@ -1,6 +1,5 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
-import { PRECIOS } from '../config/precios.js';
 import { limpiarTelefono } from '../lib/telefono.js';
 
 export default async function handler(req, res) {
@@ -25,11 +24,11 @@ export default async function handler(req, res) {
     queryLimpio = queryLimpio.slice(2); 
   }
 
-  // 🚨 4. REGLA DE TAMAÑO: 2/3/4 cifras = boleta. 10 cifras o más = celular (nacional o internacional).
-  if (queryLimpio.length === 1 || (queryLimpio.length > 4 && queryLimpio.length < 10)) {
+  // 🚨 4. REGLA DE TAMAÑO: 4 cifras = boleta. 10 cifras o más = celular (nacional o internacional).
+  if (queryLimpio.length !== 4 && queryLimpio.length < 10) {
     return res.status(200).json({
       tipo: 'ERROR_SERVIDOR',
-      mensaje: `⚠️ Formato incorrecto.\nEscribiste un número de ${queryLimpio.length} cifras.\n\nEl sistema solo permite buscar:\n• 2 cifras (Diaria)\n• 3 cifras (Diaria 3C)\n• 4 cifras (Apto)\n• 10 o más cifras (Celular nacional o internacional)`
+      mensaje: `⚠️ Formato incorrecto.\nEscribiste un número de ${queryLimpio.length} cifras.\n\nEl sistema solo permite buscar:\n• 4 cifras (boleta)\n• 10 o más cifras (Celular nacional o internacional)`
     });
   }
 
@@ -59,83 +58,7 @@ export default async function handler(req, res) {
         });
       }
     }
-    // --- CASO B: 2 CIFRAS (RIFA DIARIA) ---
-    else if (queryLimpio.length === 2) {
-      const { data: boleta, error } = await supabase
-        .from('boletas_diarias')
-        .select('*')
-        .eq('numero', queryLimpio)
-        .single();
-
-      if (error && error.code === 'PGRST116') return res.status(200).json({ tipo: 'NO_EXISTE', mensaje: '❌ Esta boleta diaria no existe.' });
-      if (error) throw error;
-
-      if (boleta.estado === 'Disponible' || !boleta.telefono_cliente) {
-        return res.status(200).json({ tipo: 'BOLETA_DISPONIBLE', data: { numero: queryLimpio } });
-      } else {
-        const { data: clienteDB } = await supabase
-          .from('clientes')
-          .select('nombre, apellido, ciudad, documento_tipo, documento_numero')
-          .eq('telefono', boleta.telefono_cliente)
-          .maybeSingle();
-        return res.status(200).json({
-          tipo: 'BOLETA_OCUPADA',
-          data: {
-            infoVenta: {
-              numero: String(boleta.numero).padStart(2, '0'),
-              nombre: clienteDB?.nombre || boleta.nombre_cliente || '',
-              apellido: clienteDB?.apellido || '',
-              ciudad: clienteDB?.ciudad || '',
-              telefono: boleta.telefono_cliente,
-              totalAbonos: boleta.total_abonado || 0,
-              restante: boleta.saldo_restante !== null && boleta.saldo_restante !== undefined ? boleta.saldo_restante : PRECIOS.RIFA_2_CIFRAS,
-              asesor: boleta.asesor || '',
-              documento_tipo: clienteDB?.documento_tipo || '',
-              documento_numero: clienteDB?.documento_numero || ''
-            }
-          }
-        });
-      }
-    }
-    // --- CASO C: 3 CIFRAS ---
-    else if (queryLimpio.length === 3) {
-      const { data: boleta, error } = await supabase
-        .from('boletas_diarias_3cifras')
-        .select('*')
-        .eq('numero', queryLimpio)
-        .single();
-
-      if (error && error.code === 'PGRST116') return res.status(200).json({ tipo: 'NO_EXISTE', mensaje: '❌ Esta boleta de 3 cifras no existe.' });
-      if (error) throw error;
-
-      if (boleta.estado === 'Disponible' || !boleta.telefono_cliente) {
-        return res.status(200).json({ tipo: 'BOLETA_DISPONIBLE', data: { numero: queryLimpio } });
-      } else {
-        const { data: clienteDB } = await supabase
-          .from('clientes')
-          .select('nombre, apellido, ciudad, documento_tipo, documento_numero')
-          .eq('telefono', boleta.telefono_cliente)
-          .maybeSingle();
-        return res.status(200).json({
-          tipo: 'BOLETA_OCUPADA',
-          data: {
-            infoVenta: {
-              numero: String(boleta.numero).padStart(3, '0'),
-              nombre: clienteDB?.nombre || boleta.nombre_cliente || '',
-              apellido: clienteDB?.apellido || '',
-              ciudad: clienteDB?.ciudad || '',
-              telefono: boleta.telefono_cliente,
-              totalAbonos: boleta.total_abonado || 0,
-              restante: boleta.saldo_restante !== null && boleta.saldo_restante !== undefined ? boleta.saldo_restante : PRECIOS.RIFA_3_CIFRAS,
-              asesor: boleta.asesor || '',
-              documento_tipo: clienteDB?.documento_tipo || '',
-              documento_numero: clienteDB?.documento_numero || ''
-            }
-          }
-        });
-      }
-    }
-    // --- CASO D: CELULAR (AHORA SÍ BUSCA EN LAS 3 TABLAS A LA VEZ) ---
+    // --- CASO B: CELULAR ---
     else if (queryLimpio.length >= 10) {
       const last10 = queryLimpio.slice(-10);
 
@@ -144,20 +67,7 @@ export default async function handler(req, res) {
         .select(`numero, total_abonado, saldo_restante, telefono_cliente, asesor, clientes (nombre, apellido, ciudad, documento_tipo, documento_numero)`)
         .like('telefono_cliente', '%' + last10);
 
-      const { data: clienteBoletasDiarias } = await supabase
-        .from('boletas_diarias')
-        .select('*')
-        .like('telefono_cliente', '%' + last10);
-
-      const { data: clienteBoletas3Cifras } = await supabase
-        .from('boletas_diarias_3cifras')
-        .select('*')
-        .like('telefono_cliente', '%' + last10);
-
-      if ((!clienteBoletasApto || clienteBoletasApto.length === 0) && 
-          (!clienteBoletasDiarias || clienteBoletasDiarias.length === 0) &&
-          (!clienteBoletas3Cifras || clienteBoletas3Cifras.length === 0)) {
-        
+      if (!clienteBoletasApto || clienteBoletasApto.length === 0) {
         // Buscamos TODAS las filas que coincidan (puede haber duplicados con/sin el 57 adelante).
         const { data: clientesEncontrados } = await supabase
           .from('clientes')
@@ -171,54 +81,13 @@ export default async function handler(req, res) {
           ) || clientesEncontrados[0];
           return res.status(200).json({ tipo: 'CLIENTE_SIN_BOLETAS', data: candidato });
         }
-        return res.status(200).json({ tipo: 'NO_EXISTE', mensaje: 'No hay cliente o boletas con este celular en ninguna rifa.' });
+        return res.status(200).json({ tipo: 'NO_EXISTE', mensaje: 'No hay cliente o boletas con este celular.' });
       }
 
-      let lista = [];
-
-      if (clienteBoletasApto && clienteBoletasApto.length > 0) {
-        lista.push(...clienteBoletasApto.map(b => ({
-          numero: b.numero, nombre: b.clientes?.nombre || '', apellido: b.clientes?.apellido || '', ciudad: b.clientes?.ciudad || '', telefono: b.telefono_cliente, totalAbonos: b.total_abonado, restante: b.saldo_restante, asesor: b.asesor,
-          documento_tipo: b.clientes?.documento_tipo || '', documento_numero: b.clientes?.documento_numero || ''
-        })));
-      }
-
-      // Buscamos datos del cliente en la tabla clientes para nombre/apellido/ciudad correctos
-      const { data: clienteDB } = await supabase
-        .from('clientes')
-        .select('nombre, apellido, ciudad, documento_tipo, documento_numero')
-        .like('telefono', '%' + last10)
-        .maybeSingle();
-
-      if (clienteBoletasDiarias && clienteBoletasDiarias.length > 0) {
-        lista.push(...clienteBoletasDiarias.map(b => ({
-          numero: String(b.numero).padStart(2, '0'),
-          nombre: clienteDB?.nombre || b.nombre_cliente || '',
-          apellido: clienteDB?.apellido || '',
-          ciudad: clienteDB?.ciudad || '',
-          telefono: b.telefono_cliente,
-          totalAbonos: b.total_abonado || 0,
-          restante: b.saldo_restante !== null && b.saldo_restante !== undefined ? b.saldo_restante : PRECIOS.RIFA_2_CIFRAS,
-          asesor: b.asesor || '',
-          documento_tipo: clienteDB?.documento_tipo || '',
-          documento_numero: clienteDB?.documento_numero || ''
-        })));
-      }
-
-      if (clienteBoletas3Cifras && clienteBoletas3Cifras.length > 0) {
-        lista.push(...clienteBoletas3Cifras.map(b => ({
-          numero: String(b.numero).padStart(3, '0'),
-          nombre: clienteDB?.nombre || b.nombre_cliente || '',
-          apellido: clienteDB?.apellido || '',
-          ciudad: clienteDB?.ciudad || '',
-          telefono: b.telefono_cliente,
-          totalAbonos: b.total_abonado || 0,
-          restante: b.saldo_restante !== null && b.saldo_restante !== undefined ? b.saldo_restante : PRECIOS.RIFA_3_CIFRAS,
-          asesor: b.asesor || '',
-          documento_tipo: clienteDB?.documento_tipo || '',
-          documento_numero: clienteDB?.documento_numero || ''
-        })));
-      }
+      const lista = clienteBoletasApto.map(b => ({
+        numero: b.numero, nombre: b.clientes?.nombre || '', apellido: b.clientes?.apellido || '', ciudad: b.clientes?.ciudad || '', telefono: b.telefono_cliente, totalAbonos: b.total_abonado, restante: b.saldo_restante, asesor: b.asesor,
+        documento_tipo: b.clientes?.documento_tipo || '', documento_numero: b.clientes?.documento_numero || ''
+      }));
 
       return res.status(200).json({ tipo: 'CLIENTE_ENCONTRADO', lista: lista });
     }
