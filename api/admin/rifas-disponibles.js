@@ -25,6 +25,22 @@ export default async function handler(req, res) {
       .limit(1)
       .maybeSingle();
 
+    // Fecha real de inicio de la rifa actual = primera boleta vendida en `boletas`
+    // (la tabla `boletas` solo contiene los registros de la rifa en curso).
+    // Si aún no hay ninguna boleta con fecha_venta, usamos la fecha_inicio guardada
+    // en la tabla `rifas` como respaldo.
+    let fechaInicioReal = rifaActual?.fecha_inicio || null;
+    const { data: primeraBoleta } = await supabase
+      .from('boletas')
+      .select('fecha_venta')
+      .not('fecha_venta', 'is', null)
+      .order('fecha_venta', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (primeraBoleta?.fecha_venta) {
+      fechaInicioReal = primeraBoleta.fecha_venta;
+    }
+
     // Rifas archivadas: agrupadas desde boletas_historico
     const { data: archivadas, error } = await supabase
       .from('boletas_historico')
@@ -72,11 +88,11 @@ export default async function handler(req, res) {
       actual: rifaActual ? {
         rifa_id: 'actual',
         nombre: rifaActual.nombre,
-        fecha_inicio: rifaActual.fecha_inicio,
+        fecha_inicio: fechaInicioReal,
         fecha_fin: rifaActual.fecha_fin,
         estado: rifaActual.estado,
         numero_rifa: rifaActual.numero_rifa
-      } : { rifa_id: 'actual', nombre: 'Rifa Actual' },
+      } : { rifa_id: 'actual', nombre: 'Rifa Actual', fecha_inicio: fechaInicioReal },
       historicas
     });
   } catch (error) {
