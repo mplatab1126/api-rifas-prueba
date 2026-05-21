@@ -1014,13 +1014,19 @@
             return new Date(d.getTime() - offset).toISOString().split('T')[0];
         };
 
-        if (rango === 'hoy') { inputDesde.value = getFormat(hoy); inputHasta.value = getFormat(hoy); } 
-        else if (rango === 'ayer') { const ayer = new Date(hoy); ayer.setDate(ayer.getDate() - 1); inputDesde.value = getFormat(ayer); inputHasta.value = getFormat(ayer); } 
-        else if (rango === 'semana') { const semana = new Date(hoy); semana.setDate(semana.getDate() - 6); inputDesde.value = getFormat(semana); inputHasta.value = getFormat(hoy); } 
-        else if (rango === 'mes') { const primeroMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1); inputDesde.value = getFormat(primeroMes); inputHasta.value = getFormat(hoy); } 
+        if (rango === 'hoy') { inputDesde.value = getFormat(hoy); inputHasta.value = getFormat(hoy); }
+        else if (rango === 'ayer') { const ayer = new Date(hoy); ayer.setDate(ayer.getDate() - 1); inputDesde.value = getFormat(ayer); inputHasta.value = getFormat(ayer); }
+        else if (rango === 'semana') { const semana = new Date(hoy); semana.setDate(semana.getDate() - 6); inputDesde.value = getFormat(semana); inputHasta.value = getFormat(hoy); }
+        else if (rango === 'mes') { const primeroMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1); inputDesde.value = getFormat(primeroMes); inputHasta.value = getFormat(hoy); }
         else if (rango === 'todo') { inputDesde.value = ''; inputHasta.value = ''; }
-        else if (rango === 'rifa-actual') { inputDesde.value = '2026-01-26'; inputHasta.value = '2026-04-04'; }
-        
+        else if (rango === 'rifa-actual') {
+          // Desde = primera boleta vendida de la rifa actual (la calcula el backend).
+          // Hasta = hoy. Si aún no se cargaron las rifas, no filtramos por fecha.
+          const inicio = rifasDisponibles?.actual?.fecha_inicio;
+          inputDesde.value = inicio ? String(inicio).substring(0, 10) : '';
+          inputHasta.value = getFormat(hoy);
+        }
+
         aplicarFiltrosEstadisticas();
     }
 
