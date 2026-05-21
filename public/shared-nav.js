@@ -16,22 +16,8 @@
   const PAGES = [
     { id: 'admin',       label: 'Panel de Ventas',       href: '/admin',                  section: 'principal', roles: 'todos' },
     { id: 'caja',        label: 'Cuadre de Caja',        href: '/caja',                   section: 'principal', roles: 'todos' },
-    { id: 'rifas-menu',   label: 'Rifas Diarias',         href: '/diarias',                  section: 'principal', roles: 'todos',
-      children: [
-        { id: 'rifa-2cifras', label: '2 Cifras', children: [
-          { id: 'rifa-2cifras-ver',   label: 'Ver página',    href: '/diarias',  external: true },
-          { id: 'rifa-2cifras-reset', label: 'Reiniciar rifa', href: '/reiniciar-rifa?tipo=2cifras' },
-        ]},
-        { id: 'rifa-3cifras', label: '3 Cifras', children: [
-          { id: 'rifa-3cifras-ver',   label: 'Ver página',    href: '/diarias3', external: true },
-          { id: 'rifa-3cifras-reset', label: 'Reiniciar rifa', href: '/reiniciar-rifa?tipo=3cifras' },
-        ]},
-      ]
-    },
     { id: 'rendimiento', label: 'Rendimiento',           href: '/rendimiento',           section: 'gerencia',  roles: 'gerencia',
       children: [
-        { id: 'rend-2cifras', label: 'Rifas 2 Cifras',    href: '/rendimiento?tipo=2cifras' },
-        { id: 'rend-3cifras', label: 'Rifas 3 Cifras',    href: '/rendimiento?tipo=3cifras' },
         { id: 'rend-4cifras', label: 'Rifa de 4 Cifras',  href: '/rendimiento?tipo=4cifras' },
       ]
     },
