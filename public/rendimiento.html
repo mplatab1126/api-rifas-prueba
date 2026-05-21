@@ -862,6 +862,9 @@
         if (res.status !== 'ok') return;
         rifasDisponibles = { actual: res.actual, historicas: res.historicas || [] };
         pintarBotonesRifas();
+        // Ajusta el filtro de fecha con el rango real de la rifa seleccionada
+        // (por defecto la actual: primera boleta vendida → hoy).
+        ajustarFiltroFechaSegunRifa();
       } catch (e) { console.error('No se pudieron cargar las rifas:', e); }
     }
 
@@ -977,23 +980,34 @@
     }
 
     // Ajusta los inputs de fecha Desde/Hasta al rango real de la rifa seleccionada.
-    // Para la rifa actual o el modo "todas" deja los filtros vacíos.
+    // - Rifa actual: desde la primera boleta vendida hasta hoy.
+    // - Histórico Total: sin filtro (vacío).
+    // - Rifa histórica: rango de fechas guardado en boletas_historico.
     function ajustarFiltroFechaSegunRifa() {
       const inputDesde = document.getElementById('filt-desde');
       const inputHasta = document.getElementById('filt-hasta');
       if (!inputDesde || !inputHasta) return;
+      const soloFecha = v => v ? String(v).substring(0, 10) : '';
 
-      if (rifaIdActiva === 'actual' || rifaIdActiva === 'todas') {
-        // Sin filtro de fecha: vista completa
+      if (rifaIdActiva === 'todas') {
         inputDesde.value = '';
         inputHasta.value = '';
+        return;
+      }
+
+      if (rifaIdActiva === 'actual') {
+        const inicio = rifasDisponibles?.actual?.fecha_inicio;
+        const hoy = new Date();
+        const offset = hoy.getTimezoneOffset() * 60000;
+        const hoyISO = new Date(hoy.getTime() - offset).toISOString().split('T')[0];
+        inputDesde.value = soloFecha(inicio);
+        inputHasta.value = hoyISO;
         return;
       }
 
       // Rifa histórica: buscar su rango en rifasDisponibles.historicas
       const rifa = (rifasDisponibles.historicas || []).find(r => r.rifa_id === rifaIdActiva);
       if (!rifa) return;
-      const soloFecha = v => v ? String(v).substring(0, 10) : '';
       inputDesde.value = soloFecha(rifa.fecha_inicio);
       inputHasta.value = soloFecha(rifa.fecha_fin);
     }
