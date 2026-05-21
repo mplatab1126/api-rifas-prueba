@@ -11,7 +11,7 @@ const $ = id => document.getElementById(id);
         if (el) el.innerHTML = `📋 Pega la imagen del comprobante aquí (Ctrl+V)<br><span id="${statusId}" style="color:var(--accent-2); font-weight:normal; margin-top:4px; display:block;"></span>`;
     }
 
-    let modoVenta = 'separar'; // 'separar' | 'inteligente' | 'efectivo' | 'premio_rifa'
+    let modoVenta = 'separar'; // 'separar' | 'inteligente' | 'efectivo' | 'pendiente'
     let ubicacionEfectivoVenta = ''; // 'oficina' | 'calle' | ''
 
     function setModoVenta(modo) {
@@ -21,11 +21,9 @@ const $ = id => document.getElementById(id);
         var btnTrans = document.getElementById('btnVentaTransferencia');
         var btnPend = document.getElementById('btnVentaPendiente');
         var btnEfec = document.getElementById('btnVentaEfectivo');
-        var btnPremio = document.getElementById('btnModePremioRifaVenta');
         var btnSeparar = document.getElementById('btnModeSeparar');
         var paySection = $('paymentSections');
         var btnReg = $('btnRegistrarVenta');
-        var infoPremio = document.getElementById('infoPremioRifaVenta');
         var seccionBuscar = document.getElementById('seccionBuscarTransferenciaVenta');
         var cardDetalle = document.getElementById('cardDetallePagoVenta');
         var camposInt = document.getElementById('camposPagoInteligenteVenta');
@@ -34,10 +32,8 @@ const $ = id => document.getElementById(id);
         if (btnTrans) btnTrans.classList.toggle('active', modo === 'inteligente');
         if (btnPend) btnPend.classList.toggle('active', modo === 'pendiente');
         if (btnEfec) btnEfec.classList.toggle('active', modo === 'efectivo');
-        if (btnPremio) btnPremio.classList.toggle('active', modo === 'premio_rifa');
         if (btnSeparar) btnSeparar.classList.toggle('active', modo === 'separar');
 
-        if (infoPremio) infoPremio.style.display = 'none';
         if (toggleUbic) toggleUbic.style.display = 'none';
 
         if (modo === 'separar') {
@@ -87,17 +83,6 @@ const $ = id => document.getElementById(id);
             $('v_idTransferencia').value = '';
             esVentaPendiente = true;
             btnReg.textContent = '⏳ Registrar Venta (Pendiente)'; btnReg.style.background = '#e65100';
-        } else if (modo === 'premio_rifa') {
-            if (paySection) paySection.style.display = 'none';
-            if (seccionBuscar) seccionBuscar.style.display = 'none';
-            if (cardDetalle) cardDetalle.style.display = 'none';
-            $('v_primerAbono').value = '0';
-            $('v_metodoPago').value = 'Premio Rifa Diaria';
-            $('v_referenciaAbono').value = 'premio_rifa_diaria';
-            $('v_idTransferencia').value = '';
-            esVentaPendiente = false;
-            if (infoPremio) { infoPremio.style.display = 'block'; cargarCupoRifaVenta(); }
-            btnReg.textContent = '🎰 Registrar Venta (Premio Rifa)'; btnReg.style.background = '#2e7d32';
         }
     }
 
@@ -131,15 +116,14 @@ const $ = id => document.getElementById(id);
       const tag = document.createElement('span'); tag.className='pill-type-tag';
       function actualizarTag(){
         const len = inp.value.length;
-        if (len === 3){ tag.textContent='3 cifras'; tag.style.cssText='color:#2563eb;font-size:.65rem;font-weight:700;'; }
-        else if (len === 4){ tag.textContent='4 cifras'; tag.style.cssText='color:#059669;font-size:.65rem;font-weight:700;'; }
+        if (len === 4){ tag.textContent='4 cifras'; tag.style.cssText='color:#059669;font-size:.65rem;font-weight:700;'; }
         else { tag.textContent=''; }
       }
-      inp.oninput = function() { actualizarTag(); actualizarBotonPremioVenta(); };
-      if (value) { actualizarTag(); setTimeout(actualizarBotonPremioVenta, 0); }
+      inp.oninput = function() { actualizarTag(); };
+      if (value) { actualizarTag(); }
 
       const del = document.createElement('button'); del.className='chip-del'; del.textContent='✕';
-      del.onclick = ()=>{ wrap.remove(); if(!numList.children.length) addDefaultPill(); actualizarBotonPremioVenta(); };
+      del.onclick = ()=>{ wrap.remove(); if(!numList.children.length) addDefaultPill(); };
       wrap.append(inp, tag, del); return wrap;
     }
     function addDefaultPill(){ numList.appendChild(makeNumPill()); }
@@ -232,7 +216,6 @@ const $ = id => document.getElementById(id);
             if(lines.length>3) {
                 const nums = lines[3].split(',').map(n=>n.replace(/\D+/g,'')).filter(n=>n);
                 numList.innerHTML=''; nums.forEach(n=>numList.appendChild(makeNumPill(n))); if(!nums.length) addDefaultPill();
-                actualizarBotonPremioVenta();
             }
             if(lines.length>4) $('v_telefono').value = lines[4];
             showModal('Pegado Mágico', 'Datos distribuidos correctamente.'); smartInput.value = '';
@@ -761,7 +744,7 @@ const $ = id => document.getElementById(id);
         feedback.textContent = "";
         if(res.tipo === 'ERROR_SERVIDOR') return showModal('Error', res.mensaje);
         if(res.tipo !== 'NO_EXISTE') activateAppMode();
-        if(res.tipo==='BOLETA_DISPONIBLE'){ switchView('view-venta'); numList.innerHTML=''; numList.appendChild(makeNumPill(res.data.numero)); actualizarBotonPremioVenta(); $('v_nombre').focus(); } 
+        if(res.tipo==='BOLETA_DISPONIBLE'){ switchView('view-venta'); numList.innerHTML=''; numList.appendChild(makeNumPill(res.data.numero)); $('v_nombre').focus(); }
         else if(res.tipo==='BOLETA_OCUPADA'){ switchView('view-cliente'); renderClienteInfo([res.data.infoVenta]); } 
         else if(res.tipo==='CLIENTE_ENCONTRADO'){ switchView('view-cliente'); renderClienteInfo(res.lista); } 
         else if(res.tipo==='CLIENTE_SIN_BOLETAS') {
@@ -843,30 +826,22 @@ $('btnRegistrarVenta').onclick = async ()=>{
            }
        }
 
-       const esVentaPremioRifa = modoVenta === 'premio_rifa';
        const esVentaEfectivo = modoVenta === 'efectivo';
        const esMiEquipoVenta = nombreAsesorActual && !esAsesorIndependiente(nombreAsesorActual);
 
-       if (esVentaPremioRifa && cupoRifaVentaCargado && cupoRifaVentaDisponible <= 0) {
-           return alert("🚫 Ya se usaron todas las boletas premio de esta rifa. No puedes registrar más ventas como Premio Rifa.");
-       }
-       if (esVentaPremioRifa && cupoRifaVentaCargado && nums.length > cupoRifaVentaDisponible) {
-           return alert("🚫 Solo quedan " + cupoRifaVentaDisponible + " boletas premio disponibles, pero estás registrando " + nums.length + " boletas.");
-       }
        if (esVentaEfectivo && esMiEquipoVenta && !ubicacionEfectivoVenta) {
            return alert("Selecciona si recibiste el efectivo en la oficina o en la calle.");
        }
 
        $('btnRegistrarVenta').textContent='Procesando...'; $('btnRegistrarVenta').disabled=true;
-       
+
        let totalMoney=0, ref='', metodo='';
-       if (modoVenta === 'separar') { totalMoney=0; ref='0'; metodo='Separado'; } 
-       else if (esVentaPremioRifa) { totalMoney=Number($('v_primerAbono').value)||0; ref='premio_rifa_diaria'; metodo='Premio Rifa Diaria'; }
+       if (modoVenta === 'separar') { totalMoney=0; ref='0'; metodo='Separado'; }
        else if (esVentaEfectivo) { totalMoney=Number($('v_primerAbono').value)||0; ref=$('v_referenciaAbono').value; metodo='Efectivo'; }
        else { totalMoney=Number($('v_primerAbono').value)||0; ref=$('v_referenciaAbono').value; metodo=$('v_metodoPago').value; }
 
        const perNum = Math.floor(totalMoney/nums.length);
-       const idTransVenta = (esVentaPremioRifa || esVentaEfectivo) ? '' : $('v_idTransferencia').value;
+       const idTransVenta = esVentaEfectivo ? '' : $('v_idTransferencia').value;
        const docTipoVenta = ($('v_doc_tipo') && $('v_doc_tipo').value || '').trim();
        const docNumeroVenta = ($('v_doc_numero') && $('v_doc_numero').value || '').trim();
 
@@ -879,11 +854,10 @@ $('btnRegistrarVenta').onclick = async ()=>{
            primerAbono: perNum,
            referenciaAbono: ref,
            metodoPago: metodo,
-           esPendiente: (esVentaPremioRifa || esVentaEfectivo) ? false : esVentaPendiente,
+           esPendiente: esVentaEfectivo ? false : esVentaPendiente,
            contrasena: localStorage.getItem(STORAGE_KEY),
            idTransferencia: idTransVenta,
-           esPagoInteligente: !esVentaPremioRifa && !esVentaEfectivo && !!(idTransVenta && idTransVenta.trim() !== ''),
-           esPremioRifa: esVentaPremioRifa,
+           esPagoInteligente: !esVentaEfectivo && !!(idTransVenta && idTransVenta.trim() !== ''),
            documento_tipo: docTipoVenta || null,
            documento_numero: docNumeroVenta || null
        };
@@ -919,7 +893,6 @@ $('btnRegistrarVenta').onclick = async ()=>{
        }
        var textoBtn = 'Registrar Venta';
        if (modoVenta === 'separar') textoBtn = 'Confirmar Separado ($0)';
-       else if (modoVenta === 'premio_rifa') textoBtn = '🎰 Registrar Venta (Premio Rifa)';
        $('btnRegistrarVenta').textContent = textoBtn;
        $('btnRegistrarVenta').disabled=false;
        
@@ -944,9 +917,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
            if(document.getElementById('ocrStatus')) document.getElementById('ocrStatus').textContent='';
 
            ubicacionEfectivoVenta = '';
-           cupoRifaVentaCargado = false;
            if (document.getElementById('toggleUbicacionEfectivoVenta')) document.getElementById('toggleUbicacionEfectivoVenta').style.display = 'none';
-           if (document.getElementById('infoPremioRifaVenta')) document.getElementById('infoPremioRifaVenta').style.display = 'none';
 
            desbloquearCampos('v_referenciaAbono', 'v_primerAbono', 'v_metodoPago', 'feedbackTransfer');
            numList.innerHTML=''; addDefaultPill(); activateHeroMode();
@@ -960,19 +931,12 @@ $('btnRegistrarVenta').onclick = async ()=>{
         if(boletasTarget.length === 0) return alert("Selecciona al menos una boleta.");
 
         const esEfectivo = modoAbonoPago === 'efectivo';
-        const esPremioRifa = modoAbonoPago === 'premio_rifa';
         const esMiEquipo = nombreAsesorActual && !esAsesorIndependiente(nombreAsesorActual);
         if (esEfectivo && esMiEquipo && !ubicacionEfectivo) {
             return alert("Selecciona si recibiste el efectivo en la oficina o en la calle.");
         }
-        if (esPremioRifa && cupoRifaCargado && cupoRifaDisponible <= 0) {
-            return alert("🚫 Ya se usaron todas las boletas premio de esta rifa. No puedes registrar más abonos como Premio Rifa.");
-        }
-        if (esPremioRifa && cupoRifaCargado && boletasTarget.length > cupoRifaDisponible) {
-            return alert("🚫 Solo quedan " + cupoRifaDisponible + " boletas premio disponibles, pero seleccionaste " + boletasTarget.length + " boletas.");
-        }
         const ref = document.getElementById('a_ref').value;
-        const metodo = esPremioRifa ? 'Premio Rifa Diaria' : (esEfectivo ? 'Efectivo' : document.getElementById('a_metodo').value);
+        const metodo = esEfectivo ? 'Efectivo' : document.getElementById('a_metodo').value;
 
         // Construir mapa de montos según el modo
         let montosPorBoleta = {};
@@ -1003,13 +967,13 @@ $('btnRegistrarVenta').onclick = async ()=>{
 
         const textoOriginal = btn.textContent; btn.textContent = 'Procesando...'; btn.disabled = true;
 
-        const idTransOriginal = (esEfectivo || esPremioRifa) ? '' : document.getElementById('a_idTransferencia').value;
+        const idTransOriginal = esEfectivo ? '' : document.getElementById('a_idTransferencia').value;
 
         // Si hay boletas externas (de otros clientes) seleccionadas, este es un cobro compartido.
-        // Solo aplica con transferencia real (no efectivo ni premio rifa) y exige suma exacta.
+        // Solo aplica con transferencia real (no efectivo) y exige suma exacta.
         const numerosExternosSet = new Set(boletasExternasEnCobro.map(b => String(b.numero)));
         const hayBoletasExternasSel = boletasTarget.some(n => numerosExternosSet.has(String(n)));
-        if (hayBoletasExternasSel && (esEfectivo || esPremioRifa)) {
+        if (hayBoletasExternasSel && esEfectivo) {
             btn.textContent = textoOriginal; btn.disabled = false;
             return alert('🚫 El cobro compartido entre boletas de varios clientes solo se puede registrar con Transferencia Real.\n\nQuita las boletas externas o cambia el modo a Transferencia.');
         }
@@ -1030,11 +994,10 @@ $('btnRegistrarVenta').onclick = async ()=>{
         const basePayload = {
             metodoPago: metodo,
             referencia: ref || 'efectivo',
-            esPendiente: (esEfectivo || esPremioRifa) ? false : esAbonoPendiente,
+            esPendiente: esEfectivo ? false : esAbonoPendiente,
             contrasena: localStorage.getItem(STORAGE_KEY),
             idTransferencia: idTransOriginal,
-            esPagoInteligente: !esEfectivo && !esPremioRifa && !!(idTransOriginal && idTransOriginal.trim() !== ''),
-            esPremioRifa: esPremioRifa,
+            esPagoInteligente: !esEfectivo && !!(idTransOriginal && idTransOriginal.trim() !== ''),
             // Si es cobro compartido, mandamos todas las boletas involucradas para que el backend
             // marque la transferencia como "ASIGNADA REPARTIDA: a, b, c".
             boletasRepartidas: hayBoletasExternasSel ? boletasTarget.map(String) : undefined
@@ -1095,9 +1058,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
             if(document.getElementById('ocrStatusAbono')) document.getElementById('ocrStatusAbono').textContent='';
             modoAbonoPago = 'inteligente';
             ubicacionEfectivo = '';
-            cupoRifaCargado = false;
             if (document.getElementById('toggleUbicacionEfectivo')) document.getElementById('toggleUbicacionEfectivo').style.display = 'none';
-            if (document.getElementById('infoPremioRifa')) document.getElementById('infoPremioRifa').style.display = 'none';
 
             desbloquearCampos('a_ref', 'a_monto', 'a_metodo', 'feedbackTransferAbono');
             activateHeroMode(); 
@@ -1116,7 +1077,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
 
     function renderBoletaExternaHTML(b, fmt) {
         var restante = Number(b.restante) || 0;
-        var tagTipo = b.tipo === 'diaria' ? 'Diaria' : (b.tipo === '3cifras' ? '3 Cifras' : 'Apto');
+        var tagTipo = 'Apto';
         var html = '';
         html += '<label data-boleta-externa="' + b.numero + '" style="display:flex; align-items:center; gap:8px; background:#fff7e0; padding:10px; border-radius:10px; border:1px solid #e0b13f; cursor:pointer; font-size:0.9rem; width:100%;">';
         html += '<input type="checkbox" value="' + b.numero + '" class="boleta-pay-checkbox" checked onchange="verificarSeleccionAbonos()" style="accent-color: var(--accent); width:16px; height:16px; flex-shrink:0;">';
@@ -1216,7 +1177,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
                 apellido: info.apellido || '',
                 telefono: info.telefono || '',
                 restante: Number(info.restante) || 0,
-                tipo: String(info.numero).length === 2 ? 'diaria' : (String(info.numero).length === 3 ? '3cifras' : 'apto')
+                tipo: 'apto'
             };
 
             const fmt = function(n) { return new Intl.NumberFormat('es-CO').format(n); };
@@ -1280,29 +1241,17 @@ $('btnRegistrarVenta').onclick = async ()=>{
        var autoCheck = lista.length === 1 ? 'checked' : '';
 
        for(var i=0; i<lista.length; i++){
-           var b = lista[i]; 
+           var b = lista[i];
            var restante = Number(b.restante) || 0;
            boletasStr.push(b.numero);
-           
-           // Evaluamos si es diaria (2), 3 cifras o apto (4)
-           var ticketEsDiaria = String(b.numero).length === 2;
-           var ticketEs3Cifras = String(b.numero).length === 3;
-           
+
            html += '<label style="display:flex; align-items:center; gap:8px; background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--ring-strong); cursor:pointer; font-size:0.9rem; width:100%; transition: 0.2s;">';
            html += '<input type="checkbox" value="' + b.numero + '" class="boleta-pay-checkbox" ' + autoCheck + ' onchange="verificarSeleccionAbonos()" style="accent-color: var(--accent); width:16px; height:16px; flex-shrink:0;">';
-           
-           // Textos con sus respectivas restas
-           if (ticketEsDiaria) {
-               html += '<span style="color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1;"><b>' + b.numero + '</b> <span style="color:var(--muted); font-size:0.8rem;">(Diaria - Resta $' + fmt(restante) + ')</span></span>';
-           } else if (ticketEs3Cifras) {
-               html += '<span style="color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1;"><b>' + b.numero + '</b> <span style="color:var(--muted); font-size:0.8rem;">(3 Cifras - Resta $' + fmt(restante) + ')</span></span>';
-           } else {
-               html += '<span style="color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1;"><b>' + b.numero + '</b> <span style="color:var(--muted); font-size:0.8rem;">(Apto - Resta $' + fmt(restante) + ')</span></span>';
-           }
+           html += '<span style="color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1;"><b>' + b.numero + '</b> <span style="color:var(--muted); font-size:0.8rem;">(Apto - Resta $' + fmt(restante) + ')</span></span>';
 
            // Contenedor de Botones Laterales
            html += '<div style="display:flex; gap:6px; flex-shrink:0;">';
-           
+
            // El botón de copiar link SOLO se muestra si es del Apartamento (4 cifras)
            if (String(b.numero).length === 4) {
                html += '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); copiarLinkBoleta(\'' + b.numero + '\');" style="background:#fff; border:1px solid var(--ring-strong); color:var(--ink-2); padding:4px 8px; border-radius:6px; font-size:0.75rem; font-weight:500; font-family:inherit; cursor:pointer; transition:0.2s;">Copiar Link</button>';
@@ -1437,10 +1386,8 @@ $('btnRegistrarVenta').onclick = async ()=>{
 
     let boletaBloqueadaPorGrupo = false; // Se activa cuando la boleta es de otro grupo
     let modoDistribucionAbono = 'uniforme'; // 'uniforme' | 'manual'
-    let modoAbonoPago = 'inteligente'; // 'inteligente' | 'efectivo' | 'premio_rifa'
+    let modoAbonoPago = 'inteligente'; // 'inteligente' | 'efectivo' | 'pendiente'
     let ubicacionEfectivo = ''; // 'oficina' | 'calle' | '' (sin elegir)
-    let cupoRifaDisponible = 0;
-    let cupoRifaCargado = false;
 
     function setModoAbonoPago(modo) {
         modoAbonoPago = modo;
@@ -1449,13 +1396,10 @@ $('btnRegistrarVenta').onclick = async ()=>{
         var btnPend = document.getElementById('btnModoPendiente');
         if (btnPend) btnPend.classList.toggle('active', modo === 'pendiente');
         document.getElementById('btnModoEfectivo').classList.toggle('active', modo === 'efectivo');
-        var btnPremio = document.getElementById('btnModoPremioRifa');
-        if (btnPremio) btnPremio.classList.toggle('active', modo === 'premio_rifa');
         document.getElementById('seccionPagoInteligente').style.display = modo === 'inteligente' ? 'block' : 'none';
 
         var toggleUbicacion = document.getElementById('toggleUbicacionEfectivo');
         var card = document.getElementById('cardDetalleAbono');
-        var infoPremio = document.getElementById('infoPremioRifa');
 
         if (modo === 'efectivo') {
             if (card) { card.style.display = 'block'; var f = card.querySelector('.vertical-form'); if (f) f.style.display = 'block'; }
@@ -1464,7 +1408,6 @@ $('btnRegistrarVenta').onclick = async ()=>{
             document.getElementById('a_ref').value = 'efectivo';
             document.getElementById('a_idTransferencia').value = '';
             esAbonoPendiente = false;
-            if (infoPremio) infoPremio.style.display = 'none';
 
             if (toggleUbicacion) {
                 var esMiEquipo = nombreAsesorActual && !esAsesorIndependiente(nombreAsesorActual);
@@ -1485,20 +1428,6 @@ $('btnRegistrarVenta').onclick = async ()=>{
             document.getElementById('a_idTransferencia').value = '';
             esAbonoPendiente = true;
             if (toggleUbicacion) toggleUbicacion.style.display = 'none';
-            if (infoPremio) infoPremio.style.display = 'none';
-        } else if (modo === 'premio_rifa') {
-            if (card) card.style.display = 'block';
-            var formAbono = card ? card.querySelector('.vertical-form') : null;
-            if (formAbono) formAbono.style.display = 'none';
-            document.getElementById('camposPagoInteligente').style.display = 'none';
-            document.getElementById('a_metodo').value = 'Premio Rifa Diaria';
-            document.getElementById('a_ref').value = 'premio_rifa_diaria';
-            document.getElementById('a_monto').value = '0';
-            document.getElementById('a_idTransferencia').value = '';
-            esAbonoPendiente = false;
-            if (toggleUbicacion) toggleUbicacion.style.display = 'none';
-            if (infoPremio) infoPremio.style.display = 'block';
-            cargarCupoRifa();
         } else {
             if (card) { card.style.display = 'none'; var f = card.querySelector('.vertical-form'); if (f) f.style.display = 'block'; }
             document.getElementById('camposPagoInteligente').style.display = 'none';
@@ -1506,89 +1435,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
             document.getElementById('a_ref').value = '';
             document.getElementById('a_idTransferencia').value = '';
             if (toggleUbicacion) toggleUbicacion.style.display = 'none';
-            if (infoPremio) infoPremio.style.display = 'none';
         }
-    }
-
-    async function cargarCupoRifa() {
-        var texto = document.getElementById('cupoRifaTexto');
-        if (!texto) return;
-        texto.textContent = 'Cargando cupo...';
-        texto.style.color = '#1b5e20';
-        try {
-            var req = await fetch('/api/admin/cupo-premio-rifa');
-            var res = await req.json();
-            if (res.status === 'ok') {
-                cupoRifaDisponible = res.disponibles;
-                cupoRifaCargado = true;
-                if (res.disponibles > 0) {
-                    texto.textContent = '🎰 Quedan ' + res.disponibles + ' de ' + res.total + ' boletas premio disponibles';
-                    texto.style.color = '#1b5e20';
-                } else {
-                    texto.textContent = '🚫 Ya se usaron todas las ' + res.total + ' boletas premio de esta rifa';
-                    texto.style.color = '#b71c1c';
-                }
-            } else {
-                texto.textContent = '⚠️ ' + (res.mensaje || 'No se pudo cargar el cupo');
-                texto.style.color = '#e65100';
-                cupoRifaDisponible = 0;
-            }
-        } catch(e) {
-            texto.textContent = '⚠️ Error al consultar cupo de premios';
-            texto.style.color = '#b71c1c';
-            cupoRifaDisponible = 0;
-        }
-    }
-
-    function mostrarBotonPremioRifa(boletas) {
-        var btn = document.getElementById('btnModoPremioRifa');
-        if (!btn) return;
-        var tieneBoletaApto = boletas && boletas.some(function(b) {
-            return String(b.numero || b).length === 4;
-        });
-        btn.style.display = tieneBoletaApto ? 'inline-block' : 'none';
-    }
-
-    let cupoRifaVentaDisponible = 0;
-    let cupoRifaVentaCargado = false;
-
-    async function cargarCupoRifaVenta() {
-        var texto = document.getElementById('cupoRifaTextoVenta');
-        if (!texto) return;
-        texto.textContent = 'Cargando cupo...';
-        texto.style.color = '#1b5e20';
-        try {
-            var req = await fetch('/api/admin/cupo-premio-rifa');
-            var res = await req.json();
-            if (res.status === 'ok') {
-                cupoRifaVentaDisponible = res.disponibles;
-                cupoRifaVentaCargado = true;
-                if (res.disponibles > 0) {
-                    texto.textContent = '🎰 Quedan ' + res.disponibles + ' de ' + res.total + ' boletas premio disponibles';
-                    texto.style.color = '#1b5e20';
-                } else {
-                    texto.textContent = '🚫 Ya se usaron todas las ' + res.total + ' boletas premio de esta rifa';
-                    texto.style.color = '#b71c1c';
-                }
-            } else {
-                texto.textContent = '⚠️ ' + (res.mensaje || 'No se pudo cargar el cupo');
-                texto.style.color = '#e65100';
-                cupoRifaVentaDisponible = 0;
-            }
-        } catch(e) {
-            texto.textContent = '⚠️ Error al consultar cupo de premios';
-            texto.style.color = '#b71c1c';
-            cupoRifaVentaDisponible = 0;
-        }
-    }
-
-    function actualizarBotonPremioVenta() {
-        var btnPremioVenta = document.getElementById('btnModePremioRifaVenta');
-        if (!btnPremioVenta) return;
-        var inputs = numList.querySelectorAll('input');
-        var tieneBoletaApto = Array.from(inputs).some(function(inp) { return inp.value.length === 4; });
-        btnPremioVenta.style.display = tieneBoletaApto ? 'inline-block' : 'none';
-        if (!tieneBoletaApto && modoVenta === 'premio_rifa') setMode('separar');
     }
 
     function setUbicacionEfectivo(ubicacion) {
@@ -1679,8 +1526,6 @@ $('btnRegistrarVenta').onclick = async ()=>{
             const yaVisible = zonaPagos.style.display === 'block';
             zonaPagos.style.display = 'block';
             if (!yaVisible) { resetOcrZone('ocrDropAbono', 'ocrStatusAbono'); modoDistribucionAbono = 'uniforme'; setModoAbonoPago('inteligente'); }
-            var boletasSeleccionadas = Array.from(checkboxes).map(function(c) { return { numero: c.value }; });
-            mostrarBotonPremioRifa(boletasSeleccionadas);
 
             const esMultiple = checkboxes.length > 1;
             if (toggleModo) toggleModo.style.display = esMultiple ? 'block' : 'none';
@@ -2577,7 +2422,6 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         rifa_santa_teresita: ['Publicidad', 'Adecuación', 'Muebles', 'Electrodomésticos', 'Acabados', 'Premios', 'Devoluciones a Clientes', 'Otros'],
         retiro_ganancia: ['Papá', 'Mateo', 'Alejandro', 'Alejandro y Mateo'],
         retiro_capital:  ['Alejandro', 'Mateo', 'Federico'],
-        pagos_diarias:  ['Rifa de 2 cifras', 'Rifa de 3 cifras'],
         // Subcategorías OBLIGATORIAS para Movimiento a Caja: indican a cuál caja entró el efectivo.
         movimiento_caja: ['Oficina', 'Papá']
     };
@@ -2597,7 +2441,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         const p = prefix || 'dist';
         const safeDesc = (desc || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const idJs = typeof itemId === 'number' ? itemId : `'${itemId}'`;
-        const catOpts = '<option value="">— Categoría * —</option><option value="operacionales">⚙️ Operacionales</option><option value="rifa_apartamento">🏠 Rifa Apartamento</option><option value="construccion">🏗️ Construcción</option><option value="rifa_camioneta">🚗 Rifa Camioneta</option><option value="rifa_santa_teresita">🏡 Rifa Santa Teresita</option><option value="retiro_ganancia">💸 Retiro Ganancia</option><option value="retiro_capital">🏦 Retiro de Capital</option><option value="pagos_diarias">🎯 Pagos Diarias</option><option value="movimiento_caja">💵 Movimiento a Caja</option>';
+        const catOpts = '<option value="">— Categoría * —</option><option value="operacionales">⚙️ Operacionales</option><option value="rifa_apartamento">🏠 Rifa Apartamento</option><option value="construccion">🏗️ Construcción</option><option value="rifa_camioneta">🚗 Rifa Camioneta</option><option value="rifa_santa_teresita">🏡 Rifa Santa Teresita</option><option value="retiro_ganancia">💸 Retiro Ganancia</option><option value="retiro_capital">🏦 Retiro de Capital</option><option value="movimiento_caja">💵 Movimiento a Caja</option>';
         const removeBtn = idx > 0 ? `<button onclick="eliminarDistFila(${idJs},${idx},'${p}')" style="padding:4px 8px;border-radius:6px;border:1px solid #ef5350;background:#ffebee;color:#c62828;font-weight:700;cursor:pointer;font-size:0.78rem;font-family:inherit;">✕</button>` : '';
         return `<div id="${p}Row_${itemId}_${idx}" class="dist-row" style="border:1px solid #90caf9;border-radius:10px;padding:10px;background:#f8fbff;">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
@@ -2687,7 +2531,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         const container = document.getElementById(`${p}Container_${itemId}`);
         if (!container) return [];
         const rows = container.querySelectorAll('.dist-row');
-        const nombresCat = { operacionales: 'Operacionales', rifa_apartamento: 'Rifa Apartamento', construccion: 'Construcción', rifa_camioneta: 'Rifa Camioneta', rifa_santa_teresita: 'Rifa Santa Teresita', retiro_ganancia: 'Retiro de Ganancia', retiro_capital: 'Retiro de Capital', pagos_diarias: 'Pagos Rifas Diarias' };
+        const nombresCat = { operacionales: 'Operacionales', rifa_apartamento: 'Rifa Apartamento', construccion: 'Construcción', rifa_camioneta: 'Rifa Camioneta', rifa_santa_teresita: 'Rifa Santa Teresita', retiro_ganancia: 'Retiro de Ganancia', retiro_capital: 'Retiro de Capital' };
         const result = [];
         rows.forEach(row => {
             const idx = row.id.split('_').pop();
@@ -3640,9 +3484,9 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         const totalClientes = gruposOrdenados.length;
         contador.textContent = `${totalClientes} cliente${totalClientes !== 1 ? 's' : ''} · ${lista.length} boleta${lista.length !== 1 ? 's' : ''}`;
 
-        const tipoBadge = { grande: '🏠', diaria2: '🎯', diaria3: '🎯' };
-        const tipoColor = { grande: 'var(--pill)', diaria2: '#e8f5e9', diaria3: '#e3f2fd' };
-        const tipoTextColor = { grande: 'var(--ink-2)', diaria2: '#1b5e20', diaria3: '#0d47a1' };
+        const tipoBadge = { grande: '🏠' };
+        const tipoColor = { grande: 'var(--pill)' };
+        const tipoTextColor = { grande: 'var(--ink-2)' };
 
         let html = '<div style="overflow-x:auto;">';
         html += '<table style="width:100%; border-collapse:collapse; font-size:0.85rem;">';

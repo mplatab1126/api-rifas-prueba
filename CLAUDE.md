@@ -43,8 +43,8 @@ Empresa colombiana familiar de venta de rifas. Los socios son dos hermanos: **Ma
 | Tipo | Dígitos | Notas |
 |---|---|---|
 | Rifa principal | 4 cifras (0000–9999) | El precio y los premios cambian con cada rifa. Consultar la base de datos para valores actuales. |
-| Rifa diaria | 2 cifras (00–99) | Rifa diaria de menor valor |
-| Rifa diaria 3 cifras | 3 cifras (000–999) | Rifa diaria de menor valor |
+
+> Antes existían dos rifas diarias (2 y 3 cifras) que fueron **eliminadas del sistema** porque ese tipo de rifas son ilegales en Colombia. Toda esa lógica se quitó: páginas públicas, endpoints, columnas y categorías de gasto. Si encuentras referencias en código viejo o histórico, es residuo no operativo.
 
 Los precios y premios específicos NO van aquí porque cambian con cada rifa. Están en la base de datos (tabla `rifas`, `premios_rifa`) y en los bot fields de ChateaPro.
 
@@ -91,14 +91,11 @@ Los precios y premios específicos NO van aquí porque cambian con cada rifa. Es
 | `calendario.html` | Horarios semanales de los asesores |
 | `admin-horarios.html` | Gestión de horarios de asesores |
 | `permisos.html` | Solo Mateo — gestión de permisos de asesores |
-| `reiniciar-rifa.html` | Reiniciar/resetear rifas diarias |
-| `diarias.html` | Página pública — clientes reservan números de 2 cifras |
-| `diarias3.html` | Página pública — clientes reservan números de 3 cifras |
 | `boleta.html` | Página pública — clientes consultan su boleta |
 
 ## Tablas principales en Supabase
 
-`boletas`, `boletas_diarias`, `boletas_diarias_3cifras`, `clientes`, `abonos`, `transferencias`, `registro_movimientos`, `gastos`, `movimientos_caja`, `rendimiento_asesores`, `metricas_facebook`, `costos_whatsapp`, `rifas`, `premios_rifa`, `capitalizacion_rifa`, `horarios_asesores`, `config_rifa_diaria`, `historial_rifas`, `llamadas_twilio`, `permisos_asesores`, `comprobantes`, `bitacora`, `registro_sorteo`
+`boletas`, `clientes`, `abonos`, `transferencias`, `registro_movimientos`, `gastos`, `movimientos_caja`, `rendimiento_asesores`, `metricas_facebook`, `costos_whatsapp`, `rifas`, `premios_rifa`, `capitalizacion_rifa`, `horarios_asesores`, `historial_rifas`, `llamadas_twilio`, `permisos_asesores`, `comprobantes`, `bitacora`, `registro_sorteo`
 
 ## Consideraciones críticas
 

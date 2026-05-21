@@ -10,7 +10,6 @@ const CATEGORIAS = [
   { id: 'rifa_santa_teresita', nombre: 'Rifa Casa Santa Teresita', icono: '🏡', afecta_er: false },
   { id: 'retiro_ganancia',  nombre: 'Retiro de Ganancia',        icono: '💸', afecta_er: false },
   { id: 'retiro_capital',   nombre: 'Retiro de Capital',         icono: '🏦', afecta_er: false },
-  { id: 'pagos_diarias',    nombre: 'Pagos Rifas Diarias',       icono: '🎯', afecta_er: false },
   // Movimiento a Caja: traslado interno (plata pasa de una cuenta bancaria a efectivo físico).
   // NO es un gasto real — por eso afecta_er=false y el Estado de Resultados debe excluirlo.
   { id: 'movimiento_caja',  nombre: 'Movimiento a Caja',         icono: '💵', afecta_er: false, es_traslado_interno: true }
