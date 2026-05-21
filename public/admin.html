@@ -157,7 +157,6 @@
                   <option value="rifa_santa_teresita">🏡 Rifa Santa Teresita</option>
                   <option value="retiro_ganancia">💸 Retiro de Ganancia</option>
                   <option value="retiro_capital">🏦 Retiro de Capital</option>
-                  <option value="pagos_diarias">🎯 Pagos Rifas Diarias</option>
                 </select>
 
                 <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--ink-2); margin-bottom:4px;">Subcategoría</label>
@@ -305,12 +304,7 @@
         <button id="btnVentaTransferencia" class="mode-btn" onclick="setModoVenta('inteligente')">Transferencia Real</button>
         <button id="btnVentaPendiente" class="mode-btn" onclick="setModoVenta('pendiente')">⏳ Pendiente</button>
         <button id="btnVentaEfectivo" class="mode-btn" onclick="setModoVenta('efectivo')">Efectivo</button>
-        <button id="btnModePremioRifaVenta" class="mode-btn" onclick="setModoVenta('premio_rifa')" style="display:none;">🎰 Premio Rifa</button>
         <button id="btnModeSeparar" class="mode-btn active" onclick="setModoVenta('separar')">Solo Separar ($0)</button>
-      </div>
-
-      <div id="infoPremioRifaVenta" style="display:none; background:#e8f5e9; border:1.5px solid #43a047; border-radius:10px; padding:10px 14px; margin-top:8px; text-align:center;">
-        <span style="font-size:0.85rem; font-weight:600; color:#1b5e20;" id="cupoRifaTextoVenta">Cargando cupo...</span>
       </div>
 
       <div id="toggleUbicacionEfectivoVenta" style="display:none;">
@@ -413,10 +407,6 @@
           <button id="btnModoInteligente" class="mode-btn active" onclick="setModoAbonoPago('inteligente')">Transferencia Real</button>
           <button id="btnModoPendiente" class="mode-btn" onclick="setModoAbonoPago('pendiente')">⏳ Pendiente</button>
           <button id="btnModoEfectivo" class="mode-btn" onclick="setModoAbonoPago('efectivo')">Efectivo</button>
-          <button id="btnModoPremioRifa" class="mode-btn" onclick="setModoAbonoPago('premio_rifa')" style="display:none;">🎰 Premio Rifa</button>
-        </div>
-        <div id="infoPremioRifa" style="display:none; background:#e8f5e9; border:1.5px solid #43a047; border-radius:10px; padding:10px 14px; margin-top:8px; text-align:center;">
-          <span style="font-size:0.85rem; font-weight:600; color:#1b5e20;" id="cupoRifaTexto">Cargando cupo...</span>
         </div>
 
         <div id="toggleUbicacionEfectivo" style="display:none;">
@@ -526,11 +516,8 @@
             <input type="text" id="lb-filtro-texto" class="pill" placeholder="Buscar nombre, teléfono, boleta..." oninput="filtrarListaBoletas()">
           </div>
           <div class="field" style="min-width:140px;">
-            <select id="lb-filtro-tipo" class="pill" onchange="filtrarListaBoletas()">
-              <option value="">Todos los tipos</option>
-              <option value="grande">Boletas grandes (4 cifras)</option>
-              <option value="diaria2">Diarias 2 cifras</option>
-              <option value="diaria3">Diarias 3 cifras</option>
+            <select id="lb-filtro-tipo" class="pill" onchange="filtrarListaBoletas()" style="display:none;">
+              <option value="" selected>Todos los tipos</option>
             </select>
           </div>
           <div id="lb-asesor-dropdown-container" style="min-width:180px; position:relative;">

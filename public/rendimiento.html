@@ -106,7 +106,6 @@
     .selector-card-title { font-size: 1.3rem; font-weight: 900; color: #fff; margin-bottom: 6px; }
     .selector-card-sub { font-size: 0.85rem; font-weight: 600; color: #64748b; }
     .selector-card-badge { display: inline-block; margin-top: 14px; padding: 5px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; }
-    .badge-diaria { background: #1e3a5f; color: #60a5fa; }
     .badge-grande { background: #14532d; color: #4ade80; }
   </style>
 </head>
@@ -128,19 +127,7 @@
     <p class="selector-titulo">BI Analytics PRO · Los Plata</p>
     <h2 class="selector-subtitulo">¿Qué rendimiento quieres ver?</h2>
     <div class="selector-grid">
-      <div class="selector-card" onclick="seleccionarRifa('2cifras')">
-        <span class="selector-card-icon">🎟️</span>
-        <div class="selector-card-title">Rifas 2 Cifras</div>
-        <div class="selector-card-sub">Boletas del 01 al 99</div>
-        <span class="selector-card-badge badge-diaria">Rifa Diaria · $20.000</span>
-      </div>
-      <div class="selector-card" onclick="seleccionarRifa('3cifras')">
-        <span class="selector-card-icon">🏷️</span>
-        <div class="selector-card-title">Rifas 3 Cifras</div>
-        <div class="selector-card-sub">Boletas del 001 al 999</div>
-        <span class="selector-card-badge badge-diaria">Rifa Diaria · $20.000</span>
-      </div>
-      <div class="selector-card" onclick="seleccionarRifa('4cifras')">
+      <div class="selector-card" onclick="seleccionarRifa()">
         <span class="selector-card-icon">🚗</span>
         <div class="selector-card-title">Rifa Principal</div>
         <div class="selector-card-sub">Boletas del 0000 al 9999</div>
@@ -162,22 +149,6 @@
   </div>
 
   <div class="shell" id="mainDashboard">
-
-    <!-- Selector de rifa (solo visible para diarias 2 y 3 cifras) -->
-    <div id="selectorRifaDiaria" style="display:none; margin-bottom: 15px;">
-      <div class="filter-zone" style="margin-bottom: 0; align-items: center;">
-        <div class="input-group" style="min-width: 280px; flex: 2;">
-          <label style="font-weight:700;">Seleccionar Rifa</label>
-          <select id="select-rifa-diaria" class="field-input" onchange="cambiarRifaSeleccionada()" style="font-weight: 700; cursor: pointer;">
-            <option value="actual">Rifa Actual</option>
-          </select>
-        </div>
-        <div id="rifa-info-badge" style="flex: 1; min-width: 200px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 12px 16px; display: none;">
-          <div style="font-size: 0.75rem; font-weight: 800; color: #166534; text-transform: uppercase;">Rifa en curso</div>
-          <div id="rifa-info-text" style="font-size: 0.9rem; font-weight: 700; color: #15803d; margin-top: 2px;">—</div>
-        </div>
-      </div>
-    </div>
 
     <!-- Selector de rifa: solo visible para 4 cifras -->
     <div id="selectorRifaHistorica" style="display:none; background: linear-gradient(135deg, #f0fdf4 0%, #eff6ff 100%); border: 1px solid #bbf7d0; border-radius: 16px; padding: 16px 20px; margin-bottom: 20px;">
@@ -266,37 +237,6 @@
         </div>
     </div>
 
-    <!-- KPIs para diarias (2/3 cifras) — fila unica -->
-    <div class="row" id="kpis-diarias" style="display:none;">
-        <div class="col-100 mega-kpi-grid" style="grid-template-columns: repeat(5, 1fr);">
-            <div class="mega-kpi kpi-green">
-                <div class="mega-kpi-title" style="font-weight:800; letter-spacing:0.5px;">RECAUDO REAL</div>
-                <div class="mega-kpi-value" id="kpi-dia-recaudo">$0</div>
-                <span class="mega-kpi-sub">Dinero ingresado</span>
-            </div>
-            <div class="mega-kpi kpi-blue">
-                <div class="mega-kpi-title" style="font-weight:800; letter-spacing:0.5px;">VENDIDAS <span id="kpi-dia-ocupacion-pct" style="font-size:0.75rem; font-weight:700; background:rgba(255,255,255,0.35); padding:2px 7px; border-radius:20px; margin-left:5px;">0%</span></div>
-                <div class="mega-kpi-value" id="kpi-dia-ocupacion">0</div>
-                <span class="mega-kpi-sub">Con cliente asignado</span>
-            </div>
-            <div class="mega-kpi kpi-green" style="border-color: #bbf7d0;">
-                <div class="mega-kpi-title" style="font-weight:800; letter-spacing:0.5px;">PAGADAS COMPLETO</div>
-                <div class="mega-kpi-value" id="kpi-dia-pagadas">0</div>
-                <span class="mega-kpi-sub">Sin saldo pendiente</span>
-            </div>
-            <div class="mega-kpi kpi-red">
-                <div class="mega-kpi-title" style="font-weight:800; letter-spacing:0.5px;">SIN ABONO INICIAL</div>
-                <div class="mega-kpi-value" id="kpi-dia-cero">0</div>
-                <span class="mega-kpi-sub">Separadas con $0</span>
-            </div>
-            <div class="mega-kpi kpi-purple" id="kpi-dia-disponibles-card">
-                <div class="mega-kpi-title" style="font-weight:800; letter-spacing:0.5px;">DISPONIBLES</div>
-                <div class="mega-kpi-value" id="kpi-dia-disponibles">0</div>
-                <span class="mega-kpi-sub">Boletas por vender</span>
-            </div>
-        </div>
-    </div>
-
     <!-- Ocupación de la rifa (solo 4 cifras, no se filtra) -->
     <div class="row" id="inventario-boletas">
         <div class="col-100">
@@ -355,63 +295,6 @@
         </div>
     </div>
     </div>
-
-  <!-- Zona administración: solo visible para rifas diarias -->
-  <div id="zonaAdminRifa" style="display:none; max-width:1500px; margin: 0 auto; padding: 0 20px;">
-
-    <!-- Historial de ganancias -->
-    <div class="saas-divider" style="margin-top: 40px;"><span>2. HISTORIAL DE RIFAS</span></div>
-
-    <div class="row" style="margin-bottom: 20px;">
-      <div class="col-100 mega-kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
-        <div class="mega-kpi kpi-green" style="padding:18px;">
-          <div class="mega-kpi-title" style="font-weight:800; letter-spacing:0.5px;">GANANCIA TOTAL</div>
-          <div class="mega-kpi-value" id="hist-ganancia-total" style="font-size:1.8rem;">$0</div>
-          <span class="mega-kpi-sub">Suma de todas las rifas</span>
-        </div>
-        <div class="mega-kpi kpi-blue" style="padding:18px;">
-          <div class="mega-kpi-title" style="font-weight:800; letter-spacing:0.5px;">RIFAS JUGADAS</div>
-          <div class="mega-kpi-value" id="hist-total-rifas" style="font-size:1.8rem;">0</div>
-          <span class="mega-kpi-sub">Total en historial</span>
-        </div>
-        <div class="mega-kpi kpi-purple" style="padding:18px;">
-          <div class="mega-kpi-title" style="font-weight:800; letter-spacing:0.5px;">GANANCIA PROMEDIO</div>
-          <div class="mega-kpi-value" id="hist-ganancia-prom" style="font-size:1.8rem;">$0</div>
-          <span class="mega-kpi-sub">Por rifa</span>
-        </div>
-        <div class="mega-kpi kpi-orange" style="padding:18px;">
-          <div class="mega-kpi-title" style="font-weight:800; letter-spacing:0.5px;">MEJOR RIFA</div>
-          <div class="mega-kpi-value" id="hist-mejor" style="font-size:1.8rem;">$0</div>
-          <span class="mega-kpi-sub">Ganancia maxima</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="row" style="margin-bottom: 20px;">
-      <div class="col-100">
-        <div class="card" style="height: 360px;">
-          <h3 class="card-title">Recaudo vs Ganancia por Rifa
-            <span id="hist-sin-datos" style="font-size:0.8rem; font-weight:600; color:var(--muted); text-transform:none; letter-spacing:0;">Sin datos aun</span>
-          </h3>
-          <canvas id="chartHistorial"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tabla detalle -->
-    <div class="row" style="margin-bottom: 30px;">
-      <div class="col-100">
-        <div class="card" style="height: auto;">
-          <h3 class="card-title">Detalle por Rifa</h3>
-          <div class="table-container" id="tablaHistorial">
-            <p style="text-align:center; color:var(--muted); padding:20px; font-weight:600;">Cargando historial...</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Reiniciar rifa: se accede desde el menú lateral → Rifas → Reiniciar rifa -->
-  </div>
 
   <div id="seccionesAvanzadas" style="display:none;">
 
@@ -655,84 +538,6 @@
 
   </div><!-- fin mainDashboard -->
 
-  <!-- Modal Nueva Rifa -->
-  <div id="modalNuevaRifa" class="modal-overlay" onclick="if(event.target===this) document.getElementById('modalNuevaRifa').style.display='none'">
-    <div class="modal-card" style="max-width: 460px; text-align: left;">
-      <div id="nrPaso1">
-        <h3 style="color: #dc2626; font-weight: 900; margin: 0 0 6px 0; font-size: 1.4rem;">🆕 Empezar Nueva Rifa</h3>
-        <p style="color: var(--ink-2); font-size: 0.9rem; margin-bottom: 20px; line-height: 1.5;">
-          Se <strong>guardará un snapshot</strong> del estado actual (boletas vendidas, recaudo, etc.) y luego <strong>todas las boletas quedarán disponibles</strong> para la nueva rifa.
-        </p>
-        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 14px; margin-bottom: 20px; font-size: 0.85rem; color: #b91c1c; font-weight: 600; line-height: 1.5;">
-          ⚠️ Esta acción es <strong>irreversible</strong>. Asegúrate de que el sorteo de hoy ya haya jugado antes de continuar.
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 22px;">
-          <div>
-            <label style="font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 6px;">📅 ¿Cuándo juega el próximo sorteo?</label>
-            <input type="text" id="nrFecha" class="field-input" placeholder="Ej: 15 MAR, MARTES 18 MAR..." style="width:100%; box-sizing:border-box;">
-          </div>
-          <div>
-            <label style="font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 6px;">⏰ ¿A qué hora cierra la venta? (para el temporizador)</label>
-            <input type="time" id="nrHora" class="field-input" value="11:00" style="width:100%; box-sizing:border-box;">
-          </div>
-          <div>
-            <label style="font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 6px;">🎱 ¿Con qué lotería juega?</label>
-            <input type="text" id="nrLoteria" class="field-input" placeholder="Ej: CHONTICO DÍA, MARDE BOGOTÁ..." style="width:100%; box-sizing:border-box; text-transform: uppercase;">
-          </div>
-          <div id="nrModoWrapper" style="display:none;">
-            <label style="font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 6px;">🎁 ¿Qué se premia en esta rifa?</label>
-            <select id="nrModoPremio" class="field-input" style="width:100%; box-sizing:border-box;" onchange="toggleCampoBoletasPremio()">
-              <option value="boletas">🏢 Boletas del Apartamento</option>
-              <option value="dinero">💰 Dinero en efectivo ($800.000 x premio)</option>
-            </select>
-            <div id="nrBoletasPremioWrapper" style="margin-top:10px;">
-              <label style="font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 6px;">🎟️ ¿Cuántas boletas del apto se dan como premio en total?</label>
-              <input type="number" id="nrTotalBoletasPremio" class="field-input" placeholder="Ej: 18" min="1" style="width:100%; box-sizing:border-box;" value="18">
-              <p style="font-size:0.75rem; color:var(--muted); margin:4px 0 0; line-height:1.3;">Este número limita cuántas boletas se pueden registrar con el método "Premio Rifa" en el panel de asesores.</p>
-            </div>
-          </div>
-          <div style="border-top: 1px dashed var(--ring-strong); padding-top: 14px; margin-top: 4px;">
-            <p style="font-size: 0.8rem; font-weight: 800; color: var(--ink-2); text-transform: uppercase; margin: 0 0 12px 0;">📊 Resultados de la rifa que termina</p>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-              <div>
-                <label style="font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 6px;">🏆 Nº de ganadores</label>
-                <input type="number" id="nrGanadores" class="field-input" placeholder="Ej: 3" min="0" style="width:100%; box-sizing:border-box;">
-              </div>
-              <div>
-                <label style="font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 6px;">💸 Total pagado</label>
-                <input type="number" id="nrPagado" class="field-input" placeholder="Ej: 2400000" min="0" style="width:100%; box-sizing:border-box;">
-              </div>
-            </div>
-          </div>
-        </div>
-        <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 16px; font-weight: 600;" id="nrRifaLabel">Rifa: —</p>
-        <div style="display: flex; gap: 10px;">
-          <button class="btn btn-outline" style="flex:1;" onclick="document.getElementById('modalNuevaRifa').style.display='none'">Cancelar</button>
-          <button class="btn" style="flex:1; background:#dc2626; color:white;" onclick="pasarAConfirmacion()">Continuar →</button>
-        </div>
-      </div>
-
-      <div id="nrPaso2" style="display:none;">
-        <h3 style="color: #dc2626; font-weight: 900; margin: 0 0 12px 0;">⚠️ Confirmar acción</h3>
-        <div style="background: var(--bg); border: 1px solid var(--ring); border-radius: 12px; padding: 16px; margin-bottom: 20px; font-size: 0.9rem; line-height: 1.8;">
-          <div>📅 Juega el: <strong id="nrResumenFecha">—</strong></div>
-          <div>⏰ Cierre venta: <strong id="nrResumenHora">—</strong></div>
-          <div>🎱 Lotería: <strong id="nrResumenLoteria">—</strong></div>
-          <div>🏆 Ganadores rifa anterior: <strong id="nrResumenGanadores">—</strong></div>
-          <div>💸 Total pagado a ganadores: <strong id="nrResumenPagado">—</strong></div>
-          <div id="nrResumenModoRow" style="display:none;">🎁 Modo de premio: <strong id="nrResumenModo">—</strong></div>
-          <div id="nrResumenBoletasPremioRow" style="display:none;">🎟️ Boletas premio (apto): <strong id="nrResumenBoletasPremio">—</strong></div>
-        </div>
-        <p style="font-size: 0.9rem; color: #b91c1c; font-weight: 700; margin-bottom: 20px;">¿Confirmas que el sorteo anterior ya jugó y quieres reiniciar la rifa?</p>
-        <div style="display: flex; gap: 10px;">
-          <button class="btn btn-outline" style="flex:1;" onclick="volverAPaso1()">← Atrás</button>
-          <button class="btn" id="btnConfirmarNuevaRifa" style="flex:2; background:#dc2626; color:white;" onclick="confirmarNuevaRifa()">🔁 Sí, reiniciar rifa</button>
-        </div>
-        <p id="nrMsg" style="margin-top:12px; font-size:0.85rem; font-weight:700; text-align:center;"></p>
-      </div>
-    </div>
-  </div>
-
   <div id="modalResult" class="modal-overlay">
     <div class="modal-card">
       <h3 id="mTitle" style="color:var(--ink); font-weight:900; margin:0 0 10px 0; font-size: 1.4rem;">Título</h3>
@@ -749,28 +554,19 @@
     let chartLinea = null; let chartVentas = null; let chartMix = null; let chartRegistradas = null;
     let rifaIdActiva = 'actual'; // 'actual' o un UUID de rifa archivada
     let rifasDisponibles = { actual: null, historicas: [] };
-    let tipoRifaActual = null; // '2cifras' | '3cifras' | '4cifras'
-    
+    // Solo queda la rifa de 4 cifras. Se mantiene la variable para conservar
+    // la firma del endpoint /api/admin/estadisticas que recibe `tipo`.
+    let tipoRifaActual = '4cifras';
+
     let rifaInicioTimestamp = null;
     let rifaSeleccionadaId = 'actual';
-    let historialCompleto = [];
-    let configRifaActual = null;
-    
+
     window.globalStatsIA = {};
     window.rankArrayIA = [];
 
     const LABELS_RIFA = {
-      '2cifras': { badge: '🎟️ Rifas 2 Cifras',  titulo: '2 Cifras · Diaria $20K' },
-      '3cifras': { badge: '🏷️ Rifas 3 Cifras',  titulo: '3 Cifras · Diaria $5K' },
       '4cifras': { badge: '🚗 Rifa Principal', titulo: '4 Cifras · $80K' }
     };
-
-    function getTipoFromURL() {
-      const params = new URLSearchParams(window.location.search);
-      const tipo = params.get('tipo');
-      if (['2cifras', '3cifras', '4cifras'].includes(tipo)) return tipo;
-      return null;
-    }
 
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -795,8 +591,7 @@
               if (window.__snavSaveAsesor) window.__snavSaveAsesor(res.asesor);
               if (window.__snavRefresh) window.__snavRefresh();
               document.getElementById('loginOverlay').style.display = 'none';
-              const tipoURL = getTipoFromURL();
-              if (tipoURL) { seleccionarRifa(tipoURL); } else { mostrarSelectorRifa(); }
+              mostrarSelectorRifa();
           } else {
               if(!auto) msg.textContent = 'Acceso denegado. Solo gerencia.';
               localStorage.removeItem(STORAGE_KEY);
@@ -811,43 +606,35 @@
       document.getElementById('mainDashboard').style.display = 'none';
     }
 
-    function seleccionarRifa(tipo) {
-      tipoRifaActual = tipo;
+    function seleccionarRifa() {
+      tipoRifaActual = '4cifras';
       document.getElementById('selectorRifa').style.display = 'none';
       document.getElementById('topBar').style.display = 'flex';
       document.getElementById('mainDashboard').style.display = 'block';
-      document.getElementById('badgeRifa').textContent = LABELS_RIFA[tipo]?.titulo || 'BI Analytics PRO';
+      document.getElementById('badgeRifa').textContent = LABELS_RIFA['4cifras'].titulo;
 
-      const soloGrande = tipo === '4cifras';
-      const esDiaria = !soloGrande;
-      document.getElementById('seccionesAvanzadas').style.display = soloGrande ? 'block' : 'none';
-      document.getElementById('zonaAdminRifa').style.display = esDiaria ? 'block' : 'none';
-      document.getElementById('selectorRifaDiaria').style.display = esDiaria ? 'block' : 'none';
+      document.getElementById('seccionesAvanzadas').style.display = 'block';
 
-      document.getElementById('kpis-4cifras').style.display = soloGrande ? 'block' : 'none';
-      document.getElementById('bloque-recaudo').style.display = soloGrande ? 'block' : 'none';
-      document.getElementById('kpis-diarias').style.display = esDiaria ? 'block' : 'none';
-      document.getElementById('inventario-boletas').style.display = soloGrande ? 'block' : 'none';
-      document.getElementById('charts-evolucion').style.display = soloGrande ? 'block' : 'none';
-      document.getElementById('selectorRifaHistorica').style.display = soloGrande ? 'block' : 'none';
+      document.getElementById('kpis-4cifras').style.display = 'block';
+      document.getElementById('bloque-recaudo').style.display = 'block';
+      document.getElementById('inventario-boletas').style.display = 'block';
+      document.getElementById('charts-evolucion').style.display = 'block';
+      document.getElementById('selectorRifaHistorica').style.display = 'block';
 
       const divRendimiento = document.querySelector('#divider-rendimiento span');
-      divRendimiento.textContent = esDiaria ? '1. RIFA ACTUAL' : '🌍 1. RENDIMIENTO GENERAL DE LA OPERACIÓN';
+      divRendimiento.textContent = '🌍 1. RENDIMIENTO GENERAL DE LA OPERACIÓN';
 
       document.querySelectorAll('.btn-sync-avanzado').forEach(b => {
-        b.style.display = soloGrande ? 'inline-flex' : 'none';
+        b.style.display = 'inline-flex';
       });
 
       rifaSeleccionadaId = 'actual';
       rifaIdActiva = 'actual';
       rifaInicioTimestamp = null;
-      configRifaActual = null;
-      historialCompleto = [];
 
-      if (soloGrande) cargarRifasDisponibles();
+      cargarRifasDisponibles();
       cargarEstadisticas();
-      if (soloGrande) cargarEstadoFacebook();
-      if (esDiaria) cargarHistorialRifas();
+      cargarEstadoFacebook();
     }
 
     // Carga la lista de rifas disponibles (actual + históricas) y pinta los botones
@@ -1048,10 +835,10 @@
         const div = document.getElementById('leaderboardRender');
         div.innerHTML = '<p style="text-align:center; color:var(--muted); padding:30px; font-weight:600;">Descargando Big Data...</p>';
         try {
-            const body = { contrasena: localStorage.getItem(STORAGE_KEY), tipo: tipoRifaActual || '4cifras' };
+            const body = { contrasena: localStorage.getItem(STORAGE_KEY), tipo: '4cifras' };
             // Si estamos viendo una rifa histórica o el modo "todas las rifas",
             // mandamos rifa_id para que el backend use las tablas históricas.
-            if (tipoRifaActual === '4cifras' && rifaIdActiva && rifaIdActiva !== 'actual') {
+            if (rifaIdActiva && rifaIdActiva !== 'actual') {
                 body.rifa_id = rifaIdActiva; // UUID de rifa histórica o 'todas'
             }
             const req = await fetch('/api/admin/estadisticas', {
@@ -1098,10 +885,10 @@
         actualizarDropdownsFB();
         // Si estamos viendo una rifa histórica o el modo "todas las rifas",
         // los inputs de fecha ya quedaron ajustados. No los pisamos.
-        if (tipoRifaActual === '4cifras' && rifaIdActiva && rifaIdActiva !== 'actual') {
+        if (rifaIdActiva && rifaIdActiva !== 'actual') {
             aplicarFiltrosEstadisticas();
         } else {
-            setRangoFecha(tipoRifaActual !== '4cifras' ? 'todo' : 'semana');
+            setRangoFecha('semana');
         }
     }
 
@@ -1279,8 +1066,7 @@
         let dineroRecaudadoAbonos = abonosF.reduce((acc, curr) => acc + Number(curr.monto), 0);
         let totalPagos = abonosF.length;
 
-        const esDiariaActual = tipoRifaActual !== '4cifras' && rifaSeleccionadaId === 'actual';
-        const recaudoReal = esDiariaActual ? (globalesAPI.recaudo_boletas || 0) : dineroRecaudadoAbonos;
+        const recaudoReal = dineroRecaudadoAbonos;
         let dineroRecaudado = recaudoReal;
 
         let ticketProm = totalPagos > 0 ? (dineroRecaudadoAbonos / totalPagos) : 0;
@@ -1302,26 +1088,6 @@
         // Recaudo y abonos (cuadritos del bloque "RECAUDO")
         document.getElementById('kpi-gen-recaudo').textContent = formatoPlata.format(recaudoReal);
         document.getElementById('kpi-gen-abonos').textContent = formatoNum.format(totalPagos);
-
-        if (tipoRifaActual !== '4cifras') {
-            document.getElementById('kpi-dia-recaudo').textContent = formatoPlata.format(recaudoReal);
-            const vendidas = globalesAPI.registradas || 0;
-            const pctOcupDia = globalesAPI.total > 0 ? ((vendidas / globalesAPI.total) * 100).toFixed(1) : '0';
-            document.getElementById('kpi-dia-ocupacion').textContent = formatoNum.format(vendidas);
-            document.getElementById('kpi-dia-ocupacion-pct').textContent = pctOcupDia + '%';
-            document.getElementById('kpi-dia-pagadas').textContent = formatoNum.format(globalesAPI.pagadas || 0);
-            document.getElementById('kpi-dia-cero').textContent = formatoNum.format(globalesAPI.separadas_cero || 0);
-            const libres = globalesAPI.libres || 0;
-            document.getElementById('kpi-dia-disponibles').textContent = formatoNum.format(libres);
-            const cardDisp = document.getElementById('kpi-dia-disponibles-card');
-            if (libres <= 10 && libres > 0) {
-                cardDisp.className = 'mega-kpi kpi-orange';
-            } else if (libres === 0) {
-                cardDisp.className = 'mega-kpi kpi-red';
-            } else {
-                cardDisp.className = 'mega-kpi kpi-purple';
-            }
-        }
 
         // BLOQUE "ESTADO DE BOLETAS" - calculado desde boletasF (responde a filtros)
         const precioBoleta = globalesAPI.precio_boleta || 150000;
@@ -1613,422 +1379,6 @@
             if (lbl) lbl.textContent = `${txt} ▼`;
         });
         aplicarFiltrosEstadisticas();
-    }
-    // ── HISTORIAL DE RIFAS ────────────────────────────────────────────
-    let chartHistorial = null;
-
-    async function cargarHistorialRifas() {
-      document.getElementById('tablaHistorial').innerHTML =
-        '<p style="text-align:center; color:var(--muted); padding:20px; font-weight:600;">Cargando...</p>';
-
-      try {
-        const req = await fetch('/api/admin/nueva-rifa', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            accion: 'obtener_historial',
-            tipo:   tipoRifaActual
-          })
-        });
-        const res = await req.json();
-        if (res.status !== 'ok') throw new Error(res.mensaje);
-
-        historialCompleto = res.historial || [];
-        configRifaActual = res.config || null;
-        rifaInicioTimestamp = configRifaActual?.updated_at || null;
-
-        construirSelectorRifas();
-        renderHistorial(historialCompleto);
-
-        if (rifaInicioTimestamp) aplicarFiltrosEstadisticas();
-      } catch (e) {
-        document.getElementById('tablaHistorial').innerHTML =
-          `<p style="text-align:center; color:var(--danger); padding:20px;">${e.message}</p>`;
-      }
-    }
-
-    function construirSelectorRifas() {
-      const select = document.getElementById('select-rifa-diaria');
-      const infoBadge = document.getElementById('rifa-info-badge');
-      const infoText = document.getElementById('rifa-info-text');
-
-      let opciones = '<option value="actual">Rifa Actual</option>';
-
-      [...historialCompleto].reverse().forEach(r => {
-        const fechaRaw = r.fecha_guardado || '';
-        const fecha = fechaRaw.includes('T')
-          ? new Date(fechaRaw).toLocaleDateString('es-CO', { weekday:'short', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })
-          : new Date(fechaRaw + 'T12:00:00').toLocaleDateString('es-CO', { weekday:'short', day:'2-digit', month:'short' });
-        const fmtCOP = n => '$' + Number(n || 0).toLocaleString('es-CO');
-        opciones += `<option value="${r.id}">📋 ${fecha} · ${r.loteria || '—'} · Recaudo: ${fmtCOP(r.recaudo_total)}</option>`;
-      });
-
-      select.innerHTML = opciones;
-      select.value = 'actual';
-
-      if (configRifaActual) {
-        infoBadge.style.display = 'block';
-        infoText.textContent = `Juega: ${configRifaActual.fecha_sorteo || '—'} · ${configRifaActual.loteria || '—'}`;
-      } else {
-        infoBadge.style.display = 'none';
-      }
-    }
-
-    function cambiarRifaSeleccionada() {
-      const valor = document.getElementById('select-rifa-diaria').value;
-      rifaSeleccionadaId = valor;
-
-      const filtros = document.getElementById('filtrosGenerales');
-      const infoBadge = document.getElementById('rifa-info-badge');
-      const seccionKPIs = document.querySelector('.saas-divider');
-
-      if (valor === 'actual') {
-        filtros.style.display = 'flex';
-        if (configRifaActual) {
-          infoBadge.style.display = 'block';
-          infoBadge.style.background = '#f0fdf4';
-          infoBadge.style.borderColor = '#bbf7d0';
-          infoBadge.querySelector('div:first-child').textContent = 'Rifa en curso';
-          infoBadge.querySelector('div:first-child').style.color = '#166534';
-          document.getElementById('rifa-info-text').style.color = '#15803d';
-          document.getElementById('rifa-info-text').textContent = `Juega: ${configRifaActual.fecha_sorteo || '—'} · ${configRifaActual.loteria || '—'}`;
-        }
-        setRangoFecha('todo');
-      } else {
-        const rifaId = Number(valor);
-        const rifa = historialCompleto.find(r => r.id === rifaId);
-        if (rifa) {
-          filtros.style.display = 'none';
-          infoBadge.style.display = 'block';
-          infoBadge.style.background = '#eff6ff';
-          infoBadge.style.borderColor = '#bfdbfe';
-          infoBadge.querySelector('div:first-child').textContent = 'Rifa finalizada';
-          infoBadge.querySelector('div:first-child').style.color = '#1e3a8a';
-          document.getElementById('rifa-info-text').style.color = '#1d4ed8';
-          const fechaLabel = (rifa.fecha_guardado || '').includes('T')
-            ? new Date(rifa.fecha_guardado).toLocaleDateString('es-CO', { weekday:'long', day:'2-digit', month:'long' })
-            : rifa.fecha_guardado;
-          document.getElementById('rifa-info-text').textContent = `${fechaLabel} · ${rifa.loteria || '—'}`;
-          mostrarRifaHistorica(rifa);
-        }
-      }
-    }
-
-    function renderHistorial(data) {
-      const fmtCOP = (n) => new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', minimumFractionDigits:0 }).format(n || 0);
-      const fmtNum = (n) => new Intl.NumberFormat('es-CO').format(n || 0);
-
-      const sinDatos = document.getElementById('hist-sin-datos');
-
-      if (data.length === 0) {
-        sinDatos.style.display = 'inline';
-        document.getElementById('tablaHistorial').innerHTML =
-          '<p style="text-align:center; color:var(--muted); padding:30px; font-weight:600;">Aún no hay rifas guardadas en el historial.</p>';
-        return;
-      }
-      sinDatos.style.display = 'none';
-
-      // KPIs resumen
-      const totalGanancia  = data.reduce((s, r) => s + Number(r.ganancia_neta || 0), 0);
-      const totalRifas     = data.length;
-      const promGanancia   = totalRifas > 0 ? totalGanancia / totalRifas : 0;
-      const mejorGanancia  = Math.max(...data.map(r => Number(r.ganancia_neta || 0)));
-
-      document.getElementById('hist-ganancia-total').textContent = fmtCOP(totalGanancia);
-      document.getElementById('hist-total-rifas').textContent    = totalRifas;
-      document.getElementById('hist-ganancia-prom').textContent  = fmtCOP(promGanancia);
-      document.getElementById('hist-mejor').textContent          = fmtCOP(mejorGanancia);
-
-      const labels  = data.map(r => {
-        const fg = r.fecha_guardado || '';
-        const d = new Date(fg.includes('T') ? fg : fg + 'T12:00:00');
-        return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' });
-      });
-      const recaudos = data.map(r => Number(r.recaudo_total || 0));
-      const ganancias = data.map(r => Number(r.ganancia_neta || 0));
-      const coloresGanancia = ganancias.map(g => g >= 0 ? '#10b981' : '#ef4444');
-
-      if (chartHistorial) chartHistorial.destroy();
-      chartHistorial = new Chart(document.getElementById('chartHistorial').getContext('2d'), {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [
-            {
-              label: 'Recaudo',
-              data: recaudos,
-              backgroundColor: 'rgba(59, 130, 246, 0.25)',
-              borderColor: '#3b82f6',
-              borderWidth: 1,
-              borderRadius: 6,
-              borderSkipped: false,
-              order: 2
-            },
-            {
-              label: 'Ganancia neta',
-              data: ganancias,
-              type: 'line',
-              borderColor: '#10b981',
-              backgroundColor: 'rgba(16, 185, 129, 0.1)',
-              borderWidth: 2.5,
-              pointBackgroundColor: coloresGanancia,
-              pointBorderColor: coloresGanancia,
-              pointRadius: 4,
-              pointHoverRadius: 6,
-              fill: true,
-              tension: 0.3,
-              order: 1
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: { mode: 'index', intersect: false },
-          plugins: {
-            legend: { display: true, position: 'top', labels: { usePointStyle: true, padding: 15, font: { size: 11, weight: '600' } } },
-            tooltip: {
-              callbacks: {
-                label: ctx => ' ' + ctx.dataset.label + ': ' + fmtCOP(ctx.raw)
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: { callback: v => fmtCOP(v) }
-            }
-          }
-        }
-      });
-
-      const dataSorted = [...data].reverse();
-      let html = `<table class="premium-table">
-        <thead><tr>
-          <th>Fecha</th><th>Loteria</th><th>Premio</th><th>Vendidas</th><th>Llenado</th>
-          <th style="text-align:center;">Pagadas / Sin abono</th>
-          <th style="text-align:right;">Recaudo</th>
-          <th>Ganadores</th>
-          <th style="text-align:right;">Pagado</th>
-          <th style="text-align:right;">Ganancia</th>
-        </tr></thead><tbody>`;
-
-      dataSorted.forEach(r => {
-        const ganancia = Number(r.ganancia_neta || 0);
-        const badgeG = ganancia >= 0
-          ? `<span style="background:#dcfce7; color:#15803d; padding:3px 8px; border-radius:6px; font-size:0.8rem; font-weight:800;">${fmtCOP(ganancia)}</span>`
-          : `<span style="background:#fee2e2; color:#b91c1c; padding:3px 8px; border-radius:6px; font-size:0.8rem; font-weight:800;">${fmtCOP(ganancia)}</span>`;
-
-        const fgH = r.fecha_guardado || '';
-        const fecha = new Date(fgH.includes('T') ? fgH : fgH + 'T12:00:00').toLocaleDateString('es-CO', { weekday:'short', day:'2-digit', month:'short' });
-
-        const totalBol = Number(r.total_boletas || 0);
-        const vendidas = Number(r.vendidas || 0);
-        const pagadas = Number(r.pagadas || 0);
-        const sinAbono = vendidas - pagadas;
-        const pctLlenado = totalBol > 0 ? ((vendidas / totalBol) * 100).toFixed(1) : '0';
-        const colorLlenado = pctLlenado >= 90 ? '#15803d' : pctLlenado >= 70 ? '#ca8a04' : '#b91c1c';
-
-        const modo = r.modo_premio || '';
-        const badgePremio = modo === 'boletas'
-          ? '<span style="background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:6px; font-size:0.78rem; font-weight:700;">Boletas</span>'
-          : modo === 'dinero'
-            ? '<span style="background:#f0fdf4; color:#15803d; padding:2px 8px; border-radius:6px; font-size:0.78rem; font-weight:700;">Dinero</span>'
-            : '<span style="color:var(--muted); font-size:0.8rem;">—</span>';
-
-        html += `<tr>
-          <td style="font-weight:700;">${fecha}</td>
-          <td style="color:var(--ink-2);">${r.loteria || '—'}</td>
-          <td>${badgePremio}</td>
-          <td>${fmtNum(vendidas)} <span style="color:var(--muted); font-size:0.8rem;">/ ${fmtNum(totalBol)}</span></td>
-          <td><span style="color:${colorLlenado}; font-weight:800;">${pctLlenado}%</span></td>
-          <td style="text-align:center;">${fmtNum(pagadas)} <span style="color:var(--muted); font-size:0.8rem;">/ ${fmtNum(sinAbono)}</span></td>
-          <td style="text-align:right; font-weight:800; color:var(--accent-hover);">${fmtCOP(r.recaudo_total)}</td>
-          <td style="text-align:center;">${fmtNum(r.ganadores)}</td>
-          <td style="text-align:right; color:var(--danger); font-weight:700;">${fmtCOP(r.total_pagado_ganadores)}</td>
-          <td style="text-align:right;">${badgeG}</td>
-        </tr>`;
-      });
-      html += '</tbody></table>';
-      document.getElementById('tablaHistorial').innerHTML = html;
-    }
-
-    function mostrarRifaHistorica(rifa) {
-      const formatoPlata = new Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', minimumFractionDigits:0});
-      const formatoNum = new Intl.NumberFormat('es-CO');
-
-      const recaudo   = Number(rifa.recaudo_total || 0);
-      const vendidas  = Number(rifa.vendidas || 0);
-      const totalBol  = Number(rifa.total_boletas || 0);
-      const pagadas   = Number(rifa.pagadas || 0);
-      const ganadores = Number(rifa.ganadores || 0);
-      const pagadoGan = Number(rifa.total_pagado_ganadores || 0);
-      const ganancia  = Number(rifa.ganancia_neta || 0);
-      const libres    = totalBol - vendidas;
-      const ticketProm = vendidas > 0 ? recaudo / vendidas : 0;
-
-      // Solo escribimos en los IDs que existen (algunos pueden estar ocultos según tipo de rifa)
-      const setIfExists = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-      setIfExists('kpi-gen-recaudo', formatoPlata.format(recaudo));
-      setIfExists('kpi-gen-abonos', '—');
-
-      if (tipoRifaActual !== '4cifras') {
-        document.getElementById('kpi-dia-recaudo').textContent = formatoPlata.format(recaudo);
-        document.getElementById('kpi-dia-ocupacion').textContent = formatoNum.format(vendidas);
-        const pctOcupH = totalBol > 0 ? ((vendidas / totalBol) * 100).toFixed(1) : '0';
-        document.getElementById('kpi-dia-ocupacion-pct').textContent = pctOcupH + '%';
-        document.getElementById('kpi-dia-pagadas').textContent = formatoNum.format(pagadas);
-        const sinAbono = vendidas - pagadas;
-        document.getElementById('kpi-dia-cero').textContent = formatoNum.format(sinAbono >= 0 ? sinAbono : 0);
-        document.getElementById('kpi-dia-disponibles').textContent = formatoNum.format(libres);
-      }
-
-      setIfExists('kpi-inv-total', formatoNum.format(totalBol));
-      setIfExists('kpi-inv-registradas', formatoNum.format(vendidas));
-      setIfExists('kpi-inv-pagadas', formatoNum.format(pagadas));
-      setIfExists('kpi-inv-parcial', '—');
-      setIfExists('kpi-inv-cero', '—');
-      setIfExists('kpi-inv-libres', formatoNum.format(libres));
-
-      const pctOcup = totalBol > 0 ? ((vendidas / totalBol) * 100) : 0;
-      document.getElementById('kpi-inv-pct').textContent = pctOcup.toFixed(1) + '%';
-      document.getElementById('kpi-inv-bar').style.width = pctOcup.toFixed(1) + '%';
-      document.getElementById('kpi-inv-bar-v').textContent = formatoNum.format(vendidas);
-      document.getElementById('kpi-inv-bar-l').textContent = formatoNum.format(libres);
-
-      if (tipoRifaActual === '4cifras') {
-        if (chartLinea) chartLinea.destroy();
-        chartLinea = new Chart(document.getElementById('chartEvolucion').getContext('2d'), {
-          type: 'bar',
-          data: {
-            labels: ['Recaudo', 'Pagado a Ganadores', 'Ganancia Neta'],
-            datasets: [{
-              data: [recaudo, pagadoGan, ganancia],
-              backgroundColor: [recaudo > 0 ? '#10b981' : '#94a3b8', '#ef4444', ganancia >= 0 ? '#3b82f6' : '#ef4444'],
-              borderRadius: 8
-            }]
-          },
-          options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + formatoPlata.format(ctx.raw) } } },
-            scales: { y: { beginAtZero: true, ticks: { callback: v => formatoPlata.format(v) } } }
-          }
-        });
-      }
-    }
-
-    // ── NUEVA RIFA ────────────────────────────────────────────────────
-    function toggleCampoBoletasPremio() {
-      var modo = document.getElementById('nrModoPremio').value;
-      var wrapper = document.getElementById('nrBoletasPremioWrapper');
-      if (wrapper) wrapper.style.display = modo === 'boletas' ? 'block' : 'none';
-    }
-
-    function abrirModalNuevaRifa() {
-      document.getElementById('nrPaso1').style.display = 'block';
-      document.getElementById('nrPaso2').style.display = 'none';
-      document.getElementById('nrMsg').textContent = '';
-      document.getElementById('nrRifaLabel').textContent = `Rifa: ${LABELS_RIFA[tipoRifaActual]?.badge || tipoRifaActual}`;
-      document.getElementById('nrModoWrapper').style.display = tipoRifaActual === '3cifras' ? 'block' : 'none';
-      toggleCampoBoletasPremio();
-      document.getElementById('modalNuevaRifa').style.display = 'flex';
-    }
-
-    function pasarAConfirmacion() {
-      const fecha     = document.getElementById('nrFecha').value.trim().toUpperCase();
-      const hora      = document.getElementById('nrHora').value;
-      const loteria   = document.getElementById('nrLoteria').value.trim().toUpperCase();
-      const ganadores = document.getElementById('nrGanadores').value;
-      const pagado    = document.getElementById('nrPagado').value;
-      if (!fecha || !hora || !loteria) return alert('Por favor completa fecha, hora y lotería.');
-
-      const fmtCOP = (n) => '$' + Number(n || 0).toLocaleString('es-CO');
-      document.getElementById('nrResumenFecha').textContent     = fecha;
-      document.getElementById('nrResumenHora').textContent      = hora;
-      document.getElementById('nrResumenLoteria').textContent   = loteria;
-      document.getElementById('nrResumenGanadores').textContent = ganadores || '0';
-      document.getElementById('nrResumenPagado').textContent    = fmtCOP(pagado);
-
-      if (tipoRifaActual === '3cifras') {
-        const modoPremio = document.getElementById('nrModoPremio').value;
-        document.getElementById('nrResumenModo').textContent = modoPremio === 'boletas' ? '🏢 Boletas del Apartamento' : '💰 Dinero en efectivo';
-        document.getElementById('nrResumenModoRow').style.display = 'block';
-        if (modoPremio === 'boletas') {
-          const totalBP = document.getElementById('nrTotalBoletasPremio').value || '0';
-          document.getElementById('nrResumenBoletasPremio').textContent = totalBP;
-          document.getElementById('nrResumenBoletasPremioRow').style.display = 'block';
-        } else {
-          document.getElementById('nrResumenBoletasPremioRow').style.display = 'none';
-        }
-      } else {
-        document.getElementById('nrResumenModoRow').style.display = 'none';
-        document.getElementById('nrResumenBoletasPremioRow').style.display = 'none';
-      }
-
-      document.getElementById('nrPaso1').style.display = 'none';
-      document.getElementById('nrPaso2').style.display = 'block';
-    }
-
-    function volverAPaso1() {
-      document.getElementById('nrPaso1').style.display = 'block';
-      document.getElementById('nrPaso2').style.display = 'none';
-    }
-
-    async function confirmarNuevaRifa() {
-      const fecha     = document.getElementById('nrFecha').value.trim().toUpperCase();
-      const hora      = document.getElementById('nrHora').value;
-      const loteria   = document.getElementById('nrLoteria').value.trim().toUpperCase();
-      const ganadores = Number(document.getElementById('nrGanadores').value) || 0;
-      const pagado    = Number(document.getElementById('nrPagado').value)    || 0;
-      const btn       = document.getElementById('btnConfirmarNuevaRifa');
-      const msg       = document.getElementById('nrMsg');
-
-      btn.textContent = '⏳ Procesando...'; btn.disabled = true;
-      msg.style.color = 'var(--muted)'; msg.textContent = 'Guardando historial y reiniciando boletas...';
-
-      try {
-        const req = await fetch('/api/admin/nueva-rifa', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            accion:              'guardar_y_reiniciar',
-            contrasena:          localStorage.getItem(STORAGE_KEY),
-            tipo:                tipoRifaActual,
-            fechaSorteo:         fecha,
-            horaCierre:          hora,
-            loteria,
-            ganadores,
-            totalPagadoGanadores: pagado,
-            modoPremio:          tipoRifaActual === '3cifras' ? document.getElementById('nrModoPremio').value : undefined,
-            totalBoletasPremio:  tipoRifaActual === '3cifras' && document.getElementById('nrModoPremio').value === 'boletas' ? Number(document.getElementById('nrTotalBoletasPremio').value) || 0 : undefined
-          })
-        });
-        const res = await req.json();
-
-        if (res.status === 'ok') {
-          const snap    = res.snapshot;
-          const fmtCOP  = (n) => '$' + Number(n || 0).toLocaleString('es-CO');
-          const ganancia = snap.recaudo - pagado;
-          document.getElementById('modalNuevaRifa').style.display = 'none';
-          showModal('✅ ¡Rifa reiniciada!',
-            `📊 Resumen de la rifa anterior:\n` +
-            `• Boletas vendidas: ${snap.vendidas} de ${snap.totalBoletas}\n` +
-            `• Recaudo total: ${fmtCOP(snap.recaudo)}\n` +
-            `• Ganadores: ${ganadores} — Total pagado: ${fmtCOP(pagado)}\n` +
-            `• 💰 GANANCIA NETA: ${fmtCOP(ganancia)}\n\n` +
-            `Todas las boletas están disponibles para la nueva rifa. 🎉`
-          );
-          rifaSeleccionadaId = 'actual';
-          document.getElementById('filtrosGenerales').style.display = 'flex';
-          cargarEstadisticas();
-          cargarHistorialRifas();
-        } else {
-          msg.style.color = '#dc2626'; msg.textContent = 'Error: ' + res.mensaje;
-        }
-      } catch (e) {
-        msg.style.color = '#dc2626'; msg.textContent = 'Error de conexión.';
-      }
-      btn.textContent = '🔁 Sí, reiniciar rifa'; btn.disabled = false;
     }
 
     document.addEventListener('click', e => {
