@@ -23,17 +23,16 @@ export default async function handler(req, res) {
     // Datos del cliente
     const { data: cliente } = await supabase
       .from('clientes')
-      .select('nombre, apellido, ciudad, telefono, total_comprado, boletas_diarias_compradas, boletas_grandes_compradas')
+      .select('nombre, apellido, ciudad, telefono, total_comprado, boletas_grandes_compradas')
       .like('telefono', '%' + last10)
       .limit(1)
       .single();
 
-    // Contar boletas activas por tipo
-    const [b4, b2, b3] = await Promise.all([
-      supabase.from('boletas').select('numero', { count: 'exact', head: true }).like('telefono_cliente', '%' + last10),
-      supabase.from('boletas_diarias').select('numero', { count: 'exact', head: true }).like('telefono_cliente', '%' + last10),
-      supabase.from('boletas_diarias_3cifras').select('numero', { count: 'exact', head: true }).like('telefono_cliente', '%' + last10),
-    ]);
+    // Contar boletas activas (solo rifa de 4 cifras)
+    const { count: countBoletas } = await supabase
+      .from('boletas')
+      .select('numero', { count: 'exact', head: true })
+      .like('telefono_cliente', '%' + last10);
 
     // Historial de pagos (ultimos 20 abonos)
     // Primero necesitamos los numeros de boletas del cliente
@@ -67,10 +66,8 @@ export default async function handler(req, res) {
         telefono: sesion.telefono,
       },
       estadisticas: {
-        boletas_4cifras: b4.count || 0,
-        boletas_2cifras: b2.count || 0,
-        boletas_3cifras: b3.count || 0,
-        total_boletas: (b4.count || 0) + (b2.count || 0) + (b3.count || 0),
+        boletas_4cifras: countBoletas || 0,
+        total_boletas: countBoletas || 0,
         total_abonado: totalAbonado,
       },
       pagos,

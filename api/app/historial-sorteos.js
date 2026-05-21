@@ -5,7 +5,6 @@
  * Endpoint publico (no requiere auth).
  *
  * Query params:
- *   tipo: '2cifras' | '3cifras' | 'todos' (default: 'todos')
  *   limite: numero (default: 30)
  *
  * Responde con lista de sorteos pasados de historial_rifas
@@ -22,7 +21,7 @@ export default async function handler(req, res) {
   const limite = Math.min(parseInt(req.query.limite) || 30, 60);
 
   try {
-    // 1. Historial de rifas diarias (de historial_rifas)
+    // 1. Historial de rifas (de historial_rifas)
     const { data: historial, error: errHistorial } = await supabase
       .from('historial_rifas')
       .select('id, fecha_guardado, loteria, numero_ganador, vendidas, total_boletas, recaudo_total, ganadores, total_pagado_ganadores, ganancia_neta, tipo')

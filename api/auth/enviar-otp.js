@@ -43,25 +43,7 @@ export default async function handler(req, res) {
 
     if (errBoletas) throw errBoletas;
 
-    let clienteExiste = boletas && boletas.length > 0;
-
-    if (!clienteExiste) {
-      const { data: diarias } = await supabase
-        .from('boletas_diarias')
-        .select('numero')
-        .like('telefono_cliente', '%' + last10)
-        .limit(1);
-      clienteExiste = diarias && diarias.length > 0;
-    }
-
-    if (!clienteExiste) {
-      const { data: diarias3 } = await supabase
-        .from('boletas_diarias_3cifras')
-        .select('numero')
-        .like('telefono_cliente', '%' + last10)
-        .limit(1);
-      clienteExiste = diarias3 && diarias3.length > 0;
-    }
+    const clienteExiste = boletas && boletas.length > 0;
 
     if (!clienteExiste) {
       return res.status(404).json({
