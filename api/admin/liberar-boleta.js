@@ -24,14 +24,8 @@ export default async function handler(req, res) {
     if (errAbonos) throw errAbonos;
 
     // A2. AJUSTAR ESTADÍSTICAS DEL CLIENTE antes de borrar todo
-    const longitud = String(numeroBoleta).trim().length;
-    let tablaConsulta = 'boletas';
-    let esDiaria = false;
-    if (longitud === 2) { tablaConsulta = 'boletas_diarias'; esDiaria = true; }
-    else if (longitud === 3) { tablaConsulta = 'boletas_diarias_3cifras'; esDiaria = true; }
-
     const { data: boletaActual } = await supabase
-      .from(tablaConsulta)
+      .from('boletas')
       .select('telefono_cliente, saldo_restante, asesor')
       .eq('numero', numeroBoleta)
       .single();
@@ -49,29 +43,28 @@ export default async function handler(req, res) {
     if (boletaActual?.telefono_cliente) {
       const { data: clienteActual } = await supabase
         .from('clientes')
-        .select('total_comprado, boletas_diarias_compradas, boletas_grandes_compradas')
+        .select('total_comprado, boletas_grandes_compradas')
         .eq('telefono', boletaActual.telefono_cliente)
         .single();
 
       if (clienteActual) {
-        // Sumar montos de abonos que NO son premio rifa
+        // Sumar montos de abonos que NO son premio_rifa_diaria.
+        // Los abonos historicos marcados como premio nunca sumaron al total_comprado;
+        // tampoco los restamos al liberar (preserva integridad de registros viejos)
         const montoARestar = (abonos || [])
           .filter(a => a.referencia_transferencia !== 'premio_rifa_diaria')
           .reduce((sum, a) => sum + Number(a.monto || 0), 0);
 
-        let totalComprado = Math.max(0, (clienteActual.total_comprado || 0) - montoARestar);
-        let diariasCompradas = clienteActual.boletas_diarias_compradas || 0;
+        const totalComprado = Math.max(0, (clienteActual.total_comprado || 0) - montoARestar);
         let grandesCompradas = clienteActual.boletas_grandes_compradas || 0;
 
         // Si la boleta estaba pagada, restar 1 al contador
         if (boletaActual.saldo_restante <= 0) {
-          if (esDiaria) diariasCompradas = Math.max(0, diariasCompradas - 1);
-          else grandesCompradas = Math.max(0, grandesCompradas - 1);
+          grandesCompradas = Math.max(0, grandesCompradas - 1);
         }
 
         await supabase.from('clientes').update({
           total_comprado: totalComprado,
-          boletas_diarias_compradas: diariasCompradas,
           boletas_grandes_compradas: grandesCompradas
         }).eq('telefono', boletaActual.telefono_cliente);
       }
@@ -88,28 +81,15 @@ export default async function handler(req, res) {
     // C. Eliminar definitivamente todos los abonos de esta boleta
     await supabase.from('abonos').delete().eq('numero_boleta', numeroBoleta);
 
-    let tabla = tablaConsulta;
-    let precioOriginal = PRECIOS.RIFA_4_CIFRAS;
-    let estadoOriginal = 'LIBRE';
-
-    if (longitud === 2) {
-      precioOriginal = PRECIOS.RIFA_2_CIFRAS;
-      estadoOriginal = 'Disponible';
-    } else if (longitud === 3) {
-      precioOriginal = PRECIOS.RIFA_3_CIFRAS;
-      estadoOriginal = 'Disponible';
-    }
-
     const liberarPayload = {
       telefono_cliente: null,
-      estado: estadoOriginal,
+      estado: 'LIBRE',
       total_abonado: 0,
-      saldo_restante: precioOriginal
+      saldo_restante: PRECIOS.RIFA_4_CIFRAS
     };
-    if (longitud === 2 || longitud === 3) liberarPayload.asesor = null;
 
     const { error: errBoleta } = await supabase
-      .from(tabla)
+      .from('boletas')
       .update(liberarPayload)
       .eq('numero', numeroBoleta);
 

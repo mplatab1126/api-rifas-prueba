@@ -21,11 +21,7 @@ export default async function handler(req, res) {
     const numeroLimpio = String(numero_boleta).trim();
 
     // Validar grupo: no puedes eliminar abonos de boletas de otro grupo
-    let tablaCheck = 'boletas';
-    if (numeroLimpio.length === 2) tablaCheck = 'boletas_diarias';
-    else if (numeroLimpio.length === 3) tablaCheck = 'boletas_diarias_3cifras';
-
-    const { data: boletaCheck } = await supabase.from(tablaCheck).select('asesor').eq('numero', numeroLimpio).single();
+    const { data: boletaCheck } = await supabase.from('boletas').select('asesor').eq('numero', numeroLimpio).single();
     const asesorBoleta = boletaCheck?.asesor || '';
     if (asesorBoleta) {
       const grupoAsesor = esIndependiente(nombreAsesor) ? 'independiente' : 'regular';
@@ -64,51 +60,37 @@ export default async function handler(req, res) {
         .eq('descripcion', descripcionCaja);
     }
 
-    let tabla = 'boletas';
-    let esDiaria = false;
+    const { data: boleta } = await supabase.from('boletas').select('saldo_restante, total_abonado, telefono_cliente').eq('numero', numeroLimpio).single();
 
-    if (numeroLimpio.length === 2) {
-      tabla = 'boletas_diarias';
-      esDiaria = true; 
-    } else if (numeroLimpio.length === 3) {
-      tabla = 'boletas_diarias_3cifras';
-      esDiaria = true; 
-    }
-
-    const { data: boleta } = await supabase.from(tabla).select('saldo_restante, total_abonado, telefono_cliente').eq('numero', numeroLimpio).single();
-    
     if (boleta) {
       const nuevoAbonado = Number(boleta.total_abonado) - Number(monto);
       const nuevoSaldo = Number(boleta.saldo_restante) + Number(monto);
-      let nuevoEstado = '';
-      if (esDiaria) nuevoEstado = nuevoSaldo <= 0 ? 'Pagada' : 'Reservado';
-      else nuevoEstado = nuevoSaldo <= 0 ? 'Pagada' : 'Ocupada';
+      const nuevoEstado = nuevoSaldo <= 0 ? 'Pagada' : 'Ocupada';
 
-      await supabase.from(tabla).update({ total_abonado: nuevoAbonado, saldo_restante: nuevoSaldo, estado: nuevoEstado }).eq('numero', numeroLimpio);
+      await supabase.from('boletas').update({ total_abonado: nuevoAbonado, saldo_restante: nuevoSaldo, estado: nuevoEstado }).eq('numero', numeroLimpio);
 
       // AJUSTAR ESTADÍSTICAS DEL CLIENTE
       if (boleta.telefono_cliente) {
         const { data: clienteActual } = await supabase
           .from('clientes')
-          .select('total_comprado, boletas_diarias_compradas, boletas_grandes_compradas')
+          .select('total_comprado, boletas_grandes_compradas')
           .eq('telefono', boleta.telefono_cliente)
           .single();
 
         if (clienteActual) {
-          const esPremio = referencia_transferencia === 'premio_rifa_diaria';
-          let totalComprado = Math.max(0, (clienteActual.total_comprado || 0) - (esPremio ? 0 : monto));
-          let diariasCompradas = clienteActual.boletas_diarias_compradas || 0;
+          // Los abonos historicos marcados como premio_rifa_diaria nunca sumaron al total_comprado;
+          // tampoco restamos al eliminarlos (preserva integridad de registros viejos)
+          const esPremioHistorico = referencia_transferencia === 'premio_rifa_diaria';
+          const totalComprado = Math.max(0, (clienteActual.total_comprado || 0) - (esPremioHistorico ? 0 : monto));
           let grandesCompradas = clienteActual.boletas_grandes_compradas || 0;
 
           // Si la boleta estaba pagada y ahora ya no, restar 1 al contador
           if (boleta.saldo_restante <= 0 && nuevoSaldo > 0) {
-            if (esDiaria) diariasCompradas = Math.max(0, diariasCompradas - 1);
-            else grandesCompradas = Math.max(0, grandesCompradas - 1);
+            grandesCompradas = Math.max(0, grandesCompradas - 1);
           }
 
           await supabase.from('clientes').update({
             total_comprado: totalComprado,
-            boletas_diarias_compradas: diariasCompradas,
             boletas_grandes_compradas: grandesCompradas
           }).eq('telefono', boleta.telefono_cliente);
         }
@@ -122,7 +104,7 @@ export default async function handler(req, res) {
         boleta: numeroLimpio,
         detalle: `Se eliminó un abono de $${monto}`
     });
-    
+
     return res.status(200).json({ status: 'ok', mensaje: 'Abono eliminado y saldos ajustados.' });
   } catch (error) {
     return res.status(500).json({ status: 'error', mensaje: error.message });

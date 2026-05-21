@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   const {
     numeroBoleta, nombre, apellido, ciudad, telefono,
     primerAbono, referenciaAbono, metodoPago, referencia,
-    contrasena, esPendiente, idTransferencia, esPagoInteligente, esPremioRifa,
+    contrasena, esPendiente, idTransferencia, esPagoInteligente,
     esColombia, permitirExceso,
     documento_tipo, documento_numero
   } = req.body;
@@ -43,7 +43,7 @@ export default async function handler(req, res) {
     }
   }
   const numeroLimpio = String(numeroBoleta).trim();
-  let abonoNum = Number(primerAbono) || 0;
+  const abonoNum = Number(primerAbono) || 0;
 
   try {
     // 🚨 1. NUEVA VALIDACIÓN ANTI-DUPLICADOS (Bloqueo por ID)
@@ -57,55 +57,10 @@ export default async function handler(req, res) {
       if (errTrans || !dbTrans) return res.status(400).json({ status: 'error', mensaje: 'No se encontró la transferencia en el banco.' });
       if (dbTrans.estado !== 'LIBRE') return res.status(400).json({ status: 'error', mensaje: `🛑 Esta transferencia ya está asignada (${dbTrans.estado}). Otro asesor pudo haberla usado.` });
     }
-    
-    let tabla = 'boletas';
-    let esDiaria = false;
-
-    if (numeroLimpio.length === 2) {
-      tabla = 'boletas_diarias';
-      esDiaria = true; 
-    } else if (numeroLimpio.length === 3) {
-      tabla = 'boletas_diarias_3cifras';
-      esDiaria = true; 
-    }
-
-    // Validación de cupo para premio rifa diaria
-    if (esPremioRifa || referenciaAbono === 'premio_rifa_diaria') {
-      if (numeroLimpio.length !== 4) {
-        return res.status(400).json({ status: 'error', mensaje: '🚫 El modo Premio Rifa solo aplica para boletas del apartamento (4 cifras).' });
-      }
-
-      const { data: configRifa } = await supabase
-        .from('config_rifa_diaria')
-        .select('total_boletas_premio')
-        .eq('tipo', '3cifras')
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      const limite = configRifa?.total_boletas_premio || 0;
-      if (limite <= 0) {
-        return res.status(400).json({ status: 'error', mensaje: '🚫 No hay boletas premio configuradas para la rifa actual. La gerencia debe configurar el total de boletas premio al iniciar la rifa.' });
-      }
-
-      const hoyCol = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Bogota" }));
-      const hoyStr = hoyCol.getFullYear() + '-' + String(hoyCol.getMonth()+1).padStart(2,'0') + '-' + String(hoyCol.getDate()).padStart(2,'0');
-
-      const { count: usados } = await supabase
-        .from('abonos')
-        .select('id', { count: 'exact', head: true })
-        .eq('referencia_transferencia', 'premio_rifa_diaria')
-        .gte('fecha_pago', hoyStr + 'T00:00:00')
-        .lte('fecha_pago', hoyStr + 'T23:59:59');
-
-      if ((usados || 0) >= limite) {
-        return res.status(400).json({ status: 'error', mensaje: `🚫 Ya se usaron las ${limite} boletas premio de esta rifa. No se pueden registrar más ventas como Premio Rifa.` });
-      }
-    }
 
     const { data: boletaData, error: boletaError } = await supabase
-      .from(tabla)
-      .select(esDiaria ? 'numero, telefono_cliente' : 'numero, precio_total, telefono_cliente')
+      .from('boletas')
+      .select('numero, precio_total, telefono_cliente')
       .eq('numero', numeroLimpio)
       .single();
 
@@ -115,21 +70,14 @@ export default async function handler(req, res) {
     // 2. Traer el historial actual del cliente (si existe)
     const { data: clienteActual } = await supabase
       .from('clientes')
-      .select('total_comprado, boletas_grandes_compradas, boletas_diarias_compradas')
+      .select('total_comprado, boletas_grandes_compradas')
       .eq('telefono', telefonoLimpio)
       .single();
 
-    let diariasCompradas = clienteActual?.boletas_diarias_compradas || 0;
     let grandesCompradas = clienteActual?.boletas_grandes_compradas || 0;
 
-    const precioTotal = numeroLimpio.length === 3 ? PRECIOS.RIFA_3_CIFRAS : (esDiaria ? PRECIOS.RIFA_2_CIFRAS : (Number(boletaData.precio_total) || PRECIOS.RIFA_4_CIFRAS));
-
-    // Premio Rifa: pagar automáticamente el 100% del precio
-    if (esPremioRifa || referenciaAbono === 'premio_rifa_diaria') {
-      abonoNum = precioTotal;
-    }
-
-    let totalComprado = (clienteActual?.total_comprado || 0) + ((esPremioRifa || referenciaAbono === 'premio_rifa_diaria') ? 0 : abonoNum);
+    const precioTotal = Number(boletaData.precio_total) || PRECIOS.RIFA_4_CIFRAS;
+    const totalComprado = (clienteActual?.total_comprado || 0) + abonoNum;
 
     const fmt = n => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
     if (abonoNum > precioTotal && !permitirExceso) {
@@ -151,8 +99,7 @@ export default async function handler(req, res) {
 
     // 3. Si con este abono inicial la boleta queda en cero, le sumamos +1 a su historial de boletas pagadas
     if (saldoRestante <= 0) {
-        if (esDiaria) diariasCompradas += 1;
-        else grandesCompradas += 1;
+      grandesCompradas += 1;
     }
 
     // 4. Guardar/Actualizar el cliente con sus nuevos números
@@ -162,7 +109,6 @@ export default async function handler(req, res) {
       apellido: apellido || '',
       ciudad: ciudad || '',
       total_comprado: totalComprado,
-      boletas_diarias_compradas: diariasCompradas,
       boletas_grandes_compradas: grandesCompradas
     };
     if (docTipoLimpio) clientePayload.documento_tipo = docTipoLimpio;
@@ -175,8 +121,6 @@ export default async function handler(req, res) {
     if (clienteError) throw clienteError;
 
     // 5. Registrar el abono
-    const tipoBoleta = tabla === 'boletas_diarias' ? '2cifras' : (tabla === 'boletas_diarias_3cifras' ? '3cifras' : '4cifras');
-
     const idTransLimpio = (idTransferencia && idTransferencia.trim() !== '') ? idTransferencia.trim() : null;
 
     if (abonoNum > 0) {
@@ -187,7 +131,7 @@ export default async function handler(req, res) {
           referencia_transferencia: referenciaAbono || 'Sin Ref',
           metodo_pago: metodoPago || 'Efectivo',
           asesor: nombreAsesor,
-          tipo: tipoBoleta,
+          tipo: '4cifras',
           origen: esPendiente ? 'pendiente' : (esPagoInteligente || idTransLimpio) ? 'transferencia_real' : 'manual',
           id_transferencia: idTransLimpio
       });
@@ -195,7 +139,7 @@ export default async function handler(req, res) {
       // ASIGNACIÓN SEGURA AL ID DE LA BASE DE DATOS
       if (idTransferencia && idTransferencia.trim() !== '') {
         await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('id', idTransferencia);
-      } else if (referenciaAbono && referenciaAbono !== 'Sin Ref' && referenciaAbono !== 'efectivo' && referenciaAbono !== 'efectivo_oficina' && referenciaAbono !== 'premio_rifa_diaria' && referenciaAbono !== '0') {
+      } else if (referenciaAbono && referenciaAbono !== 'Sin Ref' && referenciaAbono !== 'efectivo' && referenciaAbono !== 'efectivo_oficina' && referenciaAbono !== '0') {
         const { data: transLibre } = await supabase
           .from('transferencias')
           .select('id')
@@ -212,32 +156,28 @@ export default async function handler(req, res) {
     }
 
     // 6. Actualizar el estado de la boleta
-    const estadoNuevo = saldoRestante <= 0 ? 'Pagada' : (esDiaria ? 'Reservado' : 'Ocupada');
+    const estadoNuevo = saldoRestante <= 0 ? 'Pagada' : 'Ocupada';
 
     const fechaCol = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Bogota" }));
-    const fechaVentaColombia = fechaCol.getFullYear() + "-" + 
-             String(fechaCol.getMonth() + 1).padStart(2, '0') + "-" + 
-             String(fechaCol.getDate()).padStart(2, '0') + "T" + 
-             String(fechaCol.getHours()).padStart(2, '0') + ":" + 
-             String(fechaCol.getMinutes()).padStart(2, '0') + ":" + 
+    const fechaVentaColombia = fechaCol.getFullYear() + "-" +
+             String(fechaCol.getMonth() + 1).padStart(2, '0') + "-" +
+             String(fechaCol.getDate()).padStart(2, '0') + "T" +
+             String(fechaCol.getHours()).padStart(2, '0') + ":" +
+             String(fechaCol.getMinutes()).padStart(2, '0') + ":" +
              String(fechaCol.getSeconds()).padStart(2, '0');
 
-    let updatePayload = {
+    const updatePayload = {
         telefono_cliente: telefonoLimpio,
         estado: estadoNuevo,
         total_abonado: abonoNum,
-        saldo_restante: saldoRestante
+        saldo_restante: saldoRestante,
+        asesor: nombreAsesor,
+        fecha_venta: fechaVentaColombia
     };
+    if (docTipoLimpio) updatePayload.documento_tipo = docTipoLimpio;
+    if (docNumeroLimpio) updatePayload.documento_numero = docNumeroLimpio;
 
-    updatePayload.asesor = nombreAsesor;
-    if (!esDiaria) {
-        updatePayload.fecha_venta = fechaVentaColombia;
-        // Documento solo aplica para boletas de 4 cifras (las diarias no lo soportan en su tabla)
-        if (docTipoLimpio) updatePayload.documento_tipo = docTipoLimpio;
-        if (docNumeroLimpio) updatePayload.documento_numero = docNumeroLimpio;
-    }
-
-    const { error: updateError } = await supabase.from(tabla).update(updatePayload).eq('numero', numeroLimpio);
+    const { error: updateError } = await supabase.from('boletas').update(updatePayload).eq('numero', numeroLimpio);
     if (updateError) throw updateError;
 
     // Si es efectivo en oficina, registrar ingreso directo a caja
@@ -259,7 +199,7 @@ export default async function handler(req, res) {
         boleta: numeroLimpio,
         detalle: `Venta separada por ${telefonoLimpio} con abono de $${abonoNum}`
     });
-    
+
     return res.status(200).json({ status: 'ok', mensaje: 'Venta y estadísticas registradas con éxito' });
 
   } catch (error) {

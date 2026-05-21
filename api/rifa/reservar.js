@@ -5,9 +5,8 @@
  * mandar el comprobante de transferencia por WhatsApp y un asesor
  * valida y marca el abono desde admin.html.
  *
- * Es el equivalente al de diarias3/reservar.js, pero para la tabla
- * `boletas` (4 cifras), usando el precio_total de cada boleta
- * y dejándolas en estado "Ocupada" (mismo que usa admin/venta.js).
+ * Usa la tabla `boletas` (4 cifras), usando el precio_total de cada
+ * boleta y dejándolas en estado "Ocupada" (mismo que usa admin/venta.js).
  *
  * Flujo:
  * 1. Validamos que todos los números sigan libres (telefono_cliente null).
@@ -113,7 +112,7 @@ export default async function handler(req, res) {
     // 3. Guardamos / actualizamos al cliente sin pisar su historial
     const { data: clienteActual } = await supabase
       .from('clientes')
-      .select('total_comprado, boletas_diarias_compradas, boletas_grandes_compradas')
+      .select('total_comprado, boletas_grandes_compradas')
       .eq('telefono', telefonoLimpio)
       .single();
 
@@ -123,7 +122,6 @@ export default async function handler(req, res) {
       apellido: apellidoLimpio,
       ciudad: ciudadLimpia,
       total_comprado: clienteActual?.total_comprado || 0,
-      boletas_diarias_compradas: clienteActual?.boletas_diarias_compradas || 0,
       boletas_grandes_compradas: clienteActual?.boletas_grandes_compradas || 0,
     };
     if (docTipoLimpio) clientePayload.documento_tipo = docTipoLimpio;
