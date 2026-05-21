@@ -65,7 +65,7 @@ export default async function handler(req, res) {
     // 4. Guardar/actualizar cliente ANTES de la boleta (FK: boletas.telefono_cliente → clientes.telefono)
     const { data: clienteActual } = await supabase
       .from('clientes')
-      .select('total_comprado, boletas_diarias_compradas, boletas_grandes_compradas')
+      .select('total_comprado, boletas_grandes_compradas')
       .eq('telefono', telefonoLimpio)
       .single();
 
@@ -75,7 +75,6 @@ export default async function handler(req, res) {
       apellido: apellidoLimpio,
       ciudad: ciudadLimpia,
       total_comprado: clienteActual?.total_comprado || 0,
-      boletas_diarias_compradas: clienteActual?.boletas_diarias_compradas || 0,
       boletas_grandes_compradas: clienteActual?.boletas_grandes_compradas || 0
     }, { onConflict: 'telefono' });
 
