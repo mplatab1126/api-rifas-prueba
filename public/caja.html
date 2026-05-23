@@ -142,6 +142,7 @@
       <div class="kpi-card" style="border-left: 4px solid var(--muted);">
         <h3>💵 Base Fija Inicial</h3>
         <p id="lbl-base">$0</p>
+        <div id="lbl-base-origen" style="margin-top:6px; font-size:0.75rem; font-weight:600; line-height:1.3; display:none;"></div>
         <button id="btnAjustarBase" onclick="abrirModalBase()" style="margin-top:10px; background:transparent; border:none; color:var(--accent-2); font-weight:600; cursor:pointer; font-size:0.8rem; padding:0; display:none;">✏️ Ajustar Base</button>
       </div>
       <div class="kpi-card" style="border-left: 4px solid var(--danger);">
@@ -660,6 +661,31 @@
       }
     }
 
+    // Renderiza un pequeño mensaje debajo de la Base Fija Inicial explicando
+    // de dónde viene ese monto: heredado del cierre del día anterior,
+    // ajustado a mano por Mateo, o todavía sin configurar.
+    function renderOrigenBase(baseInfo) {
+      const el = document.getElementById('lbl-base-origen');
+      if (!el || !baseInfo) { if (el) el.style.display = 'none'; return; }
+
+      if (baseInfo.origen === 'heredada') {
+        const fechaBonita = baseInfo.desde
+          ? new Date(baseInfo.desde + 'T12:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })
+          : '';
+        el.style.color = 'var(--accent-2)';
+        el.innerHTML = `⬇️ Heredada del cierre del ${fechaBonita}` + (baseInfo.por ? ` (${baseInfo.por})` : '');
+        el.style.display = 'block';
+      } else if (baseInfo.origen === 'manual') {
+        el.style.color = 'var(--ink-2)';
+        el.innerHTML = `✏️ Ajustada manualmente` + (baseInfo.por ? ` por ${baseInfo.por}` : '');
+        el.style.display = 'block';
+      } else {
+        el.style.color = 'var(--danger)';
+        el.innerHTML = `⚠️ Sin base configurada para hoy`;
+        el.style.display = 'block';
+      }
+    }
+
     // --- 2. CARGAR DATOS REALES ---
     async function cargarDatosCaja() {
       document.getElementById('lista-asesores').innerHTML = '<p style="text-align:center; color:var(--muted); font-weight:500;">Cargando datos de hoy...</p>';
@@ -682,6 +708,9 @@
         document.getElementById('lbl-base').textContent = fmt(res.baseFija);
         document.getElementById('lbl-calle').textContent = fmt(res.totalEnCalle);
         document.getElementById('lbl-oficina').textContent = fmt(res.efectivoFisicoEsperado);
+
+        // Notificación del origen de la base fija (heredada / manual / cero)
+        renderOrigenBase(res.baseInfo);
 
         // Poblar desglose del efectivo esperado
         const movs = res.movimientos || [];

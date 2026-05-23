@@ -81,10 +81,10 @@ export default async function handler(req, res) {
     // ─────────────────────────────────────────────────────────
     if (accion === 'datos') {
 
-      // 1. Base fija del día
+      // 1. Base fija del día (con info del origen: heredada del cierre anterior o ajustada manualmente)
       const { data: baseData } = await supabase
         .from('movimientos_caja')
-        .select('monto')
+        .select('monto, descripcion, creado_por, created_at')
         .eq('fecha', hoy)
         .eq('tipo', 'base')
         .order('created_at', { ascending: false })
@@ -92,6 +92,31 @@ export default async function handler(req, res) {
         .maybeSingle();
 
       const baseFija = baseData?.monto || 0;
+
+      // baseInfo: contexto adicional para mostrar en la UI de dónde viene esta base.
+      // origen = 'heredada' (vino del cierre del día anterior),
+      //          'manual'   (Mateo la ajustó con el botón),
+      //          'cero'     (no hay base configurada todavía).
+      let baseInfo = { origen: 'cero' };
+      if (baseData) {
+        const desc = baseData.descripcion || '';
+        // Match: "Base inicial arrastrada del cierre de YYYY-MM-DD (por Asesor)"
+        const m = desc.match(/cierre de (\d{4}-\d{2}-\d{2})\s*\(por\s*(.+?)\)/i);
+        if (m) {
+          baseInfo = {
+            origen: 'heredada',
+            desde: m[1],
+            por: m[2],
+            descripcion: desc
+          };
+        } else {
+          baseInfo = {
+            origen: 'manual',
+            por: baseData.creado_por,
+            descripcion: desc
+          };
+        }
+      }
 
       // 2. Abonos cobrados en efectivo (desde la fecha de corte en adelante)
       const { data: abonosEfectivo } = await supabase
@@ -170,6 +195,7 @@ export default async function handler(req, res) {
         status: 'ok',
         hoy,
         baseFija,
+        baseInfo,
         totalEnCalle,
         totalEnCalleIndependientes,
         efectivoFisicoEsperado,
