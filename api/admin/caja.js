@@ -157,7 +157,11 @@ export default async function handler(req, res) {
         }
       }
 
-      const totalEnCalle = [...asesoresEquipo, ...asesoresIndependientes].reduce((s, a) => s + a.pendiente, 0);
+      // "Efectivo en la calle" = solo lo que debe entregar a caja el equipo.
+      // El dinero pendiente de los asesores independientes NO cuenta porque
+      // ellos manejan su propio efectivo (son externos a la empresa).
+      const totalEnCalle = asesoresEquipo.reduce((s, a) => s + a.pendiente, 0);
+      const totalEnCalleIndependientes = asesoresIndependientes.reduce((s, a) => s + a.pendiente, 0);
 
       // Efectivo esperado en caja = Base + Recepciones entregadas + Ingresos extra - Salidas - Consignaciones
       const efectivoFisicoEsperado = baseFija + totalRecepciones + totalIngresos - totalSalidas - totalConsignaciones;
@@ -167,6 +171,7 @@ export default async function handler(req, res) {
         hoy,
         baseFija,
         totalEnCalle,
+        totalEnCalleIndependientes,
         efectivoFisicoEsperado,
         totalRecepciones,
         totalIngresos,
