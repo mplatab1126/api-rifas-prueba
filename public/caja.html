@@ -118,6 +118,18 @@
   </div>
 
   <div class="shell" id="mainDashboard" style="display: none;">
+    <!-- Banner de cierres pendientes (días atrasados sin cerrar) -->
+    <div id="bannerPendientes" style="display:none; background: #fff8e1; border: 2px solid #fbc02d; border-radius: 14px; padding: 16px; margin-bottom: 18px; box-shadow: var(--shadow);">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+        <span style="font-size: 1.4rem;">⚠️</span>
+        <strong style="color: #5d4037; font-size: 1rem;">Cajas sin cerrar de días anteriores</strong>
+      </div>
+      <p style="color: #6d4c41; font-size: 0.85rem; margin: 0 0 12px 0; line-height: 1.4;">
+        Hay cajas abiertas que nadie cerró. Si tú fuiste quien la abrió, debes hacer el cuadre. Solo quien abrió puede cerrar.
+      </p>
+      <div id="listaPendientes"></div>
+    </div>
+
     <!-- Tabs solo para Mateo -->
     <div id="tabsCaja" class="tabs-caja" style="display:none;">
       <button id="tabHoy" class="tab-btn activo" onclick="cambiarTab('hoy')">📊 Hoy</button>
@@ -395,6 +407,45 @@
     </div>
   </div>
 
+  <!-- Modal: Cerrar día atrasado (cierre tardío) -->
+  <div id="modalCierreAtrasado" class="modal-overlay">
+    <div class="modal-card" style="max-width: 460px; max-height: 92vh; overflow-y: auto;">
+      <h3 style="margin: 0 0 5px; color: var(--ink);">🕐 Cerrar caja atrasada</h3>
+      <p id="atrasadoSubtitulo" style="color:var(--muted); font-size: 0.85rem; margin-bottom: 15px;">---</p>
+
+      <div id="atrasadoResumen" style="background: var(--bg); border: 1px solid var(--ring); border-radius: 12px; padding: 15px; text-align: left; margin-bottom: 15px;">
+        <p style="text-align:center; color:var(--muted); margin:0;">Cargando...</p>
+      </div>
+
+      <div id="atrasadoMovsHoy" style="display:none; background: #f0f7f3; border: 1px solid var(--ring-strong); border-radius: 10px; padding: 12px; margin-bottom: 15px; text-align: left;">
+        <p style="font-size: 0.75rem; font-weight: 700; color: var(--ink-2); margin: 0 0 6px 0; text-transform: uppercase;">📋 Movimientos de hoy (se descuentan automáticamente)</p>
+        <div id="atrasadoListaMovs" style="font-size: 0.8rem;"></div>
+        <div style="display:flex; justify-content:space-between; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--ring-strong);">
+          <span style="font-weight: 700; color: var(--ink-2);">Neto de hoy:</span>
+          <strong id="atrasadoNetoHoy" style="color: var(--ink); font-weight: 800;">$0</strong>
+        </div>
+      </div>
+
+      <div style="background: #fff; border: 2px solid var(--ring-strong); border-radius: 12px; padding: 15px; margin-bottom: 15px;">
+          <label style="display:block; text-align:left; font-size:0.85rem; font-weight:700; color:var(--ink); margin-bottom:8px;">💵 Cuenta TODO el efectivo que tienes ahora:</label>
+          <input type="number" id="atrasadoEfectivo" placeholder="Escribe el total..." oninput="calcularCuadreAtrasado()" style="width: 100%; border: 1px solid var(--ring-strong); border-radius: 8px; padding: 10px; font-size: 1.2rem; font-weight: 700; text-align: center; outline: none; color: var(--ink); font-family: inherit;">
+          <p style="font-size:0.75rem; color:var(--muted); margin: 8px 0 0 0; text-align: center;">Yo le resto los movimientos de hoy para saber cuánto había al cerrar el día atrasado.</p>
+          <div id="atrasadoResultado" style="margin-top: 10px; font-size: 0.95rem; font-weight: 700; text-align: center;"></div>
+      </div>
+
+      <div class="campo-obs" style="display:block;">
+        <label>📝 Observaciones (obligatorio)</label>
+        <textarea id="atrasadoObservaciones" placeholder="Explica por qué se cerró tarde (Ej: olvidé hacer el cierre, problema con internet, etc.)"></textarea>
+        <p style="font-size:0.7rem; color:#5d4037; margin: 6px 0 0 0;">Mínimo 5 caracteres. Queda guardado para auditoría.</p>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top: 15px;">
+        <button class="cta cta-outline" style="flex:1;" onclick="document.getElementById('modalCierreAtrasado').style.display='none'">Cancelar</button>
+        <button id="btnConfirmarAtrasado" class="cta" style="flex:1; background:var(--danger);" onclick="confirmarCierreAtrasado()" disabled>Confirmar cierre</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const STORAGE_KEY = 'asesor_pwd';
     let contrasenaActual = '';
@@ -539,6 +590,7 @@
       document.getElementById('tabsCaja').style.display = 'flex';
 
       cargarDatosCaja();
+      revisarCierresPendientes();
     }
 
     async function elegirModoCaja(modo) {
@@ -588,6 +640,7 @@
 
       aplicarPermisosModo();
       cargarDatosCaja();
+      revisarCierresPendientes();
     }
 
     function aplicarPermisosModo() {
@@ -1248,6 +1301,203 @@
 
       } catch (e) {
         document.getElementById('detalleResumen').innerHTML = '<p style="text-align:center; color:var(--danger); margin:0;">Error de conexión.</p>';
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // CIERRES PENDIENTES (días anteriores sin cerrar)
+    // ─────────────────────────────────────────────────────────
+    let infoCierreAtrasadoActual = null;
+
+    async function revisarCierresPendientes() {
+      const banner = document.getElementById('bannerPendientes');
+      const lista = document.getElementById('listaPendientes');
+
+      try {
+        const req = await fetch('/api/admin/caja', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accion: 'cierres_pendientes', contrasena: contrasenaActual })
+        });
+        const res = await req.json();
+        if (res.status !== 'ok' || !res.pendientes || res.pendientes.length === 0) {
+          banner.style.display = 'none';
+          return;
+        }
+
+        banner.style.display = 'block';
+        lista.innerHTML = res.pendientes.map(p => {
+          const fechaTxt = new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-CO', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+          const puede = p.puede_cerrar;
+          const botonOAviso = puede
+            ? `<button class="cta" style="background:#f57c00;" onclick="abrirCierreAtrasado('${p.fecha}')">🔒 Cerrar caja del ${fechaTxt}</button>`
+            : `<span style="font-size:0.8rem; color:#6d4c41; font-style:italic;">Solo ${p.abierto_por} puede cerrarla. Pídele que ingrese.</span>`;
+          return `
+            <div style="background:#fff; border:1px solid #ffe082; border-radius:10px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+              <div>
+                <div style="font-weight:700; color:#5d4037; font-size:0.9rem;">📅 ${fechaTxt}</div>
+                <div style="font-size:0.8rem; color:#6d4c41; margin-top:2px;">Abierta por: <strong>${p.abierto_por}</strong></div>
+              </div>
+              <div>${botonOAviso}</div>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        // Falla silenciosa: no queremos romper la página si esta consulta falla
+        banner.style.display = 'none';
+      }
+    }
+
+    async function abrirCierreAtrasado(fecha) {
+      infoCierreAtrasadoActual = null;
+      const modal = document.getElementById('modalCierreAtrasado');
+      document.getElementById('atrasadoSubtitulo').textContent = 'Cargando...';
+      document.getElementById('atrasadoResumen').innerHTML = '<p style="text-align:center; color:var(--muted); margin:0;">Cargando...</p>';
+      document.getElementById('atrasadoMovsHoy').style.display = 'none';
+      document.getElementById('atrasadoEfectivo').value = '';
+      document.getElementById('atrasadoObservaciones').value = '';
+      document.getElementById('atrasadoResultado').innerHTML = '';
+      const btn = document.getElementById('btnConfirmarAtrasado');
+      btn.disabled = true; btn.style.opacity = '0.5'; btn.textContent = 'Confirmar cierre';
+      modal.style.display = 'flex';
+
+      try {
+        const req = await fetch('/api/admin/caja', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accion: 'info_cierre_atrasado', contrasena: contrasenaActual, fecha })
+        });
+        const res = await req.json();
+        if (res.status !== 'ok') {
+          document.getElementById('atrasadoResumen').innerHTML = `<p style="text-align:center; color:var(--danger); margin:0;">${res.mensaje}</p>`;
+          return;
+        }
+
+        infoCierreAtrasadoActual = res;
+        const fechaTxt = new Date(res.fecha + 'T12:00:00').toLocaleDateString('es-CO', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+        document.getElementById('atrasadoSubtitulo').textContent = `${fechaTxt} · Abierta por ${res.abierto_por}`;
+
+        document.getElementById('atrasadoResumen').innerHTML = `
+          <p style="font-size: 0.75rem; font-weight: 700; color: var(--ink-2); margin: 0 0 8px 0; text-transform: uppercase;">📊 Desglose del día atrasado</p>
+          <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+              <span style="color:var(--muted); font-size:0.85rem;">💵 Base Fija:</span>
+              <strong style="color:var(--ink); font-size:0.9rem;">${fmt(res.baseFija)}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+              <span style="color:var(--muted); font-size:0.85rem;">📥 Recaudo Ventas:</span>
+              <strong style="color:var(--accent-2); font-size:0.9rem;">${fmt(res.totalRecaudo)}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+              <span style="color:var(--muted); font-size:0.85rem;">🟢 Ingresos Extra:</span>
+              <strong style="color:var(--accent-2); font-size:0.9rem;">${fmt(res.totalIngresos)}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+              <span style="color:var(--muted); font-size:0.85rem;">🔴 Salidas/Gastos:</span>
+              <strong style="color:var(--danger); font-size:0.9rem;">-${fmt(res.totalSalidas)}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+              <span style="color:var(--muted); font-size:0.85rem;">🔵 Consignado al Banco:</span>
+              <strong style="color:var(--accent); font-size:0.9rem;">-${fmt(res.totalConsig)}</strong>
+          </div>
+          <hr style="border:0; border-top:1px dashed var(--ring-strong); margin: 10px 0;">
+          <div style="display:flex; justify-content:space-between;">
+              <span style="color:var(--ink); font-weight:700; font-size:1rem;">Total Esperado al cierre:</span>
+              <strong style="color:var(--ink); font-size:1.2rem;">${fmt(res.totalEsperado)}</strong>
+          </div>
+        `;
+
+        // Mostrar movimientos de hoy (si los hay)
+        const movs = res.movimientosHoy || [];
+        if (movs.length > 0) {
+          const tipoLabel = { ingreso: '🟢 Ingreso', salida: '🔴 Gasto', consignacion: '🔵 Consignación', recepcion: '📥 Recibido' };
+          document.getElementById('atrasadoListaMovs').innerHTML = movs.map(m => {
+            const hora = new Date(m.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' });
+            const signo = (m.tipo === 'salida' || m.tipo === 'consignacion') ? '-' : '+';
+            return `<div style="display:flex; justify-content:space-between; padding: 3px 0;">
+              <span style="color:var(--ink-2); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${hora} ${tipoLabel[m.tipo]||m.tipo}: ${m.descripcion||''}</span>
+              <strong style="color:var(--ink);">${signo}${fmt(m.monto)}</strong>
+            </div>`;
+          }).join('');
+          document.getElementById('atrasadoNetoHoy').textContent = (res.netoHoy >= 0 ? '+' : '-') + fmt(Math.abs(res.netoHoy));
+          document.getElementById('atrasadoMovsHoy').style.display = 'block';
+        }
+
+      } catch (e) {
+        document.getElementById('atrasadoResumen').innerHTML = '<p style="text-align:center; color:var(--danger); margin:0;">Error de conexión.</p>';
+      }
+    }
+
+    function calcularCuadreAtrasado() {
+      if (!infoCierreAtrasadoActual) return;
+      const efectivoInput = document.getElementById('atrasadoEfectivo').value;
+      const efectivo = Number(efectivoInput) || 0;
+      const netoHoy = infoCierreAtrasadoActual.netoHoy || 0;
+      const totalEsperado = infoCierreAtrasadoActual.totalEsperado;
+      const resultadoDiv = document.getElementById('atrasadoResultado');
+      const btn = document.getElementById('btnConfirmarAtrasado');
+
+      if (efectivoInput === '') {
+        resultadoDiv.innerHTML = '';
+        btn.disabled = true; btn.style.opacity = '0.5';
+        return;
+      }
+
+      const montoDiaAtrasado = efectivo - netoHoy;
+      const diferencia = montoDiaAtrasado - totalEsperado;
+
+      let texto = `<div style="font-size:0.8rem; color:var(--muted); margin-bottom:4px;">Efectivo actual ${fmt(efectivo)} − Neto de hoy ${(netoHoy>=0?'+':'-')+fmt(Math.abs(netoHoy))} = <strong style="color:var(--ink);">${fmt(montoDiaAtrasado)}</strong> al cierre del día atrasado</div>`;
+      if (diferencia === 0) {
+        texto += '<span style="color:var(--accent-2);">✅ ¡Cuadró perfectamente!</span>';
+      } else if (diferencia > 0) {
+        texto += `<span style="color:#f57c00;">⚠️ Sobraron ${fmt(diferencia)}</span>`;
+      } else {
+        texto += `<span style="color:var(--danger);">❌ Faltaron ${fmt(Math.abs(diferencia))}</span>`;
+      }
+      resultadoDiv.innerHTML = texto;
+      btn.disabled = false; btn.style.opacity = '1';
+    }
+
+    async function confirmarCierreAtrasado() {
+      if (!infoCierreAtrasadoActual) return;
+      const efectivo = Number(document.getElementById('atrasadoEfectivo').value) || 0;
+      const observaciones = (document.getElementById('atrasadoObservaciones').value || '').trim();
+
+      if (observaciones.length < 5) {
+        alert('Las observaciones son obligatorias (mínimo 5 caracteres).');
+        return;
+      }
+
+      const btn = document.getElementById('btnConfirmarAtrasado');
+      btn.textContent = 'Guardando...'; btn.disabled = true;
+
+      try {
+        const req = await fetch('/api/admin/caja', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            accion: 'cerrar_dia_atrasado',
+            contrasena: contrasenaActual,
+            fecha: infoCierreAtrasadoActual.fecha,
+            efectivoActual: efectivo,
+            netoHoy: infoCierreAtrasadoActual.netoHoy,
+            observaciones
+          })
+        });
+        const res = await req.json();
+
+        if (res.status === 'ok') {
+          document.getElementById('modalCierreAtrasado').style.display = 'none';
+          alert('✅ Cierre atrasado guardado correctamente.');
+          // Refrescar el banner y los datos (puede haber más pendientes)
+          await revisarCierresPendientes();
+          historialCargado = false; // forzar recarga del historial si lo abre
+        } else {
+          alert('Error: ' + res.mensaje);
+          btn.textContent = 'Confirmar cierre'; btn.disabled = false;
+        }
+      } catch (e) {
+        alert('Error de conexión');
+        btn.textContent = 'Confirmar cierre'; btn.disabled = false;
       }
     }
   </script>
