@@ -150,8 +150,12 @@
     .btn-init:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .table-wrap {
-      overflow-x: auto;
+      overflow: auto;
+      max-height: calc(100vh - 260px);
       -webkit-overflow-scrolling: touch;
+    }
+    @media (max-width: 600px) {
+      .table-wrap { max-height: calc(100vh - 220px); }
     }
 
     table {
