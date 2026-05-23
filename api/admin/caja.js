@@ -347,7 +347,34 @@ export default async function handler(req, res) {
       });
       if (errMov) throw errMov;
 
-      return res.status(200).json({ status: 'ok', mensaje: 'Caja cerrada y arqueo guardado' });
+      // 3) Trasladar el efectivo contado como base del día siguiente.
+      //    Así el dinero físico se "arrastra" entre días en vez de
+      //    arrancar en $0 cada mañana.
+      const mañanaCol = new Date(fechaCol);
+      mañanaCol.setDate(mañanaCol.getDate() + 1);
+      const mañana = mañanaCol.getFullYear() + '-' +
+        String(mañanaCol.getMonth() + 1).padStart(2, '0') + '-' +
+        String(mañanaCol.getDate()).padStart(2, '0');
+
+      // Si ya existe una base para mañana (p.ej. porque se re-arquea
+      // hoy), la reemplazamos por el nuevo monto contado.
+      await supabase.from('movimientos_caja').delete().eq('fecha', mañana).eq('tipo', 'base');
+      const { error: errBaseManana } = await supabase.from('movimientos_caja').insert({
+        fecha: mañana,
+        tipo: 'base',
+        monto: montoContado,
+        descripcion: `Base inicial arrastrada del cierre de ${hoy} (por ${nombreAsesor})`,
+        creado_por: nombreAsesor
+      });
+      // Si falla este paso, NO bloqueamos el cierre: lo dejamos como warning.
+      // Mateo siempre puede ajustar la base manualmente con el botón existente.
+      const warning = errBaseManana ? 'Caja cerrada, pero no se pudo arrastrar la base al día siguiente. Ajústala manualmente mañana.' : null;
+
+      return res.status(200).json({
+        status: 'ok',
+        mensaje: 'Caja cerrada y arqueo guardado. Base de mañana = $' + montoContado.toLocaleString('es-CO'),
+        warning
+      });
     }
 
     // ─────────────────────────────────────────────────────────
