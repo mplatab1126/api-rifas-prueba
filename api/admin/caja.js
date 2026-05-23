@@ -410,6 +410,250 @@ export default async function handler(req, res) {
       });
     }
 
+    // ─────────────────────────────────────────────────────────
+    // ACCIÓN: cierres_pendientes — Días anteriores con apertura sin cierre
+    // ─────────────────────────────────────────────────────────
+    if (accion === 'cierres_pendientes') {
+      // Traemos aperturas y cierres de fechas anteriores a hoy
+      const { data: registros, error } = await supabase
+        .from('movimientos_caja')
+        .select('fecha, tipo, creado_por, created_at')
+        .lt('fecha', hoy)
+        .in('tipo', ['apertura', 'cierre'])
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+
+      // Para cada fecha, miramos cuál fue el último evento del día.
+      // Si fue 'apertura', está pendiente. Si fue 'cierre', ya está cerrado.
+      const ultimoPorFecha = {};
+      for (const r of (registros || [])) {
+        ultimoPorFecha[r.fecha] = r;
+      }
+
+      const pendientes = [];
+      for (const fecha of Object.keys(ultimoPorFecha)) {
+        const ult = ultimoPorFecha[fecha];
+        if (ult.tipo === 'apertura') {
+          pendientes.push({
+            fecha,
+            abierto_por: ult.creado_por,
+            apertura_at: ult.created_at,
+            puede_cerrar: ult.creado_por === nombreAsesor
+          });
+        }
+      }
+
+      // Ordenar del más viejo al más nuevo
+      pendientes.sort((a, b) => a.fecha.localeCompare(b.fecha));
+
+      return res.status(200).json({ status: 'ok', pendientes });
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // ACCIÓN: info_cierre_atrasado — Datos para cerrar un día pendiente
+    // Devuelve el desglose del día atrasado + el neto de movimientos de hoy
+    // ─────────────────────────────────────────────────────────
+    if (accion === 'info_cierre_atrasado') {
+      const fechaAtrasada = (payload.fecha || '').toString();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaAtrasada)) {
+        return res.status(400).json({ status: 'error', mensaje: 'Fecha inválida' });
+      }
+      if (fechaAtrasada >= hoy) {
+        return res.status(400).json({ status: 'error', mensaje: 'La fecha debe ser anterior a hoy' });
+      }
+
+      // 1) Verificar que ese día tenga apertura sin cierre y que el asesor logueado sea quien abrió
+      const { data: regs, error: errRegs } = await supabase
+        .from('movimientos_caja')
+        .select('tipo, creado_por, created_at')
+        .eq('fecha', fechaAtrasada)
+        .in('tipo', ['apertura', 'cierre'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (errRegs) throw errRegs;
+      if (!regs || regs.tipo !== 'apertura') {
+        return res.status(400).json({ status: 'error', mensaje: 'Ese día no tiene un cierre pendiente.' });
+      }
+      if (regs.creado_por !== nombreAsesor) {
+        return res.status(403).json({ status: 'error', mensaje: `Solo ${regs.creado_por} puede cerrar ese día.` });
+      }
+
+      // 2) Base fija del día atrasado
+      const { data: baseData } = await supabase
+        .from('movimientos_caja')
+        .select('monto')
+        .eq('fecha', fechaAtrasada)
+        .eq('tipo', 'base')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const baseFija = baseData?.monto || 0;
+
+      // 3) Movimientos del día atrasado (ingresos, salidas, consignaciones, recepciones)
+      const { data: movsDia } = await supabase
+        .from('movimientos_caja')
+        .select('tipo, monto')
+        .eq('fecha', fechaAtrasada)
+        .in('tipo', ['ingreso', 'salida', 'consignacion', 'recepcion']);
+
+      let totalIngresos = 0, totalSalidas = 0, totalConsig = 0, totalRecaudo = 0;
+      for (const m of (movsDia || [])) {
+        if (m.tipo === 'ingreso')      totalIngresos += m.monto;
+        else if (m.tipo === 'salida')  totalSalidas  += m.monto;
+        else if (m.tipo === 'consignacion') totalConsig += m.monto;
+        else if (m.tipo === 'recepcion')    totalRecaudo += m.monto;
+      }
+      const totalEsperado = baseFija + totalRecaudo + totalIngresos - totalSalidas - totalConsig;
+
+      // 4) Movimientos de HOY que ya afectaron el efectivo
+      //    (para que el asesor pueda contar todo lo que tiene ahora y el sistema descuente lo de hoy)
+      const { data: movsHoy } = await supabase
+        .from('movimientos_caja')
+        .select('tipo, monto, descripcion, created_at')
+        .eq('fecha', hoy)
+        .in('tipo', ['ingreso', 'salida', 'consignacion', 'recepcion'])
+        .order('created_at', { ascending: true });
+
+      let netoHoy = 0;
+      for (const m of (movsHoy || [])) {
+        if (m.tipo === 'ingreso' || m.tipo === 'recepcion') netoHoy += m.monto;
+        else if (m.tipo === 'salida' || m.tipo === 'consignacion') netoHoy -= m.monto;
+      }
+
+      return res.status(200).json({
+        status: 'ok',
+        fecha: fechaAtrasada,
+        abierto_por: regs.creado_por,
+        baseFija,
+        totalRecaudo,
+        totalIngresos,
+        totalSalidas,
+        totalConsig,
+        totalEsperado,
+        netoHoy,
+        movimientosHoy: movsHoy || []
+      });
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // ACCIÓN: cerrar_dia_atrasado — Cerrar retroactivamente un día anterior
+    // ─────────────────────────────────────────────────────────
+    if (accion === 'cerrar_dia_atrasado') {
+      const fechaAtrasada = (payload.fecha || '').toString();
+      const efectivoActual = Math.round(Number(payload.efectivoActual) || 0);
+      const netoHoyClient  = Math.round(Number(payload.netoHoy) || 0);
+      const observaciones  = (payload.observaciones || '').toString().trim();
+
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaAtrasada)) {
+        return res.status(400).json({ status: 'error', mensaje: 'Fecha inválida' });
+      }
+      if (fechaAtrasada >= hoy) {
+        return res.status(400).json({ status: 'error', mensaje: 'La fecha debe ser anterior a hoy' });
+      }
+      if (!observaciones || observaciones.length < 5) {
+        return res.status(400).json({ status: 'error', mensaje: 'Las observaciones son obligatorias (mínimo 5 caracteres) para cierres atrasados.' });
+      }
+
+      // 1) Validar que el asesor logueado fue quien abrió ese día
+      const { data: regs, error: errRegs } = await supabase
+        .from('movimientos_caja')
+        .select('tipo, creado_por')
+        .eq('fecha', fechaAtrasada)
+        .in('tipo', ['apertura', 'cierre'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (errRegs) throw errRegs;
+      if (!regs || regs.tipo !== 'apertura') {
+        return res.status(400).json({ status: 'error', mensaje: 'Ese día no tiene un cierre pendiente.' });
+      }
+      if (regs.creado_por !== nombreAsesor) {
+        return res.status(403).json({ status: 'error', mensaje: `Solo ${regs.creado_por} puede cerrar ese día.` });
+      }
+
+      // 2) Recalcular el desglose del día atrasado en el servidor (no confiamos en el cliente)
+      const { data: baseData } = await supabase
+        .from('movimientos_caja')
+        .select('monto')
+        .eq('fecha', fechaAtrasada)
+        .eq('tipo', 'base')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const baseFija = baseData?.monto || 0;
+
+      const { data: movsDia } = await supabase
+        .from('movimientos_caja')
+        .select('tipo, monto')
+        .eq('fecha', fechaAtrasada)
+        .in('tipo', ['ingreso', 'salida', 'consignacion', 'recepcion']);
+
+      let totalIngresos = 0, totalSalidas = 0, totalConsig = 0, totalRecaudo = 0;
+      for (const m of (movsDia || [])) {
+        if (m.tipo === 'ingreso')      totalIngresos += m.monto;
+        else if (m.tipo === 'salida')  totalSalidas  += m.monto;
+        else if (m.tipo === 'consignacion') totalConsig += m.monto;
+        else if (m.tipo === 'recepcion')    totalRecaudo += m.monto;
+      }
+      const totalEsperado = baseFija + totalRecaudo + totalIngresos - totalSalidas - totalConsig;
+
+      // 3) Recalcular el neto de hoy en el servidor (para no confiar ciegamente en el cliente)
+      const { data: movsHoy } = await supabase
+        .from('movimientos_caja')
+        .select('tipo, monto')
+        .eq('fecha', hoy)
+        .in('tipo', ['ingreso', 'salida', 'consignacion', 'recepcion']);
+
+      let netoHoyServer = 0;
+      for (const m of (movsHoy || [])) {
+        if (m.tipo === 'ingreso' || m.tipo === 'recepcion') netoHoyServer += m.monto;
+        else if (m.tipo === 'salida' || m.tipo === 'consignacion') netoHoyServer -= m.monto;
+      }
+
+      // 4) Calcular monto del día atrasado descontando lo de hoy
+      const montoContadoDia = efectivoActual - netoHoyServer;
+      const diferencia = montoContadoDia - totalEsperado;
+
+      const obsCompleta = `[CIERRE TARDÍO realizado ${hoy}] ${observaciones}`;
+
+      // 5) Insertar en cierres_caja con la fecha del día atrasado
+      const { error: errCierre } = await supabase.from('cierres_caja').insert({
+        fecha: fechaAtrasada,
+        cerrado_por: nombreAsesor,
+        base_fija: baseFija,
+        total_recaudo: totalRecaudo,
+        total_ingresos: totalIngresos,
+        total_salidas: totalSalidas,
+        total_consig: totalConsig,
+        total_esperado: totalEsperado,
+        monto_contado: montoContadoDia,
+        diferencia,
+        observaciones: obsCompleta
+      });
+      if (errCierre) throw errCierre;
+
+      // 6) Insertar registro 'cierre' en movimientos_caja con la fecha atrasada
+      //    para que la detección de "caja abierta/cerrada" deje de marcarlo como pendiente.
+      const descMov = `Arqueo TARDÍO por ${nombreAsesor}. Esperado: $${totalEsperado}. Diferencia: $${diferencia}. Obs: ${observaciones}`;
+      const { error: errMov } = await supabase.from('movimientos_caja').insert({
+        fecha: fechaAtrasada,
+        tipo: 'cierre',
+        monto: montoContadoDia,
+        descripcion: descMov,
+        creado_por: nombreAsesor
+      });
+      if (errMov) throw errMov;
+
+      return res.status(200).json({
+        status: 'ok',
+        mensaje: 'Cierre atrasado guardado',
+        montoContadoDia,
+        totalEsperado,
+        diferencia
+      });
+    }
+
     return res.status(400).json({ status: 'error', mensaje: 'Acción no reconocida' });
 
   } catch (error) {
