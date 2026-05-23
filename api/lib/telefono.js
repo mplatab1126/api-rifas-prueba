@@ -1,6 +1,5 @@
 /**
  * Longitud del número nacional (sin indicativo) por país.
- * Tomado de perla-roja.html (DIGITOS_POR_PAIS).
  */
 const LONGITUDES_NACIONALES = {
   '57': 10,   // Colombia
