@@ -75,7 +75,6 @@ const INDICADORES_INTERESANTES = [
   /por qué|porqu[eé]/i,
   /cómo sé|como se/i,
   /no entiendo/i,
-  /otra rifa|rifas?\s+dia/i,  // rifa diaria
   /efectivo|consign(ar|aci)/i,
   /cuota|abono parcial/i,
   /premio adicional|premio mayor|premio extra/i,
