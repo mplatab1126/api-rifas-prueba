@@ -542,13 +542,13 @@ function BoletaDetalleHouse({ cliente, boleta }) {
           <div className="vb-premio">
             <p className="vb-premio-fecha">El Sueldazo — Miércoles 3 de junio de 2026</p>
             <p className="vb-premio-titulo">$1.500.000 al mes · 6 meses</p>
-            <p className="vb-premio-desc">Un único ganador recibe un millón y medio de pesos cada mes durante medio año. Total: <strong>$9.000.000</strong>.</p>
+            <p className="vb-premio-desc">Un único ganador recibe un millón y medio de pesos en bonos de consumo cada mes durante medio año. Total: <strong>$9.000.000 en bonos</strong>.</p>
           </div>
           <div className="vb-divider"></div>
           <div className="vb-premio">
             <p className="vb-premio-fecha">Premios semanales — 7 sábados antes del sorteo</p>
             <p className="vb-premio-titulo">$5.000.000 cada sábado</p>
-            <p className="vb-premio-desc">Si abonas mínimo $20.000 esa semana, juegas por cinco millones con la Lotería de Boyacá.</p>
+            <p className="vb-premio-desc">Si abonas mínimo $20.000 esa semana, juegas por cinco millones en bonos de consumo con la Lotería de Boyacá.</p>
           </div>
         </div>
 
@@ -586,59 +586,80 @@ function BoletaDetalleHouse({ cliente, boleta }) {
             </div>
             <div className="vb-clausula">
               <p className="vb-clausula-num">2. Marco legal y autorización</p>
-              <p>Cada sorteo se realiza al amparo de la <strong>resolución de autorización expedida por EDSA</strong> para la edición correspondiente, en cumplimiento de la <strong>Ley 643 de 2001</strong>. La resolución vigente puede consultarse en la página oficial de EDSA, lo que evidencia la legalidad de la rifa.</p>
+              <p>Cada sorteo se realiza al amparo de la <strong>resolución de autorización expedida por EDSA</strong> para la edición correspondiente, en cumplimiento de la <strong>Ley 643 de 2001</strong>. La resolución vigente puede consultarse en la página oficial de EDSA, lo cual evidencia la legalidad de la rifa y el cumplimiento normativo.</p>
             </div>
             <div className="vb-clausula">
-              <p className="vb-clausula-num">3. Premios</p>
+              <p className="vb-clausula-num">3. Objeto de la rifa: premios</p>
               <ul>
-                <li><strong>Premio Mayor — Casa Santa Teresita:</strong> casa de dos plantas en el barrio Santa Teresita, Chinchiná, Caldas. Sorteo: sábado 4 de julio de 2026.</li>
-                <li><strong>El Sueldazo:</strong> $1.500.000 mensuales durante seis (6) meses para un único ganador. Sorteo: miércoles 3 de junio de 2026.</li>
-                <li><strong>Premios semanales:</strong> $5.000.000 a un único abonado cada uno de los siete sábados previos al sorteo mayor.</li>
+                <li><strong>Premio Mayor — Casa Santa Teresita:</strong> casa de dos plantas en el barrio Santa Teresita del municipio de Chinchiná (Caldas). Sorteo: sábado 4 de julio de 2026.</li>
+                <li><strong>El Sueldazo:</strong> $1.500.000, representados en bonos de consumo, entregados mensualmente durante seis (6) meses para un único ganador. Las fechas y entregas serán coordinadas con el ganador. Sorteo: miércoles 3 de junio de 2026.</li>
+                <li><strong>Premios semanales:</strong> $5.000.000, representados en bonos de consumo, a un único abonado cada uno de los siete sábados previos al sorteo mayor.</li>
               </ul>
             </div>
             <div className="vb-clausula">
-              <p className="vb-clausula-num">4. Sorteo</p>
+              <p className="vb-clausula-num">4. Valor de cada boleta</p>
+              <p>El valor de cada boleta es de <strong>$150.000</strong>, el cual deberá ser pagado en su totalidad.</p>
+            </div>
+            <div className="vb-clausula">
+              <p className="vb-clausula-num">5. Sorteo</p>
               <p>Los sorteos se realizan con la lotería oficial correspondiente a cada premio:</p>
               <ul>
-                <li><strong>Premio Mayor (Casa Santa Teresita) y premios semanales ($5M):</strong> juegan con la <strong>Lotería de Boyacá</strong>.</li>
+                <li><strong>Premio Mayor (Casa Santa Teresita) y premios semanales ($5.000.000 representados en bonos de consumo):</strong> juegan con la <strong>Lotería de Boyacá</strong>.</li>
                 <li><strong>El Sueldazo:</strong> juega con la <strong>Lotería de Manizales</strong> el miércoles correspondiente.</li>
               </ul>
               <p>En todos los casos, el número ganador corresponde a las <strong>últimas 4 cifras</strong> del resultado oficial publicado en la fecha del sorteo.</p>
             </div>
             <div className="vb-clausula">
-              <p className="vb-clausula-num">5. Condiciones para ganar</p>
+              <p className="vb-clausula-num">6. Participantes</p>
+              <p>Podrán participar las personas mayores de 18 años.</p>
+            </div>
+            <div className="vb-clausula">
+              <p className="vb-clausula-num">7. Condiciones para ganar</p>
               <ul>
-                <li><strong>Premios semanales:</strong> el cliente debe haber abonado mínimo $20.000 antes de la fecha del sorteo correspondiente.</li>
-                <li><strong>El Sueldazo (3 de junio):</strong> el cliente debe haber abonado mínimo $50.000 antes de esa fecha.</li>
-                <li><strong>Premio Mayor (Casa Santa Teresita):</strong> la boleta debe estar 100% pagada ($150.000) al momento del sorteo.</li>
+                <li><strong>Premios semanales:</strong> el cliente debe haber abonado mínimo $20.000 antes de la fecha correspondiente al sorteo.</li>
+                <li><strong>El Sueldazo (3 de junio):</strong> el cliente debe haber abonado mínimo $50.000 antes de la fecha correspondiente al sorteo.</li>
+                <li><strong>Premio Mayor (Casa Santa Teresita):</strong> la boleta debe estar 100% pagada ($150.000) al momento de la realización del sorteo.</li>
               </ul>
             </div>
             <div className="vb-clausula">
-              <p className="vb-clausula-num">6. Vendedores autorizados y pagos oficiales</p>
+              <p className="vb-clausula-num">8. Vendedores autorizados y pagos oficiales</p>
               <p><strong>LOS PLATA S.A.S.</strong> únicamente se hace responsable de las boletas vendidas por sus <strong>vendedores autorizados</strong> y de los pagos realizados a la cuenta oficial: <strong>Bancolombia Ahorros 706-000025-93</strong>.</p>
-              <p>Puede consultar la lista actualizada de vendedores autorizados y canales de venta en <a href="/canales-oficiales" className="vb-link">Canales oficiales</a>. No realice pagos a cuentas personales ni compre boletas a personas no listadas en esa página; LOS PLATA no responde por transacciones realizadas por fuera de los canales oficiales.</p>
+              <p>Puede consultar la lista actualizada de vendedores autorizados y canales de venta en <a href="/canales-oficiales" className="vb-link">Canales oficiales</a>. No realice pagos a cuentas personales ni compre boletas a personas no listadas en esa página; LOS PLATA S.A.S. no responde por transacciones realizadas por fuera de los canales oficiales.</p>
             </div>
             <div className="vb-clausula">
-              <p className="vb-clausula-num">7. Entrega de premios</p>
-              <p>El premio se entrega al titular registrado en la boleta ganadora, previa validación de identidad con el documento registrado, y comprobante de pago. La entrega se realiza en Colombia.</p>
+              <p className="vb-clausula-num">9. Entrega de premios</p>
+              <p>El premio únicamente será entregado al titular registrado en la boleta ganadora, previa validación de identidad con el documento registrado y comprobante de pago. La entrega se realiza en Colombia.</p>
+              <p>LOS PLATA S.A.S. no se hace responsable por daños, pérdidas o usos indebidos del premio después de su entrega.</p>
             </div>
             <div className="vb-clausula">
-              <p className="vb-clausula-num">8. Trámites y obligaciones del premio</p>
-              <p>Le entregamos su premio <strong>libre de gravamenes y al día</strong> con las certificaciones de ley vigentes al momento de la entrega. Como ocurre con cualquier bien que cambia de dueño en Colombia, los <strong>trámites para ponerlo a su nombre y los impuestos correspondientes los asume el ganador</strong>. Esto incluye, según el tipo de premio:</p>
+              <p className="vb-clausula-num">10. Trámites y obligaciones del premio</p>
+              <p>Le entregamos su premio <strong>libre de gravámenes y al día</strong> con las certificaciones de ley vigentes al momento de la entrega. Como ocurre con cualquier bien que cambia de dueño en Colombia, los <strong>trámites para ponerlo a su nombre y los impuestos correspondientes los asume el ganador</strong>. Esto incluye, según el tipo de premio:</p>
               <ul>
                 <li>La <strong>ganancia ocasional</strong> ante la DIAN, aplicable por ley a los premios de rifas.</li>
-                <li>Para <strong>vehículos:</strong> los entregamos con <strong>SOAT y revisión tecnomecánica al día</strong>. El ganador asume el <strong>traspaso, RUNT, impuesto de rodamiento</strong> y demás gastos de registro.</li>
+                <li>Para <strong>vehículos:</strong> los entregamos con <strong>SOAT y revisión tecnomecánica al día</strong>. El ganador asume los costos correspondientes al <strong>traspaso, RUNT, impuesto de rodamiento</strong> y demás gastos de registro.</li>
                 <li>Para la <strong>casa:</strong> el ganador asume la <strong>escrituración, gastos notariales y registro</strong> ante la Oficina de Instrumentos Públicos.</li>
               </ul>
               <p>Lo acompañamos en cada paso para que el proceso sea claro y sencillo.</p>
             </div>
             <div className="vb-clausula">
-              <p className="vb-clausula-num">9. Plazo para reclamar el premio</p>
+              <p className="vb-clausula-num">11. Plazo para reclamar el premio</p>
               <p>El ganador cuenta con <strong>30 días hábiles</strong> desde la fecha del sorteo para contactarnos por los canales oficiales y reclamar su premio. Pasado ese término sin justa causa, el premio podrá ser declarado desierto o reasignado conforme a las normas vigentes.</p>
             </div>
             <div className="vb-clausula">
-              <p className="vb-clausula-num">10. Soporte</p>
-              <p>Cualquier consulta debe realizarse por nuestros canales oficiales: WhatsApp +57 310 733 4957 o nuestras redes sociales verificadas.</p>
+              <p className="vb-clausula-num">12. Soporte</p>
+              <p>Cualquier consulta debe realizarse por nuestros canales oficiales: WhatsApp +57 310 733 4957 o nuestras redes sociales autorizadas.</p>
+            </div>
+            <div className="vb-clausula">
+              <p className="vb-clausula-num">13. Tratamiento de datos personales</p>
+              <p>Los datos suministrados por los participantes serán utilizados únicamente para fines relacionados con la rifa.</p>
+            </div>
+            <div className="vb-clausula">
+              <p className="vb-clausula-num">14. Autorización de uso de imagen y evidencia de entrega</p>
+              <p>El ganador de la rifa autoriza al organizador a tomar fotografías y/o grabar videos durante la entrega del premio, así como a publicar dicho material en redes sociales, medios digitales o material publicitario relacionado con la rifa, únicamente con fines de transparencia, promoción y evidencia de entrega del premio.</p>
+            </div>
+            <div className="vb-clausula">
+              <p className="vb-clausula-num">15. Aceptación de los términos y condiciones</p>
+              <p>La compra de una boleta implica la aceptación total de estos términos y condiciones.</p>
             </div>
             <p className="vb-terminos-meta">Última actualización: mayo de 2026.</p>
           </div>
