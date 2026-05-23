@@ -1,7 +1,7 @@
-// house-data.jsx — Datos del flujo Comprar boleta · La Plata House
+// house-data.jsx — Datos del flujo Comprar boleta · Casa Santa Teresita
 
 window.RIFA_INFO = {
-  nombre: "La Plata House",
+  nombre: "Casa Santa Teresita",
   edicion: "Barrio Santa Teresita · Chinchiná, Caldas",
   ubicacion: "Barrio Santa Teresita · Chinchiná, Caldas",
   fechaSorteoMayor: "Sábado 4 de julio de 2026",
@@ -65,7 +65,7 @@ window.RIFA_INFO = {
   premios: [
     {
       tipo: "MAYOR",
-      nombre: "La Plata House",
+      nombre: "Casa Santa Teresita",
       descripcion: "Casa de dos plantas en Santa Teresita · O $300.000.000 en efectivo si prefiere",
       fecha: "Sábado 4 de julio de 2026",
       imagen: "https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Habitacio%CC%81n+principal+foto+1.jpg"

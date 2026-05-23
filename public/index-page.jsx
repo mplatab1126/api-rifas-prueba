@@ -1,7 +1,7 @@
 // index-page.jsx — App principal del home (extraído de index.html para precompilar)
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "rifaNombre": "La Plata House",
+  "rifaNombre": "Casa Santa Teresita",
   "rifaEdicion": "",
   "rifaFechaSorteo": "4 de julio de 2026",
   "rifaHref": "/comprar-la-plata-house",

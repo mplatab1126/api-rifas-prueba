@@ -1,4 +1,4 @@
-// house-landing.jsx — Landing custom para La Plata House
+// house-landing.jsx — Landing custom para Casa Santa Teresita
 // Define window.HouseLanding (lo consume house-app.jsx)
 
 const { useState: useHL, useEffect: useHE, useRef: useHR } = React;
@@ -33,7 +33,7 @@ window.HouseLanding = function HouseLanding({ rifa, onComprar, tweaks }) {
           <div className="hpm-icon"><img src={window.ICONS_3D.key} alt="" /></div>
           <p className="hpm-eyebrow">Opción 1</p>
           <p className="hpm-titulo">Quédese con la casa</p>
-          <p className="hpm-desc">Le entregamos La Plata House tal cual la ve en las fotos.</p>
+          <p className="hpm-desc">Le entregamos Casa Santa Teresita tal cual la ve en las fotos.</p>
         </div>
         <div className="hpm-divider"><span>o</span></div>
         <div className="hpm-opt">
@@ -132,7 +132,7 @@ window.HouseLanding = function HouseLanding({ rifa, onComprar, tweaks }) {
             </div>
             <div className="hp-card-body">
               <img className="hp-icon" src={window.ICONS_3D.key} alt="" />
-              <p className="hp-prize-name">La Plata House</p>
+              <p className="hp-prize-name">Casa Santa Teresita</p>
               <h3 className="hp-prize">Una casa</h3>
               <p className="hp-prize-sub">o $300.000.000 en efectivo</p>
               <p className="hp-loteria">Juega con Lotería de Boyacá</p>

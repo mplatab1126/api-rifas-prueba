@@ -228,7 +228,7 @@ PAGO: "Acabé de transferir" · "Ya pagué" · "Comparto comprobante" · "Quedo 
 
 MEDIO DE PAGO: "¿Cuál es el Nequi?" · "Nequi" · "¿A qué cuenta transfiero?" · "¿Aceptan efectivo?" · "¿Por Daviplata puedo?" · "Bancolombia" · "¿Tienen corresponsal?" · "¿A qué número consigno?" (cuando se refiere a cuenta destino)
 
-RESERVA: "Hola Los Plata! Acabo de reservar mis boletas de *LA PERLA ROJA*. *Nombre:* Luz Alba *Celular:* 573168556833 *Ciudad:* Cali *Numeros:* 0002 *Total:* $80.000 Me podrian enviar el link de mi boleta digital, por favor?"
+RESERVA: "Hola Los Plata! Acabo de reservar mis boletas de *CASA SANTA TERESITA*. *Nombre:* Luz Alba *Celular:* 573168556833 *Ciudad:* Cali *Numeros:* 0002 *Total:* $150.000 Me podrian enviar el link de mi boleta digital, por favor?"
 
 CONSULTA: "¿Cuánto debo?" · "¿Cuánto me falta?" · "¿Cuál es mi número?" · "¿Mi boleta sigue activa?" · "Revísame el saldo" · "Me regalas el saldo pendiente" · "2703" · "La boleta la coloque a nombre de Ricardo" · "Ayer hice el abono y no me han enviado el link" · "Tengo abonado 40mil"
 

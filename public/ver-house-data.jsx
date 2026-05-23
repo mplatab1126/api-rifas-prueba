@@ -1,4 +1,4 @@
-// ver-house-data.jsx — Datos mock + países para la boleta de La Plata House
+// ver-house-data.jsx — Datos mock + países para la boleta de Casa Santa Teresita
 
 window.PAISES = window.PAISES || [
   { code: "+57", iso: "CO", name: "Colombia", flag: "🇨🇴", digits: 10 },
@@ -42,7 +42,7 @@ window.MOCK_CLIENTES_HOUSE = {
     boletas: [
       {
         numero: "0234",
-        rifa: "La Plata House",
+        rifa: "Casa Santa Teresita",
         valorTotal: 150000,
         totalAbonado: 150000,
         saldoPendiente: 0,
@@ -55,7 +55,7 @@ window.MOCK_CLIENTES_HOUSE = {
       },
       {
         numero: "0512",
-        rifa: "La Plata House",
+        rifa: "Casa Santa Teresita",
         valorTotal: 150000,
         totalAbonado: 60000,
         saldoPendiente: 90000,
@@ -78,7 +78,7 @@ window.MOCK_CLIENTES_HOUSE = {
     boletas: [
       {
         numero: "0789",
-        rifa: "La Plata House",
+        rifa: "Casa Santa Teresita",
         valorTotal: 150000,
         totalAbonado: 0,
         saldoPendiente: 150000,
@@ -98,7 +98,7 @@ window.MOCK_CLIENTES_HOUSE = {
     boletas: [
       {
         numero: "1023",
-        rifa: "La Plata House",
+        rifa: "Casa Santa Teresita",
         valorTotal: 150000,
         totalAbonado: 120000,
         saldoPendiente: 30000,

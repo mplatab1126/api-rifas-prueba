@@ -1,4 +1,4 @@
-// house-app.jsx — Orquestador del flujo Comprar boleta · La Plata House
+// house-app.jsx — Orquestador del flujo Comprar boleta · Casa Santa Teresita
 // Reusa StepEscoger / StepDatos / StepPago / StepExitoCompra de comprar-steps.jsx
 // pero usa su propia landing (HouseLanding).
 
@@ -81,7 +81,7 @@ function HouseApp() {
             <CompIcon name="back" size={22} />
           </button>
           <h1 className="cb-topbar-title">
-            {vista === "landing" ? "La Plata House" :
+            {vista === "landing" ? "Casa Santa Teresita" :
              vista === "escoger" ? "Escoger n\u00fameros" :
              vista === "datos" ? "Sus datos" :
              vista === "pago" ? "Confirmar" : "Listo"}
