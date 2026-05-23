@@ -5,7 +5,6 @@ import { validarAsesor } from '../lib/auth.js';
 const PAGINAS = [
   { id: 'admin',             label: 'Panel de Ventas' },
   { id: 'caja',              label: 'Cuadre de Caja' },
-  { id: 'rifas-menu',        label: 'Rifas Diarias' },
   { id: 'rendimiento',       label: 'Rendimiento' },
   { id: 'llamadas',          label: 'Llamadas IA' },
   { id: 'horarios',          label: 'Gestión de Horarios' },
@@ -28,7 +27,7 @@ function listarTodosLosAsesores() {
 
 function defaultPermitido(asesorNombre, paginaId) {
   const name = asesorNombre.toLowerCase().trim();
-  if (['admin', 'caja', 'rifas-menu'].includes(paginaId)) return true;
+  if (['admin', 'caja'].includes(paginaId)) return true;
   if (['rendimiento', 'llamadas', 'horarios'].includes(paginaId)) return GERENCIA_DEFAULT.includes(name);
   if (['rifas', 'estado', 'permisos', 'clasificaciones'].includes(paginaId)) return SOLO_MATEO_DEFAULT.includes(name);
   if (paginaId === 'finanzas-alejo') return SOLO_ALEJO_DEFAULT.includes(name);

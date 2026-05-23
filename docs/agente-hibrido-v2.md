@@ -402,7 +402,6 @@ Tag Purchase + evento conversión ($150,000)
 - [Rifa 1] Condiciones para los premios
 - [Rifa 1] Flexibilidad en los premios
 - Premio que se rifa hoy
-- [Rifa 1] Remarketing grupo rifas diarias
 
 **Todos estos se actualizan desde la interfaz de Chatea Pro cuando cambia la rifa. El prompt del agente los lee dinámicamente.**
 
