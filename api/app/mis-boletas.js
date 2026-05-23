@@ -35,7 +35,7 @@ export default async function handler(req, res) {
 
     if (error4) console.error('Error boletas 4:', error4);
 
-    const PRECIO_BOLETA = 80000;
+    const PRECIO_BOLETA = 150000;
 
     const boletas = (data4 || []).map(b => ({
       numero: String(b.numero),

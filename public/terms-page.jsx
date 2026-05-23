@@ -15,7 +15,7 @@ function TermsApp() {
         <NavDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
 
         <div className="terms-content">
-          <p className="ab-eyebrow">Rifa "La Plata House"</p>
+          <p className="ab-eyebrow">Rifa "Casa Santa Teresita"</p>
 
           <h2>1. Organizador</h2>
           <p>La rifa es organizada por <strong>LOS PLATA S.A.S.</strong>, NIT 902.003.134-4, sociedad domiciliada en Chinchiná, Caldas, Colombia, y registrada ante la Cámara de Comercio. La marca LOS PLATA está registrada ante la Superintendencia de Industria y Comercio (SIC).</p>
@@ -25,7 +25,7 @@ function TermsApp() {
 
           <h2>3. Premios</h2>
           <ul>
-            <li><strong>Premio Mayor — La Plata House:</strong> casa de dos plantas ubicada en el barrio Santa Teresita, Chinchiná, Caldas, entregada con todo lo que se aprecia en las fotografías oficiales. Sorteo: <strong>sábado 4 de julio de 2026</strong>.</li>
+            <li><strong>Premio Mayor — Casa Santa Teresita:</strong> casa de dos plantas ubicada en el barrio Santa Teresita, Chinchiná, Caldas, entregada con todo lo que se aprecia en las fotografías oficiales. Sorteo: <strong>sábado 4 de julio de 2026</strong>.</li>
             <li><strong>Opción de canje:</strong> si el ganador prefiere no recibir la casa, LOS PLATA S.A.S. se la compra por <strong>$300.000.000 COP en efectivo</strong>.</li>
             <li><strong>El Sueldazo:</strong> $1.500.000 mensuales durante seis (6) meses ($9.000.000 totales) para un único ganador. Sorteo: <strong>miércoles 3 de junio de 2026</strong>.</li>
             <li><strong>Premios semanales:</strong> $5.000.000 a un único ganador cada uno de los siete (7) sábados previos al sorteo mayor.</li>
@@ -34,14 +34,14 @@ function TermsApp() {
           <h2>4. Sorteo</h2>
           <p>Los sorteos se realizan con la lotería oficial correspondiente a cada premio:</p>
           <ul>
-            <li><strong>Premio Mayor (La Plata House) y premios semanales ($5.000.000):</strong> juegan con la <strong>Lotería de Boyacá</strong>.</li>
+            <li><strong>Premio Mayor (Casa Santa Teresita) y premios semanales ($5.000.000):</strong> juegan con la <strong>Lotería de Boyacá</strong>.</li>
             <li><strong>El Sueldazo:</strong> juega con la <strong>Lotería de Manizales</strong> el miércoles correspondiente.</li>
           </ul>
           <p>En todos los casos, el número ganador corresponde a las <strong>últimas 4 cifras</strong> del resultado oficial publicado en la fecha del sorteo.</p>
 
           <h2>5. Condiciones para ganar</h2>
           <ul>
-            <li><strong>Premio Mayor (La Plata House):</strong> la boleta debe estar 100% pagada ($150.000) al momento del sorteo.</li>
+            <li><strong>Premio Mayor (Casa Santa Teresita):</strong> la boleta debe estar 100% pagada ($150.000) al momento del sorteo.</li>
             <li><strong>El Sueldazo (3 de junio):</strong> el cliente debe haber abonado mínimo $50.000 antes de esa fecha.</li>
             <li><strong>Premios semanales ($5.000.000):</strong> el cliente debe haber abonado mínimo $20.000 antes de la fecha del sorteo correspondiente.</li>
           </ul>
