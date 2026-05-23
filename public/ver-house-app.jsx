@@ -1,4 +1,4 @@
-// ver-house-app.jsx — Flujo "Ver mi boleta" para La Plata House
+// ver-house-app.jsx — Flujo "Ver mi boleta" para Casa Santa Teresita
 // Estructura idéntica al de La Perla Roja; cambia la rifa, los premios y las fotos.
 
 const { useState: useStateVerH, useEffect: useEffectVerH } = React;
@@ -251,13 +251,13 @@ function StepBuscarVerH({ pais, setPais, telefono, setTelefono, error, loading, 
 
             <div className="vb-comprar-card">
               <p className="vb-comprar-eyebrow">¿Aún no tienes boleta?</p>
-              <h3 className="vb-comprar-titulo">Compra la tuya y participa por La Plata House</h3>
+              <h3 className="vb-comprar-titulo">Compra la tuya y participa por Casa Santa Teresita</h3>
               <p className="vb-comprar-desc">Sorteo el <strong>4 de julio de 2026</strong> con la Lotería de Boyacá. Cada boleta vale $150.000 y puedes abonar desde $20.000.</p>
               <a href="/comprar-la-plata-house" className="ab-btn-primary ab-btn-mint vb-comprar-cta">
                 Comprar mi boleta
                 <span style={{ marginLeft: 4 }}>→</span>
               </a>
-              <a href="https://wa.me/573107334957?text=Hola%2C%20quiero%20comprar%20una%20boleta%20de%20La%20Plata%20House" target="_blank" rel="noreferrer" className="vb-comprar-wa">
+              <a href="https://wa.me/573107334957?text=Hola%2C%20quiero%20comprar%20una%20boleta%20de%20Casa%20Santa%20Teresita" target="_blank" rel="noreferrer" className="vb-comprar-wa">
                 O escríbenos por WhatsApp
               </a>
             </div>
@@ -431,7 +431,7 @@ function VbHeroCarousel({ items }) {
   );
 }
 
-// ─── Boleta detalle (La Plata House) ──────────────────────────
+// ─── Boleta detalle (Casa Santa Teresita) ──────────────────────────
 function BoletaDetalleHouse({ cliente, boleta }) {
   const pagada = boleta.saldoPendiente === 0;
   const doc = cliente.documento || { tipo: "CC", numero: "—" };
@@ -445,7 +445,7 @@ function BoletaDetalleHouse({ cliente, boleta }) {
           <p className="vb-hero-sub">Boleta número {boleta.numero}</p>
         </div>
         <div className="vb-hero-img">
-          <VbHeroCarousel items={window.HOUSE_GALERIA || [{ url: window.HOUSE_HERO_IMG, titulo: "La Plata House" }]} />
+          <VbHeroCarousel items={window.HOUSE_GALERIA || [{ url: window.HOUSE_HERO_IMG, titulo: "Casa Santa Teresita" }]} />
         </div>
 
         {/* Titular */}
@@ -534,7 +534,7 @@ function BoletaDetalleHouse({ cliente, boleta }) {
         <div className="ab-cliente-card">
           <div className="vb-premio">
             <p className="vb-premio-fecha">Premio Mayor — Sábado 4 de julio de 2026</p>
-            <p className="vb-premio-titulo">La Plata House</p>
+            <p className="vb-premio-titulo">Casa Santa Teresita</p>
             <p className="vb-premio-desc">Casa de dos plantas en el barrio Santa Teresita, Chinchiná, Caldas.</p>
             <p className="vb-premio-bonus">Si no la quiere, le compramos la casa por <strong>$300.000.000 en efectivo</strong>.</p>
           </div>
@@ -591,7 +591,7 @@ function BoletaDetalleHouse({ cliente, boleta }) {
             <div className="vb-clausula">
               <p className="vb-clausula-num">3. Premios</p>
               <ul>
-                <li><strong>Premio Mayor — La Plata House:</strong> casa de dos plantas en el barrio Santa Teresita, Chinchiná, Caldas. Sorteo: sábado 4 de julio de 2026.</li>
+                <li><strong>Premio Mayor — Casa Santa Teresita:</strong> casa de dos plantas en el barrio Santa Teresita, Chinchiná, Caldas. Sorteo: sábado 4 de julio de 2026.</li>
                 <li><strong>El Sueldazo:</strong> $1.500.000 mensuales durante seis (6) meses para un único ganador. Sorteo: miércoles 3 de junio de 2026.</li>
                 <li><strong>Premios semanales:</strong> $5.000.000 a un único abonado cada uno de los siete sábados previos al sorteo mayor.</li>
               </ul>
@@ -600,7 +600,7 @@ function BoletaDetalleHouse({ cliente, boleta }) {
               <p className="vb-clausula-num">4. Sorteo</p>
               <p>Los sorteos se realizan con la lotería oficial correspondiente a cada premio:</p>
               <ul>
-                <li><strong>Premio Mayor (La Plata House) y premios semanales ($5M):</strong> juegan con la <strong>Lotería de Boyacá</strong>.</li>
+                <li><strong>Premio Mayor (Casa Santa Teresita) y premios semanales ($5M):</strong> juegan con la <strong>Lotería de Boyacá</strong>.</li>
                 <li><strong>El Sueldazo:</strong> juega con la <strong>Lotería de Manizales</strong> el miércoles correspondiente.</li>
               </ul>
               <p>En todos los casos, el número ganador corresponde a las <strong>últimas 4 cifras</strong> del resultado oficial publicado en la fecha del sorteo.</p>
@@ -610,7 +610,7 @@ function BoletaDetalleHouse({ cliente, boleta }) {
               <ul>
                 <li><strong>Premios semanales:</strong> el cliente debe haber abonado mínimo $20.000 antes de la fecha del sorteo correspondiente.</li>
                 <li><strong>El Sueldazo (3 de junio):</strong> el cliente debe haber abonado mínimo $50.000 antes de esa fecha.</li>
-                <li><strong>Premio Mayor (La Plata House):</strong> la boleta debe estar 100% pagada ($150.000) al momento del sorteo.</li>
+                <li><strong>Premio Mayor (Casa Santa Teresita):</strong> la boleta debe estar 100% pagada ($150.000) al momento del sorteo.</li>
               </ul>
             </div>
             <div className="vb-clausula">
@@ -651,7 +651,7 @@ function BoletaDetalleHouse({ cliente, boleta }) {
               Abonar a esta boleta →
             </a>
           )}
-          <a href={`https://wa.me/573107334957?text=Hola%2C%20mi%20boleta%20de%20La%20Plata%20House%20es%20la%20${boleta.numero}`} target="_blank" rel="noreferrer" className="ab-btn-secondary">
+          <a href={`https://wa.me/573107334957?text=Hola%2C%20mi%20boleta%20de%20Casa%20Santa%20Teresita%20es%20la%20${boleta.numero}`} target="_blank" rel="noreferrer" className="ab-btn-secondary">
             Compartir por WhatsApp
           </a>
         </div>

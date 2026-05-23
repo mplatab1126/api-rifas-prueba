@@ -73,6 +73,54 @@
     }
     .info-banner span { font-size: 1.3rem; flex-shrink: 0; }
 
+    /* Tabs */
+    .tabs-bar {
+      display: flex; gap: 6px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--ring);
+    }
+    .tab-btn {
+      background: none; border: none;
+      padding: 12px 20px;
+      font-family: inherit; font-size: 0.88rem; font-weight: 600;
+      color: var(--muted); cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -1px;
+      transition: all 0.15s;
+    }
+    .tab-btn:hover { color: var(--ink); }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Tabla de asesores (subpestaña) */
+    .asesores-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--ring);
+      gap: 16px;
+    }
+    .asesores-row:last-child { border-bottom: none; }
+    .asesores-row:hover { background: rgba(78,176,130,0.04); }
+    .asesores-row .asesor-cell {
+      display: flex; align-items: center; gap: 12px;
+      flex: 1; min-width: 0;
+    }
+    .asesores-row .asesor-name {
+      font-weight: 600; color: var(--ink); font-size: 0.9rem;
+    }
+    .asesores-row .asesor-badge {
+      font-size: 0.7rem; font-weight: 600;
+      padding: 3px 9px; border-radius: 20px;
+      background: #f0f7f3; color: var(--ink-2);
+    }
+    .asesores-row .asesor-badge.independiente {
+      background: rgba(78,176,130,0.15); color: var(--accent-2);
+    }
+
     .permisos-card {
       background: var(--card);
       border-radius: 16px;
@@ -102,8 +150,12 @@
     .btn-init:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .table-wrap {
-      overflow-x: auto;
+      overflow: auto;
+      max-height: calc(100vh - 260px);
       -webkit-overflow-scrolling: touch;
+    }
+    @media (max-width: 600px) {
+      .table-wrap { max-height: calc(100vh - 220px); }
     }
 
     table {
@@ -245,25 +297,57 @@
   </div>
 
   <div class="container">
-    <div class="info-banner">
-      <span>🔐</span>
-      <div>Activa o desactiva el acceso de cada asesor a las diferentes secciones del sistema. Los cambios se aplican de inmediato.</div>
+
+    <!-- Tabs -->
+    <div class="tabs-bar">
+      <button class="tab-btn active" data-tab="permisos" onclick="cambiarTab('permisos')">🛡️ Permisos</button>
+      <button class="tab-btn" data-tab="asesores" onclick="cambiarTab('asesores')">👤 Asesores</button>
     </div>
 
-    <div class="permisos-card">
-      <div class="permisos-toolbar">
-        <h2>🛡️ Matriz de Permisos</h2>
-        <button class="btn-init" id="btnInit" onclick="inicializarPermisos()">Reiniciar a valores por defecto</button>
+    <!-- Pestaña: Permisos -->
+    <div class="tab-content active" id="tab-permisos">
+      <div class="info-banner">
+        <span>🔐</span>
+        <div>Activa o desactiva el acceso de cada asesor a las diferentes secciones del sistema. Los cambios se aplican de inmediato.</div>
       </div>
-      <div class="table-wrap">
-        <div id="tablaContainer">
-          <div class="loading-state">
-            <div class="spinner"></div>
-            Cargando permisos...
+
+      <div class="permisos-card">
+        <div class="permisos-toolbar">
+          <h2>🛡️ Matriz de Permisos</h2>
+          <button class="btn-init" id="btnInit" onclick="inicializarPermisos()">Reiniciar a valores por defecto</button>
+        </div>
+        <div class="table-wrap">
+          <div id="tablaContainer">
+            <div class="loading-state">
+              <div class="spinner"></div>
+              Cargando permisos...
+            </div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Pestaña: Asesores -->
+    <div class="tab-content" id="tab-asesores">
+      <div class="info-banner">
+        <span>👤</span>
+        <div>Marca cuáles asesores son <strong>independientes</strong> (vendedores externos). Los que no estén marcados se consideran parte de "Mi equipo". Esto controla quién puede abonar en qué boletas.</div>
+      </div>
+
+      <div class="permisos-card">
+        <div class="permisos-toolbar">
+          <h2>👤 Lista de Asesores</h2>
+          <span style="font-size:0.78rem; color:var(--muted); font-weight:600;" id="contadorAsesores">—</span>
+        </div>
+        <div id="asesoresContainer">
+          <div class="loading-state">
+            <div class="spinner"></div>
+            Cargando asesores...
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -437,6 +521,120 @@
     const myName = localStorage.getItem('asesor_nombre');
     if (myName === asesor) {
       localStorage.removeItem('asesor_permisos');
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════════════
+  // PESTAÑAS
+  // ════════════════════════════════════════════════════════════════════
+
+  function cambiarTab(nombre) {
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === nombre);
+    });
+    document.querySelectorAll('.tab-content').forEach(c => {
+      c.classList.toggle('active', c.id === `tab-${nombre}`);
+    });
+    if (nombre === 'asesores' && !datosAsesores) cargarAsesores();
+  }
+
+  // ════════════════════════════════════════════════════════════════════
+  // SUBPESTAÑA: ASESORES (configuración de independientes)
+  // ════════════════════════════════════════════════════════════════════
+
+  let datosAsesores = null;
+
+  async function cargarAsesores() {
+    const container = document.getElementById('asesoresContainer');
+    container.innerHTML = '<div class="loading-state"><div class="spinner"></div>Cargando asesores...</div>';
+
+    try {
+      const r = await fetch('/api/admin/asesores-config', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contrasena: pwdAdmin, accion: 'listar' })
+      });
+      const json = await r.json();
+
+      if (json.status !== 'ok') {
+        container.innerHTML = `<div class="loading-state" style="color:var(--danger)">${json.mensaje || 'Error al cargar'}</div>`;
+        return;
+      }
+
+      datosAsesores = json.asesores;
+      renderAsesores();
+    } catch(e) {
+      container.innerHTML = '<div class="loading-state" style="color:var(--danger)">Error de conexión</div>';
+    }
+  }
+
+  function renderAsesores() {
+    if (!datosAsesores) return;
+    const total = datosAsesores.length;
+    const indep = datosAsesores.filter(a => a.es_independiente).length;
+    document.getElementById('contadorAsesores').textContent =
+      `${total} asesor${total === 1 ? '' : 'es'} · ${indep} independiente${indep === 1 ? '' : 's'}`;
+
+    let html = '';
+    for (const a of datosAsesores) {
+      const toggleId = `ai_${a.nombre.replace(/\s/g, '_')}`;
+      const checked = a.es_independiente ? 'checked' : '';
+      const badge = a.es_independiente
+        ? '<span class="asesor-badge independiente">Independiente</span>'
+        : '<span class="asesor-badge">Mi equipo</span>';
+
+      html += `
+        <div class="asesores-row">
+          <div class="asesor-cell">
+            <div class="asesor-avatar">${getInitials(a.nombre)}</div>
+            <span class="asesor-name">${a.nombre}</span>
+            ${badge}
+          </div>
+          <label class="toggle" id="wrap_${toggleId}">
+            <input type="checkbox" id="${toggleId}" ${checked}
+              onchange="toggleIndependiente('${a.nombre.replace(/'/g, "\\'")}', this.checked, '${toggleId}')">
+            <span class="slider"></span>
+          </label>
+        </div>`;
+    }
+    document.getElementById('asesoresContainer').innerHTML = html;
+  }
+
+  async function toggleIndependiente(nombre, esIndependiente, toggleId) {
+    const wrap = document.getElementById('wrap_' + toggleId);
+    const input = document.getElementById(toggleId);
+    wrap.classList.add('saving');
+    input.disabled = true;
+
+    try {
+      const r = await fetch('/api/admin/asesores-config', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contrasena: pwdAdmin,
+          accion: 'actualizar',
+          asesor_nombre: nombre,
+          campo: 'es_independiente',
+          valor: esIndependiente
+        })
+      });
+      const json = await r.json();
+
+      if (json.status === 'ok') {
+        const item = datosAsesores.find(a => a.nombre === nombre);
+        if (item) item.es_independiente = esIndependiente;
+        toast(esIndependiente
+          ? `✅ ${nombre} ahora es independiente`
+          : `✅ ${nombre} ahora es de "Mi equipo"`);
+        renderAsesores();
+      } else {
+        input.checked = !esIndependiente;
+        toast(json.mensaje || 'Error al actualizar', 'err');
+      }
+    } catch(e) {
+      input.checked = !esIndependiente;
+      toast('Error de conexión', 'err');
+    } finally {
+      wrap.classList.remove('saving');
+      input.disabled = false;
     }
   }
 

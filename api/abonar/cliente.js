@@ -85,7 +85,7 @@ export default async function handler(req, res) {
       const estado = saldoPendiente <= 0 ? 'paga' : 'pendiente';
       return {
         numero: b.numero,
-        rifa: 'La Plata House',
+        rifa: 'Casa Santa Teresita',
         valorTotal,
         totalAbonado,
         saldoPendiente,

@@ -180,7 +180,7 @@ async function responderHistorico({ res, rifa_id }) {
     // Calcular agregados desde el snapshot de boletas (la verdad oficial)
     let registradas = 0, separadas_cero = 0, libres = 0, pagadas = 0, recaudo_boletas = 0;
     const recaudo_por_asesor = {};
-    const PRECIO_DEFAULT = Number(boletasH[0]?.precio_total) || 80000;
+    const PRECIO_DEFAULT = Number(boletasH[0]?.precio_total) || 150000;
 
     boletasH.forEach(b => {
       const abonado = Number(b.total_abonado || 0);

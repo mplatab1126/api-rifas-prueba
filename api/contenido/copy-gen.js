@@ -20,7 +20,7 @@ SOBRE LOS PLATA SAS
 ════════════════════════════════════════
 Empresa colombiana de rifas legales. Sede: Chinchiná, Caldas.
 Canal principal: WhatsApp vía Meta Ads. Instagram: @losplata_
-Precio boleta: $20.000 COP. Ticket promedio: $80.000–$150.000.
+Precio boleta: $150.000 COP. Abono minimo: $20.000.
 Pagos: Nequi, Daviplata, Bancolombia.
 Premios: cambian con cada rifa — preguntar si no los tienes.
 
@@ -223,7 +223,7 @@ Gracias a todos los que siguen participando - y atención 👀
 
 *¡Este sábado vuelve el evento con otro millón de pesos en juego!*
 ──────────────
-[WA-5] Cobro semanal — La Plata House ($5M cada sábado)
+[WA-5] Cobro semanal — Casa Santa Teresita ($5M cada sábado)
 *Hoy entregamos los primeros $5.000.000* 💰
 
 Hola, te recordamos que en el evento de LA PLATA HOUSE *todos los sábados se sortean 5 millones.*
