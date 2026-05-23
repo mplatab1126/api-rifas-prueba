@@ -301,20 +301,113 @@ export default async function handler(req, res) {
     // ACCIÓN: cerrar_caja — Guardar arqueo y cerrar el turno
     // ─────────────────────────────────────────────────────────
     if (accion === 'cerrar_caja') {
-      const montoContado = Number(payload.montoContado) || 0;
-      const totalEsperado = Number(payload.totalEsperado) || 0;
-      const diferencia = montoContado - totalEsperado;
+      const montoContado   = Math.round(Number(payload.montoContado)   || 0);
+      const totalEsperado  = Math.round(Number(payload.totalEsperado)  || 0);
+      const baseFija       = Math.round(Number(payload.baseFija)       || 0);
+      const totalRecaudo   = Math.round(Number(payload.totalRecaudo)   || 0);
+      const totalIngresos  = Math.round(Number(payload.totalIngresos)  || 0);
+      const totalSalidas   = Math.round(Number(payload.totalSalidas)   || 0);
+      const totalConsig    = Math.round(Number(payload.totalConsig)    || 0);
+      const observaciones  = (payload.observaciones || '').toString().trim().slice(0, 1000) || null;
+      const diferencia     = montoContado - totalEsperado;
 
-      const { error } = await supabase.from('movimientos_caja').insert({
+      // 1) Guardar el cierre detallado en la tabla nueva
+      const { error: errCierre } = await supabase.from('cierres_caja').insert({
+        fecha: hoy,
+        cerrado_por: nombreAsesor,
+        base_fija: baseFija,
+        total_recaudo: totalRecaudo,
+        total_ingresos: totalIngresos,
+        total_salidas: totalSalidas,
+        total_consig: totalConsig,
+        total_esperado: totalEsperado,
+        monto_contado: montoContado,
+        diferencia,
+        observaciones
+      });
+      if (errCierre) throw errCierre;
+
+      // 2) Seguir guardando en movimientos_caja (para que la lógica de
+      //    "caja abierta/cerrada" del día siga funcionando igual).
+      const descBase = `Arqueo por ${nombreAsesor}. Esperado: $${totalEsperado}. Diferencia: $${diferencia}`;
+      const desc = observaciones ? `${descBase}. Obs: ${observaciones}` : descBase;
+      const { error: errMov } = await supabase.from('movimientos_caja').insert({
         fecha: hoy,
         tipo: 'cierre',
         monto: montoContado,
-        descripcion: `Arqueo por ${nombreAsesor}. Esperado: $${totalEsperado}. Diferencia: $${diferencia}`,
+        descripcion: desc,
         creado_por: nombreAsesor
       });
-      if (error) throw error;
+      if (errMov) throw errMov;
 
       return res.status(200).json({ status: 'ok', mensaje: 'Caja cerrada y arqueo guardado' });
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // ACCIÓN: historial_cierres — Lista de cierres pasados (solo Mateo)
+    // ─────────────────────────────────────────────────────────
+    if (accion === 'historial_cierres') {
+      if (nombreAsesor !== 'Mateo') {
+        return res.status(403).json({ status: 'error', mensaje: 'Solo Mateo puede ver el historial de cierres.' });
+      }
+
+      const desde  = payload.desde  || null;          // 'YYYY-MM-DD' opcional
+      const hasta  = payload.hasta  || null;          // 'YYYY-MM-DD' opcional
+      const limit  = Math.min(Number(payload.limit)  || 50, 200);
+      const offset = Math.max(Number(payload.offset) || 0, 0);
+
+      let query = supabase
+        .from('cierres_caja')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (desde) query = query.gte('fecha', desde);
+      if (hasta) query = query.lte('fecha', hasta);
+
+      const { data, error, count } = await query;
+      if (error) throw error;
+
+      return res.status(200).json({
+        status: 'ok',
+        cierres: data || [],
+        total: count || 0,
+        limit,
+        offset
+      });
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // ACCIÓN: detalle_cierre — Detalle de un cierre + movimientos de su día
+    // ─────────────────────────────────────────────────────────
+    if (accion === 'detalle_cierre') {
+      if (nombreAsesor !== 'Mateo') {
+        return res.status(403).json({ status: 'error', mensaje: 'Solo Mateo puede ver el detalle de cierres.' });
+      }
+
+      const id = Number(payload.id);
+      if (!id) return res.status(400).json({ status: 'error', mensaje: 'Falta el id del cierre' });
+
+      const { data: cierre, error: errCierre } = await supabase
+        .from('cierres_caja')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+      if (errCierre) throw errCierre;
+      if (!cierre) return res.status(404).json({ status: 'error', mensaje: 'Cierre no encontrado' });
+
+      const { data: movimientos, error: errMov } = await supabase
+        .from('movimientos_caja')
+        .select('*')
+        .eq('fecha', cierre.fecha)
+        .order('created_at', { ascending: true });
+      if (errMov) throw errMov;
+
+      return res.status(200).json({
+        status: 'ok',
+        cierre,
+        movimientos: movimientos || []
+      });
     }
 
     return res.status(400).json({ status: 'error', mensaje: 'Acción no reconocida' });

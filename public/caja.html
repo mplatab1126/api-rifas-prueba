@@ -57,6 +57,40 @@
     .mov-detalle-monto { font-weight: 800; font-size: 1rem; white-space: nowrap; flex-shrink: 0; }
     .mov-separador { text-align: center; font-size: 0.75rem; font-weight: 700; color: var(--muted); margin: 14px 0 8px; text-transform: uppercase; letter-spacing: 1px; border-top: 1px dashed var(--ring-strong); padding-top: 12px; }
     .mov-total-row { background: var(--pill); border: 2px solid var(--accent); border-radius: 12px; padding: 14px 18px; margin-top: 14px; display: flex; justify-content: space-between; align-items: center; }
+
+    /* Tabs Hoy / Historial */
+    .tabs-caja { display: flex; gap: 8px; margin-bottom: 20px; background: #fff; border: 1px solid var(--ring); border-radius: 14px; padding: 6px; box-shadow: var(--shadow); }
+    .tab-btn { flex: 1; border: none; background: transparent; padding: 12px 16px; border-radius: 10px; font-family: inherit; font-weight: 700; font-size: 0.95rem; color: var(--muted); cursor: pointer; transition: 0.2s; }
+    .tab-btn.activo { background: var(--ink); color: #fff; }
+    .tab-btn:hover:not(.activo) { background: var(--pill); color: var(--ink); }
+
+    /* Cards de cierres en historial */
+    .cierre-card { background: #fff; border: 1px solid var(--ring-strong); border-radius: 14px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: 0.2s; box-shadow: var(--shadow); }
+    .cierre-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.06); }
+    .cierre-card .fila-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .cierre-card .fecha-cierre { font-weight: 700; color: var(--ink); font-size: 0.95rem; }
+    .cierre-card .hora-cierre { font-size: 0.75rem; color: var(--muted); font-weight: 500; margin-left: 8px; }
+    .cierre-card .asesor-cierre { font-size: 0.8rem; color: var(--ink-2); font-weight: 600; }
+    .cierre-card .fila-montos { display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px dashed var(--ring); }
+    .cierre-card .label-monto { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.3px; }
+    .cierre-card .valor-monto { font-weight: 700; color: var(--ink); font-size: 0.95rem; }
+    .badge-diferencia { padding: 6px 12px; border-radius: 50px; font-size: 0.8rem; font-weight: 800; }
+    .badge-cuadrado { background: #e8f5e9; color: var(--accent-2); border: 1px solid var(--accent); }
+    .badge-sobrante { background: #fff3e0; color: #e65100; border: 1px solid #ffb74d; }
+    .badge-faltante { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger); }
+    .badge-obs { display: inline-block; background: var(--pill); color: var(--accent-2); padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; margin-top: 6px; }
+
+    /* Filtros del historial */
+    .filtros-historial { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; margin-bottom: 16px; }
+    .filtros-historial .field { flex: 1; min-width: 130px; }
+    .filtros-historial label { display: block; text-align: left; font-size: 0.75rem; font-weight: 700; color: var(--ink-2); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .filtros-historial input { padding: 8px 10px; font-size: 0.9rem; text-align: left; font-weight: 600; }
+
+    /* Modal observaciones (campo nuevo en cierre) */
+    .campo-obs { background: #fffde7; border: 1px solid #fbc02d; border-radius: 10px; padding: 12px; margin-bottom: 15px; text-align: left; }
+    .campo-obs label { display: block; font-size: 0.8rem; font-weight: 700; color: #5d4037; margin-bottom: 6px; }
+    .campo-obs textarea { width: 100%; border: 1px solid var(--ring-strong); border-radius: 8px; padding: 8px; font-size: 0.9rem; font-family: inherit; resize: vertical; min-height: 60px; outline: none; box-sizing: border-box; }
+    .campo-obs textarea:focus { border-color: var(--accent); }
   </style>
 </head>
 <body>
@@ -84,6 +118,14 @@
   </div>
 
   <div class="shell" id="mainDashboard" style="display: none;">
+    <!-- Tabs solo para Mateo -->
+    <div id="tabsCaja" class="tabs-caja" style="display:none;">
+      <button id="tabHoy" class="tab-btn activo" onclick="cambiarTab('hoy')">📊 Hoy</button>
+      <button id="tabHistorial" class="tab-btn" onclick="cambiarTab('historial')">📜 Historial de cierres</button>
+    </div>
+
+    <!-- Vista "Hoy" (la original) -->
+    <div id="vistaHoy">
     <div class="dashboard-grid">
       <div class="kpi-card" style="border-left: 4px solid var(--muted);">
         <h3>💵 Base Fija Inicial</h3>
@@ -123,9 +165,37 @@
       <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0; margin-bottom: 15px;">
         Este es el dinero que los asesores han cobrado en efectivo y que aún no te han entregado físicamente. El saldo se acumula hasta que el asesor lo entregue.
       </p>
-      
+
       <div id="lista-asesores">
         <p style="text-align:center; color:var(--muted); font-weight:500;">Cargando datos de hoy...</p>
+      </div>
+    </div>
+    </div><!-- /vistaHoy -->
+
+    <!-- Vista "Historial" — solo Mateo -->
+    <div id="vistaHistorial" style="display:none;">
+      <div class="section-card">
+        <div class="section-title">📜 Historial de cierres de caja</div>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0; margin-bottom: 15px;">
+          Aquí ves todos los arqueos de caja que se han hecho. Haz click en cualquiera para ver el detalle completo de ese día.
+        </p>
+
+        <div class="filtros-historial">
+          <div class="field">
+            <label>Desde</label>
+            <input type="date" id="filtroDesde">
+          </div>
+          <div class="field">
+            <label>Hasta</label>
+            <input type="date" id="filtroHasta">
+          </div>
+          <button class="cta" style="background: var(--ink); padding: 8px 16px;" onclick="cargarHistorial()">Filtrar</button>
+          <button class="cta cta-outline" style="padding: 8px 16px;" onclick="limpiarFiltros()">Limpiar</button>
+        </div>
+
+        <div id="listaCierres">
+          <p style="text-align:center; color:var(--muted); font-weight:500;">Cargando historial...</p>
+        </div>
       </div>
     </div>
   </div>
@@ -271,10 +341,16 @@
           </div>
       </div>
 
-      <div style="background: #fff; border: 2px solid var(--ring-strong); border-radius: 12px; padding: 15px; margin-bottom: 20px;">
+      <div style="background: #fff; border: 2px solid var(--ring-strong); border-radius: 12px; padding: 15px; margin-bottom: 15px;">
           <label style="display:block; text-align:left; font-size:0.85rem; font-weight:700; color:var(--ink); margin-bottom:8px;">¿Cuánto dinero físico contaste en total?</label>
           <input type="number" id="montoContado" placeholder="Escribe el valor aquí..." oninput="calcularCuadre()" style="width: 100%; border: 1px solid var(--ring-strong); border-radius: 8px; padding: 10px; font-size: 1.2rem; font-weight: 700; text-align: center; outline: none; color: var(--ink); font-family: inherit;">
           <div id="resultadoCuadre" style="margin-top: 10px; font-size: 0.9rem; font-weight: 700; text-align: center;"></div>
+      </div>
+
+      <div id="bloqueObservaciones" class="campo-obs" style="display:none;">
+        <label>📝 Observaciones (opcional)</label>
+        <textarea id="cierreObservaciones" placeholder="Si hubo diferencia, escribe aquí por qué (Ej: cliente pagó propina extra, asesor olvidó registrar venta, etc.)"></textarea>
+        <p style="font-size:0.7rem; color:#5d4037; margin: 6px 0 0 0;">Esto se guarda para que puedas revisarlo después en el historial.</p>
       </div>
 
       <div style="text-align: left; margin-bottom: 20px;">
@@ -290,6 +366,32 @@
         <button class="cta cta-outline" style="flex:1;" onclick="document.getElementById('modalCierre').style.display='none'">Cancelar</button>
         <button id="btnConfirmarCierre" class="cta" style="flex:1; background:var(--danger);" onclick="confirmarCierre()" disabled>Confirmar Cierre</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal de detalle de un cierre del historial -->
+  <div id="modalDetalleCierre" class="modal-overlay">
+    <div class="modal-card" style="max-width: 480px; max-height: 90vh; overflow-y: auto;">
+      <h3 style="margin: 0 0 5px; color: var(--ink);">📋 Detalle del cierre</h3>
+      <p id="detalleSubtitulo" style="color:var(--muted); font-size: 0.85rem; margin-bottom: 15px;">---</p>
+
+      <div id="detalleResumen" style="background: var(--bg); border: 1px solid var(--ring); border-radius: 12px; padding: 15px; text-align: left; margin-bottom: 15px;">
+        <p style="text-align:center; color:var(--muted); margin:0;">Cargando...</p>
+      </div>
+
+      <div id="detalleObservaciones" style="display:none; background: #fffde7; border: 1px solid #fbc02d; border-radius: 10px; padding: 12px; margin-bottom: 15px; text-align: left;">
+        <p style="font-size: 0.75rem; font-weight: 700; color: #5d4037; margin: 0 0 6px 0; text-transform: uppercase;">📝 Observaciones</p>
+        <p id="detalleObservacionesTexto" style="font-size: 0.9rem; color: var(--ink); margin: 0; line-height: 1.4;"></p>
+      </div>
+
+      <div style="text-align:left; margin-bottom: 15px;">
+        <h4 style="font-size: 0.85rem; margin: 0 0 8px 0; color: var(--ink-2);">📋 Movimientos de ese día</h4>
+        <div id="detalleMovimientos" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--ring); border-radius: 8px; padding: 10px; font-size: 0.8rem; background: #fff;">
+          <p style="text-align:center; color:var(--muted); margin:0;">Cargando...</p>
+        </div>
+      </div>
+
+      <button class="cta cta-outline" style="width: 100%;" onclick="document.getElementById('modalDetalleCierre').style.display='none'">Cerrar</button>
     </div>
   </div>
 
@@ -432,6 +534,10 @@
       badge.style.borderColor = '#5c6bc0';
 
       document.getElementById('btnAjustarBase').style.display = 'inline-block';
+
+      // Tabs Hoy / Historial — solo Mateo
+      document.getElementById('tabsCaja').style.display = 'flex';
+
       cargarDatosCaja();
     }
 
@@ -473,6 +579,11 @@
         badge.textContent = `👁️ Solo viendo (${asesorActual})`;
         badge.style.background = '#fff3e0';
         badge.style.color = '#e65100';
+      }
+
+      // Tabs Hoy / Historial — solo Mateo
+      if (asesorActual === 'Mateo') {
+        document.getElementById('tabsCaja').style.display = 'flex';
       }
 
       aplicarPermisosModo();
@@ -701,6 +812,8 @@
 
       document.getElementById('montoContado').value = '';
       document.getElementById('resultadoCuadre').innerHTML = '';
+      document.getElementById('cierreObservaciones').value = '';
+      document.getElementById('bloqueObservaciones').style.display = 'none';
       const btnConfirmar = document.getElementById('btnConfirmarCierre');
       btnConfirmar.disabled = true;
       btnConfirmar.style.opacity = '0.5';
@@ -735,9 +848,11 @@
       const diferencia = contado - valorEsperadoCaja;
       const resultadoDiv = document.getElementById('resultadoCuadre');
       const btnConfirmar = document.getElementById('btnConfirmarCierre');
+      const bloqueObs = document.getElementById('bloqueObservaciones');
 
       if (contadoInput === '') {
         resultadoDiv.innerHTML = '';
+        bloqueObs.style.display = 'none';
         btnConfirmar.disabled = true;
         btnConfirmar.style.opacity = '0.5';
         return;
@@ -748,10 +863,13 @@
 
       if (diferencia === 0) {
         resultadoDiv.innerHTML = '<span style="color:var(--accent-2);">✅ ¡Caja cuadrada perfectamente! ($0)</span>';
+        bloqueObs.style.display = 'none';
       } else if (diferencia > 0) {
         resultadoDiv.innerHTML = `<span style="color:#f57c00;">⚠️ Te sobran ${fmt(diferencia)} físicos</span>`;
+        bloqueObs.style.display = 'block';
       } else {
         resultadoDiv.innerHTML = `<span style="color:var(--danger);">❌ Te faltan ${fmt(Math.abs(diferencia))} físicos</span>`;
+        bloqueObs.style.display = 'block';
       }
     }
 
@@ -888,6 +1006,7 @@
 
     async function confirmarCierre() {
       const montoContado = Number(document.getElementById('montoContado').value) || 0;
+      const observaciones = (document.getElementById('cierreObservaciones').value || '').trim();
       const btnConfirmar = document.getElementById('btnConfirmarCierre');
       btnConfirmar.textContent = 'Cerrando...'; btnConfirmar.disabled = true;
 
@@ -895,7 +1014,18 @@
         const req = await fetch('/api/admin/caja', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ accion: 'cerrar_caja', contrasena: contrasenaActual, montoContado, totalEsperado: valorEsperadoCaja })
+          body: JSON.stringify({
+            accion: 'cerrar_caja',
+            contrasena: contrasenaActual,
+            montoContado,
+            totalEsperado:  valorEsperadoCaja,
+            baseFija:       datosCaja?.baseFija          || 0,
+            totalRecaudo:   datosCaja?.totalRecepciones  || 0,
+            totalIngresos:  datosCaja?.totalIngresos     || 0,
+            totalSalidas:   datosCaja?.totalSalidas      || 0,
+            totalConsig:    datosCaja?.totalConsignaciones || 0,
+            observaciones
+          })
         });
         const res = await req.json();
 
@@ -911,6 +1041,213 @@
       } catch (e) {
         alert('Error de conexión');
         btnConfirmar.textContent = 'Confirmar Cierre'; btnConfirmar.disabled = false;
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // HISTORIAL DE CIERRES (solo Mateo)
+    // ─────────────────────────────────────────────────────────
+    let historialCargado = false;
+
+    function cambiarTab(tab) {
+      const btnHoy = document.getElementById('tabHoy');
+      const btnHist = document.getElementById('tabHistorial');
+      const vistaHoy = document.getElementById('vistaHoy');
+      const vistaHist = document.getElementById('vistaHistorial');
+
+      if (tab === 'hoy') {
+        btnHoy.classList.add('activo');
+        btnHist.classList.remove('activo');
+        vistaHoy.style.display = 'block';
+        vistaHist.style.display = 'none';
+      } else {
+        btnHoy.classList.remove('activo');
+        btnHist.classList.add('activo');
+        vistaHoy.style.display = 'none';
+        vistaHist.style.display = 'block';
+        if (!historialCargado) {
+          cargarHistorial();
+          historialCargado = true;
+        }
+      }
+    }
+
+    function limpiarFiltros() {
+      document.getElementById('filtroDesde').value = '';
+      document.getElementById('filtroHasta').value = '';
+      cargarHistorial();
+    }
+
+    async function cargarHistorial() {
+      const desde = document.getElementById('filtroDesde').value || null;
+      const hasta = document.getElementById('filtroHasta').value || null;
+      const lista = document.getElementById('listaCierres');
+      lista.innerHTML = '<p style="text-align:center; color:var(--muted); font-weight:500;">Cargando historial...</p>';
+
+      try {
+        const req = await fetch('/api/admin/caja', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accion: 'historial_cierres', contrasena: contrasenaActual, desde, hasta, limit: 100 })
+        });
+        const res = await req.json();
+
+        if (res.status !== 'ok') {
+          lista.innerHTML = `<p style="text-align:center; color:var(--danger);">Error: ${res.mensaje}</p>`;
+          return;
+        }
+
+        const cierres = res.cierres || [];
+        if (cierres.length === 0) {
+          lista.innerHTML = '<p style="text-align:center; color:var(--muted); font-weight:500; padding: 30px 0;">No hay cierres registrados en este rango.</p>';
+          return;
+        }
+
+        lista.innerHTML = cierres.map(c => {
+          const fechaObj = new Date(c.created_at);
+          const fechaTxt = fechaObj.toLocaleDateString('es-CO', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', timeZone: 'America/Bogota' });
+          const horaTxt = fechaObj.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' });
+
+          let badge, badgeClass;
+          if (c.diferencia === 0) {
+            badge = '✅ Cuadrado';
+            badgeClass = 'badge-cuadrado';
+          } else if (c.diferencia > 0) {
+            badge = `⚠️ Sobró ${fmt(c.diferencia)}`;
+            badgeClass = 'badge-sobrante';
+          } else {
+            badge = `❌ Faltó ${fmt(Math.abs(c.diferencia))}`;
+            badgeClass = 'badge-faltante';
+          }
+
+          const tieneObs = c.observaciones && !c.observaciones.startsWith('[Cierre histórico');
+
+          return `
+            <div class="cierre-card" onclick="verDetalleCierre(${c.id})">
+              <div class="fila-top">
+                <div>
+                  <span class="fecha-cierre">${fechaTxt}</span>
+                  <span class="hora-cierre">${horaTxt}</span>
+                  <div class="asesor-cierre">👤 ${c.cerrado_por}</div>
+                  ${tieneObs ? '<span class="badge-obs">📝 Con observaciones</span>' : ''}
+                </div>
+                <span class="badge-diferencia ${badgeClass}">${badge}</span>
+              </div>
+              <div class="fila-montos">
+                <div>
+                  <div class="label-monto">Esperado</div>
+                  <div class="valor-monto">${fmt(c.total_esperado)}</div>
+                </div>
+                <div style="text-align:right;">
+                  <div class="label-monto">Contado</div>
+                  <div class="valor-monto">${fmt(c.monto_contado)}</div>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        if (res.total > cierres.length) {
+          lista.innerHTML += `<p style="text-align:center; color:var(--muted); font-size:0.8rem; margin-top:15px;">Mostrando ${cierres.length} de ${res.total} cierres. Usa los filtros para refinar.</p>`;
+        }
+      } catch (e) {
+        lista.innerHTML = '<p style="text-align:center; color:var(--danger);">Error de conexión al cargar el historial.</p>';
+      }
+    }
+
+    async function verDetalleCierre(id) {
+      const modal = document.getElementById('modalDetalleCierre');
+      document.getElementById('detalleSubtitulo').textContent = 'Cargando...';
+      document.getElementById('detalleResumen').innerHTML = '<p style="text-align:center; color:var(--muted); margin:0;">Cargando...</p>';
+      document.getElementById('detalleObservaciones').style.display = 'none';
+      document.getElementById('detalleMovimientos').innerHTML = '<p style="text-align:center; color:var(--muted); margin:0;">Cargando...</p>';
+      modal.style.display = 'flex';
+
+      try {
+        const req = await fetch('/api/admin/caja', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accion: 'detalle_cierre', contrasena: contrasenaActual, id })
+        });
+        const res = await req.json();
+
+        if (res.status !== 'ok') {
+          document.getElementById('detalleResumen').innerHTML = `<p style="text-align:center; color:var(--danger); margin:0;">${res.mensaje}</p>`;
+          return;
+        }
+
+        const c = res.cierre;
+        const fechaObj = new Date(c.created_at);
+        const fechaTxt = fechaObj.toLocaleDateString('es-CO', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric', timeZone: 'America/Bogota' });
+        const horaTxt = fechaObj.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' });
+        document.getElementById('detalleSubtitulo').textContent = `${fechaTxt} · ${horaTxt} · 👤 ${c.cerrado_por}`;
+
+        let textoDif, colorDif;
+        if (c.diferencia === 0) { textoDif = '✅ Cuadró perfecto'; colorDif = 'var(--accent-2)'; }
+        else if (c.diferencia > 0) { textoDif = `⚠️ Sobraron ${fmt(c.diferencia)}`; colorDif = '#e65100'; }
+        else { textoDif = `❌ Faltaron ${fmt(Math.abs(c.diferencia))}`; colorDif = 'var(--danger)'; }
+
+        document.getElementById('detalleResumen').innerHTML = `
+          <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+              <span style="color:var(--muted); font-size:0.85rem;">💵 Base Fija:</span>
+              <strong style="color:var(--ink); font-size:0.9rem;">${fmt(c.base_fija)}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+              <span style="color:var(--muted); font-size:0.85rem;">📥 Recaudo Ventas:</span>
+              <strong style="color:var(--accent-2); font-size:0.9rem;">${fmt(c.total_recaudo)}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+              <span style="color:var(--muted); font-size:0.85rem;">🟢 Ingresos Extra:</span>
+              <strong style="color:var(--accent-2); font-size:0.9rem;">${fmt(c.total_ingresos)}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+              <span style="color:var(--muted); font-size:0.85rem;">🔴 Salidas/Gastos:</span>
+              <strong style="color:var(--danger); font-size:0.9rem;">-${fmt(c.total_salidas)}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+              <span style="color:var(--muted); font-size:0.85rem;">🔵 Consignado al Banco:</span>
+              <strong style="color:var(--accent); font-size:0.9rem;">-${fmt(c.total_consig)}</strong>
+          </div>
+          <hr style="border:0; border-top:1px dashed var(--ring-strong); margin: 10px 0;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+              <span style="color:var(--ink); font-weight:600; font-size:0.9rem;">Total Esperado:</span>
+              <strong style="color:var(--ink); font-size:1rem;">${fmt(c.total_esperado)}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+              <span style="color:var(--ink); font-weight:600; font-size:0.9rem;">Monto Contado:</span>
+              <strong style="color:var(--ink); font-size:1rem;">${fmt(c.monto_contado)}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--ring);">
+              <span style="color:var(--ink); font-weight:700; font-size:1rem;">Diferencia:</span>
+              <strong style="color:${colorDif}; font-size:1.1rem;">${textoDif}</strong>
+          </div>
+        `;
+
+        if (c.observaciones) {
+          document.getElementById('detalleObservaciones').style.display = 'block';
+          document.getElementById('detalleObservacionesTexto').textContent = c.observaciones;
+        }
+
+        const movs = res.movimientos || [];
+        if (movs.length === 0) {
+          document.getElementById('detalleMovimientos').innerHTML = '<p style="text-align:center; color:var(--muted); margin:0;">Sin movimientos ese día.</p>';
+        } else {
+          const tipoLabel = { ingreso: '🟢 Ingreso', salida: '🔴 Gasto', consignacion: '🔵 Consignación', recepcion: '📥 Recibido', base: '💵 Base', apertura: '🔓 Apertura', condonacion: '🚫 Liberación', cierre: '🔒 Cierre' };
+          const tipoColor = { ingreso: 'var(--accent-2)', salida: 'var(--danger)', consignacion: 'var(--accent)', recepcion: 'var(--accent-2)', base: 'var(--ink)', apertura: 'var(--muted)', condonacion: 'var(--muted)', cierre: 'var(--ink)' };
+          document.getElementById('detalleMovimientos').innerHTML = movs.map(m => {
+            const hora = new Date(m.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' });
+            const signo = (m.tipo === 'salida' || m.tipo === 'consignacion') ? '-' : '';
+            return `
+              <div style="display:flex; justify-content:space-between; border-bottom: 1px solid var(--ring); padding: 6px 0;">
+                <span style="color:var(--muted); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding-right:8px;">${hora} - ${tipoLabel[m.tipo] || m.tipo}: ${m.descripcion || ''}</span>
+                <strong style="color:${tipoColor[m.tipo] || 'var(--ink)'}; flex-shrink:0;">${signo}${fmt(m.monto)}</strong>
+              </div>
+            `;
+          }).join('');
+        }
+
+      } catch (e) {
+        document.getElementById('detalleResumen').innerHTML = '<p style="text-align:center; color:var(--danger); margin:0;">Error de conexión.</p>';
       }
     }
   </script>
