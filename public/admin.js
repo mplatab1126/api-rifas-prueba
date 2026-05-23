@@ -142,13 +142,34 @@ const $ = id => document.getElementById(id);
     let telefonoClienteActualEnVista = '';
     let boletaExternaTemp = null;
 
-    // Asesores cuyas ganancias son propias (independientes)
-    const ASESORES_INDEPENDIENTES = ['alejandra plata', 'claudia', 'joaquín', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
+    // Lista de asesores independientes — se carga desde la BD (tabla asesores_config)
+    // al iniciar sesión. Mientras no haya cargado todavía, queda vacía y todos se
+    // consideran "Mi equipo" por defecto.
+    let LISTA_INDEPENDIENTES = [];
+
+    async function cargarListaIndependientes() {
+        try {
+            const r = await fetch('/api/admin/asesores-config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contrasena: localStorage.getItem(STORAGE_KEY),
+                    accion: 'lista_independientes'
+                })
+            });
+            const json = await r.json();
+            if (json.status === 'ok') {
+                LISTA_INDEPENDIENTES = (json.independientes || []).map(n => n.toLowerCase().trim());
+            }
+        } catch (e) {
+            console.error('No se pudo cargar la lista de independientes:', e);
+        }
+    }
 
     function esAsesorIndependiente(nombre) {
         if (!nombre) return false;
         const n = nombre.toLowerCase().trim();
-        return ASESORES_INDEPENDIENTES.some(ind => n.includes(ind));
+        return LISTA_INDEPENDIENTES.some(ind => n === ind);
     }
 
     function inicializarAsesor(nombre) {
@@ -187,6 +208,7 @@ const $ = id => document.getElementById(id);
               $('v_contrasena').value = pwd; 
               $('smartInput').focus();
               cargarPlataformas();
+              cargarListaIndependientes();
               inicializarAsesor(res.asesor);
               if (res.asesor === 'Mateo') $('btnFinanzas').style.display = '';
               if (res.asesor === 'Mateo' || res.asesor === 'Alejo P' || res.asesor === 'Alejo Plata') $('btnLlamadas').style.display = '';

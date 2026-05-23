@@ -35,6 +35,26 @@ export default async function handler(req, res) {
   if (!nombreAsesor) {
     return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
   }
+
+  // ── Lista de nombres marcados como independientes ──
+  // Accesible para cualquier asesor autenticado: el frontend necesita
+  // saber esta lista para decidir qué UI mostrar (ej. ocultar el toggle
+  // "oficina/calle" cuando un independiente registra efectivo).
+  if (accion === 'lista_independientes') {
+    const { data, error } = await supabase
+      .from('asesores_config')
+      .select('asesor_nombre')
+      .eq('es_independiente', true);
+
+    if (error) return res.status(500).json({ status: 'error', mensaje: error.message });
+
+    return res.status(200).json({
+      status: 'ok',
+      independientes: (data || []).map(r => r.asesor_nombre)
+    });
+  }
+
+  // ── Las siguientes acciones solo son para Mateo ──
   if (!ADMINS.includes(nombreAsesor.toLowerCase())) {
     return res.status(403).json({ status: 'error', mensaje: 'Solo el administrador puede gestionar asesores.' });
   }
