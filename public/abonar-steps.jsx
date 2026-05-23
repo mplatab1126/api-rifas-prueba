@@ -23,7 +23,7 @@ window.StepBuscar = function StepBuscar({ pais, setPais, telefono, setTelefono, 
         <p className="ab-eyebrow">Paso 1 de 3</p>
         <h1 className="ab-titulo">Encontremos tus boletas</h1>
         <p className="ab-mensaje">
-          El abono se aplicará a tu boleta de la rifa actual <strong>La Perla Roja</strong>.
+          El abono se aplicará a tu boleta de la rifa actual <strong>Casa Santa Teresita</strong>.
         </p>
       </div>
 
