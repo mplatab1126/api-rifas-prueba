@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
+import { grupoDeAsesor } from '../lib/asesores.js';
 import { PRECIOS } from '../config/precios.js';
 
 export default async function handler(req, res) {
@@ -8,9 +9,6 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
   const { numeroBoleta, valorAbono, metodoPago, referencia, contrasena, esPendiente, idTransferencia, esPagoInteligente, permitirExceso, boletasRepartidas } = req.body;
-
-  const ASESORES_INDEPENDIENTES = ['alejandra plata', 'joaquín', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
-  const esIndependiente = (nombre) => nombre && ASESORES_INDEPENDIENTES.some(ind => nombre.toLowerCase().includes(ind));
 
   const nombreAsesor = validarAsesor(contrasena);
   if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña de asesor incorrecta' });
@@ -72,8 +70,8 @@ export default async function handler(req, res) {
     // 3. Validar grupo de asesores ANTES de tocar la base de datos
     const asesorBoleta = boletaData.asesor || '';
     if (asesorBoleta) {
-        const grupoQuieneAbona = esIndependiente(nombreAsesor) ? 'independiente' : 'regular';
-        const grupoBoleta = esIndependiente(asesorBoleta) ? 'independiente' : 'regular';
+        const grupoQuieneAbona = await grupoDeAsesor(nombreAsesor);
+        const grupoBoleta = await grupoDeAsesor(asesorBoleta);
         if (grupoQuieneAbona !== grupoBoleta) {
             return res.status(400).json({
                 status: 'error',

@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
+import { listarIndependientes } from '../lib/asesores.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -11,7 +12,6 @@ export default async function handler(req, res) {
   const nombreAsesor = validarAsesor(contrasena);
   if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
 
-  const INDEPENDIENTES = ['alejandra plata', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
   const FECHA_CORTE_CAJA = '2026-03-17';
 
   // Fecha de hoy en zona horaria Colombia
@@ -140,6 +140,8 @@ export default async function handler(req, res) {
       }
 
       // 4. Calcular pendiente por asesor (cobrado histórico - recibido histórico), separando equipo e independientes
+      const listaIndep = await listarIndependientes();
+      const setIndep = new Set(listaIndep); // ya viene en lowercase+trim
       const asesoresEquipo = [];
       const asesoresIndependientes = [];
       for (const [asesor, cobrado] of Object.entries(cobradoPorAsesor)) {
@@ -147,7 +149,7 @@ export default async function handler(req, res) {
         const pendiente = cobrado - recibido;
         if (pendiente > 0) {
           const entry = { asesor, pendiente, cobrado, recibido };
-          if (INDEPENDIENTES.includes(asesor.toLowerCase().trim())) {
+          if (setIndep.has(String(asesor).toLowerCase().trim())) {
             asesoresIndependientes.push(entry);
           } else {
             asesoresEquipo.push(entry);

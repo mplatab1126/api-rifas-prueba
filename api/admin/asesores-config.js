@@ -1,6 +1,7 @@
 import { supabaseAdmin as supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
+import { invalidarCacheAsesores } from '../lib/asesores.js';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Endpoint para la configuración por asesor (tabla `asesores_config`).
@@ -119,6 +120,7 @@ export default async function handler(req, res) {
 
     if (error) return res.status(500).json({ status: 'error', mensaje: error.message });
 
+    invalidarCacheAsesores();
     return res.status(200).json({ status: 'ok', mensaje: 'Asesor actualizado.' });
   }
 

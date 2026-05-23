@@ -897,7 +897,21 @@
 <script>
 // ── Constantes ────────────────────────────────────────────────────────────
 const STORAGE_KEY = 'asesor_pwd';
-const EXCLUIDOS_MI_EQUIPO = ['alejandra plata', 'claudia', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
+// Lista de independientes cargada desde la tabla `asesores_config`
+// (antes estaba pegada a mano y desincronizada con otros archivos).
+let LISTA_INDEPENDIENTES = [];
+async function cargarListaIndependientes() {
+  try {
+    const r = await fetch('/api/admin/asesores-config', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contrasena: localStorage.getItem(STORAGE_KEY), accion: 'lista_independientes' })
+    });
+    const json = await r.json();
+    if (json.status === 'ok') {
+      LISTA_INDEPENDIENTES = (json.independientes || []).map(n => n.toLowerCase().trim());
+    }
+  } catch (e) { console.error('No se pudo cargar lista de independientes:', e); }
+}
 const FECHA_DESDE_DEFAULT = '2026-01-26';
 const FECHA_HASTA_DEFAULT = '2026-04-04';
 
@@ -961,6 +975,7 @@ async function doLogin() {
       document.getElementById('topBar').style.display      = 'none';
       document.getElementById('app').style.display         = 'block';
       document.getElementById('topAsesor').textContent     = asesorNombre;
+      cargarListaIndependientes();
       cargarTodo();
     } else {
       errEl.textContent = data.mensaje || 'Contraseña incorrecta';
@@ -1051,7 +1066,7 @@ function toggleChip(label, val) {
 
 function seleccionarMiEquipo() {
   document.querySelectorAll('.asesor-chk').forEach(chk => {
-    const activo = !EXCLUIDOS_MI_EQUIPO.includes(chk.value.toLowerCase().trim());
+    const activo = !LISTA_INDEPENDIENTES.includes(chk.value.toLowerCase().trim());
     chk.checked = activo;
     const label = chk.closest('.asesor-chip');
     if (label) label.classList.toggle('activo', activo);

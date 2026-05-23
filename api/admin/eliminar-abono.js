@@ -1,9 +1,7 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
-
-const ASESORES_INDEPENDIENTES = ['alejandra plata', 'joaquín', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
-const esIndependiente = (nombre) => nombre && ASESORES_INDEPENDIENTES.some(ind => nombre.toLowerCase().includes(ind));
+import { grupoDeAsesor } from '../lib/asesores.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -24,8 +22,8 @@ export default async function handler(req, res) {
     const { data: boletaCheck } = await supabase.from('boletas').select('asesor').eq('numero', numeroLimpio).single();
     const asesorBoleta = boletaCheck?.asesor || '';
     if (asesorBoleta) {
-      const grupoAsesor = esIndependiente(nombreAsesor) ? 'independiente' : 'regular';
-      const grupoBoleta = esIndependiente(asesorBoleta) ? 'independiente' : 'regular';
+      const grupoAsesor = await grupoDeAsesor(nombreAsesor);
+      const grupoBoleta = await grupoDeAsesor(asesorBoleta);
       if (grupoAsesor !== grupoBoleta) {
         return res.status(400).json({ status: 'error', mensaje: `🚫 Esta boleta pertenece al equipo "${grupoBoleta}". Tu equipo (${grupoAsesor}) no puede eliminar abonos de esta boleta.` });
       }

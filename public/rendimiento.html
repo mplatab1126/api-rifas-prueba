@@ -632,6 +632,7 @@
       rifaIdActiva = 'actual';
       rifaInicioTimestamp = null;
 
+      cargarListaIndependientes();
       cargarRifasDisponibles();
       cargarEstadisticas();
       cargarEstadoFacebook();
@@ -1353,10 +1354,24 @@
     }
 
     // Funciones de Checkbox y Limpieza
-    const EXCLUIDOS_MI_EQUIPO = ['alejandra plata', 'claudia', 'joaquin', 'lili', 'liliana', 'luisa', 'luisa rivera', 'nena'];
+    // Lista de independientes que se carga desde la tabla `asesores_config`.
+    // Se actualiza cada vez que se entra a Rendimiento (cargarListaIndependientes).
+    let LISTA_INDEPENDIENTES = [];
+    async function cargarListaIndependientes() {
+        try {
+            const r = await fetch('/api/admin/asesores-config', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contrasena: localStorage.getItem(STORAGE_KEY), accion: 'lista_independientes' })
+            });
+            const json = await r.json();
+            if (json.status === 'ok') {
+                LISTA_INDEPENDIENTES = (json.independientes || []).map(n => n.toLowerCase().trim());
+            }
+        } catch (e) { console.error('No se pudo cargar la lista de independientes:', e); }
+    }
     function seleccionarMiEquipo() {
         document.querySelectorAll('.asesor-chk').forEach(chk => {
-            chk.checked = !EXCLUIDOS_MI_EQUIPO.includes(chk.value.toLowerCase().trim());
+            chk.checked = !LISTA_INDEPENDIENTES.includes(chk.value.toLowerCase().trim());
         });
         verificarAsesoresYFiltrar();
     }
