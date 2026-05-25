@@ -84,7 +84,7 @@ window.HouseLanding = function HouseLanding({ rifa, onComprar, tweaks }) {
         <div className="hd-card">
           <img className="hd-icon" src={window.ICONS_3D.trophy} alt="" />
           <p className="hd-label">Cuántos ganadores</p>
-          <p className="hd-value">8 ganadores</p>
+          <p className="hd-value">9 ganadores</p>
         </div>
       </div>
 

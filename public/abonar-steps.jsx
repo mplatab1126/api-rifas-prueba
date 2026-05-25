@@ -23,7 +23,7 @@ window.StepBuscar = function StepBuscar({ pais, setPais, telefono, setTelefono, 
         <p className="ab-eyebrow">Paso 1 de 3</p>
         <h1 className="ab-titulo">Encontremos tus boletas</h1>
         <p className="ab-mensaje">
-          El abono se aplicará a tu boleta de la rifa actual <strong>La Perla Roja</strong>.
+          El abono se aplicará a tu boleta de la rifa actual <strong>Casa Santa Teresita</strong>.
         </p>
       </div>
 
@@ -346,7 +346,8 @@ window.StepConfirmar = function StepConfirmar({ cliente, boletasPagar, monto, se
     setOpcion("custom");
   };
 
-  const valid = monto >= 10000 && monto <= totalSaldo;
+  const minimoAbono = Math.min(20000, totalSaldo);
+  const valid = monto >= minimoAbono && monto <= totalSaldo;
   const boletasLabel = boletasPagar.map(b => "N° " + b.numero).join(", ");
 
   return (
@@ -374,7 +375,7 @@ window.StepConfirmar = function StepConfirmar({ cliente, boletasPagar, monto, se
           autoFocus
         />
       </div>
-      <p className="ab-help" style={{ marginTop: 8 }}>Mínimo {window.formatCOP(10000)} · Máximo {window.formatCOP(totalSaldo)}</p>
+      <p className="ab-help" style={{ marginTop: 8 }}>Mínimo {window.formatCOP(minimoAbono)} · Máximo {window.formatCOP(totalSaldo)}</p>
 
       <div style={{ height: 24 }} />
 
