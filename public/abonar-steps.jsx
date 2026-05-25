@@ -346,7 +346,8 @@ window.StepConfirmar = function StepConfirmar({ cliente, boletasPagar, monto, se
     setOpcion("custom");
   };
 
-  const valid = monto >= 10000 && monto <= totalSaldo;
+  const minimoAbono = Math.min(20000, totalSaldo);
+  const valid = monto >= minimoAbono && monto <= totalSaldo;
   const boletasLabel = boletasPagar.map(b => "N° " + b.numero).join(", ");
 
   return (
@@ -374,7 +375,7 @@ window.StepConfirmar = function StepConfirmar({ cliente, boletasPagar, monto, se
           autoFocus
         />
       </div>
-      <p className="ab-help" style={{ marginTop: 8 }}>Mínimo {window.formatCOP(10000)} · Máximo {window.formatCOP(totalSaldo)}</p>
+      <p className="ab-help" style={{ marginTop: 8 }}>Mínimo {window.formatCOP(minimoAbono)} · Máximo {window.formatCOP(totalSaldo)}</p>
 
       <div style={{ height: 24 }} />
 
