@@ -95,18 +95,6 @@
     .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(5px); z-index: 2000; display: none; align-items: center; justify-content: center; }
     .modal-card { background: #fff; width: 90%; max-width: 400px; border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
 
-    /* SELECTOR DE RIFA */
-    #selectorRifa { position: fixed; inset: 0; background: #0f172a; z-index: 150; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
-    .selector-titulo { font-size: 1.1rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
-    .selector-subtitulo { font-size: 2rem; font-weight: 900; color: #fff; margin: 0 0 40px 0; letter-spacing: -1px; text-align: center; }
-    .selector-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; width: 100%; max-width: 780px; }
-    .selector-card { background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 32px 24px; cursor: pointer; transition: all 0.2s; text-align: center; }
-    .selector-card:hover { background: rgba(255,255,255,0.1); border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
-    .selector-card-icon { font-size: 3rem; margin-bottom: 12px; display: block; }
-    .selector-card-title { font-size: 1.3rem; font-weight: 900; color: #fff; margin-bottom: 6px; }
-    .selector-card-sub { font-size: 0.85rem; font-weight: 600; color: #64748b; }
-    .selector-card-badge { display: inline-block; margin-top: 14px; padding: 5px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; }
-    .badge-grande { background: #14532d; color: #4ade80; }
   </style>
 </head>
 <body>
@@ -123,25 +111,10 @@
     </div>
   </div>
 
-  <div id="selectorRifa">
-    <p class="selector-titulo">BI Analytics PRO · Los Plata</p>
-    <h2 class="selector-subtitulo">¿Qué rendimiento quieres ver?</h2>
-    <div class="selector-grid">
-      <div class="selector-card" onclick="seleccionarRifa()">
-        <span class="selector-card-icon">🚗</span>
-        <div class="selector-card-title">Rifa Principal</div>
-        <div class="selector-card-sub">Boletas del 0000 al 9999</div>
-        <span class="selector-card-badge badge-grande">Rifa Principal · $150.000</span>
-      </div>
-    </div>
-    
-  </div>
-
   <div class="top-bar" id="topBar" style="display:none;">
     <div class="top-bar-title">LOS PLATA <span id="badgeRifa">BI Analytics PRO</span></div>
     <div style="display:flex; gap:10px; align-items: center; flex-wrap: wrap;">
       <span style="font-size: 0.8rem; color: #94a3b8; margin-right: 10px; font-weight: 600;" id="lastSyncTime">Corte: -</span>
-      <button class="btn" style="display:none; background: rgba(255,255,255,0.08); color: #94a3b8; border: 1px solid rgba(255,255,255,0.12); font-size:0.8rem;" onclick="volverAlSelector()">🔄 Cambiar Rifa</button>
       <button class="btn btn-sync-avanzado" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); display:none;" onclick="sincronizarChateaPro(this)">🔄 Sync ChateaPro</button>
       <button class="btn btn-sync-avanzado" style="background: #3b82f6; color: white; display:none;" onclick="sincronizarFacebook(this)">📊 Sync Meta Ads</button>
       
@@ -602,15 +575,8 @@
       } catch (error) { if(!auto) { btn.textContent = 'Acceder a la Data'; btn.disabled = false; msg.textContent = 'Error de conexión'; } }
     }
 
-    function mostrarSelectorRifa() {
-      document.getElementById('selectorRifa').style.display = 'flex';
-      document.getElementById('topBar').style.display = 'none';
-      document.getElementById('mainDashboard').style.display = 'none';
-    }
-
     function seleccionarRifa() {
       tipoRifaActual = '4cifras';
-      document.getElementById('selectorRifa').style.display = 'none';
       document.getElementById('topBar').style.display = 'flex';
       document.getElementById('mainDashboard').style.display = 'block';
       document.getElementById('badgeRifa').textContent = LABELS_RIFA['4cifras'].titulo;
@@ -800,11 +766,6 @@
       if (!rifa) return;
       inputDesde.value = soloFecha(rifa.fecha_inicio);
       inputHasta.value = soloFecha(rifa.fecha_fin);
-    }
-
-    function volverAlSelector() {
-      tipoRifaActual = null;
-      mostrarSelectorRifa();
     }
 
     function setRangoFecha(rango) {
