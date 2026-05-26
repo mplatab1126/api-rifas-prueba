@@ -16,11 +16,7 @@
   const PAGES = [
     { id: 'admin',       label: 'Panel de Ventas',       href: '/admin',                  section: 'principal', roles: 'todos' },
     { id: 'caja',        label: 'Cuadre de Caja',        href: '/caja',                   section: 'principal', roles: 'todos' },
-    { id: 'rendimiento', label: 'Rendimiento',           href: '/rendimiento',           section: 'gerencia',  roles: 'gerencia',
-      children: [
-        { id: 'rend-4cifras', label: 'Rifa de 4 Cifras',  href: '/rendimiento?tipo=4cifras' },
-      ]
-    },
+    { id: 'rendimiento', label: 'Rendimiento',           href: '/rendimiento',           section: 'gerencia',  roles: 'gerencia' },
     { id: 'rendimiento-contenido', label: 'Rendimiento contenido', href: '/rendimiento-contenido', section: 'gerencia', roles: 'rend-contenido' },
     { id: 'llamadas',    label: 'Llamadas IA',           href: '/llamadas',              section: 'gerencia',  roles: 'gerencia' },
     { id: 'horarios',    label: 'Gestión de Horarios',   href: '/admin-horarios',        section: 'gerencia',  roles: 'gerencia' },
