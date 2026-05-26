@@ -2,6 +2,18 @@
    SIDEBAR DE NAVEGACIÓN COMPARTIDO — Los Plata S.A.S.
    ═══════════════════════════════════════════════════════════════════ */
 (function () {
+  // Evita que la rueda del mouse cambie el valor de las cajitas numéricas
+  // (input type="number"). Por defecto el navegador sube/baja el número al
+  // hacer scroll con el cursor encima, lo que causaba ediciones accidentales
+  // en montos de caja, gastos, etc. Al hacer scroll sobre una cajita enfocada
+  // le quitamos el foco: el valor no cambia y la página sigue scrolleando.
+  document.addEventListener('wheel', function (e) {
+    const el = e.target;
+    if (el && el.tagName === 'INPUT' && el.type === 'number' && el === document.activeElement) {
+      el.blur();
+    }
+  }, { passive: true });
+
   const STORAGE_KEY = 'asesor_pwd';
   const STORAGE_NAME = 'asesor_nombre';
   const PERMISOS_CACHE_KEY = 'asesor_permisos';
