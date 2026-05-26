@@ -705,12 +705,46 @@ export default async function handler(req, res) {
       });
       if (errMov) throw errMov;
 
+      // 7) Arrastrar el efectivo contado como base del día siguiente al día atrasado,
+      //    igual que hace el cierre normal. Antes el cierre atrasado se saltaba este paso,
+      //    por eso el día siguiente amanecía con base $0.
+      //    Solo lo hacemos si ese día siguiente todavía NO tiene cierre propio, para no
+      //    pisar la base de un día que ya fue arqueado. No borramos nada: insertamos la
+      //    base nueva y la lógica de lectura siempre usa la más reciente.
+      const sigCol = new Date(fechaAtrasada + 'T12:00:00');
+      sigCol.setDate(sigCol.getDate() + 1);
+      const diaSiguiente = sigCol.getFullYear() + '-' +
+        String(sigCol.getMonth() + 1).padStart(2, '0') + '-' +
+        String(sigCol.getDate()).padStart(2, '0');
+
+      const { data: cierreSiguiente } = await supabase
+        .from('movimientos_caja')
+        .select('id')
+        .eq('fecha', diaSiguiente)
+        .eq('tipo', 'cierre')
+        .limit(1)
+        .maybeSingle();
+
+      let warningBase = null;
+      if (!cierreSiguiente) {
+        const { error: errBaseSig } = await supabase.from('movimientos_caja').insert({
+          fecha: diaSiguiente,
+          tipo: 'base',
+          monto: montoContadoDia,
+          descripcion: `Base inicial arrastrada del cierre de ${fechaAtrasada} (por ${nombreAsesor})`,
+          creado_por: nombreAsesor
+        });
+        // Si falla, no bloqueamos el cierre: la base se puede ajustar a mano.
+        if (errBaseSig) warningBase = 'Cierre guardado, pero no se pudo arrastrar la base al día siguiente. Ajústala manualmente.';
+      }
+
       return res.status(200).json({
         status: 'ok',
         mensaje: 'Cierre atrasado guardado',
         montoContadoDia,
         totalEsperado,
-        diferencia
+        diferencia,
+        warning: warningBase
       });
     }
 
