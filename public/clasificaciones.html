@@ -493,7 +493,7 @@
       cargarPlantillas();
     }
     async function eliminarPlantilla(id) {
-      if (!confirm('¿Eliminar esta plantilla?')) return;
+      if (!(await modalConfirm('¿Eliminar esta plantilla?'))) return;
       const pwd = localStorage.getItem(PWD_KEY) || '';
       await fetch('/api/admin/plantillas-difusion', {
         method:'POST', headers:{'Content-Type':'application/json'},
@@ -537,6 +537,7 @@
       entrar();
     }
   </script>
+  <script src="ui-modal.js"></script>
   <script src="shared-nav.js"></script>
 </body>
 </html>

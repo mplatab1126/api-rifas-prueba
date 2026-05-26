@@ -466,7 +466,7 @@
     const semAnterior = new Date(semanaActual);
     semAnterior.setDate(semAnterior.getDate() - 7);
     const etiqueta = 'Semana del ' + formatSemana(semAnterior);
-    if (!confirm(`¿Copiar los horarios de "${etiqueta}" a la semana actual?\n\nEsto sobrescribirá los horarios ya guardados para esta semana.`)) return;
+    if (!(await modalConfirm(`¿Copiar los horarios de "${etiqueta}" a la semana actual?\n\nEsto sobrescribirá los horarios ya guardados para esta semana.`))) return;
     try {
       const r = await fetch('/api/admin/horarios', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -675,7 +675,7 @@
   // ── Eliminar asesor ──
   async function confirmarEliminar(asesor) {
     const semLabel = 'Semana del ' + formatSemana(semanaActual);
-    if (!confirm(`¿Eliminar el horario de "${asesor}" para "${semLabel}"?\n\nEsta acción no se puede deshacer.`)) return;
+    if (!(await modalConfirm(`¿Eliminar el horario de "${asesor}" para "${semLabel}"?\n\nEsta acción no se puede deshacer.`))) return;
     try {
       const r = await fetch('/api/admin/horarios', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -721,6 +721,7 @@
   }
 </script>
 </div><!-- /snav-page-content -->
+<script src="ui-modal.js"></script>
 <script src="shared-nav.js"></script>
 </body>
 </html>

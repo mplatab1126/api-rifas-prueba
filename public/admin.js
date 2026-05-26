@@ -212,6 +212,11 @@ const $ = id => document.getElementById(id);
               inicializarAsesor(res.asesor);
               if (res.asesor === 'Mateo') $('btnFinanzas').style.display = '';
               if (res.asesor === 'Mateo' || res.asesor === 'Alejo P' || res.asesor === 'Alejo Plata') $('btnLlamadas').style.display = '';
+              const asesoresDevolucion = ['Juan Pablo Rojas', 'Juan Pablo', 'Mateo', 'Alejo P', 'Alejo Plata'];
+              if (asesoresDevolucion.includes(res.asesor)) {
+                  const elDev = document.getElementById('seccionDevolucion');
+                  if (elDev) elDev.style.display = '';
+              }
           } else {
               if(!auto) msg.textContent = 'Contraseña incorrecta';
               localStorage.removeItem(STORAGE_KEY);
@@ -694,7 +699,7 @@ const $ = id => document.getElementById(id);
     }
 
     async function liberarReferenciaDesdeBusqueda(idAbono) {
-        if(!confirm("¿Seguro que deseas liberar esta transferencia? Esto eliminará el abono de la boleta y el cliente perderá este dinero en su deuda.")) return;
+        if(!(await modalConfirm("¿Seguro que deseas liberar esta transferencia? Esto eliminará el abono de la boleta y el cliente perderá este dinero en su deuda."))) return;
 
         try {
             // Reutilizamos tu API mágica de eliminar-abono que ya hace todo esto perfecto
@@ -903,7 +908,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
                if (res.status === 'error' && res.codigo === 'EXCESO_SALDO') {
                    const fmtC = n => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
                    const d = res.datos || {};
-                   const aceptar = confirm(`⚠️ AVISO — Boleta ${d.numeroBoleta || nums[i]}\n\nEl abono (${fmtC(d.montoAbono)}) supera el precio total (${fmtC(d.saldoRestante)}) en ${fmtC(d.exceso)}.\n\n¿Registrar la venta igual?\n\nLos pesos de más NO quedarán en contra de la boleta. Se reflejarán en el total abonado y el saldo restante quedará en $0.`);
+                   const aceptar = await modalConfirm(`⚠️ AVISO — Boleta ${d.numeroBoleta || nums[i]}\n\nEl abono (${fmtC(d.montoAbono)}) supera el precio total (${fmtC(d.saldoRestante)}) en ${fmtC(d.exceso)}.\n\n¿Registrar la venta igual?\n\nLos pesos de más NO quedarán en contra de la boleta. Se reflejarán en el total abonado y el saldo restante quedará en $0.`);
                    if (aceptar) {
                        req = await fetch('/api/admin/venta', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ ...ventaPayload, permitirExceso: true }) });
                        res = await req.json();
@@ -1047,7 +1052,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
                if (res.status === 'error' && res.codigo === 'EXCESO_SALDO') {
                    const fmtC = n => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
                    const d = res.datos || {};
-                   const aceptar = confirm(`⚠️ AVISO — Boleta ${d.numeroBoleta || boletasTarget[i]}\n\nEl abono (${fmtC(d.montoAbono)}) supera el saldo restante (${fmtC(d.saldoRestante)}) en ${fmtC(d.exceso)}.\n\n¿Registrar el abono igual?\n\nLos pesos de más NO quedarán en contra de la boleta. Se reflejarán en el total abonado y el saldo restante quedará en $0.`);
+                   const aceptar = await modalConfirm(`⚠️ AVISO — Boleta ${d.numeroBoleta || boletasTarget[i]}\n\nEl abono (${fmtC(d.montoAbono)}) supera el saldo restante (${fmtC(d.saldoRestante)}) en ${fmtC(d.exceso)}.\n\n¿Registrar el abono igual?\n\nLos pesos de más NO quedarán en contra de la boleta. Se reflejarán en el total abonado y el saldo restante quedará en $0.`);
                    if (aceptar) {
                        req = await fetch('/api/admin/abono', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ ...payload, permitirExceso: true }) });
                        res = await req.json();
@@ -1643,7 +1648,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
     }
 
     async function confirmarEliminarAbono(idAbono, btnElement) {
-        if(!confirm("¿Seguro de eliminar este abono? Si usó una transferencia de banco, quedará LIBRE nuevamente.")) return;
+        if(!(await modalConfirm("¿Seguro de eliminar este abono? Si usó una transferencia de banco, quedará LIBRE nuevamente."))) return;
         
         btnElement.textContent = '...';
         btnElement.disabled = true;
@@ -1745,10 +1750,10 @@ async function confirmarLiberarBoleta(numero, totalAbonado) {
         var fmt = function(n) { return new Intl.NumberFormat('es-CO').format(n); };
 
         if (totalAbonado > 0) {
-            if(!confirm(`🚨 ¡CUIDADO! La boleta ${numero} ya tiene $${fmt(totalAbonado)} abonados.\n\nSi la liberas se PERDERÁ todo el historial de pagos y las transferencias asociadas.\n\n¿Estás SEGURO de que quieres liberarla?`)) return;
-            if(!confirm(`⚠️ SEGUNDA CONFIRMACIÓN\n\nVas a liberar la boleta ${numero} que tiene $${fmt(totalAbonado)} en abonos.\n\nEsta acción NO se puede deshacer. ¿Continuar?`)) return;
+            if(!(await modalConfirm(`🚨 ¡CUIDADO! La boleta ${numero} ya tiene $${fmt(totalAbonado)} abonados.\n\nSi la liberas se PERDERÁ todo el historial de pagos y las transferencias asociadas.\n\n¿Estás SEGURO de que quieres liberarla?`))) return;
+            if(!(await modalConfirm(`⚠️ SEGUNDA CONFIRMACIÓN\n\nVas a liberar la boleta ${numero} que tiene $${fmt(totalAbonado)} en abonos.\n\nEsta acción NO se puede deshacer. ¿Continuar?`))) return;
         } else {
-            if(!confirm(`ATENCIÓN: ¿Seguro que quieres LIBERAR la boleta ${numero}?\n\nSe borrará su historial de pagos, se liberarán transferencias asociadas y podrá ser vendida de nuevo.`)) return;
+            if(!(await modalConfirm(`ATENCIÓN: ¿Seguro que quieres LIBERAR la boleta ${numero}?\n\nSe borrará su historial de pagos, se liberarán transferencias asociadas y podrá ser vendida de nuevo.`))) return;
         }
         
         const btn = document.getElementById('btnRegistrarAbono'); 
@@ -2980,7 +2985,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
     }
 
     async function descartarPendiente(id) {
-        if (!confirm('¿Seguro que quieres descartar este egreso? Se eliminará de los pendientes porque no es un gasto real.')) return;
+        if (!(await modalConfirm('¿Seguro que quieres descartar este egreso? Se eliminará de los pendientes porque no es un gasto real.'))) return;
 
         const btn = document.getElementById(`btnDescartar_${id}`);
         if (btn) { btn.disabled = true; btn.textContent = 'Eliminando…'; }
@@ -3259,6 +3264,109 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
             <div style="font-size:0.65rem; font-weight:600; color:${color}; opacity:0.7;">${badge}</div>
           </div>
         </div>`;
+    }
+
+    // ==========================================
+    // MARCAR DEVOLUCIÓN (solo asesores autorizados)
+    // ==========================================
+    async function buscarParaDevolucion() {
+        const fecha = document.getElementById('dev_fecha').value;
+        const hora = document.getElementById('dev_hora').value;
+        const monto = document.getElementById('dev_monto').value;
+        const referencia = document.getElementById('dev_ref').value.trim();
+        const plataforma = document.getElementById('dev_plataforma').value.trim();
+        const divRes = document.getElementById('resultadosDevolucion');
+
+        if (!fecha && !hora && !monto && !referencia && !plataforma) {
+            divRes.innerHTML = '<p style="color:var(--danger); font-size:0.85rem; font-weight:600;">Ingresa al menos un dato para buscar.</p>';
+            return;
+        }
+
+        const btn = document.getElementById('btnBuscarDevolucion');
+        btn.disabled = true; btn.textContent = '⏳ Buscando...';
+        divRes.innerHTML = '<p style="color:var(--muted); font-size:0.85rem;">Buscando...</p>';
+
+        try {
+            const req = await fetch('/api/admin/transferencias', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fecha, hora, monto, referencia, plataforma })
+            });
+            const res = await req.json();
+            btn.disabled = false; btn.textContent = '🔍 Buscar transferencia';
+
+            if (res.status !== 'ok') {
+                divRes.innerHTML = `<p style="color:var(--danger); font-weight:600;">${res.mensaje || 'No se pudo buscar'}</p>`;
+                return;
+            }
+
+            renderResultadosDevolucion(res.lista || [], divRes);
+        } catch (e) {
+            btn.disabled = false; btn.textContent = '🔍 Buscar transferencia';
+            divRes.innerHTML = `<p style="color:var(--danger); font-weight:600;">Error de conexión: ${e.message}</p>`;
+        }
+    }
+
+    function renderResultadosDevolucion(lista, divRes) {
+        if (!lista.length) {
+            divRes.innerHTML = '<p style="color:var(--muted); font-size:0.85rem;">No se encontraron transferencias con esos datos.</p>';
+            return;
+        }
+        const fmt = v => new Intl.NumberFormat('es-CO').format(v);
+        let html = `<div style="font-size:0.78rem; color:var(--muted); margin-bottom:8px;">${lista.length} resultado(s):</div>`;
+        html += '<div style="display:flex; flex-direction:column; gap:8px;">';
+        for (const t of lista) {
+            const estadoUpper = String(t.status || 'LIBRE').toUpperCase();
+            const esLibre = estadoUpper === 'LIBRE';
+            const esDevuelta = estadoUpper === 'DEVUELTA';
+            const colorEstado = esLibre ? '#2e7d32' : (esDevuelta ? '#6a1b9a' : '#c62828');
+            const bgEstado = esLibre ? '#e8f5e9' : (esDevuelta ? '#f3e5f5' : '#ffebee');
+
+            const btnAccion = esLibre
+                ? `<button onclick="marcarComoDevolucion('${t.id}', ${t.monto}, '${String(t.referencia).replace(/'/g, "\\'")}')" style="padding:8px 14px; border-radius:8px; border:none; background:#7b1fa2; color:#fff; font-weight:700; font-size:0.82rem; cursor:pointer; font-family:inherit;">↩️ Marcar Devolución</button>`
+                : `<span style="padding:8px 14px; border-radius:8px; background:${bgEstado}; color:${colorEstado}; font-weight:700; font-size:0.78rem;">${estadoUpper}</span>`;
+
+            const fotoBtn = t.url_comprobante
+                ? `<button onclick="mostrarFoto('${t.url_comprobante}')" style="padding:6px 10px; border-radius:6px; border:1px solid var(--accent); background:var(--pill); color:var(--accent-2); font-size:0.75rem; font-weight:600; cursor:pointer; margin-right:6px;">👁️ Ver Foto</button>`
+                : '';
+
+            html += `
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:12px; border:1px solid var(--ring); border-radius:10px; background:#fff; gap:10px; flex-wrap:wrap;">
+                <div style="flex:1; min-width:180px;">
+                  <div style="font-weight:700; font-size:0.95rem; color:var(--ink);">${t.plataforma} · $${fmt(t.monto)}</div>
+                  <div style="font-size:0.78rem; color:var(--muted); margin-top:3px;">Ref: ${t.referencia} · ${t.fecha}</div>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  ${fotoBtn}${btnAccion}
+                </div>
+              </div>`;
+        }
+        html += '</div>';
+        divRes.innerHTML = html;
+    }
+
+    async function marcarComoDevolucion(idTransferencia, monto, referencia) {
+        const fmt = new Intl.NumberFormat('es-CO').format(monto);
+        const confirmar = await modalConfirm(`¿Marcar como DEVOLUCIÓN la transferencia de $${fmt} (Ref: ${referencia})?\n\nUna vez marcada, no se podrá asignar a ninguna boleta.`);
+        if (!confirmar) return;
+
+        try {
+            const req = await fetch('/api/admin/marcar-devolucion', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idTransferencia, contrasena: localStorage.getItem(STORAGE_KEY) })
+            });
+            const res = await req.json();
+
+            if (res.status === 'ok') {
+                alert(res.mensaje);
+                buscarParaDevolucion();
+            } else {
+                alert('❌ ' + (res.mensaje || 'No se pudo marcar como devolución'));
+            }
+        } catch (e) {
+            alert('❌ Error de conexión: ' + e.message);
+        }
     }
 
     async function convertirABase64(file) {
@@ -3814,7 +3922,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
     }
 
     async function eliminarBitacora(id) {
-        if (!confirm('¿Eliminar esta notificación?')) return;
+        if (!(await modalConfirm('¿Eliminar esta notificación?'))) return;
         const pwd = localStorage.getItem(STORAGE_KEY) || '';
         try {
             const res = await fetch('/api/admin/bitacora', {
