@@ -141,7 +141,7 @@
     <div class="top-bar-title">LOS PLATA <span id="badgeRifa">BI Analytics PRO</span></div>
     <div style="display:flex; gap:10px; align-items: center; flex-wrap: wrap;">
       <span style="font-size: 0.8rem; color: #94a3b8; margin-right: 10px; font-weight: 600;" id="lastSyncTime">Corte: -</span>
-      <button class="btn" style="background: rgba(255,255,255,0.08); color: #94a3b8; border: 1px solid rgba(255,255,255,0.12); font-size:0.8rem;" onclick="volverAlSelector()">🔄 Cambiar Rifa</button>
+      <button class="btn" style="display:none; background: rgba(255,255,255,0.08); color: #94a3b8; border: 1px solid rgba(255,255,255,0.12); font-size:0.8rem;" onclick="volverAlSelector()">🔄 Cambiar Rifa</button>
       <button class="btn btn-sync-avanzado" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); display:none;" onclick="sincronizarChateaPro(this)">🔄 Sync ChateaPro</button>
       <button class="btn btn-sync-avanzado" style="background: #3b82f6; color: white; display:none;" onclick="sincronizarFacebook(this)">📊 Sync Meta Ads</button>
       
@@ -591,7 +591,9 @@
               if (window.__snavSaveAsesor) window.__snavSaveAsesor(res.asesor);
               if (window.__snavRefresh) window.__snavRefresh();
               document.getElementById('loginOverlay').style.display = 'none';
-              mostrarSelectorRifa();
+              // Solo queda la Rifa Principal, así que entramos directo al dashboard
+              // sin pasar por la pantalla "¿Qué rendimiento quieres ver?".
+              seleccionarRifa();
           } else {
               if(!auto) msg.textContent = 'Acceso denegado. Solo gerencia.';
               localStorage.removeItem(STORAGE_KEY);
