@@ -8,6 +8,7 @@ const CATEGORIAS = [
   { id: 'construccion',     nombre: 'Construcción Apartamento',  icono: '🏗️', afecta_er: false },
   { id: 'rifa_camioneta',   nombre: 'Rifa Camioneta',            icono: '🚗', afecta_er: false },
   { id: 'rifa_santa_teresita', nombre: 'Rifa Casa Santa Teresita', icono: '🏡', afecta_er: false },
+  { id: 'rifa_santa_teresita_2', nombre: 'Rifa Casa Santa Teresita 2', icono: '🏡', afecta_er: false },
   { id: 'retiro_ganancia',  nombre: 'Retiro de Ganancia',        icono: '💸', afecta_er: false },
   { id: 'retiro_capital',   nombre: 'Retiro de Capital',         icono: '🏦', afecta_er: false },
   // Movimiento a Caja: traslado interno (plata pasa de una cuenta bancaria a efectivo físico).

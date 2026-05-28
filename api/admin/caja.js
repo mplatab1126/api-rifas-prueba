@@ -264,6 +264,7 @@ export default async function handler(req, res) {
           construccion:     'Construcción Apartamento',
           rifa_camioneta:   'Rifa Camioneta',
           rifa_santa_teresita: 'Rifa Casa Santa Teresita',
+          rifa_santa_teresita_2: 'Rifa Casa Santa Teresita 2',
           retiro_ganancia:  'Retiro de Ganancia'
         };
         const catNombre = CATS[categoria];
