@@ -819,22 +819,44 @@
         btn.disabled = true;
         msgError.style.display = 'none';
         try {
-          const response = await fetch("/api/verificar-boleta", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ numero_boleta: boletaParam, telefono: inputPhone })
-          });
-          if (!response.ok) throw new Error("error");
-          // Validación correcta: redirigimos al detalle nuevo (paleta crema/negro/menta)
-          // con telefono + boleta como deep-link. La vista ya implementada en
-          // /ver-mi-boleta-la-plata-house se encarga de cargar y mostrar la boleta.
+          // Paso 1: validar identidad contra la API
           const telLimpio = String(inputPhone).replace(/\D/g, '');
           const numLimpio = String(boletaParam).padStart(4, '0');
-          window.location.replace(
-            '/ver-mi-boleta-la-plata-house?telefono=' + encodeURIComponent(telLimpio)
-            + '&boleta=' + encodeURIComponent(numLimpio)
-          );
+          const v = await fetch("/api/verificar-boleta", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ numero_boleta: numLimpio, telefono: telLimpio })
+          });
+          if (!v.ok) throw new Error("verify_failed");
+
+          // Paso 2: obtener los datos completos del cliente y sus boletas
+          const c = await fetch("/api/abonar/cliente?telefono=" + encodeURIComponent(telLimpio));
+          if (!c.ok) throw new Error("data_failed");
+          const data = await c.json();
+          if (!data.encontrado || !Array.isArray(data.boletas)) throw new Error("not_found");
+
+          // Paso 3: localizar la boleta específica de esta URL
+          const boleta = data.boletas.find(b => String(b.numero).padStart(4, '0') === numLimpio);
+          if (!boleta) throw new Error("boleta_no_pertenece");
+
+          // Paso 4: poblar el DOM con datos reales
+          const fmt = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 });
+          document.getElementById('val-nombre').textContent = data.nombre || '';
+          document.getElementById('val-apellido').textContent = data.apellido || '';
+          document.getElementById('val-ciudad').textContent = data.ciudad || '';
+          const telMostrar = String(data.telefono || telLimpio).replace(/\D/g, '').slice(-10);
+          document.getElementById('val-telefono').textContent = telMostrar;
+          const abonado = Number(boleta.totalAbonado || 0);
+          const saldo = Number(boleta.saldoPendiente || 0);
+          document.getElementById('val-abonado').textContent = fmt.format(abonado);
+          document.getElementById('val-restante').textContent = fmt.format(saldo);
+          animarProgreso(abonado, abonado + saldo);
+          animarNumeroBoleta(numLimpio);
+
+          // Paso 5: quitar overlay y mostrar la boleta completa
+          document.getElementById('security-overlay').style.display = 'none';
         } catch (error) {
+          console.error('[verificarIdentidad]', error);
           msgError.style.display = 'block';
           msgError.textContent = "El número no coincide con el titular.";
           var box = document.querySelector('.sec-box');
@@ -844,6 +866,15 @@
           btn.textContent = "Ver mi boleta";
           btn.disabled = false;
         }
+      }
+
+      // AUTO-DEEP-LINK: si llega con ?telefono=X (desde el buscador "Ver mi boleta"
+      // del hub o desde links viejos), pre-llenar y verificar automáticamente.
+      if (urlParams.has('telefono')) {
+        const telDeepLink = urlParams.get('telefono').replace(/\D/g, '');
+        const tel10 = telDeepLink.length >= 10 ? telDeepLink.slice(-10) : telDeepLink;
+        document.getElementById('inputPhone').value = tel10;
+        setTimeout(() => verificarIdentidad(), 50);
       }
 
       // PREVIEW MODE: agrega ?preview=1 a la URL para ver la boleta con datos demo
