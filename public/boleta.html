@@ -280,6 +280,48 @@
       .th img { width: 100%; height: 100%; object-fit: cover; }
       .th.active { opacity: 1; border-color: var(--accent); transform: scale(1.04); }
 
+      /* THUMB DE VIDEO */
+      .th-video { position: relative; opacity: 1; }
+      .th-video .th-play-overlay {
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(0,0,0,0.45);
+        pointer-events: none;
+      }
+      .th-video .th-play-overlay svg {
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+      }
+
+      /* MODAL DE VIDEO (YouTube Short 9:16) */
+      .video-modal {
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.94);
+        z-index: 9999;
+        display: none;
+        align-items: center; justify-content: center;
+        padding: 20px;
+      }
+      .video-modal.open { display: flex; }
+      .video-modal-close {
+        position: absolute; top: 16px; right: 16px;
+        width: 44px; height: 44px; border-radius: 50%;
+        background: rgba(255,255,255,0.15);
+        border: none; color: white;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .video-modal-frame {
+        width: min(96vw, 480px);
+        aspect-ratio: 9 / 16;
+        max-height: 92vh;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .video-modal-frame iframe {
+        width: 100%; height: 100%; border: 0; display: block;
+      }
+
       /* PREMIOS */
       .premio {
         padding: 14px 0;
@@ -646,6 +688,12 @@
           <div class="gallery-hint">Desliza para ver mas</div>
         </div>
         <div class="thumbs" id="thumbCarousel">
+          <div class="th th-video" data-video="1_KG5fXGzK0" aria-label="Ver video de la casa">
+            <img src="https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Cine+foto+1.jpg" crossOrigin="anonymous">
+            <div class="th-play-overlay">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+          </div>
           <div class="th active" data-caption="Comedor"><img src="https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Comedor+foto+1.jpg" crossOrigin="anonymous"></div>
           <div class="th" data-caption="Habitación principal"><img src="https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Habitacio%CC%81n+principal+foto+1.jpg" crossOrigin="anonymous"></div>
           <div class="th" data-caption="Habitación principal"><img src="https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/Habitacio%CC%81n+principal+foto+2.jpg" crossOrigin="anonymous"></div>
@@ -710,6 +758,13 @@
 
     <div class="btn-bar">
       <button class="btn-download" id="btnDownload">Guardar mi boleta</button>
+    </div>
+
+    <div class="video-modal" id="videoModal" role="dialog" aria-modal="true" aria-label="Video oficial de la casa">
+      <button class="video-modal-close" id="videoModalClose" aria-label="Cerrar video">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M6 18L18 6"/></svg>
+      </button>
+      <div class="video-modal-frame" id="videoModalFrame"></div>
     </div>
 
     <script>
@@ -831,7 +886,7 @@
         const mainImg = document.getElementById('activeImage');
         const caption = document.getElementById('galleryCaption');
         const viewer = document.getElementById('mainImageViewer');
-        const thumbs = document.querySelectorAll('.th');
+        const thumbs = document.querySelectorAll('.th:not([data-video])');
         let ci = 0;
         const total = thumbs.length;
         function set(i) {
@@ -858,6 +913,29 @@
         if (!prefersReduced) {
           mainImg.addEventListener('load', () => requestAnimationFrame(() => mainImg.classList.add('zooming')), { once: true });
         }
+      })();
+
+      // VIDEO MODAL (YouTube Short)
+      (function(){
+        const videoThumb = document.querySelector('.th[data-video]');
+        const videoModal = document.getElementById('videoModal');
+        const videoModalFrame = document.getElementById('videoModalFrame');
+        const videoModalClose = document.getElementById('videoModalClose');
+        if (!videoThumb || !videoModal) return;
+        function openVideoModal(id) {
+          videoModalFrame.innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + id + '?rel=0&modestbranding=1&autoplay=1&playsinline=1" title="Video oficial" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>';
+          videoModal.classList.add('open');
+          document.body.style.overflow = 'hidden';
+        }
+        function closeVideoModal() {
+          videoModal.classList.remove('open');
+          videoModalFrame.innerHTML = '';
+          document.body.style.overflow = '';
+        }
+        videoThumb.addEventListener('click', () => openVideoModal(videoThumb.dataset.video));
+        videoModalClose.addEventListener('click', closeVideoModal);
+        videoModal.addEventListener('click', (e) => { if (e.target === videoModal) closeVideoModal(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && videoModal.classList.contains('open')) closeVideoModal(); });
       })();
 
       // DESCARGA
