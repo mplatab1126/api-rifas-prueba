@@ -588,11 +588,12 @@
             <path d="M8 11V8a4 4 0 0 1 8 0v3"/>
           </svg>
         </div>
-        <h2 class="sec-title">Verificación</h2>
-        <p class="sec-desc">Ingresa el celular registrado en la boleta <strong id="lbl-boleta">---</strong></p>
+        <h2 class="sec-title" id="sec-title">Verificación</h2>
+        <p class="sec-desc" id="sec-desc">Ingresa el celular registrado en la boleta <strong id="lbl-boleta">---</strong></p>
         <input type="tel" id="inputPhone" class="sec-input" placeholder="Tu número de celular" inputmode="numeric" autocomplete="tel" pattern="[0-9]*">
-        <button class="sec-btn" id="btnVerificar" onclick="verificarIdentidad()">Ver mi boleta</button>
+        <button class="sec-btn" id="btnVerificar" onclick="manejarBotonSeguridad()">Ver mi boleta</button>
         <p id="errorMsg" class="sec-error">El número no coincide.</p>
+        <div id="searchResults" style="display:none; margin-top:14px;"></div>
         <p class="sec-help"><a href="https://wa.me/573107334957" target="_blank" rel="noreferrer">¿Necesitas ayuda?</a></p>
       </div>
     </div>
@@ -769,15 +770,28 @@
 
     <script>
       let boletaParam = "0000";
+      let modoBuscador = false;
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.has('numero')) {
         boletaParam = urlParams.get('numero');
       } else {
         const ruta = window.location.pathname.split('/');
-        const ultimoValor = ruta[ruta.length - 1];
-        if (!isNaN(ultimoValor) && ultimoValor.trim() !== "") boletaParam = ultimoValor;
+        const ultimoValor = (ruta[ruta.length - 1] || '').trim();
+        if (ultimoValor !== "" && /^\d+$/.test(ultimoValor)) {
+          boletaParam = ultimoValor;
+        } else {
+          // No hay número en la URL (ej: /boleta) → el cliente entró por "Ver mi boleta"
+          // del hub. Mostramos el buscador en vez de la verificación.
+          modoBuscador = true;
+        }
       }
       document.getElementById('lbl-boleta').textContent = boletaParam;
+
+      // Si entró sin número, convertir el overlay en buscador.
+      if (modoBuscador) {
+        document.getElementById('sec-title').textContent = 'Encontremos tu boleta';
+        document.getElementById('sec-desc').textContent = 'Escribe el celular con el que compraste y te mostramos tu boleta.';
+      }
 
       const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -868,9 +882,61 @@
         }
       }
 
-      // AUTO-DEEP-LINK: si llega con ?telefono=X (desde el buscador "Ver mi boleta"
-      // del hub o desde links viejos), pre-llenar y verificar automáticamente.
-      if (urlParams.has('telefono')) {
+      // Decide qué hace el botón del overlay según el modo (verificar vs buscar).
+      function manejarBotonSeguridad() {
+        if (modoBuscador) { buscarBoleta(); } else { verificarIdentidad(); }
+      }
+
+      // BUSCADOR: el cliente escribe su celular y encontramos su(s) boleta(s).
+      async function buscarBoleta() {
+        const inputPhone = document.getElementById('inputPhone').value;
+        const btn = document.getElementById('btnVerificar');
+        const msgError = document.getElementById('errorMsg');
+        const results = document.getElementById('searchResults');
+        btn.textContent = "Buscando...";
+        btn.disabled = true;
+        msgError.style.display = 'none';
+        results.style.display = 'none';
+        results.innerHTML = '';
+        try {
+          const telLimpio = String(inputPhone).replace(/\D/g, '');
+          if (telLimpio.length < 7) throw new Error('short');
+          const c = await fetch("/api/abonar/cliente?telefono=" + encodeURIComponent(telLimpio));
+          if (!c.ok) throw new Error("data_failed");
+          const data = await c.json();
+          if (!data.encontrado || !Array.isArray(data.boletas) || data.boletas.length === 0) throw new Error("not_found");
+          if (data.boletas.length === 1) {
+            // Una sola boleta → la abrimos directamente
+            const num = String(data.boletas[0].numero).padStart(4, '0');
+            window.location.href = '/boleta/' + num + '?telefono=' + encodeURIComponent(telLimpio);
+            return;
+          }
+          // Varias boletas → mostrar lista para que elija
+          document.getElementById('inputPhone').style.display = 'none';
+          btn.style.display = 'none';
+          document.getElementById('sec-desc').textContent = 'Tienes varias boletas. Toca la que quieres ver:';
+          let html = '';
+          data.boletas.forEach(function(b) {
+            const num = String(b.numero).padStart(4, '0');
+            const pagada = Number(b.saldoPendiente || 0) <= 0;
+            html += '<button type="button" class="sec-btn" style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;" onclick="window.location.href=\'/boleta/' + num + '?telefono=' + encodeURIComponent(telLimpio) + '\'"><span>Boleta N&deg; ' + num + '</span><span style="font-size:13px;font-weight:400;opacity:0.85;">' + (pagada ? 'Pagada' : 'Pendiente') + '</span></button>';
+          });
+          results.innerHTML = html;
+          results.style.display = 'block';
+        } catch (error) {
+          console.error('[buscarBoleta]', error);
+          msgError.style.display = 'block';
+          msgError.textContent = (error.message === 'not_found')
+            ? 'No encontramos boletas con ese número. Verifica o escríbenos por WhatsApp.'
+            : 'No pudimos buscar tu boleta. Inténtalo de nuevo.';
+          btn.textContent = "Ver mi boleta";
+          btn.disabled = false;
+        }
+      }
+
+      // AUTO-DEEP-LINK: si llega con ?telefono=X a una boleta con número
+      // (desde el buscador o links viejos), verificar automáticamente.
+      if (!modoBuscador && urlParams.has('telefono')) {
         const telDeepLink = urlParams.get('telefono').replace(/\D/g, '');
         const tel10 = telDeepLink.length >= 10 ? telDeepLink.slice(-10) : telDeepLink;
         document.getElementById('inputPhone').value = tel10;

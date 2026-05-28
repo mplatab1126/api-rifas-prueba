@@ -6,7 +6,7 @@ const HUB_TARJETAS = [
     titulo: "Ver mi boleta",
     icono3d: "assets/icon-3d-document.png",
     color: "slate",
-    href: "/ver-mi-boleta-la-plata-house"
+    href: "/boleta"
   },
   {
     id: "abonar",

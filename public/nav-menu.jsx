@@ -3,7 +3,7 @@
 const NAV_ITEMS = [
   { id: "inicio",    label: "Inicio",                 href: "/" },
   { id: "comprar",   label: "Comprar boleta",         href: "/comprar-la-plata-house" },
-  { id: "ver",       label: "Ver mi boleta",          href: "/ver-mi-boleta-la-plata-house" },
+  { id: "ver",       label: "Ver mi boleta",          href: "/boleta" },
   { id: "abonar",    label: "Abonar a mi boleta",     href: "/abonar" },
   { id: "canales",   label: "Canales oficiales",      href: "/canales-oficiales" },
   { id: "terminos",  label: "Términos y condiciones", href: "/terminos-y-condiciones" },

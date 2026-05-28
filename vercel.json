@@ -42,6 +42,13 @@
     }
   },
   "crons": [],
+  "redirects": [
+    {
+      "source": "/ver-mi-boleta-la-plata-house",
+      "destination": "/boleta",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/boleta/:numero",
