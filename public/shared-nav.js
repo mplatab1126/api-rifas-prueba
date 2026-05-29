@@ -44,7 +44,6 @@
     { id: 'vendedores-panel', label: 'Panel de Vendedores', href: '/vendedores',         section: 'principal', roles: 'gerencia' },
     { id: 'sorteo',      label: 'Sorteo en Vivo',         href: '/sorteo',                section: 'admin',     roles: 'gerencia' },
     { id: 'permisos',    label: 'Permisos',              href: '/permisos',              section: 'admin',     roles: 'mateo' },
-    { id: 'clasificaciones', label: 'Monitor IA',        href: '/clasificaciones',       section: 'admin',     roles: 'mateo' },
   ];
 
   function detectCurrentPage() {

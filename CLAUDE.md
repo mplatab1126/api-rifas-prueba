@@ -164,7 +164,7 @@ ChateaPro es el proveedor de la API de WhatsApp Business. Mateo tiene **2 línea
 ### Endpoints que ChateaPro consume del sistema
 - `GET /api/cliente?telefono={tel}` — Boletas, deuda y datos del cliente
 - `GET /api/disponibles` — Números de boleta disponibles
-- `POST /api/chateapro/clasificar-plantilla` — Clasificación de intenciones con Claude Haiku
+- *(eliminado)* el clasificador de difusiones se retiró; ya no se usan difusiones de cobro por ChateaPro.
 
 ### Endpoints del sistema que consumen la API de ChateaPro
 - `POST /api/admin/sincronizar-agentes` — Trae rendimiento de asesores de ambas líneas
