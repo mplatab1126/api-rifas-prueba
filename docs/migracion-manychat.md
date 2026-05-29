@@ -43,7 +43,9 @@ Plan elegido: **Avanzado (Advanced), USD $139/mes** → 25.000 contactos, 10 usu
 | **Estados de conversación** | En el Inbox son **Abierta / Cerrada** + **asignar** a un asesor + **recordatorios**. NO existe un estado "Pendiente/Snooze" separado. |
 | **API** | Sirve para conectar tu sistema de rifas con Manychat. Incluida en el plan Avanzado. La clave es como una contraseña: **no compartir**. |
 
-⚠️ **Por verificar al momento de pagar:** que la pantalla diga **"IA incluida"** en el plan Avanzado y si hay **límite de uso** de IA (algunas guías externas mencionan un complemento de USD $29 aparte; parece estructura vieja, pero hay que confirmarlo).
+⚠️ **Por verificar al momento de pagar:** que la pantalla diga **"IA incluida"** en el plan Avanzado y si hay **límite de uso** de IA.
+
+**Qué es el "complemento de IA" (Manychat AI):** cuesta USD $29/mes sobre los planes bajos (Pro/Business) y viene **incluido en los planes altos**. Contiene 4 herramientas: (1) **Reconocimiento de Intenciones** (enrutar por intención), (2) **AI Step** (IA dentro del flujo), (3) **Asistente del Constructor de Flujos** (la IA ayuda a armar los flujos), (4) **Mejorador de Texto** (pule los mensajes). También permite entrenar la IA con la info del negocio. En la cuenta de Mateo ya aparece el AI Step disponible → parece estar activo; confirmar al pagar el Avanzado.
 
 ---
 
