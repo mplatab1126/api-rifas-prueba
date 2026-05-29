@@ -72,7 +72,7 @@ Plan elegido: **Avanzado (Advanced), USD $139/mes** → 25.000 contactos, 10 usu
 - [ ] Contratar plan Avanzado y verificar "IA incluida" / límites de uso.
 - [ ] Conectar el canal de WhatsApp Business a Manychat.
 - [ ] Reconstruir el embudo de venta (los 7 pasos) en Manychat.
-- [ ] Configurar "Reconocimiento de Intenciones" → mapear las intenciones actuales (ej.: comprar número, consultar premio, ya pagué, hablar con asesor).
+- [ ] Configurar "Reconocimiento de Intenciones" → mapear las intenciones actuales (ej.: comprar número, consultar premio, ya pagué, hablar con asesor). **OJO:** es un **Disparador/Trigger** al inicio de la automatización, NO un nodo del flujo ni el AI Step. Se activa: disparador *"El usuario envía un mensaje"* → *"Reconocer la intención del mensaje"*. (El **AI Step** es distinto: nodo que maneja un tramo de conversación hacia un objetivo, dentro del flujo.)
 - [ ] Diseñar un **agente de ventas con IA nuevo, desde cero** en Manychat (Camila quedó retirada; no se reutiliza nada de ella).
 - [ ] Configurar estados de conversación + asignación de asesores.
 - [ ] Conectar el sistema de rifas (Solicitud externa + clave API) para la sincronización en vivo.
