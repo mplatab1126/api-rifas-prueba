@@ -37,6 +37,9 @@ Plan elegido: **Avanzado (Advanced), USD $139/mes** → 25.000 contactos, 10 usu
 |---|---|
 | **"Eliminar marca de Manychat"** | Quita el *"powered by Manychat"* que ve el cliente en formularios/widgets. Solo estético, no afecta flujos ni IA. Incluido en el plan Avanzado. |
 | **IA de intención** | Manychat tiene **"Reconocimiento de Intenciones"**: la IA detecta la intención del cliente y lo enruta a flujo X o Y (igual que hoy en ChateaPro). Funciona en WhatsApp. |
+| **⚠️ Dos "IA" distintas (NO confundir)** | (1) La **pestaña "IA de Manychat"** (asistente todo-en-uno: Knowledge/Behavior/Skills) está en **BETA y solo para Instagram** hoy — NO sirve para WhatsApp todavía. (2) La **IA dentro de los flujos** = **Reconocimiento de Intenciones** + **Paso de IA**, y **esa SÍ funciona en WhatsApp**. → Para Camila en WhatsApp usamos la opción (2), no la pestaña. |
+| **Secuencias** | Mensajes automáticos espaciados en el tiempo (goteo) para seguimiento/cobro escalonado. Limitación WhatsApp: fuera de las 24h cada mensaje debe ser plantilla aprobada y paga (regla de Meta). |
+| **Broadcasts (difusiones)** | Un mensaje a muchos a la vez (equivale a las difusiones de cobro de ChateaPro). Fuera de las 24h requiere plantilla aprobada por Meta, opt-in del cliente y se paga por mensaje desde el "Wallet" de Manychat. |
 | **Estados de conversación** | En el Inbox son **Abierta / Cerrada** + **asignar** a un asesor + **recordatorios**. NO existe un estado "Pendiente/Snooze" separado. |
 | **API** | Sirve para conectar tu sistema de rifas con Manychat. Incluida en el plan Avanzado. La clave es como una contraseña: **no compartir**. |
 
