@@ -37,7 +37,7 @@ Plan elegido: **Avanzado (Advanced), USD $139/mes** → 25.000 contactos, 10 usu
 |---|---|
 | **"Eliminar marca de Manychat"** | Quita el *"powered by Manychat"* que ve el cliente en formularios/widgets. Solo estético, no afecta flujos ni IA. Incluido en el plan Avanzado. |
 | **IA de intención** | Manychat tiene **"Reconocimiento de Intenciones"**: la IA detecta la intención del cliente y lo enruta a flujo X o Y (igual que hoy en ChateaPro). Funciona en WhatsApp. |
-| **⚠️ Dos "IA" distintas (NO confundir)** | (1) La **pestaña "IA de Manychat"** (asistente todo-en-uno: Knowledge/Behavior/Skills) está en **BETA y solo para Instagram** hoy — NO sirve para WhatsApp todavía. (2) La **IA dentro de los flujos** = **Reconocimiento de Intenciones** + **Paso de IA**, y **esa SÍ funciona en WhatsApp**. → Para Camila en WhatsApp usamos la opción (2), no la pestaña. |
+| **⚠️ Dos "IA" distintas (NO confundir)** | (1) La **pestaña "IA de Manychat"** (asistente todo-en-uno: Knowledge/Behavior/Skills) está en **BETA y solo para Instagram** hoy — NO sirve para WhatsApp todavía. (2) La **IA dentro de los flujos** = **Reconocimiento de Intenciones** + **Paso de IA**, y **esa SÍ funciona en WhatsApp**. → Para el agente de ventas en WhatsApp usamos la opción (2), no la pestaña. |
 | **Secuencias** | Mensajes automáticos espaciados en el tiempo (goteo) para seguimiento/cobro escalonado. Limitación WhatsApp: fuera de las 24h cada mensaje debe ser plantilla aprobada y paga (regla de Meta). |
 | **Broadcasts (difusiones)** | Un mensaje a muchos a la vez (equivale a las difusiones de cobro de ChateaPro). Fuera de las 24h requiere plantilla aprobada por Meta, opt-in del cliente y se paga por mensaje desde el "Wallet" de Manychat. |
 | **Estados de conversación** | En el Inbox son **Abierta / Cerrada** + **asignar** a un asesor + **recordatorios**. NO existe un estado "Pendiente/Snooze" separado. |
@@ -52,7 +52,7 @@ Plan elegido: **Avanzado (Advanced), USD $139/mes** → 25.000 contactos, 10 usu
 | En ChateaPro (hoy) | En Manychat (equivalente) |
 |---|---|
 | Embudo de venta (7 pasos: contacto → info → números → datos → pago → boleta → actualizar) | Flujos / Automatizaciones |
-| Agente IA "Camila v2" (AI Hub) | Agente IA de Manychat (**AI Step** + **Reconocimiento de Intenciones**) |
+| ~~Agente IA "Camila v2"~~ — **RETIRADO** (Mateo ya no lo usa; docs eliminados) | Agente de ventas con IA **nuevo, desde cero** en Manychat (**AI Step** + **Reconocimiento de Intenciones**) |
 | Clasificación de intención con Claude Haiku (`/clasificar-plantilla`) | **Reconocimiento de Intenciones** nativo **o** seguir usando tu endpoint vía "Solicitud externa" *(decisión pendiente)* |
 | Llamadas a `/api/disponibles` y `/api/cliente` | Bloque **"Solicitud externa"** (se reutilizan los mismos endpoints) |
 | Bot fields (premios, precios, mensajes) | Campos personalizados **o**, mejor, consulta en vivo |
@@ -73,7 +73,7 @@ Plan elegido: **Avanzado (Advanced), USD $139/mes** → 25.000 contactos, 10 usu
 - [ ] Conectar el canal de WhatsApp Business a Manychat.
 - [ ] Reconstruir el embudo de venta (los 7 pasos) en Manychat.
 - [ ] Configurar "Reconocimiento de Intenciones" → mapear las intenciones actuales (ej.: comprar número, consultar premio, ya pagué, hablar con asesor).
-- [ ] Recrear el agente "Camila" en Manychat.
+- [ ] Diseñar un **agente de ventas con IA nuevo, desde cero** en Manychat (Camila quedó retirada; no se reutiliza nada de ella).
 - [ ] Configurar estados de conversación + asignación de asesores.
 - [ ] Conectar el sistema de rifas (Solicitud externa + clave API) para la sincronización en vivo.
 - [ ] Quitar la marca de Manychat.
@@ -84,3 +84,4 @@ Plan elegido: **Avanzado (Advanced), USD $139/mes** → 25.000 contactos, 10 usu
 ## 6. Registro de sesiones
 
 - **2026-05-29** — Investigación inicial y decisiones confirmadas (sección 3). Definido el plan (Avanzado). Documentada la estrategia de sincronización (sección 2). Creada esta bitácora.
+- **2026-05-29** — Camila (agente de IA de ChateaPro) **retirada**: Mateo confirmó que ya no la usa. Eliminados su documentación (`camila-v2-configuracion.md`, `agente-hibrido-v2.md`) y los scripts de auditoría (`auditar-linea-2.js`, `extraer-mensajes-raros.js`, `dump-conversaciones-linea-2.js`) + el volcado de conversaciones. **Se conservó el código en vivo** (`disponibles.js`, `verificar-numero.js`, `house-data.jsx`) porque la página web también lo usa; la palabra "Camila" queda solo en comentarios.
