@@ -28,6 +28,17 @@
 - Si vas a borrar o modificar algo importante, pide confirmación primero.
 - Si notas que algo en el sistema podría mejorarse o tiene un riesgo, sugiéremelo aunque no te lo haya pedido.
 
+## Publicar cambios en internet (MUY IMPORTANTE)
+
+Cuando termines un cambio funcional, **publícalo tú mismo sin que Mateo lo pida**. El sitio vive en **Vercel** y sale al aire solo al hacer `push` a la rama `main`. Pasos:
+
+1. `git status` y agrega **solo los archivos de tu tarea** (NO uses `git add -A` / `git add .`: casi siempre hay trabajo de Mateo sin guardar en el árbol, a veces en los mismos archivos que editas — sepáralo).
+2. `git commit` con un mensaje corto en español, estilo del repo, **sin** `Co-Authored-By`.
+3. `git push origin main`. Vercel publica solo en ~1 minuto (dominio `www.losplata.com.co`).
+4. **Verifica que el cambio quedó AL AIRE de verdad** (con `curl` al sitio en vivo, o pidiéndole a Mateo que recargue con Ctrl+Shift+R). No digas "listo" hasta haberlo confirmado en producción.
+
+Si "publicaste pero no se ve", el código casi nunca es el problema. Revisa **PRIMERO** en Vercel si hay un **rollback activo** (Overview → botón "Undo Rollback" / "Promote to Production"): un rollback congela producción aunque todos los despliegues estén en verde. Mateo NO es programador y trabaja desde una sola máquina (Windows): no le pidas que use git ni la terminal; en Vercel solo guíalo a dar el clic que únicamente él puede dar.
+
 ## Idioma
 
 - Responde siempre en español.
