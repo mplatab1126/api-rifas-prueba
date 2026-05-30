@@ -13,7 +13,6 @@ const PAGINAS = [
   { id: 'finanzas-alejo',    label: 'Finanzas personales (Alejo)' },
   { id: 'vendedores-panel',  label: 'Panel de Vendedores' },
   { id: 'permisos',          label: 'Permisos' },
-  { id: 'clasificaciones',   label: 'Monitor IA' },
 ];
 
 const GERENCIA_DEFAULT = ['mateo', 'alejo p', 'alejo plata'];
@@ -29,7 +28,7 @@ function defaultPermitido(asesorNombre, paginaId) {
   const name = asesorNombre.toLowerCase().trim();
   if (['admin', 'caja'].includes(paginaId)) return true;
   if (['rendimiento', 'llamadas', 'horarios'].includes(paginaId)) return GERENCIA_DEFAULT.includes(name);
-  if (['rifas', 'estado', 'permisos', 'clasificaciones'].includes(paginaId)) return SOLO_MATEO_DEFAULT.includes(name);
+  if (['rifas', 'estado', 'permisos'].includes(paginaId)) return SOLO_MATEO_DEFAULT.includes(name);
   if (paginaId === 'finanzas-alejo') return SOLO_ALEJO_DEFAULT.includes(name);
   if (paginaId === 'vendedores-panel') return GERENCIA_DEFAULT.includes(name);
   return false;
