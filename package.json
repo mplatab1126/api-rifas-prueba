@@ -2,8 +2,7 @@
   "name": "api-rifas",
   "version": "1.0.0",
   "scripts": {
-    "build": "node scripts/build-jsx.mjs",
-    "chateapro:export-subflow": "node scripts/export-chateapro-subflow.mjs"
+    "build": "node scripts/build-jsx.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
