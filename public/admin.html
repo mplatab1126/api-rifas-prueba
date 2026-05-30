@@ -195,6 +195,38 @@
         </div>
         <div id="resultadoConciliacion" style="margin-top:15px;"></div>
       </div>
+
+      <!-- MARCAR DEVOLUCIÓN (solo Juan Pablo Rojas, Mateo y Alejandro) -->
+      <div class="section-card" id="seccionDevolucion" style="margin-top:20px; display:none;">
+        <div class="section-title">↩️ Marcar Devolución</div>
+        <p style="font-size:0.85rem; color:var(--muted); margin-top:0; line-height:1.5;">
+          Si un cliente envió una transferencia por error y se le devolvió el dinero, busca el pago aquí y márcalo como <b>Devolución</b>. Quedará inhabilitado y no se podrá asignar a ninguna boleta.
+        </p>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:12px;">
+          <div>
+            <label style="font-size:0.78rem; color:var(--ink-2); font-weight:600;">Fecha</label>
+            <div class="field"><input id="dev_fecha" class="pill" type="date"></div>
+          </div>
+          <div>
+            <label style="font-size:0.78rem; color:var(--ink-2); font-weight:600;">Hora (HH:MM)</label>
+            <div class="field"><input id="dev_hora" class="pill" type="time"></div>
+          </div>
+          <div>
+            <label style="font-size:0.78rem; color:var(--ink-2); font-weight:600;">Monto</label>
+            <div class="field"><input id="dev_monto" class="pill" type="number" placeholder="Ej: 50000"></div>
+          </div>
+          <div>
+            <label style="font-size:0.78rem; color:var(--ink-2); font-weight:600;">Referencia</label>
+            <div class="field"><input id="dev_ref" class="pill" type="text" placeholder="Ej: 3186425497"></div>
+          </div>
+          <div>
+            <label style="font-size:0.78rem; color:var(--ink-2); font-weight:600;">Plataforma</label>
+            <div class="field"><input id="dev_plataforma" class="pill" type="text" placeholder="Bancolombia / Nequi..."></div>
+          </div>
+        </div>
+        <button id="btnBuscarDevolucion" type="button" class="cta" style="width:auto; padding:10px 24px; background:var(--ink);" onclick="buscarParaDevolucion()">🔍 Buscar transferencia</button>
+        <div id="resultadosDevolucion" style="margin-top:15px;"></div>
+      </div>
     </div>
 
 
@@ -585,6 +617,7 @@
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </div><!-- /snav-page-content -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script src="ui-modal.js"></script>
   <script src="admin.js"></script>
   <script src="shared-nav.js"></script>
 </body>

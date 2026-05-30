@@ -640,7 +640,7 @@
 
   // ── Inicializar permisos ──
   async function inicializarPermisos() {
-    if (!confirm('¿Reiniciar todos los permisos a los valores por defecto?\n\nEsto sobrescribirá cualquier cambio que hayas hecho.')) return;
+    if (!(await modalConfirm('¿Reiniciar todos los permisos a los valores por defecto?\n\nEsto sobrescribirá cualquier cambio que hayas hecho.'))) return;
     const btn = document.getElementById('btnInit');
     btn.disabled = true;
     btn.textContent = 'Reiniciando...';
@@ -667,6 +667,7 @@
     }
   }
 </script>
+<script src="ui-modal.js"></script>
 <script src="shared-nav.js"></script>
 </body>
 </html>

@@ -1649,7 +1649,7 @@ async function guardarRifa() {
 }
 
 async function eliminarRifa(id, nombre) {
-  if (!confirm(`¿Eliminar la rifa "${nombre}"?\n\nEsto también eliminará todos sus premios y capitalización. Esta acción no se puede deshacer.`)) return;
+  if (!(await modalConfirm(`¿Eliminar la rifa "${nombre}"?\n\nEsto también eliminará todos sus premios y capitalización. Esta acción no se puede deshacer.`))) return;
   try {
     await apiCall('eliminar_rifa', { id });
     toast('🗑️ Rifa eliminada.');
@@ -1712,7 +1712,7 @@ async function guardarPremio() {
 }
 
 async function eliminarPremio(id, nombre, rifaId) {
-  if (!confirm(`¿Eliminar el premio "${nombre}"?`)) return;
+  if (!(await modalConfirm(`¿Eliminar el premio "${nombre}"?`))) return;
   try {
     await apiCall('eliminar_premio', { id });
     toast('🗑️ Premio eliminado.');
@@ -2031,6 +2031,7 @@ window.addEventListener('resize', () => {
 });
 </script>
 </div><!-- /snav-page-content -->
+<script src="ui-modal.js"></script>
 <script src="shared-nav.js"></script>
 </body>
 </html>
