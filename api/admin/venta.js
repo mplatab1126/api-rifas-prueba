@@ -140,17 +140,19 @@ export default async function handler(req, res) {
       if (idTransferencia && idTransferencia.trim() !== '') {
         await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('id', idTransferencia);
       } else if (referenciaAbono && referenciaAbono !== 'Sin Ref' && referenciaAbono !== 'efectivo' && referenciaAbono !== 'efectivo_oficina' && referenciaAbono !== '0') {
-        const { data: transLibre } = await supabase
+        // ⚠️ Solo asignamos automáticamente si hay UNA SOLA transferencia LIBRE que coincida.
+        // Si hay varias (caso típico de los pagos por llave Bre-B, que comparten la misma
+        // referencia), NO asignamos ninguna al azar: la dejamos LIBRE para que el asesor
+        // seleccione la correcta a mano. Así evitamos asignar el pago a la boleta equivocada.
+        const { data: libres } = await supabase
           .from('transferencias')
           .select('id')
           .eq('referencia', referenciaAbono)
           .eq('estado', 'LIBRE')
-          .eq('monto', abonoNum)
-          .limit(1)
-          .maybeSingle();
+          .eq('monto', abonoNum);
 
-        if (transLibre) {
-          await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('id', transLibre.id);
+        if (libres && libres.length === 1) {
+          await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('id', libres[0].id);
         }
       }
     }

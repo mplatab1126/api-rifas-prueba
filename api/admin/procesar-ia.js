@@ -117,6 +117,20 @@ export default async function handler(req, res) {
       if (codigo) datos.referencia = codigo;
     }
 
+    // 🔑 PAGO POR LLAVE (Bre-B): Bancolombia le pone la MISMA "Referencia 1" a TODOS los pagos
+    // hechos a la llave (@losplatasas), así que distintos pagos se ven iguales y el sistema los
+    // confunde. Para distinguirlos usamos el NOMBRE del remitente (lo que va después de
+    // "Pago llave") como referencia única. En los PDF el nombre y el número de referencia salen
+    // pegados (ej: "Pago llave mauren farid pajoy 0092366866"); por eso quitamos ese número del final.
+    const descLlave = (datos.descripcion_movimiento || '').trim();
+    if (/^pago\s+llave/i.test(descLlave)) {
+      let nombre = descLlave.replace(/^pago\s+llave\s*/i, '').trim();
+      const refNum = String(datos.referencia || '').trim();
+      if (refNum && nombre.endsWith(refNum)) nombre = nombre.slice(0, -refNum.length).trim();
+      nombre = nombre.replace(/\s+/g, ' ').trim();
+      if (nombre) datos.referencia = nombre;
+    }
+
     // El asesor elige manualmente si sube ingresos o egresos.
     // Si viene forzarTipo, usamos ese valor. Si no, dejamos lo que dijo la IA como fallback.
     if (forzarTipo === 'ingreso' || forzarTipo === 'egreso') {
