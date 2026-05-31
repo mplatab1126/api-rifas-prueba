@@ -12,6 +12,8 @@ Pasar toda la atención de WhatsApp de **ChateaPro → Manychat**. Primero **con
 
 Plan elegido: **Avanzado (Advanced), USD $139/mes** → 25.000 contactos, 10 usuarios, canales ilimitados, IA, API, inbox colaborativo y "eliminar marca de Manychat".
 
+**Escala / tope:** "Avanzado" (25.000) es el **tope de los planes de autoservicio**. Para volúmenes grandes (cientos de miles de contactos) se pasa al plan **Elite (empresarial)**: precio **a medida** con ventas de Manychat + gerente de cuenta dedicado (no hay tarifa pública por contacto a ese nivel). Costo por contacto extra dentro de autoservicio: ~$0.025–0.05 USD según el tier; el exacto del tier de 25k se ve moviendo el slider de contactos en la página de precios.
+
 ---
 
 ## 2. El problema que resolvemos: la sincronización
