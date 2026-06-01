@@ -107,6 +107,10 @@
     .pbol a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--gray-300); }
     .pbol a:hover { border-color: var(--ink); }
     .pbol b { font-weight: 500; }
+    .pbol-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+    .pbol-head a { font-weight: 600; font-size: 0.95rem; color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--gray-300); }
+    .pbol-head a:hover { border-color: var(--ink); }
+    .pbol-head b { font-weight: 600; font-size: 0.95rem; }
     .ppago { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--gray-100); font-size: 0.85rem; }
     .ppago b { font-weight: 500; }
     .pfecha { color: var(--ink); }
@@ -361,39 +365,45 @@ async function cargarFicha(telefono){
     ? [r.nombre, r.apellido].filter(Boolean).join(' ')
     : (c.nombre_perfil || telefono);
 
-  let cuerpo;
-  if(r.status === 'ok' && r.encontrado){
-    const bol = r.boletas.map(b =>
-      `<div class="pbol"><a href="/boleta/${esc(b.numero)}" target="_blank">Boleta ${esc(b.numero)}</a><b>${pesos(b.saldo)}</b></div>`
-    ).join('');
-    const pagos = (r.pagos || []).map(p => {
-      const f = p.fecha_pago ? new Date(p.fecha_pago).toLocaleString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
-      const ref = String(p.referencia_transferencia || '').trim();
-      const refTxt = (ref && !['sin ref','efectivo','efectivo_oficina','0','pendiente'].includes(ref.toLowerCase())) ? ('Ref ' + esc(ref) + ' · ') : '';
-      const meta = refTxt + esc(p.asesor || '');
-      return `<div class="ppago"><div><div class="pfecha">${f}</div><div class="pmeta">${meta}</div></div><b>${pesos(p.monto)}</b></div>`;
-    }).join('') || '<div class="pmuted" style="text-align:left;padding:8px 0">Sin pagos registrados</div>';
-    cuerpo = `
-      <div class="prow"><span class="plabel">Ciudad</span><b>${esc(r.ciudad || '—')}</b></div>
+  // Tarjeta del cliente (siempre): foto, nombre, teléfono, y si existe: ciudad, documento, saldo total
+  const datosCliente = (r.status==='ok' && r.encontrado) ? `
+      <div class="prow" style="margin-top:16px"><span class="plabel">Ciudad</span><b>${esc(r.ciudad || '—')}</b></div>
       <div class="prow"><span class="plabel">Documento</span><b>${esc(r.documento || '—')}</b></div>
-      <div class="pdeuda"><div class="plabel">Saldo pendiente</div><div class="val">${pesos(r.deuda)}</div></div>
-      <div class="psub">Boletas · ${r.boletas.length}</div>
-      ${bol}
-      <div class="psub">Historial de pagos · ${(r.pagos || []).length}</div>
-      ${pagos}`;
-  } else if(r.status === 'ok' && !r.encontrado){
-    cuerpo = `<div class="pnuevo"><b>Cliente nuevo</b><br><span>No tiene boletas registradas con este número.</span></div>`;
-  } else {
-    cuerpo = `<div class="pmuted">No se pudo cargar la ficha.</div>`;
-  }
-
-  p.innerHTML = `
+      <div class="prow" style="border-bottom:none"><span class="plabel">Saldo total</span><b>${pesos(r.deuda)}</b></div>` : '';
+  const cardCliente = `
     <div class="pcard">
       <div class="pavatar">${esc(inicial(c))}</div>
       <div class="pnombre">${esc(nombreTit)}</div>
       <div class="ptel">+${esc(telefono)}</div>
-    </div>
-    <div class="pcard">${cuerpo}</div>`;
+      ${datosCliente}
+    </div>`;
+
+  // Una tarjeta por boleta, cada una con su saldo y su propio historial de pagos
+  let resto;
+  if(r.status==='ok' && r.encontrado){
+    resto = r.boletas.map(tarjetaBoleta).join('');
+  } else if(r.status==='ok' && !r.encontrado){
+    resto = `<div class="pcard"><div class="pnuevo"><b>Cliente nuevo</b><br><span>No tiene boletas registradas con este número.</span></div></div>`;
+  } else {
+    resto = `<div class="pcard"><div class="pmuted">No se pudo cargar la ficha.</div></div>`;
+  }
+
+  p.innerHTML = cardCliente + resto;
+}
+
+function tarjetaBoleta(b){
+  const pagos = (b.pagos || []).map(p => {
+    const f = p.fecha_pago ? new Date(p.fecha_pago).toLocaleString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+    const ref = String(p.referencia_transferencia || '').trim();
+    const refTxt = (ref && !['sin ref','efectivo','efectivo_oficina','0','pendiente'].includes(ref.toLowerCase())) ? ('Ref ' + esc(ref) + ' · ') : '';
+    return `<div class="ppago"><div><div class="pfecha">${f}</div><div class="pmeta">${refTxt}${esc(p.asesor || '')}</div></div><b>${pesos(p.monto)}</b></div>`;
+  }).join('') || '<div class="pmuted" style="text-align:left;padding:8px 0">Sin pagos registrados</div>';
+  const saldo = b.saldo > 0 ? pesos(b.saldo) : '<span style="color:#1f8a4c">Pagada</span>';
+  return `<div class="pcard">
+    <div class="pbol-head"><a href="/boleta/${esc(b.numero)}" target="_blank">Boleta ${esc(b.numero)}</a><b>${saldo}</b></div>
+    <div class="psub" style="margin-top:10px">Historial de pagos · ${(b.pagos || []).length}</div>
+    ${pagos}
+  </div>`;
 }
 
 /* ── Mensajes ── */

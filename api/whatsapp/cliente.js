@@ -48,10 +48,18 @@ export default async function handler(req, res) {
   const numeros = boletas.map(b => b.numero);
   const { data: pagos } = await supabase
     .from('abonos')
-    .select('monto, fecha_pago, referencia_transferencia, asesor')
+    .select('numero_boleta, monto, fecha_pago, referencia_transferencia, asesor')
     .in('numero_boleta', numeros)
     .order('fecha_pago', { ascending: false })
-    .limit(50);
+    .limit(100);
+
+  // Agrupar los pagos por boleta
+  const porBoleta = {};
+  for (const p of (pagos || [])) {
+    (porBoleta[p.numero_boleta] = porBoleta[p.numero_boleta] || []).push({
+      monto: p.monto, fecha_pago: p.fecha_pago, referencia_transferencia: p.referencia_transferencia, asesor: p.asesor,
+    });
+  }
 
   return res.status(200).json({
     status: 'ok',
@@ -61,9 +69,13 @@ export default async function handler(req, res) {
     ciudad: cli.ciudad || '',
     documento: cli.documento_numero || '',
     deuda,
-    pagos: pagos || [],
     boletas: boletas
-      .map(b => ({ numero: b.numero, saldo: Number(b.saldo_restante || 0), abonado: Number(b.total_abonado || 0) }))
+      .map(b => ({
+        numero: b.numero,
+        saldo: Number(b.saldo_restante || 0),
+        abonado: Number(b.total_abonado || 0),
+        pagos: porBoleta[b.numero] || [],
+      }))
       .sort((a, b) => a.numero - b.numero),
   });
 }
