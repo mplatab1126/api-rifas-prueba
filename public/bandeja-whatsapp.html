@@ -107,6 +107,10 @@
     .pbol a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--gray-300); }
     .pbol a:hover { border-color: var(--ink); }
     .pbol b { font-weight: 500; }
+    .ppago { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--gray-100); font-size: 0.85rem; }
+    .ppago b { font-weight: 500; }
+    .pfecha { color: var(--ink); }
+    .pmeta { color: var(--ink-mute); font-size: 0.74rem; margin-top: 2px; }
     .pmuted { color: var(--gray-400); text-align: center; font-size: 0.86rem; }
     .pnuevo { text-align: center; color: var(--ink-mute); font-size: 0.88rem; line-height: 1.6; }
     .pnuevo b { color: var(--ink); font-weight: 600; }
@@ -359,17 +363,22 @@ async function cargarFicha(telefono){
 
   let cuerpo;
   if(r.status === 'ok' && r.encontrado){
-    const ua = r.ultimo_abono ? new Date(r.ultimo_abono).toLocaleDateString('es-CO') : '—';
     const bol = r.boletas.map(b =>
       `<div class="pbol"><a href="/boleta/${esc(b.numero)}" target="_blank">Boleta ${esc(b.numero)}</a><b>${pesos(b.saldo)}</b></div>`
     ).join('');
+    const pagos = (r.pagos || []).map(p => {
+      const f = p.fecha_pago ? new Date(p.fecha_pago).toLocaleString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+      const meta = `Boleta ${esc(p.numero_boleta)}${p.metodo_pago ? ' · ' + esc(p.metodo_pago) : ''}`;
+      return `<div class="ppago"><div><div class="pfecha">${f}</div><div class="pmeta">${meta}</div></div><b>${pesos(p.monto)}</b></div>`;
+    }).join('') || '<div class="pmuted" style="text-align:left;padding:8px 0">Sin pagos registrados</div>';
     cuerpo = `
       <div class="prow"><span class="plabel">Ciudad</span><b>${esc(r.ciudad || '—')}</b></div>
       <div class="prow"><span class="plabel">Documento</span><b>${esc(r.documento || '—')}</b></div>
-      <div class="prow"><span class="plabel">Último abono</span><b>${ua}</b></div>
       <div class="pdeuda"><div class="plabel">Saldo pendiente</div><div class="val">${pesos(r.deuda)}</div></div>
       <div class="psub">Boletas · ${r.boletas.length}</div>
-      ${bol}`;
+      ${bol}
+      <div class="psub">Historial de pagos · ${(r.pagos || []).length}</div>
+      ${pagos}`;
   } else if(r.status === 'ok' && !r.encontrado){
     cuerpo = `<div class="pnuevo"><b>Cliente nuevo</b><br><span>No tiene boletas registradas con este número.</span></div>`;
   } else {

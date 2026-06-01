@@ -44,14 +44,14 @@ export default async function handler(req, res) {
   const cli = boletas[0].clientes || {};
   const deuda = boletas.reduce((s, b) => s + Number(b.saldo_restante || 0), 0);
 
-  // Fecha del último abono entre todas sus boletas
+  // Historial de pagos (abonos) de todas sus boletas, del más reciente al más viejo
   const numeros = boletas.map(b => b.numero);
-  const { data: abonos } = await supabase
+  const { data: pagos } = await supabase
     .from('abonos')
-    .select('fecha_pago')
+    .select('numero_boleta, monto, fecha_pago, metodo_pago')
     .in('numero_boleta', numeros)
     .order('fecha_pago', { ascending: false })
-    .limit(1);
+    .limit(50);
 
   return res.status(200).json({
     status: 'ok',
@@ -61,7 +61,7 @@ export default async function handler(req, res) {
     ciudad: cli.ciudad || '',
     documento: cli.documento_numero || '',
     deuda,
-    ultimo_abono: abonos?.[0]?.fecha_pago || null,
+    pagos: pagos || [],
     boletas: boletas
       .map(b => ({ numero: b.numero, saldo: Number(b.saldo_restante || 0), abonado: Number(b.total_abonado || 0) }))
       .sort((a, b) => a.numero - b.numero),
