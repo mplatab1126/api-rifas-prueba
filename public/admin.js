@@ -204,11 +204,11 @@ const $ = id => document.getElementById(id);
         ['switchPendienteVenta', 'switchPendienteAbono'].forEach(function(id) {
             const el = document.getElementById(id);
             if (!el) return;
-            el.style.display = esGerenciaPendiente() ? '' : 'none';
-            el.textContent = pendienteActivo ? '🔓 Pendiente: ACTIVO para asesores' : '🔒 Pendiente: oculto';
-            el.style.background = pendienteActivo ? '#e8f5e9' : '#f5f5f5';
-            el.style.color = pendienteActivo ? '#2e7d32' : '#777';
-            el.style.borderColor = pendienteActivo ? '#2e7d32' : 'var(--ring)';
+            el.style.display = esGerenciaPendiente() ? 'inline-flex' : 'none';
+            el.classList.toggle('on', pendienteActivo);
+            el.title = pendienteActivo
+                ? "Encendido: los asesores SÍ ven 'Pendiente'. Clic para apagar."
+                : "Apagado: 'Pendiente' oculto a los asesores. Clic para encender.";
         });
     }
 

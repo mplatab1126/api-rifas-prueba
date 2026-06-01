@@ -336,7 +336,7 @@
       <div class="mode-switch" id="toggleMetodoVenta">
         <button id="btnVentaTransferencia" class="mode-btn" onclick="setModoVenta('inteligente')">Transferencia Real</button>
         <button id="btnVentaPendiente" class="mode-btn" onclick="setModoVenta('pendiente')">⏳ Pendiente</button>
-        <button id="switchPendienteVenta" type="button" onclick="toggleInterruptorPendiente()" title="Interruptor (solo gerencia): habilita o esconde 'Pendiente' a los asesores" style="display:none; border:1.5px solid var(--ring); border-radius:8px; padding:4px 10px; font-size:0.7rem; font-weight:700; cursor:pointer; font-family:inherit; white-space:nowrap;"></button>
+        <span id="switchPendienteVenta" class="toggle-pendiente" onclick="toggleInterruptorPendiente()" title="Interruptor (solo gerencia): habilita u oculta 'Pendiente' a los asesores" style="display:none;"><span class="toggle-pendiente-knob"></span></span>
         <button id="btnVentaEfectivo" class="mode-btn" onclick="setModoVenta('efectivo')">Efectivo</button>
         <button id="btnModeSeparar" class="mode-btn active" onclick="setModoVenta('separar')">Solo Separar ($0)</button>
       </div>
@@ -440,7 +440,7 @@
         <div class="mode-switch" id="toggleMetodoAbono">
           <button id="btnModoInteligente" class="mode-btn active" onclick="setModoAbonoPago('inteligente')">Transferencia Real</button>
           <button id="btnModoPendiente" class="mode-btn" onclick="setModoAbonoPago('pendiente')">⏳ Pendiente</button>
-          <button id="switchPendienteAbono" type="button" onclick="toggleInterruptorPendiente()" title="Interruptor (solo gerencia): habilita o esconde 'Pendiente' a los asesores" style="display:none; border:1.5px solid var(--ring); border-radius:8px; padding:4px 10px; font-size:0.7rem; font-weight:700; cursor:pointer; font-family:inherit; white-space:nowrap;"></button>
+          <span id="switchPendienteAbono" class="toggle-pendiente" onclick="toggleInterruptorPendiente()" title="Interruptor (solo gerencia): habilita u oculta 'Pendiente' a los asesores" style="display:none;"><span class="toggle-pendiente-knob"></span></span>
           <button id="btnModoEfectivo" class="mode-btn" onclick="setModoAbonoPago('efectivo')">Efectivo</button>
         </div>
 
