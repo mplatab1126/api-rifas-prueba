@@ -73,17 +73,22 @@
     .media audio { max-width: 240px; }
     .cap { margin-top: 4px; }
     #aviso24 { display: none; background: #fff4d6; color: #856404; text-align: center; font-size: 0.8rem; padding: 8px; }
-    /* Ficha del cliente */
-    #ficha { display: none; background: #f6faf5; border-bottom: 1px solid #e3ebe1; font-size: 0.84rem; color: #2d4a2a; }
-    #ficha .res { padding: 9px 16px; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; cursor: pointer; }
-    #ficha .res b { color: #14310f; }
-    #ficha .res .deuda { color: #b00020; font-weight: 600; }
-    #ficha .res .nuevo { color: #667781; font-style: italic; }
-    #ficha .res .flecha { margin-left: auto; color: #667781; font-size: 0.75rem; }
-    #ficha .det { display: none; padding: 0 16px 10px; }
-    #ficha.abierta .det { display: block; }
-    #ficha .bol { display: flex; justify-content: space-between; padding: 5px 0; border-top: 1px dashed #d8e3d6; }
-    #ficha .bol a { color: var(--verde2); text-decoration: none; font-weight: 600; }
+    /* Panel de ficha del cliente (columna derecha) */
+    #panel { width: 340px; min-width: 340px; background: #f7f9f7; border-left: 1px solid #e3ebe1; overflow-y: auto; display: none; }
+    .pcard { background: #fff; margin: 10px; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .pavatar { width: 72px; height: 72px; border-radius: 50%; background: var(--verde2); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 600; margin: 0 auto 10px; }
+    .pnombre { text-align: center; font-weight: 600; font-size: 1.05rem; }
+    .ptel { text-align: center; color: var(--tenue); font-size: 0.85rem; margin-top: 2px; }
+    .prow { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.88rem; }
+    .prow span { color: var(--tenue); }
+    .pdeuda { text-align: center; background: #fdecef; color: #b00020; font-weight: 600; border-radius: 8px; padding: 10px; margin: 12px 0; font-size: 1.05rem; }
+    .psub { font-weight: 600; margin: 12px 0 6px; font-size: 0.85rem; color: #14310f; }
+    .pbol { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-top: 1px dashed #e0e6df; font-size: 0.85rem; }
+    .pbol a { color: var(--verde2); text-decoration: none; font-weight: 600; }
+    .pnuevo { text-align: center; color: #667781; font-size: 0.92rem; line-height: 1.5; }
+    .pnuevo span { font-size: 0.8rem; }
+    .pmuted { color: var(--tenue); text-align: center; font-size: 0.88rem; }
+    @media (min-width: 1101px){ #app.chat-abierto #panel { display: block; } }
     #barra { display: flex; gap: 10px; padding: 12px 16px; background: #f0f2f5; align-items: flex-end; }
     #texto { flex: 1; resize: none; max-height: 120px; padding: 11px 16px; border-radius: 22px; border: none; font-family: inherit; font-size: 0.95rem; outline: none; }
     #enviar { width: 48px; height: 48px; min-width: 48px; border-radius: 50%; border: none; background: var(--verde2); color: #fff; font-size: 1.2rem; cursor: pointer; }
@@ -139,7 +144,6 @@
             <div class="sub" id="convSub"></div>
           </div>
         </div>
-        <div id="ficha"></div>
         <div id="aviso24">⚠️ Pasaron 24h desde el último mensaje del cliente. WhatsApp solo deja responder con una plantilla aprobada (texto libre será rechazado).</div>
         <div id="msgs"></div>
         <div id="barra">
@@ -148,6 +152,7 @@
         </div>
       </div>
     </div>
+    <div id="panel"></div>
   </div>
 
 <script>
@@ -236,6 +241,7 @@ window.abrir = async function(telefono){
   firmaMsgs = '';
   $('msgs').innerHTML = '';
   $('app').classList.add('viendo-chat');
+  $('app').classList.add('chat-abierto');
   $('vacio').style.display = 'none';
   $('convReal').style.display = 'flex';
   const c = conversaciones.find(x => x.telefono === telefono) || { telefono };
@@ -256,44 +262,52 @@ window.cerrarChat = function(){
   actual = null;
   clearInterval(timerChat);
   $('app').classList.remove('viendo-chat');
+  $('app').classList.remove('chat-abierto');
   $('convReal').style.display = 'none';
-  $('ficha').style.display = 'none';
+  $('panel').innerHTML = '';
   $('vacio').style.display = 'flex';
   pintarLista();
 };
 
-// ── Ficha del cliente ──
+// ── Ficha del cliente (panel derecho) ──
 const pesos = v => '$' + Number(v || 0).toLocaleString('es-CO');
 async function cargarFicha(telefono){
-  const f = $('ficha');
-  f.style.display = 'block';
-  f.classList.remove('abierta');
-  f.innerHTML = '<div class="res">Buscando cliente…</div>';
+  const p = $('panel');
+  p.innerHTML = '<div class="pcard"><div class="pmuted">Buscando cliente…</div></div>';
   const r = await api('cliente', { telefono });
   if(telefono !== actual) return;               // cambió de chat mientras cargaba
-  if(r.status !== 'ok'){ f.style.display = 'none'; return; }
-  if(!r.encontrado){
-    f.innerHTML = '<div class="res"><span class="nuevo">🆕 Cliente nuevo — sin boletas registradas</span></div>';
-    return;
+  const c = conversaciones.find(x => x.telefono === telefono) || { telefono };
+
+  const nombreTit = (r.status==='ok' && r.encontrado && (r.nombre || r.apellido))
+    ? [r.nombre, r.apellido].filter(Boolean).join(' ')
+    : (c.nombre_perfil || telefono);
+
+  let cuerpo;
+  if(r.status === 'ok' && r.encontrado){
+    const ua = r.ultimo_abono ? new Date(r.ultimo_abono).toLocaleDateString('es-CO') : '—';
+    const bol = r.boletas.map(b =>
+      `<div class="pbol"><a href="/boleta/${esc(b.numero)}" target="_blank">🎟️ Boleta ${esc(b.numero)}</a><span>Restante <b>${pesos(b.saldo)}</b></span></div>`
+    ).join('');
+    cuerpo = `
+      <div class="prow"><span>📍 Ciudad</span><b>${esc(r.ciudad || '—')}</b></div>
+      <div class="prow"><span>🪪 Documento</span><b>${esc(r.documento || '—')}</b></div>
+      <div class="pdeuda">Debe ${pesos(r.deuda)}</div>
+      <div class="prow"><span>Último abono</span><b>${ua}</b></div>
+      <div class="psub">Boletas (${r.boletas.length})</div>
+      ${bol}`;
+  } else if(r.status === 'ok' && !r.encontrado){
+    cuerpo = `<div class="pnuevo">🆕 <b>Cliente nuevo</b><br><span>No tiene boletas registradas con este número.</span></div>`;
+  } else {
+    cuerpo = `<div class="pmuted">No se pudo cargar la ficha.</div>`;
   }
-  const nombre = [r.nombre, r.apellido].filter(Boolean).join(' ') || 'Cliente';
-  const ua = r.ultimo_abono ? new Date(r.ultimo_abono).toLocaleDateString('es-CO') : '—';
-  const det = r.boletas.map(b =>
-    `<div class="bol"><a href="/boleta/${b.numero}" target="_blank">🎟️ Boleta ${esc(b.numero)}</a><span>Restante: <b>${pesos(b.saldo)}</b></span></div>`
-  ).join('');
-  f.innerHTML = `
-    <div class="res" onclick="document.getElementById('ficha').classList.toggle('abierta')">
-      <span>👤 <b>${esc(nombre)}</b></span>
-      ${r.ciudad ? `<span>📍 ${esc(r.ciudad)}</span>` : ''}
-      ${r.documento ? `<span>🪪 ${esc(r.documento)}</span>` : ''}
-      <span>🎟️ ${r.boletas.length} boleta(s)</span>
-      <span class="deuda">Debe ${pesos(r.deuda)}</span>
-      <span class="flecha">▼ ver boletas</span>
+
+  p.innerHTML = `
+    <div class="pcard">
+      <div class="pavatar">${esc(inicial(c))}</div>
+      <div class="pnombre">${esc(nombreTit)}</div>
+      <div class="ptel">+${esc(telefono)}</div>
     </div>
-    <div class="det">
-      <div style="padding:4px 0;color:#667781">Último abono: ${ua}</div>
-      ${det}
-    </div>`;
+    <div class="pcard">${cuerpo}</div>`;
 }
 
 // Dibuja el cuerpo de un mensaje. Si es foto/audio/etc, deja un marcador que
