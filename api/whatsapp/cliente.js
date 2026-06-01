@@ -48,7 +48,7 @@ export default async function handler(req, res) {
   const numeros = boletas.map(b => b.numero);
   const { data: pagos } = await supabase
     .from('abonos')
-    .select('numero_boleta, monto, fecha_pago, metodo_pago')
+    .select('monto, fecha_pago, referencia_transferencia, asesor')
     .in('numero_boleta', numeros)
     .order('fecha_pago', { ascending: false })
     .limit(50);

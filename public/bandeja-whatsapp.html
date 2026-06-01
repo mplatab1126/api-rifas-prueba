@@ -368,7 +368,9 @@ async function cargarFicha(telefono){
     ).join('');
     const pagos = (r.pagos || []).map(p => {
       const f = p.fecha_pago ? new Date(p.fecha_pago).toLocaleString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
-      const meta = `Boleta ${esc(p.numero_boleta)}${p.metodo_pago ? ' · ' + esc(p.metodo_pago) : ''}`;
+      const ref = String(p.referencia_transferencia || '').trim();
+      const refTxt = (ref && !['sin ref','efectivo','efectivo_oficina','0','pendiente'].includes(ref.toLowerCase())) ? ('Ref ' + esc(ref) + ' · ') : '';
+      const meta = refTxt + esc(p.asesor || '');
       return `<div class="ppago"><div><div class="pfecha">${f}</div><div class="pmeta">${meta}</div></div><b>${pesos(p.monto)}</b></div>`;
     }).join('') || '<div class="pmuted" style="text-align:left;padding:8px 0">Sin pagos registrados</div>';
     cuerpo = `
