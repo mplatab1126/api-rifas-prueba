@@ -156,4 +156,6 @@ Mateo decidió **no tocar las dos líneas reales** y montar el buzón propio con
 
 ## 5. Registro
 - **2026-06-01** — Creada esta evaluación. Mateo pidió comparar opciones antes de decidir.
-- **2026-06-01** — Mateo eligió construir buzón propio con número de prueba (sin tocar L1 ni L2). Escrito el código base del buzón (timbre + envío + 2 tablas). Tablas aún NO creadas en Supabase (pendiente autorización). Falta la app de Meta y las variables de entorno.
+- **2026-06-01** — Mateo eligió construir buzón propio con número de prueba (sin tocar L1 ni L2). Escrito el código base del buzón (timbre + envío + 2 tablas).
+- **2026-06-01** — **Buzón conectado y RECIBIENDO ✅.** Creada la app de Meta "Buzón Los Plata" (id 2607182326463882) con número de prueba +1 555 671 2533 (phone_number_id 1147348345124937, WABA de prueba 1522272816231368). Variables `WHATSAPP_TOKEN`/`WHATSAPP_PHONE_NUMBER_ID`/`WHATSAPP_VERIFY_TOKEN` puestas en Vercel. Código publicado en producción (main). Webhook configurado en Meta (URL `https://www.losplata.com.co/api/whatsapp/recibir`, suscrito a `messages`). **Prueba end-to-end exitosa:** un WhatsApp real de Mateo llegó a `mensajes_whatsapp` con su nombre de perfil y wamid real, sin ChateaPro. **Bug arreglado:** el índice único de `wa_message_id` era parcial y rompía el upsert; se cambió a índice único normal.
+  - Pendiente: probar ENVIAR (bloqueado por seguridad mandar WhatsApp real sin OK explícito), crear **token permanente** (el actual de prueba vence en 24h), luego agente IA y bandeja.
