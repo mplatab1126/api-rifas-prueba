@@ -48,7 +48,7 @@ export default async function handler(req, res) {
   const numeros = boletas.map(b => b.numero);
   const { data: pagos } = await supabase
     .from('abonos')
-    .select('numero_boleta, monto, fecha_pago, referencia_transferencia, asesor')
+    .select('numero_boleta, monto, fecha_pago, referencia_transferencia, metodo_pago, asesor')
     .in('numero_boleta', numeros)
     .order('fecha_pago', { ascending: false })
     .limit(100);
@@ -57,7 +57,7 @@ export default async function handler(req, res) {
   const porBoleta = {};
   for (const p of (pagos || [])) {
     (porBoleta[p.numero_boleta] = porBoleta[p.numero_boleta] || []).push({
-      monto: p.monto, fecha_pago: p.fecha_pago, referencia_transferencia: p.referencia_transferencia, asesor: p.asesor,
+      monto: p.monto, fecha_pago: p.fecha_pago, referencia_transferencia: p.referencia_transferencia, metodo_pago: p.metodo_pago, asesor: p.asesor,
     });
   }
 

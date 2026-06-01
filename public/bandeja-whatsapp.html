@@ -393,10 +393,11 @@ async function cargarFicha(telefono){
 
 function tarjetaBoleta(b){
   const pagos = (b.pagos || []).map(p => {
-    const f = p.fecha_pago ? new Date(p.fecha_pago).toLocaleString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+    const f = p.fecha_pago ? new Date(p.fecha_pago).toLocaleDateString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric' }) : '—';
     const ref = String(p.referencia_transferencia || '').trim();
-    const refTxt = (ref && !['sin ref','efectivo','efectivo_oficina','0','pendiente'].includes(ref.toLowerCase())) ? ('Ref ' + esc(ref) + ' · ') : '';
-    return `<div class="ppago"><div><div class="pfecha">${f}</div><div class="pmeta">${refTxt}${esc(p.asesor || '')}</div></div><b>${pesos(p.monto)}</b></div>`;
+    const esRefReal = ref && !['sin ref','efectivo','efectivo_oficina','0','pendiente'].includes(ref.toLowerCase());
+    const principal = esRefReal ? ('Ref ' + esc(ref)) : esc(p.metodo_pago || 'Efectivo');
+    return `<div class="ppago"><div><div class="pfecha">${f}</div><div class="pmeta">${principal} · ${esc(p.asesor || '')}</div></div><b>${pesos(p.monto)}</b></div>`;
   }).join('') || '<div class="pmuted" style="text-align:left;padding:8px 0">Sin pagos registrados</div>';
   const saldo = b.saldo > 0 ? pesos(b.saldo) : '<span style="color:#1f8a4c">Pagada</span>';
   return `<div class="pcard">
