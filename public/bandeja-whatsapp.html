@@ -150,8 +150,12 @@
     .tmain { font-weight: 600; font-size: 0.92rem; color: var(--ink); }
     .tsub { font-size: 0.76rem; color: var(--ink-mute); margin-top: 3px; }
     .testado { font-size: 0.8rem; font-weight: 500; margin-top: 7px; }
-    .tfoto { display: inline-block; margin-top: 9px; font-size: 0.76rem; color: var(--ink); border: 1px solid var(--gray-200); border-radius: 100px; padding: 5px 13px; text-decoration: none; }
+    .tfoto { display: inline-block; margin-top: 9px; font-size: 0.76rem; color: var(--ink); border: 1px solid var(--gray-200); border-radius: 100px; padding: 5px 13px; text-decoration: none; cursor: pointer; }
     .tfoto:hover { background: var(--cream-50); }
+    /* Visor de foto (lightbox) */
+    #fotoBg { position: fixed; inset: 0; z-index: 400; background: rgba(10,10,10,.82); display: none; align-items: center; justify-content: center; padding: 20px; }
+    #fotoBg.show { display: flex; }
+    #fotoBg img { max-width: 92vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,.45); }
     .mnone { text-align: center; color: var(--ink-mute); font-size: 0.88rem; padding: 14px; line-height: 1.55; }
     .mcerrar { width: 100%; margin-top: 6px; padding: 12px; border: 1px solid var(--gray-200); background: #fff; border-radius: 12px; font-family: inherit; font-size: 0.9rem; color: var(--ink); cursor: pointer; }
     .mcerrar:hover { background: var(--cream-50); }
@@ -224,6 +228,7 @@
 
   <div id="ctxMenu"></div>
   <div id="modalBg"><div class="modal" id="modal"></div></div>
+  <div id="fotoBg"><img id="fotoImg" alt="Comprobante"></div>
 
 <script>
 const PWD_KEY = 'asesor_pwd', NAME_KEY = 'asesor_nombre';
@@ -494,7 +499,7 @@ function fmtTrans(t){
     ? `<div class="testado ${t.libre?'estado-libre':'estado-asig'}">${t.libre?'Libre':('Asignada a boleta '+esc(t.boleta||'?'))}</div>`
     : '';
   const foto = t.url_comprobante
-    ? `<a class="tfoto" href="${esc(t.url_comprobante)}" target="_blank">Ver foto</a>`
+    ? `<span class="tfoto" data-url="${esc(t.url_comprobante)}">Ver foto</span>`
     : '';
   return `
     <div class="tmain">${esc(t.plataforma || '—')} · ${pesos(t.monto)}</div>
@@ -546,6 +551,13 @@ async function buscarPago(mid){
 function abrirModal(html){ $('modal').innerHTML = html; $('modalBg').classList.add('show'); }
 window.cerrarModal = function(){ $('modalBg').classList.remove('show'); };
 $('modalBg').addEventListener('click', e => { if(e.target === $('modalBg')) cerrarModal(); });
+
+// Visor de foto (lightbox) al dar clic en "Ver foto"
+$('modal').addEventListener('click', e => {
+  const f = e.target.closest('.tfoto');
+  if(f){ $('fotoImg').src = f.getAttribute('data-url'); $('fotoBg').classList.add('show'); }
+});
+$('fotoBg').addEventListener('click', () => { $('fotoBg').classList.remove('show'); $('fotoImg').src = ''; });
 
 /* ── Inicio ── */
 if(localStorage.getItem(PWD_KEY) && localStorage.getItem(NAME_KEY)){
