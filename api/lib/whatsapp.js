@@ -64,3 +64,29 @@ export async function enviarTexto(telefono, texto) {
     return { ok: false, error: err.message };
   }
 }
+
+/**
+ * Descarga un archivo de WhatsApp (foto/PDF) y lo devuelve como base64.
+ * Igual que el endpoint media.js pero como función reutilizable desde el backend.
+ *
+ * @param {string} mediaId - El identificador del archivo en Meta
+ * @returns {Promise<{ok:boolean, base64?:string, mimeType?:string, error?:string}>}
+ */
+export async function descargarMediaBase64(mediaId) {
+  const { token } = configWhatsapp();
+  if (!token) return { ok: false, error: 'Falta WHATSAPP_TOKEN en Vercel.' };
+
+  try {
+    const metaResp = await fetch(`${GRAPH}/${mediaId}`, { headers: { Authorization: `Bearer ${token}` } });
+    const info = await metaResp.json();
+    if (!info.url) return { ok: false, error: info.error?.message || 'No se encontró el archivo.' };
+
+    const bin = await fetch(info.url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!bin.ok) return { ok: false, error: 'No se pudo descargar el archivo.' };
+
+    const buffer = Buffer.from(await bin.arrayBuffer());
+    return { ok: true, base64: buffer.toString('base64'), mimeType: info.mime_type || 'image/jpeg' };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
