@@ -5,11 +5,11 @@
  * Flujo:
  *   1. Descarga la imagen que mandó el cliente (por media_id).
  *   2. La lee con IA y extrae monto, fecha, hora, referencia, plataforma.
- *   3. Busca en `transferencias` (estado LIBRE) las que coincidan en monto+fecha.
- *   4. Sugiere la mejor coincidencia usando las mismas estrategias que el Admin
- *      (referencia, hora exacta, teléfono del cliente en la referencia).
+ *   3. Busca en `transferencias` (TODOS los estados) las del mismo monto y la
+ *      MISMA fecha (exacta).
+ *   4. Sugiere la mejor coincidencia (referencia, hora exacta, teléfono).
+ *   5. Muestra el estado de cada una: si ya está ASIGNADA, dice a qué boleta.
  *
- * Devuelve la lista de candidatas y cuál sugiere, para que el asesor decida.
  * El asesor SIEMPRE confirma; el sistema nunca abona solo.
  *
  * Recibe (POST, JSON): { contrasena, media_id, telefono }
@@ -41,36 +41,40 @@ export default async function handler(req, res) {
   try {
     const monto = Number(datos.monto);
     const last10 = String(telefono || '').replace(/\D/g, '').slice(-10);
-    const fechas = fechasCercanas(datos.fecha_pago); // [fecha-1, fecha, fecha+1]
 
-    // 3. Candidatas reales LIBRES del mismo monto, fecha exacta o ±1 día
-    const { data: libres } = await supabase
+    // 3. Mismo monto + MISMA fecha (exacta), TODOS los estados (libre o asignada)
+    const { data: mismas } = await supabase
       .from('transferencias')
       .select('id, monto, fecha_pago, hora_pago, referencia, plataforma, estado, url_comprobante')
-      .eq('estado', 'LIBRE')
       .eq('monto', monto)
-      .in('fecha_pago', fechas);
+      .eq('fecha_pago', datos.fecha_pago);
 
-    const candidatas = (libres || []).map(c => ({
+    const candidatas = (mismas || []).map(c => ({
       ...c,
-      fecha_exacta: c.fecha_pago === datos.fecha_pago,
+      libre: c.estado === 'LIBRE',
+      boleta: boletaDeEstado(c.estado),
     }));
+
+    // Ordenar por cercanía de hora al comprobante (la más parecida primero)
+    const horaRef = horaAMin(datos.hora_pago);
+    candidatas.sort((a, b) => Math.abs(horaAMin(a.hora_pago) - horaRef) - Math.abs(horaAMin(b.hora_pago) - horaRef));
 
     // 4. Elegir la sugerida con las estrategias del Admin
     const sugerida = elegirSugerida(candidatas, datos, last10);
 
-    // 5. Diagnóstico si no hay candidatas LIBRES (¿existe pero ya asignada?)
+    // 5. Diagnóstico si NO hay ninguna del mismo monto y fecha exacta
     let diagnostico = null;
     if (candidatas.length === 0) {
-      const { data: todas } = await supabase
+      const fechas = vecinas(datos.fecha_pago); // [fecha-1, fecha+1]
+      const { data: cercanas } = await supabase
         .from('transferencias')
-        .select('estado, referencia, fecha_pago')
+        .select('estado, fecha_pago')
         .eq('monto', monto)
         .in('fecha_pago', fechas)
         .limit(1);
-      diagnostico = (todas && todas.length)
-        ? `Existe un pago de $${monto.toLocaleString('es-CO')} (${todas[0].fecha_pago}) pero está en estado "${todas[0].estado}", no LIBRE.`
-        : `No hay ninguna transferencia real de $${monto.toLocaleString('es-CO')} cerca del ${datos.fecha_pago}. Verifica que esté cargada con Carga IA.`;
+      diagnostico = (cercanas && cercanas.length)
+        ? `Hay un pago de $${monto.toLocaleString('es-CO')} pero el ${cercanas[0].fecha_pago} (1 día de diferencia con el comprobante). Revisa la fecha.`
+        : `No hay ninguna transferencia real de $${monto.toLocaleString('es-CO')} el ${datos.fecha_pago}. Verifica que esté cargada con Carga IA.`;
     }
 
     return res.status(200).json({
@@ -86,24 +90,36 @@ export default async function handler(req, res) {
   }
 }
 
-// Devuelve [fecha-1, fecha, fecha+1] en formato YYYY-MM-DD
-function fechasCercanas(fecha) {
+// "ASIGNADA a boleta 8732" -> "8732"; "ASIGNADA REPARTIDA: 8732, 8733" -> "8732, 8733"; LIBRE -> null
+function boletaDeEstado(estado) {
+  if (!estado || estado === 'LIBRE') return null;
+  const rep = estado.match(/REPARTIDA:\s*(.+)/i);
+  if (rep) return rep[1].trim();
+  const uno = estado.match(/boleta\s+(\S+)/i);
+  if (uno) return uno[1].trim();
+  return estado; // por si hay otro formato, mostramos el estado tal cual
+}
+
+function horaAMin(v) {
+  if (!v || !/^\d/.test(String(v))) return 1e9;
+  const [h, m] = String(v).split(':').map(Number);
+  return (h * 60) + (m || 0);
+}
+
+function vecinas(fecha) {
   try {
     const base = new Date(fecha + 'T12:00:00');
     const fmt = d => d.toISOString().split('T')[0];
     const antes = new Date(base); antes.setDate(antes.getDate() - 1);
     const despues = new Date(base); despues.setDate(despues.getDate() + 1);
-    return [fmt(antes), fecha, fmt(despues)];
-  } catch (_) {
-    return [fecha];
-  }
+    return [fmt(antes), fmt(despues)];
+  } catch (_) { return []; }
 }
 
 // Mismas estrategias que api/admin/buscar-transferencia-ia.js, en orden de confianza.
-// Marca _razon en la elegida para explicarle al asesor por qué la sugiere.
 function elegirSugerida(candidatas, datos, last10) {
   if (!candidatas.length) return null;
-  const { referencia, hora_pago, plataforma } = datos;
+  const { referencia, hora_pago } = datos;
 
   // 1. Referencia exacta o parcial
   if (referencia && referencia !== '0' && String(referencia).toLowerCase() !== 'sin ref') {
@@ -117,8 +133,8 @@ function elegirSugerida(candidatas, datos, last10) {
 
   // 2. Hora exacta (mismo minuto) + Bancolombia
   if (hora_pago) {
-    const horaMinuto = hora_pago.substring(0, 5);
-    const m = candidatas.find(c => c.hora_pago && c.hora_pago.startsWith(horaMinuto) && String(c.plataforma).toLowerCase().includes('bancolombia'));
+    const hm = hora_pago.substring(0, 5);
+    const m = candidatas.find(c => c.hora_pago && c.hora_pago.startsWith(hm) && String(c.plataforma).toLowerCase().includes('bancolombia'));
     if (m) { m._razon = 'Misma hora y plataforma'; return m; }
   }
 
@@ -127,18 +143,17 @@ function elegirSugerida(candidatas, datos, last10) {
     const [hIA, mIA] = hora_pago.split(':').map(Number);
     const minIA = (hIA * 60) + mIA;
     const m = candidatas.find(c => {
-      if (!c.referencia || !String(c.referencia).includes(last10)) return false;
-      if (!c.hora_pago) return false;
+      if (!c.referencia || !String(c.referencia).includes(last10) || !c.hora_pago) return false;
       const [hBD, mBD] = c.hora_pago.split(':').map(Number);
       return Math.abs(minIA - ((hBD * 60) + mBD)) <= 60;
     });
     if (m) { m._razon = 'El celular del cliente está en la referencia'; return m; }
   }
 
-  // 4. Hora exacta (mismo minuto) con cualquier plataforma
+  // 4. Hora exacta (mismo minuto), cualquier plataforma
   if (hora_pago) {
-    const horaMinuto = hora_pago.substring(0, 5);
-    const m = candidatas.find(c => c.hora_pago && c.hora_pago.startsWith(horaMinuto));
+    const hm = hora_pago.substring(0, 5);
+    const m = candidatas.find(c => c.hora_pago && c.hora_pago.startsWith(hm));
     if (m) { m._razon = 'Misma hora'; return m; }
   }
 

@@ -143,6 +143,9 @@
     .cand.sug { border-color: var(--mint-dark); background: #f3fcf5; }
     .cand .tag { display: inline-block; font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; background: var(--mint); color: var(--ink); padding: 3px 9px; border-radius: 100px; margin-bottom: 8px; font-weight: 600; }
     .cand .razon { font-size: 0.72rem; color: var(--ink-mute); margin-top: 6px; }
+    .estado-libre { color: #1f8a4c; }
+    .estado-asig { color: var(--danger); }
+    .aviso-asig { margin-top: 9px; background: #fdecec; color: var(--danger); border-radius: 8px; padding: 9px 11px; font-size: 0.76rem; line-height: 1.4; }
     .mnone { text-align: center; color: var(--ink-mute); font-size: 0.88rem; padding: 14px; line-height: 1.55; }
     .mcerrar { width: 100%; margin-top: 6px; padding: 12px; border: 1px solid var(--gray-200); background: #fff; border-radius: 12px; font-family: inherit; font-size: 0.9rem; color: var(--ink); cursor: pointer; }
     .mcerrar:hover { background: var(--cream-50); }
@@ -479,12 +482,16 @@ document.addEventListener('click', () => { $('ctxMenu').style.display = 'none'; 
 document.addEventListener('scroll', () => { $('ctxMenu').style.display = 'none'; }, true);
 
 function fmtTrans(t){
+  const estado = t.estado
+    ? `<div class="mrow"><span>Estado</span><b class="${t.libre?'estado-libre':'estado-asig'}">${t.libre?'Libre':('Asignada a boleta '+esc(t.boleta||'?'))}</b></div>`
+    : '';
   return `
     <div class="mrow"><span>Monto</span><b>${pesos(t.monto)}</b></div>
-    <div class="mrow"><span>Fecha</span><b>${esc(t.fecha_pago || '—')}${t.fecha_exacta===false?' (±1 día)':''}</b></div>
+    <div class="mrow"><span>Fecha</span><b>${esc(t.fecha_pago || '—')}</b></div>
     <div class="mrow"><span>Hora</span><b>${esc(t.hora_pago || '—')}</b></div>
     <div class="mrow"><span>Plataforma</span><b>${esc(t.plataforma || '—')}</b></div>
-    <div class="mrow"><span>Referencia</span><b>${esc(t.referencia || '—')}</b></div>`;
+    <div class="mrow"><span>Referencia</span><b>${esc(t.referencia || '—')}</b></div>
+    ${estado}`;
 }
 
 async function buscarPago(mid){
@@ -498,13 +505,20 @@ async function buscarPago(mid){
   let cand;
   if(r.candidatas && r.candidatas.length){
     const ordenadas = r.candidatas.slice().sort((a,b)=> (b.id===r.sugerida_id?1:0) - (a.id===r.sugerida_id?1:0));
-    const cards = ordenadas.map(t => `
-      <div class="cand ${t.id===r.sugerida_id?'sug':''}">
-        ${t.id===r.sugerida_id ? '<div class="tag">Coincidencia sugerida</div>' : ''}
+    const cards = ordenadas.map(t => {
+      const sug = t.id===r.sugerida_id;
+      const aviso = (sug && !t.libre)
+        ? `<div class="aviso-asig">Este pago ya está asignado a la boleta ${esc(t.boleta||'?')}. No lo vuelvas a abonar.</div>`
+        : '';
+      return `
+      <div class="cand ${sug?'sug':''}">
+        ${sug ? '<div class="tag">Coincidencia sugerida</div>' : ''}
         ${fmtTrans(t)}
-        ${t.id===r.sugerida_id && r.razon_sugerida ? `<div class="razon">${esc(r.razon_sugerida)}</div>` : ''}
-      </div>`).join('');
-    const titulo = r.candidatas.length > 1 ? `<div class="mhdr">Pagos reales libres que coinciden · ${r.candidatas.length}</div>` : `<div class="mhdr">Pago real encontrado</div>`;
+        ${sug && r.razon_sugerida ? `<div class="razon">${esc(r.razon_sugerida)}</div>` : ''}
+        ${aviso}
+      </div>`;
+    }).join('');
+    const titulo = r.candidatas.length > 1 ? `<div class="mhdr">Pagos reales del mismo monto y día · ${r.candidatas.length}</div>` : `<div class="mhdr">Pago real encontrado</div>`;
     cand = titulo + cards;
   } else {
     cand = `<div class="mnone">No se encontró ninguna transferencia real LIBRE con estos datos.<br><br>${esc(r.diagnostico || '')}</div>`;
