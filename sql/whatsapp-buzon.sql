@@ -45,8 +45,11 @@ create table if not exists public.mensajes_whatsapp (
 
 -- ── Índices ────────────────────────────────────────────────────────────────
 -- Evita guardar dos veces el mismo mensaje (Meta a veces reenvía el aviso).
+-- Índice único NORMAL (no parcial): en Postgres igual permite varios NULL, y
+-- así sí es compatible con el "upsert" (ON CONFLICT) que usa el timbre. Un
+-- índice parcial (WHERE ... IS NOT NULL) rompe el upsert y el mensaje no se guarda.
 create unique index if not exists mensajes_whatsapp_wamid_idx
-  on public.mensajes_whatsapp (wa_message_id) where wa_message_id is not null;
+  on public.mensajes_whatsapp (wa_message_id);
 
 -- Para abrir un chat rápido (todos los mensajes de una conversación, recientes primero).
 create index if not exists mensajes_whatsapp_conv_idx
