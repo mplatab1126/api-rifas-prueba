@@ -130,5 +130,30 @@ La pregunta no es técnica, es operativa: **¿quieres ser el responsable único 
 
 ---
 
-## 4. Registro
-- **2026-06-01** — Creada esta evaluación. Mateo pidió comparar opciones antes de decidir. Pendiente: que elija rumbo (A / B / C).
+## 4. Construcción del buzón propio (arrancada)
+
+Mateo decidió **no tocar las dos líneas reales** y montar el buzón propio con un **número de prueba gratis de Meta**. Orden acordado: (1) buzón, (2) agente IA, (3) bandeja de asesores.
+
+### Lo que ya quedó en el código (sin tocar producción)
+- `sql/whatsapp-buzon.sql` — crea 2 tablas NUEVAS: `conversaciones_whatsapp` (un chat por cliente) y `mensajes_whatsapp` (un registro por mensaje, entrante o saliente). Additivo, no toca tablas existentes.
+- `api/lib/whatsapp.js` — helper para enviar por la Cloud API de Meta (`enviarTexto`). Lee las variables de entorno nuevas.
+- `api/whatsapp/recibir.js` — **el timbre (webhook)**. Verifica el webhook (GET) y guarda los mensajes entrantes + acuses de entrega (POST). Responde 200 rápido para que Meta no reintente. Evita duplicados por `wa_message_id`.
+- `api/whatsapp/enviar.js` — endpoint protegido para enviar un texto y guardarlo en el buzón (lo usará la bandeja; sirve para pruebas).
+
+### Variables de entorno nuevas (configurar en Vercel cuando la app de Meta esté lista)
+- `WHATSAPP_TOKEN` — token de acceso de la app de Meta.
+- `WHATSAPP_PHONE_NUMBER_ID` — identificador del número desde el que se envía.
+- `WHATSAPP_VERIFY_TOKEN` — palabra secreta que inventa Mateo para el "apretón de manos" del webhook (debe coincidir en Meta y en Vercel).
+
+> Se usan variables NUEVAS, separadas de `WABA_ID`/`WABA_TOKEN` (que ya existen para los costos), para mantener el piloto aislado.
+
+### Pendiente para dejarlo funcionando
+- [ ] **Mateo:** crear la app en developers.facebook.com → producto WhatsApp → copiar `token`, `phone number ID`; agregar su WhatsApp como número de prueba.
+- [ ] **Correr `sql/whatsapp-buzon.sql`** en Supabase (crea las 2 tablas). Requiere autorización explícita de Mateo (toca la base real, aunque sea additivo).
+- [ ] Configurar las 3 variables de entorno en Vercel.
+- [ ] En Meta → WhatsApp → Configuración → Webhook: poner la URL `https://<dominio>/api/whatsapp/recibir`, el `verify token`, y suscribirse a `messages`.
+- [ ] Prueba: escribir desde el WhatsApp de prueba y ver la fila aparecer en `mensajes_whatsapp`; responder con `enviar`.
+
+## 5. Registro
+- **2026-06-01** — Creada esta evaluación. Mateo pidió comparar opciones antes de decidir.
+- **2026-06-01** — Mateo eligió construir buzón propio con número de prueba (sin tocar L1 ni L2). Escrito el código base del buzón (timbre + envío + 2 tablas). Tablas aún NO creadas en Supabase (pendiente autorización). Falta la app de Meta y las variables de entorno.
