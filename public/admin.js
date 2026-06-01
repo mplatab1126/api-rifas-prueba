@@ -180,6 +180,74 @@ const $ = id => document.getElementById(id);
         }
     }
 
+    // ──────────────────────────────────────────────────────────────────
+    // INTERRUPTOR "PENDIENTE" (solo gerencia)
+    // El modo "Pendiente" queda OCULTO para los asesores, salvo que Mateo
+    // lo active (p.ej. cuando el banco está caído). El estado se guarda en
+    // el servidor (tabla `configuracion`) y también se valida por detrás.
+    // ──────────────────────────────────────────────────────────────────
+    let pendienteActivo = false;
+
+    function esGerenciaPendiente() {
+        return (nombreAsesorActual || '').trim().toLowerCase() === 'mateo';
+    }
+
+    function aplicarVisibilidadPendiente() {
+        // El botón "Pendiente" (y sus atajos) se ve si el interruptor está activo
+        // o si quien entró es gerencia (Mateo siempre lo ve para poder activarlo).
+        const mostrarBoton = pendienteActivo || esGerenciaPendiente();
+        ['btnVentaPendiente', 'btnModoPendiente', 'btnForzarPendiente', 'btnForzarPendienteAbono'].forEach(function(id) {
+            const el = document.getElementById(id);
+            if (el) el.style.display = mostrarBoton ? '' : 'none';
+        });
+        // El interruptor en sí solo lo ve la gerencia.
+        ['switchPendienteVenta', 'switchPendienteAbono'].forEach(function(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.display = esGerenciaPendiente() ? '' : 'none';
+            el.textContent = pendienteActivo ? '🔓 Pendiente: ACTIVO para asesores' : '🔒 Pendiente: oculto';
+            el.style.background = pendienteActivo ? '#e8f5e9' : '#f5f5f5';
+            el.style.color = pendienteActivo ? '#2e7d32' : '#777';
+            el.style.borderColor = pendienteActivo ? '#2e7d32' : 'var(--ring)';
+        });
+    }
+
+    async function cargarConfiguracionPendiente() {
+        try {
+            const r = await fetch('/api/admin/configuracion', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contrasena: localStorage.getItem(STORAGE_KEY), accion: 'get' })
+            });
+            const j = await r.json();
+            if (j.status === 'ok') pendienteActivo = !!j.pendiente_habilitado;
+        } catch (e) {
+            console.error('No se pudo cargar el interruptor Pendiente:', e);
+        }
+        aplicarVisibilidadPendiente();
+    }
+
+    async function toggleInterruptorPendiente() {
+        if (!esGerenciaPendiente()) return;
+        const nuevo = !pendienteActivo;
+        try {
+            const r = await fetch('/api/admin/configuracion', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contrasena: localStorage.getItem(STORAGE_KEY), accion: 'set', clave: 'pendiente_habilitado', valor: nuevo })
+            });
+            const j = await r.json();
+            if (j.status === 'ok') {
+                pendienteActivo = !!j.pendiente_habilitado;
+                aplicarVisibilidadPendiente();
+            } else {
+                alert('No se pudo cambiar el interruptor: ' + (j.mensaje || ''));
+            }
+        } catch (e) {
+            alert('Error de conexión al cambiar el interruptor.');
+        }
+    }
+
     function initLogin(){ const s=localStorage.getItem(STORAGE_KEY); if(s) verifyLogin(s,true); }
     $('btnLogin').onclick = ()=> verifyLogin($('loginPwd').value);
     $('btnLogout').onclick = ()=> { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem('asesor_nombre'); location.reload(); };
@@ -210,6 +278,7 @@ const $ = id => document.getElementById(id);
               cargarPlataformas();
               cargarListaIndependientes();
               inicializarAsesor(res.asesor);
+              cargarConfiguracionPendiente();
               if (res.asesor === 'Mateo') $('btnFinanzas').style.display = '';
               if (res.asesor === 'Mateo' || res.asesor === 'Alejo P' || res.asesor === 'Alejo Plata') $('btnLlamadas').style.display = '';
               const asesoresDevolucion = ['Juan Pablo Rojas', 'Juan Pablo', 'Mateo', 'Alejo P', 'Alejo Plata'];

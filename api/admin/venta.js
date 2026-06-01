@@ -3,6 +3,7 @@ import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 import { PRECIOS } from '../config/precios.js';
 import { limpiarTelefono, esTelefonoValido } from '../lib/telefono.js';
+import { pendienteHabilitado } from '../lib/configuracion.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -22,6 +23,14 @@ export default async function handler(req, res) {
 
   const nombreAsesor = validarAsesor(contrasena);
   if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
+
+  // 🔒 CANDADO PENDIENTE: el modo "Pendiente" solo se permite si el interruptor
+  // (que controla Mateo) está encendido. Mateo siempre puede usarlo. Esto evita
+  // que un asesor registre un pendiente aunque tenga la página vieja abierta.
+  if (esPendiente && nombreAsesor.toLowerCase() !== 'mateo' && !(await pendienteHabilitado())) {
+    return res.status(403).json({ status: 'error', mensaje: '🚫 La opción "Pendiente" está deshabilitada. Amarra una transferencia real o registra el pago en efectivo.' });
+  }
+
   if (!numeroBoleta || !telefono) return res.status(400).json({ status: 'error', mensaje: 'Faltan datos' });
   // La tabla clientes exige que nombre, apellido y ciudad no estén vacíos.
   if (!String(nombre || '').trim())   return res.status(400).json({ status: 'error', mensaje: '🚫 Falta el nombre del cliente.' });

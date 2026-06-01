@@ -3,6 +3,7 @@ import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 import { grupoDeAsesor } from '../lib/asesores.js';
 import { PRECIOS } from '../config/precios.js';
+import { pendienteHabilitado } from '../lib/configuracion.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -17,6 +18,13 @@ export default async function handler(req, res) {
   const numeroLimpio = String(numeroBoleta).trim();
   const monto = Number(valorAbono);
   if (monto <= 0) return res.status(400).json({ status: 'error', mensaje: 'El abono debe ser mayor a cero' });
+
+  // 🔒 CANDADO PENDIENTE: el modo "Pendiente" solo se permite si el interruptor
+  // (que controla Mateo) está encendido. Mateo siempre puede usarlo. Esto evita
+  // que un asesor registre un pendiente aunque tenga la página vieja abierta.
+  if (esPendiente && nombreAsesor.toLowerCase() !== 'mateo' && !(await pendienteHabilitado())) {
+    return res.status(403).json({ status: 'error', mensaje: '🚫 La opción "Pendiente" está deshabilitada. Amarra una transferencia real o registra el pago en efectivo.' });
+  }
 
   try {
     // 🚨 NUEVA VALIDACIÓN ANTI-DUPLICADOS (Bloqueo por ID)
