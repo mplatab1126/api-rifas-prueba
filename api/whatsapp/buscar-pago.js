@@ -49,32 +49,40 @@ export default async function handler(req, res) {
       .eq('monto', monto)
       .eq('fecha_pago', datos.fecha_pago);
 
-    const candidatas = (mismas || []).map(c => ({
+    const todasDelDia = (mismas || []).map(c => ({
       ...c,
       libre: c.estado === 'LIBRE',
       boleta: boletaDeEstado(c.estado),
     }));
 
+    // 4. EXACTITUD: de las del mismo monto y día, dejar SOLO las que realmente
+    // coinciden con este comprobante (por referencia, mismo minuto, o teléfono).
+    // Así no se muestran pagos de otra hora que solo comparten el monto.
+    const candidatas = todasDelDia.filter(c => esCoincidencia(c, datos, last10));
+
     // Ordenar por cercanía de hora al comprobante (la más parecida primero)
     const horaRef = horaAMin(datos.hora_pago);
     candidatas.sort((a, b) => Math.abs(horaAMin(a.hora_pago) - horaRef) - Math.abs(horaAMin(b.hora_pago) - horaRef));
 
-    // 4. Elegir la sugerida con las estrategias del Admin
+    // 5. Elegir la sugerida con las estrategias del Admin
     const sugerida = elegirSugerida(candidatas, datos, last10);
 
-    // 5. Diagnóstico si NO hay ninguna del mismo monto y fecha exacta
+    // 6. Diagnóstico cuando no hay coincidencia exacta
     let diagnostico = null;
     if (candidatas.length === 0) {
-      const fechas = vecinas(datos.fecha_pago); // [fecha-1, fecha+1]
-      const { data: cercanas } = await supabase
-        .from('transferencias')
-        .select('estado, fecha_pago')
-        .eq('monto', monto)
-        .in('fecha_pago', fechas)
-        .limit(1);
-      diagnostico = (cercanas && cercanas.length)
-        ? `Hay un pago de $${monto.toLocaleString('es-CO')} pero el ${cercanas[0].fecha_pago} (1 día de diferencia con el comprobante). Revisa la fecha.`
-        : `No hay ninguna transferencia real de $${monto.toLocaleString('es-CO')} el ${datos.fecha_pago}. Verifica que esté cargada con Carga IA.`;
+      if (todasDelDia.length > 0) {
+        diagnostico = `Hay ${todasDelDia.length} pago(s) de $${monto.toLocaleString('es-CO')} el ${datos.fecha_pago}, pero ninguno coincide en hora ni referencia con este comprobante. Revísalo a mano.`;
+      } else {
+        const { data: cercanas } = await supabase
+          .from('transferencias')
+          .select('estado, fecha_pago')
+          .eq('monto', monto)
+          .in('fecha_pago', vecinas(datos.fecha_pago))
+          .limit(1);
+        diagnostico = (cercanas && cercanas.length)
+          ? `Hay un pago de $${monto.toLocaleString('es-CO')} pero el ${cercanas[0].fecha_pago} (1 día de diferencia con el comprobante). Revisa la fecha.`
+          : `No hay ninguna transferencia real de $${monto.toLocaleString('es-CO')} el ${datos.fecha_pago}. Verifica que esté cargada con Carga IA.`;
+      }
     }
 
     return res.status(200).json({
@@ -114,6 +122,23 @@ function vecinas(fecha) {
     const despues = new Date(base); despues.setDate(despues.getDate() + 1);
     return [fmt(antes), fmt(despues)];
   } catch (_) { return []; }
+}
+
+// ¿Esta transferencia coincide DE VERDAD con el comprobante?
+// Solo si: la referencia coincide, O el teléfono del cliente está en la
+// referencia, O es el MISMO minuto exacto. Si no, no es la del cliente.
+function esCoincidencia(c, datos, last10) {
+  const { referencia, hora_pago } = datos;
+
+  if (referencia && referencia !== '0' && String(referencia).toLowerCase() !== 'sin ref') {
+    const refLimpia = String(referencia).replace(/\D/g, '');
+    const refBD = String(c.referencia || '');
+    if (refBD.includes(referencia) || (refLimpia.length > 4 && refBD.includes(refLimpia))) return true;
+  }
+  if (last10 && last10.length === 10 && String(c.referencia || '').includes(last10)) return true;
+  if (hora_pago && c.hora_pago && c.hora_pago.substring(0, 5) === hora_pago.substring(0, 5)) return true;
+
+  return false;
 }
 
 // Mismas estrategias que api/admin/buscar-transferencia-ia.js, en orden de confianza.
