@@ -85,7 +85,8 @@
     .b.sal .h { color: rgba(250,250,247,0.5); }
     .b.medio { color: var(--ink-mute); }
     .media { min-width: 150px; font-size: 0.82rem; color: inherit; opacity: 0.85; }
-    .media img, .media video { max-width: 250px; border-radius: 10px; cursor: pointer; display: block; }
+    .media img { width: 200px; height: 200px; object-fit: cover; border-radius: 10px; cursor: pointer; display: block; }
+    .media video { max-width: 250px; border-radius: 10px; cursor: pointer; display: block; }
     .media audio { max-width: 250px; }
     .media a { color: inherit; text-decoration: underline; }
     .cap { margin-top: 5px; }
@@ -440,7 +441,7 @@ async function hidratarMedia(){
         url = URL.createObjectURL(await resp.blob());
         mediaCache[mid] = url;
       }
-      if(tipo==='img')        el.innerHTML = `<img src="${url}" onclick="window.open('${url}','_blank')">`;
+      if(tipo==='img')        el.innerHTML = `<img src="${url}" onclick="verImagen('${url}')">`;
       else if(tipo==='audio') el.innerHTML = `<audio controls src="${url}"></audio>`;
       else if(tipo==='video') el.innerHTML = `<video controls src="${url}"></video>`;
       else                    el.innerHTML = `<a href="${url}" target="_blank" download>Abrir archivo</a>`;
@@ -580,6 +581,7 @@ $('modal').addEventListener('click', e => {
   if(f){ $('fotoImg').src = f.getAttribute('data-url'); $('fotoBg').classList.add('show'); }
 });
 $('fotoBg').addEventListener('click', () => { $('fotoBg').classList.remove('show'); $('fotoImg').src = ''; });
+window.verImagen = function(url){ $('fotoImg').src = url; $('fotoBg').classList.add('show'); };
 
 /* ── Inicio ── */
 if(localStorage.getItem(PWD_KEY) && localStorage.getItem(NAME_KEY)){
