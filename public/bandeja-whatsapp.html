@@ -68,6 +68,10 @@
     .b.sal { align-self: flex-end; background: var(--verde-burbuja); border-top-right-radius: 0; }
     .b .h { font-size: 0.66rem; color: var(--tenue); text-align: right; margin-top: 3px; }
     .b.medio { font-style: italic; color: var(--tenue); }
+    .media { min-width: 140px; color: var(--tenue); font-size: 0.85rem; }
+    .media img, .media video { max-width: 240px; border-radius: 8px; cursor: pointer; display: block; }
+    .media audio { max-width: 240px; }
+    .cap { margin-top: 4px; }
     #aviso24 { display: none; background: #fff4d6; color: #856404; text-align: center; font-size: 0.8rem; padding: 8px; }
     #barra { display: flex; gap: 10px; padding: 12px 16px; background: #f0f2f5; align-items: flex-end; }
     #texto { flex: 1; resize: none; max-height: 120px; padding: 11px 16px; border-radius: 22px; border: none; font-family: inherit; font-size: 0.95rem; outline: none; }
@@ -217,6 +221,8 @@ $('buscar').oninput = pintarLista;
 /* ── Abrir un chat ── */
 window.abrir = async function(telefono){
   actual = telefono;
+  firmaMsgs = '';
+  $('msgs').innerHTML = '';
   $('app').classList.add('viendo-chat');
   $('vacio').style.display = 'none';
   $('convReal').style.display = 'flex';
@@ -242,20 +248,67 @@ window.cerrarChat = function(){
   pintarLista();
 };
 
+// Dibuja el cuerpo de un mensaje. Si es foto/audio/etc, deja un marcador que
+// luego hidratarMedia() reemplaza por el archivo de verdad.
+function cuerpoMensaje(m){
+  if(m.tipo === 'text' || !m.tipo) return esc(m.texto || '');
+  if(m.media_id){
+    const cap = m.texto ? `<div class="cap">${esc(m.texto)}</div>` : '';
+    const t = (m.tipo==='image'||m.tipo==='sticker') ? 'img'
+            : m.tipo==='audio' ? 'audio'
+            : m.tipo==='video' ? 'video' : 'doc';
+    const carga = t==='img' ? '📷 Cargando imagen…' : t==='audio' ? '🎵 Cargando audio…'
+                : t==='video' ? '🎬 Cargando video…' : '📎 Cargando archivo…';
+    return `<div class="media" data-mid="${esc(m.media_id)}" data-tipo="${t}">${carga}</div>${cap}`;
+  }
+  return `[${esc(m.tipo)}]${m.texto ? ' ' + esc(m.texto) : ''}`;
+}
+
+// Trae los archivos (foto/audio) por detrás y los muestra. Cachea por media_id
+// para no volver a descargarlos en cada refresco.
+const mediaCache = {};
+async function hidratarMedia(){
+  for(const el of $('msgs').querySelectorAll('.media[data-mid]')){
+    if(el.dataset.cargado) continue;
+    el.dataset.cargado = '1';
+    const mid = el.getAttribute('data-mid'), tipo = el.getAttribute('data-tipo');
+    try{
+      let url = mediaCache[mid];
+      if(!url){
+        const resp = await fetch('/api/whatsapp/media', { method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ contrasena: localStorage.getItem(PWD_KEY), media_id: mid }) });
+        const ct = resp.headers.get('content-type') || '';
+        if(!resp.ok || ct.includes('application/json')){
+          el.textContent = '⚠️ No se pudo cargar el archivo'; el.dataset.cargado = ''; continue;
+        }
+        url = URL.createObjectURL(await resp.blob());
+        mediaCache[mid] = url;
+      }
+      if(tipo==='img')        el.innerHTML = `<img src="${url}" onclick="window.open('${url}','_blank')">`;
+      else if(tipo==='audio') el.innerHTML = `<audio controls src="${url}"></audio>`;
+      else if(tipo==='video') el.innerHTML = `<video controls src="${url}"></video>`;
+      else                    el.innerHTML = `<a href="${url}" target="_blank" download style="color:var(--verde);font-weight:600">📎 Abrir archivo</a>`;
+    }catch(e){ el.textContent = '⚠️ Error al cargar'; el.dataset.cargado = ''; }
+  }
+}
+
+let firmaMsgs = '';
 async function cargarMensajes(scroll){
   if(!actual) return;
   const r = await api('mensajes', { telefono: actual });
   if(r.status !== 'ok') return;
+  const ult = r.mensajes[r.mensajes.length-1];
+  const firma = r.mensajes.length + ':' + (ult?.id || '') + ':' + (ult?.estado_envio || '');
+  if(!scroll && firma === firmaMsgs) return;   // nada nuevo: no re-dibujamos (evita parpadeo)
+  firmaMsgs = firma;
   const cont = $('msgs');
   const abajo = cont.scrollHeight - cont.scrollTop - cont.clientHeight < 80;
   cont.innerHTML = r.mensajes.map(m => {
-    const cuerpo = m.tipo === 'text' || !m.tipo
-      ? esc(m.texto || '')
-      : `[${esc(m.tipo)}]${m.texto ? ' ' + esc(m.texto) : ''}`;
-    const claseMedio = (m.tipo && m.tipo !== 'text') ? ' medio' : '';
+    const claseMedio = (m.tipo && m.tipo !== 'text' && !m.media_id) ? ' medio' : '';
     const estado = m.direccion === 'saliente' ? estadoIcono(m.estado_envio) : '';
-    return `<div class="b ${m.direccion==='entrante'?'ent':'sal'}${claseMedio}">${cuerpo}<div class="h">${hora(m.timestamp_wa || m.created_at)} ${estado}</div></div>`;
+    return `<div class="b ${m.direccion==='entrante'?'ent':'sal'}${claseMedio}">${cuerpoMensaje(m)}<div class="h">${hora(m.timestamp_wa || m.created_at)} ${estado}</div></div>`;
   }).join('');
+  hidratarMedia();
   if(scroll || abajo) cont.scrollTop = cont.scrollHeight;
 }
 
