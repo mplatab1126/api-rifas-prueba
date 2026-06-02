@@ -600,8 +600,8 @@ async function verComparacion(urlSistema){
   }
   $('fotoBg').innerHTML = `
     <div class="cmp" onclick="event.stopPropagation()">
-      <div class="cmp-col"><div class="cmp-lbl">Pago encontrado por el sistema</div><img src="${urlSistema}"></div>
       <div class="cmp-col"><div class="cmp-lbl">Comprobante del cliente</div>${urlCliente ? `<img src="${urlCliente}">` : '<div class="cmp-none">No disponible</div>'}</div>
+      <div class="cmp-col"><div class="cmp-lbl">Pago encontrado por el sistema</div><img src="${urlSistema}"></div>
     </div>`;
   $('fotoBg').classList.add('show');
 }
