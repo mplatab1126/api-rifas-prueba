@@ -300,6 +300,25 @@
     .rp-t { display: block; font-weight: 600; font-size: 0.86rem; color: var(--ink); }
     .rp-x { display: block; margin-top: 2px; color: var(--ink-mute); font-size: 0.78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .rp-vacio { padding: 16px; text-align: center; color: var(--ink-mute); font-size: 0.82rem; line-height: 1.5; }
+    #btnResp:disabled { opacity: 0.5; cursor: default; }
+    .resp-cnt { font-weight: 500; font-size: 0.68rem; color: var(--ink-mute); background: var(--cream-100); border-radius: 100px; padding: 2px 9px; margin-left: 6px; white-space: nowrap; }
+
+    /* Editor del flujo de pasos (crear/editar respuesta) */
+    .paso-label { font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray-400); margin: 16px 0 8px; }
+    .paso-card { border: 1px solid var(--gray-200); border-radius: 12px; padding: 12px; margin-bottom: 10px; background: var(--cream-50); }
+    .paso-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; }
+    .paso-tag { font-size: 0.72rem; font-weight: 600; color: var(--ink-soft); }
+    .paso-ctrl { display: flex; gap: 2px; }
+    .paso-ctrl button { width: 26px; height: 26px; border: 1px solid var(--gray-200); background: #fff; border-radius: 7px; cursor: pointer; color: var(--ink-mute); font-size: 0.8rem; line-height: 1; display: flex; align-items: center; justify-content: center; }
+    .paso-ctrl button:hover:not(:disabled) { background: var(--cream-100); color: var(--ink); }
+    .paso-ctrl button:disabled { opacity: 0.3; cursor: default; }
+    .paso-ctrl .paso-del { font-size: 1.15rem; }
+    .paso-ctrl .paso-del:hover:not(:disabled) { color: var(--danger); background: #fdecec; border-color: #f3c9c9; }
+    .paso-card .cc-input { margin-bottom: 8px; }
+    .paso-card .cc-input:last-child { margin-bottom: 0; }
+    .paso-add { display: flex; gap: 8px; }
+    .paso-add button { flex: 1; padding: 9px; border: 1px dashed var(--gray-300); background: #fff; border-radius: 9px; font-family: inherit; font-size: 0.84rem; color: var(--ink); cursor: pointer; }
+    .paso-add button:hover { background: var(--cream-50); border-color: var(--ink-mute); }
 
     @media (max-width: 1100px) { #lista { width: 320px; min-width: 320px; } }
     @media (max-width: 820px) {
@@ -685,6 +704,10 @@ function tarjetaBoleta(b){
 /* ── Mensajes ── */
 function cuerpoMensaje(m){
   if(m.tipo === 'text' || !m.tipo) return esc(m.texto || '');
+  if(m.media_url && (m.tipo === 'image' || m.tipo === 'sticker')){
+    const cap = m.texto ? `<div class="cap">${esc(m.texto)}</div>` : '';
+    return `<div class="media"><img src="${esc(m.media_url)}" onclick="verImagen(this.src)"></div>${cap}`;
+  }
   if(m.media_id){
     const cap = m.texto ? `<div class="cap">${esc(m.texto)}</div>` : '';
     const t = (m.tipo==='image'||m.tipo==='sticker') ? 'img'
@@ -1290,22 +1313,35 @@ async function cargarRespuestas(){
   await obtenerRespuestas(lineaActual, true);
   pintarRespuestas();
 }
+// Devuelve los pasos de una respuesta (con respaldo al texto de la versión vieja).
+function pasosDe(r){
+  if(Array.isArray(r.pasos) && r.pasos.length) return r.pasos;
+  if(r.texto) return [{ tipo:'texto', texto: r.texto }];
+  return [];
+}
+// Resumen corto del flujo para listas y selector.
+function resumenPasos(r){
+  return pasosDe(r).map(p => p.tipo === 'imagen' ? '🖼️ Imagen' : (p.texto || '')).join('  ·  ');
+}
 function pintarRespuestas(){
   const filtro = $('buscarResp').value.trim().toLowerCase();
-  const items = respCache.filter(r => !filtro || (r.titulo||'').toLowerCase().includes(filtro) || (r.texto||'').toLowerCase().includes(filtro));
-  $('listaResp').innerHTML = items.map(r => `
+  const items = respCache.filter(r => !filtro || (r.titulo||'').toLowerCase().includes(filtro) || resumenPasos(r).toLowerCase().includes(filtro));
+  $('listaResp').innerHTML = items.map(r => {
+    const n = pasosDe(r).length;
+    return `
     <div class="resp-card">
       <div class="resp-top">
-        <div class="resp-titulo">${esc(r.titulo)}</div>
+        <div class="resp-titulo">${esc(r.titulo)} <span class="resp-cnt">${n} ${n === 1 ? 'mensaje' : 'mensajes'}</span></div>
         <div class="resp-acc">
           <button class="resp-edit" data-id="${esc(r.id)}" title="Editar">${RR_EDIT}</button>
           <button class="resp-del" data-id="${esc(r.id)}" title="Eliminar">${RR_TRASH}</button>
         </div>
       </div>
-      <div class="resp-texto">${esc(r.texto)}</div>
-    </div>`).join('') || (respCache.length
-      ? '<div class="vacio-lista">Ninguna coincide con la búsqueda.</div>'
-      : '<div class="vacio-lista">Aún no hay respuestas rápidas en esta línea. Crea la primera.</div>');
+      <div class="resp-texto">${esc(resumenPasos(r))}</div>
+    </div>`;
+  }).join('') || (respCache.length
+    ? '<div class="vacio-lista">Ninguna coincide con la búsqueda.</div>'
+    : '<div class="vacio-lista">Aún no hay respuestas rápidas en esta línea. Crea la primera.</div>');
 }
 $('buscarResp').oninput = () => pintarRespuestas();
 $('btnCrearResp').onclick = () => formRespuesta(null);
@@ -1316,22 +1352,75 @@ $('listaResp').addEventListener('click', e => {
   if(de){ borrarRespuesta(de.getAttribute('data-id')); return; }
 });
 
+// Estado del editor del flujo
+let rrEditId = null, rrTitulo = '', rrPasos = [];
+
 window.formRespuesta = function(r){
+  rrEditId = r ? r.id : null;
+  rrTitulo = r ? (r.titulo || '') : '';
+  rrPasos = r
+    ? pasosDe(r).map(p => ({ tipo: p.tipo === 'imagen' ? 'imagen' : 'texto', texto: p.texto || '', url: p.url || '' }))
+    : [{ tipo:'texto', texto:'', url:'' }];
+  if(!rrPasos.length) rrPasos = [{ tipo:'texto', texto:'', url:'' }];
+  pintarFormRespuesta();
+};
+
+// Guarda en rrTitulo/rrPasos lo que esté escrito en el formulario (antes de redibujar).
+function capturarForm(){
+  const t = $('rrTitulo'); if(t) rrTitulo = t.value;
+  document.querySelectorAll('.paso-campo').forEach(el => {
+    const i = +el.getAttribute('data-idx'), k = el.getAttribute('data-k');
+    if(rrPasos[i]) rrPasos[i][k] = el.value;
+  });
+}
+function pintarFormRespuesta(){
+  const pasosHtml = rrPasos.map((p, i) => {
+    const ctrl = `
+      <div class="paso-ctrl">
+        <button onclick="pasoMover(${i},-1)" title="Subir" ${i === 0 ? 'disabled' : ''}>▲</button>
+        <button onclick="pasoMover(${i},1)" title="Bajar" ${i === rrPasos.length - 1 ? 'disabled' : ''}>▼</button>
+        <button class="paso-del" onclick="pasoEliminar(${i})" title="Quitar">&times;</button>
+      </div>`;
+    const cuerpo = p.tipo === 'imagen'
+      ? `<input class="cc-input paso-campo" data-idx="${i}" data-k="url" placeholder="URL de la imagen (https://...jpg)" value="${esc(p.url)}">
+         <input class="cc-input paso-campo" data-idx="${i}" data-k="texto" placeholder="Pie de foto (opcional)" value="${esc(p.texto)}">`
+      : `<textarea class="cc-input paso-campo" data-idx="${i}" data-k="texto" rows="3" placeholder="Escribe el mensaje…" style="resize:vertical">${esc(p.texto)}</textarea>`;
+    return `<div class="paso-card">
+      <div class="paso-head"><span class="paso-tag">${i + 1} · ${p.tipo === 'imagen' ? '🖼️ Imagen' : '💬 Texto'}</span>${ctrl}</div>
+      ${cuerpo}
+    </div>`;
+  }).join('');
   abrirModal(`
-    <h3>${r ? 'Editar respuesta' : 'Nueva respuesta rápida'}</h3>
-    <div class="msub">Ponle un título corto y escribe el mensaje. Los asesores de esta línea podrán usarla en cualquier chat.</div>
-    <input id="rrTitulo" class="cc-input" placeholder="Título (ej: Métodos de pago)" maxlength="60" value="${r ? esc(r.titulo) : ''}">
-    <textarea id="rrTexto" class="cc-input" rows="6" placeholder="Escribe aquí el mensaje completo…" style="resize:vertical">${r ? esc(r.texto) : ''}</textarea>
-    <button class="ab-confirm" onclick="guardarRespuesta(${r ? "'" + esc(r.id) + "'" : 'null'})">${r ? 'Guardar cambios' : 'Crear'}</button>
+    <h3>${rrEditId ? 'Editar respuesta' : 'Nueva respuesta rápida'}</h3>
+    <div class="msub">Arma el flujo: agrega mensajes de texto e imágenes en el orden que quieras. Al usar la respuesta, se envían todos en ese orden.</div>
+    <input id="rrTitulo" class="cc-input" placeholder="Título (ej: Contacto inicial)" maxlength="60" value="${esc(rrTitulo)}">
+    <div class="paso-label">Mensajes del flujo</div>
+    ${pasosHtml}
+    <div class="paso-add">
+      <button onclick="pasoAgregar('texto')">+ Texto</button>
+      <button onclick="pasoAgregar('imagen')">+ Imagen</button>
+    </div>
+    <button class="ab-confirm" style="margin-top:14px" onclick="guardarRespuesta()">${rrEditId ? 'Guardar cambios' : 'Crear'}</button>
     <button class="mcerrar" onclick="cerrarModal()">Cancelar</button>
   `);
-  setTimeout(() => { const t = $('rrTitulo'); if(t) t.focus(); }, 40);
-};
-window.guardarRespuesta = async function(id){
-  const titulo = $('rrTitulo').value.trim(), texto = $('rrTexto').value.trim();
-  if(!titulo || !texto) return alert('Escribe un título y un mensaje.');
+}
+window.pasoAgregar = function(tipo){ capturarForm(); rrPasos.push({ tipo, texto:'', url:'' }); pintarFormRespuesta(); };
+window.pasoEliminar = function(i){ capturarForm(); rrPasos.splice(i, 1); if(!rrPasos.length) rrPasos.push({ tipo:'texto', texto:'', url:'' }); pintarFormRespuesta(); };
+window.pasoMover = function(i, dir){ capturarForm(); const j = i + dir; if(j < 0 || j >= rrPasos.length) return; const t = rrPasos[i]; rrPasos[i] = rrPasos[j]; rrPasos[j] = t; pintarFormRespuesta(); };
+
+window.guardarRespuesta = async function(){
+  capturarForm();
+  const titulo = rrTitulo.trim();
+  if(!titulo) return alert('Ponle un título a la respuesta.');
+  const pasos = rrPasos
+    .map(p => p.tipo === 'imagen'
+      ? { tipo:'imagen', url:(p.url||'').trim(), texto:(p.texto||'').trim() }
+      : { tipo:'texto', texto:(p.texto||'').trim() })
+    .filter(p => p.tipo === 'imagen' ? p.url : p.texto);
+  if(!pasos.length) return alert('Agrega al menos un mensaje (texto o una imagen con su URL).');
+  if(rrPasos.some(p => p.tipo === 'imagen' && !(p.url||'').trim()) && !confirm('Una imagen quedó sin URL y se va a omitir. ¿Guardar igual?')) return;
   abrirModal('<div class="mcargando">Guardando…</div>');
-  const r = await api('respuestas-rapidas', { accion: id ? 'editar' : 'crear', linea_id: lineaActual, id, titulo, texto });
+  const r = await api('respuestas-rapidas', { accion: rrEditId ? 'editar' : 'crear', linea_id: lineaActual, id: rrEditId, titulo, pasos });
   if(r.status === 'ok'){ cerrarModal(); await obtenerRespuestas(lineaActual, true); pintarRespuestas(); }
   else abrirModal(`<h3>No se pudo</h3><div class="mnone">${esc(r.mensaje || 'Error')}</div><button class="mcerrar" onclick="cerrarModal()">Cerrar</button>`);
 };
@@ -1352,21 +1441,27 @@ function abrirPicker(filtro){
     cont.innerHTML = '<div class="rp-vacio">No hay respuestas rápidas en esta línea.<br>Créalas en <b>Herramientas → Respuestas rápidas</b>.</div>';
   } else {
     const f = (filtro || '').toLowerCase();
-    const items = respCache.filter(r => !f || (r.titulo||'').toLowerCase().includes(f) || (r.texto||'').toLowerCase().includes(f));
+    const items = respCache.filter(r => !f || (r.titulo||'').toLowerCase().includes(f) || resumenPasos(r).toLowerCase().includes(f));
     cont.innerHTML = items.length
-      ? items.map(r => `<button class="rp-item" data-id="${esc(r.id)}"><span class="rp-t">${esc(r.titulo)}</span><span class="rp-x">${esc(r.texto)}</span></button>`).join('')
+      ? items.map(r => `<button class="rp-item" data-id="${esc(r.id)}"><span class="rp-t">${esc(r.titulo)}</span><span class="rp-x">${esc(resumenPasos(r))}</span></button>`).join('')
       : '<div class="rp-vacio">Ninguna respuesta coincide.</div>';
   }
   cont.style.display = 'block';
 }
-window.usarRespuesta = function(id){
-  const r = respCache.find(x => x.id === id);
-  if(!r) return;
-  const t = $('texto');
-  t.value = r.texto;
+window.usarRespuesta = async function(id){
+  if(!actual) return;
   cerrarPicker();
-  t.focus();
-  t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 120) + 'px';
+  const t = $('texto'); t.value = ''; t.style.height = 'auto';
+  const b = $('btnResp'); if(b) b.disabled = true;
+  const r = await api('respuestas-rapidas', { accion:'enviar', linea_id: actualLinea, telefono: actual, id });
+  if(b) b.disabled = false;
+  if(r.status === 'ok'){
+    await cargarMensajes(true);
+    cargarLista();
+    if(r.fallidos){ alert(`Se enviaron ${r.enviados} de ${r.enviados + r.fallidos} mensajes.\n${(r.errores||[]).join('\n')}`); }
+  } else {
+    alert('No se pudo enviar la respuesta: ' + (r.mensaje || 'error'));
+  }
 };
 $('btnResp').onclick = async (e) => {
   e.stopPropagation();
