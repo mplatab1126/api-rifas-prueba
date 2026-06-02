@@ -18,7 +18,7 @@ import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 import { supabase, supabaseAdmin } from '../lib/supabase.js';
 import { puedeVerLinea } from '../lib/asesores.js';
-import { enviarTexto, enviarImagen } from '../lib/whatsapp.js';
+import { enviarTexto, enviarImagen, enviarImagenPorId, subirMediaDesdeUrl } from '../lib/whatsapp.js';
 
 const MAX_TITULO = 60;
 const MAX_TEXTO = 4096;   // límite de texto de WhatsApp
@@ -135,16 +135,31 @@ export default async function handler(req, res) {
       pasos = sanitizarPasos(pasos);
       if (!pasos.length) return res.status(200).json({ status: 'error', mensaje: 'La respuesta no tiene mensajes.' });
 
+      // 1) Subir TODAS las imágenes a Meta primero (en paralelo). Así quedan en
+      //    sus servidores y se entregan al instante, en el orden correcto, sin la
+      //    demora de "descargar el link" que descuadraba los mensajes.
+      const medias = await Promise.all(pasos.map(p =>
+        p.tipo === 'imagen' ? subirMediaDesdeUrl(p.url, linea_id) : Promise.resolve(null)
+      ));
+
       const conversacion_id = await asegurarConv(telefono, linea_id, nombre);
       let enviados = 0;
       const errores = [];
       let ultimoPreview = '';
+      const ESPERA_MS = 1200; // pausa entre mensajes, para asegurar el orden de llegada
 
-      for (const p of pasos) {
+      for (let i = 0; i < pasos.length; i++) {
+        const p = pasos[i];
         const esImg = p.tipo === 'imagen';
-        const env = esImg
-          ? await enviarImagen(telefono, p.url, p.texto, linea_id)
-          : await enviarTexto(telefono, p.texto, linea_id);
+        let env;
+        if (esImg) {
+          const media = medias[i];
+          env = (media && media.ok)
+            ? await enviarImagenPorId(telefono, media.media_id, p.texto, linea_id)
+            : await enviarImagen(telefono, p.url, p.texto, linea_id);   // respaldo: por link
+        } else {
+          env = await enviarTexto(telefono, p.texto, linea_id);
+        }
         if (!env.ok) { errores.push((esImg ? 'Imagen' : 'Texto') + ': ' + env.error); continue; }
 
         const ts = new Date().toISOString();
@@ -163,6 +178,9 @@ export default async function handler(req, res) {
         });
         enviados++;
         ultimoPreview = esImg ? (p.texto || '📷 Foto') : p.texto;
+
+        // Esperar antes del siguiente (no después del último) para que lleguen en orden.
+        if (i < pasos.length - 1) await new Promise(r => setTimeout(r, ESPERA_MS));
       }
 
       if (enviados > 0) {

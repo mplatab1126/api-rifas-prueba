@@ -132,6 +132,88 @@ export async function enviarImagen(telefono, url, caption, lineaId) {
 }
 
 /**
+ * Sube una imagen a Meta a partir de su URL pública y devuelve su media_id.
+ *
+ * Por qué: cuando se envía una imagen "por link", Meta la descarga del URL
+ * RECIÉN al momento de entregarla, y esa demora hace que el mensaje siguiente
+ * (un texto) le llegue antes al cliente, descuadrando el orden. Si en cambio
+ * subimos la imagen primero, queda EN los servidores de Meta y se entrega de
+ * inmediato, igual de rápido que un texto → el orden se respeta.
+ *
+ * @returns {Promise<{ok:boolean, media_id?:string, error?:string}>}
+ */
+export async function subirMediaDesdeUrl(url, lineaId) {
+  const { token, phoneNumberId } = await resolverLinea(lineaId);
+  if (!token || !phoneNumberId) {
+    return { ok: false, error: 'No hay token/número configurado para esta línea.' };
+  }
+
+  try {
+    const desc = await fetch(url);
+    if (!desc.ok) return { ok: false, error: `No se pudo descargar la imagen (HTTP ${desc.status}).` };
+    const mime = (desc.headers.get('content-type') || 'image/jpeg').split(';')[0].trim();
+    const buffer = Buffer.from(await desc.arrayBuffer());
+
+    const form = new FormData();
+    form.append('messaging_product', 'whatsapp');
+    form.append('type', mime);
+    form.append('file', new Blob([buffer], { type: mime }), 'imagen');
+
+    const up = await fetch(`${GRAPH}/${phoneNumberId}/media`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: form,
+    });
+    const data = await up.json();
+    if (!up.ok || data.error || !data.id) {
+      return { ok: false, error: data.error?.message || `HTTP ${up.status}` };
+    }
+    return { ok: true, media_id: data.id };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+/**
+ * Envía una imagen que YA está subida a Meta (por su media_id).
+ *
+ * @returns {Promise<{ok:boolean, wa_message_id?:string, error?:string, raw?:object}>}
+ */
+export async function enviarImagenPorId(telefono, mediaId, caption, lineaId) {
+  const { token, phoneNumberId } = await resolverLinea(lineaId);
+  if (!token || !phoneNumberId) {
+    return { ok: false, error: 'No hay token/número configurado para esta línea.' };
+  }
+
+  try {
+    const image = { id: mediaId };
+    if (caption) image.caption = caption;
+    const resp = await fetch(`${GRAPH}/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: telefono,
+        type: 'image',
+        image,
+      }),
+    });
+
+    const data = await resp.json();
+    if (!resp.ok || data.error) {
+      return { ok: false, error: data.error?.message || `HTTP ${resp.status}`, raw: data };
+    }
+    return { ok: true, wa_message_id: data.messages?.[0]?.id, raw: data };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+/**
  * Descarga un archivo de WhatsApp (foto/PDF) y lo devuelve como base64.
  * Igual que el endpoint media.js pero como función reutilizable desde el backend.
  *

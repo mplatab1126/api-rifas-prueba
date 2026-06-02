@@ -1451,10 +1451,16 @@ function abrirPicker(filtro){
 window.usarRespuesta = async function(id){
   if(!actual) return;
   cerrarPicker();
-  const t = $('texto'); t.value = ''; t.style.height = 'auto';
-  const b = $('btnResp'); if(b) b.disabled = true;
+  const t = $('texto'), b = $('btnResp'), env = $('enviar');
+  const ph = t.placeholder;
+  t.value = ''; t.style.height = 'auto';
+  if(b) b.disabled = true;
+  if(env) env.disabled = true;
+  t.placeholder = 'Enviando respuesta…';
   const r = await api('respuestas-rapidas', { accion:'enviar', linea_id: actualLinea, telefono: actual, id });
   if(b) b.disabled = false;
+  if(env) env.disabled = false;
+  t.placeholder = ph;
   if(r.status === 'ok'){
     await cargarMensajes(true);
     cargarLista();
