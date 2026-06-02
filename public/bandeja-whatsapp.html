@@ -301,8 +301,9 @@
     .resp-texto { margin-top: 7px; color: var(--ink-mute); font-size: 0.84rem; line-height: 1.45; white-space: pre-wrap; word-wrap: break-word; max-height: 5.2em; overflow: hidden; }
 
     /* Botón ⚡ y selector flotante de respuestas en el chat */
-    #btnResp { width: 44px; height: 44px; min-width: 44px; border-radius: 50%; border: 1px solid var(--gray-200); background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--ink-mute); transition: .15s; }
-    #btnResp:hover { background: var(--cream-50); color: var(--ink); border-color: var(--gray-300); }
+    #btnResp, #btnBoleta { width: 44px; height: 44px; min-width: 44px; border-radius: 50%; border: 1px solid var(--gray-200); background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--ink-mute); transition: .15s; }
+    #btnResp:hover, #btnBoleta:hover { background: var(--cream-50); color: var(--ink); border-color: var(--gray-300); }
+    #btnBoleta:disabled { opacity: 0.5; cursor: default; }
     #respPicker { display: none; position: absolute; left: 14px; right: 14px; bottom: calc(100% + 8px); max-height: 320px; overflow-y: auto; background: #fff; border: 1px solid var(--gray-200); border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.14); padding: 6px; z-index: 50; }
     .rp-item { display: block; width: 100%; text-align: left; background: none; border: none; padding: 10px 12px; border-radius: 10px; cursor: pointer; }
     .rp-item:hover { background: var(--cream-100); }
@@ -494,6 +495,9 @@
         <div id="msgs"></div>
         <div id="barra">
           <div id="respPicker"></div>
+          <button id="btnBoleta" title="Enviar boleta al cliente" aria-label="Enviar boleta">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V8z"/><line x1="13" y1="6" x2="13" y2="18" stroke-dasharray="2 2"/></svg>
+          </button>
           <button id="btnResp" title="Respuestas rápidas" aria-label="Respuestas rápidas">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 10 14 9 22 19 10 12 10 13 2"/></svg>
           </button>
@@ -1698,6 +1702,36 @@ $('respPicker').addEventListener('click', e => {
 document.addEventListener('click', e => {
   if(pickerAbierto() && !e.target.closest('#respPicker') && !e.target.closest('#btnResp')) cerrarPicker();
 });
+
+/* ── Enviar boleta al cliente (atajo del chat) ── */
+$('btnBoleta').onclick = async () => {
+  if(!actual) return;
+  abrirModal('<div class="mcargando">Buscando las boletas del cliente…</div>');
+  const r = await api('enviar-boleta', { accion:'previsualizar', linea_id: actualLinea, telefono: actual });
+  if(r.status !== 'ok'){
+    abrirModal(`<h3>No se pudo</h3><div class="mnone">${esc(r.mensaje || 'Error')}</div><button class="mcerrar" onclick="cerrarModal()">Cerrar</button>`);
+    return;
+  }
+  if(!r.encontrado){
+    abrirModal(`<h3>Sin boletas</h3><div class="mnone">Este número no tiene boletas asignadas en la base de datos. Verifica que el teléfono del chat sea el mismo con el que compró.</div><button class="mcerrar" onclick="cerrarModal()">Cerrar</button>`);
+    return;
+  }
+  abrirModal(`
+    <h3>Enviar boleta a ${esc(r.nombre || 'el cliente')}</h3>
+    <div class="msub">Se ${r.total === 1 ? 'encontró 1 boleta' : 'encontraron ' + r.total + ' boletas'}. Este es el mensaje que se le enviará:</div>
+    <div class="df-card-body" style="max-height:320px;overflow:auto">${esc(r.mensaje)}</div>
+    <button class="ab-confirm" style="margin-top:14px" onclick="enviarBoletaConfirmar()">Enviar boleta</button>
+    <button class="mcerrar" onclick="cerrarModal()">Cancelar</button>
+  `);
+};
+window.enviarBoletaConfirmar = async function(){
+  const tel = actual, linea = actualLinea;
+  if(!tel) return;
+  abrirModal('<div class="mcargando">Enviando…</div>');
+  const r = await api('enviar-boleta', { accion:'enviar', linea_id: linea, telefono: tel });
+  if(r.status === 'ok'){ cerrarModal(); if(actual === tel) cargarMensajes(true); cargarLista(); }
+  else abrirModal(`<h3>No se pudo enviar</h3><div class="mnone">${esc(r.mensaje || 'Error')}</div><button class="mcerrar" onclick="cerrarModal()">Cerrar</button>`);
+};
 
 /* ── Difusiones y plantillas ── */
 // Texto y color de cada estado, en palabras simples para Mateo.
