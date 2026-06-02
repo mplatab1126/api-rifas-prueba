@@ -341,12 +341,16 @@ export async function eliminarPlantillaMeta(lineaId, nombre) {
  * @param {{nombre:string, idioma:string, parametros?:string[]}} plantilla
  * @param {string} lineaId
  */
-export async function enviarPlantilla(telefono, { nombre, idioma, parametros }, lineaId) {
+export async function enviarPlantilla(telefono, { nombre, idioma, parametros, botonUrlParam }, lineaId) {
   const { token, phoneNumberId } = await resolverLinea(lineaId);
   if (!token || !phoneNumberId) return { ok: false, error: 'No hay token/número configurado para esta línea.' };
   const componentes = [];
   if (Array.isArray(parametros) && parametros.length) {
     componentes.push({ type: 'body', parameters: parametros.map(p => ({ type: 'text', text: String(p ?? '') })) });
+  }
+  // Si la plantilla tiene un botón de URL dinámica, su parte variable va aquí.
+  if (botonUrlParam != null && botonUrlParam !== '') {
+    componentes.push({ type: 'button', sub_type: 'url', index: 0, parameters: [{ type: 'text', text: String(botonUrlParam) }] });
   }
   try {
     const resp = await fetch(`${GRAPH}/${phoneNumberId}/messages`, {

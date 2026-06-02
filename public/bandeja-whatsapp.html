@@ -1704,7 +1704,8 @@ document.addEventListener('click', e => {
 });
 
 /* ── Enviar boleta al cliente (atajo del chat) ── */
-$('btnBoleta').onclick = async () => {
+$('btnBoleta').onclick = () => abrirBoleta();
+async function abrirBoleta(){
   if(!actual) return;
   abrirModal('<div class="mcargando">Buscando las boletas del cliente…</div>');
   const r = await api('enviar-boleta', { accion:'previsualizar', linea_id: actualLinea, telefono: actual });
@@ -1716,13 +1717,35 @@ $('btnBoleta').onclick = async () => {
     abrirModal(`<h3>Sin boletas</h3><div class="mnone">Este número no tiene boletas asignadas en la base de datos. Verifica que el teléfono del chat sea el mismo con el que compró.</div><button class="mcerrar" onclick="cerrarModal()">Cerrar</button>`);
     return;
   }
+  const esPlantilla = r.modo === 'plantilla';
+  const badge = esPlantilla
+    ? '<span class="estado-pill estado-aprobada">Plantilla bonita</span>'
+    : '<span class="estado-pill estado-borrador">Texto normal</span>';
+  let extra = '';
+  if(!esPlantilla){
+    if(r.plantillaEstado === 'pendiente'){
+      extra = '<div class="df-aviso">✨ La plantilla bonita está en revisión de Meta. Mientras la aprueban, la boleta se envía como texto; apenas la aprueben se usará sola.</div>';
+    } else if(r.plantillaEstado === 'rechazada'){
+      extra = '<div class="df-aviso">La plantilla bonita fue rechazada por Meta. Revísala en Difusiones → Plantillas. Por ahora se envía como texto.</div>';
+    } else if(r.puedeCrear){
+      extra = `<div class="df-aviso">💡 También puedes enviarla como <b>plantilla bonita</b> (encabezado, pie y botón "Ver mi boleta"). Se crea una sola vez y Meta la aprueba en minutos u horas.<br>
+        <button class="df-ghost" style="margin-top:8px" onclick="crearPlantillaBoleta()">✨ Crear la plantilla bonita</button></div>`;
+    }
+  }
   abrirModal(`
     <h3>Enviar boleta a ${esc(r.nombre || 'el cliente')}</h3>
-    <div class="msub">Se ${r.total === 1 ? 'encontró 1 boleta' : 'encontraron ' + r.total + ' boletas'}. Este es el mensaje que se le enviará:</div>
-    <div class="df-card-body" style="max-height:320px;overflow:auto">${esc(r.mensaje)}</div>
+    <div class="msub">Se ${r.total === 1 ? 'encontró 1 boleta' : 'encontraron ' + r.total + ' boletas'}. ${badge}</div>
+    <div class="df-card-body" style="max-height:300px;overflow:auto;margin-top:10px">${esc(r.mensaje)}</div>
+    ${extra}
     <button class="ab-confirm" style="margin-top:14px" onclick="enviarBoletaConfirmar()">Enviar boleta</button>
     <button class="mcerrar" onclick="cerrarModal()">Cancelar</button>
   `);
+}
+window.crearPlantillaBoleta = async function(){
+  abrirModal('<div class="mcargando">Creando la plantilla y enviándola a revisión de Meta…</div>');
+  const r = await api('enviar-boleta', { accion:'crear-plantilla', linea_id: actualLinea });
+  if(r.status === 'ok') abrirBoleta();
+  else abrirModal(`<h3>No se pudo crear</h3><div class="mnone">${esc(r.mensaje || 'Error')}</div><button class="mcerrar" onclick="cerrarModal()">Cerrar</button>`);
 };
 window.enviarBoletaConfirmar = async function(){
   const tel = actual, linea = actualLinea;
