@@ -263,8 +263,10 @@
     /* Etiquetas */
     .etiq { display: inline-flex; align-items: center; gap: 3px; font-size: 0.68rem; padding: 2px 8px; border-radius: 100px; font-weight: 500; color: var(--ink); white-space: nowrap; }
     .chat-item .etiqs { margin-top: 5px; display: flex; flex-wrap: wrap; gap: 4px; }
-    #btnFicha { display: none; margin-left: auto; background: none; border: none; cursor: pointer; color: var(--ink-mute); padding: 6px; border-radius: 8px; align-items: center; }
+    #btnFicha { display: flex; position: relative; margin-left: auto; background: none; border: none; cursor: pointer; color: var(--ink-mute); padding: 6px; border-radius: 8px; align-items: center; }
     #btnFicha:hover { background: var(--cream-100); color: var(--ink); }
+    .ficha-dot { display: none; position: absolute; top: 2px; right: 2px; width: 9px; height: 9px; border-radius: 50%; background: #22C55E; border: 2px solid #fff; }
+    #btnFicha.tiene-boletas .ficha-dot { display: block; }
     #cerrarFicha { display: none; }
     #btnEtiquetas { margin-left: auto; background: none; border: none; cursor: pointer; color: var(--ink-mute); padding: 6px; border-radius: 8px; display: flex; }
     #btnEtiquetas:hover { background: var(--cream-100); color: var(--ink); }
@@ -517,6 +519,7 @@
           </div>
           <button id="btnFicha" title="Ver ficha del cliente" onclick="toggleFicha(true)">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span class="ficha-dot" title="Este cliente tiene boletas"></span>
           </button>
           <button id="btnEtiquetas" title="Etiquetas" onclick="abrirEtiquetas()">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
@@ -804,6 +807,7 @@ window.cerrarChat = function(){
   $('app').classList.remove('viendo-chat');
   $('app').classList.remove('chat-abierto');
   $('app').classList.remove('ficha-abierta');
+  $('btnFicha').classList.remove('tiene-boletas');
   $('convReal').style.display = 'none';
   $('panel').innerHTML = '';
   $('vacio').style.display = 'flex';
@@ -823,6 +827,8 @@ async function cargarFicha(telefono){
   p.innerHTML = '<div class="pcard"><div class="pmuted">Buscando cliente…</div></div>';
   const r = await api('cliente', { telefono });
   if(telefono !== actual) return;
+  // Puntito verde en el ícono de ficha si el cliente tiene boletas asignadas.
+  $('btnFicha').classList.toggle('tiene-boletas', !!(r.status === 'ok' && r.encontrado && r.boletas && r.boletas.length));
   const c = conversaciones.find(x => x.telefono === telefono) || { telefono };
 
   const nombreTit = (r.status==='ok' && r.encontrado && (r.nombre || r.apellido))
