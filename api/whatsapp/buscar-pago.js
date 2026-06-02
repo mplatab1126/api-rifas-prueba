@@ -25,12 +25,12 @@ export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  const { contrasena, media_id, telefono } = req.body || {};
+  const { contrasena, media_id, telefono, linea_id } = req.body || {};
   if (!validarAsesor(contrasena)) return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido.' });
   if (!media_id) return res.status(400).json({ status: 'error', mensaje: 'Falta el comprobante.' });
 
-  // 1. Descargar la imagen del cliente
-  const media = await descargarMediaBase64(media_id);
+  // 1. Descargar la imagen del cliente (con el token de su línea)
+  const media = await descargarMediaBase64(media_id, linea_id);
   if (!media.ok) return res.status(200).json({ status: 'error', mensaje: media.error });
 
   // 2. Leer el comprobante (solo extrae datos)

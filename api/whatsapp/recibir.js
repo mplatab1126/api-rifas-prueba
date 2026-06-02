@@ -44,10 +44,11 @@ export default async function handler(req, res) {
     for (const cambio of cambios) {
       const value = cambio.value || {};
       const nombrePerfil = value.contacts?.[0]?.profile?.name || null;
+      const lineaId = value.metadata?.phone_number_id || null;   // a qué número NUESTRO llegó
 
       // a) Mensajes nuevos que escribe el cliente
       for (const m of (value.messages || [])) {
-        await guardarEntrante(m, nombrePerfil);
+        await guardarEntrante(m, nombrePerfil, lineaId);
       }
       // b) Acuses de mensajes que NOSOTROS enviamos (enviado/entregado/leído/falló)
       for (const s of (value.statuses || [])) {
@@ -63,7 +64,7 @@ export default async function handler(req, res) {
 }
 
 // ── Guardar un mensaje entrante ─────────────────────────────────────────────
-async function guardarEntrante(m, nombrePerfil) {
+async function guardarEntrante(m, nombrePerfil, lineaId) {
   const telefono = m.from;
   const { tipo, texto, media_id } = interpretarMensaje(m);
   const ts = m.timestamp
@@ -71,7 +72,7 @@ async function guardarEntrante(m, nombrePerfil) {
     : new Date().toISOString();
 
   const preview = texto || `[${tipo}]`;
-  const conversacion = await upsertConversacion(telefono, nombrePerfil, preview, ts, true);
+  const conversacion = await upsertConversacion(telefono, nombrePerfil, preview, ts, true, lineaId);
 
   // upsert con ignoreDuplicates: si Meta reenvía el mismo mensaje, no se duplica.
   await supabaseAdmin
@@ -80,6 +81,7 @@ async function guardarEntrante(m, nombrePerfil) {
       {
         conversacion_id: conversacion?.id || null,
         telefono,
+        linea_id: lineaId,
         direccion: 'entrante',
         tipo,
         texto,
@@ -107,7 +109,7 @@ async function actualizarEstado(s) {
 }
 
 // ── Crear o actualizar la conversación (el chat del cliente) ────────────────
-async function upsertConversacion(telefono, nombrePerfil, preview, ts, esEntrante) {
+async function upsertConversacion(telefono, nombrePerfil, preview, ts, esEntrante, lineaId) {
   const cambios = {
     ultimo_mensaje: preview?.slice(0, 200) ?? null,
     ultimo_at: ts,
@@ -119,11 +121,13 @@ async function upsertConversacion(telefono, nombrePerfil, preview, ts, esEntrant
     cambios.ventana_vence_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
   }
 
-  const { data: existente } = await supabaseAdmin
+  // El chat es único por (línea + teléfono): el mismo cliente puede escribirle a varias líneas.
+  let busqueda = supabaseAdmin
     .from('conversaciones_whatsapp')
     .select('id, no_leidos')
-    .eq('telefono', telefono)
-    .maybeSingle();
+    .eq('telefono', telefono);
+  busqueda = lineaId ? busqueda.eq('linea_id', lineaId) : busqueda.is('linea_id', null);
+  const { data: existente } = await busqueda.maybeSingle();
 
   if (existente) {
     if (esEntrante) cambios.no_leidos = (existente.no_leidos || 0) + 1;
@@ -134,7 +138,7 @@ async function upsertConversacion(telefono, nombrePerfil, preview, ts, esEntrant
     return existente;
   }
 
-  const fila = { telefono, ...cambios };
+  const fila = { telefono, linea_id: lineaId, ...cambios };
   if (esEntrante) {
     fila.no_leidos = 1;
     fila.estado = 'bot';

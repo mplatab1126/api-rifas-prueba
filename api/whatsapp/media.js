@@ -12,7 +12,7 @@
 
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
-import { configWhatsapp } from '../lib/whatsapp.js';
+import { resolverLinea } from '../lib/whatsapp.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
   }
 
-  const { contrasena, media_id } = req.body || {};
+  const { contrasena, media_id, linea_id } = req.body || {};
   if (!validarAsesor(contrasena)) {
     return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido.' });
   }
@@ -28,9 +28,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ status: 'error', mensaje: 'Falta el media_id.' });
   }
 
-  const { token } = configWhatsapp();
+  const { token } = await resolverLinea(linea_id);
   if (!token) {
-    return res.status(200).json({ status: 'error', mensaje: 'Falta WHATSAPP_TOKEN en Vercel.' });
+    return res.status(200).json({ status: 'error', mensaje: 'No hay token configurado para esta línea.' });
   }
 
   try {

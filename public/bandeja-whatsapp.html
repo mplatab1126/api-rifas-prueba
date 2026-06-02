@@ -52,6 +52,7 @@
     #lista header .u { font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-mute); margin-top: 4px; }
     #salir { background: none; color: var(--ink-mute); border: 1px solid var(--gray-200); border-radius: 100px; padding: 6px 14px; font-family: inherit; font-size: 0.74rem; cursor: pointer; transition: .15s; }
     #salir:hover { color: var(--ink); border-color: var(--gray-300); }
+    #selLinea { display: none; margin: 12px 16px 0; padding: 10px 14px; border: 1px solid var(--gray-200); border-radius: 10px; background: #fff; font-family: inherit; font-size: 0.86rem; font-weight: 500; color: var(--ink); outline: none; cursor: pointer; }
     #buscar { margin: 12px 16px; padding: 10px 16px; border-radius: 10px; border: 1px solid transparent; background: var(--cream-100); font-family: inherit; font-size: 0.86rem; color: var(--ink); outline: none; }
     #buscar:focus { border-color: var(--gray-200); background: #fff; }
     #buscar::placeholder { color: var(--gray-400); }
@@ -237,6 +238,7 @@
         </div>
         <button id="salir">Salir</button>
       </header>
+      <select id="selLinea"></select>
       <input id="buscar" placeholder="Buscar por nombre o número">
       <button id="filtroSinResp">Sin respuesta <span class="cnt" id="cntSinResp">0</span></button>
       <div id="chats"></div>
@@ -280,6 +282,9 @@ let conversaciones = [];
 let timerLista = null, timerChat = null;
 let firmaMsgs = '';
 let soloSinRespuesta = false; // filtro: solo chats donde el último mensaje fue del cliente
+let lineas = [];              // líneas de WhatsApp disponibles
+let lineaActual = null;       // línea seleccionada (phone_number_id)
+let actualLinea = null;       // línea del chat abierto
 let comprobanteMid = null;   // media_id del comprobante del cliente que se está verificando
 let verifActual = null;      // resultado de la última verificación (incluye boletas del cliente)
 let abonoCtx = null;         // { id, monto, ref, plat } de la transferencia que se va a abonar
@@ -312,13 +317,36 @@ $('btnLogin').onclick = async () => {
 
 $('salir').onclick = () => { localStorage.removeItem(PWD_KEY); location.reload(); };
 
-function arrancar(){
+async function arrancar(){
   $('login').style.display = 'none';
   $('app').classList.add('ready');
   $('quien').textContent = localStorage.getItem(NAME_KEY) || '';
+  await cargarLineas();
   cargarLista();
   timerLista = setInterval(cargarLista, 5000);
 }
+
+async function cargarLineas(){
+  const r = await api('lineas', {});
+  lineas = (r && r.lineas) ? r.lineas : [];
+  const sel = $('selLinea');
+  if(lineas.length){
+    const guardada = localStorage.getItem('wa_linea');
+    lineaActual = (guardada && lineas.some(l => l.phone_number_id === guardada)) ? guardada : lineas[0].phone_number_id;
+    sel.innerHTML = lineas.map(l => `<option value="${esc(l.phone_number_id)}">${esc(l.nombre)}</option>`).join('');
+    sel.value = lineaActual;
+    sel.style.display = lineas.length > 1 ? 'block' : 'none';
+  } else {
+    lineaActual = null;
+    sel.style.display = 'none';
+  }
+}
+$('selLinea').onchange = () => {
+  lineaActual = $('selLinea').value;
+  localStorage.setItem('wa_linea', lineaActual);
+  cerrarChat();
+  cargarLista();
+};
 
 /* ── Lista de conversaciones ── */
 function hora(iso){
@@ -330,7 +358,7 @@ function hora(iso){
 function inicial(c){ const n = c.nombre_perfil || c.telefono || '?'; return n.trim().charAt(0).toUpperCase(); }
 
 async function cargarLista(){
-  const r = await api('conversaciones', { soloSinRespuesta });
+  const r = await api('conversaciones', { soloSinRespuesta, linea_id: lineaActual });
   if(r.status !== 'ok'){ if(r.mensaje && /restringido/i.test(r.mensaje)){ localStorage.removeItem(PWD_KEY); location.reload(); } return; }
   conversaciones = r.conversaciones;
   if(typeof r.sinRespuestaTotal === 'number') $('cntSinResp').textContent = r.sinRespuestaTotal;
@@ -376,6 +404,7 @@ window.abrir = async function(telefono){
   $('vacio').style.display = 'none';
   $('convReal').style.display = 'flex';
   const c = conversaciones.find(x => x.telefono === telefono) || { telefono };
+  actualLinea = c.linea_id || lineaActual;
   $('convAvatar').textContent = inicial(c);
   $('convNom').textContent = c.nombre_perfil || c.telefono;
   $('convSub').textContent = '+' + (c.telefono || '');
@@ -482,7 +511,7 @@ async function hidratarMedia(){
       let url = mediaCache[mid];
       if(!url){
         const resp = await fetch('/api/whatsapp/media', { method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ contrasena: localStorage.getItem(PWD_KEY), media_id: mid }) });
+          body: JSON.stringify({ contrasena: localStorage.getItem(PWD_KEY), media_id: mid, linea_id: actualLinea }) });
         const ct = resp.headers.get('content-type') || '';
         if(!resp.ok || ct.includes('application/json')){
           el.textContent = 'No se pudo cargar el archivo'; el.dataset.cargado = ''; continue;
@@ -500,7 +529,7 @@ async function hidratarMedia(){
 
 async function cargarMensajes(scroll){
   if(!actual) return;
-  const r = await api('mensajes', { telefono: actual });
+  const r = await api('mensajes', { telefono: actual, linea_id: actualLinea });
   if(r.status !== 'ok') return;
   const ult = r.mensajes[r.mensajes.length-1];
   const firma = r.mensajes.length + ':' + (ult?.id || '') + ':' + (ult?.estado_envio || '');
@@ -526,7 +555,7 @@ async function enviarMsg(){
   const txt = $('texto').value.trim();
   if(!txt || !actual) return;
   $('enviar').disabled = true;
-  const r = await api('enviar', { telefono: actual, texto: txt });
+  const r = await api('enviar', { telefono: actual, texto: txt, linea_id: actualLinea });
   $('enviar').disabled = false;
   if(r.status === 'ok'){
     $('texto').value = '';
@@ -582,7 +611,7 @@ function fmtTrans(t){
 async function buscarPago(mid){
   comprobanteMid = mid;
   abrirModal('<div class="mcargando">Leyendo el comprobante y buscando el pago real…</div>');
-  const r = await api('buscar-pago', { media_id: mid, telefono: actual });
+  const r = await api('buscar-pago', { media_id: mid, telefono: actual, linea_id: actualLinea });
   verifActual = r;
   if(r.status !== 'ok'){
     abrirModal(`<h3>No se pudo verificar</h3><div class="mnone">${esc(r.mensaje || 'Error')}</div><button class="mcerrar" onclick="cerrarModal()">Cerrar</button>`);
@@ -776,7 +805,7 @@ async function verComparacion(urlSistema){
   if(!urlCliente && comprobanteMid){
     try{
       const resp = await fetch('/api/whatsapp/media', { method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ contrasena: localStorage.getItem(PWD_KEY), media_id: comprobanteMid }) });
+        body: JSON.stringify({ contrasena: localStorage.getItem(PWD_KEY), media_id: comprobanteMid, linea_id: actualLinea }) });
       if(resp.ok){ urlCliente = URL.createObjectURL(await resp.blob()); mediaCache[comprobanteMid] = urlCliente; }
     }catch(_){}
   }

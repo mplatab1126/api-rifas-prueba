@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
   }
 
-  const { contrasena, telefono, texto } = req.body || {};
+  const { contrasena, telefono, texto, linea_id } = req.body || {};
   const asesor = validarAsesor(contrasena);
   if (!asesor) {
     return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido.' });
@@ -31,19 +31,20 @@ export default async function handler(req, res) {
     return res.status(400).json({ status: 'error', mensaje: 'Faltan teléfono o texto.' });
   }
 
-  // 1) Mandar por la API de Meta
-  const r = await enviarTexto(String(telefono).trim(), texto);
+  // 1) Mandar por la API de Meta, usando el token/número de ESA línea
+  const r = await enviarTexto(String(telefono).trim(), texto, linea_id);
   if (!r.ok) {
     return res.status(200).json({ status: 'error', mensaje: r.error });
   }
 
   // 2) Guardar el saliente en el buzón
   const ts = new Date().toISOString();
-  const conversacion_id = await asegurarConversacion(telefono, texto, ts, asesor);
+  const conversacion_id = await asegurarConversacion(telefono, texto, ts, asesor, linea_id);
 
   await supabaseAdmin.from('mensajes_whatsapp').insert({
     conversacion_id,
     telefono,
+    linea_id: linea_id || null,
     direccion: 'saliente',
     tipo: 'text',
     texto,
@@ -57,14 +58,15 @@ export default async function handler(req, res) {
 }
 
 // Crea la conversación si no existe, o le actualiza la vista previa. Devuelve su id.
-async function asegurarConversacion(telefono, texto, ts, asesor) {
+async function asegurarConversacion(telefono, texto, ts, asesor, lineaId) {
   const preview = texto.slice(0, 200);
 
-  const { data: existente } = await supabaseAdmin
+  let busqueda = supabaseAdmin
     .from('conversaciones_whatsapp')
     .select('id')
-    .eq('telefono', telefono)
-    .maybeSingle();
+    .eq('telefono', telefono);
+  busqueda = lineaId ? busqueda.eq('linea_id', lineaId) : busqueda.is('linea_id', null);
+  const { data: existente } = await busqueda.maybeSingle();
 
   if (existente) {
     await supabaseAdmin
@@ -78,6 +80,7 @@ async function asegurarConversacion(telefono, texto, ts, asesor) {
     .from('conversaciones_whatsapp')
     .insert({
       telefono,
+      linea_id: lineaId || null,
       ultimo_mensaje: preview,
       ultimo_at: ts,
       ultimo_entrante: false,

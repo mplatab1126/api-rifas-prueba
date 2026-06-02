@@ -16,6 +16,8 @@
  * de forma controlada (no se cae nada).
  */
 
+import { supabaseAdmin } from './supabase.js';
+
 const GRAPH = 'https://graph.facebook.com/v21.0';
 
 export function configWhatsapp() {
@@ -27,16 +29,37 @@ export function configWhatsapp() {
 }
 
 /**
+ * Resuelve el token y el número de envío de UNA línea (multi-línea).
+ * lineaId es el phone_number_id de Meta. Si la línea tiene token propio en la
+ * tabla lineas_whatsapp se usa ese; si no, cae al WHATSAPP_TOKEN de Vercel
+ * (la línea de prueba). Así agregar una línea = agregar una fila.
+ *
+ * @param {string} lineaId - phone_number_id de la línea
+ * @returns {Promise<{token:string, phoneNumberId:string}>}
+ */
+export async function resolverLinea(lineaId) {
+  let token = process.env.WHATSAPP_TOKEN;
+  const phoneNumberId = lineaId || process.env.WHATSAPP_PHONE_NUMBER_ID;
+  if (lineaId) {
+    try {
+      const { data } = await supabaseAdmin.from('lineas_whatsapp').select('token').eq('phone_number_id', lineaId).maybeSingle();
+      if (data && data.token) token = data.token;
+    } catch (_) {}
+  }
+  return { token, phoneNumberId };
+}
+
+/**
  * Envía un mensaje de TEXTO a un número de WhatsApp.
  *
  * @param {string} telefono - Número internacional sin signos, ej: '573001234567'
  * @param {string} texto    - El mensaje
  * @returns {Promise<{ok:boolean, wa_message_id?:string, error?:string, raw?:object}>}
  */
-export async function enviarTexto(telefono, texto) {
-  const { token, phoneNumberId } = configWhatsapp();
+export async function enviarTexto(telefono, texto, lineaId) {
+  const { token, phoneNumberId } = await resolverLinea(lineaId);
   if (!token || !phoneNumberId) {
-    return { ok: false, error: 'Faltan WHATSAPP_TOKEN o WHATSAPP_PHONE_NUMBER_ID en Vercel.' };
+    return { ok: false, error: 'No hay token/número configurado para esta línea.' };
   }
 
   try {
@@ -72,9 +95,9 @@ export async function enviarTexto(telefono, texto) {
  * @param {string} mediaId - El identificador del archivo en Meta
  * @returns {Promise<{ok:boolean, base64?:string, mimeType?:string, error?:string}>}
  */
-export async function descargarMediaBase64(mediaId) {
-  const { token } = configWhatsapp();
-  if (!token) return { ok: false, error: 'Falta WHATSAPP_TOKEN en Vercel.' };
+export async function descargarMediaBase64(mediaId, lineaId) {
+  const { token } = await resolverLinea(lineaId);
+  if (!token) return { ok: false, error: 'No hay token configurado para esta línea.' };
 
   try {
     const metaResp = await fetch(`${GRAPH}/${mediaId}`, { headers: { Authorization: `Bearer ${token}` } });

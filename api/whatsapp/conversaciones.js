@@ -20,17 +20,18 @@ export default async function handler(req, res) {
     return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
   }
 
-  const { contrasena, soloSinRespuesta } = req.body || {};
+  const { contrasena, soloSinRespuesta, linea_id } = req.body || {};
   if (!validarAsesor(contrasena)) {
     return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido.' });
   }
 
-  // Lista de chats (los 300 más recientes; si el filtro está activo, solo los "sin respuesta")
+  // Lista de chats DE ESTA LÍNEA (los 300 más recientes; si el filtro está activo, solo los "sin respuesta")
   let query = supabase
     .from('conversaciones_whatsapp')
-    .select('id, telefono, nombre_perfil, ultimo_mensaje, ultimo_at, no_leidos, estado, asesor_asignado, ventana_vence_at, ultimo_entrante')
+    .select('id, telefono, nombre_perfil, ultimo_mensaje, ultimo_at, no_leidos, estado, asesor_asignado, ventana_vence_at, ultimo_entrante, linea_id')
     .order('ultimo_at', { ascending: false, nullsFirst: false })
     .limit(300);
+  if (linea_id) query = query.eq('linea_id', linea_id);
   if (soloSinRespuesta) query = query.eq('ultimo_entrante', true);
 
   const { data, error } = await query;
@@ -38,11 +39,13 @@ export default async function handler(req, res) {
     return res.status(200).json({ status: 'error', mensaje: error.message });
   }
 
-  // Conteo total de "sin respuesta" en el servidor (rápido por el índice parcial)
-  const { count: sinRespuestaTotal } = await supabase
+  // Conteo total de "sin respuesta" de esta línea (rápido por el índice parcial)
+  let conteo = supabase
     .from('conversaciones_whatsapp')
     .select('id', { count: 'exact', head: true })
     .eq('ultimo_entrante', true);
+  if (linea_id) conteo = conteo.eq('linea_id', linea_id);
+  const { count: sinRespuestaTotal } = await conteo;
 
   return res.status(200).json({
     status: 'ok',
