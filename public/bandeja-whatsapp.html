@@ -60,6 +60,17 @@
     #filtroSinResp:hover { border-color: var(--gray-300); }
     #filtroSinResp.on { background: var(--mint); color: var(--ink); border-color: var(--mint); font-weight: 600; }
     #filtroSinResp .cnt { background: rgba(0,0,0,0.10); border-radius: 100px; padding: 1px 8px; font-size: 0.72rem; min-width: 18px; text-align: center; }
+    #tabs { display: flex; gap: 6px; margin: 12px 16px 0; }
+    .tab { flex: 1; padding: 8px; border: 1px solid var(--gray-200); background: #fff; border-radius: 8px; font-family: inherit; font-size: 0.84rem; color: var(--ink-mute); cursor: pointer; }
+    .tab.on { background: var(--cream-100); color: var(--ink); font-weight: 600; border-color: var(--gray-300); }
+    #accContactos { display: none; gap: 8px; margin: 0 16px 8px; }
+    #accContactos.show { display: flex; }
+    #accContactos button { flex: 1; padding: 8px; border: 1px solid var(--gray-200); background: #fff; border-radius: 8px; font-family: inherit; font-size: 0.8rem; color: var(--ink); cursor: pointer; }
+    #accContactos button:hover { background: var(--cream-50); }
+    .cargarmas { display: block; margin: 12px auto; padding: 9px 16px; border: 1px solid var(--gray-200); background: #fff; border-radius: 8px; font-family: inherit; font-size: 0.82rem; cursor: pointer; color: var(--ink); }
+    .cargarmas:hover { background: var(--cream-50); }
+    .cc-input { width: 100%; margin-bottom: 10px; padding: 11px 14px; border: 1px solid var(--gray-200); border-radius: 10px; font-family: inherit; font-size: 0.9rem; color: var(--ink); outline: none; }
+    .cc-input:focus { border-color: var(--ink); }
     #chats { flex: 1; overflow-y: auto; }
     .chat-item { display: flex; gap: 13px; align-items: center; padding: 13px 18px; cursor: pointer; border-bottom: 1px solid var(--gray-100); border-left: 3px solid transparent; transition: background .12s; }
     .chat-item:hover { background: var(--cream-50); }
@@ -239,8 +250,17 @@
         <button id="salir">Salir</button>
       </header>
       <select id="selLinea"></select>
+      <div id="tabs">
+        <button id="tabChats" class="tab on">Chats</button>
+        <button id="tabContactos" class="tab">Contactos</button>
+      </div>
       <input id="buscar" placeholder="Buscar por nombre o número">
       <button id="filtroSinResp">Sin respuesta <span class="cnt" id="cntSinResp">0</span></button>
+      <div id="accContactos">
+        <button id="btnCrearContacto">Crear contacto</button>
+        <button id="btnImportar">Importar</button>
+        <input id="fileImport" type="file" accept=".csv,text/csv" style="display:none">
+      </div>
       <div id="chats"></div>
     </div>
 
@@ -285,6 +305,8 @@ let soloSinRespuesta = false; // filtro: solo chats donde el último mensaje fue
 let lineas = [];              // líneas de WhatsApp disponibles
 let lineaActual = null;       // línea seleccionada (phone_number_id)
 let actualLinea = null;       // línea del chat abierto
+let vista = 'chats';          // 'chats' | 'contactos'
+let contactosPage = 0, contactosTotal = 0, timerBuscar = null;
 let comprobanteMid = null;   // media_id del comprobante del cliente que se está verificando
 let verifActual = null;      // resultado de la última verificación (incluye boletas del cliente)
 let abonoCtx = null;         // { id, monto, ref, plat } de la transferencia que se va a abonar
@@ -362,7 +384,7 @@ async function cargarLista(){
   if(r.status !== 'ok'){ if(r.mensaje && /restringido/i.test(r.mensaje)){ localStorage.removeItem(PWD_KEY); location.reload(); } return; }
   conversaciones = r.conversaciones;
   if(typeof r.sinRespuestaTotal === 'number') $('cntSinResp').textContent = r.sinRespuestaTotal;
-  pintarLista();
+  if(vista === 'chats') pintarLista();
 }
 
 $('filtroSinResp').onclick = () => {
@@ -392,10 +414,13 @@ function pintarLista(){
     </div>`).join('') || '<div class="vacio-lista">Aún no hay conversaciones</div>';
 }
 
-$('buscar').oninput = pintarLista;
+$('buscar').oninput = () => {
+  if(vista === 'chats') { pintarLista(); }
+  else { clearTimeout(timerBuscar); timerBuscar = setTimeout(() => { contactosPage = 0; cargarContactos(true); }, 350); }
+};
 
 /* ── Abrir un chat ── */
-window.abrir = async function(telefono){
+window.abrir = async function(telefono, nombrePerfil){
   actual = telefono;
   firmaMsgs = '';
   $('msgs').innerHTML = '';
@@ -403,7 +428,7 @@ window.abrir = async function(telefono){
   $('app').classList.add('chat-abierto');
   $('vacio').style.display = 'none';
   $('convReal').style.display = 'flex';
-  const c = conversaciones.find(x => x.telefono === telefono) || { telefono };
+  const c = conversaciones.find(x => x.telefono === telefono) || { telefono, nombre_perfil: nombrePerfil || telefono, linea_id: lineaActual };
   actualLinea = c.linea_id || lineaActual;
   $('convAvatar').textContent = inicial(c);
   $('convNom').textContent = c.nombre_perfil || c.telefono;
@@ -852,6 +877,137 @@ window.confirmarEliminarAbono = async function(id){
     abrirModal(`<h3>No se pudo eliminar</h3><div class="mnone">${esc(r.mensaje || 'Error')}</div><button class="mcerrar" onclick="cerrarModal()">Cerrar</button>`);
   }
 };
+
+/* ── Contactos ── */
+$('tabChats').onclick = () => cambiarVista('chats');
+$('tabContactos').onclick = () => cambiarVista('contactos');
+function cambiarVista(v){
+  vista = v;
+  $('tabChats').classList.toggle('on', v === 'chats');
+  $('tabContactos').classList.toggle('on', v === 'contactos');
+  $('filtroSinResp').style.display = (v === 'chats') ? '' : 'none';
+  $('accContactos').classList.toggle('show', v === 'contactos');
+  $('buscar').value = '';
+  $('buscar').placeholder = (v === 'chats') ? 'Buscar por nombre o número' : 'Buscar contacto';
+  if(v === 'chats'){ pintarLista(); }
+  else { contactosPage = 0; cargarContactos(true); }
+}
+
+async function cargarContactos(reset){
+  if(reset){ contactosPage = 0; $('chats').innerHTML = '<div class="vacio-lista">Cargando contactos…</div>'; }
+  const q = $('buscar').value.trim();
+  const r = await api('contactos', { linea_id: lineaActual, q, page: contactosPage });
+  if(vista !== 'contactos') return;
+  if(r.status !== 'ok'){ $('chats').innerHTML = '<div class="vacio-lista">No se pudieron cargar.</div>'; return; }
+  contactosTotal = r.total;
+  const rows = (r.contactos || []).map(c => {
+    const nom = c.nombre_perfil || ('+' + c.telefono);
+    const sub = c.correo || ('+' + c.telefono);
+    const ini = (nom || '?').trim().charAt(0).toUpperCase();
+    return `<div class="chat-item" data-tel="${esc(c.telefono)}" data-nom="${esc(c.nombre_perfil || '')}">
+      <div class="avatar">${esc(ini)}</div>
+      <div class="info"><div class="nom">${esc(nom)}</div><div class="prev">${esc(sub)}</div></div>
+    </div>`;
+  }).join('');
+  const cargados = contactosPage * r.porPagina + (r.contactos ? r.contactos.length : 0);
+  const masBtn = (cargados < contactosTotal) ? `<button class="cargarmas" onclick="masContactos()">Cargar más (${contactosTotal - cargados} restantes)</button>` : '';
+  if(reset || contactosPage === 0){
+    $('chats').innerHTML = (rows || '<div class="vacio-lista">Sin contactos</div>') + masBtn;
+  } else {
+    const old = $('chats').querySelector('.cargarmas'); if(old) old.remove();
+    $('chats').insertAdjacentHTML('beforeend', rows + masBtn);
+  }
+}
+window.masContactos = function(){ contactosPage++; cargarContactos(false); };
+
+// Clic en un contacto → abrir su chat
+$('chats').addEventListener('click', e => {
+  const item = e.target.closest('.chat-item[data-tel]');
+  if(item) abrir(item.getAttribute('data-tel'), item.getAttribute('data-nom') || '');
+});
+
+// Crear contacto
+$('btnCrearContacto').onclick = () => {
+  abrirModal(`
+    <h3>Crear contacto</h3>
+    <div class="msub">Se agrega a la línea seleccionada.</div>
+    <input id="ncNombre" class="cc-input" placeholder="Nombre">
+    <input id="ncTel" class="cc-input" placeholder="Teléfono (ej: 3001234567)" inputmode="numeric">
+    <input id="ncCorreo" class="cc-input" type="email" placeholder="Correo (opcional)">
+    <button class="ab-confirm" onclick="guardarContacto()">Guardar</button>
+    <button class="mcerrar" onclick="cerrarModal()">Cancelar</button>
+  `);
+};
+window.guardarContacto = async function(){
+  const nombre = $('ncNombre').value.trim(), telefono = $('ncTel').value.trim(), correo = $('ncCorreo').value.trim();
+  if(!telefono) return alert('Falta el teléfono.');
+  abrirModal('<div class="mcargando">Guardando…</div>');
+  const r = await api('contacto-crear', { linea_id: lineaActual, nombre, telefono, correo });
+  if(r.status === 'ok'){ cerrarModal(); cargarContactos(true); }
+  else abrirModal(`<h3>No se pudo</h3><div class="mnone">${esc(r.mensaje || 'Error')}</div><button class="mcerrar" onclick="cerrarModal()">Cerrar</button>`);
+};
+
+// Importar desde archivo CSV
+$('btnImportar').onclick = () => $('fileImport').click();
+$('fileImport').onchange = async (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  let texto = '';
+  try { texto = await file.text(); } catch(_) { alert('No se pudo leer el archivo.'); return; }
+  const filas = parseCSV(texto);
+  $('fileImport').value = '';
+  if(!filas.length){ alert('No encontré contactos en el archivo. Asegúrate de exportar en CSV con una columna de teléfono.'); return; }
+  abrirModal(`<div class="mcargando">Importando ${filas.length} contactos…</div>`);
+  let total = 0;
+  for(let i = 0; i < filas.length; i += 500){
+    const bloque = filas.slice(i, i + 500);
+    const r = await api('contactos-importar', { linea_id: lineaActual, contactos: bloque });
+    if(r.status !== 'ok'){
+      abrirModal(`<h3>Error al importar</h3><div class="mnone">${esc(r.mensaje || '')}<br>Importados antes del error: ${total}</div><button class="mcerrar" onclick="cerrarModal()">Cerrar</button>`);
+      return;
+    }
+    total += (r.importados || 0);
+    abrirModal(`<div class="mcargando">Importando… ${total}/${filas.length}</div>`);
+  }
+  abrirModal(`<h3>Importación lista</h3><div class="mnone">Se importaron ${total} contactos a esta línea.</div><button class="mcerrar" onclick="cerrarModal()">Listo</button>`);
+  if(vista === 'contactos') cargarContactos(true);
+};
+
+// Parser de CSV: maneja comillas y detecta columnas nombre/teléfono/correo
+function parseCSV(texto){
+  const lineas = texto.replace(/\r/g, '').split('\n').filter(l => l.trim().length);
+  if(lineas.length < 2) return [];
+  const delim = (lineas[0].split(';').length > lineas[0].split(',').length) ? ';' : ',';
+  const parseLine = (l) => {
+    const out = []; let cur = '', q = false;
+    for(let i = 0; i < l.length; i++){
+      const ch = l[i];
+      if(q){ if(ch === '"'){ if(l[i+1] === '"'){ cur += '"'; i++; } else q = false; } else cur += ch; }
+      else { if(ch === '"') q = true; else if(ch === delim){ out.push(cur); cur = ''; } else cur += ch; }
+    }
+    out.push(cur);
+    return out.map(s => s.trim());
+  };
+  const header = parseLine(lineas[0]).map(h => h.toLowerCase());
+  const exacto = (n) => header.indexOf(n);
+  const contiene = (kws) => header.findIndex(h => kws.some(k => h.includes(k)));
+  let iTel = exacto('phone'); if(iTel < 0) iTel = contiene(['whatsapp', 'phone', 'tel', 'celular', 'móvil', 'movil']);
+  if(iTel < 0) return [];
+  let iNom = exacto('name'); if(iNom < 0) iNom = exacto('first_name'); if(iNom < 0) iNom = contiene(['nombre', 'name']);
+  let iCor = exacto('email'); if(iCor < 0) iCor = contiene(['correo', 'email', 'mail']);
+  const filas = [];
+  for(let r = 1; r < lineas.length; r++){
+    const cols = parseLine(lineas[r]);
+    const tel = (cols[iTel] || '').trim();
+    if(!tel) continue;
+    filas.push({
+      nombre: iNom >= 0 ? (cols[iNom] || '') : '',
+      telefono: tel,
+      correo: iCor >= 0 ? (cols[iCor] || '') : '',
+    });
+  }
+  return filas;
+}
 
 /* ── Inicio ── */
 if(localStorage.getItem(PWD_KEY) && localStorage.getItem(NAME_KEY)){

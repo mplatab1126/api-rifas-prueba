@@ -39,6 +39,7 @@ export default async function handler(req, res) {
     .from('conversaciones_whatsapp')
     .select('id, telefono, nombre_perfil, ultimo_mensaje, ultimo_at, no_leidos, estado, asesor_asignado, ventana_vence_at, ultimo_entrante, linea_id')
     .order('ultimo_at', { ascending: false, nullsFirst: false })
+    .not('ultimo_at', 'is', null)   // los contactos sin conversación van al apartado Contactos
     .limit(300);
   if (linea_id) query = query.eq('linea_id', linea_id);
   if (soloSinRespuesta) query = query.eq('ultimo_entrante', true);
