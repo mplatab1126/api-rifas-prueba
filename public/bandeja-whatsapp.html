@@ -255,6 +255,22 @@
     .rep-total.bad { color: var(--danger); font-weight: 600; }
     .ab-confirm { display: block; width: 100%; margin-top: 4px; padding: 11px; border: none; border-radius: 10px; background: var(--mint); color: var(--ink); font-family: inherit; font-weight: 600; font-size: 0.86rem; cursor: pointer; }
     .ab-confirm:disabled { opacity: 0.45; cursor: default; }
+    /* Etiquetas */
+    .etiq { display: inline-flex; align-items: center; gap: 3px; font-size: 0.68rem; padding: 2px 8px; border-radius: 100px; font-weight: 500; color: var(--ink); white-space: nowrap; }
+    .chat-item .etiqs { margin-top: 5px; display: flex; flex-wrap: wrap; gap: 4px; }
+    #btnEtiquetas { margin-left: auto; background: none; border: none; cursor: pointer; color: var(--ink-mute); padding: 6px; border-radius: 8px; display: flex; }
+    #btnEtiquetas:hover { background: var(--cream-100); color: var(--ink); }
+    .etiq-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--gray-100); }
+    .etiq-row input { width: auto; cursor: pointer; margin: 0; }
+    .etiq-row .etiq { flex: 1; }
+    .etiq-del { background: none; border: none; color: var(--gray-400); font-size: 1.15rem; cursor: pointer; line-height: 1; padding: 2px 7px; border-radius: 6px; }
+    .etiq-del:hover { color: var(--danger); background: #fdecec; }
+    .et-label { font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray-400); margin: 14px 0 6px; }
+    .et-palette { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+    .et-emoji { width: 38px; height: 38px; border: 1px solid var(--gray-200); background: #fff; border-radius: 10px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .et-emoji.on { border-color: var(--ink); background: var(--cream-100); }
+    .et-color { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
+    .et-color.on { border-color: var(--ink); box-shadow: inset 0 0 0 2px #fff; }
 
     @media (max-width: 1100px) { #lista { width: 320px; min-width: 320px; } }
     @media (max-width: 820px) {
@@ -340,6 +356,9 @@
             <div class="nom" id="convNom"></div>
             <div class="sub" id="convSub"></div>
           </div>
+          <button id="btnEtiquetas" title="Etiquetas" onclick="abrirEtiquetas()">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          </button>
         </div>
         <div id="aviso24">Pasaron 24 horas desde el último mensaje del cliente. WhatsApp solo permite responder con una plantilla aprobada.</div>
         <div id="msgs"></div>
@@ -508,6 +527,7 @@ function pintarLista(){
       <div class="info">
         <div class="nom">${esc(c.nombre_perfil || c.telefono)}</div>
         <div class="prev">${esc(c.ultimo_mensaje || '')}</div>
+        ${(c.etiquetas && c.etiquetas.length) ? `<div class="etiqs">${c.etiquetas.map(pildoraEtiq).join('')}</div>` : ''}
       </div>
       <div class="meta">
         <div class="hora">${hora(c.ultimo_at)}</div>
@@ -1107,6 +1127,79 @@ function parseCSV(texto){
   }
   return filas;
 }
+
+/* ── Etiquetas ── */
+const EMOJIS = ['🟢','🟡','🔵','🔴','🟣','🟠','⭐','✅','💰','📌','🔥','❗','🎯','👍','🏷️','📞'];
+const COLORES = ['#22C55E','#EAB308','#3B82F6','#EF4444','#A855F7','#F97316','#14B8A6','#6B7280'];
+let nuevaIcono = '🟢', nuevaColor = '#22C55E';
+
+function tinte(hex){
+  const h = String(hex || '#888888').replace('#','');
+  const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+  return `rgba(${isNaN(r)?136:r},${isNaN(g)?136:g},${isNaN(b)?136:b},0.16)`;
+}
+function pildoraEtiq(e){
+  return `<span class="etiq" style="background:${tinte(e.color)}">${e.icono ? esc(e.icono) + ' ' : ''}${esc(e.nombre)}</span>`;
+}
+
+window.abrirEtiquetas = async function(){
+  if(!actual) return;
+  abrirModal('<div class="mcargando">Cargando etiquetas…</div>');
+  const [r1, r2] = await Promise.all([
+    api('etiquetas', { accion:'listar', linea_id: actualLinea }),
+    api('etiquetas', { accion:'conversacion', linea_id: actualLinea, telefono: actual }),
+  ]);
+  const etiquetas = (r1 && r1.etiquetas) || [];
+  const asignadas = new Set((r2 && r2.asignadas) || []);
+  const filas = etiquetas.map(e => `
+    <div class="etiq-row">
+      <input type="checkbox" ${asignadas.has(e.id) ? 'checked' : ''} onchange="toggleEtiqueta('${e.id}', this.checked)">
+      <span class="etiq" style="background:${tinte(e.color)}">${e.icono ? esc(e.icono) + ' ' : ''}${esc(e.nombre)}</span>
+      <button class="etiq-del" title="Eliminar etiqueta" onclick="eliminarEtiqueta('${e.id}')">&times;</button>
+    </div>`).join('') || '<div class="mnone">Aún no hay etiquetas. Crea la primera.</div>';
+  abrirModal(`
+    <h3>Etiquetas</h3>
+    <div class="msub">Marca las que aplican a este chat.</div>
+    ${filas}
+    <button class="ab-igual" style="margin-top:10px" onclick="nuevaEtiquetaForm()">+ Nueva etiqueta</button>
+    <button class="mcerrar" onclick="cerrarModal()">Listo</button>
+  `);
+};
+
+window.toggleEtiqueta = async function(id, checked){
+  await api('etiquetas', { accion:'toggle', linea_id: actualLinea, telefono: actual, etiqueta_id: id, asignar: checked });
+  cargarLista();
+};
+
+window.eliminarEtiqueta = async function(id){
+  if(!confirm('¿Eliminar esta etiqueta? Se quitará de todos los chats que la tengan.')) return;
+  await api('etiquetas', { accion:'eliminar', linea_id: actualLinea, id });
+  cargarLista();
+  abrirEtiquetas();
+};
+
+window.nuevaEtiquetaForm = function(){
+  nuevaIcono = '🟢'; nuevaColor = '#22C55E';
+  abrirModal(`
+    <h3>Nueva etiqueta</h3>
+    <div class="msub">Elige un ícono, un color y un nombre.</div>
+    <input id="etNombre" class="cc-input" placeholder="Nombre (ej: Pagada)" maxlength="40">
+    <div class="et-label">Ícono</div>
+    <div class="et-palette">${EMOJIS.map(e => `<button class="et-emoji ${e===nuevaIcono?'on':''}" onclick="selEmoji(this,'${e}')">${e}</button>`).join('')}</div>
+    <div class="et-label">Color</div>
+    <div class="et-palette">${COLORES.map(c => `<button class="et-color ${c===nuevaColor?'on':''}" style="background:${c}" onclick="selColor(this,'${c}')"></button>`).join('')}</div>
+    <button class="ab-confirm" style="margin-top:14px" onclick="crearEtiqueta()">Crear etiqueta</button>
+    <button class="mcerrar" onclick="abrirEtiquetas()">Atrás</button>
+  `);
+};
+window.selEmoji = function(btn, e){ nuevaIcono = e; document.querySelectorAll('.et-emoji').forEach(b => b.classList.remove('on')); btn.classList.add('on'); };
+window.selColor = function(btn, c){ nuevaColor = c; document.querySelectorAll('.et-color').forEach(b => b.classList.remove('on')); btn.classList.add('on'); };
+window.crearEtiqueta = async function(){
+  const nm = $('etNombre').value.trim();
+  if(!nm) return alert('Ponle un nombre a la etiqueta.');
+  const r = await api('etiquetas', { accion:'crear', linea_id: actualLinea, nombre: nm, icono: nuevaIcono, color: nuevaColor });
+  if(r.status === 'ok') abrirEtiquetas(); else alert(r.mensaje || 'No se pudo crear.');
+};
 
 /* ── Inicio ── */
 if(localStorage.getItem(PWD_KEY) && localStorage.getItem(NAME_KEY)){

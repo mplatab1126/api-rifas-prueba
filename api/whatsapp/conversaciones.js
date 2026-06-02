@@ -49,6 +49,21 @@ export default async function handler(req, res) {
     return res.status(200).json({ status: 'error', mensaje: error.message });
   }
 
+  // Adjuntar las etiquetas de cada conversación
+  const ids = (data || []).map(c => c.id);
+  const etiqPorConv = {};
+  if (ids.length) {
+    const { data: asign } = await supabase
+      .from('conversacion_etiquetas')
+      .select('conversacion_id, etiquetas (id, nombre, icono, color)')
+      .in('conversacion_id', ids);
+    for (const a of (asign || [])) {
+      if (!a.etiquetas) continue;
+      (etiqPorConv[a.conversacion_id] = etiqPorConv[a.conversacion_id] || []).push(a.etiquetas);
+    }
+  }
+  const conversaciones = (data || []).map(c => ({ ...c, etiquetas: etiqPorConv[c.id] || [] }));
+
   // Conteo total de "sin respuesta" de esta línea (rápido por el índice parcial)
   let conteo = supabase
     .from('conversaciones_whatsapp')
@@ -59,7 +74,7 @@ export default async function handler(req, res) {
 
   return res.status(200).json({
     status: 'ok',
-    conversaciones: data || [],
+    conversaciones,
     sinRespuestaTotal: sinRespuestaTotal || 0,
   });
 }
