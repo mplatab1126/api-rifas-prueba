@@ -321,6 +321,7 @@
     .paso-ctrl .paso-del:hover:not(:disabled) { color: var(--danger); background: #fdecec; border-color: #f3c9c9; }
     .paso-card .cc-input { margin-bottom: 8px; }
     .paso-card .cc-input:last-child { margin-bottom: 0; }
+    .paso-nota { font-size: 0.8rem; color: var(--ink-mute); line-height: 1.45; margin-bottom: 8px; }
     .paso-add { display: flex; gap: 8px; }
     .paso-add button { flex: 1; padding: 9px; border: 1px dashed var(--gray-300); background: #fff; border-radius: 9px; font-family: inherit; font-size: 0.84rem; color: var(--ink); cursor: pointer; }
     .paso-add button:hover { background: var(--cream-50); border-color: var(--ink-mute); }
@@ -769,9 +770,10 @@ async function hidratarMedia(){
 
 /* ── Mensajes "optimistas": se ven al instante, antes de confirmar el servidor ── */
 function burbujaPendiente(p){
-  const cuerpo = p.tipo === 'imagen'
-    ? `<div class="media"><img src="${esc(p.url)}"></div>${p.texto ? `<div class="cap">${esc(p.texto)}</div>` : ''}`
-    : esc(p.texto);
+  let cuerpo;
+  if(p.tipo === 'imagen') cuerpo = `<div class="media"><img src="${esc(p.url)}"></div>${p.texto ? `<div class="cap">${esc(p.texto)}</div>` : ''}`;
+  else if(p.tipo === 'numeros') cuerpo = (p.texto ? esc(p.texto) + '<br>' : '') + '<span style="opacity:.7">(trayendo números disponibles…)</span>';
+  else cuerpo = esc(p.texto);
   return `<div class="b sal optim" data-pid="${p.pid}">${cuerpo}<div class="h">enviando…</div></div>`;
 }
 function agregarPendiente(p){
@@ -1377,7 +1379,7 @@ function pasosDe(r){
 }
 // Resumen corto del flujo para listas y selector.
 function resumenPasos(r){
-  return pasosDe(r).map(p => p.tipo === 'imagen' ? '🖼️ Imagen' : (p.texto || '')).join('  ·  ');
+  return pasosDe(r).map(p => p.tipo === 'imagen' ? '🖼️ Imagen' : p.tipo === 'numeros' ? '🎟️ Números disponibles' : (p.texto || '')).join('  ·  ');
 }
 function pintarRespuestas(){
   const filtro = $('buscarResp').value.trim().toLowerCase();
@@ -1440,9 +1442,13 @@ function pintarFormRespuesta(){
     const cuerpo = p.tipo === 'imagen'
       ? `<input class="cc-input paso-campo" data-idx="${i}" data-k="url" placeholder="URL de la imagen (https://...jpg)" value="${esc(p.url)}">
          <input class="cc-input paso-campo" data-idx="${i}" data-k="texto" placeholder="Pie de foto (opcional)" value="${esc(p.texto)}">`
+      : p.tipo === 'numeros'
+      ? `<div class="paso-nota">Al enviar, se traen <b>50 números disponibles</b> en vivo (la misma función que la web). Puedes poner un texto antes (opcional):</div>
+         <input class="cc-input paso-campo" data-idx="${i}" data-k="texto" placeholder="Texto antes de los números (opcional)" value="${esc(p.texto)}">`
       : `<textarea class="cc-input paso-campo" data-idx="${i}" data-k="texto" rows="3" placeholder="Escribe el mensaje…" style="resize:vertical">${esc(p.texto)}</textarea>`;
+    const etiq = p.tipo === 'imagen' ? '🖼️ Imagen' : p.tipo === 'numeros' ? '🎟️ Números disponibles' : '💬 Texto';
     return `<div class="paso-card">
-      <div class="paso-head"><span class="paso-tag">${i + 1} · ${p.tipo === 'imagen' ? '🖼️ Imagen' : '💬 Texto'}</span>${ctrl}</div>
+      <div class="paso-head"><span class="paso-tag">${i + 1} · ${etiq}</span>${ctrl}</div>
       ${cuerpo}
     </div>`;
   }).join('');
@@ -1455,6 +1461,7 @@ function pintarFormRespuesta(){
     <div class="paso-add">
       <button onclick="pasoAgregar('texto')">+ Texto</button>
       <button onclick="pasoAgregar('imagen')">+ Imagen</button>
+      <button onclick="pasoAgregar('numeros')">+ Números</button>
     </div>
     <button class="ab-confirm" style="margin-top:14px" onclick="guardarRespuesta()">${rrEditId ? 'Guardar cambios' : 'Crear'}</button>
     <button class="mcerrar" onclick="cerrarModal()">Cancelar</button>
@@ -1471,8 +1478,10 @@ window.guardarRespuesta = async function(){
   const pasos = rrPasos
     .map(p => p.tipo === 'imagen'
       ? { tipo:'imagen', url:(p.url||'').trim(), texto:(p.texto||'').trim() }
+      : p.tipo === 'numeros'
+      ? { tipo:'numeros', texto:(p.texto||'').trim() }
       : { tipo:'texto', texto:(p.texto||'').trim() })
-    .filter(p => p.tipo === 'imagen' ? p.url : p.texto);
+    .filter(p => p.tipo === 'imagen' ? p.url : p.tipo === 'numeros' ? true : p.texto);
   if(!pasos.length) return alert('Agrega al menos un mensaje (texto o una imagen con su URL).');
   if(rrPasos.some(p => p.tipo === 'imagen' && !(p.url||'').trim()) && !confirm('Una imagen quedó sin URL y se va a omitir. ¿Guardar igual?')) return;
   abrirModal('<div class="mcargando">Guardando…</div>');
@@ -1512,22 +1521,24 @@ window.usarRespuesta = async function(id){
   if(!pasos.length){ alert('Esta respuesta no tiene mensajes.'); return; }
   const tel = actual, linea = actualLinea;
   $('texto').value = ''; $('texto').style.height = 'auto';
+  const tipoDe = (p) => p.tipo === 'imagen' ? 'imagen' : p.tipo === 'numeros' ? 'numeros' : 'texto';
   // Mostrar TODO el flujo de inmediato (optimista)
-  const items = pasos.map(p => agregarPendiente({ tipo: p.tipo === 'imagen' ? 'imagen' : 'texto', texto: p.texto || '', url: p.url || '', tel }));
+  const items = pasos.map(p => agregarPendiente({ tipo: tipoDe(p), texto: p.texto || '', url: p.url || '', tel }));
   // Enviar uno por uno, en orden. Cada uno es una petición corta → no se corta por tiempo.
   const errores = [];
   for(let i = 0; i < pasos.length; i++){
     const p = pasos[i];
     const resp = await api('respuestas-rapidas', {
       accion: 'enviar-paso', linea_id: linea, telefono: tel,
-      tipo: p.tipo === 'imagen' ? 'imagen' : 'texto', texto: p.texto || '', url: p.url || '',
+      tipo: tipoDe(p), texto: p.texto || '', url: p.url || '',
       media_id: p.media_id || '', respuesta_id: id, paso_idx: i,
     });
     if(resp.status === 'ok'){
+      if(p.tipo === 'numeros') quitarPendiente(items[i]);   // su texto real (con números) no coincide con el optimista
       if(actual === tel) cargarMensajes(true);
     } else {
       quitarPendiente(items[i]);
-      errores.push((p.tipo === 'imagen' ? 'Imagen' : 'Texto') + ': ' + (resp.mensaje || 'error'));
+      errores.push((p.tipo === 'imagen' ? 'Imagen' : p.tipo === 'numeros' ? 'Números' : 'Texto') + ': ' + (resp.mensaje || 'error'));
     }
     await new Promise(res => setTimeout(res, 300));  // respiro para mantener el orden
   }

@@ -19,6 +19,7 @@ import { validarAsesor } from '../lib/auth.js';
 import { supabase, supabaseAdmin } from '../lib/supabase.js';
 import { puedeVerLinea } from '../lib/asesores.js';
 import { enviarTexto, enviarImagen, enviarImagenPorId, subirMediaDesdeUrl } from '../lib/whatsapp.js';
+import { numerosDisponibles } from '../lib/numeros-disponibles.js';
 
 const MAX_TITULO = 60;
 const MAX_TEXTO = 4096;   // límite de texto de WhatsApp
@@ -35,6 +36,9 @@ function sanitizarPasos(raw) {
       const url = String(p.url || '').trim().slice(0, MAX_URL);
       if (!/^https?:\/\//i.test(url)) continue;   // imagen sin URL válida → se descarta
       out.push({ tipo: 'imagen', url, texto: String(p.texto || '').trim().slice(0, MAX_TEXTO) });
+    } else if (p.tipo === 'numeros') {
+      // Paso especial: al enviar trae 50 números disponibles en vivo. El texto es un intro opcional.
+      out.push({ tipo: 'numeros', texto: String(p.texto || '').trim().slice(0, MAX_TEXTO) });
     } else {
       const texto = String(p.texto || '').trim().slice(0, MAX_TEXTO);
       if (!texto) continue;                        // texto vacío → se descarta
@@ -147,7 +151,7 @@ export default async function handler(req, res) {
     // sola petición larga que el navegador corte por tiempo.
     if (accion === 'enviar-paso') {
       const telefono = String(req.body.telefono || '').trim();
-      const tipo = req.body.tipo === 'imagen' ? 'imagen' : 'texto';
+      const tipo = ['imagen', 'numeros'].includes(req.body.tipo) ? req.body.tipo : 'texto';
       const texto = String(req.body.texto || '').trim().slice(0, MAX_TEXTO);
       const url = String(req.body.url || '').trim().slice(0, MAX_URL);
       const mediaIdCache = String(req.body.media_id || '').trim();
@@ -158,6 +162,10 @@ export default async function handler(req, res) {
       if (tipo === 'imagen' && !/^https?:\/\//i.test(url)) return res.status(200).json({ status: 'error', mensaje: 'La imagen no tiene una URL válida.' });
 
       let env;
+      let tipoGuardado = 'text';        // cómo queda guardado en el historial del chat
+      let textoGuardado = texto || null;
+      let mediaUrlGuardado = null;
+
       if (tipo === 'imagen') {
         // 1) Intentar con la imagen YA subida a Meta (instantáneo)
         if (mediaIdCache) env = await enviarImagenPorId(telefono, mediaIdCache, texto, linea_id);
@@ -171,8 +179,26 @@ export default async function handler(req, res) {
             env = await enviarImagen(telefono, url, texto, linea_id);   // último respaldo: por link
           }
         }
+        tipoGuardado = 'image';
+        textoGuardado = texto || null;
+        mediaUrlGuardado = url;
+      } else if (tipo === 'numeros') {
+        // Trae 50 números disponibles EN VIVO (misma función que web/ChateaPro) y los manda como texto.
+        let nums;
+        try {
+          const r = await numerosDisponibles({ canal: 'bandeja' });
+          nums = r.texto;
+        } catch (e) {
+          return res.status(200).json({ status: 'error', mensaje: 'No se pudieron traer los números disponibles: ' + e.message });
+        }
+        const cuerpo = texto ? (texto + '\n\n' + nums) : nums;
+        env = await enviarTexto(telefono, cuerpo, linea_id);
+        tipoGuardado = 'text';
+        textoGuardado = cuerpo;
       } else {
         env = await enviarTexto(telefono, texto, linea_id);
+        tipoGuardado = 'text';
+        textoGuardado = texto;
       }
       if (!env || !env.ok) return res.status(200).json({ status: 'error', mensaje: (env && env.error) || 'No se pudo enviar.' });
 
@@ -180,13 +206,14 @@ export default async function handler(req, res) {
       const ts = new Date().toISOString();
       await supabaseAdmin.from('mensajes_whatsapp').insert({
         conversacion_id, telefono, linea_id: linea_id || null,
-        direccion: 'saliente', tipo: tipo === 'imagen' ? 'image' : 'text',
-        texto: tipo === 'imagen' ? (texto || null) : texto,
-        media_url: tipo === 'imagen' ? url : null,
+        direccion: 'saliente', tipo: tipoGuardado,
+        texto: textoGuardado,
+        media_url: mediaUrlGuardado,
         wa_message_id: env.wa_message_id, estado_envio: 'enviado', timestamp_wa: ts, raw: env.raw,
       });
+      const preview = mediaUrlGuardado ? (texto || '📷 Foto') : (textoGuardado || '');
       let upd = supabaseAdmin.from('conversaciones_whatsapp')
-        .update({ ultimo_mensaje: String(tipo === 'imagen' ? (texto || '📷 Foto') : texto).slice(0, 200), ultimo_at: ts, ultimo_entrante: false })
+        .update({ ultimo_mensaje: String(preview).slice(0, 200), ultimo_at: ts, ultimo_entrante: false })
         .eq('telefono', telefono);
       upd = linea_id ? upd.eq('linea_id', linea_id) : upd.is('linea_id', null);
       await upd;
