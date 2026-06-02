@@ -7,6 +7,17 @@
 > simple; Mateo no es programador; no reescribir lógica de plata; publicar a
 > `main` que Vercel despliega en ~1 min en www.losplata.com.co).
 
+## 0. Regla de oro: pensar EN GRANDE (escala)
+Todo lo que se construya aquí debe aguantar **escala real**: líneas con **50.000–100.000
+contactos**, **5+ líneas** conectadas a la vez, cada una con un flujo enorme. Antes de crear
+algo, pregúntate si sirve a ese tamaño. Reglas prácticas:
+- **Filtros, conteos, búsquedas y paginación SIEMPRE en el servidor**, apoyados en índices.
+  Nunca traer todos los contactos/mensajes al navegador para filtrarlos ahí.
+- **Una sola tabla por concepto** con columna `linea_id` + índices (no una tabla por línea).
+- Datos **grandes** (contactos, conversaciones, mensajes) → paginar y consultar por índice.
+  Datos de **configuración** (etiquetas, respuestas rápidas) son pocos por línea → ahí sí se
+  pueden cargar completos sin problema.
+
 ## 1. Objetivo
 Mateo (gerencia, empresa de rifas "Los Plata") está **saliendo de ChateaPro**
 (falla mucho) y probó Manychat (limitado). Decisión: **construir su propio buzón
