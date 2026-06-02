@@ -41,6 +41,7 @@ protegida con contraseña de asesor (las mismas del Admin, `ASESORES_SECRETO`).
 - **Contactos** (módulo): lista paginada con buscador **en servidor**, **crear contacto** e **importar CSV** (parser entiende el export de ChateaPro: columnas `name`, `phone`, `email`).
 - **Campo correo** (opcional) agregado a clientes/boletas en todo el sistema (venta, editar, reserva web, búsqueda, abonar, ficha).
 - **Permisos por línea**: gerencia ve todas; cada asesor solo las suyas (ver §5).
+- **Respuestas rápidas (flujos)** en **Herramientas → Respuestas rápidas**. Cada una es un **flujo de varios mensajes** (texto e imágenes por URL) en el orden que el asesor defina. Se **administran** en esa pantalla (crear/editar/reordenar/borrar) y se **usan** en el chat con el botón **⚡** o escribiendo **`/`** (filtra por título); al elegirla se **envían todos los pasos en orden** al cliente. **Compartidas por línea** (como las etiquetas). Las imágenes se mandan por `link` y se guardan con `media_url` para verse en el historial.
 
 ## 3. Arquitectura — Base de datos (Supabase, proyecto `ikvzmojzgpxuhnbymtxm`)
 Tablas nuevas creadas para el buzón:
@@ -67,6 +68,7 @@ Tablas nuevas creadas para el buzón:
 - **`lineas.js`** — lista de líneas que el asesor puede ver (+ flag `esGerencia`).
 - **`conectar-linea.js`** — (gerencia) suscribe la app a la WABA (`POST /{waba}/subscribed_apps`) con el token de env. Marca `suscrita=true`.
 - **`etiquetas.js`** — acciones: `listar` (siembra 4 por defecto), `crear`, `eliminar`, `conversacion`, `toggle`.
+- **`respuestas-rapidas.js`** — respuestas rápidas (tabla `respuestas_rapidas`, columna `pasos` jsonb). Acciones: `listar`, `crear`, `editar`, `eliminar`, y **`enviar`** (manda todos los pasos del flujo en orden y los guarda en el chat). Reusa `enviarTexto`/`enviarImagen` de `lib/whatsapp.js`.
 - **libs**: `lib/whatsapp.js` (`resolverLinea`, `enviarTexto`, `descargarMediaBase64`, `configWhatsapp`), `lib/comprobante.js` (`extraerDatos` — lee comprobante con Claude, solo lectura), `lib/asesores.js` (se agregó `esGerencia`, `lineasDeAsesor`, `puedeVerLinea`; **GERENCIA = ['mateo','alejo plata']**, editable ahí).
 
 Se REUSAN (no se reescriben) endpoints de plata del Admin: `/api/admin/abono` (abonar) y `/api/admin/eliminar-abono` (se **modificó** para que borrar una parte de un pago repartido borre todas y libere la transferencia — también beneficia al Admin).
@@ -109,7 +111,7 @@ Se REUSAN (no se reescriben) endpoints de plata del Admin: `/api/admin/abono` (a
 ## 8. Pendientes / próximos pasos
 - **Agente de IA** (auto-responder con Claude; "agrupar mensajes": juntar varios mensajes seguidos del cliente antes de responder — el gran dolor de ChateaPro/Manychat).
 - **Difusiones / broadcasts** (con plantillas aprobadas por Meta).
-- **Enviar fotos/archivos** desde la bandeja (hoy saliente es solo texto; entrante sí se ve).
+- **Enviar fotos/archivos sueltos** desde la barra del chat (hoy el asesor solo escribe texto a mano; las imágenes salientes ya funcionan, pero únicamente vía las **respuestas rápidas** por URL, no subiendo un archivo desde el computador).
 - **Búsqueda de chats en servidor** (hoy el buscador de Chats filtra solo sobre los ~300 cargados; el de Contactos ya es server-side).
 - **Avisos de mensaje nuevo** (sonido/insignia) y marcar qué asesor atiende.
 - **Plantillas** para escribir fuera de la ventana de 24h.
