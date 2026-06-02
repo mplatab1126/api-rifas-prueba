@@ -20,13 +20,15 @@ import { validarAsesor } from '../lib/auth.js';
 import { supabase } from '../lib/supabase.js';
 import { descargarMediaBase64 } from '../lib/whatsapp.js';
 import { extraerDatos } from '../lib/comprobante.js';
+import { grupoDeAsesor } from '../lib/asesores.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
   const { contrasena, media_id, telefono, linea_id } = req.body || {};
-  if (!validarAsesor(contrasena)) return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido.' });
+  const nombre = validarAsesor(contrasena);
+  if (!nombre) return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido.' });
   if (!media_id) return res.status(400).json({ status: 'error', mensaje: 'Falta el comprobante.' });
 
   // 1. Descargar la imagen del cliente (con el token de su línea)
@@ -85,15 +87,30 @@ export default async function handler(req, res) {
       }
     }
 
-    // 7. Boletas del cliente con saldo pendiente (para elegir a cuál abonar)
+    // 7. Boletas del cliente con saldo pendiente (para elegir a cuál abonar).
+    //    Marca cuáles son de OTRO grupo (solo lectura), igual que el Admin.
     const { data: bols } = await supabase
       .from('boletas')
-      .select('numero, saldo_restante')
+      .select('numero, saldo_restante, asesor')
       .like('telefono_cliente', '%' + last10);
-    const boletas = (bols || [])
-      .map(b => ({ numero: b.numero, saldo: Number(b.saldo_restante || 0) }))
-      .filter(b => b.saldo > 0)
-      .sort((a, b) => a.numero - b.numero);
+    const grupoAsesor = await grupoDeAsesor(nombre);
+    const cacheGrupo = {};
+    const boletas = [];
+    for (const b of (bols || [])) {
+      if (Number(b.saldo_restante || 0) <= 0) continue;
+      let g = null;
+      if (b.asesor) {
+        if (!(b.asesor in cacheGrupo)) cacheGrupo[b.asesor] = await grupoDeAsesor(b.asesor);
+        g = cacheGrupo[b.asesor];
+      }
+      boletas.push({
+        numero: b.numero,
+        saldo: Number(b.saldo_restante || 0),
+        asesor: b.asesor || '',
+        puede_modificar: !b.asesor || g === grupoAsesor,
+      });
+    }
+    boletas.sort((a, b) => a.numero - b.numero);
 
     return res.status(200).json({
       status: 'ok',

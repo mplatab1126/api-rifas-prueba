@@ -11,6 +11,7 @@
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 import { supabase } from '../lib/supabase.js';
+import { grupoDeAsesor } from '../lib/asesores.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -19,7 +20,8 @@ export default async function handler(req, res) {
   }
 
   const { contrasena, telefono } = req.body || {};
-  if (!validarAsesor(contrasena)) {
+  const nombre = validarAsesor(contrasena);
+  if (!nombre) {
     return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido.' });
   }
   if (!telefono) {
@@ -30,7 +32,7 @@ export default async function handler(req, res) {
 
   const { data: boletas, error } = await supabase
     .from('boletas')
-    .select('numero, saldo_restante, total_abonado, clientes (nombre, apellido, ciudad, documento_numero, correo)')
+    .select('numero, saldo_restante, total_abonado, asesor, clientes (nombre, apellido, ciudad, documento_numero, correo)')
     .like('telefono_cliente', '%' + last10);
 
   if (error) {
@@ -61,6 +63,30 @@ export default async function handler(req, res) {
     });
   }
 
+  // Permisos por grupo (igual que el Admin): un asesor solo puede MODIFICAR
+  // boletas de su mismo grupo. Las de otro grupo se ven, pero en solo lectura.
+  const grupoAsesor = await grupoDeAsesor(nombre);
+  const cacheGrupo = {};
+  const grupoDe = async (a) => {
+    if (!a) return null;
+    if (!(a in cacheGrupo)) cacheGrupo[a] = await grupoDeAsesor(a);
+    return cacheGrupo[a];
+  };
+
+  const boletasOut = [];
+  for (const b of boletas) {
+    const g = await grupoDe(b.asesor);
+    boletasOut.push({
+      numero: b.numero,
+      saldo: Number(b.saldo_restante || 0),
+      abonado: Number(b.total_abonado || 0),
+      asesor: b.asesor || '',
+      puede_modificar: !b.asesor || g === grupoAsesor,
+      pagos: porBoleta[b.numero] || [],
+    });
+  }
+  boletasOut.sort((a, b) => a.numero - b.numero);
+
   return res.status(200).json({
     status: 'ok',
     encontrado: true,
@@ -70,13 +96,6 @@ export default async function handler(req, res) {
     documento: cli.documento_numero || '',
     correo: cli.correo || '',
     deuda,
-    boletas: boletas
-      .map(b => ({
-        numero: b.numero,
-        saldo: Number(b.saldo_restante || 0),
-        abonado: Number(b.total_abonado || 0),
-        pagos: porBoleta[b.numero] || [],
-      }))
-      .sort((a, b) => a.numero - b.numero),
+    boletas: boletasOut,
   });
 }
