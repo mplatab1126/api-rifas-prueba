@@ -59,6 +59,28 @@ async function asegurarConv(telefono, lineaId, asesor) {
   return nueva ? nueva.id : null;
 }
 
+// Sube a Meta las imágenes del flujo UNA sola vez y guarda su media_id en cada
+// paso. Así, al usar la respuesta, las fotos ya están en Meta y se envían al
+// instante (no se re-suben cada vez). Se llama al crear/editar la respuesta.
+async function prepararMedia(pasos, lineaId) {
+  await Promise.all((pasos || []).map(async (p) => {
+    if (p.tipo === 'imagen' && p.url) {
+      const sub = await subirMediaDesdeUrl(p.url, lineaId);
+      if (sub && sub.ok) p.media_id = sub.media_id;
+    }
+  }));
+}
+
+// Best-effort: si una imagen se tuvo que re-subir al enviar (porque su id venció),
+// guarda el id nuevo para que la próxima vez vuelva a ser instantáneo.
+async function refrescarMediaId(respuestaId, lineaId, idx, nuevoId) {
+  const { data } = await supabaseAdmin.from('respuestas_rapidas').select('pasos').eq('id', respuestaId).eq('linea_id', lineaId).maybeSingle();
+  if (data && Array.isArray(data.pasos) && data.pasos[idx] && data.pasos[idx].tipo === 'imagen') {
+    data.pasos[idx].media_id = nuevoId;
+    await supabaseAdmin.from('respuestas_rapidas').update({ pasos: data.pasos }).eq('id', respuestaId).eq('linea_id', lineaId);
+  }
+}
+
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
@@ -86,6 +108,9 @@ export default async function handler(req, res) {
       const pasos = sanitizarPasos(req.body.pasos);
       if (!titulo) return res.status(200).json({ status: 'error', mensaje: 'Falta el título.' });
       if (!pasos.length) return res.status(200).json({ status: 'error', mensaje: 'Agrega al menos un mensaje (texto o imagen con URL).' });
+
+      // Subir las imágenes a Meta UNA vez y guardar su id (envío luego instantáneo).
+      await prepararMedia(pasos, linea_id);
 
       if (accion === 'crear') {
         const { data, error } = await supabaseAdmin
@@ -125,20 +150,31 @@ export default async function handler(req, res) {
       const tipo = req.body.tipo === 'imagen' ? 'imagen' : 'texto';
       const texto = String(req.body.texto || '').trim().slice(0, MAX_TEXTO);
       const url = String(req.body.url || '').trim().slice(0, MAX_URL);
+      const mediaIdCache = String(req.body.media_id || '').trim();
+      const respuestaId = req.body.respuesta_id || null;
+      const pasoIdx = Number.isInteger(req.body.paso_idx) ? req.body.paso_idx : null;
       if (!telefono) return res.status(200).json({ status: 'error', mensaje: 'Falta el teléfono.' });
       if (tipo === 'texto' && !texto) return res.status(200).json({ status: 'error', mensaje: 'Mensaje de texto vacío.' });
       if (tipo === 'imagen' && !/^https?:\/\//i.test(url)) return res.status(200).json({ status: 'error', mensaje: 'La imagen no tiene una URL válida.' });
 
       let env;
       if (tipo === 'imagen') {
-        const sub = await subirMediaDesdeUrl(url, linea_id);
-        env = (sub && sub.ok)
-          ? await enviarImagenPorId(telefono, sub.media_id, texto, linea_id)
-          : await enviarImagen(telefono, url, texto, linea_id);
+        // 1) Intentar con la imagen YA subida a Meta (instantáneo)
+        if (mediaIdCache) env = await enviarImagenPorId(telefono, mediaIdCache, texto, linea_id);
+        // 2) Si no había id o falló (p.ej. venció a los 30 días), subirla y refrescar el id guardado
+        if (!mediaIdCache || !env || !env.ok) {
+          const sub = await subirMediaDesdeUrl(url, linea_id);
+          if (sub && sub.ok) {
+            env = await enviarImagenPorId(telefono, sub.media_id, texto, linea_id);
+            if (env && env.ok && respuestaId && pasoIdx !== null) refrescarMediaId(respuestaId, linea_id, pasoIdx, sub.media_id).catch(() => {});
+          } else if (!env || !env.ok) {
+            env = await enviarImagen(telefono, url, texto, linea_id);   // último respaldo: por link
+          }
+        }
       } else {
         env = await enviarTexto(telefono, texto, linea_id);
       }
-      if (!env.ok) return res.status(200).json({ status: 'error', mensaje: env.error || 'No se pudo enviar.' });
+      if (!env || !env.ok) return res.status(200).json({ status: 'error', mensaje: (env && env.error) || 'No se pudo enviar.' });
 
       const conversacion_id = await asegurarConv(telefono, linea_id, nombre);
       const ts = new Date().toISOString();

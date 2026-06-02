@@ -592,6 +592,7 @@ $('filtroSinResp').onclick = () => {
   cargarLista();
 };
 
+let firmaLista = '';
 function pintarLista(){
   const filtro = $('buscar').value.trim().toLowerCase();
   const cont = $('chats');
@@ -599,6 +600,12 @@ function pintarLista(){
     if(!filtro) return true;
     return (c.nombre_perfil||'').toLowerCase().includes(filtro) || (c.telefono||'').includes(filtro);
   });
+  // Solo redibujar si de verdad cambió algo (evita parpadeo y trabajo innecesario cada 5s)
+  const firma = filtro + '|' + actual + '|' + visibles.map(c =>
+    c.telefono + ':' + c.ultimo_at + ':' + c.no_leidos + ':' + (c.ultimo_mensaje || '').length + ':' + (c.etiquetas || []).map(e => e.id).join('.')
+  ).join('|');
+  if(firma === firmaLista) return;
+  firmaLista = firma;
   cont.innerHTML = visibles.map(c => `
     <div class="chat-item ${c.telefono===actual?'activo':''}" onclick="abrir('${esc(c.telefono)}')">
       <div class="avatar">${esc(inicial(c))}</div>
@@ -1514,6 +1521,7 @@ window.usarRespuesta = async function(id){
     const resp = await api('respuestas-rapidas', {
       accion: 'enviar-paso', linea_id: linea, telefono: tel,
       tipo: p.tipo === 'imagen' ? 'imagen' : 'texto', texto: p.texto || '', url: p.url || '',
+      media_id: p.media_id || '', respuesta_id: id, paso_idx: i,
     });
     if(resp.status === 'ok'){
       if(actual === tel) cargarMensajes(true);

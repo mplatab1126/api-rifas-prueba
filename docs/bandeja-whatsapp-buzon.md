@@ -18,6 +18,13 @@ algo, pregúntate si sirve a ese tamaño. Reglas prácticas:
   Datos de **configuración** (etiquetas, respuestas rápidas) son pocos por línea → ahí sí se
   pueden cargar completos sin problema.
 
+**Y que se sienta RÁPIDO, LIGERO y FÁCIL para el asesor.** Concretamente:
+- **UI optimista**: mostrar la acción al instante (el mensaje aparece al enviar) sin esperar al servidor.
+- **No redibujar pantallas completas si no cambió nada** (guardas de "firma" en lista y chat).
+- **Cachear/subir lo pesado UNA vez y reusarlo** (ej: imágenes a Meta por `media_id`, no re-subir en cada envío).
+- **Peticiones cortas**, no una sola petición larga que el navegador corte por tiempo (ej: el flujo se envía paso por paso).
+- La velocidad casi nunca se arregla pagando más plan de Vercel/Supabase: es **diseño del código**.
+
 ## 1. Objetivo
 Mateo (gerencia, empresa de rifas "Los Plata") está **saliendo de ChateaPro**
 (falla mucho) y probó Manychat (limitado). Decisión: **construir su propio buzón
