@@ -2,36 +2,71 @@
  * Enviar la boleta al cliente desde la bandeja (atajo del chat).
  *
  * Dado el teléfono del chat abierto: busca en la base las boletas asignadas a
- * ese número y arma un mensaje con cada boleta, su saldo y su enlace público
- * (la misma página /boleta/{numero} que el cliente ya conoce).
+ * ese número y se las envía. Hay dos formas de envío:
+ *
+ *   - Plantilla "boleta_cliente" (Utilidad) si existe y está APROBADA por Meta:
+ *     se ve bonita (encabezado, pie y botón "Ver mi boleta"). Es gratis cuando el
+ *     cliente escribió en las últimas 24h.
+ *   - Texto normal (respaldo): si aún no hay plantilla aprobada, se manda como
+ *     texto para que el botón nunca deje de funcionar. Al aprobarse la plantilla,
+ *     pasa a usarla solo.
  *
  * Acciones (POST, JSON): { contrasena, accion, linea_id, telefono }
- *   previsualizar → arma el mensaje y lo devuelve (NO envía nada)
- *   enviar        → lo envía por WhatsApp y lo deja en el historial del chat
- *
- * Empareja por los últimos 10 dígitos del teléfono (con o sin el 57).
+ *   previsualizar  → arma el mensaje y dice si saldrá como plantilla o texto
+ *   enviar         → lo envía y lo deja en el historial del chat
+ *   crear-plantilla→ crea la plantilla "boleta_cliente" en Meta (1 sola vez)
  */
 
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 import { supabase, supabaseAdmin } from '../lib/supabase.js';
 import { puedeVerLinea } from '../lib/asesores.js';
-import { enviarTexto } from '../lib/whatsapp.js';
+import { enviarTexto, enviarPlantilla, crearPlantillaMeta } from '../lib/whatsapp.js';
 
 const pesos = (v) => '$' + Number(v || 0).toLocaleString('es-CO');
 
-// Estado de UNA boleta en una frase corta.
-function estadoBoleta(b) {
-  return Number(b.saldo_restante || 0) <= 0
-    ? '✅ Pagada'
-    : `Te falta abonar *${pesos(b.saldo_restante)}*`;
+// ── Definición de la plantilla "bonita" de la boleta (Utilidad) ──
+const TPL_NOMBRE = 'boleta_cliente';
+const TPL_IDIOMA = 'es';
+const TPL_HEADER = 'Tu boleta de Los Plata';
+const TPL_BODY =
+  '🎉 ¡Quedaste participando!\n\n' +
+  'Estas son tus boletas para la rifa de Los Plata:\n\n' +
+  '{{1}}\n\n' +
+  'Guárdalas y consúltalas cuando quieras con el botón de abajo. ¡Te deseamos mucha suerte! 🍀';
+const TPL_FOOTER = 'LOS PLATA S.A.S. — Pagos solo a nuestro nombre';
+const TPL_BTN_TEXTO = 'Ver mi boleta';
+const TPL_BTN_URL_BASE = 'https://www.losplata.com.co/boleta?telefono=';
+
+// Componentes en el formato que pide Meta para CREAR la plantilla.
+function componentesBoleta() {
+  return [
+    { type: 'HEADER', format: 'TEXT', text: TPL_HEADER },
+    { type: 'BODY', text: TPL_BODY, example: { body_text: [['🎟️ 1234 (Pagada)']] } },
+    { type: 'FOOTER', text: TPL_FOOTER },
+    { type: 'BUTTONS', buttons: [
+      { type: 'URL', text: TPL_BTN_TEXTO, url: TPL_BTN_URL_BASE + '{{1}}', example: [TPL_BTN_URL_BASE + '3001234567'] },
+    ] },
+  ];
 }
 
-// Arma el texto que recibe el cliente. Es el "cierre feliz" de la compra: no
-// saluda (ya se viene hablando con el cliente), celebra y manda número + enlace.
-// Se adapta solo: si todo está pagado celebra "¡Quedaste participando!"; si falta
-// abono usa un encabezado neutro.
-function construirMensaje(boletas, last10) {
+const estadoBoleta = (b) => Number(b.saldo_restante || 0) <= 0 ? 'Pagada' : ('falta ' + pesos(b.saldo_restante));
+
+// La variable {{1}} de la plantilla: lista de boletas en UNA sola línea
+// (Meta no permite saltos de línea dentro de una variable).
+function variableBoletas(boletas) {
+  return boletas.map(b => `🎟️ ${b.numero} (${estadoBoleta(b)})`).join('  ·  ');
+}
+
+// Cómo se verá la plantilla para el cliente (para mostrar en la vista previa).
+function previewPlantilla(boletas, last10) {
+  const cuerpo = TPL_BODY.replace('{{1}}', boletas.map(b => `🎟️ ${b.numero} (${estadoBoleta(b)})`).join('\n'));
+  return `*${TPL_HEADER}*\n\n${cuerpo}\n\n[ ${TPL_BTN_TEXTO} ]  →  ${TPL_BTN_URL_BASE}${last10}\n\n_${TPL_FOOTER}_`;
+}
+
+// Texto de respaldo (cuando no hay plantilla aprobada). Es el "cierre feliz"
+// de la compra: no saluda, celebra y manda número + enlace.
+function textoRespaldo(boletas, last10) {
   const url = (n) => `https://www.losplata.com.co/boleta/${n}?telefono=${last10}`;
   const todasPagadas = boletas.every(b => Number(b.saldo_restante || 0) <= 0);
   const una = boletas.length === 1;
@@ -41,13 +76,13 @@ function construirMensaje(boletas, last10) {
   const intro = una
     ? 'Esta es tu boleta para la rifa de *Los Plata*:'
     : 'Estas son tus boletas para la rifa de *Los Plata*:';
-
+  const linea = (b) => Number(b.saldo_restante || 0) <= 0 ? '✅ Pagada' : `Te falta abonar *${pesos(b.saldo_restante)}*`;
   let cuerpo;
   if (una) {
     const b = boletas[0];
-    cuerpo = `🎟️ *Boleta ${b.numero}*  ·  ${estadoBoleta(b)}\n\nGuárdala bien. Puedes consultarla cuando quieras aquí 👇\n${url(b.numero)}`;
+    cuerpo = `🎟️ *Boleta ${b.numero}*  ·  ${linea(b)}\n\nGuárdala bien. Puedes consultarla cuando quieras aquí 👇\n${url(b.numero)}`;
   } else {
-    cuerpo = boletas.map(b => `🎟️ *Boleta ${b.numero}*  ·  ${estadoBoleta(b)}\n👉 ${url(b.numero)}`).join('\n\n')
+    cuerpo = boletas.map(b => `🎟️ *Boleta ${b.numero}*  ·  ${linea(b)}\n👉 ${url(b.numero)}`).join('\n\n')
       + '\n\nGuárdalas bien y consúltalas cuando quieras desde los enlaces.';
   }
   return `${header}\n\n${intro}\n\n${cuerpo}\n\n¡Te deseamos mucha suerte! 🍀`;
@@ -66,6 +101,13 @@ async function asegurarConv(telefono, lineaId, asesor) {
   return nueva ? nueva.id : null;
 }
 
+// ¿Hay plantilla "boleta_cliente" en esta línea? Devuelve su estado o null.
+async function estadoPlantilla(lineaId) {
+  const { data } = await supabase
+    .from('plantillas_whatsapp').select('estado').eq('linea_id', lineaId).eq('nombre', TPL_NOMBRE).maybeSingle();
+  return data ? data.estado : null;
+}
+
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
@@ -77,9 +119,26 @@ export default async function handler(req, res) {
   if (!(await puedeVerLinea(nombreAsesor, linea_id))) {
     return res.status(403).json({ status: 'error', mensaje: 'No tienes acceso a esta línea.' });
   }
-  if (!telefono) return res.status(200).json({ status: 'error', mensaje: 'Falta el teléfono.' });
 
   try {
+    // Crear la plantilla bonita (una sola vez por línea).
+    if (accion === 'crear-plantilla') {
+      const yaEstado = await estadoPlantilla(linea_id);
+      if (yaEstado) return res.status(200).json({ status: 'ok', yaExistia: true, estado: yaEstado });
+      const meta = await crearPlantillaMeta(linea_id, {
+        nombre: TPL_NOMBRE, categoria: 'UTILITY', idioma: TPL_IDIOMA, componentes: componentesBoleta(),
+      });
+      if (!meta.ok) return res.status(200).json({ status: 'error', mensaje: 'Meta no aceptó la plantilla: ' + meta.error });
+      await supabaseAdmin.from('plantillas_whatsapp').insert({
+        linea_id, nombre: TPL_NOMBRE, categoria: 'UTILITY', idioma: TPL_IDIOMA,
+        encabezado: TPL_HEADER, cuerpo: TPL_BODY, pie: TPL_FOOTER,
+        meta_template_id: meta.id || null, estado: 'pendiente',
+      });
+      return res.status(200).json({ status: 'ok', estado: 'pendiente' });
+    }
+
+    // De aquí en adelante se necesita el teléfono del cliente.
+    if (!telefono) return res.status(200).json({ status: 'error', mensaje: 'Falta el teléfono.' });
     const last10 = String(telefono).replace(/\D/g, '').slice(-10);
 
     const { data: boletas, error } = await supabase
@@ -94,30 +153,47 @@ export default async function handler(req, res) {
 
     const nombre = (boletas[0].clientes && boletas[0].clientes.nombre) || '';
     boletas.sort((a, b) => Number(a.numero) - Number(b.numero));
-    const mensaje = construirMensaje(boletas, last10);
+
+    const estTpl = await estadoPlantilla(linea_id);
+    const usarPlantilla = estTpl === 'aprobada';
+    const mensaje = usarPlantilla ? previewPlantilla(boletas, last10) : textoRespaldo(boletas, last10);
 
     if (accion === 'previsualizar') {
-      return res.status(200).json({ status: 'ok', encontrado: true, nombre, total: boletas.length, mensaje });
+      return res.status(200).json({
+        status: 'ok', encontrado: true, nombre, total: boletas.length,
+        modo: usarPlantilla ? 'plantilla' : 'texto',
+        plantillaEstado: estTpl, puedeCrear: !estTpl, mensaje,
+      });
     }
 
     if (accion === 'enviar') {
-      const env = await enviarTexto(telefono, mensaje, linea_id);
+      let env;
+      if (usarPlantilla) {
+        env = await enviarPlantilla(telefono, {
+          nombre: TPL_NOMBRE, idioma: TPL_IDIOMA,
+          parametros: [variableBoletas(boletas)], botonUrlParam: last10,
+        }, linea_id);
+      } else {
+        env = await enviarTexto(telefono, mensaje, linea_id);
+      }
       if (!env || !env.ok) return res.status(200).json({ status: 'error', mensaje: (env && env.error) || 'No se pudo enviar.' });
 
+      // Texto que se guarda en el historial (legible, con saltos de línea).
+      const textoHistorial = usarPlantilla ? previewPlantilla(boletas, last10) : mensaje;
       const conversacion_id = await asegurarConv(telefono, linea_id, nombreAsesor);
       const ts = new Date().toISOString();
       await supabaseAdmin.from('mensajes_whatsapp').insert({
         conversacion_id, telefono, linea_id: linea_id || null,
-        direccion: 'saliente', tipo: 'text', texto: mensaje,
+        direccion: 'saliente', tipo: 'text', texto: textoHistorial,
         wa_message_id: env.wa_message_id, estado_envio: 'enviado', timestamp_wa: ts, raw: env.raw,
       });
       let upd = supabaseAdmin.from('conversaciones_whatsapp')
-        .update({ ultimo_mensaje: ('🎟️ Boleta(s) enviada(s)'), ultimo_at: ts, ultimo_entrante: false })
+        .update({ ultimo_mensaje: '🎟️ Boleta(s) enviada(s)', ultimo_at: ts, ultimo_entrante: false })
         .eq('telefono', telefono);
       upd = linea_id ? upd.eq('linea_id', linea_id) : upd.is('linea_id', null);
       await upd;
 
-      return res.status(200).json({ status: 'ok', wa_message_id: env.wa_message_id });
+      return res.status(200).json({ status: 'ok', wa_message_id: env.wa_message_id, modo: usarPlantilla ? 'plantilla' : 'texto' });
     }
 
     return res.status(200).json({ status: 'error', mensaje: 'Acción no válida.' });

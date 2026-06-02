@@ -943,6 +943,17 @@
         setTimeout(() => verificarIdentidad(), 50);
       }
 
+      // AUTO-BUSCADOR: si llega a /boleta?telefono=X (sin número, ej. botón
+      // "Ver mi boleta" de WhatsApp), prellenar el celular y buscar solo
+      // todas las boletas de ese cliente.
+      if (modoBuscador && urlParams.has('telefono')) {
+        const telBusca = urlParams.get('telefono').replace(/\D/g, '');
+        const tel10b = telBusca.length >= 10 ? telBusca.slice(-10) : telBusca;
+        const ip = document.getElementById('inputPhone');
+        if (ip) ip.value = tel10b;
+        setTimeout(() => buscarBoleta(), 50);
+      }
+
       // PREVIEW MODE: agrega ?preview=1 a la URL para ver la boleta con datos demo
       // (no toca el backend, solo es para revisar el diseño)
       if (urlParams.has('preview')) {
