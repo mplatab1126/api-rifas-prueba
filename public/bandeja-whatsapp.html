@@ -265,6 +265,10 @@
     .chat-item .etiqs { margin-top: 5px; display: flex; flex-wrap: wrap; gap: 4px; }
     #btnEtiquetas { margin-left: auto; background: none; border: none; cursor: pointer; color: var(--ink-mute); padding: 6px; border-radius: 8px; display: flex; }
     #btnEtiquetas:hover { background: var(--cream-100); color: var(--ink); }
+    #btnEliminarChat { background: none; border: none; cursor: pointer; color: var(--ink-mute); padding: 6px; border-radius: 8px; display: flex; }
+    #btnEliminarChat:hover { background: #fdecec; color: var(--danger); }
+    .cont-del { margin-left: auto; flex-shrink: 0; background: none; border: none; cursor: pointer; color: var(--gray-400); padding: 8px; border-radius: 8px; display: flex; }
+    .cont-del:hover { background: #fdecec; color: var(--danger); }
     .etiq-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--gray-100); }
     .etiq-row input { width: auto; cursor: pointer; margin: 0; }
     .etiq-row .etiq { flex: 1; }
@@ -417,6 +421,9 @@
           </div>
           <button id="btnEtiquetas" title="Etiquetas" onclick="abrirEtiquetas()">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          </button>
+          <button id="btnEliminarChat" title="Eliminar contacto" onclick="eliminarChatActual()">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>
         </div>
         <div id="aviso24">Pasaron 24 horas desde el último mensaje del cliente. WhatsApp solo permite responder con una plantilla aprobada.</div>
@@ -1175,6 +1182,7 @@ async function cargarContactos(reset){
     return `<div class="chat-item" data-tel="${esc(c.telefono)}" data-nom="${esc(c.nombre_perfil || '')}">
       <div class="avatar">${esc(ini)}</div>
       <div class="info"><div class="nom">${esc(nom)}</div><div class="prev">${esc(sub)}</div></div>
+      <button class="cont-del" data-tel="${esc(c.telefono)}" data-nom="${esc(c.nombre_perfil || '')}" title="Eliminar contacto"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
     </div>`;
   }).join('');
   const cargados = contactosPage * r.porPagina + (r.contactos ? r.contactos.length : 0);
@@ -1190,9 +1198,39 @@ window.masContactos = function(){ contactosPage++; cargarContactos(false); };
 
 // Clic en un contacto → ir a Chats y abrir su chat
 $('listaContactos').addEventListener('click', e => {
+  const del = e.target.closest('.cont-del');
+  if(del){ e.stopPropagation(); eliminarContacto(del.getAttribute('data-tel'), del.getAttribute('data-nom') || '', lineaActual); return; }
   const item = e.target.closest('.chat-item[data-tel]');
   if(item){ irA('chats'); abrir(item.getAttribute('data-tel'), item.getAttribute('data-nom') || ''); }
 });
+
+/* ── Eliminar un contacto (conversación + mensajes). NO toca boletas/pagos/cliente. ── */
+window.eliminarChatActual = function(){ if(actual) eliminarContacto(actual, $('convNom').textContent || '', actualLinea); };
+window.eliminarContacto = function(telefono, nombre, linea){
+  abrirModal(`
+    <h3>Eliminar contacto</h3>
+    <div class="msub">¿Seguro que quieres eliminar a <b>${esc(nombre || telefono)}</b>?</div>
+    <div class="mnone" style="text-align:left; line-height:1.55">
+      Se borrará de la bandeja: la <b>conversación</b> y <b>todos sus mensajes</b> de esta línea.<br><br>
+      <b>NO</b> se borran sus boletas, pagos ni datos de cliente — eso queda intacto.<br><br>
+      Si el cliente vuelve a escribir, aparecerá de nuevo como contacto nuevo.
+    </div>
+    <button class="mboleta mexceso" onclick="confirmarEliminarContacto('${esc(telefono)}','${esc(linea || '')}')">Sí, eliminar</button>
+    <button class="mcerrar" onclick="cerrarModal()">Cancelar</button>
+  `);
+};
+window.confirmarEliminarContacto = async function(telefono, linea){
+  abrirModal('<div class="mcargando">Eliminando…</div>');
+  const r = await api('contacto-eliminar', { telefono, linea_id: linea || null });
+  if(r.status === 'ok'){
+    cerrarModal();
+    if(actual === telefono) cerrarChat();
+    if(vista === 'contactos') cargarContactos(true);
+    cargarLista();
+  } else {
+    abrirModal(`<h3>No se pudo</h3><div class="mnone">${esc(r.mensaje || 'Error')}</div><button class="mcerrar" onclick="cerrarModal()">Cerrar</button>`);
+  }
+};
 
 // Crear contacto
 $('btnCrearContacto').onclick = () => {
