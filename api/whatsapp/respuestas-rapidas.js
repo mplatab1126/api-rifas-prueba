@@ -166,7 +166,7 @@ export default async function handler(req, res) {
           const sub = await subirMediaDesdeUrl(url, linea_id);
           if (sub && sub.ok) {
             env = await enviarImagenPorId(telefono, sub.media_id, texto, linea_id);
-            if (env && env.ok && respuestaId && pasoIdx !== null) refrescarMediaId(respuestaId, linea_id, pasoIdx, sub.media_id).catch(() => {});
+            if (env && env.ok && respuestaId && pasoIdx !== null) await refrescarMediaId(respuestaId, linea_id, pasoIdx, sub.media_id).catch(() => {});
           } else if (!env || !env.ok) {
             env = await enviarImagen(telefono, url, texto, linea_id);   // último respaldo: por link
           }
