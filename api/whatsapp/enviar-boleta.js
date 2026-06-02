@@ -20,17 +20,37 @@ import { enviarTexto } from '../lib/whatsapp.js';
 
 const pesos = (v) => '$' + Number(v || 0).toLocaleString('es-CO');
 
-// Arma el texto que recibe el cliente. Una línea por boleta, con su estado y enlace.
-function construirMensaje(nombre, boletas, last10) {
-  const saludo = nombre ? `Hola ${nombre} 👋` : 'Hola 👋';
-  const cuantas = boletas.length === 1 ? 'tu boleta' : `tus ${boletas.length} boletas`;
-  const lineas = boletas.map(b => {
-    const estado = Number(b.saldo_restante || 0) <= 0
-      ? '✅ Pagada'
-      : `Saldo pendiente: *${pesos(b.saldo_restante)}*`;
-    return `🎟️ *Boleta ${b.numero}* — ${estado}\nhttps://www.losplata.com.co/boleta/${b.numero}?telefono=${last10}`;
-  }).join('\n\n');
-  return `${saludo}\n\nEstas son ${cuantas} de la rifa de *Los Plata*:\n\n${lineas}\n\nPuedes consultar el estado de tu boleta en cualquier momento desde el enlace. ¡Gracias por participar! 🍀`;
+// Estado de UNA boleta en una frase corta.
+function estadoBoleta(b) {
+  return Number(b.saldo_restante || 0) <= 0
+    ? '✅ Pagada'
+    : `Te falta abonar *${pesos(b.saldo_restante)}*`;
+}
+
+// Arma el texto que recibe el cliente. Es el "cierre feliz" de la compra: no
+// saluda (ya se viene hablando con el cliente), celebra y manda número + enlace.
+// Se adapta solo: si todo está pagado celebra "¡Quedaste participando!"; si falta
+// abono usa un encabezado neutro.
+function construirMensaje(boletas, last10) {
+  const url = (n) => `https://www.losplata.com.co/boleta/${n}?telefono=${last10}`;
+  const todasPagadas = boletas.every(b => Number(b.saldo_restante || 0) <= 0);
+  const una = boletas.length === 1;
+  const header = todasPagadas
+    ? '🎉 ¡Quedaste participando!'
+    : (una ? '🎟️ Aquí está tu boleta' : '🎟️ Aquí están tus boletas');
+  const intro = una
+    ? 'Esta es tu boleta para la rifa de *Los Plata*:'
+    : 'Estas son tus boletas para la rifa de *Los Plata*:';
+
+  let cuerpo;
+  if (una) {
+    const b = boletas[0];
+    cuerpo = `🎟️ *Boleta ${b.numero}*  ·  ${estadoBoleta(b)}\n\nGuárdala bien. Puedes consultarla cuando quieras aquí 👇\n${url(b.numero)}`;
+  } else {
+    cuerpo = boletas.map(b => `🎟️ *Boleta ${b.numero}*  ·  ${estadoBoleta(b)}\n👉 ${url(b.numero)}`).join('\n\n')
+      + '\n\nGuárdalas bien y consúltalas cuando quieras desde los enlaces.';
+  }
+  return `${header}\n\n${intro}\n\n${cuerpo}\n\n¡Te deseamos mucha suerte! 🍀`;
 }
 
 // Busca (o crea) la conversación de un teléfono en una línea y devuelve su id.
@@ -74,7 +94,7 @@ export default async function handler(req, res) {
 
     const nombre = (boletas[0].clientes && boletas[0].clientes.nombre) || '';
     boletas.sort((a, b) => Number(a.numero) - Number(b.numero));
-    const mensaje = construirMensaje(nombre, boletas, last10);
+    const mensaje = construirMensaje(boletas, last10);
 
     if (accion === 'previsualizar') {
       return res.status(200).json({ status: 'ok', encontrado: true, nombre, total: boletas.length, mensaje });
