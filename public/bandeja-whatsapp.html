@@ -543,15 +543,11 @@ async function buscarPago(mid){
     const ordenadas = r.candidatas.slice().sort((a,b)=> (b.id===r.sugerida_id?1:0) - (a.id===r.sugerida_id?1:0));
     const cards = ordenadas.map(t => {
       const sug = t.id===r.sugerida_id;
-      const aviso = (sug && !t.libre)
-        ? `<div class="aviso-asig">Este pago ya está asignado a la boleta ${esc(t.boleta||'?')}. No lo vuelvas a abonar.</div>`
-        : '';
       return `
       <div class="cand ${sug?'sug':''}">
         ${sug ? '<div class="tag">Coincidencia sugerida</div>' : ''}
         ${fmtTrans(t)}
         ${sug && r.razon_sugerida ? `<div class="razon">${esc(r.razon_sugerida)}</div>` : ''}
-        ${aviso}
       </div>`;
     }).join('');
     const titulo = r.candidatas.length > 1 ? `<div class="mhdr">Pagos reales del mismo monto y día · ${r.candidatas.length}</div>` : `<div class="mhdr">Pago real encontrado</div>`;
