@@ -85,12 +85,23 @@ export default async function handler(req, res) {
       }
     }
 
+    // 7. Boletas del cliente con saldo pendiente (para elegir a cuál abonar)
+    const { data: bols } = await supabase
+      .from('boletas')
+      .select('numero, saldo_restante')
+      .like('telefono_cliente', '%' + last10);
+    const boletas = (bols || [])
+      .map(b => ({ numero: b.numero, saldo: Number(b.saldo_restante || 0) }))
+      .filter(b => b.saldo > 0)
+      .sort((a, b) => a.numero - b.numero);
+
     return res.status(200).json({
       status: 'ok',
       extraido: datos,
       candidatas,
       sugerida_id: sugerida ? sugerida.id : null,
       razon_sugerida: sugerida ? sugerida._razon : null,
+      boletas,
       diagnostico,
     });
   } catch (error) {
