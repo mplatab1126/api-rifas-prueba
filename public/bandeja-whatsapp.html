@@ -141,6 +141,7 @@
     .b.ent .h { color: var(--gray-400); }
     .b.sal .h { color: rgba(250,250,247,0.5); }
     .b.medio { color: var(--ink-mute); }
+    .b.optim { opacity: 0.55; }
     .media { min-width: 150px; font-size: 0.82rem; color: inherit; opacity: 0.85; }
     .media img { width: 200px; height: 200px; object-fit: cover; border-radius: 10px; cursor: pointer; display: block; }
     .media video { max-width: 250px; border-radius: 10px; cursor: pointer; display: block; }
@@ -481,6 +482,8 @@ let contactosPage = 0, contactosTotal = 0, timerBuscar = null;
 let comprobanteMid = null;   // media_id del comprobante del cliente que se está verificando
 let verifActual = null;      // resultado de la última verificación (incluye boletas del cliente)
 let abonoCtx = null;         // { id, monto, ref, plat } de la transferencia que se va a abonar
+let pendientes = [];         // mensajes salientes mostrados de inmediato (optimista), aún sin confirmar del servidor
+let pidSeq = 0;
 
 const $ = id => document.getElementById(id);
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -634,7 +637,7 @@ window.abrir = async function(telefono, nombrePerfil){
   cargarFicha(telefono);
   await cargarMensajes(true);
   clearInterval(timerChat);
-  timerChat = setInterval(() => cargarMensajes(false), 4000);
+  timerChat = setInterval(() => cargarMensajes(false), 2500);
 };
 
 window.cerrarChat = function(){
@@ -757,21 +760,50 @@ async function hidratarMedia(){
   }
 }
 
+/* ── Mensajes "optimistas": se ven al instante, antes de confirmar el servidor ── */
+function burbujaPendiente(p){
+  const cuerpo = p.tipo === 'imagen'
+    ? `<div class="media"><img src="${esc(p.url)}"></div>${p.texto ? `<div class="cap">${esc(p.texto)}</div>` : ''}`
+    : esc(p.texto);
+  return `<div class="b sal optim" data-pid="${p.pid}">${cuerpo}<div class="h">enviando…</div></div>`;
+}
+function agregarPendiente(p){
+  p.pid = ++pidSeq;
+  pendientes.push(p);
+  if(p.tel === actual){
+    const cont = $('msgs');
+    cont.insertAdjacentHTML('beforeend', burbujaPendiente(p));
+    cont.scrollTop = cont.scrollHeight;
+  }
+  return p;
+}
+function quitarPendiente(p){
+  pendientes = pendientes.filter(x => x.pid !== p.pid);
+  const el = $('msgs').querySelector('[data-pid="' + p.pid + '"]');
+  if(el) el.remove();
+}
+
 async function cargarMensajes(scroll){
   if(!actual) return;
   const r = await api('mensajes', { telefono: actual, linea_id: actualLinea });
   if(r.status !== 'ok') return;
+  // Quitar los pendientes que el servidor ya confirmó (de este mismo chat)
+  if(pendientes.length){
+    pendientes = pendientes.filter(p => p.tel !== actual || !r.mensajes.some(m => m.direccion === 'saliente'
+      && (p.tipo === 'imagen' ? m.media_url === p.url : (m.texto || '').trim() === (p.texto || '').trim())));
+  }
+  const propios = pendientes.filter(p => p.tel === actual);
   const ult = r.mensajes[r.mensajes.length-1];
-  const firma = r.mensajes.length + ':' + (ult?.id || '') + ':' + (ult?.estado_envio || '');
+  const firma = r.mensajes.length + ':' + (ult?.id || '') + ':' + (ult?.estado_envio || '') + ':p' + propios.length;
   if(!scroll && firma === firmaMsgs) return;
   firmaMsgs = firma;
   const cont = $('msgs');
   const abajo = cont.scrollHeight - cont.scrollTop - cont.clientHeight < 80;
   cont.innerHTML = r.mensajes.map(m => {
-    const claseMedio = (m.tipo && m.tipo !== 'text' && !m.media_id) ? ' medio' : '';
+    const claseMedio = (m.tipo && m.tipo !== 'text' && !m.media_id && !m.media_url) ? ' medio' : '';
     const estado = m.direccion === 'saliente' ? estadoIcono(m.estado_envio) : '';
     return `<div class="b ${m.direccion==='entrante'?'ent':'sal'}${claseMedio}">${cuerpoMensaje(m)}<div class="h">${hora(m.timestamp_wa || m.created_at)}${estado ? ' · ' + estado : ''}</div></div>`;
-  }).join('');
+  }).join('') + propios.map(burbujaPendiente).join('');
   hidratarMedia();
   if(scroll || abajo) cont.scrollTop = cont.scrollHeight;
 }
@@ -784,16 +816,17 @@ function estadoIcono(e){
 async function enviarMsg(){
   const txt = $('texto').value.trim();
   if(!txt || !actual) return;
-  $('enviar').disabled = true;
-  const r = await api('enviar', { telefono: actual, texto: txt, linea_id: actualLinea });
-  $('enviar').disabled = false;
+  const tel = actual, linea = actualLinea;
+  $('texto').value = '';
+  $('texto').style.height = 'auto';
+  cerrarPicker();
+  const p = agregarPendiente({ tipo: 'texto', texto: txt, tel });   // se ve al instante
+  const r = await api('enviar', { telefono: tel, texto: txt, linea_id: linea });
   if(r.status === 'ok'){
-    $('texto').value = '';
-    $('texto').style.height = 'auto';
-    cerrarPicker();
-    await cargarMensajes(true);
+    if(actual === tel) cargarMensajes(true);
     cargarLista();
   } else {
+    quitarPendiente(p);
     alert('No se pudo enviar: ' + (r.mensaje || 'error'));
   }
 }
@@ -1467,23 +1500,31 @@ function abrirPicker(filtro){
 window.usarRespuesta = async function(id){
   if(!actual) return;
   cerrarPicker();
-  const t = $('texto'), b = $('btnResp'), env = $('enviar');
-  const ph = t.placeholder;
-  t.value = ''; t.style.height = 'auto';
-  if(b) b.disabled = true;
-  if(env) env.disabled = true;
-  t.placeholder = 'Enviando respuesta…';
-  const r = await api('respuestas-rapidas', { accion:'enviar', linea_id: actualLinea, telefono: actual, id });
-  if(b) b.disabled = false;
-  if(env) env.disabled = false;
-  t.placeholder = ph;
-  if(r.status === 'ok'){
-    await cargarMensajes(true);
-    cargarLista();
-    if(r.fallidos){ alert(`Se enviaron ${r.enviados} de ${r.enviados + r.fallidos} mensajes.\n${(r.errores||[]).join('\n')}`); }
-  } else {
-    alert('No se pudo enviar la respuesta: ' + (r.mensaje || 'error'));
+  const r = respCache.find(x => x.id === id);
+  const pasos = r ? pasosDe(r) : [];
+  if(!pasos.length){ alert('Esta respuesta no tiene mensajes.'); return; }
+  const tel = actual, linea = actualLinea;
+  $('texto').value = ''; $('texto').style.height = 'auto';
+  // Mostrar TODO el flujo de inmediato (optimista)
+  const items = pasos.map(p => agregarPendiente({ tipo: p.tipo === 'imagen' ? 'imagen' : 'texto', texto: p.texto || '', url: p.url || '', tel }));
+  // Enviar uno por uno, en orden. Cada uno es una petición corta → no se corta por tiempo.
+  const errores = [];
+  for(let i = 0; i < pasos.length; i++){
+    const p = pasos[i];
+    const resp = await api('respuestas-rapidas', {
+      accion: 'enviar-paso', linea_id: linea, telefono: tel,
+      tipo: p.tipo === 'imagen' ? 'imagen' : 'texto', texto: p.texto || '', url: p.url || '',
+    });
+    if(resp.status === 'ok'){
+      if(actual === tel) cargarMensajes(true);
+    } else {
+      quitarPendiente(items[i]);
+      errores.push((p.tipo === 'imagen' ? 'Imagen' : 'Texto') + ': ' + (resp.mensaje || 'error'));
+    }
+    await new Promise(res => setTimeout(res, 300));  // respiro para mantener el orden
   }
+  cargarLista();
+  if(errores.length) alert('Estos mensajes no se enviaron:\n' + errores.join('\n'));
 };
 $('btnResp').onclick = async (e) => {
   e.stopPropagation();

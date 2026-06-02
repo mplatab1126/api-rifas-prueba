@@ -117,6 +117,47 @@ export default async function handler(req, res) {
       return res.status(200).json({ status: 'ok' });
     }
 
+    // Envía UN solo paso (texto o imagen). El navegador llama esto una vez por
+    // paso, en orden, para que cada mensaje aparezca al instante y no haya una
+    // sola petición larga que el navegador corte por tiempo.
+    if (accion === 'enviar-paso') {
+      const telefono = String(req.body.telefono || '').trim();
+      const tipo = req.body.tipo === 'imagen' ? 'imagen' : 'texto';
+      const texto = String(req.body.texto || '').trim().slice(0, MAX_TEXTO);
+      const url = String(req.body.url || '').trim().slice(0, MAX_URL);
+      if (!telefono) return res.status(200).json({ status: 'error', mensaje: 'Falta el teléfono.' });
+      if (tipo === 'texto' && !texto) return res.status(200).json({ status: 'error', mensaje: 'Mensaje de texto vacío.' });
+      if (tipo === 'imagen' && !/^https?:\/\//i.test(url)) return res.status(200).json({ status: 'error', mensaje: 'La imagen no tiene una URL válida.' });
+
+      let env;
+      if (tipo === 'imagen') {
+        const sub = await subirMediaDesdeUrl(url, linea_id);
+        env = (sub && sub.ok)
+          ? await enviarImagenPorId(telefono, sub.media_id, texto, linea_id)
+          : await enviarImagen(telefono, url, texto, linea_id);
+      } else {
+        env = await enviarTexto(telefono, texto, linea_id);
+      }
+      if (!env.ok) return res.status(200).json({ status: 'error', mensaje: env.error || 'No se pudo enviar.' });
+
+      const conversacion_id = await asegurarConv(telefono, linea_id, nombre);
+      const ts = new Date().toISOString();
+      await supabaseAdmin.from('mensajes_whatsapp').insert({
+        conversacion_id, telefono, linea_id: linea_id || null,
+        direccion: 'saliente', tipo: tipo === 'imagen' ? 'image' : 'text',
+        texto: tipo === 'imagen' ? (texto || null) : texto,
+        media_url: tipo === 'imagen' ? url : null,
+        wa_message_id: env.wa_message_id, estado_envio: 'enviado', timestamp_wa: ts, raw: env.raw,
+      });
+      let upd = supabaseAdmin.from('conversaciones_whatsapp')
+        .update({ ultimo_mensaje: String(tipo === 'imagen' ? (texto || '📷 Foto') : texto).slice(0, 200), ultimo_at: ts, ultimo_entrante: false })
+        .eq('telefono', telefono);
+      upd = linea_id ? upd.eq('linea_id', linea_id) : upd.is('linea_id', null);
+      await upd;
+
+      return res.status(200).json({ status: 'ok', wa_message_id: env.wa_message_id });
+    }
+
     if (accion === 'enviar') {
       const telefono = String(req.body.telefono || '').trim();
       const { id } = req.body;
