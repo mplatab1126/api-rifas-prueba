@@ -162,9 +162,15 @@
     .tfoto { display: inline-block; margin-top: 9px; font-size: 0.76rem; color: var(--ink); border: 1px solid var(--gray-200); border-radius: 100px; padding: 5px 13px; text-decoration: none; cursor: pointer; }
     .tfoto:hover { background: var(--cream-50); }
     /* Visor de foto (lightbox) */
-    #fotoBg { position: fixed; inset: 0; z-index: 400; background: rgba(10,10,10,.82); display: none; align-items: center; justify-content: center; padding: 20px; }
+    #fotoBg { position: fixed; inset: 0; z-index: 400; background: rgba(10,10,10,.85); display: none; align-items: center; justify-content: center; padding: 20px; }
     #fotoBg.show { display: flex; }
-    #fotoBg img { max-width: 92vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,.45); }
+    .vimg { max-width: 92vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,.45); }
+    .cmp { display: flex; gap: 18px; align-items: flex-start; }
+    .cmp-col { display: flex; flex-direction: column; align-items: center; gap: 9px; }
+    .cmp-lbl { color: rgba(255,255,255,.85); font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; }
+    .cmp-col img { max-width: 44vw; max-height: 80vh; border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,.45); object-fit: contain; }
+    .cmp-none { color: #9a9a9a; font-size: 0.85rem; padding: 50px 30px; }
+    @media (max-width: 760px){ .cmp { flex-direction: column; overflow-y: auto; max-height: 90vh; } .cmp-col img { max-width: 86vw; max-height: 60vh; } }
     .mnone { text-align: center; color: var(--ink-mute); font-size: 0.88rem; padding: 14px; line-height: 1.55; }
     .mcerrar { width: 100%; margin-top: 6px; padding: 12px; border: 1px solid var(--gray-200); background: #fff; border-radius: 12px; font-family: inherit; font-size: 0.9rem; color: var(--ink); cursor: pointer; }
     .mcerrar:hover { background: var(--cream-50); }
@@ -237,7 +243,7 @@
 
   <div id="ctxMenu"></div>
   <div id="modalBg"><div class="modal" id="modal"></div></div>
-  <div id="fotoBg"><img id="fotoImg" alt="Comprobante"></div>
+  <div id="fotoBg"></div>
 
 <script>
 const PWD_KEY = 'asesor_pwd', NAME_KEY = 'asesor_nombre';
@@ -245,6 +251,7 @@ let actual = null;        // telefono del chat abierto
 let conversaciones = [];
 let timerLista = null, timerChat = null;
 let firmaMsgs = '';
+let comprobanteMid = null;   // media_id del comprobante del cliente que se está verificando
 
 const $ = id => document.getElementById(id);
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -531,6 +538,7 @@ function fmtTrans(t){
 }
 
 async function buscarPago(mid){
+  comprobanteMid = mid;
   abrirModal('<div class="mcargando">Leyendo el comprobante y buscando el pago real…</div>');
   const r = await api('buscar-pago', { media_id: mid, telefono: actual });
   if(r.status !== 'ok'){
@@ -571,13 +579,32 @@ function abrirModal(html){ $('modal').innerHTML = html; $('modalBg').classList.a
 window.cerrarModal = function(){ $('modalBg').classList.remove('show'); };
 $('modalBg').addEventListener('click', e => { if(e.target === $('modalBg')) cerrarModal(); });
 
-// Visor de foto (lightbox) al dar clic en "Ver foto"
+// Visor de foto (lightbox)
+function cerrarFoto(){ $('fotoBg').classList.remove('show'); $('fotoBg').innerHTML = ''; }
+$('fotoBg').addEventListener('click', cerrarFoto);
+window.verImagen = function(url){ $('fotoBg').innerHTML = `<img class="vimg" src="${url}">`; $('fotoBg').classList.add('show'); };
+
+// "Ver foto" en la verificación → comparar lado a lado: sistema (izq) vs cliente (der)
 $('modal').addEventListener('click', e => {
   const f = e.target.closest('.tfoto');
-  if(f){ $('fotoImg').src = f.getAttribute('data-url'); $('fotoBg').classList.add('show'); }
+  if(f) verComparacion(f.getAttribute('data-url'));
 });
-$('fotoBg').addEventListener('click', () => { $('fotoBg').classList.remove('show'); $('fotoImg').src = ''; });
-window.verImagen = function(url){ $('fotoImg').src = url; $('fotoBg').classList.add('show'); };
+async function verComparacion(urlSistema){
+  let urlCliente = comprobanteMid ? mediaCache[comprobanteMid] : null;
+  if(!urlCliente && comprobanteMid){
+    try{
+      const resp = await fetch('/api/whatsapp/media', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ contrasena: localStorage.getItem(PWD_KEY), media_id: comprobanteMid }) });
+      if(resp.ok){ urlCliente = URL.createObjectURL(await resp.blob()); mediaCache[comprobanteMid] = urlCliente; }
+    }catch(_){}
+  }
+  $('fotoBg').innerHTML = `
+    <div class="cmp" onclick="event.stopPropagation()">
+      <div class="cmp-col"><div class="cmp-lbl">Pago encontrado por el sistema</div><img src="${urlSistema}"></div>
+      <div class="cmp-col"><div class="cmp-lbl">Comprobante del cliente</div>${urlCliente ? `<img src="${urlCliente}">` : '<div class="cmp-none">No disponible</div>'}</div>
+    </div>`;
+  $('fotoBg').classList.add('show');
+}
 
 /* ── Inicio ── */
 if(localStorage.getItem(PWD_KEY) && localStorage.getItem(NAME_KEY)){
