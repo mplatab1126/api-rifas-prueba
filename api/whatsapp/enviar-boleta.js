@@ -50,42 +50,44 @@ function componentesBoleta() {
   ];
 }
 
-const estadoBoleta = (b) => Number(b.saldo_restante || 0) <= 0 ? 'Pagada' : ('falta ' + pesos(b.saldo_restante));
+const estadoBoleta = (b) => Number(b.saldo_restante || 0) <= 0 ? '✅ Pagada' : ('Te falta abonar *' + pesos(b.saldo_restante) + '*');
+
+// Una línea por boleta, limpia: número en negrita + estado. Sin enlaces ni
+// emojis repetidos (el enlace va UNA sola vez, abajo).
+const lineaBoleta = (b) => `*${b.numero}*  ·  ${estadoBoleta(b)}`;
+
+// Enlace único para ver la(s) boleta(s): abre la página que, si hay varias,
+// le deja elegir cuál ver.
+const enlaceBoletas = (last10) => `https://www.losplata.com.co/boleta?telefono=${last10}`;
 
 // La variable {{1}} de la plantilla: lista de boletas en UNA sola línea
 // (Meta no permite saltos de línea dentro de una variable).
 function variableBoletas(boletas) {
-  return boletas.map(b => `🎟️ ${b.numero} (${estadoBoleta(b)})`).join('  ·  ');
+  const est = (b) => Number(b.saldo_restante || 0) <= 0 ? 'Pagada' : ('falta ' + pesos(b.saldo_restante));
+  return boletas.map(b => `${b.numero} (${est(b)})`).join('  ·  ');
 }
 
 // Cómo se verá la plantilla para el cliente (para mostrar en la vista previa).
 function previewPlantilla(boletas, last10) {
-  const cuerpo = TPL_BODY.replace('{{1}}', boletas.map(b => `🎟️ ${b.numero} (${estadoBoleta(b)})`).join('\n'));
-  return `*${TPL_HEADER}*\n\n${cuerpo}\n\n[ ${TPL_BTN_TEXTO} ]  →  ${TPL_BTN_URL_BASE}${last10}\n\n_${TPL_FOOTER}_`;
+  const est = (b) => Number(b.saldo_restante || 0) <= 0 ? 'Pagada' : ('falta ' + pesos(b.saldo_restante));
+  const cuerpo = TPL_BODY.replace('{{1}}', boletas.map(b => `${b.numero} (${est(b)})`).join('\n'));
+  return `*${TPL_HEADER}*\n\n${cuerpo}\n\n[ ${TPL_BTN_TEXTO} ]  →  ${enlaceBoletas(last10)}\n\n_${TPL_FOOTER}_`;
 }
 
 // Texto de respaldo (cuando no hay plantilla aprobada). Es el "cierre feliz"
-// de la compra: no saluda, celebra y manda número + enlace.
+// de la compra: no saluda, celebra, lista las boletas y deja UN solo enlace.
 function textoRespaldo(boletas, last10) {
-  const url = (n) => `https://www.losplata.com.co/boleta/${n}?telefono=${last10}`;
   const todasPagadas = boletas.every(b => Number(b.saldo_restante || 0) <= 0);
   const una = boletas.length === 1;
   const header = todasPagadas
     ? '🎉 ¡Quedaste participando!'
-    : (una ? '🎟️ Aquí está tu boleta' : '🎟️ Aquí están tus boletas');
+    : (una ? 'Aquí está tu boleta 🎟️' : 'Aquí están tus boletas 🎟️');
   const intro = una
     ? 'Esta es tu boleta para la rifa de *Los Plata*:'
     : 'Estas son tus boletas para la rifa de *Los Plata*:';
-  const linea = (b) => Number(b.saldo_restante || 0) <= 0 ? '✅ Pagada' : `Te falta abonar *${pesos(b.saldo_restante)}*`;
-  let cuerpo;
-  if (una) {
-    const b = boletas[0];
-    cuerpo = `🎟️ *Boleta ${b.numero}*  ·  ${linea(b)}\n\nGuárdala bien. Puedes consultarla cuando quieras aquí 👇\n${url(b.numero)}`;
-  } else {
-    cuerpo = boletas.map(b => `🎟️ *Boleta ${b.numero}*  ·  ${linea(b)}\n👉 ${url(b.numero)}`).join('\n\n')
-      + '\n\nGuárdalas bien y consúltalas cuando quieras desde los enlaces.';
-  }
-  return `${header}\n\n${intro}\n\n${cuerpo}\n\n¡Te deseamos mucha suerte! 🍀`;
+  const lista = boletas.map(lineaBoleta).join('\n');
+  const verbo = una ? 'Consulta tu boleta aquí' : 'Consulta tus boletas aquí';
+  return `${header}\n\n${intro}\n\n${lista}\n\n👉 ${verbo}:\n${enlaceBoletas(last10)}\n\n¡Te deseamos mucha suerte! 🍀`;
 }
 
 // Busca (o crea) la conversación de un teléfono en una línea y devuelve su id.
