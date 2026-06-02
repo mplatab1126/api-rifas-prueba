@@ -69,7 +69,7 @@ async function asegurarConversacion(telefono, texto, ts, asesor) {
   if (existente) {
     await supabaseAdmin
       .from('conversaciones_whatsapp')
-      .update({ ultimo_mensaje: preview, ultimo_at: ts })
+      .update({ ultimo_mensaje: preview, ultimo_at: ts, ultimo_entrante: false })
       .eq('id', existente.id);
     return existente.id;
   }
@@ -80,6 +80,7 @@ async function asegurarConversacion(telefono, texto, ts, asesor) {
       telefono,
       ultimo_mensaje: preview,
       ultimo_at: ts,
+      ultimo_entrante: false,
       estado: 'humano',
       asesor_asignado: asesor,
     })

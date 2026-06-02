@@ -55,6 +55,10 @@
     #buscar { margin: 12px 16px; padding: 10px 16px; border-radius: 10px; border: 1px solid transparent; background: var(--cream-100); font-family: inherit; font-size: 0.86rem; color: var(--ink); outline: none; }
     #buscar:focus { border-color: var(--gray-200); background: #fff; }
     #buscar::placeholder { color: var(--gray-400); }
+    #filtroSinResp { margin: 0 16px 10px; align-self: flex-start; padding: 7px 14px; border: 1px solid var(--gray-200); background: #fff; border-radius: 100px; font-family: inherit; font-size: 0.8rem; color: var(--ink-mute); cursor: pointer; display: flex; align-items: center; gap: 7px; transition: .15s; }
+    #filtroSinResp:hover { border-color: var(--gray-300); }
+    #filtroSinResp.on { background: var(--mint); color: var(--ink); border-color: var(--mint); font-weight: 600; }
+    #filtroSinResp .cnt { background: rgba(0,0,0,0.10); border-radius: 100px; padding: 1px 8px; font-size: 0.72rem; min-width: 18px; text-align: center; }
     #chats { flex: 1; overflow-y: auto; }
     .chat-item { display: flex; gap: 13px; align-items: center; padding: 13px 18px; cursor: pointer; border-bottom: 1px solid var(--gray-100); border-left: 3px solid transparent; transition: background .12s; }
     .chat-item:hover { background: var(--cream-50); }
@@ -234,6 +238,7 @@
         <button id="salir">Salir</button>
       </header>
       <input id="buscar" placeholder="Buscar por nombre o número">
+      <button id="filtroSinResp">Sin respuesta <span class="cnt" id="cntSinResp">0</span></button>
       <div id="chats"></div>
     </div>
 
@@ -274,6 +279,7 @@ let actual = null;        // telefono del chat abierto
 let conversaciones = [];
 let timerLista = null, timerChat = null;
 let firmaMsgs = '';
+let soloSinRespuesta = false; // filtro: solo chats donde el último mensaje fue del cliente
 let comprobanteMid = null;   // media_id del comprobante del cliente que se está verificando
 let verifActual = null;      // resultado de la última verificación (incluye boletas del cliente)
 let abonoCtx = null;         // { id, monto, ref, plat } de la transferencia que se va a abonar
@@ -324,11 +330,18 @@ function hora(iso){
 function inicial(c){ const n = c.nombre_perfil || c.telefono || '?'; return n.trim().charAt(0).toUpperCase(); }
 
 async function cargarLista(){
-  const r = await api('conversaciones', {});
+  const r = await api('conversaciones', { soloSinRespuesta });
   if(r.status !== 'ok'){ if(r.mensaje && /restringido/i.test(r.mensaje)){ localStorage.removeItem(PWD_KEY); location.reload(); } return; }
   conversaciones = r.conversaciones;
+  if(typeof r.sinRespuestaTotal === 'number') $('cntSinResp').textContent = r.sinRespuestaTotal;
   pintarLista();
 }
+
+$('filtroSinResp').onclick = () => {
+  soloSinRespuesta = !soloSinRespuesta;
+  $('filtroSinResp').classList.toggle('on', soloSinRespuesta);
+  cargarLista();
+};
 
 function pintarLista(){
   const filtro = $('buscar').value.trim().toLowerCase();

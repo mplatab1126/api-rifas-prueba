@@ -111,6 +111,7 @@ async function upsertConversacion(telefono, nombrePerfil, preview, ts, esEntrant
   const cambios = {
     ultimo_mensaje: preview?.slice(0, 200) ?? null,
     ultimo_at: ts,
+    ultimo_entrante: esEntrante,   // el último mensaje lo mandó el cliente → falta responder
   };
   if (nombrePerfil) cambios.nombre_perfil = nombrePerfil;
   // Cada mensaje del cliente renueva la ventana gratis de 24h.

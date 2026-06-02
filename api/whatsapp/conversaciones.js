@@ -4,7 +4,10 @@
  * Devuelve los chats ordenados por el más reciente, con su vista previa y
  * cuántos mensajes sin leer tienen. Protegido con contraseña de asesor.
  *
- * Recibe (POST, JSON): { contrasena }
+ * Recibe (POST, JSON): { contrasena, soloSinRespuesta }
+ *
+ * Pensado para escala (50k-100k chats): el filtro "sin respuesta" y su conteo
+ * se hacen EN LA BASE DE DATOS (con índice), no en el navegador.
  */
 
 import { aplicarCors } from '../lib/cors.js';
@@ -17,20 +20,33 @@ export default async function handler(req, res) {
     return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
   }
 
-  const { contrasena } = req.body || {};
+  const { contrasena, soloSinRespuesta } = req.body || {};
   if (!validarAsesor(contrasena)) {
     return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido.' });
   }
 
-  const { data, error } = await supabase
+  // Lista de chats (los 300 más recientes; si el filtro está activo, solo los "sin respuesta")
+  let query = supabase
     .from('conversaciones_whatsapp')
-    .select('id, telefono, nombre_perfil, ultimo_mensaje, ultimo_at, no_leidos, estado, asesor_asignado, ventana_vence_at')
+    .select('id, telefono, nombre_perfil, ultimo_mensaje, ultimo_at, no_leidos, estado, asesor_asignado, ventana_vence_at, ultimo_entrante')
     .order('ultimo_at', { ascending: false, nullsFirst: false })
     .limit(300);
+  if (soloSinRespuesta) query = query.eq('ultimo_entrante', true);
 
+  const { data, error } = await query;
   if (error) {
     return res.status(200).json({ status: 'error', mensaje: error.message });
   }
 
-  return res.status(200).json({ status: 'ok', conversaciones: data || [] });
+  // Conteo total de "sin respuesta" en el servidor (rápido por el índice parcial)
+  const { count: sinRespuestaTotal } = await supabase
+    .from('conversaciones_whatsapp')
+    .select('id', { count: 'exact', head: true })
+    .eq('ultimo_entrante', true);
+
+  return res.status(200).json({
+    status: 'ok',
+    conversaciones: data || [],
+    sinRespuestaTotal: sinRespuestaTotal || 0,
+  });
 }
