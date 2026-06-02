@@ -439,7 +439,9 @@ function cuerpoMensaje(m){
 
 const mediaCache = {};
 async function hidratarMedia(){
-  for(const el of $('msgs').querySelectorAll('.media[data-mid]')){
+  // De abajo hacia arriba: los archivos más nuevos (los de abajo) cargan primero
+  const els = Array.from($('msgs').querySelectorAll('.media[data-mid]')).reverse();
+  for(const el of els){
     if(el.dataset.cargado) continue;
     el.dataset.cargado = '1';
     const mid = el.getAttribute('data-mid'), tipo = el.getAttribute('data-tipo');
