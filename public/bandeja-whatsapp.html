@@ -183,6 +183,20 @@
     .mboleta { display: block; width: 100%; margin-bottom: 9px; padding: 12px 14px; border: 1px solid var(--gray-200); border-radius: 10px; background: #fff; font-family: inherit; font-size: 0.88rem; color: var(--ink); cursor: pointer; text-align: left; }
     .mboleta:hover { background: var(--cream-50); border-color: var(--gray-300); }
     .mexceso { border-color: var(--danger); color: var(--danger); font-weight: 500; }
+    .ab-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+    .ab-tab { flex: 1; padding: 8px; border: 1px solid var(--gray-200); background: #fff; border-radius: 8px; font-family: inherit; font-size: 0.82rem; cursor: pointer; color: var(--ink-mute); }
+    .ab-tab.on { background: var(--cream-100); color: var(--ink); font-weight: 600; border-color: var(--gray-300); }
+    .ab-igual { display: block; width: 100%; margin-bottom: 10px; padding: 9px; border: 1px solid var(--gray-200); background: #fff; border-radius: 8px; font-family: inherit; font-size: 0.82rem; cursor: pointer; color: var(--ink); }
+    .ab-igual:hover { background: var(--cream-50); }
+    .rep-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--gray-100); font-size: 0.85rem; }
+    .rep-row small { color: var(--ink-mute); }
+    .rep-input { width: 120px; padding: 8px 10px; border: 1px solid var(--gray-200); border-radius: 8px; font-family: inherit; font-size: 0.88rem; text-align: right; outline: none; }
+    .rep-input:focus { border-color: var(--ink); }
+    .rep-total { text-align: right; font-size: 0.85rem; margin: 11px 0; color: var(--ink-mute); }
+    .rep-total.ok { color: #1f8a4c; font-weight: 600; }
+    .rep-total.bad { color: var(--danger); font-weight: 600; }
+    .ab-confirm { display: block; width: 100%; margin-top: 4px; padding: 11px; border: none; border-radius: 10px; background: var(--mint); color: var(--ink); font-family: inherit; font-weight: 600; font-size: 0.86rem; cursor: pointer; }
+    .ab-confirm:disabled { opacity: 0.45; cursor: default; }
 
     @media (max-width: 1100px) { #lista { width: 320px; min-width: 320px; } }
     @media (max-width: 820px) {
@@ -613,20 +627,101 @@ $('modal').addEventListener('click', e => {
   const f = e.target.closest('.tfoto');
   if(f){ verComparacion(f.getAttribute('data-url')); return; }
 });
+$('modal').addEventListener('input', e => { if(e.target.classList.contains('rep-input')) actualizarRepTotal(); });
 
-// Paso 1: elegir a cuál boleta se abona el pago encontrado
+// Paso 1: elegir a cuál boleta se abona, o repartir entre varias
 window.iniciarAbono = function(ctx){
   abonoCtx = ctx;
+  renderAbono('una');
+};
+window.renderAbono = function(modo){
+  const ctx = abonoCtx;
   const boletas = (verifActual && verifActual.boletas) ? verifActual.boletas : [];
-  const lista = boletas.length
-    ? boletas.map(b => `<button class="mboleta" data-num="${esc(b.numero)}">Boleta ${esc(b.numero)} · debe ${pesos(b.saldo)}</button>`).join('')
-    : '<div class="mnone">Este cliente no tiene boletas con saldo pendiente.</div>';
+  const tabs = boletas.length > 1 ? `
+    <div class="ab-tabs">
+      <button class="ab-tab ${modo==='una'?'on':''}" onclick="renderAbono('una')">Una boleta</button>
+      <button class="ab-tab ${modo==='rep'?'on':''}" onclick="renderAbono('rep')">Repartir</button>
+    </div>` : '';
+  let cuerpo;
+  if(modo === 'rep'){
+    cuerpo = `
+      <div class="msub">Reparte ${pesos(ctx.monto)} entre las boletas. La suma debe quedar exacta.</div>
+      <button class="ab-igual" onclick="repartirIgual()">Dividir igual</button>
+      ${boletas.map(b => `<div class="rep-row"><span>Boleta ${esc(b.numero)}<br><small>debe ${pesos(b.saldo)}</small></span><input class="rep-input" data-num="${esc(b.numero)}" type="number" min="0" placeholder="0"></div>`).join('')}
+      <div class="rep-total" id="repTotal"></div>
+      <button class="ab-confirm" id="repConfirm" onclick="confirmarReparto()">Repartir y abonar</button>`;
+  } else {
+    cuerpo = boletas.length
+      ? boletas.map(b => `<button class="mboleta" data-num="${esc(b.numero)}">Boleta ${esc(b.numero)} · debe ${pesos(b.saldo)}</button>`).join('')
+      : '<div class="mnone">Este cliente no tiene boletas con saldo pendiente.</div>';
+  }
   abrirModal(`
     <h3>Abonar el pago</h3>
-    <div class="msub">Pago de ${pesos(ctx.monto)} · ${ctx.ref ? 'Ref ' + esc(ctx.ref) : esc(ctx.plat)}. ¿A cuál boleta lo abonas?</div>
-    ${lista}
+    <div class="msub">Pago de ${pesos(ctx.monto)} · ${ctx.ref ? 'Ref ' + esc(ctx.ref) : esc(ctx.plat)}.</div>
+    ${tabs}
+    ${cuerpo}
     <button class="mcerrar" onclick="cerrarModal()">Cancelar</button>
   `);
+  if(modo === 'rep') actualizarRepTotal();
+};
+
+window.repartirIgual = function(){
+  const inputs = [...document.querySelectorAll('.rep-input')];
+  const n = inputs.length;
+  if(!n) return;
+  const base = Math.floor(abonoCtx.monto / n);
+  const resto = abonoCtx.monto - base * n;
+  inputs.forEach((inp, i) => { inp.value = base + (i === n-1 ? resto : 0); });
+  actualizarRepTotal();
+};
+
+function actualizarRepTotal(){
+  const inputs = [...document.querySelectorAll('.rep-input')];
+  const suma = inputs.reduce((s, inp) => s + (Number(inp.value) || 0), 0);
+  const el = $('repTotal'), btn = $('repConfirm');
+  if(!el) return;
+  el.textContent = `Asignado: ${pesos(suma)} de ${pesos(abonoCtx.monto)}`;
+  const exacto = suma === abonoCtx.monto;
+  el.className = 'rep-total ' + (exacto ? 'ok' : 'bad');
+  if(btn) btn.disabled = !exacto;
+}
+
+window.confirmarReparto = async function(){
+  const inputs = [...document.querySelectorAll('.rep-input')];
+  const boletasMap = {}; (verifActual.boletas || []).forEach(b => boletasMap[b.numero] = b.saldo);
+  const montos = {}; let suma = 0; let algoCero = false;
+  inputs.forEach(inp => { const v = Number(inp.value) || 0; if(v <= 0) algoCero = true; montos[inp.dataset.num] = v; suma += v; });
+  if(algoCero) return alert('Cada boleta debe llevar un monto mayor a 0. Si una no recibe nada, déjala por fuera abonando aparte.');
+  if(suma !== abonoCtx.monto) return alert('La suma debe ser exactamente ' + pesos(abonoCtx.monto) + '.');
+  const nums = Object.keys(montos);
+  for(const num of nums){
+    if(montos[num] > (boletasMap[num] || 0)) return alert(`La boleta ${num} solo debe ${pesos(boletasMap[num]||0)}. No le asignes ${pesos(montos[num])}.`);
+  }
+
+  abrirModal('<div class="mcargando">Repartiendo el pago…</div>');
+  let okCount = 0; const errores = [];
+  for(let i = 0; i < nums.length; i++){
+    const num = nums[i];
+    const payload = {
+      contrasena: localStorage.getItem(PWD_KEY),
+      numeroBoleta: num,
+      valorAbono: montos[num],
+      metodoPago: abonoCtx.plat || 'Transferencia',
+      referencia: abonoCtx.ref || '',
+      idTransferencia: i === 0 ? abonoCtx.id : '',        // solo la 1ª consume la transferencia
+      esPagoInteligente: !!abonoCtx.id,
+      boletasRepartidas: i === 0 ? nums.map(String) : undefined,
+    };
+    let res = await fetch('/api/admin/abono', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }).then(x => x.json()).catch(e => ({ status:'error', mensaje:e.message }));
+    if(res.status === 'ok') okCount++; else errores.push(`Boleta ${num}: ${res.mensaje || 'error'}`);
+  }
+  if(errores.length === 0){
+    abrirModal(`<h3>Pago repartido</h3><div class="mnone">Se repartió ${pesos(abonoCtx.monto)} entre ${nums.length} boletas.</div><button class="mcerrar" onclick="cerrarModal()">Listo</button>`);
+  } else {
+    abrirModal(`<h3>Repartido con avisos</h3><div class="mnone">Se registraron ${okCount} de ${nums.length}.<br>${errores.map(esc).join('<br>')}</div><button class="mcerrar" onclick="cerrarModal()">Cerrar</button>`);
+  }
+  cargarFicha(actual);
+  cargarLista();
 };
 
 // Paso 2: registrar el abono (reusa /api/admin/abono, que valida todo)
