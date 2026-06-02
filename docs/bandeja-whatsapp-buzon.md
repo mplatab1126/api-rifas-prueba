@@ -49,6 +49,9 @@ protegida con contraseña de asesor (las mismas del Admin, `ASESORES_SECRETO`).
 - **Campo correo** (opcional) agregado a clientes/boletas en todo el sistema (venta, editar, reserva web, búsqueda, abonar, ficha).
 - **Permisos por línea**: gerencia ve todas; cada asesor solo las suyas (ver §5).
 - **Permisos por grupo en la ficha (solo lectura)**: igual que el Admin, un asesor solo puede **modificar** boletas de su mismo **grupo** (`grupoDeAsesor`: 'independiente' vs 'regular'). Las boletas de otro grupo se **ven** pero con banner "🔒 Esta boleta no es de tu equipo": sin basurero (no borrar abonos) y no aparecen como opción para abonar. El flag `puede_modificar` lo calculan en el servidor `cliente.js` y `buscar-pago.js`; el servidor (`/api/admin/abono`, `eliminar-abono`, `liberar-boleta`) ya bloqueaba la acción, esto es el bloqueo **preventivo** en pantalla.
+- **Difusiones (broadcasts)** en el menú **Difusiones**, con dos pestañas: **Plantillas** y **Campañas**.
+  - **Plantillas**: se crean de punta a punta contra Meta (`POST /{waba}/message_templates`), se guardan en `plantillas_whatsapp` y se ve su estado en colores (borrador / en revisión / aprobada / rechazada). Botón "Actualizar estados" consulta a Meta (`GET .../message_templates`) y refleja aprobaciones/rechazos. WhatsApp obliga a usar una plantilla aprobada para escribir fuera de la ventana de 24h.
+  - **Campañas**: asistente elegir plantilla aprobada → audiencia (todos los contactos de la línea, o filtrados por una etiqueta) → revisar → enviar. Variables de la plantilla ({{1}}, {{2}}…) se llenan con texto fijo o tokens `{nombre}`/`{telefono}`. El envío es **por lotes** (`enviar-lote`, ~25 por llamada) con cola en `difusion_destinatarios` → resistente y retomable; incluye **conteo previo**, **envío de prueba a un número** y barra de progreso. Cada mensaje enviado queda en el chat del cliente.
 - **Respuestas rápidas (flujos)** en **Herramientas → Respuestas rápidas**. Cada una es un **flujo de varios mensajes** (texto e imágenes por URL) en el orden que el asesor defina. Se **administran** en esa pantalla (crear/editar/reordenar/borrar) y se **usan** en el chat con el botón **⚡** o escribiendo **`/`** (filtra por título); al elegirla se **envían todos los pasos en orden** al cliente. **Compartidas por línea** (como las etiquetas). Las imágenes se mandan por `link` y se guardan con `media_url` para verse en el historial.
 
 ## 3. Arquitectura — Base de datos (Supabase, proyecto `ikvzmojzgpxuhnbymtxm`)
@@ -60,6 +63,9 @@ Tablas nuevas creadas para el buzón:
 - **`etiquetas`**: `(id, linea_id, nombre, icono, color)`. **Por línea.**
 - **`conversacion_etiquetas`**: `(conversacion_id, etiqueta_id)`.
 - También se agregó columna **`correo`** a `clientes` y `boletas` (feature de email).
+- **`plantillas_whatsapp`** (difusiones): `(id, linea_id, nombre, categoria [MARKETING/UTILITY], idioma, encabezado, cuerpo, pie, ejemplo_variables jsonb, meta_template_id, estado, motivo_rechazo)`. Nombre único por línea. El `estado` se sincroniza desde Meta.
+- **`difusiones`** (campañas): `(id, linea_id, nombre, plantilla_id→plantillas_whatsapp, variables jsonb, filtros jsonb {tipo:'todos'|'etiqueta', etiqueta_id}, estado [borrador|preparada|enviando|completada|cancelada], total, enviados, fallidos, creada_por, ...)`.
+- **`difusion_destinatarios`** (cola de envío, escala 50k–100k): `(id bigint, difusion_id→difusiones [cascade], telefono, nombre, estado [pendiente|enviado|fallido], error, wa_message_id, enviado_at)`. Índice `(difusion_id, estado)` y único `(difusion_id, telefono)`.
 
 Índices pensados para **escala (50k–100k chats por línea)**: por `linea_id`, por `ultimo_at`, parcial de "sin respuesta", etc.
 
@@ -76,6 +82,8 @@ Tablas nuevas creadas para el buzón:
 - **`lineas.js`** — lista de líneas que el asesor puede ver (+ flag `esGerencia`).
 - **`conectar-linea.js`** — (gerencia) suscribe la app a la WABA (`POST /{waba}/subscribed_apps`) con el token de env. Marca `suscrita=true`.
 - **`etiquetas.js`** — acciones: `listar` (siembra 4 por defecto), `crear`, `eliminar`, `conversacion`, `toggle`.
+- **`plantillas.js`** — plantillas de WhatsApp. Acciones: `listar`, `crear` (las manda a revisión a Meta), `sincronizar` (trae estados de Meta y actualiza), `eliminar` (borra en Meta + base).
+- **`difusiones.js`** — campañas. Acciones: `listar`, `crear`/`editar`, `eliminar`, `preparar` (calcula audiencia y llena la cola), `estado` (progreso), `enviar-lote` (manda un lote y devuelve avance), `cancelar`, `prueba` (un envío a un número). En `lib/whatsapp.js` se agregaron `construirComponentesPlantilla`, `crearPlantillaMeta`, `listarPlantillasMeta`, `eliminarPlantillaMeta`, `enviarPlantilla`; y `resolverLinea` ahora devuelve también `wabaId`.
 - **`respuestas-rapidas.js`** — respuestas rápidas (tabla `respuestas_rapidas`, columna `pasos` jsonb). Acciones: `listar`, `crear`, `editar`, `eliminar`, y **`enviar`** (manda todos los pasos del flujo en orden y los guarda en el chat). Reusa `enviarTexto`/`enviarImagen` de `lib/whatsapp.js`.
 - **libs**: `lib/whatsapp.js` (`resolverLinea`, `enviarTexto`, `descargarMediaBase64`, `configWhatsapp`), `lib/comprobante.js` (`extraerDatos` — lee comprobante con Claude, solo lectura), `lib/asesores.js` (se agregó `esGerencia`, `lineasDeAsesor`, `puedeVerLinea`; **GERENCIA = ['mateo','alejo plata']**, editable ahí).
 
@@ -118,7 +126,7 @@ Se REUSAN (no se reescriben) endpoints de plata del Admin: `/api/admin/abono` (a
 
 ## 8. Pendientes / próximos pasos
 - **Agente de IA** (auto-responder con Claude; "agrupar mensajes": juntar varios mensajes seguidos del cliente antes de responder — el gran dolor de ChateaPro/Manychat).
-- **Difusiones / broadcasts** (con plantillas aprobadas por Meta).
+- ~~Difusiones / broadcasts (con plantillas aprobadas por Meta)~~ → **HECHO** (menú Difusiones: Plantillas + Campañas). Pendiente de pulir: más filtros de audiencia, programar envíos (cron), pegar lista propia de números, y para audiencias muy grandes (decenas de miles) mover el "preparar" a un proceso en segundo plano.
 - **Enviar fotos/archivos sueltos** desde la barra del chat (hoy el asesor solo escribe texto a mano; las imágenes salientes ya funcionan, pero únicamente vía las **respuestas rápidas** por URL, no subiendo un archivo desde el computador).
 - **Búsqueda de chats en servidor** (hoy el buscador de Chats filtra solo sobre los ~300 cargados; el de Contactos ya es server-side).
 - **Avisos de mensaje nuevo** (sonido/insignia) y marcar qué asesor atiende.
