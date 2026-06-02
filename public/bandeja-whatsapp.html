@@ -52,7 +52,35 @@
     #lista header .u { font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-mute); margin-top: 4px; }
     #salir { background: none; color: var(--ink-mute); border: 1px solid var(--gray-200); border-radius: 100px; padding: 6px 14px; font-family: inherit; font-size: 0.74rem; cursor: pointer; transition: .15s; }
     #salir:hover { color: var(--ink); border-color: var(--gray-300); }
-    #selLinea { display: none; margin: 12px 16px 0; padding: 10px 14px; border: 1px solid var(--gray-200); border-radius: 10px; background: #fff; font-family: inherit; font-size: 0.86rem; font-weight: 500; color: var(--ink); outline: none; cursor: pointer; }
+    /* Menú de navegación (izquierda, fijo) */
+    #nav { width: 212px; min-width: 212px; height: 100%; background: #fff; border-right: 1px solid var(--gray-200); display: flex; flex-direction: column; }
+    .nav-top { padding: 16px 16px 12px; border-bottom: 1px solid var(--gray-100); }
+    .nav-title { font-weight: 700; font-size: 1.2rem; letter-spacing: -0.02em; margin-bottom: 10px; }
+    #selLinea { display: none; width: 100%; padding: 9px 12px; border: 1px solid var(--gray-200); border-radius: 10px; background: var(--cream-50); font-family: inherit; font-size: 0.82rem; font-weight: 500; color: var(--ink); outline: none; cursor: pointer; }
+    .nav-items { flex: 1; padding: 10px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+    .nav-item { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border: none; background: none; border-radius: 10px; font-family: inherit; font-size: 0.9rem; color: var(--ink-mute); cursor: pointer; text-align: left; }
+    .nav-item:hover { background: var(--cream-50); }
+    .nav-item.on { background: var(--cream-100); color: var(--ink); font-weight: 600; }
+    .nav-item.on svg { color: var(--ink); }
+    .nav-foot { padding: 12px 16px; border-top: 1px solid var(--gray-100); }
+    .nav-user { font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 8px; }
+    .nav-foot #salir { width: 100%; background: none; color: var(--ink-mute); border: 1px solid var(--gray-200); border-radius: 100px; padding: 8px; font-family: inherit; font-size: 0.78rem; cursor: pointer; }
+    .nav-foot #salir:hover { color: var(--ink); border-color: var(--gray-300); }
+    /* Módulos */
+    #modChats { flex: 1; display: flex; min-width: 0; }
+    #modContactos { flex: 1; display: none; flex-direction: column; min-width: 0; background: var(--cream-50); overflow: hidden; }
+    .cont-head { background: #fff; border-bottom: 1px solid var(--gray-200); padding: 16px 24px; }
+    .cont-head h2 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+    .cont-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    #buscarContacto { flex: 1; min-width: 200px; padding: 10px 16px; border: 1px solid var(--gray-200); border-radius: 10px; background: var(--cream-50); font-family: inherit; font-size: 0.88rem; color: var(--ink); outline: none; }
+    #buscarContacto:focus { border-color: var(--gray-300); background: #fff; }
+    .cont-actions button { padding: 10px 16px; border: 1px solid var(--gray-200); background: #fff; border-radius: 10px; font-family: inherit; font-size: 0.84rem; color: var(--ink); cursor: pointer; }
+    #btnCrearContacto { background: var(--mint) !important; border-color: var(--mint) !important; font-weight: 600; }
+    #btnCrearContacto:hover { background: var(--mint-light) !important; }
+    #btnImportar:hover { background: var(--cream-50); }
+    #listaContactos { flex: 1; overflow-y: auto; padding: 10px 16px 20px; }
+    #listaContactos .chat-item { background: #fff; border: 1px solid var(--gray-100); border-radius: 12px; margin-bottom: 8px; border-bottom: 1px solid var(--gray-100); }
+    #listaContactos .chat-item:hover { background: var(--cream-50); }
     #buscar { margin: 12px 16px; padding: 10px 16px; border-radius: 10px; border: 1px solid transparent; background: var(--cream-100); font-family: inherit; font-size: 0.86rem; color: var(--ink); outline: none; }
     #buscar:focus { border-color: var(--gray-200); background: #fff; }
     #buscar::placeholder { color: var(--gray-400); }
@@ -217,6 +245,12 @@
 
     @media (max-width: 1100px) { #lista { width: 320px; min-width: 320px; } }
     @media (max-width: 820px) {
+      #nav { width: 58px; min-width: 58px; }
+      .nav-title, .nav-user, .nav-item span { display: none; }
+      .nav-item { justify-content: center; padding: 12px 0; }
+      .nav-top { padding: 12px 8px; }
+      #selLinea { font-size: 0.7rem; padding: 7px 4px; }
+      .nav-foot { padding: 10px 8px; }
       #lista { width: 100%; min-width: 0; }
       #conv { position: fixed; inset: 0; z-index: 10; }
       #app.viendo-chat #lista { display: none; }
@@ -241,30 +275,37 @@
 
   <!-- APP -->
   <div id="app">
-    <div id="lista">
-      <header>
-        <div>
-          <div class="t">Bandeja</div>
-          <div class="u" id="quien"></div>
-        </div>
+    <!-- MENÚ DE NAVEGACIÓN (izquierda, fijo) -->
+    <nav id="nav">
+      <div class="nav-top">
+        <div class="nav-title">Bandeja</div>
+        <select id="selLinea"></select>
+      </div>
+      <div class="nav-items">
+        <button class="nav-item on" data-mod="chats">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          <span>Chats</span>
+        </button>
+        <button class="nav-item" data-mod="contactos">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Contactos</span>
+        </button>
+      </div>
+      <div class="nav-foot">
+        <div class="nav-user" id="quien"></div>
         <button id="salir">Salir</button>
-      </header>
-      <select id="selLinea"></select>
-      <div id="tabs">
-        <button id="tabChats" class="tab on">Chats</button>
-        <button id="tabContactos" class="tab">Contactos</button>
       </div>
-      <input id="buscar" placeholder="Buscar por nombre o número">
-      <button id="filtroSinResp">Sin respuesta <span class="cnt" id="cntSinResp">0</span></button>
-      <div id="accContactos">
-        <button id="btnCrearContacto">Crear contacto</button>
-        <button id="btnImportar">Importar</button>
-        <input id="fileImport" type="file" accept=".csv,text/csv" style="display:none">
-      </div>
-      <div id="chats"></div>
-    </div>
+    </nav>
 
-    <div id="conv">
+    <!-- MÓDULO: CHATS -->
+    <div id="modChats">
+      <div id="lista">
+        <input id="buscar" placeholder="Buscar por nombre o número">
+        <button id="filtroSinResp">Sin respuesta <span class="cnt" id="cntSinResp">0</span></button>
+        <div id="chats"></div>
+      </div>
+
+      <div id="conv">
       <div id="vacio">
         <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#C9C7BE" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
         <div class="txt">Selecciona una conversación para empezar a responder</div>
@@ -288,8 +329,23 @@
         </div>
       </div>
     </div>
-    <div id="panel"></div>
-  </div>
+      <div id="panel"></div>
+    </div><!-- /modChats -->
+
+    <!-- MÓDULO: CONTACTOS -->
+    <div id="modContactos">
+      <div class="cont-head">
+        <h2>Contactos</h2>
+        <div class="cont-actions">
+          <input id="buscarContacto" placeholder="Buscar por nombre o número">
+          <button id="btnCrearContacto">Crear contacto</button>
+          <button id="btnImportar">Importar</button>
+          <input id="fileImport" type="file" accept=".csv,text/csv" style="display:none">
+        </div>
+      </div>
+      <div id="listaContactos"></div>
+    </div><!-- /modContactos -->
+  </div><!-- /app -->
 
   <div id="ctxMenu"></div>
   <div id="modalBg"><div class="modal" id="modal"></div></div>
@@ -367,7 +423,7 @@ $('selLinea').onchange = () => {
   lineaActual = $('selLinea').value;
   localStorage.setItem('wa_linea', lineaActual);
   cerrarChat();
-  cargarLista();
+  if(vista === 'contactos') cargarContactos(true); else cargarLista();
 };
 
 /* ── Lista de conversaciones ── */
@@ -414,10 +470,8 @@ function pintarLista(){
     </div>`).join('') || '<div class="vacio-lista">Aún no hay conversaciones</div>';
 }
 
-$('buscar').oninput = () => {
-  if(vista === 'chats') { pintarLista(); }
-  else { clearTimeout(timerBuscar); timerBuscar = setTimeout(() => { contactosPage = 0; cargarContactos(true); }, 350); }
-};
+$('buscar').oninput = () => pintarLista();
+$('buscarContacto').oninput = () => { clearTimeout(timerBuscar); timerBuscar = setTimeout(() => { contactosPage = 0; cargarContactos(true); }, 350); };
 
 /* ── Abrir un chat ── */
 window.abrir = async function(telefono, nombrePerfil){
@@ -879,26 +933,25 @@ window.confirmarEliminarAbono = async function(id){
 };
 
 /* ── Contactos ── */
-$('tabChats').onclick = () => cambiarVista('chats');
-$('tabContactos').onclick = () => cambiarVista('contactos');
-function cambiarVista(v){
-  vista = v;
-  $('tabChats').classList.toggle('on', v === 'chats');
-  $('tabContactos').classList.toggle('on', v === 'contactos');
-  $('filtroSinResp').style.display = (v === 'chats') ? '' : 'none';
-  $('accContactos').classList.toggle('show', v === 'contactos');
-  $('buscar').value = '';
-  $('buscar').placeholder = (v === 'chats') ? 'Buscar por nombre o número' : 'Buscar contacto';
-  if(v === 'chats'){ pintarLista(); }
-  else { contactosPage = 0; cargarContactos(true); }
+// Menú lateral: cambiar de módulo
+document.querySelectorAll('.nav-item').forEach(btn => {
+  btn.onclick = () => irA(btn.getAttribute('data-mod'));
+});
+function irA(mod){
+  vista = mod;
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('on', b.getAttribute('data-mod') === mod));
+  $('modChats').style.display = (mod === 'chats') ? 'flex' : 'none';
+  $('modContactos').style.display = (mod === 'contactos') ? 'flex' : 'none';
+  if(mod === 'contactos'){ contactosPage = 0; cargarContactos(true); }
+  else { pintarLista(); }
 }
 
 async function cargarContactos(reset){
-  if(reset){ contactosPage = 0; $('chats').innerHTML = '<div class="vacio-lista">Cargando contactos…</div>'; }
-  const q = $('buscar').value.trim();
+  if(reset){ contactosPage = 0; $('listaContactos').innerHTML = '<div class="vacio-lista">Cargando contactos…</div>'; }
+  const q = $('buscarContacto').value.trim();
   const r = await api('contactos', { linea_id: lineaActual, q, page: contactosPage });
   if(vista !== 'contactos') return;
-  if(r.status !== 'ok'){ $('chats').innerHTML = '<div class="vacio-lista">No se pudieron cargar.</div>'; return; }
+  if(r.status !== 'ok'){ $('listaContactos').innerHTML = '<div class="vacio-lista">No se pudieron cargar.</div>'; return; }
   contactosTotal = r.total;
   const rows = (r.contactos || []).map(c => {
     const nom = c.nombre_perfil || ('+' + c.telefono);
@@ -912,18 +965,18 @@ async function cargarContactos(reset){
   const cargados = contactosPage * r.porPagina + (r.contactos ? r.contactos.length : 0);
   const masBtn = (cargados < contactosTotal) ? `<button class="cargarmas" onclick="masContactos()">Cargar más (${contactosTotal - cargados} restantes)</button>` : '';
   if(reset || contactosPage === 0){
-    $('chats').innerHTML = (rows || '<div class="vacio-lista">Sin contactos</div>') + masBtn;
+    $('listaContactos').innerHTML = (rows || '<div class="vacio-lista">Sin contactos</div>') + masBtn;
   } else {
-    const old = $('chats').querySelector('.cargarmas'); if(old) old.remove();
-    $('chats').insertAdjacentHTML('beforeend', rows + masBtn);
+    const old = $('listaContactos').querySelector('.cargarmas'); if(old) old.remove();
+    $('listaContactos').insertAdjacentHTML('beforeend', rows + masBtn);
   }
 }
 window.masContactos = function(){ contactosPage++; cargarContactos(false); };
 
-// Clic en un contacto → abrir su chat
-$('chats').addEventListener('click', e => {
+// Clic en un contacto → ir a Chats y abrir su chat
+$('listaContactos').addEventListener('click', e => {
   const item = e.target.closest('.chat-item[data-tel]');
-  if(item) abrir(item.getAttribute('data-tel'), item.getAttribute('data-nom') || '');
+  if(item){ irA('chats'); abrir(item.getAttribute('data-tel'), item.getAttribute('data-nom') || ''); }
 });
 
 // Crear contacto
