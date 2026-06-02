@@ -40,7 +40,8 @@ export default async function handler(req, res) {
         telefono_cliente,
         documento_tipo,
         documento_numero,
-        clientes (telefono, nombre, apellido, ciudad, documento_tipo, documento_numero)
+        correo,
+        clientes (telefono, nombre, apellido, ciudad, documento_tipo, documento_numero, correo)
       `)
       .like('telefono_cliente', '%' + last10);
 
@@ -56,6 +57,10 @@ export default async function handler(req, res) {
     const primeraBoletaConDoc = boletas.find(b => b.documento_tipo || b.documento_numero);
     const documentoTipo = (primeraBoletaConDoc && primeraBoletaConDoc.documento_tipo) || cliente.documento_tipo || null;
     const documentoNumero = (primeraBoletaConDoc && primeraBoletaConDoc.documento_numero) || cliente.documento_numero || null;
+
+    // Correo: prioridad al guardado en la boleta puntual, si no usar el del cliente
+    const primeraBoletaConCorreo = boletas.find(b => b.correo);
+    const correoCliente = (primeraBoletaConCorreo && primeraBoletaConCorreo.correo) || cliente.correo || null;
 
     const numerosBoletas = boletas.map(b => b.numero);
     const { data: abonos, error: errAbonos } = await supabase
@@ -102,6 +107,7 @@ export default async function handler(req, res) {
       telefono: cliente.telefono || telefono,
       documento_tipo: documentoTipo,
       documento_numero: documentoNumero,
+      correo: correoCliente,
       boletas: boletasFmt
     });
   } catch (error) {

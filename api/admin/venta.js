@@ -14,12 +14,18 @@ export default async function handler(req, res) {
     primerAbono, referenciaAbono, metodoPago, referencia,
     contrasena, esPendiente, idTransferencia, esPagoInteligente,
     esColombia, permitirExceso,
-    documento_tipo, documento_numero
+    documento_tipo, documento_numero, correo
   } = req.body;
 
   // Documento opcional — solo se persiste si viene con valor (no sobrescribe lo ya guardado)
   const docTipoLimpio = documento_tipo ? String(documento_tipo).trim().toUpperCase() : null;
   const docNumeroLimpio = documento_numero ? String(documento_numero).trim() : null;
+
+  // Correo opcional — si lo llenan debe tener formato válido; si va vacío no pasa nada
+  const correoLimpio = correo ? String(correo).trim() : null;
+  if (correoLimpio && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correoLimpio)) {
+    return res.status(400).json({ status: 'error', mensaje: `🚫 El correo "${correoLimpio}" no tiene un formato válido.` });
+  }
 
   const nombreAsesor = validarAsesor(contrasena);
   if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
@@ -122,6 +128,7 @@ export default async function handler(req, res) {
     };
     if (docTipoLimpio) clientePayload.documento_tipo = docTipoLimpio;
     if (docNumeroLimpio) clientePayload.documento_numero = docNumeroLimpio;
+    if (correoLimpio) clientePayload.correo = correoLimpio;
 
     const { error: clienteError } = await supabase
       .from('clientes')
@@ -187,6 +194,7 @@ export default async function handler(req, res) {
     };
     if (docTipoLimpio) updatePayload.documento_tipo = docTipoLimpio;
     if (docNumeroLimpio) updatePayload.documento_numero = docNumeroLimpio;
+    if (correoLimpio) updatePayload.correo = correoLimpio;
 
     const { error: updateError } = await supabase.from('boletas').update(updatePayload).eq('numero', numeroLimpio);
     if (updateError) throw updateError;

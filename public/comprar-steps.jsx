@@ -380,6 +380,19 @@ window.StepDatos = function StepDatos({ datos, setDatos, seleccionadas, rifa, on
             autoComplete="address-level2"
           />
         </div>
+
+        <div>
+          <label className="cb-field-label" htmlFor="cb-correo">Correo electrónico <span style={{ fontWeight: 400, color: "var(--ink-mute)" }}>(opcional)</span></label>
+          <input
+            id="cb-correo"
+            className="cb-input"
+            type="email"
+            placeholder="correo@ejemplo.com"
+            value={datos.correo || ""}
+            onChange={(e) => update("correo", e.target.value)}
+            autoComplete="email"
+          />
+        </div>
       </form>
 
       <div className="cb-sticky-bar">
@@ -610,7 +623,8 @@ Por favor envíenme los datos para realizar el pago. ¡Gracias!`
           telefono: telefonoParaApi,
           esColombia: esColombia,
           documento_tipo: datos.tipoDoc,
-          documento_numero: datos.cedula
+          documento_numero: datos.cedula,
+          correo: datos.correo || ""
         })
       });
       const data = await res.json();

@@ -402,6 +402,7 @@ async function cargarFicha(telefono){
   const datosCliente = (r.status==='ok' && r.encontrado) ? `
       <div class="prow" style="margin-top:16px"><span class="plabel">Ciudad</span><b>${esc(r.ciudad || '—')}</b></div>
       <div class="prow"><span class="plabel">Documento</span><b>${esc(r.documento || '—')}</b></div>
+      <div class="prow"><span class="plabel">Correo</span><b>${esc(r.correo || '—')}</b></div>
       <div class="prow" style="border-bottom:none"><span class="plabel">Saldo total</span><b>${pesos(r.deuda)}</b></div>` : '';
   const cardCliente = `
     <div class="pcard">

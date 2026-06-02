@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  const { telefono, nombre, apellido, ciudad, contrasena, documento_tipo, documento_numero } = req.body;
+  const { telefono, nombre, apellido, ciudad, contrasena, documento_tipo, documento_numero, correo } = req.body;
 
   if (!validarAsesor(contrasena)) return res.status(401).json({ status: 'error', mensaje: 'Contraseña de asesor incorrecta' });
 
@@ -28,6 +28,12 @@ export default async function handler(req, res) {
   const docTipoLimpio = documento_tipo ? String(documento_tipo).trim().toUpperCase() : null;
   const docNumeroLimpio = documento_numero ? String(documento_numero).trim() : null;
 
+  // Correo opcional — si lo llenan debe tener formato válido
+  const correoLimpio = correo ? String(correo).trim() : null;
+  if (correoLimpio && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correoLimpio)) {
+    return res.status(400).json({ status: 'error', mensaje: `🚫 El correo "${correoLimpio}" no tiene un formato válido.` });
+  }
+
   try {
     const payload = {
       telefono: telefono,
@@ -37,6 +43,7 @@ export default async function handler(req, res) {
     };
     if (docTipoLimpio) payload.documento_tipo = docTipoLimpio;
     if (docNumeroLimpio) payload.documento_numero = docNumeroLimpio;
+    if (correoLimpio) payload.correo = correoLimpio;
 
     // Upsert: crea el registro si no existe, o actualiza si ya existe
     const { error } = await supabase

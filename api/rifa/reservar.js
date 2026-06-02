@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ exito: false, error: 'Método no permitido' });
   }
 
-  const { numeros, nombre, apellido, ciudad, telefono, documento_tipo, documento_numero, esColombia } = req.body || {};
+  const { numeros, nombre, apellido, ciudad, telefono, documento_tipo, documento_numero, correo, esColombia } = req.body || {};
 
   if (!Array.isArray(numeros) || numeros.length === 0 || !telefono
       || !String(nombre || '').trim()
@@ -45,6 +45,12 @@ export default async function handler(req, res) {
   // Documento opcional — solo se persiste si viene con valor (no sobrescribe lo ya guardado)
   const docTipoLimpio = documento_tipo ? String(documento_tipo).trim().toUpperCase() : null;
   const docNumeroLimpio = documento_numero ? String(documento_numero).trim() : null;
+
+  // Correo opcional — si lo llenan debe tener formato válido
+  const correoLimpio = correo ? String(correo).trim() : null;
+  if (correoLimpio && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correoLimpio)) {
+    return res.status(400).json({ exito: false, error: 'El correo no tiene un formato válido.' });
+  }
 
   // País del cliente (default: Colombia para compatibilidad con reservas viejas)
   const esColombiaFlag = esColombia !== false;
@@ -126,6 +132,7 @@ export default async function handler(req, res) {
     };
     if (docTipoLimpio) clientePayload.documento_tipo = docTipoLimpio;
     if (docNumeroLimpio) clientePayload.documento_numero = docNumeroLimpio;
+    if (correoLimpio) clientePayload.correo = correoLimpio;
 
     const { error: upsertError } = await supabase.from('clientes').upsert(clientePayload, { onConflict: 'telefono' });
     if (upsertError) throw upsertError;
@@ -154,6 +161,7 @@ export default async function handler(req, res) {
       };
       if (docTipoLimpio) boletaPayload.documento_tipo = docTipoLimpio;
       if (docNumeroLimpio) boletaPayload.documento_numero = docNumeroLimpio;
+      if (correoLimpio) boletaPayload.correo = correoLimpio;
 
       const { error: upErr } = await supabase
         .from('boletas')

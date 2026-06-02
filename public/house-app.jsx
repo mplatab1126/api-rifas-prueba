@@ -20,7 +20,8 @@ function HouseApp() {
     cedula: "",
     pais: window.PAISES[0],
     celular: "",
-    ciudad: ""
+    ciudad: "",
+    correo: ""
   });
   const [metodo, setMetodo] = useStateApp("wompi");
   const [tipoAbono, setTipoAbono] = useStateApp("total");

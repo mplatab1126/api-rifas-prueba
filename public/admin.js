@@ -874,7 +874,8 @@ const $ = id => document.getElementById(id);
                 $('v_apellido').value = res.data.apellido || '';
                 $('v_telefono').value = res.data.telefono || '';
                 $('v_ciudad').value = res.data.ciudad || '';
-                
+                if($('v_correo')) $('v_correo').value = res.data.correo || '';
+
                 numList.innerHTML = '';
                 addDefaultPill(); // Prepara el espacio para escribir la boleta
                 setMode('separar');
@@ -957,6 +958,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
        const idTransVenta = esVentaEfectivo ? '' : $('v_idTransferencia').value;
        const docTipoVenta = ($('v_doc_tipo') && $('v_doc_tipo').value || '').trim();
        const docNumeroVenta = ($('v_doc_numero') && $('v_doc_numero').value || '').trim();
+       const correoVenta = ($('v_correo') && $('v_correo').value || '').trim();
 
        const baseData = {
            nombre: $('v_nombre').value,
@@ -972,7 +974,8 @@ $('btnRegistrarVenta').onclick = async ()=>{
            idTransferencia: idTransVenta,
            esPagoInteligente: !esVentaEfectivo && !!(idTransVenta && idTransVenta.trim() !== ''),
            documento_tipo: docTipoVenta || null,
-           documento_numero: docNumeroVenta || null
+           documento_numero: docNumeroVenta || null,
+           correo: correoVenta || null
        };
   
        let ok=0, fails=0;
@@ -1020,6 +1023,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
            $('v_nombre').value=''; $('v_apellido').value=''; $('v_telefono').value=''; $('v_ciudad').value=''; $('v_primerAbono').value=0; $('v_referenciaAbono').value=''; $('v_metodoPago').value='';
            if($('v_doc_tipo')) $('v_doc_tipo').value='';
            if($('v_doc_numero')) $('v_doc_numero').value='';
+           if($('v_correo')) $('v_correo').value='';
            
            // LIMPIEZA DE BÚSQUEDA INTELIGENTE Y OCR
            if(document.getElementById('t_ref')) document.getElementById('t_ref').value=''; 
@@ -1422,6 +1426,9 @@ $('btnRegistrarVenta').onclick = async ()=>{
        html += '  </select>';
        html += '  <input id="c_doc_numero" type="text" class="main-input" style="padding:8px 12px;" placeholder="Número de documento" value="' + docNumeroActual + '">';
        html += '</div>';
+       html += '<div style="margin-bottom:12px;">';
+       html += '  <input id="c_correo" type="email" class="main-input" style="padding:8px 12px; width:100%;" placeholder="Correo electrónico (opcional)" value="' + (c.correo || '') + '">';
+       html += '</div>';
        html += '<div style="display:flex; gap:10px; flex-wrap:wrap;">';        html += '  <button type="button" onclick="guardarCambiosCliente(\'' + c.telefono + '\', this)" class="cta" style="flex:1; padding:8px 20px; margin:0; font-size:0.85rem;">Guardar cambios</button>';        html += '  <button type="button" onclick="prepararNuevaVentaExistente(\'' + c.telefono + '\')" class="cta" style="flex:1; padding:8px 20px; margin:0; font-size:0.85rem; background:var(--ink);">➕ Agregar Boletas</button>';        html += '</div>';
        html += '</div>';
 
@@ -1766,6 +1773,10 @@ $('btnRegistrarVenta').onclick = async ()=>{
         const ciudad = document.getElementById('c_ciudad').value;
         const docTipo = (document.getElementById('c_doc_tipo') && document.getElementById('c_doc_tipo').value || '').trim();
         const docNumero = (document.getElementById('c_doc_numero') && document.getElementById('c_doc_numero').value || '').trim();
+        const correo = (document.getElementById('c_correo') && document.getElementById('c_correo').value || '').trim();
+        if (correo && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)) {
+            return alert('🚫 El correo "' + correo + '" no tiene un formato válido.');
+        }
 
         // Validación: si pones uno, pon el otro; y el largo debe ser correcto según el tipo.
         if (docTipo && !docNumero) {
@@ -1808,6 +1819,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
                     ciudad: ciudad,
                     documento_tipo: docTipo,
                     documento_numero: docNumero,
+                    correo: correo,
                     contrasena: localStorage.getItem(STORAGE_KEY)
                 })
             });
@@ -2144,6 +2156,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         const nombre = document.getElementById('c_nombre').value;
         const apellido = document.getElementById('c_apellido').value;
         const ciudad = document.getElementById('c_ciudad').value;
+        const correo = (document.getElementById('c_correo') && document.getElementById('c_correo').value) || '';
 
         // 2. Cambiamos a la pestaña de "Ventas"
         activateAppMode();
@@ -2154,6 +2167,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
         document.getElementById('v_apellido').value = apellido;
         document.getElementById('v_telefono').value = telefono;
         document.getElementById('v_ciudad').value = ciudad;
+        if(document.getElementById('v_correo')) document.getElementById('v_correo').value = correo;
 
         // 4. Limpiamos las cajas de boletas por si había algo escrito antes
         const listaNumeros = document.getElementById('numList');

@@ -30,7 +30,7 @@ export default async function handler(req, res) {
 
   const { data: boletas, error } = await supabase
     .from('boletas')
-    .select('numero, saldo_restante, total_abonado, clientes (nombre, apellido, ciudad, documento_numero)')
+    .select('numero, saldo_restante, total_abonado, clientes (nombre, apellido, ciudad, documento_numero, correo)')
     .like('telefono_cliente', '%' + last10);
 
   if (error) {
@@ -68,6 +68,7 @@ export default async function handler(req, res) {
     apellido: cli.apellido || '',
     ciudad: cli.ciudad || '',
     documento: cli.documento_numero || '',
+    correo: cli.correo || '',
     deuda,
     boletas: boletas
       .map(b => ({

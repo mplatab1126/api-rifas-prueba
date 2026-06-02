@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     if (queryLimpio.length === 4) {
       const { data: boleta, error } = await supabase
         .from('boletas')
-        .select(`numero, total_abonado, saldo_restante, telefono_cliente, asesor, clientes (nombre, apellido, ciudad, documento_tipo, documento_numero)`)
+        .select(`numero, total_abonado, saldo_restante, telefono_cliente, asesor, clientes (nombre, apellido, ciudad, documento_tipo, documento_numero, correo)`)
         .eq('numero', queryLimpio)
         .single();
 
@@ -52,7 +52,7 @@ export default async function handler(req, res) {
           data: {
             infoVenta: {
               numero: boleta.numero, nombre: boleta.clientes?.nombre || '', apellido: boleta.clientes?.apellido || '', ciudad: boleta.clientes?.ciudad || '', telefono: boleta.telefono_cliente, totalAbonos: boleta.total_abonado, restante: boleta.saldo_restante, asesor: boleta.asesor,
-              documento_tipo: boleta.clientes?.documento_tipo || '', documento_numero: boleta.clientes?.documento_numero || ''
+              documento_tipo: boleta.clientes?.documento_tipo || '', documento_numero: boleta.clientes?.documento_numero || '', correo: boleta.clientes?.correo || ''
             }
           }
         });
@@ -64,14 +64,14 @@ export default async function handler(req, res) {
 
       const { data: clienteBoletasApto } = await supabase
         .from('boletas')
-        .select(`numero, total_abonado, saldo_restante, telefono_cliente, asesor, clientes (nombre, apellido, ciudad, documento_tipo, documento_numero)`)
+        .select(`numero, total_abonado, saldo_restante, telefono_cliente, asesor, clientes (nombre, apellido, ciudad, documento_tipo, documento_numero, correo)`)
         .like('telefono_cliente', '%' + last10);
 
       if (!clienteBoletasApto || clienteBoletasApto.length === 0) {
         // Buscamos TODAS las filas que coincidan (puede haber duplicados con/sin el 57 adelante).
         const { data: clientesEncontrados } = await supabase
           .from('clientes')
-          .select('nombre, apellido, ciudad, telefono')
+          .select('nombre, apellido, ciudad, telefono, correo')
           .like('telefono', '%' + last10);
 
         if (clientesEncontrados && clientesEncontrados.length > 0) {
@@ -86,7 +86,7 @@ export default async function handler(req, res) {
 
       const lista = clienteBoletasApto.map(b => ({
         numero: b.numero, nombre: b.clientes?.nombre || '', apellido: b.clientes?.apellido || '', ciudad: b.clientes?.ciudad || '', telefono: b.telefono_cliente, totalAbonos: b.total_abonado, restante: b.saldo_restante, asesor: b.asesor,
-        documento_tipo: b.clientes?.documento_tipo || '', documento_numero: b.clientes?.documento_numero || ''
+        documento_tipo: b.clientes?.documento_tipo || '', documento_numero: b.clientes?.documento_numero || '', correo: b.clientes?.correo || ''
       }));
 
       return res.status(200).json({ tipo: 'CLIENTE_ENCONTRADO', lista: lista });
