@@ -57,3 +57,40 @@ export function invalidarCacheAsesores() {
   cacheLista = null;
   cacheTime = 0;
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// Permisos de líneas de WhatsApp (multi-línea).
+//
+// GERENCIA ve TODAS las líneas. Un asesor ve solo las líneas que tenga
+// asignadas en la tabla lineas_asesores. Para cambiar quién es gerencia,
+// edita esta lista (es el único lugar).
+// ──────────────────────────────────────────────────────────────────────────
+const GERENCIA = ['mateo', 'alejo plata'];
+
+export function esGerencia(nombre) {
+  return GERENCIA.includes(String(nombre || '').toLowerCase().trim());
+}
+
+// IDs (phone_number_id) de las líneas que puede ver un asesor.
+// Gerencia → null (significa "todas"). Asesor → array de sus líneas.
+export async function lineasDeAsesor(nombre) {
+  if (esGerencia(nombre)) return null;
+  const { data } = await supabaseAdmin
+    .from('lineas_asesores')
+    .select('phone_number_id')
+    .eq('asesor', nombre);
+  return (data || []).map(r => r.phone_number_id);
+}
+
+// ¿Este asesor puede ver/usar esta línea?
+export async function puedeVerLinea(nombre, lineaId) {
+  if (esGerencia(nombre)) return true;
+  if (!lineaId) return false;
+  const { data } = await supabaseAdmin
+    .from('lineas_asesores')
+    .select('phone_number_id')
+    .eq('asesor', nombre)
+    .eq('phone_number_id', lineaId)
+    .maybeSingle();
+  return !!data;
+}

@@ -10,6 +10,7 @@
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 import { supabase, supabaseAdmin } from '../lib/supabase.js';
+import { puedeVerLinea } from '../lib/asesores.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -18,11 +19,15 @@ export default async function handler(req, res) {
   }
 
   const { contrasena, telefono, linea_id } = req.body || {};
-  if (!validarAsesor(contrasena)) {
+  const nombre = validarAsesor(contrasena);
+  if (!nombre) {
     return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido.' });
   }
   if (!telefono) {
     return res.status(400).json({ status: 'error', mensaje: 'Falta el teléfono.' });
+  }
+  if (linea_id && !(await puedeVerLinea(nombre, linea_id))) {
+    return res.status(403).json({ status: 'error', mensaje: 'No tienes acceso a esta línea.' });
   }
 
   let query = supabase

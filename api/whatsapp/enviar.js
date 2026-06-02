@@ -15,6 +15,7 @@ import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 import { supabaseAdmin } from '../lib/supabase.js';
 import { enviarTexto } from '../lib/whatsapp.js';
+import { puedeVerLinea } from '../lib/asesores.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -29,6 +30,9 @@ export default async function handler(req, res) {
   }
   if (!telefono || !texto) {
     return res.status(400).json({ status: 'error', mensaje: 'Faltan teléfono o texto.' });
+  }
+  if (linea_id && !(await puedeVerLinea(asesor, linea_id))) {
+    return res.status(403).json({ status: 'error', mensaje: 'No tienes acceso a esta línea.' });
   }
 
   // 1) Mandar por la API de Meta, usando el token/número de ESA línea

@@ -13,6 +13,7 @@
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 import { supabase } from '../lib/supabase.js';
+import { esGerencia, puedeVerLinea } from '../lib/asesores.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -21,8 +22,16 @@ export default async function handler(req, res) {
   }
 
   const { contrasena, soloSinRespuesta, linea_id } = req.body || {};
-  if (!validarAsesor(contrasena)) {
+  const nombre = validarAsesor(contrasena);
+  if (!nombre) {
     return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido.' });
+  }
+  // Permiso de línea: un asesor solo ve las suyas
+  if (linea_id && !(await puedeVerLinea(nombre, linea_id))) {
+    return res.status(403).json({ status: 'error', mensaje: 'No tienes acceso a esta línea.' });
+  }
+  if (!linea_id && !esGerencia(nombre)) {
+    return res.status(200).json({ status: 'ok', conversaciones: [], sinRespuestaTotal: 0 });
   }
 
   // Lista de chats DE ESTA LÍNEA (los 300 más recientes; si el filtro está activo, solo los "sin respuesta")
