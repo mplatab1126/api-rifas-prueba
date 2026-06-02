@@ -183,6 +183,7 @@
     .mboleta { display: block; width: 100%; margin-bottom: 9px; padding: 12px 14px; border: 1px solid var(--gray-200); border-radius: 10px; background: #fff; font-family: inherit; font-size: 0.88rem; color: var(--ink); cursor: pointer; text-align: left; }
     .mboleta:hover { background: var(--cream-50); border-color: var(--gray-300); }
     .mexceso { border-color: var(--danger); color: var(--danger); font-weight: 500; }
+    .aviso-reparto { background: #fdecec; color: var(--danger); border-radius: 10px; padding: 13px 15px; font-weight: 600; font-size: 0.98rem; line-height: 1.4; margin-bottom: 10px; }
     .ab-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
     .ab-tab { flex: 1; padding: 8px; border: 1px solid var(--gray-200); background: #fff; border-radius: 8px; font-family: inherit; font-size: 0.82rem; cursor: pointer; color: var(--ink-mute); }
     .ab-tab.on { background: var(--cream-100); color: var(--ink); font-weight: 600; border-color: var(--gray-300); }
@@ -782,12 +783,13 @@ window.eliminarAbono = async function(id, monto){
   abrirModal('<div class="mcargando">Revisando el abono…</div>');
   let info = null;
   try{ info = await api('abono-reparto', { id }); }catch(_){}
-  const msg = (info && info.reparto)
-    ? `Este pago está repartido entre las boletas ${esc(info.boletas.join(', '))}. Al eliminarlo se borrarán los ${info.cantidad} abonos de esas boletas (total ${pesos(info.montoTotal)}) y la transferencia quedará LIBRE.`
-    : `¿Seguro que quieres eliminar el abono de ${pesos(monto)}? El saldo de la boleta se ajustará y, si venía de una transferencia, esta quedará LIBRE de nuevo.`;
+  const cuerpo = (info && info.reparto)
+    ? `<div class="aviso-reparto">Este pago está repartido entre las boletas ${esc(info.boletas.join(', '))}.</div>
+       <div class="msub">Al eliminarlo se borrarán los ${info.cantidad} abonos de esas boletas (total ${pesos(info.montoTotal)}) y la transferencia quedará LIBRE.</div>`
+    : `<div class="msub">¿Seguro que quieres eliminar el abono de ${pesos(monto)}? El saldo de la boleta se ajustará y, si venía de una transferencia, esta quedará LIBRE de nuevo.</div>`;
   abrirModal(`
     <h3>Eliminar abono</h3>
-    <div class="msub">${msg}</div>
+    ${cuerpo}
     <button class="mboleta mexceso" onclick="confirmarEliminarAbono('${esc(id)}')">Sí, eliminar</button>
     <button class="mcerrar" onclick="cerrarModal()">Cancelar</button>
   `);

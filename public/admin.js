@@ -767,8 +767,25 @@ const $ = id => document.getElementById(id);
         }
     }
 
+    // Si el abono es parte de un pago repartido entre varias boletas, avisa que se
+    // borrarán los abonos de TODAS esas boletas. Devuelve el mensaje a confirmar.
+    async function mensajeEliminarAbono(idAbono, msgDefault) {
+        try {
+            const req = await fetch('/api/whatsapp/abono-reparto', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ id: idAbono, contrasena: localStorage.getItem(STORAGE_KEY) })
+            });
+            const r = await req.json();
+            if (r && r.reparto) {
+                const fmt = n => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
+                return `⚠️ PAGO REPARTIDO\n\nEste pago está repartido entre las boletas ${r.boletas.join(', ')}.\n\nAl eliminarlo se borrarán los ${r.cantidad} abonos de esas boletas (total ${fmt(r.montoTotal)}) y la transferencia quedará LIBRE.\n\n¿Eliminar de todas formas?`;
+            }
+        } catch (_) {}
+        return msgDefault;
+    }
+
     async function liberarReferenciaDesdeBusqueda(idAbono) {
-        if(!(await modalConfirm("¿Seguro que deseas liberar esta transferencia? Esto eliminará el abono de la boleta y el cliente perderá este dinero en su deuda."))) return;
+        if(!(await modalConfirm(await mensajeEliminarAbono(idAbono, "¿Seguro que deseas liberar esta transferencia? Esto eliminará el abono de la boleta y el cliente perderá este dinero en su deuda.")))) return;
 
         try {
             // Reutilizamos tu API mágica de eliminar-abono que ya hace todo esto perfecto
@@ -1717,7 +1734,7 @@ $('btnRegistrarVenta').onclick = async ()=>{
     }
 
     async function confirmarEliminarAbono(idAbono, btnElement) {
-        if(!(await modalConfirm("¿Seguro de eliminar este abono? Si usó una transferencia de banco, quedará LIBRE nuevamente."))) return;
+        if(!(await modalConfirm(await mensajeEliminarAbono(idAbono, "¿Seguro de eliminar este abono? Si usó una transferencia de banco, quedará LIBRE nuevamente.")))) return;
         
         btnElement.textContent = '...';
         btnElement.disabled = true;
