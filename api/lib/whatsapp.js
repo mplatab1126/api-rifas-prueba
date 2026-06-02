@@ -40,13 +40,15 @@ export function configWhatsapp() {
 export async function resolverLinea(lineaId) {
   let token = process.env.WHATSAPP_TOKEN;
   const phoneNumberId = lineaId || process.env.WHATSAPP_PHONE_NUMBER_ID;
+  let wabaId = null;
   if (lineaId) {
     try {
-      const { data } = await supabaseAdmin.from('lineas_whatsapp').select('token').eq('phone_number_id', lineaId).maybeSingle();
+      const { data } = await supabaseAdmin.from('lineas_whatsapp').select('token, waba_id').eq('phone_number_id', lineaId).maybeSingle();
       if (data && data.token) token = data.token;
+      if (data && data.waba_id) wabaId = data.waba_id;
     } catch (_) {}
   }
-  return { token, phoneNumberId };
+  return { token, phoneNumberId, wabaId };
 }
 
 /**
@@ -234,6 +236,137 @@ export async function descargarMediaBase64(mediaId, lineaId) {
 
     const buffer = Buffer.from(await bin.arrayBuffer());
     return { ok: true, base64: buffer.toString('base64'), mimeType: info.mime_type || 'image/jpeg' };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// PLANTILLAS (templates) y DIFUSIONES
+//
+// WhatsApp NO permite escribirle "en frío" a un cliente (fuera de la ventana de
+// 24h desde su último mensaje). Para eso obliga a usar una PLANTILLA que Meta
+// haya aprobado antes. Las plantillas se administran a nivel de WABA (la cuenta
+// de WhatsApp Business), no del número; por eso aquí resolvemos el waba_id.
+// ──────────────────────────────────────────────────────────────────────────
+
+/**
+ * Arma los "componentes" de una plantilla en el formato que pide Meta, a partir
+ * de los campos simples que llenó el asesor (encabezado, cuerpo, pie, ejemplos).
+ * Si el cuerpo tiene variables {{1}}, {{2}}..., Meta exige un ejemplo por cada una.
+ */
+export function construirComponentesPlantilla({ encabezado, cuerpo, pie, ejemplo_variables }) {
+  const componentes = [];
+  if (encabezado && String(encabezado).trim()) {
+    componentes.push({ type: 'HEADER', format: 'TEXT', text: String(encabezado).trim() });
+  }
+  const body = { type: 'BODY', text: cuerpo };
+  const numVars = (String(cuerpo).match(/\{\{\s*\d+\s*\}\}/g) || []).length;
+  if (numVars > 0) {
+    const ejemplos = Array.isArray(ejemplo_variables) ? ejemplo_variables.map(v => String(v || 'Ejemplo')) : [];
+    while (ejemplos.length < numVars) ejemplos.push('Ejemplo');
+    body.example = { body_text: [ejemplos.slice(0, numVars)] };
+  }
+  componentes.push(body);
+  if (pie && String(pie).trim()) {
+    componentes.push({ type: 'FOOTER', text: String(pie).trim() });
+  }
+  return componentes;
+}
+
+/**
+ * Crea la plantilla EN META (la manda a revisión). Devuelve {ok, id, estado, error}.
+ */
+export async function crearPlantillaMeta(lineaId, { nombre, categoria, idioma, componentes }) {
+  const { token, wabaId } = await resolverLinea(lineaId);
+  if (!token) return { ok: false, error: 'No hay token configurado para esta línea.' };
+  if (!wabaId) return { ok: false, error: 'Esta línea no tiene su cuenta de WhatsApp Business (WABA) configurada. No se puede crear la plantilla.' };
+  try {
+    const resp = await fetch(`${GRAPH}/${wabaId}/message_templates`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: nombre, language: idioma, category: categoria, components: componentes }),
+    });
+    const data = await resp.json();
+    if (!resp.ok || data.error) return { ok: false, error: data.error?.message || `HTTP ${resp.status}`, raw: data };
+    return { ok: true, id: data.id, estado: data.status, raw: data };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+/**
+ * Trae el estado actual de TODAS las plantillas de la WABA desde Meta
+ * (para saber cuáles aprobó/rechazó). Devuelve {ok, plantillas:[...]}.
+ */
+export async function listarPlantillasMeta(lineaId) {
+  const { token, wabaId } = await resolverLinea(lineaId);
+  if (!token || !wabaId) return { ok: false, error: 'Falta el token o la cuenta de WhatsApp Business (WABA) de esta línea.' };
+  try {
+    const resp = await fetch(`${GRAPH}/${wabaId}/message_templates?fields=name,status,category,language,components,id,rejected_reason&limit=250`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    const data = await resp.json();
+    if (!resp.ok || data.error) return { ok: false, error: data.error?.message || `HTTP ${resp.status}` };
+    return { ok: true, plantillas: data.data || [] };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+/**
+ * Borra una plantilla en Meta (por nombre).
+ */
+export async function eliminarPlantillaMeta(lineaId, nombre) {
+  const { token, wabaId } = await resolverLinea(lineaId);
+  if (!token || !wabaId) return { ok: false, error: 'Falta el token o la cuenta de WhatsApp Business (WABA) de esta línea.' };
+  try {
+    const resp = await fetch(`${GRAPH}/${wabaId}/message_templates?name=${encodeURIComponent(nombre)}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    const data = await resp.json();
+    if (!resp.ok || data.error) return { ok: false, error: data.error?.message || `HTTP ${resp.status}` };
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+/**
+ * Envía un mensaje de PLANTILLA a un número (esto es lo que permite escribir
+ * fuera de la ventana de 24h). `parametros` son los valores de {{1}}, {{2}}...
+ *
+ * @param {string} telefono
+ * @param {{nombre:string, idioma:string, parametros?:string[]}} plantilla
+ * @param {string} lineaId
+ */
+export async function enviarPlantilla(telefono, { nombre, idioma, parametros }, lineaId) {
+  const { token, phoneNumberId } = await resolverLinea(lineaId);
+  if (!token || !phoneNumberId) return { ok: false, error: 'No hay token/número configurado para esta línea.' };
+  const componentes = [];
+  if (Array.isArray(parametros) && parametros.length) {
+    componentes.push({ type: 'body', parameters: parametros.map(p => ({ type: 'text', text: String(p ?? '') })) });
+  }
+  try {
+    const resp = await fetch(`${GRAPH}/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: telefono,
+        type: 'template',
+        template: {
+          name: nombre,
+          language: { code: idioma },
+          ...(componentes.length ? { components: componentes } : {}),
+        },
+      }),
+    });
+    const data = await resp.json();
+    if (!resp.ok || data.error) return { ok: false, error: data.error?.message || `HTTP ${resp.status}`, raw: data };
+    return { ok: true, wa_message_id: data.messages?.[0]?.id, raw: data };
   } catch (err) {
     return { ok: false, error: err.message };
   }

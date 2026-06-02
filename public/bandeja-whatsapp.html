@@ -330,6 +330,66 @@
     .paso-add button { flex: 1; padding: 9px; border: 1px dashed var(--gray-300); background: #fff; border-radius: 9px; font-family: inherit; font-size: 0.84rem; color: var(--ink); cursor: pointer; }
     .paso-add button:hover { background: var(--cream-50); border-color: var(--ink-mute); }
 
+    /* ── Difusiones (campañas + plantillas) ── */
+    #modDifusiones { flex: 1; display: none; flex-direction: column; min-width: 0; background: var(--cream-50); overflow: hidden; }
+    .df-head { padding: 16px 18px 0; display: flex; flex-direction: column; gap: 12px; border-bottom: 1px solid var(--gray-200); }
+    .df-head h2 { font-size: 1.05rem; font-weight: 700; color: var(--ink); margin: 0; }
+    .df-tabs { display: flex; gap: 4px; }
+    .df-tab { padding: 9px 16px; border: none; background: none; border-bottom: 2px solid transparent; font-family: inherit; font-size: 0.86rem; color: var(--ink-mute); cursor: pointer; margin-bottom: -1px; }
+    .df-tab:hover { color: var(--ink); }
+    .df-tab.on { color: var(--ink); font-weight: 600; border-bottom-color: var(--mint-dark); }
+    .df-sub { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    .df-bar { display: flex; gap: 10px; flex-wrap: wrap; padding: 14px 18px; align-items: center; }
+    .df-bar input { flex: 1; min-width: 180px; padding: 10px 16px; border: 1px solid var(--gray-200); border-radius: 10px; background: var(--cream-50); font-family: inherit; font-size: 0.88rem; color: var(--ink); outline: none; }
+    .df-bar input:focus { border-color: var(--gray-300); background: #fff; }
+    .df-primary { padding: 10px 16px; border: 1px solid var(--mint); background: var(--mint); border-radius: 10px; font-family: inherit; font-size: 0.84rem; font-weight: 600; color: var(--ink); cursor: pointer; }
+    .df-primary:hover { background: var(--mint-light); }
+    .df-ghost { padding: 10px 14px; border: 1px solid var(--gray-200); background: #fff; border-radius: 10px; font-family: inherit; font-size: 0.84rem; color: var(--ink); cursor: pointer; }
+    .df-ghost:hover { background: var(--cream-100); }
+    #listaDifusiones, #listaPlantillas { flex: 1; overflow-y: auto; padding: 4px 18px 22px; }
+
+    /* Tarjeta (campaña o plantilla) */
+    .df-card { background: #fff; border: 1px solid var(--gray-200); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
+    .df-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .df-card-tit { font-weight: 600; font-size: 0.94rem; color: var(--ink); word-break: break-word; }
+    .df-card-sub { margin-top: 3px; color: var(--ink-mute); font-size: 0.8rem; }
+    .df-card-body { margin-top: 8px; color: var(--ink-soft); font-size: 0.84rem; line-height: 1.45; white-space: pre-wrap; word-wrap: break-word; background: var(--cream-50); border-radius: 9px; padding: 10px 12px; }
+    .df-acc { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+    .df-acc button { background: #fff; border: 1px solid var(--gray-200); padding: 7px 12px; border-radius: 8px; color: var(--ink); cursor: pointer; font-family: inherit; font-size: 0.8rem; }
+    .df-acc button:hover { background: var(--cream-100); }
+    .df-acc .df-go { background: var(--mint); border-color: var(--mint); font-weight: 600; }
+    .df-acc .df-go:hover { background: var(--mint-light); }
+    .df-acc .df-danger:hover { color: var(--danger); background: #fdecec; border-color: #f3c9c9; }
+
+    /* Pastilla de estado */
+    .estado-pill { display: inline-block; font-size: 0.7rem; font-weight: 600; border-radius: 100px; padding: 3px 10px; white-space: nowrap; }
+    .estado-aprobada { background: #dff7e4; color: #1c7a37; }
+    .estado-pendiente { background: #fdf4d3; color: #8a6d1a; }
+    .estado-rechazada { background: #fdecec; color: var(--danger); }
+    .estado-borrador, .estado-desconocido { background: var(--cream-100); color: var(--ink-mute); }
+    .estado-pausada { background: #eee6f7; color: #6b3ca0; }
+    .estado-preparada { background: #e0eefb; color: #1f5e9e; }
+    .estado-enviando { background: #fdf4d3; color: #8a6d1a; }
+    .estado-completada { background: #dff7e4; color: #1c7a37; }
+    .estado-cancelada { background: #fdecec; color: var(--danger); }
+
+    /* Barra de progreso de una difusión */
+    .df-prog { height: 8px; background: var(--cream-200); border-radius: 100px; overflow: hidden; margin-top: 10px; }
+    .df-prog-fill { height: 100%; background: var(--mint-dark); border-radius: 100px; transition: width .25s; }
+    .df-prog-txt { margin-top: 6px; font-size: 0.78rem; color: var(--ink-mute); }
+
+    /* Formularios de difusión/plantilla (dentro del modal) */
+    .df-field { margin: 12px 0 0; }
+    .df-field label { display: block; font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gray-400); margin-bottom: 5px; }
+    .df-field select, .df-field textarea, .df-field input { width: 100%; padding: 10px 12px; border: 1px solid var(--gray-200); border-radius: 10px; font-family: inherit; font-size: 0.88rem; color: var(--ink); background: #fff; outline: none; }
+    .df-field textarea { resize: vertical; }
+    .df-hint { font-size: 0.78rem; color: var(--ink-mute); line-height: 1.45; margin-top: 5px; }
+    .df-radio { display: flex; gap: 8px; align-items: center; padding: 9px 12px; border: 1px solid var(--gray-200); border-radius: 10px; margin-bottom: 8px; cursor: pointer; font-size: 0.86rem; }
+    .df-radio input { width: auto; }
+    .df-chip { display: inline-block; background: var(--cream-100); border: 1px solid var(--gray-200); border-radius: 8px; padding: 4px 9px; font-size: 0.76rem; color: var(--ink); cursor: pointer; margin: 0 4px 4px 0; }
+    .df-chip:hover { background: var(--mint-light); border-color: var(--mint); }
+    .df-aviso { background: #fdf4d3; border: 1px solid #ecd98a; color: #6b541a; border-radius: 10px; padding: 10px 12px; font-size: 0.82rem; line-height: 1.45; margin: 12px 0; }
+
     @media (max-width: 1100px) { #lista { width: 320px; min-width: 320px; } }
     @media (max-width: 820px) {
       #nav { width: 58px; min-width: 58px; }
@@ -382,6 +442,10 @@
         <button class="nav-item" data-mod="contactos">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           <span>Contactos</span>
+        </button>
+        <button class="nav-item" data-mod="difusiones">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+          <span>Difusiones</span>
         </button>
         <div class="nav-sec">Herramientas</div>
         <button class="nav-item" data-mod="respuestas">
@@ -468,6 +532,36 @@
       </div>
       <div id="listaResp"></div>
     </div><!-- /modRespuestas -->
+
+    <!-- MÓDULO: DIFUSIONES -->
+    <div id="modDifusiones">
+      <div class="df-head">
+        <h2>Difusiones</h2>
+        <div class="df-tabs">
+          <button class="df-tab on" data-tab="campanas">Campañas</button>
+          <button class="df-tab" data-tab="plantillas">Plantillas</button>
+        </div>
+      </div>
+
+      <!-- Sub-vista: Campañas -->
+      <div id="dfCampanas" class="df-sub">
+        <div class="df-bar">
+          <input id="buscarDifusion" placeholder="Buscar campaña">
+          <button id="btnCrearDifusion" class="df-primary">Nueva difusión</button>
+        </div>
+        <div id="listaDifusiones"></div>
+      </div>
+
+      <!-- Sub-vista: Plantillas -->
+      <div id="dfPlantillas" class="df-sub" style="display:none">
+        <div class="df-bar">
+          <input id="buscarPlantilla" placeholder="Buscar plantilla">
+          <button id="btnSyncPlantillas" class="df-ghost" title="Preguntarle a Meta cómo van">Actualizar estados</button>
+          <button id="btnCrearPlantilla" class="df-primary">Nueva plantilla</button>
+        </div>
+        <div id="listaPlantillas"></div>
+      </div>
+    </div><!-- /modDifusiones -->
   </div><!-- /app -->
 
   <div id="ctxMenu"></div>
@@ -485,7 +579,11 @@ let lineas = [];              // líneas de WhatsApp disponibles
 let gerencia = false;         // ¿el usuario es gerencia? (ve botón Conectar línea)
 let lineaActual = null;       // línea seleccionada (phone_number_id)
 let actualLinea = null;       // línea del chat abierto
-let vista = 'chats';          // 'chats' | 'contactos'
+let vista = 'chats';          // 'chats' | 'contactos' | 'difusiones' | 'respuestas'
+let dfTab = 'campanas';       // pestaña activa dentro de Difusiones: 'campanas' | 'plantillas'
+let difusionesCache = [], plantillasCache = [], etiquetasCache = [];
+let dfEnviando = false;       // candado para no disparar dos envíos a la vez
+let dfForm = null;            // borrador del formulario de difusión en edición
 let contactosPage = 0, contactosTotal = 0, timerBuscar = null;
 let comprobanteMid = null;   // media_id del comprobante del cliente que se está verificando
 let verifActual = null;      // resultado de la última verificación (incluye boletas del cliente)
@@ -574,6 +672,7 @@ $('selLinea').onchange = () => {
   cerrarChat();
   if(vista === 'contactos') cargarContactos(true);
   else if(vista === 'respuestas') cargarRespuestas();
+  else if(vista === 'difusiones') cargarModuloDifusiones();
   else cargarLista();
 };
 
@@ -1163,8 +1262,10 @@ function irA(mod){
   $('modChats').style.display = (mod === 'chats') ? 'flex' : 'none';
   $('modContactos').style.display = (mod === 'contactos') ? 'flex' : 'none';
   $('modRespuestas').style.display = (mod === 'respuestas') ? 'flex' : 'none';
+  $('modDifusiones').style.display = (mod === 'difusiones') ? 'flex' : 'none';
   if(mod === 'contactos'){ contactosPage = 0; cargarContactos(true); }
   else if(mod === 'respuestas'){ cargarRespuestas(); }
+  else if(mod === 'difusiones'){ cargarModuloDifusiones(); }
   else { pintarLista(); }
 }
 
@@ -1597,6 +1698,325 @@ $('respPicker').addEventListener('click', e => {
 document.addEventListener('click', e => {
   if(pickerAbierto() && !e.target.closest('#respPicker') && !e.target.closest('#btnResp')) cerrarPicker();
 });
+
+/* ── Difusiones y plantillas ── */
+// Texto y color de cada estado, en palabras simples para Mateo.
+function estadoPill(estado){
+  const txt = { aprobada:'Aprobada', pendiente:'En revisión', rechazada:'Rechazada', borrador:'Borrador',
+    pausada:'Pausada', desconocido:'—', preparada:'Lista para enviar', enviando:'Enviando',
+    completada:'Completada', cancelada:'Cancelada' };
+  return `<span class="estado-pill estado-${esc(estado)}">${esc(txt[estado] || estado)}</span>`;
+}
+function cuentaVariables(cuerpo){ return (String(cuerpo||'').match(/\{\{\s*\d+\s*\}\}/g) || []).length; }
+
+function cargarModuloDifusiones(){ switchDfTab(dfTab); }
+function switchDfTab(tab){
+  if(tab !== 'campanas' && tab !== 'plantillas') tab = 'campanas';
+  dfTab = tab;
+  document.querySelectorAll('.df-tab').forEach(b => b.classList.toggle('on', b.getAttribute('data-tab') === tab));
+  $('dfCampanas').style.display = tab === 'campanas' ? 'flex' : 'none';
+  $('dfPlantillas').style.display = tab === 'plantillas' ? 'flex' : 'none';
+  if(tab === 'campanas') cargarDifusiones(); else cargarPlantillas();
+}
+document.querySelectorAll('.df-tab').forEach(b => b.onclick = () => switchDfTab(b.getAttribute('data-tab')));
+
+/* ── Plantillas ── */
+async function cargarPlantillas(){
+  $('listaPlantillas').innerHTML = '<div class="vacio-lista">Cargando…</div>';
+  const r = await api('plantillas', { accion:'listar', linea_id: lineaActual });
+  if(vista !== 'difusiones') return;
+  plantillasCache = (r && r.plantillas) || [];
+  pintarPlantillas();
+}
+function pintarPlantillas(){
+  const f = $('buscarPlantilla').value.trim().toLowerCase();
+  const items = plantillasCache.filter(p => !f || (p.nombre||'').toLowerCase().includes(f) || (p.cuerpo||'').toLowerCase().includes(f));
+  $('listaPlantillas').innerHTML = items.map(p => `
+    <div class="df-card">
+      <div class="df-card-top">
+        <div>
+          <div class="df-card-tit">${esc(p.nombre)} ${estadoPill(p.estado)}</div>
+          <div class="df-card-sub">${p.categoria === 'UTILITY' ? 'Utilidad' : 'Marketing'} · ${esc(p.idioma)}</div>
+        </div>
+        <div class="df-acc"><button class="df-danger" onclick="borrarPlantilla('${p.id}')">Eliminar</button></div>
+      </div>
+      ${p.encabezado ? `<div class="df-card-sub" style="margin-top:8px"><b>${esc(p.encabezado)}</b></div>` : ''}
+      <div class="df-card-body">${esc(p.cuerpo)}</div>
+      ${p.pie ? `<div class="df-card-sub">${esc(p.pie)}</div>` : ''}
+      ${p.estado === 'rechazada' && p.motivo_rechazo ? `<div class="df-card-sub" style="color:var(--danger);margin-top:6px">Motivo del rechazo: ${esc(p.motivo_rechazo)}</div>` : ''}
+    </div>`).join('') || (plantillasCache.length
+      ? '<div class="vacio-lista">Ninguna coincide con la búsqueda.</div>'
+      : '<div class="vacio-lista">Aún no hay plantillas en esta línea. Crea la primera para poder difundir.</div>');
+}
+$('buscarPlantilla').oninput = () => pintarPlantillas();
+$('btnCrearPlantilla').onclick = () => formPlantilla();
+$('btnSyncPlantillas').onclick = sincronizarPlantillas;
+
+async function sincronizarPlantillas(){
+  const btn = $('btnSyncPlantillas'); btn.textContent = 'Consultando…'; btn.disabled = true;
+  const r = await api('plantillas', { accion:'sincronizar', linea_id: lineaActual });
+  btn.textContent = 'Actualizar estados'; btn.disabled = false;
+  if(r.status === 'ok'){ plantillasCache = r.plantillas || []; pintarPlantillas(); }
+  else alert(r.mensaje || 'No se pudo consultar a Meta.');
+}
+
+window.formPlantilla = function(){
+  abrirModal(`
+    <h3>Nueva plantilla</h3>
+    <div class="msub">El mensaje que Meta debe aprobar antes de poder difundirlo. La aprobación tarda de minutos a 24 horas.</div>
+    <div class="df-field"><label>Nombre interno</label><input id="plNombre" placeholder="ej: cobro saldo pendiente" maxlength="60"></div>
+    <div class="df-field"><label>Tipo</label>
+      <select id="plCat">
+        <option value="MARKETING">Marketing (promociones, recordatorios de pago)</option>
+        <option value="UTILITY">Utilidad (confirmaciones, actualizaciones)</option>
+      </select>
+    </div>
+    <div class="df-field"><label>Idioma</label><input id="plIdioma" value="es" maxlength="12"></div>
+    <div class="df-field"><label>Encabezado (opcional)</label><input id="plEnc" placeholder="Título corto (opcional)" maxlength="60"></div>
+    <div class="df-field"><label>Mensaje</label>
+      <textarea id="plCuerpo" rows="5" placeholder="Hola {{1}}, te recordamos que tu boleta {{2}} tiene saldo pendiente."></textarea>
+      <div class="df-hint">Usa <b>{{1}}</b>, <b>{{2}}</b>… donde van datos que cambian por cliente (nombre, número de boleta).</div>
+    </div>
+    <div class="df-field"><label>Pie (opcional)</label><input id="plPie" placeholder="ej: Los Plata S.A.S." maxlength="60"></div>
+    <div class="df-field"><label>Ejemplos de las variables</label>
+      <textarea id="plEjem" rows="2" placeholder="Un ejemplo por línea: primero para {{1}}, luego {{2}}…"></textarea>
+      <div class="df-hint">Meta los pide para revisar. Si usaste {{1}} y {{2}}, escribe 2 líneas (ej: "Mateo" y luego "1234").</div>
+    </div>
+    <button class="ab-confirm" style="margin-top:14px" onclick="crearPlantilla()">Enviar a revisión de Meta</button>
+    <button class="mcerrar" onclick="cerrarModal()">Cancelar</button>
+  `);
+};
+window.crearPlantilla = async function(){
+  // Leer TODO antes de cambiar el modal (si no, los campos desaparecen).
+  const nombre = $('plNombre').value.trim();
+  const cuerpo = $('plCuerpo').value.trim();
+  const categoria = $('plCat').value;
+  const idioma = $('plIdioma').value.trim() || 'es';
+  const encabezado = $('plEnc').value.trim();
+  const pie = $('plPie').value.trim();
+  const ejemplos = $('plEjem').value.split('\n').map(s => s.trim()).filter(Boolean);
+  if(!nombre) return alert('Ponle un nombre a la plantilla.');
+  if(!cuerpo) return alert('Escribe el mensaje.');
+  const numVars = cuentaVariables(cuerpo);
+  if(numVars > 0 && ejemplos.length < numVars && !confirm(`Tu mensaje tiene ${numVars} variable(s) pero diste ${ejemplos.length} ejemplo(s). Meta podría rechazarla. ¿Enviar igual?`)) return;
+  abrirModal('<div class="mcargando">Enviando a Meta…</div>');
+  const r = await api('plantillas', { accion:'crear', linea_id: lineaActual, nombre, categoria, idioma, encabezado, cuerpo, pie, ejemplo_variables: ejemplos });
+  if(r.status === 'ok'){ cerrarModal(); await cargarPlantillas(); }
+  else abrirModal(`<h3>No se pudo</h3><div class="mnone">${esc(r.mensaje||'Error')}</div><button class="mcerrar" onclick="cerrarModal()">Cerrar</button>`);
+};
+window.borrarPlantilla = async function(id){
+  const p = plantillasCache.find(x => x.id === id);
+  if(!confirm(`¿Eliminar la plantilla "${p ? p.nombre : ''}"? Se borra también en Meta y no se puede deshacer.`)) return;
+  const r = await api('plantillas', { accion:'eliminar', linea_id: lineaActual, id });
+  if(r.status === 'ok') cargarPlantillas(); else alert(r.mensaje || 'No se pudo eliminar.');
+};
+
+/* ── Campañas (difusiones) ── */
+function descAudiencia(filtros){
+  if(filtros && filtros.tipo === 'etiqueta'){
+    const e = etiquetasCache.find(x => x.id === filtros.etiqueta_id);
+    return 'Etiqueta: ' + (e ? ((e.icono ? e.icono + ' ' : '') + e.nombre) : '—');
+  }
+  return 'Todos los contactos';
+}
+async function cargarDifusiones(){
+  $('listaDifusiones').innerHTML = '<div class="vacio-lista">Cargando…</div>';
+  const [r, re] = await Promise.all([
+    api('difusiones', { accion:'listar', linea_id: lineaActual }),
+    api('etiquetas', { accion:'listar', linea_id: lineaActual }),
+  ]);
+  if(vista !== 'difusiones') return;
+  difusionesCache = (r && r.difusiones) || [];
+  etiquetasCache = (re && re.etiquetas) || [];
+  pintarDifusiones();
+}
+function pintarDifusiones(){
+  const f = $('buscarDifusion').value.trim().toLowerCase();
+  const items = difusionesCache.filter(d => !f || (d.nombre||'').toLowerCase().includes(f));
+  $('listaDifusiones').innerHTML = items.map(d => {
+    const total = d.total || 0, env = d.enviados || 0, fail = d.fallidos || 0;
+    const hechos = env + fail, pct = total ? Math.round(hechos / total * 100) : 0;
+    const mostrarProg = ['enviando','completada'].includes(d.estado) || hechos > 0;
+    let acc;
+    if(d.estado === 'borrador' || d.estado === 'preparada'){
+      acc = `<button class="df-go" onclick="abrirEnvio('${d.id}')">Revisar y enviar</button>
+             <button onclick="editarDifusion('${d.id}')">Editar</button>
+             <button class="df-danger" onclick="borrarDifusion('${d.id}')">Eliminar</button>`;
+    } else if(d.estado === 'enviando'){
+      acc = `<button class="df-go" onclick="abrirEnvio('${d.id}')">Continuar envío</button>
+             <button class="df-danger" onclick="cancelarDifusion('${d.id}')">Cancelar</button>`;
+    } else {
+      acc = `<button class="df-danger" onclick="borrarDifusion('${d.id}')">Eliminar</button>`;
+    }
+    const plTxt = d.plantilla_nombre
+      ? esc(d.plantilla_nombre) + (d.plantilla_estado !== 'aprobada' ? ' (no aprobada)' : '')
+      : '— sin plantilla';
+    return `<div class="df-card">
+      <div class="df-card-top">
+        <div>
+          <div class="df-card-tit">${esc(d.nombre)} ${estadoPill(d.estado)}</div>
+          <div class="df-card-sub">Plantilla: ${plTxt} · ${esc(descAudiencia(d.filtros))}</div>
+        </div>
+        <div class="df-acc">${acc}</div>
+      </div>
+      ${mostrarProg ? `<div class="df-prog"><div class="df-prog-fill" style="width:${pct}%"></div></div>
+        <div class="df-prog-txt">${env} enviados${fail ? ` · ${fail} fallidos` : ''} de ${total}</div>` : ''}
+    </div>`;
+  }).join('') || (difusionesCache.length
+    ? '<div class="vacio-lista">Ninguna coincide con la búsqueda.</div>'
+    : '<div class="vacio-lista">Aún no hay campañas en esta línea. Crea la primera.</div>');
+}
+$('buscarDifusion').oninput = () => pintarDifusiones();
+$('btnCrearDifusion').onclick = () => formDifusion(null);
+
+window.formDifusion = async function(d){
+  abrirModal('<div class="mcargando">Cargando…</div>');
+  const [rp, re] = await Promise.all([
+    api('plantillas', { accion:'listar', linea_id: lineaActual }),
+    api('etiquetas', { accion:'listar', linea_id: lineaActual }),
+  ]);
+  plantillasCache = (rp && rp.plantillas) || plantillasCache;
+  etiquetasCache = (re && re.etiquetas) || [];
+  dfForm = d ? {
+    id: d.id, nombre: d.nombre || '', plantilla_id: d.plantilla_id || '',
+    variables: Array.isArray(d.variables) ? d.variables.slice() : [],
+    filtros: d.filtros || { tipo:'todos' },
+  } : { id:null, nombre:'', plantilla_id:'', variables:[], filtros:{ tipo:'todos' } };
+  pintarFormDifusion();
+};
+function capturarFormDifusion(){
+  if($('dfNombre')) dfForm.nombre = $('dfNombre').value;
+  if($('dfPlantilla')) dfForm.plantilla_id = $('dfPlantilla').value;
+  const sel = document.querySelector('input[name="dfAud"]:checked');
+  if(sel){ dfForm.filtros = { tipo: sel.value }; if(sel.value === 'etiqueta' && $('dfEtiqueta')) dfForm.filtros.etiqueta_id = $('dfEtiqueta').value; }
+  document.querySelectorAll('.df-var').forEach(el => { dfForm.variables[+el.getAttribute('data-i')] = el.value; });
+}
+function pintarFormDifusion(){
+  const pl = plantillasCache.find(p => p.id === dfForm.plantilla_id);
+  const numVars = pl ? cuentaVariables(pl.cuerpo) : 0;
+  const optsPl = plantillasCache.map(p =>
+    `<option value="${p.id}" ${p.id === dfForm.plantilla_id ? 'selected' : ''}>${esc(p.nombre)} — ${p.estado === 'aprobada' ? 'aprobada' : p.estado}</option>`).join('');
+  const varsHtml = numVars ? Array.from({ length: numVars }).map((_, i) => `
+    <div class="df-field"><label>Variable {{${i+1}}}</label>
+      <input class="df-var" data-i="${i}" value="${esc(dfForm.variables[i] || '')}" placeholder="Texto fijo o un dato del cliente">
+      <div style="margin-top:5px">
+        <span class="df-chip" onclick="setVar(${i},'{nombre}')">Nombre del cliente</span>
+        <span class="df-chip" onclick="setVar(${i},'{telefono}')">Teléfono</span>
+      </div>
+    </div>`).join('') : '';
+  const esEtq = dfForm.filtros.tipo === 'etiqueta';
+  const etOpts = etiquetasCache.map(e =>
+    `<option value="${e.id}" ${dfForm.filtros.etiqueta_id === e.id ? 'selected' : ''}>${e.icono ? e.icono + ' ' : ''}${esc(e.nombre)}</option>`).join('');
+  const plAviso = (pl && pl.estado !== 'aprobada')
+    ? `<div class="df-aviso">Esta plantilla todavía no está aprobada por Meta. Puedes guardar la difusión, pero no podrás enviarla hasta que la aprueben.</div>` : '';
+  abrirModal(`
+    <h3>${dfForm.id ? 'Editar difusión' : 'Nueva difusión'}</h3>
+    <div class="msub">Elige el mensaje (plantilla) y a quién enviarlo. No se envía nada hasta el paso final.</div>
+    <div class="df-field"><label>Nombre de la campaña</label><input id="dfNombre" value="${esc(dfForm.nombre)}" placeholder="ej: Cobro saldos mayo" maxlength="100"></div>
+    <div class="df-field"><label>Plantilla</label>
+      <select id="dfPlantilla" onchange="onCambioPlantilla()">
+        <option value="">— Elige una plantilla —</option>${optsPl}
+      </select>
+      ${plantillasCache.length ? '' : '<div class="df-hint">No tienes plantillas. Créalas en la pestaña Plantillas.</div>'}
+    </div>
+    ${plAviso}
+    ${varsHtml}
+    <div class="df-field"><label>¿A quién?</label>
+      <label class="df-radio"><input type="radio" name="dfAud" value="todos" ${!esEtq ? 'checked' : ''} onchange="onCambioAud()"> Todos los contactos de la línea</label>
+      <label class="df-radio"><input type="radio" name="dfAud" value="etiqueta" ${esEtq ? 'checked' : ''} onchange="onCambioAud()"> Solo los de una etiqueta</label>
+      <select id="dfEtiqueta" style="${esEtq ? '' : 'display:none'}">${etOpts || '<option value="">(sin etiquetas)</option>'}</select>
+    </div>
+    <button class="ab-confirm" style="margin-top:14px" onclick="guardarDifusion()">${dfForm.id ? 'Guardar' : 'Crear difusión'}</button>
+    <button class="mcerrar" onclick="cerrarModal()">Cancelar</button>
+  `);
+}
+window.onCambioPlantilla = function(){ capturarFormDifusion(); pintarFormDifusion(); };
+window.onCambioAud = function(){ capturarFormDifusion(); pintarFormDifusion(); };
+window.setVar = function(i, val){ capturarFormDifusion(); dfForm.variables[i] = val; pintarFormDifusion(); };
+
+window.guardarDifusion = async function(){
+  capturarFormDifusion();
+  if(!dfForm.nombre.trim()) return alert('Ponle un nombre a la campaña.');
+  abrirModal('<div class="mcargando">Guardando…</div>');
+  const r = await api('difusiones', {
+    accion: dfForm.id ? 'editar' : 'crear', linea_id: lineaActual, id: dfForm.id,
+    nombre: dfForm.nombre.trim(), plantilla_id: dfForm.plantilla_id || null,
+    variables: dfForm.variables, filtros: dfForm.filtros,
+  });
+  if(r.status === 'ok'){ cerrarModal(); cargarDifusiones(); }
+  else abrirModal(`<h3>No se pudo</h3><div class="mnone">${esc(r.mensaje||'Error')}</div><button class="mcerrar" onclick="cerrarModal()">Cerrar</button>`);
+};
+window.editarDifusion = function(id){ const d = difusionesCache.find(x => x.id === id); if(d) formDifusion(d); };
+window.borrarDifusion = async function(id){
+  const d = difusionesCache.find(x => x.id === id);
+  if(!confirm(`¿Eliminar la campaña "${d ? d.nombre : ''}"? No se puede deshacer.`)) return;
+  await api('difusiones', { accion:'eliminar', linea_id: lineaActual, id });
+  cargarDifusiones();
+};
+window.cancelarDifusion = async function(id){
+  if(!confirm('¿Cancelar esta difusión? Se detiene el envío de los que faltan.')) return;
+  await api('difusiones', { accion:'cancelar', linea_id: lineaActual, id });
+  cargarDifusiones();
+};
+
+// Paso final: preparar la lista, mostrar conteo, permitir prueba y confirmar el envío.
+window.abrirEnvio = async function(id){
+  const d = difusionesCache.find(x => x.id === id);
+  if(!d) return;
+  if(!d.plantilla_id){ alert('Esta difusión no tiene plantilla. Edítala primero.'); return; }
+  if(d.plantilla_estado !== 'aprobada'){ alert('La plantilla de esta difusión aún no está aprobada por Meta. No se puede enviar todavía.'); return; }
+  abrirModal('<div class="mcargando">Preparando la lista de destinatarios…</div>');
+  const r = await api('difusiones', { accion:'preparar', linea_id: lineaActual, id });
+  if(r.status !== 'ok'){ abrirModal(`<h3>No se pudo preparar</h3><div class="mnone">${esc(r.mensaje||'Error')}</div><button class="mcerrar" onclick="cerrarModal()">Cerrar</button>`); return; }
+  pintarEnvio(d, r.total || 0);
+};
+function pintarEnvio(d, total){
+  abrirModal(`
+    <h3>Enviar "${esc(d.nombre)}"</h3>
+    <div class="msub">Plantilla: <b>${esc(d.plantilla_nombre || '')}</b> · ${esc(descAudiencia(d.filtros))}</div>
+    <div class="df-aviso">Esto le enviará el mensaje a <b>${total}</b> contacto(s) por WhatsApp. Esta acción no se puede deshacer.</div>
+    <div class="df-field"><label>Antes de enviar a todos, prueba con un número tuyo</label>
+      <input id="dfPrueba" placeholder="Número con indicativo, ej: 573001234567">
+      <button class="df-ghost" style="margin-top:8px" onclick="enviarPrueba('${d.id}')">Enviar prueba</button>
+      <div class="df-hint" id="dfPruebaMsg"></div>
+    </div>
+    <div id="dfProgreso" style="display:none;margin-top:12px">
+      <div class="df-prog"><div class="df-prog-fill" id="dfFill" style="width:0%"></div></div>
+      <div class="df-prog-txt" id="dfProgTxt"></div>
+    </div>
+    <button class="ab-confirm" id="dfConfirm" style="margin-top:14px" onclick="confirmarEnvio('${d.id}', ${total})">Enviar a ${total} contacto(s)</button>
+    <button class="mcerrar" onclick="cerrarModal()">Cerrar</button>
+  `);
+  if(total === 0){ const b = $('dfConfirm'); b.disabled = true; b.textContent = 'No hay destinatarios'; }
+}
+window.enviarPrueba = async function(id){
+  const d = difusionesCache.find(x => x.id === id);
+  const tel = $('dfPrueba').value.replace(/\D/g, '');
+  if(!tel){ $('dfPruebaMsg').textContent = 'Escribe un número.'; return; }
+  $('dfPruebaMsg').textContent = 'Enviando prueba…';
+  const r = await api('difusiones', { accion:'prueba', linea_id: lineaActual, plantilla_id: d.plantilla_id, variables: d.variables, telefono: tel });
+  $('dfPruebaMsg').textContent = r.status === 'ok' ? '✅ Prueba enviada. Revisa ese WhatsApp.' : '❌ ' + (r.mensaje || 'No se pudo');
+};
+window.confirmarEnvio = async function(id, total){
+  if(dfEnviando) return;
+  if(!confirm(`¿Seguro? Se enviará a ${total} contacto(s). No se puede deshacer.`)) return;
+  dfEnviando = true;
+  $('dfConfirm').disabled = true;
+  $('dfProgreso').style.display = 'block';
+  let seguir = true;
+  while(seguir){
+    const r = await api('difusiones', { accion:'enviar-lote', linea_id: lineaActual, id, limite: 25 });
+    if(r.status !== 'ok'){ $('dfProgTxt').textContent = 'Error: ' + (r.mensaje || ''); break; }
+    const hechos = (r.enviados || 0) + (r.fallidos || 0);
+    const pct = total ? Math.round(hechos / total * 100) : 100;
+    $('dfFill').style.width = pct + '%';
+    $('dfProgTxt').textContent = `${r.enviados || 0} enviados${r.fallidos ? ` · ${r.fallidos} fallidos` : ''} · faltan ${r.restantes || 0}`;
+    if(r.completada || (r.restantes || 0) === 0) seguir = false;
+  }
+  dfEnviando = false;
+  if($('dfProgTxt')) $('dfProgTxt').textContent += ' · ✅ Listo';
+  cargarDifusiones();
+};
 
 /* ── Inicio ── */
 if(localStorage.getItem(PWD_KEY) && localStorage.getItem(NAME_KEY)){
