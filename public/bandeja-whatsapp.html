@@ -778,10 +778,16 @@ $('panel').addEventListener('click', e => {
   const del = e.target.closest('.pp-del');
   if(del) eliminarAbono(del.getAttribute('data-id'), Number(del.getAttribute('data-monto')));
 });
-window.eliminarAbono = function(id, monto){
+window.eliminarAbono = async function(id, monto){
+  abrirModal('<div class="mcargando">Revisando el abono…</div>');
+  let info = null;
+  try{ info = await api('abono-reparto', { id }); }catch(_){}
+  const msg = (info && info.reparto)
+    ? `Este pago está repartido entre las boletas ${esc(info.boletas.join(', '))}. Al eliminarlo se borrarán los ${info.cantidad} abonos de esas boletas (total ${pesos(info.montoTotal)}) y la transferencia quedará LIBRE.`
+    : `¿Seguro que quieres eliminar el abono de ${pesos(monto)}? El saldo de la boleta se ajustará y, si venía de una transferencia, esta quedará LIBRE de nuevo.`;
   abrirModal(`
     <h3>Eliminar abono</h3>
-    <div class="msub">¿Seguro que quieres eliminar el abono de ${pesos(monto)}? El saldo de la boleta se ajustará y, si venía de una transferencia, esta quedará LIBRE de nuevo.</div>
+    <div class="msub">${msg}</div>
     <button class="mboleta mexceso" onclick="confirmarEliminarAbono('${esc(id)}')">Sí, eliminar</button>
     <button class="mcerrar" onclick="cerrarModal()">Cancelar</button>
   `);
