@@ -72,7 +72,7 @@
     .nav-foot #salir { display: flex; align-items: center; justify-content: center; gap: 8px; }
     /* Menú contraído: solo íconos */
     #nav.colapsado { width: 60px; min-width: 60px; }
-    #nav.colapsado .nav-title, #nav.colapsado .nav-user, #nav.colapsado #selLinea, #nav.colapsado #btnConectar, #nav.colapsado .nav-item span, #nav.colapsado #salir span { display: none; }
+    #nav.colapsado .nav-title, #nav.colapsado .nav-user, #nav.colapsado #selLinea, #nav.colapsado #btnConectar, #nav.colapsado .nav-item span, #nav.colapsado #salir span { display: none !important; }
     #btnConectar { display: none; width: 100%; margin-top: 8px; padding: 8px; border: 1px solid var(--gray-200); background: #fff; border-radius: 10px; font-family: inherit; font-size: 0.78rem; color: var(--ink); cursor: pointer; }
     #btnConectar:hover { background: var(--cream-50); border-color: var(--gray-300); }
     #nav.colapsado .nav-item { justify-content: center; padding: 12px 0; }
@@ -423,11 +423,17 @@ $('navToggle').onclick = () => {
   localStorage.setItem('nav_colapsado', col ? '1' : '0');
 };
 
+function actualizarBtnConectar(){
+  const ln = lineas.find(l => l.phone_number_id === lineaActual);
+  $('btnConectar').style.display = (gerencia && ln && !ln.suscrita) ? 'block' : 'none';
+}
+
 $('btnConectar').onclick = async () => {
   if(!lineaActual) return;
-  const ln = (lineas.find(l => l.phone_number_id === lineaActual) || {}).nombre || 'esta línea';
-  abrirModal(`<div class="mcargando">Conectando "${esc(ln)}" a Meta…</div>`);
+  const ln = lineas.find(l => l.phone_number_id === lineaActual);
+  abrirModal(`<div class="mcargando">Conectando "${esc((ln && ln.nombre) || 'esta línea')}" a Meta…</div>`);
   const r = await api('conectar-linea', { linea_id: lineaActual });
+  if(r.status === 'ok' && ln){ ln.suscrita = true; actualizarBtnConectar(); }
   abrirModal(`<h3>${r.status === 'ok' ? 'Línea conectada' : 'No se pudo conectar'}</h3><div class="mnone">${esc(r.mensaje || 'Error')}</div><button class="mcerrar" onclick="cerrarModal()">Cerrar</button>`);
 };
 
@@ -445,7 +451,6 @@ async function cargarLineas(){
   const r = await api('lineas', {});
   lineas = (r && r.lineas) ? r.lineas : [];
   gerencia = !!(r && r.esGerencia);
-  $('btnConectar').style.display = (gerencia && lineas.length) ? 'block' : 'none';
   const sel = $('selLinea');
   if(lineas.length){
     const guardada = localStorage.getItem('wa_linea');
@@ -457,10 +462,12 @@ async function cargarLineas(){
     lineaActual = null;
     sel.style.display = 'none';
   }
+  actualizarBtnConectar();
 }
 $('selLinea').onchange = () => {
   lineaActual = $('selLinea').value;
   localStorage.setItem('wa_linea', lineaActual);
+  actualizarBtnConectar();
   cerrarChat();
   if(vista === 'contactos') cargarContactos(true); else cargarLista();
 };

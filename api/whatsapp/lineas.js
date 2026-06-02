@@ -24,7 +24,7 @@ export default async function handler(req, res) {
 
   let query = supabase
     .from('lineas_whatsapp')
-    .select('phone_number_id, nombre')
+    .select('phone_number_id, nombre, suscrita')
     .eq('activa', true)
     .order('created_at', { ascending: true });
 

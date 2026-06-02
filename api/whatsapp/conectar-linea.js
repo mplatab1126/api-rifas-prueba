@@ -45,6 +45,7 @@ export default async function handler(req, res) {
     if (!resp.ok || data.error) {
       return res.status(200).json({ status: 'error', mensaje: data.error?.message || `HTTP ${resp.status}` });
     }
+    await supabase.from('lineas_whatsapp').update({ suscrita: true }).eq('phone_number_id', linea_id);
     return res.status(200).json({ status: 'ok', mensaje: `Línea "${linea.nombre}" conectada. Sus mensajes ya llegarán al sistema.` });
   } catch (err) {
     return res.status(200).json({ status: 'error', mensaje: err.message });
