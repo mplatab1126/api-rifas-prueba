@@ -37,7 +37,7 @@ export default async function handler(req, res) {
   // Lista de chats DE ESTA LÍNEA (los 300 más recientes; si el filtro está activo, solo los "sin respuesta")
   let query = supabase
     .from('conversaciones_whatsapp')
-    .select('id, telefono, nombre_perfil, ultimo_mensaje, ultimo_at, no_leidos, estado, asesor_asignado, ventana_vence_at, ultimo_entrante, linea_id')
+    .select('id, telefono, nombre_perfil, ultimo_mensaje, ultimo_at, no_leidos, estado, asesor_asignado, ventana_vence_at, ultimo_entrante, linea_id, agente_activo')
     .order('ultimo_at', { ascending: false, nullsFirst: false })
     .not('ultimo_at', 'is', null)   // los contactos sin conversación van al apartado Contactos
     .limit(300);

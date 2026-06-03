@@ -40,6 +40,9 @@
     "api/whatsapp/agente.js": {
       "maxDuration": 30
     },
+    "api/whatsapp/agente-responder.js": {
+      "maxDuration": 60
+    },
     "api/admin/llamadas-automaticas.js": {
       "maxDuration": 60
     },
