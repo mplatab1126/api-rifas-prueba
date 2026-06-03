@@ -136,7 +136,7 @@
     #convHead #btnAgente.off { background: #fdecec; border-color: #e7b7b7; color: #b3402f; }
     .b.nota { align-self: center; max-width: 92%; background: #fff7e6; border: 1px dashed #e6cf8f; color: #7a5d14; font-size: 0.76rem; font-style: italic; border-radius: 10px; padding: 6px 12px 4px; }
     .b.nota .h { color: #b89b50; text-align: center; }
-    .b .cita { border-left: 3px solid var(--mint-dark); background: rgba(0,0,0,0.05); border-radius: 6px; padding: 4px 8px; margin-bottom: 5px; font-size: 0.78rem; color: var(--ink-mute); line-height: 1.35; max-height: 3.4em; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .b .cita { border-left: 3px solid var(--mint-dark); background: rgba(0,0,0,0.05); border-radius: 6px; padding: 4px 8px; margin-bottom: 5px; font-size: 0.78rem; color: var(--ink-mute); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
     .b.sal .cita { background: rgba(255,255,255,0.14); border-left-color: rgba(255,255,255,0.55); color: rgba(255,255,255,0.8); }
     #texto:disabled { background: var(--cream-100); color: var(--ink-mute); cursor: not-allowed; }
     #barra #enviar:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -1131,7 +1131,7 @@ async function cargarMensajes(scroll){
     const claseMedio = (m.tipo && m.tipo !== 'text' && !m.media_id && !m.media_url) ? ' medio' : '';
     const estado = m.direccion === 'saliente' ? estadoIcono(m.estado_envio) : '';
     const cit = m.responde_a ? porWaId[m.responde_a] : null;
-    const cita = cit ? `<div class="cita">${esc((cit.texto || ('['+(cit.tipo||'mensaje')+']')).slice(0,140))}</div>` : '';
+    const cita = cit ? `<div class="cita">${esc((cit.texto || ('['+(cit.tipo||'mensaje')+']')).replace(/\s+/g,' ').trim().slice(0,200))}</div>` : '';
     return `<div class="b ${m.direccion==='entrante'?'ent':'sal'}${claseMedio}">${cita}${cuerpoMensaje(m)}<div class="h">${hora(m.timestamp_wa || m.created_at)}${estado ? ' · ' + estado : ''}</div></div>`;
   }).join('') + propios.map(burbujaPendiente).join('');
   hidratarMedia();
