@@ -42,6 +42,8 @@ protegida con contraseña de asesor (las mismas del Admin, `ASESORES_SECRETO`).
 - **Filtro "Sin respuesta"** (chats donde el último mensaje lo mandó el cliente), con conteo, calculado en el servidor.
 - **Ver comprobantes** (fotos/audios) dentro del chat; miniaturas cuadradas; clic = visor grande.
 - **Ficha del cliente** (panel derecho): tarjeta del cliente (nombre, ciudad, documento, correo, saldo total) + **una tarjeta por boleta** con su saldo y su **historial de pagos** (fecha · referencia/método · asesor · valor), con **basurero para eliminar abono**.
+  - **Muestra al cliente registrado aunque NO tenga boletas en la rifa actual**: si el teléfono existe en la tabla `clientes` (emparejando por los **últimos 10 dígitos**), la primera tarjeta muestra sus datos (nombre, ciudad, documento, correo). La segunda tarjeta dice "Sin boletas en la rifa actual"; solo si no existe en la base dice "Cliente nuevo". El "Saldo total" solo aparece cuando tiene boletas.
+  - **Autocompleta el indicativo**: WhatsApp siempre llega con el número completo; si en la base el teléfono está más corto (sin indicativo) y el cliente no tiene boletas, al abrir el chat se actualiza solo al número de WhatsApp. Es best-effort (si la base lo rechaza no pasa nada, la ficha se muestra igual).
 - **Verificar pago (clic derecho en el comprobante → "Buscar el pago")**: lee la imagen con IA, la compara contra las **transferencias REALES** del sistema (no abona por la foto), sugiere la coincidencia, muestra si ya está asignada, compara las 2 fotos lado a lado. Si está LIBRE → botón **"Abonar"** (una boleta o **repartir** entre varias, suma exacta). Reusa `/api/admin/abono`.
 - **Eliminar abono** desde la bandeja (y arreglado en Admin): si el pago está **repartido**, borrar una parte **borra todas** y libera la transferencia; avisa antes.
 - **Etiquetas** por conversación (estilo Manychat): ícono + color + nombre, pastillas en la lista, menú para asignar/crear/eliminar. 4 por defecto: 🟢 Pagada, 🟡 Abonada, 🔵 Separada, 🔴 Pendiente.
@@ -75,7 +77,7 @@ Tablas nuevas creadas para el buzón:
 - **`conversaciones.js`** — lista de chats de una línea (filtro sin-respuesta + conteo, adjunta etiquetas). Solo trae chats con `ultimo_at` no nulo.
 - **`mensajes.js`** — mensajes de un chat.
 - **`media.js`** — descarga foto/audio con el token de la línea.
-- **`cliente.js`** — ficha (boletas, deuda, pagos agrupados por boleta).
+- **`cliente.js`** — ficha (boletas, deuda, pagos agrupados por boleta). Empareja por **últimos 10 dígitos**. Devuelve también los datos del cliente **registrado aunque no tenga boletas** (`registrado:true`, `boletas:[]`) y **autocompleta el indicativo** del teléfono cuando está corto y el cliente no tiene boletas (best-effort).
 - **`buscar-pago.js`** — verificación del comprobante vs transferencias reales (Fase 1) + boletas del cliente (Fase 2 abona con `/api/admin/abono`).
 - **`abono-reparto.js`** — dice si un abono es parte de un pago repartido (para el aviso al borrar).
 - **`contactos.js` / `contacto-crear.js` / `contactos-importar.js`** — apartado Contactos.
