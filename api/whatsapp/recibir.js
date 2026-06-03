@@ -67,6 +67,7 @@ export default async function handler(req, res) {
 async function guardarEntrante(m, nombrePerfil, lineaId) {
   const telefono = m.from;
   const { tipo, texto, media_id } = interpretarMensaje(m);
+  const respondeA = m.context?.id || null;   // si el cliente citó/respondió a un mensaje, su wa_message_id
   const ts = m.timestamp
     ? new Date(Number(m.timestamp) * 1000).toISOString()
     : new Date().toISOString();
@@ -87,6 +88,7 @@ async function guardarEntrante(m, nombrePerfil, lineaId) {
         texto,
         media_id,
         wa_message_id: m.id,
+        responde_a: respondeA,
         estado_envio: 'recibido',
         timestamp_wa: ts,
         raw: m,
