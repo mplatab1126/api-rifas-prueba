@@ -1585,16 +1585,6 @@ function pintarAgente(){
       <div><button class="ag-save" onclick="agGuardar()">Guardar cambios</button><span id="agSaveMsg" class="ag-savemsg"></span></div>
     </div>
     <div class="ag-card">
-      <h3>Probador<span class="ag-pb-tag">no le escribe a nadie</span></h3>
-      <div class="ag-sub">Escríbele como si fueras el cliente y mira cómo responde. Es un <b>simulador</b>: usa lo que tengas escrito arriba (puedes editar y volver a probar sin guardar).</div>
-      <div id="agPbChat" class="ag-probar-chat"></div>
-      <div class="ag-pb-bar">
-        <input id="agPbInput" placeholder="Escribe como el cliente…" onkeydown="if(event.key==='Enter'){event.preventDefault();agProbarEnviar();}">
-        <button class="ag-pb-send" onclick="agProbarEnviar()">Enviar</button>
-      </div>
-      <button class="ag-pb-reset" onclick="agProbarReset()">Reiniciar conversación</button>
-    </div>
-    <div class="ag-card">
       <h3>Herramientas</h3>
       <div class="ag-sub">Las acciones que el agente puede ejecutar. Préndelas de a poco; empieza por las <b>verdes</b> (no tocan dinero).</div>
       <div class="ag-tools">${toolRows}</div>

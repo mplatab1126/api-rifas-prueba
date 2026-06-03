@@ -27,13 +27,14 @@ const MAX_NOMBRE = 40;
 // Herramientas por defecto, sembradas la 1ª vez que se abre una línea.
 // Arrancan APAGADAS (activa:false); Mateo prende las que quiera, de a poco.
 const HERRAMIENTAS_DEFAULT = [
-  { clave: 'consultar_disponibles',    nombre: 'Consultar números disponibles',     descripcion: 'Mira en el sistema qué boletas están libres para ofrecerlas.',          riesgo: 'bajo',  orden: 1 },
-  { clave: 'consultar_precio_premios', nombre: 'Consultar precio y premios',          descripcion: 'Informa el valor de la boleta y los premios de la rifa actual.',         riesgo: 'bajo',  orden: 2 },
-  { clave: 'consultar_cliente',        nombre: 'Ver boletas y saldo de un cliente',   descripcion: 'Consulta las boletas, abonos y deuda de un cliente por su teléfono.',    riesgo: 'bajo',  orden: 3 },
-  { clave: 'apartar_numero',           nombre: 'Apartar un número',                   descripcion: 'Reserva una boleta a nombre del cliente.',                              riesgo: 'medio', orden: 4 },
-  { clave: 'enviar_boleta',            nombre: 'Enviar la boleta',                    descripcion: 'Manda al cliente su boleta digital.',                                   riesgo: 'medio', orden: 5 },
-  { clave: 'registrar_abono',          nombre: 'Registrar un abono (dinero)',         descripcion: 'Registra un pago verificado contra una transferencia real del sistema.', riesgo: 'alto',  orden: 6 },
-  { clave: 'pasar_a_humano',           nombre: 'Pasar la conversación a un asesor',   descripcion: 'Cuando no está seguro o el cliente lo pide, entrega el chat a una persona.', riesgo: 'bajo', orden: 7 },
+  { clave: 'enviar_contacto_inicial', nombre: 'Enviar el contacto inicial',           descripcion: 'Manda la presentación: fotos de la casa, precio y la pregunta de los premios.', riesgo: 'bajo',  orden: 1 },
+  { clave: 'consultar_disponibles',    nombre: 'Consultar números disponibles',      descripcion: 'Mira en el sistema qué boletas están libres para ofrecerlas.',          riesgo: 'bajo',  orden: 2 },
+  { clave: 'verificar_disponibilidad', nombre: 'Verificar si un número está libre',   descripcion: 'Revisa si un número puntual (ej: 1234) está disponible u ocupado.',      riesgo: 'bajo',  orden: 3 },
+  { clave: 'consultar_cliente',        nombre: 'Ver boletas y saldo de un cliente',   descripcion: 'Consulta las boletas, abonos y deuda de un cliente por su teléfono.',    riesgo: 'bajo',  orden: 4 },
+  { clave: 'pasar_a_humano',           nombre: 'Pasar la conversación a un asesor',   descripcion: 'Cuando no está seguro o el cliente lo pide, entrega el chat a una persona.', riesgo: 'bajo', orden: 5 },
+  { clave: 'apartar_numero',           nombre: 'Apartar un número (Fase 2)',          descripcion: 'Reserva una boleta a nombre del cliente. Aún no disponible.',            riesgo: 'medio', orden: 6 },
+  { clave: 'enviar_boleta',            nombre: 'Enviar la boleta (Fase 2)',           descripcion: 'Manda al cliente su boleta digital. Aún no disponible.',                 riesgo: 'medio', orden: 7 },
+  { clave: 'registrar_abono',          nombre: 'Registrar un abono · dinero (Fase 2)', descripcion: 'Registra un pago verificado contra una transferencia real. Aún no disponible.', riesgo: 'alto',  orden: 8 },
 ];
 
 // Devuelve la config de la línea; si no existe, la crea con valores por defecto.
