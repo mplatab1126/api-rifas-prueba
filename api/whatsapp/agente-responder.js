@@ -180,7 +180,7 @@ async function ejecutarHerramienta(nombre, input, conv) {
       if (i < rr.pasos.length - 1) await dormir(PAUSA_MS);
     }
     await nota(conv, 'Envié el contacto inicial (presentación con fotos, precio y la pregunta de los premios).');
-    return `Listo, ya le envié la presentación completa: el saludo (soy Liliana, de Los Plata), las fotos de la casa, el precio ($150 mil, se separa con $20 mil), que somos legales (EDSA), y termina con "¿Te explico los premios?". NO repitas NADA de eso, ni esa pregunta. SOLO si el cliente hizo una pregunta puntual que la presentación NO responde, contéstasela ahora en 1 frase corta. Si su mensaje era apenas un saludo o "quiero información", NO escribas nada más.`;
+    return `Listo, ya le envié la presentación completa: el saludo (soy Liliana, de Los Plata), las fotos de la casa, el precio ($150 mil, se separa con $20 mil), que somos legales (autorizados por EDSA) y termina preguntando "¿Te explico los premios?". NO repitas NADA de eso (ni el precio, ni lo de EDSA, ni la pregunta de los premios). SOLO si el cliente hizo una pregunta puntual que la presentación NO responde (ej. de dónde son), contéstala en UNA sola frase corta y NADA más: NO cierres con otra pregunta como "¿te explico los premios?" (ya se la hice). Si su mensaje era apenas un saludo o pedir información, NO escribas nada.`;
   }
 
   if (nombre === 'apartar_numero') {
@@ -274,12 +274,18 @@ export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  const { contrasena, linea_id, telefono } = req.body || {};
-  const nombre = validarAsesor(contrasena);
-  if (!nombre) return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido.' });
-  if (!esMateo(nombre)) return res.status(403).json({ status: 'error', mensaje: 'Solo Mateo.' });
+  const { contrasena, linea_id, telefono, interno } = req.body || {};
   if (!linea_id || !telefono) return res.status(200).json({ status: 'error', mensaje: 'Falta línea o teléfono.' });
-  if (!(await puedeVerLinea(nombre, linea_id))) return res.status(403).json({ status: 'error', mensaje: 'Sin acceso a esta línea.' });
+  // Autorización: o el secreto interno (lo dispara el webhook al instante) o Mateo desde la bandeja.
+  let autorizado = false;
+  const tokenInterno = process.env.WHATSAPP_VERIFY_TOKEN;
+  if (interno && tokenInterno && interno === tokenInterno) {
+    autorizado = true;
+  } else {
+    const nombre = validarAsesor(contrasena);
+    if (nombre && esMateo(nombre) && (await puedeVerLinea(nombre, linea_id))) autorizado = true;
+  }
+  if (!autorizado) return res.status(403).json({ status: 'error', mensaje: 'No autorizado.' });
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(200).json({ status: 'error', mensaje: 'Falta ANTHROPIC_API_KEY.' });
@@ -330,6 +336,17 @@ export default async function handler(req, res) {
     const messages = construirMensajes(reales);
     if (!messages.length) return res.status(200).json({ status: 'ok', skip: 'Sin mensajes para procesar.' });
 
+    // Candado anti-duplicado: solo UNA corrida responde este chat a la vez (webhook + bandeja).
+    const expira = new Date(Date.now() - 45000).toISOString();
+    const { data: lock } = await supabaseAdmin
+      .from('conversaciones_whatsapp')
+      .update({ agente_procesando_at: new Date().toISOString() })
+      .eq('id', conv.id)
+      .or(`agente_procesando_at.is.null,agente_procesando_at.lt.${expira}`)
+      .select('id')
+      .maybeSingle();
+    if (!lock) return res.status(200).json({ status: 'ok', skip: 'Otra corrida ya está respondiendo.' });
+
     // 4) Bucle de razonamiento + herramientas.
     let apagado = false;
     for (let iter = 0; iter < MAX_ITER; iter++) {
@@ -373,6 +390,7 @@ export default async function handler(req, res) {
       }
     }
 
+    await supabaseAdmin.from('conversaciones_whatsapp').update({ agente_procesando_at: null }).eq('id', conv.id);
     return res.status(200).json({ status: 'ok', agente_activo: !apagado });
   } catch (e) {
     return res.status(500).json({ status: 'error', mensaje: e.message });
