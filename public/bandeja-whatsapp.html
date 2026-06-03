@@ -133,6 +133,7 @@
     #convHead .sub { font-size: 0.74rem; color: var(--ink-mute); margin-top: 1px; }
     #convHead #btnAgente { display: none; align-items: center; gap: 5px; margin-left: auto; background: none; border: 1px solid var(--gray-200); border-radius: 100px; padding: 6px 12px; font-family: inherit; font-size: 0.78rem; font-weight: 600; color: var(--ink-mute); cursor: pointer; white-space: nowrap; }
     #convHead #btnAgente.on { background: #dff7e4; border-color: #a9e6ba; color: #1c7a37; }
+    #convHead #btnAgente.off { background: #fdecec; border-color: #e7b7b7; color: #b3402f; }
     .b.nota { align-self: center; max-width: 92%; background: #fff7e6; border: 1px dashed #e6cf8f; color: #7a5d14; font-size: 0.76rem; font-style: italic; border-radius: 10px; padding: 6px 12px 4px; }
     .b.nota .h { color: #b89b50; text-align: center; }
     #texto:disabled { background: var(--cream-100); color: var(--ink-mute); cursor: not-allowed; }
@@ -826,6 +827,11 @@ async function cargarLista(){
   if(r.status !== 'ok'){ if(r.mensaje && /restringido/i.test(r.mensaje)){ localStorage.removeItem(PWD_KEY); location.reload(); } return; }
   conversaciones = r.conversaciones;
   if(typeof r.sinRespuestaTotal === 'number') $('cntSinResp').textContent = r.sinRespuestaTotal;
+  // Mantener el botón 🤖 del chat abierto en sync con el estado real (por si el agente se apagó solo).
+  if(actual){
+    const ca = conversaciones.find(x => x.telefono === actual);
+    if(ca && !!ca.agente_activo !== agenteActivoActual){ agenteActivoActual = !!ca.agente_activo; actualizarBtnAgente(); }
+  }
   if(vista === 'chats') pintarLista();
 }
 
@@ -918,7 +924,8 @@ function actualizarBtnAgente(){
   const b = $('btnAgente'); if(!b) return;
   b.style.display = (soyMateo && actual) ? 'inline-flex' : 'none';
   b.classList.toggle('on', !!agenteActivoActual);
-  const t = $('btnAgenteTxt'); if(t) t.textContent = agenteActivoActual ? 'Agente ON' : 'Agente';
+  b.classList.toggle('off', !agenteActivoActual);
+  const t = $('btnAgenteTxt'); if(t) t.textContent = agenteActivoActual ? 'Agente ON' : 'Agente OFF';
 }
 window.toggleAgente = async function(){
   if(!actual) return;
@@ -944,9 +951,16 @@ async function dispararAgenteSiCorresponde(mensajes){
   agenteDisparado[actual] = marca;
   const tel = actual;
   agenteOcupado = true;
-  try { await api('agente-responder', { telefono: tel, linea_id: actualLinea }); }
+  let resp = null;
+  try { resp = await api('agente-responder', { telefono: tel, linea_id: actualLinea }); }
   catch(e){}
   finally { agenteOcupado = false; }
+  // Si el agente se apagó solo (p. ej. pasó a un asesor), reflejarlo en el botón.
+  if(resp && resp.agente_activo === false){
+    agenteActivoActual = false;
+    const c = conversaciones.find(x => x.telefono === tel); if(c) c.agente_activo = false;
+    if(actual === tel) actualizarBtnAgente();
+  }
   if(actual === tel) cargarMensajes(false);
 }
 
