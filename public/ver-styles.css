@@ -426,6 +426,31 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+.vb-premio-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 9px;
+  background: var(--cream-100);
+  border: 1px solid var(--gray-200);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  vertical-align: middle;
+}
+.vb-premio-nota {
+  font-size: 14px;
+  color: var(--ink-mute);
+  margin: 8px 0 0;
+  line-height: 1.45;
+  font-style: italic;
+}
+.vb-premio-nota strong { color: var(--ink-soft); font-weight: 700; }
+
+/* Correo en la tarjeta del titular: que los correos largos hagan salto de línea */
+.vb-grid-val-email { overflow-wrap: anywhere; }
 
 .vb-canjear {
   margin: 14px 0 4px;
