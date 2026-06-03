@@ -12,6 +12,14 @@ function VerHouseApp() {
   const [boletaActiva, setBoletaActiva] = useStateVerH(null);
   const [error, setError] = useStateVerH(null);
   const [loading, setLoading] = useStateVerH(false);
+  // Número de boleta pedido por la URL: ?boleta=1234 o la ruta /boleta/1234.
+  const [boletaForzadaURL] = useStateVerH(() => {
+    if (typeof window === "undefined") return null;
+    const q = new URLSearchParams(window.location.search).get("boleta");
+    if (q) return q;
+    const m = window.location.pathname.match(/\/boleta\/(\d{1,4})/i);
+    return m ? m[1] : null;
+  });
   // Si entramos por deep-link (?telefono=X&boleta=Y desde /boleta), ocultamos
   // todo hasta que el fetch automático termine, para no mostrar el form parpadeando.
   const [inicializando, setInicializando] = useStateVerH(() => {
@@ -25,7 +33,7 @@ function VerHouseApp() {
     if (loading) return;
     const paisUsar = (opts && opts.pais) || pais;
     const telUsar = (opts && opts.telefono) || telefono;
-    const boletaForzada = opts && opts.boleta;
+    const boletaForzada = (opts && opts.boleta) || boletaForzadaURL;
     setError(null);
     setLoading(true);
     try {
@@ -82,7 +90,7 @@ function VerHouseApp() {
   useEffectVerH(() => {
     const params = new URLSearchParams(window.location.search);
     const telParam = params.get("telefono");
-    const boletaParam = params.get("boleta");
+    const boletaParam = boletaForzadaURL;
     if (!telParam) {
       setInicializando(false);
       return;
