@@ -827,20 +827,24 @@ async function cargarFicha(telefono){
   p.innerHTML = '<div class="pcard"><div class="pmuted">Buscando cliente…</div></div>';
   const r = await api('cliente', { telefono });
   if(telefono !== actual) return;
-  // Puntito verde en el ícono de ficha si el cliente tiene boletas asignadas.
-  $('btnFicha').classList.toggle('tiene-boletas', !!(r.status === 'ok' && r.encontrado && r.boletas && r.boletas.length));
+  // ¿El cliente está registrado en la base? (tenga o no boletas en la rifa actual)
+  const registrado = (r.status === 'ok' && r.registrado);
+  const tieneBol = !!(r.status === 'ok' && r.boletas && r.boletas.length);
+  // Puntito verde en el ícono de ficha solo si tiene boletas en la rifa actual.
+  $('btnFicha').classList.toggle('tiene-boletas', tieneBol);
   const c = conversaciones.find(x => x.telefono === telefono) || { telefono };
 
-  const nombreTit = (r.status==='ok' && r.encontrado && (r.nombre || r.apellido))
+  const nombreTit = (registrado && (r.nombre || r.apellido))
     ? [r.nombre, r.apellido].filter(Boolean).join(' ')
     : (c.nombre_perfil || telefono);
 
-  // Tarjeta del cliente (siempre): foto, nombre, teléfono, y si existe: ciudad, documento, saldo total
-  const datosCliente = (r.status==='ok' && r.encontrado) ? `
+  // Tarjeta del cliente: si está registrado mostramos ciudad, documento y correo.
+  // El "Saldo total" solo se muestra cuando tiene boletas en la rifa actual.
+  const datosCliente = registrado ? `
       <div class="prow" style="margin-top:16px"><span class="plabel">Ciudad</span><b>${esc(r.ciudad || '—')}</b></div>
       <div class="prow"><span class="plabel">Documento</span><b>${esc(r.documento || '—')}</b></div>
-      <div class="prow"><span class="plabel">Correo</span><b>${esc(r.correo || '—')}</b></div>
-      <div class="prow" style="border-bottom:none"><span class="plabel">Saldo total</span><b>${pesos(r.deuda)}</b></div>` : '';
+      <div class="prow"${tieneBol ? '' : ' style="border-bottom:none"'}><span class="plabel">Correo</span><b>${esc(r.correo || '—')}</b></div>
+      ${tieneBol ? `<div class="prow" style="border-bottom:none"><span class="plabel">Saldo total</span><b>${pesos(r.deuda)}</b></div>` : ''}` : '';
   const cardCliente = `
     <div class="pcard">
       <div class="pavatar">${esc(inicial(c))}</div>
@@ -849,14 +853,16 @@ async function cargarFicha(telefono){
       ${datosCliente}
     </div>`;
 
-  // Una tarjeta por boleta, cada una con su saldo y su propio historial de pagos
+  // Segunda tarjeta: boletas de la rifa actual, o el estado del cliente.
   let resto;
-  if(r.status==='ok' && r.encontrado){
-    resto = r.boletas.map(tarjetaBoleta).join('');
-  } else if(r.status==='ok' && !r.encontrado){
-    resto = `<div class="pcard"><div class="pnuevo"><b>Cliente nuevo</b><br><span>No tiene boletas registradas con este número.</span></div></div>`;
-  } else {
+  if(r.status !== 'ok'){
     resto = `<div class="pcard"><div class="pmuted">No se pudo cargar la ficha.</div></div>`;
+  } else if(tieneBol){
+    resto = r.boletas.map(tarjetaBoleta).join('');
+  } else if(registrado){
+    resto = `<div class="pcard"><div class="pnuevo"><b>Sin boletas en la rifa actual</b><br><span>Este cliente está registrado pero no tiene boletas de la rifa actual.</span></div></div>`;
+  } else {
+    resto = `<div class="pcard"><div class="pnuevo"><b>Cliente nuevo</b><br><span>No tiene boletas registradas con este número.</span></div></div>`;
   }
 
   p.innerHTML = cardCliente + resto;
