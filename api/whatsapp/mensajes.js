@@ -32,7 +32,7 @@ export default async function handler(req, res) {
 
   let query = supabase
     .from('mensajes_whatsapp')
-    .select('id, direccion, tipo, texto, media_id, media_url, estado_envio, error, timestamp_wa, created_at')
+    .select('id, direccion, tipo, texto, media_id, media_url, estado_envio, error, timestamp_wa, created_at, wa_message_id, responde_a')
     .eq('telefono', telefono)
     .order('created_at', { ascending: true })
     .limit(500);
