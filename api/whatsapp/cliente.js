@@ -43,10 +43,13 @@ export default async function handler(req, res) {
 
   // Datos del cliente en la base, aunque NO tenga boletas en la rifa actual
   // (clientes que ya dieron sus datos antes o que participaron en rifas pasadas).
+  // Si hay duplicados (el mismo cliente con y sin indicativo), preferimos el
+  // teléfono "mayor" — el que tiene el indicativo (ej. 57…) gana sobre el corto.
   const { data: clientesRows } = await supabase
     .from('clientes')
-    .select('nombre, apellido, ciudad, documento_numero, correo')
+    .select('telefono, nombre, apellido, ciudad, documento_numero, correo')
     .like('telefono', '%' + last10)
+    .order('telefono', { ascending: false })
     .limit(1);
 
   const tieneBoletas = !!(boletas && boletas.length);
@@ -56,6 +59,30 @@ export default async function handler(req, res) {
   // Cliente realmente nuevo: ni datos en la base ni boletas en la rifa actual.
   if (!registrado) {
     return res.status(200).json({ status: 'ok', encontrado: false, registrado: false, boletas: [] });
+  }
+
+  // Autocompletar el indicativo: WhatsApp siempre trae el número completo (con
+  // indicativo). Si en la base el teléfono está más corto (sin indicativo) y
+  // coincide por los últimos 10 dígitos, lo actualizamos al número de WhatsApp.
+  // Solo cuando NO tiene boletas: si las tuviera, la base lo bloquea (la columna
+  // boletas.telefono_cliente apunta a clientes.telefono con regla NO ACTION).
+  // Es "best-effort": si la base lo rechaza (ya existe ese número, etc.) no pasa
+  // nada y la ficha se muestra igual. Nunca debe romper la respuesta.
+  if (!tieneBoletas && clientesRows && clientesRows[0] && clientesRows[0].telefono) {
+    const waDigits = String(telefono).replace(/\D/g, '');
+    const guardado = String(clientesRows[0].telefono);
+    const guardadoDigits = guardado.replace(/\D/g, '');
+    if (waDigits.length >= 11 &&
+        guardadoDigits.length < waDigits.length &&
+        waDigits.slice(-10) === guardadoDigits.slice(-10)) {
+      const { error: errUpd } = await supabase
+        .from('clientes')
+        .update({ telefono: waDigits })
+        .eq('telefono', guardado);
+      if (errUpd) {
+        console.warn('[whatsapp/cliente] no se pudo completar indicativo:', errUpd.message);
+      }
+    }
   }
 
   const deuda = (boletas || []).reduce((s, b) => s + Number(b.saldo_restante || 0), 0);
