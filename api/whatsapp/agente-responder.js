@@ -129,7 +129,7 @@ async function ejecutarHerramienta(nombre, input, conv) {
   if (nombre === 'consultar_disponibles') {
     const { texto } = await numerosDisponibles({ canal: 'bandeja' });
     await nota(conv, 'Consulté los números disponibles.');
-    return 'Números disponibles ahora (4 cifras): ' + texto;
+    return 'Esta es una MUESTRA de números libres (NO son todos y CAMBIA cada vez que la pides). Muéstrasela al cliente para que elija. NUNCA digas que "son los únicos" ni la filtres por terminación. Si el cliente quiere un número puntual o con cierta terminación, pídele que te diga uno y verifícalo con verificar_disponibilidad. Muestra: ' + texto;
   }
 
   if (nombre === 'verificar_disponibilidad') {
@@ -251,8 +251,12 @@ function construirMensajes(historial) {
     } else if (m.direccion === 'saliente') {
       role = 'assistant';
       text = (m.texto || '').trim();
+    } else if (m.direccion === 'nota') {
+      // Las acciones que el agente YA ejecutó: se las recordamos para que no las repita ni las olvide.
+      role = 'assistant';
+      text = '(' + String(m.texto || '').replace(/^🤖\s*/, 'ya hice esto → ') + ')';
     } else {
-      continue;   // las notas (direccion='nota') NO van al historial de la IA
+      continue;
     }
     if (!text) continue;
     // La API exige alternancia user/assistant: fusiona mensajes seguidos del mismo lado.
