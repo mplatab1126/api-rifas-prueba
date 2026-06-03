@@ -695,9 +695,9 @@ function BoletaDetalleHouse({ cliente, boleta }) {
         {/* Acciones */}
         <div className="vb-actions">
           {!pagada && (
-            <a href="/abonar" className="ab-btn-primary ab-btn-mint">
-              Abonar a esta boleta →
-            </a>
+            <button type="button" className="ab-btn-primary vb-abonar-pronto" disabled aria-disabled="true">
+              Abonar a esta boleta <span className="vb-abonar-pronto-badge">Próximamente</span>
+            </button>
           )}
           <a href={`https://wa.me/573107334957?text=Hola%2C%20mi%20boleta%20de%20Casa%20Santa%20Teresita%20es%20la%20${boleta.numero}`} target="_blank" rel="noreferrer" className="ab-btn-secondary">
             Compartir por WhatsApp

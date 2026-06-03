@@ -13,7 +13,9 @@ const HUB_TARJETAS = [
     titulo: "Abonar a mi boleta",
     icono3d: "assets/icon-3d-wallet.png",
     color: "green",
-    href: "/abonar"
+    href: "#",
+    proximamente: true,
+    badge: "Próximamente"
   },
   {
     id: "canales",

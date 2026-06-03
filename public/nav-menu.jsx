@@ -4,7 +4,7 @@ const NAV_ITEMS = [
   { id: "inicio",    label: "Inicio",                 href: "/" },
   { id: "comprar",   label: "Comprar boleta",         href: "/comprar-la-plata-house" },
   { id: "ver",       label: "Ver mi boleta",          href: "/boleta" },
-  { id: "abonar",    label: "Abonar a mi boleta",     href: "/abonar" },
+  { id: "abonar",    label: "Abonar a mi boleta",     href: "#", proximamente: true },
   { id: "canales",   label: "Canales oficiales",      href: "/canales-oficiales" },
   { id: "terminos",  label: "Términos y condiciones", href: "/terminos-y-condiciones" },
   { id: "oficina",   label: "Oficina y documentos",   href: "#", proximamente: true },

@@ -501,6 +501,29 @@
 .vb-actions a {
   text-decoration: none;
 }
+/* Botón "Abonar" inhabilitado temporalmente (próximamente) */
+.vb-abonar-pronto {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--cream-100);
+  color: var(--ink-mute);
+  border: 1px solid var(--gray-200);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.vb-abonar-pronto:hover { background: var(--cream-100); }
+.vb-abonar-pronto-badge {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--gray-200);
+  color: var(--ink-soft);
+}
 
 .vb-legal {
   font-size: 15px;
