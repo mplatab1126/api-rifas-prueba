@@ -458,7 +458,7 @@ function BoletaDetalleHouse({ cliente, boleta }) {
 
         {/* Titular */}
         <h2 className="ab-section-titulo vb-sec-icon">
-          <img src="assets/icon-3d-document.png" alt="" />
+          <img src="/assets/icon-3d-document.png" alt="" />
           Titular de la boleta
         </h2>
         <div className="ab-cliente-card">
@@ -492,7 +492,7 @@ function BoletaDetalleHouse({ cliente, boleta }) {
 
         {/* Estado de pago */}
         <h2 className="ab-section-titulo vb-sec-icon">
-          <img src="assets/icon-3d-calculator.png" alt="" />
+          <img src="/assets/icon-3d-calculator.png" alt="" />
           Estado de pago
         </h2>
         <div className="ab-cliente-card">
@@ -536,7 +536,7 @@ function BoletaDetalleHouse({ cliente, boleta }) {
 
         {/* Premios */}
         <h2 className="ab-section-titulo vb-sec-icon">
-          <img src="assets/icon-3d-gift.png" alt="" />
+          <img src="/assets/icon-3d-gift.png" alt="" />
           Premios
         </h2>
         <div className="ab-cliente-card">
@@ -562,7 +562,7 @@ function BoletaDetalleHouse({ cliente, boleta }) {
 
         {/* Condiciones */}
         <h2 className="ab-section-titulo vb-sec-icon">
-          <img src="assets/icon-3d-shield.png" alt="" />
+          <img src="/assets/icon-3d-shield.png" alt="" />
           Condiciones para ganar
         </h2>
         <div className="ab-cliente-card">
@@ -577,7 +577,7 @@ function BoletaDetalleHouse({ cliente, boleta }) {
 
         {/* Términos y condiciones */}
         <h2 className="ab-section-titulo vb-sec-icon">
-          <img src="assets/icon-3d-lock.png" alt="" />
+          <img src="/assets/icon-3d-lock.png" alt="" />
           Términos y condiciones
         </h2>
         <details className="vb-terminos">
