@@ -367,6 +367,51 @@
     .df-acc .df-go:hover { background: var(--mint-light); }
     .df-acc .df-danger:hover { color: var(--danger); background: #fdecec; border-color: #f3c9c9; }
 
+    /* ── Agente de IA (cabina de control · solo gerencia) ── */
+    #modAgente { flex: 1; display: none; flex-direction: column; min-width: 0; background: var(--cream-50); overflow: hidden; }
+    #modAgente .ag-sub { color: var(--ink-mute); font-size: 0.82rem; line-height: 1.5; }
+    .ag-wrap { flex: 1; overflow-y: auto; padding: 16px; }
+    .ag-card { background: #fff; border: 1px solid var(--gray-200); border-radius: 14px; padding: 18px; margin-bottom: 14px; max-width: 760px; }
+    .ag-card h3 { font-size: 0.98rem; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+    .ag-card .ag-sub { margin-bottom: 14px; }
+    .ag-estado { display: flex; gap: 8px; flex-wrap: wrap; }
+    .ag-estado button { flex: 1; min-width: 130px; padding: 12px; border: 1px solid var(--gray-200); background: #fff; border-radius: 10px; font-family: inherit; font-size: 0.86rem; font-weight: 600; color: var(--ink-mute); cursor: pointer; text-align: left; }
+    .ag-estado button .d { display: block; font-weight: 400; font-size: 0.72rem; color: var(--ink-mute); margin-top: 4px; line-height: 1.35; }
+    .ag-estado button.on { color: var(--ink); }
+    .ag-estado button.on.apagado { background: #fdecec; border-color: #e7b7b7; }
+    .ag-estado button.on.sombra { background: #fdf4d3; border-color: #e6d38f; }
+    .ag-estado button.on.encendido { background: #dff7e4; border-color: #a9e6ba; }
+    .ag-field-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+    .ag-field-row .cc-input { flex: 1; min-width: 200px; margin-bottom: 0; }
+    .ag-prompt { width: 100%; min-height: 220px; padding: 14px; border: 1px solid var(--gray-200); border-radius: 12px; font-family: inherit; font-size: 0.9rem; line-height: 1.5; color: var(--ink); outline: none; resize: vertical; background: var(--cream-50); }
+    .ag-prompt:focus { border-color: var(--ink); background: #fff; }
+    .ag-save { margin-top: 12px; padding: 11px 20px; border: 1px solid var(--mint); background: var(--mint); border-radius: 10px; font-family: inherit; font-size: 0.86rem; font-weight: 600; color: var(--ink); cursor: pointer; }
+    .ag-save:hover { background: var(--mint-light); }
+    .ag-savemsg { margin-left: 12px; font-size: 0.82rem; color: #1c7a37; }
+    .ag-tools { display: flex; flex-direction: column; }
+    .ag-tool { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-top: 1px solid var(--gray-100); }
+    .ag-tool:first-child { border-top: none; }
+    .ag-tool-info { flex: 1; min-width: 0; }
+    .ag-tool-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .ag-tool-nom { font-weight: 600; font-size: 0.88rem; color: var(--ink); }
+    .ag-tool-desc { color: var(--ink-mute); font-size: 0.8rem; margin-top: 3px; line-height: 1.4; }
+    .ag-risk { font-size: 0.62rem; font-weight: 700; border-radius: 100px; padding: 2px 9px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .ag-risk.bajo { background: #dff7e4; color: #1c7a37; }
+    .ag-risk.medio { background: #fdf4d3; color: #8a6d1a; }
+    .ag-risk.alto { background: #fdecec; color: var(--danger); }
+    .ag-switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
+    .ag-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .ag-switch .sl { position: absolute; inset: 0; background: var(--gray-200); border-radius: 100px; cursor: pointer; transition: .15s; }
+    .ag-switch .sl::before { content: ''; position: absolute; height: 18px; width: 18px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .15s; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+    .ag-switch input:checked + .sl { background: var(--mint-dark); }
+    .ag-switch input:checked + .sl::before { transform: translateX(18px); }
+    .ag-log { display: flex; flex-direction: column; }
+    .ag-log-row { display: flex; gap: 12px; padding: 9px 0; border-top: 1px solid var(--gray-100); font-size: 0.82rem; }
+    .ag-log-row:first-child { border-top: none; }
+    .ag-log-when { color: var(--gray-400); white-space: nowrap; min-width: 96px; }
+    .ag-log-txt { color: var(--ink-soft); line-height: 1.4; }
+    .ag-empty { color: var(--gray-400); font-size: 0.82rem; line-height: 1.5; padding: 6px 0; }
+
     /* Pastilla de estado */
     .estado-pill { display: inline-block; font-size: 0.7rem; font-weight: 600; border-radius: 100px; padding: 3px 10px; white-space: nowrap; }
     .estado-aprobada { background: #dff7e4; color: #1c7a37; }
@@ -485,6 +530,11 @@
         <button class="nav-item" data-mod="respuestas">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 10 14 9 22 19 10 12 10 13 2"/></svg>
           <span>Respuestas rápidas</span>
+        </button>
+        <div class="nav-sec" id="navSecAgente" style="display:none">Inteligencia</div>
+        <button class="nav-item" id="navAgente" data-mod="agente" style="display:none">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M12 8V5"/><circle cx="12" cy="3.5" r="1.2"/><circle cx="9" cy="13.5" r="1"/><circle cx="15" cy="13.5" r="1"/></svg>
+          <span>Agente</span>
         </button>
       </div>
       <div class="nav-foot">
@@ -607,6 +657,15 @@
         <div id="listaPlantillas"></div>
       </div>
     </div><!-- /modDifusiones -->
+
+    <!-- MÓDULO: AGENTE (solo gerencia) -->
+    <div id="modAgente">
+      <div class="cont-head">
+        <h2>Agente de IA</h2>
+        <div class="ag-sub">Configura cómo atiende el agente a los clientes de esta línea. Por ahora es la cabina de control; el cerebro de IA se conecta después.</div>
+      </div>
+      <div id="agBody" class="ag-wrap"></div>
+    </div><!-- /modAgente -->
   </div><!-- /app -->
 
   <div id="ctxMenu"></div>
@@ -697,6 +756,8 @@ async function cargarLineas(){
   const r = await api('lineas', {});
   lineas = (r && r.lineas) ? r.lineas : [];
   gerencia = !!(r && r.esGerencia);
+  // La cabina del Agente es solo para gerencia: mostrar su entrada del menú.
+  if(gerencia){ $('navSecAgente').style.display = ''; $('navAgente').style.display = ''; }
   const sel = $('selLinea');
   if(lineas.length){
     const guardada = localStorage.getItem('wa_linea');
@@ -718,6 +779,7 @@ $('selLinea').onchange = () => {
   if(vista === 'contactos') cargarContactos(true);
   else if(vista === 'respuestas') cargarRespuestas();
   else if(vista === 'difusiones') cargarModuloDifusiones();
+  else if(vista === 'agente') cargarAgente();
   else cargarLista();
 };
 
@@ -1326,10 +1388,136 @@ function irA(mod){
   $('modContactos').style.display = (mod === 'contactos') ? 'flex' : 'none';
   $('modRespuestas').style.display = (mod === 'respuestas') ? 'flex' : 'none';
   $('modDifusiones').style.display = (mod === 'difusiones') ? 'flex' : 'none';
+  $('modAgente').style.display = (mod === 'agente') ? 'flex' : 'none';
   if(mod === 'contactos'){ contactosPage = 0; cargarContactos(true); }
   else if(mod === 'respuestas'){ cargarRespuestas(); }
   else if(mod === 'difusiones'){ cargarModuloDifusiones(); }
+  else if(mod === 'agente'){ cargarAgente(); }
   else { pintarLista(); }
+}
+
+/* ── Agente de IA · cabina de control (solo gerencia) ──────────────────────
+   Por ahora SOLO configura (todavía no hay "cerebro" conectado): el estado
+   (apagado/sombra/encendido), las instrucciones, qué herramientas puede usar
+   y el registro de lo que hace. Todo se guarda en la base, no en el código. */
+let agData = null;            // { config, herramientas, actividad } de la línea
+const AG_ESTADOS = [
+  { v:'apagado',   t:'Apagado',     d:'Solo responden los humanos.' },
+  { v:'sombra',    t:'Modo sombra', d:'Practica en silencio, no le escribe al cliente.' },
+  { v:'encendido', t:'Encendido',   d:'Le responde al cliente de verdad.' },
+];
+const AG_MODELOS = [
+  { v:'claude-haiku-4-5',  t:'Haiku 4.5 — rápido y económico' },
+  { v:'claude-sonnet-4-6', t:'Sonnet 4.6 — equilibrado (recomendado)' },
+  { v:'claude-opus-4-8',   t:'Opus 4.8 — el más inteligente' },
+];
+const AG_RIESGO_TXT = { bajo:'segura', medio:'sensible', alto:'dinero' };
+
+function agFechaHora(iso){
+  if(!iso) return '';
+  return new Date(iso).toLocaleString('es-CO', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+}
+
+async function cargarAgente(){
+  if(!gerencia){ $('agBody').innerHTML = '<div class="vacio-lista">Solo gerencia puede ver esta sección.</div>'; return; }
+  if(!lineaActual){ $('agBody').innerHTML = '<div class="vacio-lista">No hay una línea seleccionada.</div>'; return; }
+  $('agBody').innerHTML = '<div class="vacio-lista">Cargando…</div>';
+  const r = await api('agente', { accion:'config', linea_id: lineaActual });
+  if(vista !== 'agente') return;
+  if(r.status !== 'ok'){ $('agBody').innerHTML = `<div class="vacio-lista">No se pudo cargar.<br><small>${esc(r.mensaje||'')}</small></div>`; return; }
+  agData = r;
+  pintarAgente();
+}
+
+function agCapturarForm(){
+  if(!agData) return;
+  agData.config = agData.config || {};
+  if($('agPrompt')) agData.config.prompt = $('agPrompt').value;
+  if($('agNombre')) agData.config.nombre_agente = $('agNombre').value;
+  if($('agModelo')) agData.config.modelo = $('agModelo').value;
+}
+
+function pintarAgente(){
+  if(!agData) return;
+  const c = agData.config || {};
+  const estado = c.estado || 'apagado';
+  const modelo = c.modelo || 'claude-sonnet-4-6';
+  const hs = agData.herramientas || [];
+  const act = agData.actividad || [];
+
+  const estadoBtns = AG_ESTADOS.map(e =>
+    `<button class="${e.v} ${estado===e.v?'on':''}" onclick="agSetEstado('${e.v}')">${e.t}<span class="d">${e.d}</span></button>`
+  ).join('');
+  const modeloOpts = AG_MODELOS.map(m =>
+    `<option value="${m.v}" ${modelo===m.v?'selected':''}>${esc(m.t)}</option>`
+  ).join('');
+  const toolRows = hs.map(h => `
+      <div class="ag-tool">
+        <div class="ag-tool-info">
+          <div class="ag-tool-top"><span class="ag-tool-nom">${esc(h.nombre)}</span><span class="ag-risk ${esc(h.riesgo)}">${AG_RIESGO_TXT[h.riesgo]||esc(h.riesgo)}</span></div>
+          <div class="ag-tool-desc">${esc(h.descripcion||'')}</div>
+        </div>
+        <label class="ag-switch"><input type="checkbox" ${h.activa?'checked':''} onchange="agToggleTool('${esc(h.clave)}', this.checked)"><span class="sl"></span></label>
+      </div>`).join('');
+  const logRows = act.length
+    ? act.map(a => `<div class="ag-log-row"><div class="ag-log-when">${esc(agFechaHora(a.created_at))}</div><div class="ag-log-txt">${esc(a.resumen || a.tipo || '')}</div></div>`).join('')
+    : '<div class="ag-empty">Aún no hay actividad. Cuando el agente empiece a trabajar, aquí verás cada acción y a qué hora la hizo.</div>';
+
+  $('agBody').innerHTML = `
+    <div class="ag-card">
+      <h3>Encendido</h3>
+      <div class="ag-sub">Lo más importante. Por seguridad arranca en <b>Apagado</b>. En <b>Modo sombra</b> el agente practica sin escribirle a ningún cliente.</div>
+      <div class="ag-estado">${estadoBtns}</div>
+    </div>
+    <div class="ag-card">
+      <h3>Instrucciones del agente</h3>
+      <div class="ag-sub">El “manual”: cómo se comporta, qué sabe de la rifa, precios, premios, tono. Puedes escribir mucho.</div>
+      <div class="ag-field-row">
+        <input id="agNombre" class="cc-input" placeholder="Nombre con el que se presenta (ej: Camila)" value="${esc(c.nombre_agente||'')}">
+        <select id="agModelo" class="cc-input">${modeloOpts}</select>
+      </div>
+      <textarea id="agPrompt" class="ag-prompt" placeholder="Ej: Eres la asesora de Los Plata. Vendemos rifas de 4 cifras (0000–9999)...">${esc(c.prompt||'')}</textarea>
+      <div><button class="ag-save" onclick="agGuardar()">Guardar cambios</button><span id="agSaveMsg" class="ag-savemsg"></span></div>
+    </div>
+    <div class="ag-card">
+      <h3>Herramientas</h3>
+      <div class="ag-sub">Las acciones que el agente puede ejecutar. Préndelas de a poco; empieza por las <b>verdes</b> (no tocan dinero).</div>
+      <div class="ag-tools">${toolRows}</div>
+    </div>
+    <div class="ag-card">
+      <h3>Registro de actividad</h3>
+      <div class="ag-sub">Qué hace el agente y cuándo, en vivo.</div>
+      <div class="ag-log">${logRows}</div>
+    </div>`;
+}
+
+function agSetEstado(v){
+  if(!agData) return;
+  agCapturarForm();
+  agData.config.estado = v;
+  pintarAgente();
+  agGuardar(true);   // guarda el cambio de estado al instante
+}
+
+async function agToggleTool(clave, activa){
+  const h = (agData && agData.herramientas || []).find(x => x.clave === clave);
+  if(h) h.activa = activa;
+  const r = await api('agente', { accion:'herramienta', linea_id: lineaActual, clave, activa });
+  if(r.status !== 'ok'){ alert(r.mensaje || 'No se pudo cambiar la herramienta.'); cargarAgente(); }
+}
+
+async function agGuardar(silencioso){
+  if(!agData) return;
+  agCapturarForm();
+  const c = agData.config;
+  const r = await api('agente', { accion:'guardar', linea_id: lineaActual,
+    estado: c.estado||'apagado', prompt: c.prompt||'', nombre_agente: c.nombre_agente||'', modelo: c.modelo||'claude-sonnet-4-6' });
+  if(r.status === 'ok'){
+    agData.config = r.config;
+    if(silencioso !== true && $('agSaveMsg')){ $('agSaveMsg').textContent = 'Guardado ✓'; setTimeout(()=>{ if($('agSaveMsg')) $('agSaveMsg').textContent=''; }, 2500); }
+  } else {
+    alert(r.mensaje || 'No se pudo guardar.');
+  }
 }
 
 async function cargarContactos(reset){
