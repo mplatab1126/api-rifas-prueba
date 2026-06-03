@@ -65,15 +65,27 @@ export function limpiarTelefono(telefono, indicativo = '57') {
  * tiene indicativo, ej. 57…, gana sobre el corto).
  */
 export async function telefonoSinDuplicar(supabase, telefonoNormalizado) {
-  const last10 = String(telefonoNormalizado).replace(/\D/g, '').slice(-10);
+  const norm = String(telefonoNormalizado).replace(/\D/g, '');
+  const last10 = norm.slice(-10);
   if (last10.length < 10) return telefonoNormalizado;
+
   const { data } = await supabase
     .from('clientes')
     .select('telefono')
     .like('telefono', '%' + last10)
-    .order('telefono', { ascending: false })
-    .limit(1);
-  return (data && data[0] && data[0].telefono) || telefonoNormalizado;
+    .order('telefono', { ascending: false });
+
+  // Solo reutilizamos si es el MISMO número salvo el indicativo: uno tiene que
+  // ser la "cola" del otro (ej. 3026001113 ⊂ 573026001113). Así, dos extranjeros
+  // de países distintos que casualmente terminen en los mismos 10 dígitos NO se
+  // confunden. Preferimos el más largo (el que trae indicativo) por el orden desc.
+  for (const row of (data || [])) {
+    const cand = String(row.telefono).replace(/\D/g, '');
+    if (cand && (cand.endsWith(norm) || norm.endsWith(cand))) {
+      return row.telefono;
+    }
+  }
+  return telefonoNormalizado;
 }
 
 /**
