@@ -337,15 +337,20 @@ export default async function handler(req, res) {
     if (!messages.length) return res.status(200).json({ status: 'ok', skip: 'Sin mensajes para procesar.' });
 
     // Candado anti-duplicado: solo UNA corrida responde este chat a la vez (webhook + bandeja).
-    const expira = new Date(Date.now() - 45000).toISOString();
-    const { data: lock } = await supabaseAdmin
-      .from('conversaciones_whatsapp')
-      .update({ agente_procesando_at: new Date().toISOString() })
-      .eq('id', conv.id)
-      .or(`agente_procesando_at.is.null,agente_procesando_at.lt.${expira}`)
-      .select('id')
-      .maybeSingle();
-    if (!lock) return res.status(200).json({ status: 'ok', skip: 'Otra corrida ya está respondiendo.' });
+    // Si el candado fallara por cualquier motivo, preferimos responder a quedarnos callados.
+    let bloqueado = false;
+    try {
+      const expira = new Date(Date.now() - 45000).toISOString();
+      const { data: lock, error: lockErr } = await supabaseAdmin
+        .from('conversaciones_whatsapp')
+        .update({ agente_procesando_at: new Date().toISOString() })
+        .eq('id', conv.id)
+        .or('agente_procesando_at.is.null,agente_procesando_at.lt.' + expira)
+        .select('id')
+        .maybeSingle();
+      if (!lockErr && !lock) bloqueado = true;
+    } catch (_) { /* si el candado falla, seguimos: mejor responder que quedar callados */ }
+    if (bloqueado) return res.status(200).json({ status: 'ok', skip: 'Otra corrida ya está respondiendo.' });
 
     // 4) Bucle de razonamiento + herramientas.
     let apagado = false;
