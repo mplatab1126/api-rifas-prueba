@@ -17,7 +17,7 @@
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 import { supabase, supabaseAdmin } from '../lib/supabase.js';
-import { esGerencia, puedeVerLinea } from '../lib/asesores.js';
+import { esMateo, puedeVerLinea } from '../lib/asesores.js';
 
 const ESTADOS = ['apagado', 'sombra', 'encendido'];
 const MODELOS = ['claude-opus-4-8', 'claude-sonnet-4-6', 'claude-haiku-4-5'];
@@ -77,8 +77,8 @@ export default async function handler(req, res) {
   const { contrasena, accion, linea_id } = req.body || {};
   const nombre = validarAsesor(contrasena);
   if (!nombre) return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido.' });
-  // La cabina del agente es SOLO para gerencia (define cómo se atiende al cliente).
-  if (!esGerencia(nombre)) return res.status(403).json({ status: 'error', mensaje: 'Solo gerencia puede configurar el agente.' });
+  // El agente es por ahora EXCLUSIVO de Mateo (para evitar errores en pruebas).
+  if (!esMateo(nombre)) return res.status(403).json({ status: 'error', mensaje: 'Solo Mateo puede configurar el agente.' });
   if (!linea_id) return res.status(200).json({ status: 'error', mensaje: 'Falta la línea.' });
   if (!(await puedeVerLinea(nombre, linea_id))) return res.status(403).json({ status: 'error', mensaje: 'No tienes acceso a esta línea.' });
 

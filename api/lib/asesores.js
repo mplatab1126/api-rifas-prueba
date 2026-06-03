@@ -71,6 +71,12 @@ export function esGerencia(nombre) {
   return GERENCIA.includes(String(nombre || '').toLowerCase().trim());
 }
 
+// Solo Mateo (el dueño). Por ahora el Agente de IA es EXCLUSIVO suyo, para
+// evitar errores mientras se prueba: ni Alejo ni los asesores lo ven ni lo usan.
+export function esMateo(nombre) {
+  return String(nombre || '').toLowerCase().trim() === 'mateo';
+}
+
 // IDs (phone_number_id) de las líneas que puede ver un asesor.
 // Gerencia → null (significa "todas"). Asesor → array de sus líneas.
 export async function lineasDeAsesor(nombre) {

@@ -24,7 +24,7 @@
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 import { supabase, supabaseAdmin } from '../lib/supabase.js';
-import { esGerencia, puedeVerLinea } from '../lib/asesores.js';
+import { esMateo, puedeVerLinea } from '../lib/asesores.js';
 import { enviarTexto, enviarImagenPorId, enviarImagen } from '../lib/whatsapp.js';
 import { numerosDisponibles } from '../lib/numeros-disponibles.js';
 
@@ -199,7 +199,7 @@ export default async function handler(req, res) {
   const { contrasena, linea_id, telefono } = req.body || {};
   const nombre = validarAsesor(contrasena);
   if (!nombre) return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido.' });
-  if (!esGerencia(nombre)) return res.status(403).json({ status: 'error', mensaje: 'Solo gerencia.' });
+  if (!esMateo(nombre)) return res.status(403).json({ status: 'error', mensaje: 'Solo Mateo.' });
   if (!linea_id || !telefono) return res.status(200).json({ status: 'error', mensaje: 'Falta línea o teléfono.' });
   if (!(await puedeVerLinea(nombre, linea_id))) return res.status(403).json({ status: 'error', mensaje: 'Sin acceso a esta línea.' });
 
