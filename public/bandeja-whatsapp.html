@@ -135,6 +135,8 @@
     #convHead #btnAgente.on { background: #dff7e4; border-color: #a9e6ba; color: #1c7a37; }
     .b.nota { align-self: center; max-width: 92%; background: #fff7e6; border: 1px dashed #e6cf8f; color: #7a5d14; font-size: 0.76rem; font-style: italic; border-radius: 10px; padding: 6px 12px 4px; }
     .b.nota .h { color: #b89b50; text-align: center; }
+    #texto:disabled { background: var(--cream-100); color: var(--ink-mute); cursor: not-allowed; }
+    #barra #enviar:disabled { opacity: 0.4; cursor: not-allowed; }
     #vacio { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--gray-400); text-align: center; padding: 20px; flex-direction: column; gap: 14px; }
     #vacio .txt { font-size: 0.92rem; color: var(--ink-mute); max-width: 260px; line-height: 1.5; }
     #msgs { flex: 1; overflow-y: auto; padding: 24px 9%; display: flex; flex-direction: column; gap: 7px; }
@@ -702,6 +704,7 @@ let firmaMsgs = '';
 let soloSinRespuesta = false; // filtro: solo chats donde el último mensaje fue del cliente
 let lineas = [];              // líneas de WhatsApp disponibles
 let gerencia = false;         // ¿el usuario es gerencia? (ve botón Conectar línea)
+let soyMateo = false;         // ¿es Mateo? (único que ve/usa el Agente de IA por ahora)
 let lineaActual = null;       // línea seleccionada (phone_number_id)
 let actualLinea = null;       // línea del chat abierto
 let vista = 'chats';          // 'chats' | 'contactos' | 'difusiones' | 'respuestas'
@@ -718,6 +721,7 @@ let pidSeq = 0;
 let agenteActivoActual = false;   // ¿el agente está prendido en el chat abierto?
 let agenteOcupado = false;        // evita disparar el agente dos veces a la vez
 const agenteDisparado = {};       // telefono -> marca del último mensaje ya atendido
+let ventanaVenceMs = 0;           // hasta cuándo se puede escribir texto libre (ventana 24h de WhatsApp)
 
 const $ = id => document.getElementById(id);
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -780,8 +784,9 @@ async function cargarLineas(){
   const r = await api('lineas', {});
   lineas = (r && r.lineas) ? r.lineas : [];
   gerencia = !!(r && r.esGerencia);
+  soyMateo = !!(r && r.soyMateo);
   // La cabina del Agente es solo para gerencia: mostrar su entrada del menú.
-  if(gerencia){ $('navSecAgente').style.display = ''; $('navAgente').style.display = ''; }
+  if(soyMateo){ $('navSecAgente').style.display = ''; $('navAgente').style.display = ''; }
   const sel = $('selLinea');
   if(lineas.length){
     const guardada = localStorage.getItem('wa_linea');
@@ -879,8 +884,7 @@ window.abrir = async function(telefono, nombrePerfil){
   $('convAvatar').textContent = inicial(c);
   $('convNom').textContent = c.nombre_perfil || c.telefono;
   $('convSub').textContent = '+' + (c.telefono || '');
-  const venc = c.ventana_vence_at ? new Date(c.ventana_vence_at) : null;
-  $('aviso24').style.display = (venc && venc < new Date()) ? 'block' : 'none';
+  actualizarVentana(c.ventana_vence_at ? new Date(c.ventana_vence_at).getTime() : 0);
   pintarLista();
   cargarFicha(telefono);
   await cargarMensajes(true);
@@ -912,7 +916,7 @@ window.toggleFicha = function(abrir){
 /* ── Agente por conversación (botón 🤖 del chat · solo gerencia) ──────────── */
 function actualizarBtnAgente(){
   const b = $('btnAgente'); if(!b) return;
-  b.style.display = (gerencia && actual) ? 'inline-flex' : 'none';
+  b.style.display = (soyMateo && actual) ? 'inline-flex' : 'none';
   b.classList.toggle('on', !!agenteActivoActual);
   const t = $('btnAgenteTxt'); if(t) t.textContent = agenteActivoActual ? 'Agente ON' : 'Agente';
 }
@@ -1112,6 +1116,10 @@ async function cargarMensajes(scroll){
   }).join('') + propios.map(burbujaPendiente).join('');
   hidratarMedia();
   if(scroll || abajo) cont.scrollTop = cont.scrollHeight;
+  // Recalcular la ventana de 24h con el último mensaje entrante real del cliente.
+  let ultEnt = null;
+  for(let i = r.mensajes.length - 1; i >= 0; i--){ if(r.mensajes[i].direccion === 'entrante'){ ultEnt = r.mensajes[i]; break; } }
+  actualizarVentana(ultEnt ? new Date(ultEnt.timestamp_wa || ultEnt.created_at).getTime() + 24*3600*1000 : 0);
   dispararAgenteSiCorresponde(r.mensajes);
 }
 
@@ -1119,8 +1127,22 @@ function estadoIcono(e){
   return ({ enviado:'enviado', entregado:'entregado', leido:'leído', fallido:'no enviado', recibido:'' }[e]) || '';
 }
 
+/* ── Ventana de 24h de WhatsApp ─────────────────────────────────────────────
+   Fuera de la ventana (24h desde el último mensaje del cliente) Meta solo deja
+   enviar plantillas, no texto libre. Bloqueamos el texto manual y avisamos. */
+function ventanaAbierta(){ return ventanaVenceMs && ventanaVenceMs > Date.now(); }
+function actualizarVentana(venceMs){
+  ventanaVenceMs = venceMs || 0;
+  const cerrada = !ventanaAbierta();
+  if($('aviso24')) $('aviso24').style.display = cerrada ? 'block' : 'none';
+  const t = $('texto'), e = $('enviar');
+  if(t){ t.disabled = cerrada; t.placeholder = cerrada ? 'Ventana de 24h cerrada — espera a que el cliente escriba' : 'Escribe un mensaje'; }
+  if(e) e.disabled = cerrada;
+}
+
 /* ── Enviar ── */
 async function enviarMsg(){
+  if(!ventanaAbierta()){ alert('No puedes enviarle mensajes ahora.\n\nPasaron más de 24 horas desde el último mensaje del cliente, y WhatsApp solo permite responder dentro de esa ventana. Espera a que el cliente te escriba de nuevo (o envíale una plantilla).'); return; }
   const txt = $('texto').value.trim();
   if(!txt || !actual) return;
   const tel = actual, linea = actualLinea;
@@ -1488,7 +1510,7 @@ function agFechaHora(iso){
 }
 
 async function cargarAgente(){
-  if(!gerencia){ $('agBody').innerHTML = '<div class="vacio-lista">Solo gerencia puede ver esta sección.</div>'; return; }
+  if(!soyMateo){ $('agBody').innerHTML = '<div class="vacio-lista">Solo Mateo puede ver esta sección.</div>'; return; }
   if(!lineaActual){ $('agBody').innerHTML = '<div class="vacio-lista">No hay una línea seleccionada.</div>'; return; }
   $('agBody').innerHTML = '<div class="vacio-lista">Cargando…</div>';
   const r = await api('agente', { accion:'config', linea_id: lineaActual });
