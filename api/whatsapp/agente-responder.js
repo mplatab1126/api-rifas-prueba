@@ -56,6 +56,11 @@ const TOOLS = [
     input_schema: { type: 'object', properties: {}, required: [] },
   },
   {
+    name: 'verificar_disponibilidad',
+    description: 'Verifica si UN número de boleta específico (4 cifras) está libre u ocupado. Úsala cuando el cliente pregunta por un número puntual, por ejemplo "¿tienes el 1234?".',
+    input_schema: { type: 'object', properties: { numero: { type: 'string', description: 'El número de 4 cifras a verificar.' } }, required: ['numero'] },
+  },
+  {
     name: 'consultar_cliente',
     description: 'Consulta si un teléfono ya tiene boletas con nosotros y cuánto debe. Si no pasas teléfono, usa el del cliente de este chat.',
     input_schema: {
@@ -110,6 +115,15 @@ async function ejecutarHerramienta(nombre, input, conv) {
     const { texto } = await numerosDisponibles({ canal: 'bandeja' });
     await nota(conv, 'Consulté los números disponibles.');
     return 'Números disponibles ahora (4 cifras): ' + texto;
+  }
+
+  if (nombre === 'verificar_disponibilidad') {
+    const num = String(input?.numero || '').replace(/\D/g, '').padStart(4, '0').slice(-4);
+    if (!/^\d{4}$/.test(num)) return 'El número no es válido. Pídele al cliente un número de 4 cifras (0000-9999).';
+    const { data: bol } = await supabase.from('boletas').select('telefono_cliente').eq('numero', num).maybeSingle();
+    await nota(conv, 'Verifiqué el número ' + num + '.');
+    if (!bol) return `El número ${num} no existe en esta rifa.`;
+    return bol.telefono_cliente ? `El número ${num} ya está OCUPADO (no disponible).` : `El número ${num} está LIBRE y disponible.`;
   }
 
   if (nombre === 'consultar_cliente') {
@@ -235,6 +249,12 @@ export default async function handler(req, res) {
     if (!prompt) return res.status(200).json({ status: 'error', mensaje: 'El agente no tiene instrucciones guardadas.' });
     const modelo = MODELOS_OK.includes(cfg?.modelo) ? cfg.modelo : 'claude-sonnet-4-6';
 
+    // Solo se le ofrecen a la IA las herramientas IMPLEMENTADAS que estén ACTIVAS en la cabina.
+    const { data: hsAct } = await supabase.from('agente_herramientas')
+      .select('clave').eq('linea_id', linea_id).eq('activa', true);
+    const activas = new Set((hsAct || []).map(h => h.clave));
+    const toolsActivas = TOOLS.filter(t => activas.has(t.name));
+
     const system = prompt +
       `\n\n---\nCONTEXTO (no lo menciones literalmente): hoy es ${contextoFechaHora()} (Colombia). ` +
       `Hablas por WhatsApp con el cliente cuyo número es ${conv.telefono}. ` +
@@ -252,7 +272,7 @@ export default async function handler(req, res) {
       const resp = await fetch(ANTHROPIC_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({ model: modelo, max_tokens: 1024, system, tools: TOOLS, messages }),
+        body: JSON.stringify({ model: modelo, max_tokens: 1024, system, messages, ...(toolsActivas.length ? { tools: toolsActivas } : {}) }),
       });
       const data = await resp.json();
       if (data.error) { await nota(conv, 'No pude responder (problema con la IA): ' + (data.error.message || 'error')); return res.status(200).json({ status: 'error', mensaje: 'IA: ' + (data.error.message || 'error') }); }
