@@ -57,6 +57,7 @@ function VerHouseApp() {
         documento: (data.documento_tipo || data.documento_numero)
           ? { tipo: data.documento_tipo || "CC", numero: data.documento_numero || "—" }
           : null,
+        correo: data.correo || "",
         boletas: data.boletas
       };
 
@@ -480,8 +481,8 @@ function BoletaDetalleHouse({ cliente, boleta }) {
               <p className="vb-grid-val">{cliente.ciudad}</p>
             </div>
             <div>
-              <p className="vb-grid-label">Sorteo</p>
-              <p className="vb-grid-val">Lotería de Boyacá</p>
+              <p className="vb-grid-label">Correo electrónico</p>
+              <p className="vb-grid-val vb-grid-val-email">{cliente.correo || "—"}</p>
             </div>
             <div>
               <p className="vb-grid-label">Ubicación de la casa</p>
@@ -539,41 +540,59 @@ function BoletaDetalleHouse({ cliente, boleta }) {
           <img src="/assets/icon-3d-gift.png" alt="" />
           Premios
         </h2>
-        <div className="ab-cliente-card">
-          <div className="vb-premio">
-            <p className="vb-premio-fecha">Premio Mayor — Sábado 4 de julio de 2026</p>
-            <p className="vb-premio-titulo">Casa Santa Teresita</p>
-            <p className="vb-premio-desc">Casa de dos plantas en el barrio Santa Teresita, Chinchiná, Caldas.</p>
-            <p className="vb-premio-bonus">Si no la quiere, le compramos la casa por <strong>$300.000.000 en efectivo</strong>.</p>
+        <details className="vb-terminos">
+          <summary className="vb-terminos-summary">
+            <span>Ver premios de la rifa</span>
+            <svg className="vb-terminos-chevron" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </summary>
+          <div className="vb-terminos-body">
+            <div className="vb-premio">
+              <p className="vb-premio-fecha">Premio Mayor — Sábado 4 de julio de 2026</p>
+              <p className="vb-premio-titulo">Casa Santa Teresita</p>
+              <p className="vb-premio-desc">Casa de dos plantas en el barrio Santa Teresita, Chinchiná, Caldas.</p>
+              <p className="vb-premio-bonus">Si no la quiere, le compramos la casa por <strong>$300.000.000 en efectivo</strong>.</p>
+            </div>
+            <div className="vb-divider"></div>
+            <div className="vb-premio">
+              <p className="vb-premio-fecha">El Sueldazo — Miércoles 3 de junio de 2026 <span className="vb-premio-badge">Obsequio</span></p>
+              <p className="vb-premio-titulo">$1.500.000 al mes · 6 meses</p>
+              <p className="vb-premio-desc">Un único ganador recibe un millón y medio de pesos en bonos de consumo cada mes durante medio año. Total: <strong>$9.000.000 en bonos</strong>.</p>
+              <p className="vb-premio-nota">Este premio es un <strong>obsequio</strong> de LOS PLATA S.A.S. y no hace parte de la rifa autorizada.</p>
+            </div>
+            <div className="vb-divider"></div>
+            <div className="vb-premio">
+              <p className="vb-premio-fecha">Premios semanales — 7 sábados antes del sorteo <span className="vb-premio-badge">Obsequio</span></p>
+              <p className="vb-premio-titulo">$5.000.000 cada sábado</p>
+              <p className="vb-premio-desc">Si abonas mínimo $20.000 esa semana, juegas por cinco millones en bonos de consumo con la Lotería de Boyacá.</p>
+              <p className="vb-premio-nota">Este premio es un <strong>obsequio</strong> de LOS PLATA S.A.S. y no hace parte de la rifa autorizada.</p>
+            </div>
           </div>
-          <div className="vb-divider"></div>
-          <div className="vb-premio">
-            <p className="vb-premio-fecha">El Sueldazo — Miércoles 3 de junio de 2026</p>
-            <p className="vb-premio-titulo">$1.500.000 al mes · 6 meses</p>
-            <p className="vb-premio-desc">Un único ganador recibe un millón y medio de pesos en bonos de consumo cada mes durante medio año. Total: <strong>$9.000.000 en bonos</strong>.</p>
-          </div>
-          <div className="vb-divider"></div>
-          <div className="vb-premio">
-            <p className="vb-premio-fecha">Premios semanales — 7 sábados antes del sorteo</p>
-            <p className="vb-premio-titulo">$5.000.000 cada sábado</p>
-            <p className="vb-premio-desc">Si abonas mínimo $20.000 esa semana, juegas por cinco millones en bonos de consumo con la Lotería de Boyacá.</p>
-          </div>
-        </div>
+        </details>
 
         {/* Condiciones */}
         <h2 className="ab-section-titulo vb-sec-icon">
           <img src="/assets/icon-3d-shield.png" alt="" />
           Condiciones para ganar
         </h2>
-        <div className="ab-cliente-card">
-          <p className="vb-cond"><strong>Premio Mayor — La casa (4 de julio):</strong> tu boleta debe estar 100% pagada ($150.000) al momento del sorteo.</p>
-          <div className="vb-divider"></div>
-          <p className="vb-cond"><strong>El Sueldazo (3 de junio):</strong> haber abonado mínimo $50.000 antes de esa fecha.</p>
-          <div className="vb-divider"></div>
-          <p className="vb-cond"><strong>Premios semanales ($5M):</strong> abonar mínimo $20.000 en la semana del sorteo correspondiente.</p>
-          <div className="vb-divider"></div>
-          <p className="vb-cond">Todos los sorteos juegan con la <strong>Lotería de Boyacá</strong> (últimas 4 cifras del resultado oficial).</p>
-        </div>
+        <details className="vb-terminos">
+          <summary className="vb-terminos-summary">
+            <span>Ver condiciones para ganar</span>
+            <svg className="vb-terminos-chevron" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </summary>
+          <div className="vb-terminos-body">
+            <p className="vb-cond"><strong>Premio Mayor — La casa (4 de julio):</strong> tu boleta debe estar 100% pagada ($150.000) al momento del sorteo.</p>
+            <div className="vb-divider"></div>
+            <p className="vb-cond"><strong>El Sueldazo (3 de junio):</strong> haber abonado mínimo $50.000 antes de esa fecha.</p>
+            <div className="vb-divider"></div>
+            <p className="vb-cond"><strong>Premios semanales ($5M):</strong> abonar mínimo $20.000 en la semana del sorteo correspondiente.</p>
+            <div className="vb-divider"></div>
+            <p className="vb-cond">Todos los sorteos juegan con la <strong>Lotería de Boyacá</strong> (últimas 4 cifras del resultado oficial).</p>
+          </div>
+        </details>
 
         {/* Términos y condiciones */}
         <h2 className="ab-section-titulo vb-sec-icon">
