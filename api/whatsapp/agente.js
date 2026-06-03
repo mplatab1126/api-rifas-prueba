@@ -124,6 +124,21 @@ export default async function handler(req, res) {
       return res.status(200).json({ status: 'ok' });
     }
 
+    // Prende/apaga el agente en UNA conversación (el botón 🤖 de la bandeja).
+    if (accion === 'activar_conversacion') {
+      const tel = String(req.body.telefono || '').trim();
+      const activa = !!req.body.activa;
+      if (!tel) return res.status(200).json({ status: 'error', mensaje: 'Falta el teléfono.' });
+      const patch = { agente_activo: activa };
+      if (activa) patch.estado = 'bot';
+      const { error } = await supabaseAdmin
+        .from('conversaciones_whatsapp')
+        .update(patch)
+        .eq('telefono', tel).eq('linea_id', linea_id);
+      if (error) return res.status(200).json({ status: 'error', mensaje: error.message });
+      return res.status(200).json({ status: 'ok', activa });
+    }
+
     // Simulador: corre el prompt contra una conversación de prueba. NO toca WhatsApp.
     if (accion === 'probar') {
       const apiKey = process.env.ANTHROPIC_API_KEY;

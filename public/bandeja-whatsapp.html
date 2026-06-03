@@ -131,6 +131,10 @@
     #convHead .volver { display: none; background: none; border: none; color: var(--ink); font-size: 1.3rem; cursor: pointer; padding: 0 4px 0 0; }
     #convHead .nom { font-weight: 600; font-size: 0.95rem; color: var(--ink); }
     #convHead .sub { font-size: 0.74rem; color: var(--ink-mute); margin-top: 1px; }
+    #convHead #btnAgente { display: none; align-items: center; gap: 5px; margin-left: auto; background: none; border: 1px solid var(--gray-200); border-radius: 100px; padding: 6px 12px; font-family: inherit; font-size: 0.78rem; font-weight: 600; color: var(--ink-mute); cursor: pointer; white-space: nowrap; }
+    #convHead #btnAgente.on { background: #dff7e4; border-color: #a9e6ba; color: #1c7a37; }
+    .b.nota { align-self: center; max-width: 92%; background: #fff7e6; border: 1px dashed #e6cf8f; color: #7a5d14; font-size: 0.76rem; font-style: italic; border-radius: 10px; padding: 6px 12px 4px; }
+    .b.nota .h { color: #b89b50; text-align: center; }
     #vacio { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--gray-400); text-align: center; padding: 20px; flex-direction: column; gap: 14px; }
     #vacio .txt { font-size: 0.92rem; color: var(--ink-mute); max-width: 260px; line-height: 1.5; }
     #msgs { flex: 1; overflow-y: auto; padding: 24px 9%; display: flex; flex-direction: column; gap: 7px; }
@@ -583,6 +587,7 @@
             <div class="nom" id="convNom"></div>
             <div class="sub" id="convSub"></div>
           </div>
+          <button id="btnAgente" title="Activar o apagar el agente en este chat" onclick="toggleAgente()">🤖 <span id="btnAgenteTxt">Agente</span></button>
           <button id="btnFicha" title="Ver ficha del cliente" onclick="toggleFicha(true)">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             <span class="ficha-dot" title="Este cliente tiene boletas"></span>
@@ -710,6 +715,9 @@ let verifActual = null;      // resultado de la última verificación (incluye b
 let abonoCtx = null;         // { id, monto, ref, plat } de la transferencia que se va a abonar
 let pendientes = [];         // mensajes salientes mostrados de inmediato (optimista), aún sin confirmar del servidor
 let pidSeq = 0;
+let agenteActivoActual = false;   // ¿el agente está prendido en el chat abierto?
+let agenteOcupado = false;        // evita disparar el agente dos veces a la vez
+const agenteDisparado = {};       // telefono -> marca del último mensaje ya atendido
 
 const $ = id => document.getElementById(id);
 function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -866,6 +874,8 @@ window.abrir = async function(telefono, nombrePerfil){
   $('convReal').style.display = 'flex';
   const c = conversaciones.find(x => x.telefono === telefono) || { telefono, nombre_perfil: nombrePerfil || telefono, linea_id: lineaActual };
   actualLinea = c.linea_id || lineaActual;
+  agenteActivoActual = !!c.agente_activo;
+  actualizarBtnAgente();
   $('convAvatar').textContent = inicial(c);
   $('convNom').textContent = c.nombre_perfil || c.telefono;
   $('convSub').textContent = '+' + (c.telefono || '');
@@ -898,6 +908,43 @@ window.toggleFicha = function(abrir){
   const on = (abrir === undefined) ? !$('app').classList.contains('ficha-abierta') : !!abrir;
   $('app').classList.toggle('ficha-abierta', on);
 };
+
+/* ── Agente por conversación (botón 🤖 del chat · solo gerencia) ──────────── */
+function actualizarBtnAgente(){
+  const b = $('btnAgente'); if(!b) return;
+  b.style.display = (gerencia && actual) ? 'inline-flex' : 'none';
+  b.classList.toggle('on', !!agenteActivoActual);
+  const t = $('btnAgenteTxt'); if(t) t.textContent = agenteActivoActual ? 'Agente ON' : 'Agente';
+}
+window.toggleAgente = async function(){
+  if(!actual) return;
+  const nuevo = !agenteActivoActual;
+  if(nuevo && !confirm('¿Activar el agente en ESTE chat?\n\nResponderá solo a este cliente y puede ejecutar acciones reales. Úsalo solo en tu chat de prueba.')) return;
+  agenteActivoActual = nuevo;
+  actualizarBtnAgente();
+  const r = await api('agente', { accion:'activar_conversacion', linea_id: actualLinea, telefono: actual, activa: nuevo });
+  if(r.status !== 'ok'){ agenteActivoActual = !nuevo; actualizarBtnAgente(); alert(r.mensaje || 'No se pudo cambiar el agente.'); return; }
+  const c = conversaciones.find(x => x.telefono === actual); if(c) c.agente_activo = nuevo;
+  if(nuevo) dispararAgenteSiCorresponde();
+};
+async function dispararAgenteSiCorresponde(mensajes){
+  if(!actual || !agenteActivoActual || agenteOcupado) return;
+  let lista = mensajes;
+  if(!lista){ const r = await api('mensajes', { telefono: actual, linea_id: actualLinea }); if(r && r.status==='ok') lista = r.mensajes; }
+  if(!Array.isArray(lista)) return;
+  const reales = lista.filter(m => m.direccion === 'entrante' || m.direccion === 'saliente');
+  const ult = reales[reales.length - 1];
+  if(!ult || ult.direccion !== 'entrante') return;
+  const marca = String(ult.id || ult.wa_message_id || ((ult.timestamp_wa||'') + (ult.texto||'')));
+  if(agenteDisparado[actual] === marca) return;
+  agenteDisparado[actual] = marca;
+  const tel = actual;
+  agenteOcupado = true;
+  try { await api('agente-responder', { telefono: tel, linea_id: actualLinea }); }
+  catch(e){}
+  finally { agenteOcupado = false; }
+  if(actual === tel) cargarMensajes(false);
+}
 
 /* ── Ficha del cliente (panel derecho) ── */
 async function cargarFicha(telefono){
@@ -1056,12 +1103,16 @@ async function cargarMensajes(scroll){
   const cont = $('msgs');
   const abajo = cont.scrollHeight - cont.scrollTop - cont.clientHeight < 80;
   cont.innerHTML = r.mensajes.map(m => {
+    if(m.direccion === 'nota'){
+      return `<div class="b nota">${esc(m.texto||'')}<div class="h">${hora(m.timestamp_wa || m.created_at)}</div></div>`;
+    }
     const claseMedio = (m.tipo && m.tipo !== 'text' && !m.media_id && !m.media_url) ? ' medio' : '';
     const estado = m.direccion === 'saliente' ? estadoIcono(m.estado_envio) : '';
     return `<div class="b ${m.direccion==='entrante'?'ent':'sal'}${claseMedio}">${cuerpoMensaje(m)}<div class="h">${hora(m.timestamp_wa || m.created_at)}${estado ? ' · ' + estado : ''}</div></div>`;
   }).join('') + propios.map(burbujaPendiente).join('');
   hidratarMedia();
   if(scroll || abajo) cont.scrollTop = cont.scrollHeight;
+  dispararAgenteSiCorresponde(r.mensajes);
 }
 
 function estadoIcono(e){

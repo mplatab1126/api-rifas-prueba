@@ -50,3 +50,8 @@ create table if not exists public.agente_actividad (
 );
 create index if not exists agente_actividad_linea_fecha_idx
   on public.agente_actividad (linea_id, created_at desc);
+
+-- 4) Interruptor del agente POR conversación: lo prende/apaga el botón 🤖 de la
+--    bandeja, para activarlo solo en un chat (prueba) sin afectar a los demás.
+alter table public.conversaciones_whatsapp
+  add column if not exists agente_activo boolean not null default false;
