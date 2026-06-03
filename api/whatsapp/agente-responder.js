@@ -180,7 +180,7 @@ async function ejecutarHerramienta(nombre, input, conv) {
       if (i < rr.pasos.length - 1) await dormir(PAUSA_MS);
     }
     await nota(conv, 'Envié el contacto inicial (presentación con fotos, precio y la pregunta de los premios).');
-    return `Listo, ya le envié la presentación inicial completa (${enviados} mensajes: fotos de la casa, precio y la pregunta de si quiere que le explique los premios). NO repitas esa información; espera su respuesta.`;
+    return `Listo, ya le envié la presentación completa: el saludo (soy Liliana, de Los Plata), las fotos de la casa, el precio ($150 mil, se separa con $20 mil), que somos legales (EDSA), y termina con "¿Te explico los premios?". NO repitas NADA de eso, ni esa pregunta. SOLO si el cliente hizo una pregunta puntual que la presentación NO responde, contéstasela ahora en 1 frase corta. Si su mensaje era apenas un saludo o "quiero información", NO escribas nada más.`;
   }
 
   if (nombre === 'apartar_numero') {
@@ -352,19 +352,14 @@ export default async function handler(req, res) {
       // Ejecutar herramientas y devolver resultados a la IA.
       messages.push({ role: 'assistant', content: bloques });
       const results = [];
-      let cerrarSinTexto = false;
       for (const tu of toolUses) {
         let out;
         try { out = await ejecutarHerramienta(tu.name, tu.input || {}, conv); }
         catch (e) { out = 'Error ejecutando la herramienta: ' + e.message; }
         if (typeof out === 'string' && out.startsWith('AGENTE_APAGADO')) apagado = true;
-        // El contacto inicial YA termina con "¿Te explico los premios?": cerramos
-        // el turno aquí para que el agente NO escriba otro mensaje repitiéndola.
-        if (tu.name === 'enviar_contacto_inicial') cerrarSinTexto = true;
         results.push({ type: 'tool_result', tool_use_id: tu.id, content: out });
       }
       messages.push({ role: 'user', content: results });
-      if (cerrarSinTexto && !apagado) break;
       if (apagado) {
         // dar una última vuelta para el mensaje de despedida y cortar
         const resp2 = await fetch(ANTHROPIC_URL, {
