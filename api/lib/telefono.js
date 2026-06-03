@@ -54,6 +54,41 @@ export function limpiarTelefono(telefono, indicativo = '57') {
 }
 
 /**
+ * Evita clientes duplicados. Dado un teléfono ya normalizado, busca si ya existe
+ * un cliente cuyos ÚLTIMOS 10 DÍGITOS coincidan (sin importar si lo tiene con o
+ * sin indicativo) y, si lo encuentra, devuelve ESE teléfono tal como está
+ * guardado, para reutilizar la misma fila. Si no existe ninguno, devuelve el
+ * teléfono normalizado que se le pasó (cliente nuevo).
+ *
+ * Así, aunque en la base esté el número viejo sin el 57, NO se crea otra fila.
+ * Cuando hay duplicados ya existentes, prefiere el teléfono "mayor" (el que
+ * tiene indicativo, ej. 57…, gana sobre el corto).
+ */
+export async function telefonoSinDuplicar(supabase, telefonoNormalizado) {
+  const norm = String(telefonoNormalizado).replace(/\D/g, '');
+  const last10 = norm.slice(-10);
+  if (last10.length < 10) return telefonoNormalizado;
+
+  const { data } = await supabase
+    .from('clientes')
+    .select('telefono')
+    .like('telefono', '%' + last10)
+    .order('telefono', { ascending: false });
+
+  // Solo reutilizamos si es el MISMO número salvo el indicativo: uno tiene que
+  // ser la "cola" del otro (ej. 3026001113 ⊂ 573026001113). Así, dos extranjeros
+  // de países distintos que casualmente terminen en los mismos 10 dígitos NO se
+  // confunden. Preferimos el más largo (el que trae indicativo) por el orden desc.
+  for (const row of (data || [])) {
+    const cand = String(row.telefono).replace(/\D/g, '');
+    if (cand && (cand.endsWith(norm) || norm.endsWith(cand))) {
+      return row.telefono;
+    }
+  }
+  return telefonoNormalizado;
+}
+
+/**
  * Verifica si un teléfono (ya limpio) tiene un formato válido para su indicativo.
  * Útil para rechazar números corruptos antes de guardarlos o usarlos en WhatsApp.
  *

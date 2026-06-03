@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 import { PRECIOS } from '../config/precios.js';
-import { limpiarTelefono, esTelefonoValido } from '../lib/telefono.js';
+import { limpiarTelefono, esTelefonoValido, telefonoSinDuplicar } from '../lib/telefono.js';
 import { pendienteHabilitado } from '../lib/configuracion.js';
 
 export default async function handler(req, res) {
@@ -82,11 +82,15 @@ export default async function handler(req, res) {
     if (boletaError || !boletaData) return res.status(404).json({ status: 'error', mensaje: 'La boleta no existe' });
     if (boletaData.telefono_cliente) return res.status(400).json({ status: 'error', mensaje: 'Esta boleta ya fue vendida' });
 
+    // Anti-duplicados: si este cliente ya existe (por sus últimos 10 dígitos),
+    // reutilizamos su teléfono guardado en vez de crear otra fila.
+    const telefonoCliente = await telefonoSinDuplicar(supabase, telefonoLimpio);
+
     // 2. Traer el historial actual del cliente (si existe)
     const { data: clienteActual } = await supabase
       .from('clientes')
       .select('total_comprado, boletas_grandes_compradas')
-      .eq('telefono', telefonoLimpio)
+      .eq('telefono', telefonoCliente)
       .single();
 
     let grandesCompradas = clienteActual?.boletas_grandes_compradas || 0;
@@ -119,7 +123,7 @@ export default async function handler(req, res) {
 
     // 4. Guardar/Actualizar el cliente con sus nuevos números
     const clientePayload = {
-      telefono: telefonoLimpio,
+      telefono: telefonoCliente,
       nombre: nombre || 'Sin Nombre',
       apellido: apellido || '',
       ciudad: ciudad || '',
@@ -185,7 +189,7 @@ export default async function handler(req, res) {
              String(fechaCol.getSeconds()).padStart(2, '0');
 
     const updatePayload = {
-        telefono_cliente: telefonoLimpio,
+        telefono_cliente: telefonoCliente,
         estado: estadoNuevo,
         total_abonado: abonoNum,
         saldo_restante: saldoRestante,

@@ -21,7 +21,7 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
 import { PRECIOS } from '../config/precios.js';
-import { limpiarTelefono, esTelefonoValido } from '../lib/telefono.js';
+import { limpiarTelefono, esTelefonoValido, telefonoSinDuplicar } from '../lib/telefono.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -115,15 +115,19 @@ export default async function handler(req, res) {
       0
     );
 
+    // Anti-duplicados: si este cliente ya existe (por sus últimos 10 dígitos),
+    // reutilizamos su teléfono guardado en vez de crear otra fila.
+    const telefonoCliente = await telefonoSinDuplicar(supabase, telefonoLimpio);
+
     // 3. Guardamos / actualizamos al cliente sin pisar su historial
     const { data: clienteActual } = await supabase
       .from('clientes')
       .select('total_comprado, boletas_grandes_compradas')
-      .eq('telefono', telefonoLimpio)
+      .eq('telefono', telefonoCliente)
       .single();
 
     const clientePayload = {
-      telefono: telefonoLimpio,
+      telefono: telefonoCliente,
       nombre: nombreLimpio,
       apellido: apellidoLimpio,
       ciudad: ciudadLimpia,
@@ -152,7 +156,7 @@ export default async function handler(req, res) {
     for (const b of checkData) {
       const precio = Number(b.precio_total) || PRECIOS.RIFA_4_CIFRAS;
       const boletaPayload = {
-        telefono_cliente: telefonoLimpio,
+        telefono_cliente: telefonoCliente,
         estado: 'Ocupada',
         total_abonado: 0,
         saldo_restante: precio,
