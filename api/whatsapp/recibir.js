@@ -95,6 +95,30 @@ async function guardarEntrante(m, nombrePerfil, lineaId) {
       },
       { onConflict: 'wa_message_id', ignoreDuplicates: true }
     );
+
+  // Si el agente está activo en este chat, dispararlo de una (sin depender del navegador).
+  await dispararAgenteSiActivo(telefono, lineaId);
+}
+
+// ── Disparar el agente de IA si está activo en esta conversación ────────────
+// Lo llamamos al instante cuando entra el mensaje, sin esperar al navegador.
+// No bloqueamos a Meta: lanzamos la petición y cortamos a 1.5s (el motor sigue
+// procesando en su propia ejecución serverless).
+async function dispararAgenteSiActivo(telefono, lineaId) {
+  try {
+    const { data: c } = await supabaseAdmin
+      .from('conversaciones_whatsapp')
+      .select('agente_activo')
+      .eq('telefono', telefono).eq('linea_id', lineaId).maybeSingle();
+    if (!c || !c.agente_activo) return;
+    const { verifyToken } = configWhatsapp();
+    await fetch('https://www.losplata.com.co/api/whatsapp/agente-responder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ telefono, linea_id: lineaId, interno: verifyToken }),
+      signal: AbortSignal.timeout(1500),
+    });
+  } catch (_) { /* el corte a 1.5s es esperado; el motor sigue procesando aparte */ }
 }
 
 // ── Actualizar el estado de un mensaje que enviamos ─────────────────────────
