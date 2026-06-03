@@ -216,6 +216,43 @@ export async function enviarImagenPorId(telefono, mediaId, caption, lineaId) {
 }
 
 /**
+ * Envía un DOCUMENTO (PDF, etc.) por URL pública a un número de WhatsApp.
+ * Meta descarga el archivo del link y se lo entrega al cliente.
+ *
+ * @param {string} telefono - Número internacional sin signos
+ * @param {string} url      - URL pública del documento
+ * @param {string} filename - Nombre con el que el cliente verá el archivo
+ * @param {string} caption  - Texto opcional bajo el documento
+ * @returns {Promise<{ok:boolean, wa_message_id?:string, error?:string, raw?:object}>}
+ */
+export async function enviarDocumento(telefono, url, filename, caption, lineaId) {
+  const { token, phoneNumberId } = await resolverLinea(lineaId);
+  if (!token || !phoneNumberId) {
+    return { ok: false, error: 'No hay token/número configurado para esta línea.' };
+  }
+  try {
+    const document = { link: url };
+    if (filename) document.filename = filename;
+    if (caption) document.caption = caption;
+    const resp = await fetch(`${GRAPH}/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp', recipient_type: 'individual',
+        to: telefono, type: 'document', document,
+      }),
+    });
+    const data = await resp.json();
+    if (!resp.ok || data.error) {
+      return { ok: false, error: data.error?.message || `HTTP ${resp.status}`, raw: data };
+    }
+    return { ok: true, wa_message_id: data.messages?.[0]?.id, raw: data };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+/**
  * Descarga un archivo de WhatsApp (foto/PDF) y lo devuelve como base64.
  * Igual que el endpoint media.js pero como función reutilizable desde el backend.
  *

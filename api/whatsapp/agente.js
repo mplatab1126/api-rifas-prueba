@@ -35,6 +35,7 @@ const HERRAMIENTAS_DEFAULT = [
   { clave: 'apartar_numero',           nombre: 'Apartar un número (Fase 2)',          descripcion: 'Reserva una boleta a nombre del cliente. Aún no disponible.',            riesgo: 'medio', orden: 6 },
   { clave: 'enviar_boleta',            nombre: 'Enviar la boleta (Fase 2)',           descripcion: 'Manda al cliente su boleta digital. Aún no disponible.',                 riesgo: 'medio', orden: 7 },
   { clave: 'registrar_abono',          nombre: 'Registrar un abono · dinero (Fase 2)', descripcion: 'Registra un pago verificado contra una transferencia real. Aún no disponible.', riesgo: 'alto',  orden: 8 },
+  { clave: 'enviar_resolucion',        nombre: 'Enviar la resolución (PDF de EDSA)',  descripcion: 'Le manda al cliente el PDF de la resolución oficial que autoriza la rifa.', riesgo: 'bajo',  orden: 9 },
 ];
 
 // Devuelve la config de la línea; si no existe, la crea con valores por defecto.

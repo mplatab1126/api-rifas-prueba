@@ -25,7 +25,7 @@ import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 import { supabase, supabaseAdmin } from '../lib/supabase.js';
 import { esMateo, puedeVerLinea } from '../lib/asesores.js';
-import { enviarTexto, enviarImagenPorId, enviarImagen } from '../lib/whatsapp.js';
+import { enviarTexto, enviarImagenPorId, enviarImagen, enviarDocumento } from '../lib/whatsapp.js';
 import { numerosDisponibles } from '../lib/numeros-disponibles.js';
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
@@ -68,6 +68,11 @@ const TOOLS = [
       properties: { telefono: { type: 'string', description: 'Teléfono a consultar (opcional). Por defecto el de este chat.' } },
       required: [],
     },
+  },
+  {
+    name: 'enviar_resolucion',
+    description: 'Envía al cliente el PDF de la resolución oficial de EDSA que autoriza la rifa. Úsala cuando el cliente pide ver la resolución, el documento legal, o pruebas concretas de que la rifa es legal o está autorizada.',
+    input_schema: { type: 'object', properties: {}, required: [] },
   },
   {
     name: 'apartar_numero',
@@ -213,6 +218,14 @@ async function ejecutarHerramienta(nombre, input, conv) {
     if (env && env.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto, wa_message_id: env.wa_message_id });
     await nota(conv, 'Envié la boleta digital al cliente.');
     return 'Listo, le envié su boleta digital con el enlace para consultarla. Si va a abonar, recuérdale los medios de pago y avísale que un asesor le confirma el pago.';
+  }
+
+  if (nombre === 'enviar_resolucion') {
+    const env = await enviarDocumento(conv.telefono, 'https://www.losplata.com.co/resolucion.pdf', 'Resolucion-EDSA-Los-Plata.pdf', 'Resolución oficial que autoriza la rifa (EDSA).', conv.linea_id);
+    if (!env || !env.ok) { await nota(conv, 'Intenté enviar la resolución pero no se pudo: ' + ((env && env.error) || 'error')); return 'No se pudo enviar el documento. Dile que en un momento se lo hace llegar un asesor.'; }
+    await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: '📄 Resolución oficial de EDSA (PDF enviado)', wa_message_id: env.wa_message_id });
+    await nota(conv, 'Envié la resolución oficial (PDF de EDSA).');
+    return 'Listo, le envié el PDF de la resolución oficial de EDSA. Aprovecha para reforzar la confianza y retomar la venta.';
   }
 
   if (nombre === 'pasar_a_humano') {
