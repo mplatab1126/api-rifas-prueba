@@ -70,8 +70,18 @@ const TOOLS = [
     },
   },
   {
+    name: 'apartar_numero',
+    description: 'Aparta (reserva) una boleta a nombre del cliente. Úsala SOLO cuando ya tengas los CUATRO datos: el número de 4 cifras, el nombre, el apellido y la ciudad del cliente. El teléfono es el de este chat.',
+    input_schema: { type: 'object', properties: { numero: { type: 'string', description: 'Número de 4 cifras a apartar.' }, nombre: { type: 'string' }, apellido: { type: 'string' }, ciudad: { type: 'string' } }, required: ['numero', 'nombre', 'apellido', 'ciudad'] },
+  },
+  {
+    name: 'enviar_boleta',
+    description: 'Envía al cliente su boleta digital con el enlace para consultarla. Úsala justo después de apartar su número.',
+    input_schema: { type: 'object', properties: {}, required: [] },
+  },
+  {
     name: 'pasar_a_humano',
-    description: 'Entrega la conversación a un asesor humano y te apaga en este chat. Úsala cuando el cliente quiere comprar/apartar/pagar, tiene una queja, pide algo que no puedes resolver, o pide hablar con una persona.',
+    description: 'Entrega la conversación a un asesor humano y te apaga en este chat. Úsala cuando: el cliente dice que YA PAGÓ o manda un comprobante (para que un asesor confirme el abono), tiene una queja, pide algo que no puedes resolver, o pide hablar con una persona.',
     input_schema: {
       type: 'object',
       properties: { motivo: { type: 'string', description: 'Motivo corto del traspaso.' } },
@@ -166,6 +176,43 @@ async function ejecutarHerramienta(nombre, input, conv) {
     }
     await nota(conv, 'Envié el contacto inicial (presentación con fotos, precio y la pregunta de los premios).');
     return `Listo, ya le envié la presentación inicial completa (${enviados} mensajes: fotos de la casa, precio y la pregunta de si quiere que le explique los premios). NO repitas esa información; espera su respuesta.`;
+  }
+
+  if (nombre === 'apartar_numero') {
+    const num = String(input?.numero || '').replace(/\D/g, '').padStart(4, '0').slice(-4);
+    const nom = String(input?.nombre || '').trim();
+    const ape = String(input?.apellido || '').trim();
+    const ciu = String(input?.ciudad || '').trim();
+    if (!/^\d{4}$/.test(num) || !nom || !ape || !ciu) {
+      return 'Faltan datos para apartar. Necesito el número de 4 cifras, nombre, apellido y ciudad del cliente. Pídeselos antes de apartar.';
+    }
+    try {
+      const r = await fetch('https://www.losplata.com.co/api/rifa/reservar', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ numeros: [num], nombre: nom, apellido: ape, ciudad: ciu, telefono: conv.telefono }),
+      });
+      const d = await r.json();
+      if (!d.exito) { await nota(conv, 'Intenté apartar el ' + num + ' pero no se pudo: ' + (d.error || 'error')); return 'No se pudo apartar: ' + (d.error || 'error') + '. Cuéntaselo al cliente y ofrécele otra opción.'; }
+      await nota(conv, `Aparté el número ${num} a nombre de ${nom} ${ape} (${ciu}).`);
+      return `Listo: el número ${num} quedó apartado a nombre de ${nom} ${ape}. Total por pagar: $${Number(d.total || 0).toLocaleString('es-CO')}. Ahora envíale la boleta con enviar_boleta y explícale cómo abonar.`;
+    } catch (e) {
+      return 'No se pudo apartar (error de conexión): ' + e.message + '. Mejor pasa a un asesor.';
+    }
+  }
+
+  if (nombre === 'enviar_boleta') {
+    const last10 = String(conv.telefono).replace(/\D/g, '').slice(-10);
+    const { data: boletas } = await supabase.from('boletas').select('numero, saldo_restante').like('telefono_cliente', '%' + last10);
+    if (!boletas || !boletas.length) return 'El cliente todavía no tiene ninguna boleta apartada. Primero aparta su número con apartar_numero.';
+    boletas.sort((a, b) => Number(a.numero) - Number(b.numero));
+    const una = boletas.length === 1;
+    const lista = boletas.map(b => `*${b.numero}*  ·  ${Number(b.saldo_restante || 0) <= 0 ? '✅ Pagada' : ('te falta abonar $' + Number(b.saldo_restante || 0).toLocaleString('es-CO'))}`).join('\n');
+    const enlace = `https://www.losplata.com.co/boleta?telefono=${last10}`;
+    const texto = `🎉 ¡Quedaste participando!\n\n${una ? 'Esta es tu boleta' : 'Estas son tus boletas'} para la rifa de *Los Plata*:\n\n${lista}\n\n👉 ${una ? 'Consulta tu boleta aquí' : 'Consulta tus boletas aquí'}:\n${enlace}\n\n¡Te deseamos mucha suerte! 🍀`;
+    const env = await enviarTexto(conv.telefono, texto, conv.linea_id);
+    if (env && env.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto, wa_message_id: env.wa_message_id });
+    await nota(conv, 'Envié la boleta digital al cliente.');
+    return 'Listo, le envié su boleta digital con el enlace para consultarla. Si va a abonar, recuérdale los medios de pago y avísale que un asesor le confirma el pago.';
   }
 
   if (nombre === 'pasar_a_humano') {
