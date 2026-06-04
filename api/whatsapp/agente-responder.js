@@ -609,6 +609,9 @@ export default async function handler(req, res) {
       .filter(m => m.direccion === 'nota' && /^🤖/.test(String(m.texto || '')))
       .map(m => String(m.texto).replace(/^🤖\s*/, '').trim())
       .filter(Boolean);
+    // ¿Ya hubo respuestas en este chat? (un asesor lo atendió a mano o el agente ya se
+    // presentó). Si es así, al activarlo NO debe reenviar el contacto inicial: continúa.
+    const yaHuboSalientes = reales.some(m => m.direccion === 'saliente');
 
     const system = prompt +
       `\n\n---\nCONTEXTO (no lo menciones literalmente): hoy es ${contextoFechaHora()} (Colombia). ` +
@@ -621,6 +624,9 @@ export default async function handler(req, res) {
       `\n\n---\n${bloqueEstadoCliente(estadoCliente)}` +
       (accionesHechas.length
         ? `\n\n---\nACCIONES QUE TÚ YA EJECUTASTE EN ESTE CHAT (son HECHOS ya aplicados en el sistema; NO las repitas y NO digas nada que las contradiga —ej.: si ya liberaste una boleta, no digas luego que "no está a su nombre"):\n- ${accionesHechas.join('\n- ')}`
+        : '') +
+      (yaHuboSalientes
+        ? `\n\n---\nESTE CHAT YA TIENE MENSAJES PREVIOS (un asesor lo atendió a mano o ya te presentaste). NO uses enviar_contacto_inicial, NO te vuelvas a presentar y NO repitas información ya enviada. Lee TODO el historial y CONTINÚA desde donde quedó, respondiendo lo ÚLTIMO que preguntó el cliente.`
         : '');
 
     const messages = construirMensajes(reales, imagenesVistas);
