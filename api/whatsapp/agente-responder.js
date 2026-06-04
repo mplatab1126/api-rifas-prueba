@@ -47,8 +47,8 @@ function contextoFechaHora() {
 const TOOLS = [
   {
     name: 'enviar_contacto_inicial',
-    description: 'Envía al cliente la presentación inicial de la rifa: el saludo, las fotos de la casa, el precio, cómo separar y la pregunta de si quiere que le expliquen los premios. Úsala UNA sola vez al comienzo, cuando el cliente acaba de llegar y aún no se le ha enviado esa presentación en el chat.',
-    input_schema: { type: 'object', properties: {}, required: [] },
+    description: 'Envía la presentación inicial: un saludo + las fotos de la casa + un mensaje de cierre. Úsala UNA sola vez al comienzo, cuando el cliente acaba de llegar. TÚ redactas los textos (saludo y cierre). El CIERRE (lo que va después de las fotos) DEBE incluir: el precio ($150 mil, se separa con $20 mil), que es legal (autorizados por EDSA), la RESPUESTA a cualquier pregunta que el cliente haya hecho en su saludo (ej. de dónde son), y terminar con "¿Te explico los premios?". Así va todo en un solo mensaje y no se duplica.',
+    input_schema: { type: 'object', properties: { saludo: { type: 'string', description: 'Saludo corto y cálido, presentándote como Liliana (ej: "¡Hola! 😊 Soy Liliana, te muestro la casa:").' }, cierre: { type: 'string', description: 'Mensaje después de las fotos: precio, cómo separar, que es legal (EDSA), la respuesta a su pregunta, y cierra con "¿Te explico los premios?".' } }, required: ['saludo', 'cierre'] },
   },
   {
     name: 'consultar_disponibles',
@@ -156,31 +156,25 @@ async function ejecutarHerramienta(nombre, input, conv) {
   }
 
   if (nombre === 'enviar_contacto_inicial') {
-    const { data: rr } = await supabase
-      .from('respuestas_rapidas')
-      .select('pasos')
-      .eq('linea_id', conv.linea_id)
-      .ilike('titulo', '%contacto inicial%')
-      .maybeSingle();
-    if (!rr || !Array.isArray(rr.pasos) || !rr.pasos.length) {
-      return 'No encontré la presentación inicial configurada. Salúdalo tú con un mensaje corto y ofrece explicarle los premios.';
+    const saludo = String(input?.saludo || '').trim() || 'Hola, ¿cómo estás? 😊 Mi nombre es Liliana, te muestro las fotos de la casa:';
+    const cierre = String(input?.cierre || '').trim() || '• Cada boleta *cuesta 150 mil*\n\n• La puedes *separar con 20 mil* e ir abonando a tu ritmo\n\n• Estamos *autorizados por EDSA* (rifa legal)\n\n*¿Te explico los premios?* 🤔';
+    // 1) Saludo (lo redactó el agente)
+    const e1 = await enviarTexto(conv.telefono, saludo, conv.linea_id);
+    if (e1 && e1.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: saludo, wa_message_id: e1.wa_message_id });
+    // 2) Fotos de la casa (fijas, de la respuesta rápida "Contacto inicial")
+    const { data: rr } = await supabase.from('respuestas_rapidas').select('pasos').eq('linea_id', conv.linea_id).ilike('titulo', '%contacto inicial%').maybeSingle();
+    const fotos = (rr && Array.isArray(rr.pasos) ? rr.pasos : []).filter(p => p.tipo === 'imagen' && (p.media_id || p.url));
+    for (const p of fotos) {
+      await dormir(600);
+      const env = p.media_id ? await enviarImagenPorId(conv.telefono, p.media_id, '', conv.linea_id) : await enviarImagen(conv.telefono, p.url, '', conv.linea_id);
+      if (env && env.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'image', texto: null, media_url: p.url || null, wa_message_id: env.wa_message_id });
     }
-    let enviados = 0;
-    for (let i = 0; i < rr.pasos.length; i++) {
-      const p = rr.pasos[i];
-      if (p.tipo === 'imagen' && (p.media_id || p.url)) {
-        const env = p.media_id
-          ? await enviarImagenPorId(conv.telefono, p.media_id, p.texto || '', conv.linea_id)
-          : await enviarImagen(conv.telefono, p.url, p.texto || '', conv.linea_id);
-        if (env && env.ok) { await guardarEnChat(conv, { direccion: 'saliente', tipo: 'image', texto: p.texto || null, media_url: p.url || null, wa_message_id: env.wa_message_id }); enviados++; }
-      } else if (p.texto) {
-        const env = await enviarTexto(conv.telefono, p.texto, conv.linea_id);
-        if (env && env.ok) { await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: p.texto, wa_message_id: env.wa_message_id }); enviados++; }
-      }
-      if (i < rr.pasos.length - 1) await dormir(PAUSA_MS);
-    }
-    await nota(conv, 'Envié el contacto inicial (presentación con fotos, precio y la pregunta de los premios).');
-    return `Listo, ya le envié la presentación completa: el saludo (soy Liliana, de Los Plata), las fotos de la casa, el precio ($150 mil, se separa con $20 mil), que somos legales (autorizados por EDSA) y termina preguntando "¿Te explico los premios?". NO repitas NADA de eso (ni el precio, ni lo de EDSA, ni la pregunta de los premios). SOLO si el cliente hizo una pregunta puntual que la presentación NO responde (ej. de dónde son), contéstala en UNA sola frase corta y NADA más: NO cierres con otra pregunta como "¿te explico los premios?" (ya se la hice). Si su mensaje era apenas un saludo o pedir información, NO escribas nada.`;
+    // 3) Cierre (lo redactó el agente: precio + legalidad + respuesta a su pregunta + "¿Te explico los premios?")
+    await dormir(PAUSA_MS);
+    const e3 = await enviarTexto(conv.telefono, cierre, conv.linea_id);
+    if (e3 && e3.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: cierre, wa_message_id: e3.wa_message_id });
+    await nota(conv, 'Envié el contacto inicial (saludo + fotos de la casa + cierre).');
+    return 'Listo: envié el saludo, las fotos y el cierre (que ya incluye el precio, la legalidad, la respuesta a su pregunta y "¿Te explico los premios?"). NO escribas NADA más; espera su respuesta.';
   }
 
   if (nombre === 'apartar_numero') {
@@ -374,14 +368,18 @@ export default async function handler(req, res) {
       // Ejecutar herramientas y devolver resultados a la IA.
       messages.push({ role: 'assistant', content: bloques });
       const results = [];
+      let cerrarSinTexto = false;
       for (const tu of toolUses) {
         let out;
         try { out = await ejecutarHerramienta(tu.name, tu.input || {}, conv); }
         catch (e) { out = 'Error ejecutando la herramienta: ' + e.message; }
         if (typeof out === 'string' && out.startsWith('AGENTE_APAGADO')) apagado = true;
+        // El contacto inicial ya manda saludo + fotos + cierre completo: cerramos el turno.
+        if (tu.name === 'enviar_contacto_inicial') cerrarSinTexto = true;
         results.push({ type: 'tool_result', tool_use_id: tu.id, content: out });
       }
       messages.push({ role: 'user', content: results });
+      if (cerrarSinTexto && !apagado) break;
       if (apagado) {
         // dar una última vuelta para el mensaje de despedida y cortar
         const resp2 = await fetch(ANTHROPIC_URL, {
