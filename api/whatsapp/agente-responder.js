@@ -88,7 +88,10 @@ function bloqueEstadoCliente({ cli, boletas }) {
   if (boletas && boletas.length) {
     const lista = boletas.slice()
       .sort((a, b) => Number(a.numero) - Number(b.numero))
-      .map(b => `${b.numero} (${Number(b.saldo_restante || 0) <= 0 ? 'pagada' : 'le falta $' + Number(b.saldo_restante || 0).toLocaleString('es-CO')})`)
+      .map(b => {
+        const ab = Number(b.total_abonado || 0), fa = Number(b.saldo_restante || 0);
+        return `${b.numero} (abonado $${ab.toLocaleString('es-CO')}, ${fa <= 0 ? 'PAGADA' : 'le falta $' + fa.toLocaleString('es-CO')})`;
+      })
       .join(', ');
     const unaSola = boletas.length === 1 ? (' ' + boletas[0].numero) : '';
     return 'ESTADO DE ESTE CLIENTE (es la verdad del sistema; NO lo leas literal):\n' +
@@ -632,7 +635,8 @@ export default async function handler(req, res) {
       `Si el cliente acaba de llegar y aún no se ha enviado la presentación, usa primero enviar_contacto_inicial. ` +
       `Si ves "[audio del cliente] ...", es lo que dijo en un audio (ya transcrito): respóndelo como si lo hubiera escrito, sin decir que no puedes oír audios. ` +
       `Después de usar una herramienta, sigue la conversación con naturalidad y mensajes cortos. No repitas información que ya esté en el chat. ` +
-      `NUNCA narres lo que vas a hacer ("voy a verificar", "un momento", "ahora libero"): haz la acción en silencio y da SOLO el resultado, en pocos mensajes, como una persona.` +
+      `NUNCA narres lo que vas a hacer ("voy a verificar", "un momento", "ahora libero"): haz la acción en silencio y da SOLO el resultado, en pocos mensajes, como una persona. ` +
+      `NUNCA le preguntes al cliente algo que YA sabes (está en el ESTADO DE ESTE CLIENTE de abajo, o lo dijiste tú mismo hace poco en el chat). Ejemplo: si una boleta ya tiene abono, NO preguntes "¿ya abonaste?"; ya sabes que sí, úsalo y actúa.` +
       `\n\n---\n${bloqueEstadoCliente(estadoCliente)}` +
       (accionesHechas.length
         ? `\n\n---\nACCIONES QUE TÚ YA EJECUTASTE EN ESTE CHAT (son HECHOS ya aplicados en el sistema; NO las repitas y NO digas nada que las contradiga —ej.: si ya liberaste una boleta, no digas luego que "no está a su nombre"):\n- ${accionesHechas.join('\n- ')}`
