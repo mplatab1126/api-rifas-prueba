@@ -26,11 +26,13 @@ const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const MODELOS_OK = ['claude-opus-4-8', 'claude-sonnet-4-6', 'claude-haiku-4-5'];
 const OPUS = 'claude-opus-4-8';   // supervisor de acciones que mueven dinero/inventario
 const BASE_URL = 'https://www.losplata.com.co';
-// El supervisor Opus revisa estas acciones antes de ejecutarlas. registrar_abono
-// NO va aquí: ese ya tiene su propio candado fuerte (verifica el comprobante contra
-// el pago REAL del banco y no abona si no coincide), y el supervisor —que no ve la
-// foto— solo lo frenaba en falso.
-const ACCIONES_SENSIBLES = new Set(['apartar_numero', 'liberar_boleta']);
+// El supervisor Opus revisa estas acciones antes de ejecutarlas. NO van aquí:
+//  - registrar_abono: ya verifica el comprobante contra el pago REAL del banco.
+//  - liberar_boleta: ya valida que la boleta sea del cliente y esté en $0 abonado.
+// Esos dos tienen su propio candado fuerte; el supervisor (que no ve la foto ni
+// ejecuta esos chequeos) solo los frenaba en falso. Queda apartar_numero, que no
+// tiene una verificación equivalente.
+const ACCIONES_SENSIBLES = new Set(['apartar_numero']);
 const MAX_ITER = 6;          // tope de idas/vueltas con la IA por cada mensaje del cliente
 const MAX_HISTORIAL = 40;    // últimos mensajes que lee del chat
 const PAUSA_MS = 800;        // entre los pasos del contacto inicial (para que lleguen en orden)
