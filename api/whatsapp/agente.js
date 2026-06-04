@@ -35,8 +35,9 @@ const HERRAMIENTAS_DEFAULT = [
   { clave: 'apartar_numero',           nombre: 'Apartar un número',                  descripcion: 'Reserva una boleta a nombre del cliente. Lo supervisa Opus.',            riesgo: 'medio', orden: 6 },
   { clave: 'enviar_boleta',            nombre: 'Enviar la boleta',                   descripcion: 'Manda al cliente su boleta digital.',                                   riesgo: 'medio', orden: 7 },
   { clave: 'registrar_abono',          nombre: 'Registrar un abono (dinero)',         descripcion: 'Verifica el comprobante contra el pago real del banco y abona. Lo supervisa Opus.', riesgo: 'alto', orden: 8 },
-  { clave: 'liberar_boleta',           nombre: 'Liberar / cancelar una boleta',       descripcion: 'Cancela una boleta si el cliente ya no quiere (solo si no ha abonado). Lo supervisa Opus.', riesgo: 'alto', orden: 9 },
-  { clave: 'pasar_a_humano',           nombre: 'Pasar la conversación a un asesor',   descripcion: 'Cuando no está seguro o el cliente lo pide, entrega el chat a una persona.', riesgo: 'bajo', orden: 10 },
+  { clave: 'liberar_boleta',           nombre: 'Liberar / cancelar una boleta',       descripcion: 'Cancela una boleta del cliente si ya no la quiere (solo si no ha abonado).', riesgo: 'alto', orden: 9 },
+  { clave: 'trasladar_abono',          nombre: 'Trasladar un abono entre boletas',    descripcion: 'Mueve lo ya abonado de una boleta a otra del MISMO cliente. Nunca de otro.', riesgo: 'alto', orden: 10 },
+  { clave: 'pasar_a_humano',           nombre: 'Pasar la conversación a un asesor',   descripcion: 'Cuando no está seguro o el cliente lo pide, entrega el chat a una persona.', riesgo: 'bajo', orden: 11 },
 ];
 
 // Devuelve la config de la línea; si no existe, la crea con valores por defecto.

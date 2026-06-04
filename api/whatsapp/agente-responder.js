@@ -225,6 +225,11 @@ const TOOLS = [
     input_schema: { type: 'object', properties: { numero: { type: 'string', description: 'Número de 4 cifras a liberar.' }, motivo: { type: 'string', description: 'Por qué la cancela (ej. "ya no quiere participar").' } }, required: ['numero'] },
   },
   {
+    name: 'trasladar_abono',
+    description: 'Traslada el abono (el dinero ya pagado) de UNA boleta del cliente a OTRA boleta del MISMO cliente. Úsala cuando el cliente quiere mover lo que ya abonó de una de sus boletas a otra suya (ej. "pásame el abono de la 1234 a la 5678"). Ambas boletas deben ser de ESTE cliente; nunca muevas dinero de o hacia la boleta de otra persona.',
+    input_schema: { type: 'object', properties: { origen: { type: 'string', description: 'Boleta de la que SALE el abono (4 cifras), del cliente.' }, destino: { type: 'string', description: 'Boleta del MISMO cliente que RECIBE el abono (4 cifras).' } }, required: ['origen', 'destino'] },
+  },
+  {
     name: 'pasar_a_humano',
     description: 'Entrega la conversación a un asesor humano y te apaga en este chat. Úsala cuando: tiene una queja, pide algo que no puedes resolver/verificar, o pide hablar con una persona.',
     input_schema: {
@@ -411,6 +416,19 @@ async function ejecutarHerramienta(nombre, input, conv) {
     if (d.status !== 'ok') return 'No se pudo liberar la boleta: ' + (d.mensaje || 'error') + '. Pásalo a un asesor.';
     await nota(conv, `Liberé la boleta ${num} (el cliente ya no quiere participar).`);
     return `Listo, liberé el número ${num}. Confírmaselo con amabilidad, sin presionar, y déjale la puerta abierta para cuando quiera volver.`;
+  }
+
+  if (nombre === 'trasladar_abono') {
+    const origen = String(input?.origen || '').replace(/\D/g, '').padStart(4, '0').slice(-4);
+    const destino = String(input?.destino || '').replace(/\D/g, '').padStart(4, '0').slice(-4);
+    if (!/^\d{4}$/.test(origen) || !/^\d{4}$/.test(destino)) return 'Necesito las dos boletas de 4 cifras: de cuál sale el abono y a cuál entra.';
+    if (origen === destino) return 'La boleta de origen y la de destino no pueden ser la misma.';
+    const pwd = contrasenaGerencia();
+    if (!pwd) return 'No puedo trasladar abonos ahora (falta configuración). Pásalo a un asesor.';
+    const d = await llamarApi('/api/admin/trasladar-abono', { numeroOrigen: origen, numeroDestino: destino, telefono: conv.telefono, contrasena: pwd });
+    if (d.status !== 'ok') { await nota(conv, `Intenté trasladar el abono de ${origen} a ${destino} pero no se pudo: ${d.mensaje || 'error'}`); return 'No se pudo trasladar: ' + (d.mensaje || 'error') + '. Si el cliente insiste o algo no cuadra, pásalo a un asesor.'; }
+    await nota(conv, `Trasladé $${Number(d.monto).toLocaleString('es-CO')} de la boleta ${origen} a la ${destino}.`);
+    return `Listo: el abono de $${Number(d.monto).toLocaleString('es-CO')} pasó de la boleta ${origen} a la ${destino}. Confírmaselo al cliente. La boleta ${origen} quedó SIN abono; si el cliente ya no la quiere, puedes liberarla con liberar_boleta.`;
   }
 
   if (nombre === 'enviar_resolucion') {
