@@ -231,8 +231,8 @@ const TOOLS = [
   },
   {
     name: 'trasladar_abono',
-    description: 'Traslada el abono (el dinero ya pagado) de UNA boleta del cliente a OTRA boleta del MISMO cliente. Úsala cuando el cliente quiere mover lo que ya abonó de una de sus boletas a otra suya (ej. "pásame el abono de la 1234 a la 5678"). Ambas boletas deben ser de ESTE cliente; nunca muevas dinero de o hacia la boleta de otra persona.',
-    input_schema: { type: 'object', properties: { origen: { type: 'string', description: 'Boleta de la que SALE el abono (4 cifras), del cliente.' }, destino: { type: 'string', description: 'Boleta del MISMO cliente que RECIBE el abono (4 cifras).' } }, required: ['origen', 'destino'] },
+    description: 'Traslada abono (dinero ya pagado) de UNA boleta del cliente a OTRA del MISMO cliente. Puedes mover TODO el abono o solo una PARTE: para DIVIDIR (ej. dejar $40.000 en una boleta y pasar $20.000 a otra) indica el "monto" a mover. Ejemplos: "pásame el abono de la 1234 a la 5678" = mueve todo; "deja $40.000 en la 1234 y pasa $20.000 a la 5678" = origen 1234, destino 5678, monto 20000. Ambas boletas deben ser de ESTE cliente; nunca muevas dinero de o hacia la boleta de otra persona.',
+    input_schema: { type: 'object', properties: { origen: { type: 'string', description: 'Boleta de la que SALE el abono (4 cifras), del cliente.' }, destino: { type: 'string', description: 'Boleta del MISMO cliente que RECIBE el abono (4 cifras).' }, monto: { type: 'number', description: '(Opcional) cuánto mover. Si no lo pones, mueve TODO el abono de la boleta origen.' } }, required: ['origen', 'destino'] },
   },
   {
     name: 'pasar_a_humano',
@@ -430,10 +430,13 @@ async function ejecutarHerramienta(nombre, input, conv) {
     if (origen === destino) return 'La boleta de origen y la de destino no pueden ser la misma.';
     const pwd = contrasenaGerencia();
     if (!pwd) return 'No puedo trasladar abonos ahora (falta configuración). Pásalo a un asesor.';
-    const d = await llamarApi('/api/admin/trasladar-abono', { numeroOrigen: origen, numeroDestino: destino, telefono: conv.telefono, contrasena: pwd });
+    const cuerpo = { numeroOrigen: origen, numeroDestino: destino, telefono: conv.telefono, contrasena: pwd };
+    if (input?.monto != null && input.monto !== '') cuerpo.monto = input.monto;
+    const d = await llamarApi('/api/admin/trasladar-abono', cuerpo);
     if (d.status !== 'ok') { await nota(conv, `Intenté trasladar el abono de ${origen} a ${destino} pero no se pudo: ${d.mensaje || 'error'}`); return 'No se pudo trasladar: ' + (d.mensaje || 'error') + '. Si el cliente insiste o algo no cuadra, pásalo a un asesor.'; }
-    await nota(conv, `Trasladé $${Number(d.monto).toLocaleString('es-CO')} de la boleta ${origen} a la ${destino}.`);
-    return `Listo: el abono de $${Number(d.monto).toLocaleString('es-CO')} pasó de la boleta ${origen} a la ${destino}. Confírmaselo al cliente. La boleta ${origen} quedó SIN abono; si el cliente ya no la quiere, puedes liberarla con liberar_boleta.`;
+    const movido = Number(d.monto).toLocaleString('es-CO');
+    await nota(conv, `Trasladé $${movido} de la boleta ${origen} a la ${destino}.`);
+    return `Listo: pasé $${movido} de la boleta ${origen} a la ${destino}. Confírmaselo al cliente con los saldos nuevos. Si la ${origen} quedó SIN abono y el cliente ya no la quiere, puedes liberarla con liberar_boleta.`;
   }
 
   if (nombre === 'enviar_resolucion') {
