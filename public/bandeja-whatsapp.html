@@ -172,7 +172,14 @@
     .galeria .gt .media { min-width: 0; height: 148px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.06); border-radius: 8px; font-size: 0.72rem; opacity: 0.85; }
     .galeria .gt.oculta { display: none; }
     .galeria .gt .mas { position: absolute; inset: 0; background: rgba(0,0,0,0.5); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 600; border-radius: 8px; cursor: pointer; }
-    #aviso24 { display: none; background: var(--cream-100); color: var(--ink-soft); border-bottom: 1px solid var(--gray-200); text-align: center; font-size: 0.78rem; padding: 9px 16px; }
+    #aviso24 { display: none; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; background: var(--cream-100); color: var(--ink-soft); border-bottom: 1px solid var(--gray-200); text-align: center; font-size: 0.78rem; padding: 9px 16px; }
+    #btnPlantillaChat { flex-shrink: 0; padding: 6px 14px; border: 1px solid var(--mint); background: var(--mint); border-radius: 100px; font-family: inherit; font-size: 0.78rem; font-weight: 600; color: var(--ink); cursor: pointer; white-space: nowrap; }
+    #btnPlantillaChat:hover { background: var(--mint-light); }
+    .pl-chat-item { display: block; width: 100%; text-align: left; background: #fff; border: 1px solid var(--gray-200); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; font-family: inherit; }
+    .pl-chat-item:hover { background: var(--cream-50); border-color: var(--gray-300); }
+    .pl-chat-nom { display: block; font-weight: 600; font-size: 0.88rem; color: var(--ink); }
+    .pl-chat-prev { display: block; margin-top: 3px; font-size: 0.78rem; color: var(--ink-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pl-chat-tip { font-size: 0.76rem; color: var(--ink-mute); margin: 6px 2px 0; line-height: 1.4; }
 
     /* Columna derecha · ficha */
     #panel { width: 320px; min-width: 320px; background: var(--cream-50); border-left: 1px solid var(--gray-200); overflow-y: auto; display: none; }
@@ -641,7 +648,10 @@
             <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>
         </div>
-        <div id="aviso24">Pasaron 24 horas desde el último mensaje del cliente. WhatsApp solo permite responder con una plantilla aprobada.</div>
+        <div id="aviso24">
+          <span>Pasaron 24 horas desde el último mensaje del cliente. WhatsApp solo permite responder con una plantilla aprobada.</span>
+          <button id="btnPlantillaChat" onclick="abrirPlantillaChat()">Enviar plantilla</button>
+        </div>
         <div id="msgs"></div>
         <div id="barra">
           <div id="respPicker"></div>
@@ -1311,7 +1321,7 @@ function ventanaAbierta(){ return ventanaVenceMs && ventanaVenceMs > Date.now();
 function actualizarVentana(venceMs){
   ventanaVenceMs = venceMs || 0;
   const cerrada = !ventanaAbierta();
-  if($('aviso24')) $('aviso24').style.display = cerrada ? 'block' : 'none';
+  if($('aviso24')) $('aviso24').style.display = cerrada ? 'flex' : 'none';
   const t = $('texto'), e = $('enviar');
   if(t){ t.disabled = cerrada; t.placeholder = cerrada ? 'Ventana de 24h cerrada — espera a que el cliente escriba' : 'Escribe un mensaje'; }
   if(e) e.disabled = cerrada;
@@ -1372,6 +1382,58 @@ async function enviarArchivo(file){
 }
 $('btnAdjuntar').onclick = () => { if(!$('btnAdjuntar').disabled) $('fileChat').click(); };
 $('fileChat').onchange = (e) => { const f = e.target.files[0]; e.target.value = ''; if(f) enviarArchivo(f); };
+
+/* ── Enviar una PLANTILLA aprobada desde el chat (reabrir conversaciones de +24h) ── */
+let plantillasChatCache = [];
+window.abrirPlantillaChat = async function(){
+  if(!actual) return;
+  abrirModal('<div class="mcargando">Buscando plantillas aprobadas…</div>');
+  const r = await api('plantillas', { accion:'listar', linea_id: actualLinea });
+  const aprobadas = ((r && r.plantillas) || []).filter(p => p.estado === 'aprobada');
+  plantillasChatCache = aprobadas;
+  if(!aprobadas.length){
+    abrirModal(`<h3>No hay plantillas aprobadas</h3>
+      <div class="mnone">Para escribirle a un cliente después de 24 horas, WhatsApp exige una plantilla aprobada por Meta. Créala en <b>Difusiones → Plantillas</b> y espera a que la aprueben.</div>
+      <button class="mcerrar" onclick="cerrarModal()">Entendido</button>`);
+    return;
+  }
+  const lista = aprobadas.map(p => `
+    <button class="pl-chat-item" onclick="elegirPlantillaChat('${p.id}')">
+      <span class="pl-chat-nom">${esc(p.nombre)}</span>
+      <span class="pl-chat-prev">${esc((p.cuerpo||'').replace(/\s+/g,' ').slice(0,90))}</span>
+    </button>`).join('');
+  abrirModal(`<h3>Enviar plantilla</h3>
+    <div class="msub">Elige una plantilla para reactivar este chat. El cliente la recibirá; cuando responda, se reabre el chat para escribirle libremente.</div>
+    ${lista}
+    <button class="mcerrar" onclick="cerrarModal()">Cancelar</button>`);
+};
+window.elegirPlantillaChat = function(id){
+  const p = plantillasChatCache.find(x => String(x.id) === String(id));
+  if(!p) return;
+  const nVars = ((p.cuerpo||'').match(/\{\{\s*\d+\s*\}\}/g) || []).length;
+  let campos = '';
+  for(let i=1; i<=nVars; i++) campos += `<input class="cc-input pl-chat-var" data-i="${i}" placeholder="Variable {{${i}}}">`;
+  const tip = nVars ? `<div class="pl-chat-tip">Tip: escribe <b>{nombre}</b> y se reemplaza por el nombre del cliente; <b>{telefono}</b> por su número.</div>` : '';
+  abrirModal(`<h3>${esc(p.nombre)}</h3>
+    <div class="mblock"><div class="mhdr">Mensaje</div><div style="font-size:0.86rem; white-space:pre-wrap; line-height:1.45">${esc(p.cuerpo||'')}</div></div>
+    ${campos}${tip}
+    <button class="ab-confirm" style="margin-top:14px" onclick="enviarPlantillaChat('${p.id}')">Enviar al cliente</button>
+    <button class="mcerrar" onclick="abrirPlantillaChat()">Volver</button>`);
+};
+window.enviarPlantillaChat = async function(id){
+  const tel = actual, linea = actualLinea;
+  const variables = [...document.querySelectorAll('.pl-chat-var')]
+    .sort((a,b) => a.dataset.i - b.dataset.i).map(el => el.value.trim());
+  abrirModal('<div class="mcargando">Enviando plantilla…</div>');
+  const r = await api('plantillas', { accion:'enviar-chat', linea_id: linea, telefono: tel, plantilla_id: id, variables });
+  if(r.status === 'ok'){
+    cerrarModal();
+    if(actual === tel) cargarMensajes(true);
+    cargarLista();
+  } else {
+    abrirModal(`<h3>No se pudo enviar</h3><div class="mnone">${esc(r.mensaje||'Error')}</div><button class="mcerrar" onclick="cerrarModal()">Cerrar</button>`);
+  }
+};
 $('texto').addEventListener('keydown', e => {
   if(pickerAbierto()){
     if(e.key === 'Escape'){ e.preventDefault(); cerrarPicker(); return; }

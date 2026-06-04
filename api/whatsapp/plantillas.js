@@ -22,6 +22,7 @@ import {
   crearPlantillaMeta,
   listarPlantillasMeta,
   eliminarPlantillaMeta,
+  enviarPlantilla,
 } from '../lib/whatsapp.js';
 
 const MAX_NOMBRE = 60;
@@ -50,6 +51,24 @@ function normalizarNombre(s) {
     .replace(/[^a-z0-9_]+/g, '_')
     .replace(/^_+|_+$/g, '')
     .slice(0, MAX_NOMBRE);
+}
+
+// Reemplaza los tokens {nombre}/{telefono} por los datos reales del cliente
+// (mismo criterio que las campañas). Cualquier otro texto se deja igual.
+function resolverParametros(variables, dest) {
+  if (!Array.isArray(variables)) return [];
+  return variables.map(v => {
+    const s = String(v == null ? '' : v);
+    if (s === '{nombre}') return dest.nombre || '';
+    if (s === '{telefono}') return dest.telefono || '';
+    return s;
+  });
+}
+// Cuerpo con las variables ya puestas, para guardarlo en el historial del chat.
+function textoFinal(cuerpo, params) {
+  let t = String(cuerpo || '');
+  (params || []).forEach((val, i) => { t = t.replaceAll(`{{${i + 1}}}`, String(val ?? '')); });
+  return t;
 }
 
 export default async function handler(req, res) {
@@ -155,6 +174,53 @@ export default async function handler(req, res) {
       const m = await eliminarPlantillaMeta(linea_id, pl.nombre);
       if (!m.ok) return res.status(200).json({ status: 'error', mensaje: 'No se pudo borrar en Meta: ' + m.error });
       await supabaseAdmin.from('plantillas_whatsapp').delete().eq('id', id).eq('linea_id', linea_id);
+      return res.status(200).json({ status: 'ok' });
+    }
+
+    // Enviar una plantilla aprobada a UN chat puntual (para reabrir conversaciones de +24h).
+    if (accion === 'enviar-chat') {
+      const telefono = String(req.body.telefono || '').replace(/\D/g, '');
+      const plantilla_id = req.body.plantilla_id;
+      const variables = Array.isArray(req.body.variables) ? req.body.variables : [];
+      if (!telefono) return res.status(200).json({ status: 'error', mensaje: 'Falta el teléfono del chat.' });
+
+      const { data: pl } = await supabaseAdmin
+        .from('plantillas_whatsapp').select('nombre, idioma, cuerpo, estado').eq('id', plantilla_id).eq('linea_id', linea_id).maybeSingle();
+      if (!pl) return res.status(200).json({ status: 'error', mensaje: 'No se encontró la plantilla.' });
+      if (pl.estado !== 'aprobada') return res.status(200).json({ status: 'error', mensaje: 'La plantilla aún no está aprobada por Meta.' });
+
+      // Datos del cliente (para el token {nombre}) y su conversación.
+      let bq = supabaseAdmin.from('conversaciones_whatsapp').select('id, nombre_perfil').eq('telefono', telefono);
+      bq = linea_id ? bq.eq('linea_id', linea_id) : bq.is('linea_id', null);
+      const { data: conv } = await bq.maybeSingle();
+      const nombreCliente = (conv && conv.nombre_perfil) || '';
+
+      const params = resolverParametros(variables, { nombre: nombreCliente, telefono });
+      const env = await enviarPlantilla(telefono, { nombre: pl.nombre, idioma: pl.idioma, parametros: params }, linea_id);
+      if (!env.ok) return res.status(200).json({ status: 'error', mensaje: env.error });
+
+      // Guardar en el historial del chat + actualizar la vista previa de la conversación.
+      const ts = new Date().toISOString();
+      const cuerpo = textoFinal(pl.cuerpo, params);
+      let conversacion_id = conv ? conv.id : null;
+      if (!conversacion_id) {
+        const { data: nueva } = await supabaseAdmin
+          .from('conversaciones_whatsapp')
+          .insert({ telefono, linea_id: linea_id || null, ultimo_entrante: false, estado: 'humano', asesor_asignado: nombreAsesor })
+          .select('id').single();
+        conversacion_id = nueva ? nueva.id : null;
+      }
+      await supabaseAdmin.from('mensajes_whatsapp').insert({
+        conversacion_id, telefono, linea_id: linea_id || null,
+        direccion: 'saliente', tipo: 'text', texto: cuerpo,
+        wa_message_id: env.wa_message_id, estado_envio: 'enviado', timestamp_wa: ts,
+      });
+      let upd = supabaseAdmin.from('conversaciones_whatsapp')
+        .update({ ultimo_mensaje: String(cuerpo).slice(0, 200), ultimo_at: ts, ultimo_entrante: false })
+        .eq('telefono', telefono);
+      upd = linea_id ? upd.eq('linea_id', linea_id) : upd.is('linea_id', null);
+      await upd;
+
       return res.status(200).json({ status: 'ok' });
     }
 
