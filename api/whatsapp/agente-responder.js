@@ -72,7 +72,15 @@ async function resumenCliente(telefono) {
 // la conversación en cada caso (cliente con boleta, conocido sin boleta, o nuevo).
 function bloqueEstadoCliente({ cli, boletas }) {
   const nombre = cli && cli.nombre ? String(cli.nombre).trim() : '';
+  const apellido = cli && cli.apellido ? String(cli.apellido).trim() : '';
   const ciudad = cli && cli.ciudad ? String(cli.ciudad).trim() : '';
+  const datos = [];
+  if (nombre) datos.push('nombre: ' + nombre);
+  if (apellido) datos.push('apellido: ' + apellido);
+  if (ciudad) datos.push('ciudad: ' + ciudad);
+  const datosTxt = datos.length
+    ? 'Datos que YA tienes guardados de este cliente (úsalos y NUNCA se los vuelvas a pedir, ni la ciudad): ' + datos.join(', ') + '.'
+    : '';
   if (boletas && boletas.length) {
     const lista = boletas.slice()
       .sort((a, b) => Number(a.numero) - Number(b.numero))
@@ -80,15 +88,15 @@ function bloqueEstadoCliente({ cli, boletas }) {
       .join(', ');
     const unaSola = boletas.length === 1 ? (' ' + boletas[0].numero) : '';
     return 'ESTADO DE ESTE CLIENTE (es la verdad del sistema; NO lo leas literal):\n' +
-      '- Ya es cliente nuestro' + (nombre ? ', se llama ' + nombre : '') + (ciudad ? ' (' + ciudad + ')' : '') + '.\n' +
+      '- Ya es cliente nuestro' + (nombre ? ', se llama ' + nombre + (apellido ? ' ' + apellido : '') : '') + (ciudad ? ' (' + ciudad + ')' : '') + '.\n' +
+      (datosTxt ? '- ' + datosTxt + '\n' : '') +
       '- YA TIENE boleta(s) con nosotros: ' + lista + '.\n' +
       '- En tu PRIMER mensaje NO te presentes como si fuera nuevo NI uses enviar_contacto_inicial. Salúdalo por su NOMBRE y recuérdale con cariño que ya tiene su boleta' + unaSola + ' con nosotros (por si se le olvidó), y pregúntale en qué le ayudas.\n' +
       '- NO le ofrezcas comprar otra boleta a menos que él lo pida.\n' +
-      '- Ya tienes sus datos (nombre/ciudad): NO se los vuelvas a pedir.\n' +
-      '- Si pregunta por su saldo o sus abonos (postventa), pásalo a un asesor (tu regla de siempre).';
+      '- Si pregunta por su saldo, cuánto debe o sus abonos, CONSÚLTALO con tu herramienta y respóndele TÚ con claridad; NO lo pases a un asesor solo por eso.';
   }
-  if (nombre) {
-    return 'ESTADO DE ESTE CLIENTE: ya lo conocemos (se llama ' + nombre + (ciudad ? ', ' + ciudad : '') + ') pero NO tiene boletas en la rifa actual. Salúdalo por su nombre. Si va a comprar, usa esos datos y NO se los vuelvas a pedir.';
+  if (datos.length) {
+    return 'ESTADO DE ESTE CLIENTE: ya lo conocemos pero NO tiene boletas en la rifa actual. ' + datosTxt + ' Salúdalo por su nombre. Si va a comprar, usa esos datos y NO se los vuelvas a pedir (ni la ciudad).';
   }
   return 'ESTADO DE ESTE CLIENTE: es NUEVO (sin boletas ni registro). Sigue el camino de venta normal: si acaba de llegar, empieza por enviar_contacto_inicial.';
 }
@@ -317,7 +325,7 @@ async function ejecutarHerramienta(nombre, input, conv) {
     const d = await llamarApi('/api/rifa/reservar', { numeros: [num], nombre: nom, apellido: ape, ciudad: ciu, telefono: conv.telefono });
     if (!d.exito) { await nota(conv, 'Intenté apartar el ' + num + ' pero no se pudo: ' + (d.error || 'error')); return 'No se pudo apartar: ' + (d.error || 'error') + '. Cuéntaselo al cliente y ofrécele otra opción.'; }
     await nota(conv, `Aparté el número ${num} a nombre de ${nom} ${ape} (${ciu}).`);
-    return `Listo: el número ${num} quedó apartado a nombre de ${nom} ${ape}. Total por pagar: $${Number(d.total || 0).toLocaleString('es-CO')}. Ahora envíale la boleta con enviar_boleta y explícale cómo abonar.`;
+    return `Listo: el número ${num} quedó apartado a nombre de ${nom} ${ape}. Total por pagar: $${Number(d.total || 0).toLocaleString('es-CO')}. Si el cliente quería MÁS números, apártalos PRIMERO; cuando ya estén TODOS apartados, envía la boleta UNA sola vez con enviar_boleta (esa ya muestra TODAS sus boletas en un mensaje). NO envíes la boleta después de cada número.`;
   }
 
   if (nombre === 'enviar_boleta') {
