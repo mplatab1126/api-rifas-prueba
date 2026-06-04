@@ -26,13 +26,11 @@ const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const MODELOS_OK = ['claude-opus-4-8', 'claude-sonnet-4-6', 'claude-haiku-4-5'];
 const OPUS = 'claude-opus-4-8';   // supervisor de acciones que mueven dinero/inventario
 const BASE_URL = 'https://www.losplata.com.co';
-// El supervisor Opus revisa estas acciones antes de ejecutarlas. NO van aquí:
-//  - registrar_abono: ya verifica el comprobante contra el pago REAL del banco.
-//  - liberar_boleta: ya valida que la boleta sea del cliente y esté en $0 abonado.
-// Esos dos tienen su propio candado fuerte; el supervisor (que no ve la foto ni
-// ejecuta esos chequeos) solo los frenaba en falso. Queda apartar_numero, que no
-// tiene una verificación equivalente.
-const ACCIONES_SENSIBLES = new Set(['apartar_numero']);
+// Acciones que un supervisor Opus revisaría antes de ejecutarlas. Hoy está VACÍO:
+// cada acción ya tiene su propio candado (el abono verifica contra el banco; liberar
+// valida dueño + $0; apartar es reversible —se puede liberar—). El supervisor, que no
+// ve fotos ni ejecuta esos chequeos, solo frenaba acciones legítimas en falso.
+const ACCIONES_SENSIBLES = new Set();
 const MAX_ITER = 6;          // tope de idas/vueltas con la IA por cada mensaje del cliente
 const MAX_HISTORIAL = 40;    // últimos mensajes que lee del chat
 const PAUSA_MS = 800;        // entre los pasos del contacto inicial (para que lleguen en orden)
@@ -305,9 +303,14 @@ async function ejecutarHerramienta(nombre, input, conv) {
 
   if (nombre === 'apartar_numero') {
     const num = String(input?.numero || '').replace(/\D/g, '').padStart(4, '0').slice(-4);
-    const nom = String(input?.nombre || '').trim();
-    const ape = String(input?.apellido || '').trim();
-    const ciu = String(input?.ciudad || '').trim();
+    let nom = String(input?.nombre || '').trim();
+    let ape = String(input?.apellido || '').trim();
+    let ciu = String(input?.ciudad || '').trim();
+    // Si faltan datos pero el cliente YA está registrado, tómalos de su ficha (no re-preguntar).
+    if (!nom || !ape || !ciu) {
+      const { cli } = await resumenCliente(conv.telefono);
+      if (cli) { nom = nom || String(cli.nombre || '').trim(); ape = ape || String(cli.apellido || '').trim(); ciu = ciu || String(cli.ciudad || '').trim(); }
+    }
     if (!/^\d{4}$/.test(num) || !nom || !ape || !ciu) {
       return 'Faltan datos para apartar. Necesito el número de 4 cifras, nombre, apellido y ciudad del cliente. Pídeselos antes de apartar.';
     }
@@ -558,14 +561,26 @@ export default async function handler(req, res) {
     // sepa desde el primer mensaje si ya tiene boleta (y no lo trate como nuevo).
     const estadoCliente = await resumenCliente(conv.telefono);
 
+    // Memoria: las acciones que el agente YA ejecutó en este chat (de las notas 🤖).
+    // ANTES no le llegaban (a construirMensajes se le pasa `reales`, sin notas), por eso
+    // repetía acciones y se contradecía. Aquí se las damos como HECHOS firmes.
+    const accionesHechas = (historial || [])
+      .filter(m => m.direccion === 'nota' && /^🤖/.test(String(m.texto || '')))
+      .map(m => String(m.texto).replace(/^🤖\s*/, '').trim())
+      .filter(Boolean);
+
     const system = prompt +
       `\n\n---\nCONTEXTO (no lo menciones literalmente): hoy es ${contextoFechaHora()} (Colombia). ` +
       `Hablas por WhatsApp con el cliente cuyo número es ${conv.telefono}. ` +
       `Tienes herramientas para actuar; úsalas cuando corresponda en vez de inventar. ` +
       `Si el cliente acaba de llegar y aún no se ha enviado la presentación, usa primero enviar_contacto_inicial. ` +
       `Si ves "[audio del cliente] ...", es lo que dijo en un audio (ya transcrito): respóndelo como si lo hubiera escrito, sin decir que no puedes oír audios. ` +
-      `Después de usar una herramienta, sigue la conversación con naturalidad y mensajes cortos. No repitas información que ya esté en el chat.` +
-      `\n\n---\n${bloqueEstadoCliente(estadoCliente)}`;
+      `Después de usar una herramienta, sigue la conversación con naturalidad y mensajes cortos. No repitas información que ya esté en el chat. ` +
+      `NUNCA narres lo que vas a hacer ("voy a verificar", "un momento", "ahora libero"): haz la acción en silencio y da SOLO el resultado, en pocos mensajes, como una persona.` +
+      `\n\n---\n${bloqueEstadoCliente(estadoCliente)}` +
+      (accionesHechas.length
+        ? `\n\n---\nACCIONES QUE TÚ YA EJECUTASTE EN ESTE CHAT (son HECHOS ya aplicados en el sistema; NO las repitas y NO digas nada que las contradiga —ej.: si ya liberaste una boleta, no digas luego que "no está a su nombre"):\n- ${accionesHechas.join('\n- ')}`
+        : '');
 
     const messages = construirMensajes(reales, imagenesVistas);
     if (!messages.length) { await soltarLock(conv); return res.status(200).json({ status: 'ok', skip: 'Sin mensajes para procesar.' }); }
@@ -593,11 +608,15 @@ export default async function handler(req, res) {
       if (data.error) { await nota(conv, 'No pude responder (problema con la IA): ' + (data.error.message || 'error')); await soltarLock(conv); return res.status(200).json({ status: 'error', mensaje: 'IA: ' + (data.error.message || 'error') }); }
 
       const bloques = data.content || [];
-      for (const b of bloques) {
-        if (b.type === 'text' && b.text && b.text.trim()) await decir(conv, b.text.trim());
-      }
       const toolUses = bloques.filter(b => b.type === 'tool_use');
-      if (data.stop_reason !== 'tool_use' || toolUses.length === 0) break;
+      const vaAUsarHerramientas = data.stop_reason === 'tool_use' && toolUses.length > 0;
+      for (const b of bloques) {
+        // No narrar el proceso: si en este turno va a usar herramientas, NO mandes el
+        // texto de relleno ("voy a...", "un momento..."); solo el mensaje FINAL (cuando
+        // ya no quedan herramientas por usar) se le envía al cliente.
+        if (b.type === 'text' && b.text && b.text.trim() && !vaAUsarHerramientas) await decir(conv, b.text.trim());
+      }
+      if (!vaAUsarHerramientas) break;
 
       messages.push({ role: 'assistant', content: bloques });
       const results = [];
