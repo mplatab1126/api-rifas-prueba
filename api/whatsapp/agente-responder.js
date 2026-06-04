@@ -246,6 +246,11 @@ const TOOLS = [
     input_schema: { type: 'object', properties: { origen: { type: 'string', description: 'Boleta de la que SALE el abono (4 cifras), del cliente.' }, destino: { type: 'string', description: 'Boleta del MISMO cliente que RECIBE el abono (4 cifras).' }, monto: { type: 'number', description: '(Opcional) cuánto mover. Si no lo pones, mueve TODO el abono de la boleta origen.' } }, required: ['origen', 'destino'] },
   },
   {
+    name: 'programar_recordatorio',
+    description: 'Agenda que TÚ MISMO le vuelvas a escribir al cliente más tarde HOY, cuando él te pide tiempo ("estoy ocupado, escríbeme en 20 minutos", "dame una hora y te escribo", "más tardecito"). Indica en cuántos MINUTOS volver a escribirle y el motivo (qué ibas a preguntar/hacer). SOLO sirve para hoy: máximo dentro de las 24 horas desde el último mensaje del cliente. Si el cliente pide en DÍAS ("llámame en 3 días"), NO la uses: dile que un asesor lo contacta. Si el cliente vuelve a escribir antes, el recordatorio se cancela solo.',
+    input_schema: { type: 'object', properties: { minutos: { type: 'number', description: 'En cuántos minutos debes volver a escribirle (ej. 20, 60).' }, motivo: { type: 'string', description: 'Qué ibas a preguntar/hacer al volver (ej. "saber qué número le gustó").' } }, required: ['minutos'] },
+  },
+  {
     name: 'pasar_a_humano',
     description: 'Entrega la conversación a un asesor humano y te apaga en este chat. Úsala cuando: tiene una queja, pide algo que no puedes resolver/verificar, o pide hablar con una persona.',
     input_schema: {
@@ -458,6 +463,34 @@ async function ejecutarHerramienta(nombre, input, conv) {
     return 'Listo, le envié el PDF de la resolución oficial de EDSA. Aprovecha para reforzar la confianza y retomar la venta.';
   }
 
+  if (nombre === 'programar_recordatorio') {
+    const minutos = Math.round(Number(input?.minutos || 0));
+    const motivo = String(input?.motivo || '').trim().slice(0, 300);
+    if (!minutos || minutos < 1) return 'Dime en cuántos minutos debo volver a escribirle (mínimo 1).';
+    // Ventana de 24h: solo se permite agendar DENTRO de las 24h desde el último mensaje del cliente.
+    const { data: ult } = await supabase.from('mensajes_whatsapp')
+      .select('timestamp_wa, created_at').eq('conversacion_id', conv.id).eq('direccion', 'entrante')
+      .order('timestamp_wa', { ascending: false }).limit(1);
+    const ultMs = ult && ult[0] ? new Date(ult[0].timestamp_wa || ult[0].created_at).getTime() : Date.now();
+    const programadoMs = Date.now() + minutos * 60000;
+    const limiteMs = ultMs + 24 * 3600 * 1000 - 5 * 60000;   // 5 min de colchón antes de que cierre la ventana
+    if (programadoMs > limiteMs) {
+      return 'No puedo agendar tan lejos: solo recordatorios DENTRO de las 24 horas desde el último mensaje del cliente (es decir, hoy). Si el cliente pide en días, dile con cariño que un asesor lo contacta luego; NO agendes.';
+    }
+    // Un solo recordatorio activo por chat: si había otro pendiente, se reemplaza.
+    await supabaseAdmin.from('recordatorios').update({ estado: 'cancelado' })
+      .eq('linea_id', conv.linea_id).eq('telefono', conv.telefono).eq('estado', 'pendiente');
+    const { error } = await supabaseAdmin.from('recordatorios').insert({
+      linea_id: conv.linea_id, telefono: conv.telefono, conversacion_id: conv.id,
+      programado_para: new Date(programadoMs).toISOString(), motivo: motivo || null,
+      ultimo_msg_cliente_at: new Date(ultMs).toISOString(), estado: 'pendiente', creado_por: 'agente',
+    });
+    if (error) return 'No pude agendar el recordatorio (' + error.message + '). Sigue la conversación normal.';
+    const cuando = new Date(programadoMs).toLocaleString('es-CO', { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit', hour12: true });
+    await nota(conv, `Programé un recordatorio: le escribo en ${minutos} min (~${cuando})${motivo ? ' — ' + motivo : ''}.`);
+    return `Listo: te recordaré escribirle en ${minutos} minutos. Confírmale al cliente con naturalidad (ej. "Dale, te escribo en un rato"), sin sonar a robot. Si él vuelve a escribir antes, el recordatorio se cancela solo.`;
+  }
+
   if (nombre === 'pasar_a_humano') {
     const motivo = String(input?.motivo || 'sin especificar').slice(0, 200);
     await supabaseAdmin.from('conversaciones_whatsapp')
@@ -516,7 +549,7 @@ export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  const { contrasena, linea_id, telefono, interno } = req.body || {};
+  const { contrasena, linea_id, telefono, interno, recordatorio } = req.body || {};
   if (!linea_id || !telefono) return res.status(200).json({ status: 'error', mensaje: 'Falta línea o teléfono.' });
   // Autorización: o el secreto interno (lo dispara el webhook al instante) o Mateo desde la bandeja.
   let autorizado = false;
@@ -562,7 +595,7 @@ export default async function handler(req, res) {
     //     esperamos un silencio; si entra otro mensaje, esperamos otro poco (hasta un tope).
     //     Así juntamos toda la ráfaga en UNA sola respuesta. Solo en el disparo automático
     //     (webhook); cuando Mateo prueba manual desde la bandeja, responde de una.
-    if (interno) {
+    if (interno && !recordatorio) {
       const inicioEspera = Date.now();
       while (Date.now() - inicioEspera < DEBOUNCE_MAX_MS) {
         const { data: ult } = await supabase
@@ -599,7 +632,10 @@ export default async function handler(req, res) {
     const { data: histAsc } = await qHist;
     const historial = (histAsc || []).slice().reverse();
     const reales = historial.filter(m => m.direccion === 'entrante' || m.direccion === 'saliente');
-    if (!reales.length || reales[reales.length - 1].direccion !== 'entrante') {
+    // Normalmente solo respondemos si el último mensaje es del cliente. EXCEPCIÓN: un
+    // recordatorio (el agente se programó volver a escribir) sí arranca aunque el último
+    // mensaje sea suyo.
+    if (!recordatorio && (!reales.length || reales[reales.length - 1].direccion !== 'entrante')) {
       await soltarLock(conv);
       return res.status(200).json({ status: 'ok', skip: 'No hay un mensaje del cliente pendiente de responder.' });
     }
@@ -688,6 +724,18 @@ export default async function handler(req, res) {
         : '');
 
     const messages = construirMensajes(reales, imagenesVistas);
+    // Disparo por RECORDATORIO: no hay mensaje nuevo del cliente; le inyectamos una nota
+    // interna (que el cliente NO ve) pidiéndole retomar la conversación él mismo.
+    if (recordatorio) {
+      const motivoTxt = String(recordatorio.motivo || '').trim();
+      const nudge = '[NOTA INTERNA DEL SISTEMA — el cliente NO ve esto] Pasó el tiempo que acordaste con el cliente para volver a escribirle. Escríbele TÚ ahora un mensaje de seguimiento corto, cálido y natural para retomar la conversación' +
+        (motivoTxt ? ' (lo que ibas a hacer/preguntar: ' + motivoTxt + ')' : '') +
+        '. No menciones que es un recordatorio automático ni esta nota interna. Si la conversación ya quedó cerrada y no tiene sentido escribir, no mandes nada.';
+      const last = messages[messages.length - 1];
+      if (last && last.role === 'user' && typeof last.content === 'string') last.content += '\n\n' + nudge;
+      else if (last && last.role === 'user' && Array.isArray(last.content)) last.content.push({ type: 'text', text: nudge });
+      else messages.push({ role: 'user', content: nudge });
+    }
     if (!messages.length) { await soltarLock(conv); return res.status(200).json({ status: 'ok', skip: 'Sin mensajes para procesar.' }); }
 
     // Contexto en texto para el supervisor Opus (revisa las acciones sensibles).

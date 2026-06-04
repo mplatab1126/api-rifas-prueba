@@ -96,8 +96,22 @@ async function guardarEntrante(m, nombrePerfil, lineaId) {
       { onConflict: 'wa_message_id', ignoreDuplicates: true }
     );
 
+  // El cliente volvió a escribir → cancela los recordatorios que el agente tenía pendientes
+  // para este chat (ya retomaron la conversación, no hace falta el seguimiento automático).
+  await cancelarRecordatorios(telefono, lineaId);
+
   // Si el agente está activo en este chat, dispararlo de una (sin depender del navegador).
   await dispararAgenteSiActivo(telefono, lineaId);
+}
+
+// ── Cancelar recordatorios pendientes de una conversación ───────────────────
+async function cancelarRecordatorios(telefono, lineaId) {
+  try {
+    let q = supabaseAdmin.from('recordatorios').update({ estado: 'cancelado' })
+      .eq('telefono', telefono).eq('estado', 'pendiente');
+    q = lineaId ? q.eq('linea_id', lineaId) : q.is('linea_id', null);
+    await q;
+  } catch (_) { /* no es crítico: si falla, el recordatorio simplemente se dispararía */ }
 }
 
 // ── Disparar el agente de IA si está activo en esta conversación ────────────
