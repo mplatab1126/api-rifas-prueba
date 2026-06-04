@@ -26,12 +26,26 @@ const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const MODELOS_OK = ['claude-opus-4-8', 'claude-sonnet-4-6', 'claude-haiku-4-5'];
 const OPUS = 'claude-opus-4-8';   // supervisor de acciones que mueven dinero/inventario
 const BASE_URL = 'https://www.losplata.com.co';
-const ACCIONES_SENSIBLES = new Set(['apartar_numero', 'registrar_abono', 'liberar_boleta']);
+// El supervisor Opus revisa estas acciones antes de ejecutarlas. registrar_abono
+// NO va aquí: ese ya tiene su propio candado fuerte (verifica el comprobante contra
+// el pago REAL del banco y no abona si no coincide), y el supervisor —que no ve la
+// foto— solo lo frenaba en falso.
+const ACCIONES_SENSIBLES = new Set(['apartar_numero', 'liberar_boleta']);
 const MAX_ITER = 6;          // tope de idas/vueltas con la IA por cada mensaje del cliente
 const MAX_HISTORIAL = 40;    // últimos mensajes que lee del chat
 const PAUSA_MS = 800;        // entre los pasos del contacto inicial (para que lleguen en orden)
 
 const dormir = (ms) => new Promise(r => setTimeout(r, ms));
+const MAX_IMAGENES = 2;   // imágenes entrantes recientes que se le muestran a la IA (comprobantes)
+
+// Normaliza el tipo de imagen al formato que acepta la API de la IA.
+function mediaTypeImagen(mime) {
+  const m = String(mime || '').toLowerCase();
+  if (m.includes('png')) return 'image/png';
+  if (m.includes('webp')) return 'image/webp';
+  if (m.includes('gif')) return 'image/gif';
+  return 'image/jpeg';
+}
 
 function contextoFechaHora() {
   return new Date().toLocaleString('es-CO', {
@@ -353,12 +367,25 @@ async function ejecutarHerramienta(nombre, input, conv) {
 }
 
 // ── Arma el historial del chat en formato de la IA (user/assistant) ─────────
-function construirMensajes(historial) {
+// `imagenes` es un Map (id de mensaje → { mime, base64 }) con las fotos entrantes
+// que la IA SÍ debe VER (ej. comprobantes de pago). Antes solo veía "[imagen]".
+function construirMensajes(historial, imagenes) {
+  const imgs = imagenes || new Map();
   const msgs = [];
   for (const m of historial) {
     let role, text;
     if (m.direccion === 'entrante') {
       role = 'user';
+      const img = m.tipo === 'image' ? imgs.get(m.id) : null;
+      if (img) {
+        // Mensaje propio con la foto + su pie (no se fusiona con el anterior).
+        const pie = (m.texto || '').trim() || 'Imagen que envié (míralas; puede ser el comprobante de pago).';
+        msgs.push({ role, content: [
+          { type: 'image', source: { type: 'base64', media_type: img.mime, data: img.base64 } },
+          { type: 'text', text: pie },
+        ] });
+        continue;
+      }
       text = (m.texto || '').trim() || (m.tipo && m.tipo !== 'text' ? `[el cliente envió un ${m.tipo}]` : '');
     } else if (m.direccion === 'saliente') {
       role = 'assistant';
@@ -370,8 +397,9 @@ function construirMensajes(historial) {
       continue;
     }
     if (!text) continue;
-    if (msgs.length && msgs[msgs.length - 1].role === role) {
-      msgs[msgs.length - 1].content += '\n' + text;
+    const prev = msgs[msgs.length - 1];
+    if (prev && prev.role === role && typeof prev.content === 'string') {
+      prev.content += '\n' + text;
     } else {
       msgs.push({ role, content: text });
     }
@@ -454,6 +482,24 @@ export default async function handler(req, res) {
       }
     }
 
+    // 3c) Adjuntar las imágenes entrantes recientes para que la IA las VEA (la clave
+    //     para que reconozca un comprobante de pago en vez de ignorarlo). Claude lee
+    //     imágenes; descargamos las últimas y se las pasamos como foto, no como "[imagen]".
+    const imagenesVistas = new Map();
+    let imgsCargadas = 0;
+    for (let i = reales.length - 1; i >= 0 && imgsCargadas < MAX_IMAGENES; i--) {
+      const m = reales[i];
+      if (m.direccion === 'entrante' && m.tipo === 'image' && m.media_id) {
+        try {
+          const media = await descargarMediaBase64(m.media_id, conv.linea_id);
+          if (media && media.ok && media.base64) {
+            imagenesVistas.set(m.id, { mime: mediaTypeImagen(media.mimeType), base64: media.base64 });
+            imgsCargadas++;
+          }
+        } catch (_) {}
+      }
+    }
+
     // 4) Configuración del agente (prompt + modelo).
     const { data: cfg } = await supabase
       .from('agente_config').select('prompt, modelo, nombre_agente').eq('linea_id', linea_id).maybeSingle();
@@ -475,12 +521,17 @@ export default async function handler(req, res) {
       `Si ves "[audio del cliente] ...", es lo que dijo en un audio (ya transcrito): respóndelo como si lo hubiera escrito, sin decir que no puedes oír audios. ` +
       `Después de usar una herramienta, sigue la conversación con naturalidad y mensajes cortos. No repitas información que ya esté en el chat.`;
 
-    const messages = construirMensajes(reales);
+    const messages = construirMensajes(reales, imagenesVistas);
     if (!messages.length) { await soltarLock(conv); return res.status(200).json({ status: 'ok', skip: 'Sin mensajes para procesar.' }); }
 
     // Contexto en texto para el supervisor Opus (revisa las acciones sensibles).
     const contextoOpus = messages.slice(-12).map(m => {
-      const c = typeof m.content === 'string' ? m.content : '[el agente usó una herramienta]';
+      let c;
+      if (typeof m.content === 'string') c = m.content;
+      else if (Array.isArray(m.content)) {
+        const txt = m.content.filter(b => b.type === 'text').map(b => b.text).join(' ');
+        c = (m.content.some(b => b.type === 'image') ? '[el cliente adjuntó una imagen] ' : '') + txt;
+      } else c = '[el agente usó una herramienta]';
       return (m.role === 'user' ? 'Cliente' : 'Liliana') + ': ' + c;
     }).join('\n');
 
