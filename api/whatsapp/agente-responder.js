@@ -54,6 +54,45 @@ function contextoFechaHora() {
   });
 }
 
+// Resumen del cliente (datos guardados + boletas que ya tiene), buscando por
+// teléfono. Las boletas se guardan por teléfono, así que esto encuentra al cliente
+// aunque haya comprado por OTRA línea. Sirve para que el agente sepa, desde el
+// PRIMER mensaje, si ya es cliente y no lo trate como nuevo.
+async function resumenCliente(telefono) {
+  const last10 = String(telefono || '').replace(/\D/g, '').slice(-10);
+  if (!last10) return { cli: null, boletas: [] };
+  const [rc, rb] = await Promise.all([
+    supabase.from('clientes').select('nombre, apellido, ciudad').like('telefono', '%' + last10).limit(1),
+    supabase.from('boletas').select('numero, saldo_restante, total_abonado').like('telefono_cliente', '%' + last10),
+  ]);
+  return { cli: (rc.data && rc.data[0]) || null, boletas: rb.data || [] };
+}
+
+// Texto que se le inyecta al agente con el estado del cliente y cómo debe abrir
+// la conversación en cada caso (cliente con boleta, conocido sin boleta, o nuevo).
+function bloqueEstadoCliente({ cli, boletas }) {
+  const nombre = cli && cli.nombre ? String(cli.nombre).trim() : '';
+  const ciudad = cli && cli.ciudad ? String(cli.ciudad).trim() : '';
+  if (boletas && boletas.length) {
+    const lista = boletas.slice()
+      .sort((a, b) => Number(a.numero) - Number(b.numero))
+      .map(b => `${b.numero} (${Number(b.saldo_restante || 0) <= 0 ? 'pagada' : 'le falta $' + Number(b.saldo_restante || 0).toLocaleString('es-CO')})`)
+      .join(', ');
+    const unaSola = boletas.length === 1 ? (' ' + boletas[0].numero) : '';
+    return 'ESTADO DE ESTE CLIENTE (es la verdad del sistema; NO lo leas literal):\n' +
+      '- Ya es cliente nuestro' + (nombre ? ', se llama ' + nombre : '') + (ciudad ? ' (' + ciudad + ')' : '') + '.\n' +
+      '- YA TIENE boleta(s) con nosotros: ' + lista + '.\n' +
+      '- En tu PRIMER mensaje NO te presentes como si fuera nuevo NI uses enviar_contacto_inicial. Salúdalo por su NOMBRE y recuérdale con cariño que ya tiene su boleta' + unaSola + ' con nosotros (por si se le olvidó), y pregúntale en qué le ayudas.\n' +
+      '- NO le ofrezcas comprar otra boleta a menos que él lo pida.\n' +
+      '- Ya tienes sus datos (nombre/ciudad): NO se los vuelvas a pedir.\n' +
+      '- Si pregunta por su saldo o sus abonos (postventa), pásalo a un asesor (tu regla de siempre).';
+  }
+  if (nombre) {
+    return 'ESTADO DE ESTE CLIENTE: ya lo conocemos (se llama ' + nombre + (ciudad ? ', ' + ciudad : '') + ') pero NO tiene boletas en la rifa actual. Salúdalo por su nombre. Si va a comprar, usa esos datos y NO se los vuelvas a pedir.';
+  }
+  return 'ESTADO DE ESTE CLIENTE: es NUEVO (sin boletas ni registro). Sigue el camino de venta normal: si acaba de llegar, empieza por enviar_contacto_inicial.';
+}
+
 // Transcribe un audio de WhatsApp a texto con OpenAI Whisper (Claude no "oye").
 async function transcribirAudio(mediaId, lineaId) {
   const key = process.env.OPENAI_API_KEY;
@@ -513,13 +552,18 @@ export default async function handler(req, res) {
     const activas = new Set((hsAct || []).map(h => h.clave));
     const toolsActivas = TOOLS.filter(t => activas.has(t.name));
 
+    // Estado del cliente: SIEMPRE se consulta antes de responder, para que el agente
+    // sepa desde el primer mensaje si ya tiene boleta (y no lo trate como nuevo).
+    const estadoCliente = await resumenCliente(conv.telefono);
+
     const system = prompt +
       `\n\n---\nCONTEXTO (no lo menciones literalmente): hoy es ${contextoFechaHora()} (Colombia). ` +
       `Hablas por WhatsApp con el cliente cuyo número es ${conv.telefono}. ` +
       `Tienes herramientas para actuar; úsalas cuando corresponda en vez de inventar. ` +
       `Si el cliente acaba de llegar y aún no se ha enviado la presentación, usa primero enviar_contacto_inicial. ` +
       `Si ves "[audio del cliente] ...", es lo que dijo en un audio (ya transcrito): respóndelo como si lo hubiera escrito, sin decir que no puedes oír audios. ` +
-      `Después de usar una herramienta, sigue la conversación con naturalidad y mensajes cortos. No repitas información que ya esté en el chat.`;
+      `Después de usar una herramienta, sigue la conversación con naturalidad y mensajes cortos. No repitas información que ya esté en el chat.` +
+      `\n\n---\n${bloqueEstadoCliente(estadoCliente)}`;
 
     const messages = construirMensajes(reales, imagenesVistas);
     if (!messages.length) { await soltarLock(conv); return res.status(200).json({ status: 'ok', skip: 'Sin mensajes para procesar.' }); }
