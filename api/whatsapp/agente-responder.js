@@ -1,24 +1,18 @@
 /**
- * MOTOR del Agente de IA — Fase 1.
+ * MOTOR del Agente de IA.
  *
- * Lo dispara la bandeja cuando entra un mensaje del cliente en una conversación
- * con el agente ACTIVADO (conversaciones_whatsapp.agente_activo = true). NO se
- * mete en todos los chats: solo donde gerencia lo prendió con el botón.
+ * Lo dispara el webhook (recibir.js) cuando entra un mensaje del cliente en una
+ * conversación con el agente ACTIVADO (conversaciones_whatsapp.agente_activo).
+ * Solo actúa donde gerencia lo prendió con el botón 🤖.
  *
- * Qué hace (Fase 1):
- *   - Lee el prompt guardado (agente_config) y todo el historial del chat.
- *   - Conversa usando la API de Anthropic con HERRAMIENTAS (tool use).
- *   - Herramientas de Fase 1 (no tocan dinero ni inventario):
- *       · enviar_contacto_inicial → manda la presentación (fotos + precio + premios)
- *       · consultar_disponibles   → números libres reales
- *       · consultar_cliente       → boletas y saldo de un teléfono
- *       · pasar_a_humano          → apaga el agente y avisa que siga un asesor
- *   - Por cada acción deja una NOTA en el propio chat (direccion='nota'),
- *     para que gerencia vea qué hizo, tal como pidió Mateo.
+ * Conversa con la API de Anthropic usando HERRAMIENTAS (tool use). Cada acción
+ * deja una NOTA en el chat. Las acciones que mueven DINERO o INVENTARIO
+ * (apartar, registrar abono, liberar boleta) las revisa un SUPERVISOR Opus
+ * ANTES de ejecutarlas. La conversación normal va en el modelo configurado
+ * (Sonnet). El abono y el liberar reutilizan la lógica probada del sistema.
  *
- * Apartar números y registrar abonos (dinero/inventario) son FASE 2.
- *
- * Recibe (POST, JSON): { contrasena, linea_id, telefono }  — SOLO gerencia.
+ * Recibe (POST, JSON): { contrasena, linea_id, telefono }  (Mateo) o
+ *                      { interno, linea_id, telefono }      (webhook).
  */
 
 import { aplicarCors } from '../lib/cors.js';
@@ -30,6 +24,9 @@ import { numerosDisponibles } from '../lib/numeros-disponibles.js';
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const MODELOS_OK = ['claude-opus-4-8', 'claude-sonnet-4-6', 'claude-haiku-4-5'];
+const OPUS = 'claude-opus-4-8';   // supervisor de acciones que mueven dinero/inventario
+const BASE_URL = 'https://www.losplata.com.co';
+const ACCIONES_SENSIBLES = new Set(['apartar_numero', 'registrar_abono', 'liberar_boleta']);
 const MAX_ITER = 6;          // tope de idas/vueltas con la IA por cada mensaje del cliente
 const MAX_HISTORIAL = 40;    // últimos mensajes que lee del chat
 const PAUSA_MS = 800;        // entre los pasos del contacto inicial (para que lleguen en orden)
@@ -43,7 +40,52 @@ function contextoFechaHora() {
   });
 }
 
-// ── Definición de las herramientas para la IA (Fase 1) ──────────────────────
+// Contraseña de gerencia (Mateo) para llamar los endpoints internos con la MISMA
+// lógica probada que usan los asesores. Sale de ASESORES_SECRETO.
+function contrasenaGerencia() {
+  try {
+    const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
+    const entradas = Object.entries(asesores);
+    const mateo = entradas.find(([, n]) => String(n).toLowerCase().trim() === 'mateo');
+    if (mateo) return mateo[0];
+    const ger = entradas.find(([, n]) => ['mateo', 'alejo plata'].includes(String(n).toLowerCase().trim()));
+    return ger ? ger[0] : null;
+  } catch (_) { return null; }
+}
+
+// POST a un endpoint del propio sistema (reusar lógica probada de abono/liberar/etc.).
+async function llamarApi(ruta, cuerpo) {
+  try {
+    const r = await fetch(BASE_URL + ruta, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cuerpo),
+    });
+    return await r.json();
+  } catch (e) { return { status: 'error', error: e.message, mensaje: e.message }; }
+}
+
+// SUPERVISOR: para acciones que mueven dinero o inventario, Opus revisa la
+// decisión con el contexto ANTES de ejecutarla. Si Opus no está disponible,
+// dejamos pasar (los demás candados —verificación del pago real, dueño de la
+// boleta, etc.— siguen protegiendo).
+async function verificarConOpus(accion, input, contexto, apiKey) {
+  const system = 'Eres un SUPERVISOR de seguridad de una rifa colombiana. Un agente de ventas automático quiere ejecutar una acción que mueve DINERO o INVENTARIO (apartar una boleta, registrar un abono, o liberar/cancelar una boleta). Revisa si la acción es correcta y si el cliente realmente la pidió o corresponde, según la conversación. Sé estricto: si el cliente NO lo pidió claramente o algo no cuadra (número, monto, datos), recházala. Responde en UNA sola línea: "APRUEBO" o "RECHAZO: <motivo corto>".';
+  const user = `Conversación reciente con el cliente:\n${contexto}\n\nEl agente quiere ejecutar la acción: ${accion}\nDatos: ${JSON.stringify(input || {})}\n\n¿La apruebas?`;
+  try {
+    const r = await fetch(ANTHROPIC_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: OPUS, max_tokens: 200, system, messages: [{ role: 'user', content: user }] }),
+    });
+    const data = await r.json();
+    if (data.error) return { aprobado: true };   // Opus caído: no bloquear (hay otros candados)
+    const txt = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join(' ').trim();
+    if (/^\s*APRUEBO/i.test(txt)) return { aprobado: true };
+    return { aprobado: false, motivo: txt.replace(/^\s*RECHAZO:?\s*/i, '') || 'el supervisor no lo aprobó' };
+  } catch (_) { return { aprobado: true }; }
+}
+
+// ── Definición de las herramientas para la IA ───────────────────────────────
 const TOOLS = [
   {
     name: 'enviar_contacto_inicial',
@@ -85,8 +127,18 @@ const TOOLS = [
     input_schema: { type: 'object', properties: {}, required: [] },
   },
   {
+    name: 'registrar_abono',
+    description: 'Registra el pago (abono) del cliente a su boleta. Úsala SOLO cuando el cliente YA mandó la FOTO del comprobante de pago en el chat. El sistema verifica esa foto contra los pagos reales del banco y, si coincide, abona. Si el cliente solo dijo "ya pagué" pero NO mandó la foto, NO la uses: pídele primero el comprobante.',
+    input_schema: { type: 'object', properties: { numero: { type: 'string', description: 'Boleta a la que abonar (4 cifras). Opcional: si no lo pones, se usa la que tenga saldo.' } }, required: [] },
+  },
+  {
+    name: 'liberar_boleta',
+    description: 'Libera (cancela) una boleta del cliente cuando él dice claramente que YA NO quiere participar. Indica el número de 4 cifras. OJO: si el cliente ya había abonado dinero, NO se libera sola (un asesor gestiona la devolución).',
+    input_schema: { type: 'object', properties: { numero: { type: 'string', description: 'Número de 4 cifras a liberar.' }, motivo: { type: 'string', description: 'Por qué la cancela (ej. "ya no quiere participar").' } }, required: ['numero'] },
+  },
+  {
     name: 'pasar_a_humano',
-    description: 'Entrega la conversación a un asesor humano y te apaga en este chat. Úsala cuando: el cliente dice que YA PAGÓ o manda un comprobante (para que un asesor confirme el abono), tiene una queja, pide algo que no puedes resolver, o pide hablar con una persona.',
+    description: 'Entrega la conversación a un asesor humano y te apaga en este chat. Úsala cuando: tiene una queja, pide algo que no puedes resolver/verificar, o pide hablar con una persona.',
     input_schema: {
       type: 'object',
       properties: { motivo: { type: 'string', description: 'Motivo corto del traspaso.' } },
@@ -103,7 +155,6 @@ async function guardarEnChat(conv, { direccion, tipo = 'text', texto = null, med
     direccion, tipo, texto, media_url, wa_message_id,
     estado_envio: direccion === 'nota' ? 'nota' : 'enviado', timestamp_wa: ts, raw: { agente: true },
   });
-  // refrescar el preview de la conversación
   if (direccion !== 'nota') {
     await supabaseAdmin.from('conversaciones_whatsapp')
       .update({ ultimo_mensaje: String(texto || '📷').slice(0, 200), ultimo_at: ts, ultimo_entrante: false })
@@ -158,10 +209,8 @@ async function ejecutarHerramienta(nombre, input, conv) {
   if (nombre === 'enviar_contacto_inicial') {
     const saludo = String(input?.saludo || '').trim() || 'Hola, ¿cómo estás? 😊 Mi nombre es Liliana, te muestro las fotos de la casa:';
     const cierre = String(input?.cierre || '').trim() || '• Cada boleta *cuesta 150 mil*\n\n• La puedes *separar con 20 mil* e ir abonando a tu ritmo\n\n• Estamos *autorizados por EDSA* (rifa legal)\n\n*¿Te explico los premios?* 🤔';
-    // 1) Saludo (lo redactó el agente)
     const e1 = await enviarTexto(conv.telefono, saludo, conv.linea_id);
     if (e1 && e1.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: saludo, wa_message_id: e1.wa_message_id });
-    // 2) Fotos de la casa (fijas, de la respuesta rápida "Contacto inicial")
     const { data: rr } = await supabase.from('respuestas_rapidas').select('pasos').eq('linea_id', conv.linea_id).ilike('titulo', '%contacto inicial%').maybeSingle();
     const fotos = (rr && Array.isArray(rr.pasos) ? rr.pasos : []).filter(p => p.tipo === 'imagen' && (p.media_id || p.url));
     for (const p of fotos) {
@@ -169,7 +218,6 @@ async function ejecutarHerramienta(nombre, input, conv) {
       const env = p.media_id ? await enviarImagenPorId(conv.telefono, p.media_id, '', conv.linea_id) : await enviarImagen(conv.telefono, p.url, '', conv.linea_id);
       if (env && env.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'image', texto: null, media_url: p.url || null, wa_message_id: env.wa_message_id });
     }
-    // 3) Cierre (lo redactó el agente: precio + legalidad + respuesta a su pregunta + "¿Te explico los premios?")
     await dormir(PAUSA_MS);
     const e3 = await enviarTexto(conv.telefono, cierre, conv.linea_id);
     if (e3 && e3.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: cierre, wa_message_id: e3.wa_message_id });
@@ -185,18 +233,10 @@ async function ejecutarHerramienta(nombre, input, conv) {
     if (!/^\d{4}$/.test(num) || !nom || !ape || !ciu) {
       return 'Faltan datos para apartar. Necesito el número de 4 cifras, nombre, apellido y ciudad del cliente. Pídeselos antes de apartar.';
     }
-    try {
-      const r = await fetch('https://www.losplata.com.co/api/rifa/reservar', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ numeros: [num], nombre: nom, apellido: ape, ciudad: ciu, telefono: conv.telefono }),
-      });
-      const d = await r.json();
-      if (!d.exito) { await nota(conv, 'Intenté apartar el ' + num + ' pero no se pudo: ' + (d.error || 'error')); return 'No se pudo apartar: ' + (d.error || 'error') + '. Cuéntaselo al cliente y ofrécele otra opción.'; }
-      await nota(conv, `Aparté el número ${num} a nombre de ${nom} ${ape} (${ciu}).`);
-      return `Listo: el número ${num} quedó apartado a nombre de ${nom} ${ape}. Total por pagar: $${Number(d.total || 0).toLocaleString('es-CO')}. Ahora envíale la boleta con enviar_boleta y explícale cómo abonar.`;
-    } catch (e) {
-      return 'No se pudo apartar (error de conexión): ' + e.message + '. Mejor pasa a un asesor.';
-    }
+    const d = await llamarApi('/api/rifa/reservar', { numeros: [num], nombre: nom, apellido: ape, ciudad: ciu, telefono: conv.telefono });
+    if (!d.exito) { await nota(conv, 'Intenté apartar el ' + num + ' pero no se pudo: ' + (d.error || 'error')); return 'No se pudo apartar: ' + (d.error || 'error') + '. Cuéntaselo al cliente y ofrécele otra opción.'; }
+    await nota(conv, `Aparté el número ${num} a nombre de ${nom} ${ape} (${ciu}).`);
+    return `Listo: el número ${num} quedó apartado a nombre de ${nom} ${ape}. Total por pagar: $${Number(d.total || 0).toLocaleString('es-CO')}. Ahora envíale la boleta con enviar_boleta y explícale cómo abonar.`;
   }
 
   if (nombre === 'enviar_boleta') {
@@ -206,16 +246,71 @@ async function ejecutarHerramienta(nombre, input, conv) {
     boletas.sort((a, b) => Number(a.numero) - Number(b.numero));
     const una = boletas.length === 1;
     const lista = boletas.map(b => `*${b.numero}*  ·  ${Number(b.saldo_restante || 0) <= 0 ? '✅ Pagada' : ('te falta abonar $' + Number(b.saldo_restante || 0).toLocaleString('es-CO'))}`).join('\n');
-    const enlace = `https://www.losplata.com.co/boleta?telefono=${last10}`;
+    const enlace = `${BASE_URL}/boleta?telefono=${last10}`;
     const texto = `🎉 ¡Quedaste participando!\n\n${una ? 'Esta es tu boleta' : 'Estas son tus boletas'} para la rifa de *Los Plata*:\n\n${lista}\n\n👉 ${una ? 'Consulta tu boleta aquí' : 'Consulta tus boletas aquí'}:\n${enlace}\n\n¡Te deseamos mucha suerte! 🍀`;
     const env = await enviarTexto(conv.telefono, texto, conv.linea_id);
     if (env && env.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto, wa_message_id: env.wa_message_id });
     await nota(conv, 'Envié la boleta digital al cliente.');
-    return 'Listo, le envié su boleta digital con el enlace para consultarla. Si va a abonar, recuérdale los medios de pago y avísale que un asesor le confirma el pago.';
+    return 'Listo, le envié su boleta digital con el enlace para consultarla. Recuérdale los medios de pago y que cuando pague me mande la foto del comprobante para registrarle el abono.';
+  }
+
+  if (nombre === 'registrar_abono') {
+    const pwd = contrasenaGerencia();
+    if (!pwd) return 'No puedo registrar pagos ahora (falta configuración). Pásalo a un asesor.';
+    // 1) Último comprobante (imagen) que mandó el cliente.
+    const { data: imgs } = await supabase.from('mensajes_whatsapp')
+      .select('media_id').eq('conversacion_id', conv.id).eq('direccion', 'entrante').eq('tipo', 'image')
+      .order('timestamp_wa', { ascending: false }).limit(1);
+    const mediaId = imgs && imgs[0] && imgs[0].media_id;
+    if (!mediaId) return 'El cliente NO ha mandado la foto del comprobante. Pídesela amablemente; sin el comprobante no puedo registrar el pago.';
+    // 2) Verificar el comprobante contra los pagos REALES del sistema.
+    const v = await llamarApi('/api/whatsapp/buscar-pago', { media_id: mediaId, telefono: conv.telefono, linea_id: conv.linea_id, contrasena: pwd });
+    if (v.status !== 'ok') return 'No pude leer o verificar el comprobante: ' + (v.mensaje || 'error') + '. Pásalo a un asesor para que lo revise a mano.';
+    if (!v.sugerida_id) {
+      await nota(conv, 'Recibí un comprobante pero NO encontré el pago real en el sistema. ' + (v.diagnostico || ''));
+      return 'El comprobante NO coincide con ningún pago real cargado en el sistema. NO registres el abono. Avísale con tacto que un asesor va a verificar su pago, y pásalo a un asesor.';
+    }
+    const trans = (v.candidatas || []).find(c => c.id === v.sugerida_id);
+    if (!trans) return 'No pude identificar el pago con seguridad. Pásalo a un asesor.';
+    const conSaldo = (v.boletas || []).filter(b => b.puede_modificar && Number(b.saldo) > 0);
+    if (!conSaldo.length) return 'El cliente no tiene boletas con saldo pendiente para abonar. Verifícalo o pásalo a un asesor.';
+    let destino = null;
+    const pedido = String(input?.numero || '').replace(/\D/g, '');
+    if (pedido) destino = conSaldo.find(b => String(b.numero) === pedido.padStart(4, '0') || String(b.numero) === pedido);
+    if (!destino) destino = conSaldo[0];
+    // 3) Registrar el abono con tu lógica probada (anti-duplicados, amarre de transferencia, etc.).
+    const d = await llamarApi('/api/admin/abono', {
+      numeroBoleta: String(destino.numero), valorAbono: trans.monto,
+      metodoPago: trans.plataforma || 'Transferencia', referencia: trans.referencia || 'Sin Ref',
+      idTransferencia: v.sugerida_id, contrasena: pwd,
+    });
+    if (d.status !== 'ok') return 'No se pudo registrar el abono: ' + (d.mensaje || 'error') + '. Pásalo a un asesor.';
+    await nota(conv, `Registré un abono de $${Number(trans.monto).toLocaleString('es-CO')} a la boleta ${destino.numero} (pago verificado contra el banco).`);
+    return `Listo: registré el abono de $${Number(trans.monto).toLocaleString('es-CO')} a la boleta ${destino.numero}. Confírmaselo con alegría, agradécele y, si quieres que termine de pagar, recuérdale con cariño el saldo que le queda.`;
+  }
+
+  if (nombre === 'liberar_boleta') {
+    const num = String(input?.numero || '').replace(/\D/g, '').padStart(4, '0').slice(-4);
+    if (!/^\d{4}$/.test(num)) return 'Necesito el número de 4 cifras que el cliente quiere cancelar.';
+    const last10 = String(conv.telefono).replace(/\D/g, '').slice(-10);
+    const { data: bol } = await supabase.from('boletas').select('numero, telefono_cliente, total_abonado').eq('numero', num).maybeSingle();
+    if (!bol) return `El número ${num} no existe.`;
+    if (!bol.telefono_cliente || !String(bol.telefono_cliente).endsWith(last10)) {
+      return `El número ${num} no está a nombre de este cliente, así que no se puede cancelar desde aquí.`;
+    }
+    if (Number(bol.total_abonado || 0) > 0) {
+      return `El cliente ya tiene $${Number(bol.total_abonado).toLocaleString('es-CO')} abonados en el ${num}. NO la liberes tú: explícale con tacto que un asesor le gestiona la cancelación y la devolución, y pásalo a un asesor.`;
+    }
+    const pwd = contrasenaGerencia();
+    if (!pwd) return 'No puedo cancelar boletas ahora (falta configuración). Pásalo a un asesor.';
+    const d = await llamarApi('/api/admin/liberar-boleta', { numeroBoleta: num, contrasena: pwd });
+    if (d.status !== 'ok') return 'No se pudo liberar la boleta: ' + (d.mensaje || 'error') + '. Pásalo a un asesor.';
+    await nota(conv, `Liberé la boleta ${num} (el cliente ya no quiere participar).`);
+    return `Listo, liberé el número ${num}. Confírmaselo con amabilidad, sin presionar, y déjale la puerta abierta para cuando quiera volver.`;
   }
 
   if (nombre === 'enviar_resolucion') {
-    const env = await enviarDocumento(conv.telefono, 'https://www.losplata.com.co/resolucion.pdf', 'Resolucion-EDSA-Los-Plata.pdf', 'Resolución oficial que autoriza la rifa (EDSA).', conv.linea_id);
+    const env = await enviarDocumento(conv.telefono, `${BASE_URL}/resolucion.pdf`, 'Resolucion-EDSA-Los-Plata.pdf', 'Resolución oficial que autoriza la rifa (EDSA).', conv.linea_id);
     if (!env || !env.ok) { await nota(conv, 'Intenté enviar la resolución pero no se pudo: ' + ((env && env.error) || 'error')); return 'No se pudo enviar el documento. Dile que en un momento se lo hace llegar un asesor.'; }
     await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: '📄 Resolución oficial de EDSA (PDF enviado)', wa_message_id: env.wa_message_id });
     await nota(conv, 'Envié la resolución oficial (PDF de EDSA).');
@@ -246,14 +341,12 @@ function construirMensajes(historial) {
       role = 'assistant';
       text = (m.texto || '').trim();
     } else if (m.direccion === 'nota') {
-      // Las acciones que el agente YA ejecutó: se las recordamos para que no las repita ni las olvide.
       role = 'assistant';
       text = '(' + String(m.texto || '').replace(/^🤖\s*/, 'ya hice esto → ') + ')';
     } else {
       continue;
     }
     if (!text) continue;
-    // La API exige alternancia user/assistant: fusiona mensajes seguidos del mismo lado.
     if (msgs.length && msgs[msgs.length - 1].role === role) {
       msgs[msgs.length - 1].content += '\n' + text;
     } else {
@@ -293,7 +386,7 @@ export default async function handler(req, res) {
     if (!conv) return res.status(200).json({ status: 'error', mensaje: 'No existe esa conversación.' });
     if (!conv.agente_activo) return res.status(200).json({ status: 'ok', skip: 'El agente no está activo en este chat.' });
 
-    // 2) Historial. Si el último mensaje NO es del cliente, ya está respondido → no hago nada (evita dobles).
+    // 2) Historial. Si el último mensaje NO es del cliente, ya está respondido → no hago nada.
     const { data: histAsc } = await supabase
       .from('mensajes_whatsapp')
       .select('direccion, tipo, texto, timestamp_wa, created_at')
@@ -330,8 +423,13 @@ export default async function handler(req, res) {
     const messages = construirMensajes(reales);
     if (!messages.length) return res.status(200).json({ status: 'ok', skip: 'Sin mensajes para procesar.' });
 
+    // Contexto en texto para el supervisor Opus (revisa las acciones sensibles).
+    const contextoOpus = messages.slice(-12).map(m => {
+      const c = typeof m.content === 'string' ? m.content : '[el agente usó una herramienta]';
+      return (m.role === 'user' ? 'Cliente' : 'Liliana') + ': ' + c;
+    }).join('\n');
+
     // Candado anti-duplicado: solo UNA corrida responde este chat a la vez (webhook + bandeja).
-    // Si el candado fallara por cualquier motivo, preferimos responder a quedarnos callados.
     let bloqueado = false;
     try {
       const expira = new Date(Date.now() - 45000).toISOString();
@@ -355,33 +453,38 @@ export default async function handler(req, res) {
         body: JSON.stringify({ model: modelo, max_tokens: 1024, system, messages, ...(toolsActivas.length ? { tools: toolsActivas } : {}) }),
       });
       const data = await resp.json();
-      if (data.error) { await nota(conv, 'No pude responder (problema con la IA): ' + (data.error.message || 'error')); return res.status(200).json({ status: 'error', mensaje: 'IA: ' + (data.error.message || 'error') }); }
+      if (data.error) { await nota(conv, 'No pude responder (problema con la IA): ' + (data.error.message || 'error')); await soltarLock(conv); return res.status(200).json({ status: 'error', mensaje: 'IA: ' + (data.error.message || 'error') }); }
 
       const bloques = data.content || [];
-      // Enviar primero cualquier texto que la IA quiera decir.
       for (const b of bloques) {
         if (b.type === 'text' && b.text && b.text.trim()) await decir(conv, b.text.trim());
       }
       const toolUses = bloques.filter(b => b.type === 'tool_use');
-      if (data.stop_reason !== 'tool_use' || toolUses.length === 0) break;   // terminó su turno
+      if (data.stop_reason !== 'tool_use' || toolUses.length === 0) break;
 
-      // Ejecutar herramientas y devolver resultados a la IA.
       messages.push({ role: 'assistant', content: bloques });
       const results = [];
       let cerrarSinTexto = false;
       for (const tu of toolUses) {
         let out;
+        // Supervisor Opus para las acciones que mueven dinero/inventario.
+        if (ACCIONES_SENSIBLES.has(tu.name)) {
+          const v = await verificarConOpus(tu.name, tu.input || {}, contextoOpus, apiKey);
+          if (!v.aprobado) {
+            await nota(conv, `El supervisor (Opus) frenó "${tu.name}": ${v.motivo}`);
+            results.push({ type: 'tool_result', tool_use_id: tu.id, content: `El SUPERVISOR de seguridad NO aprobó esta acción: ${v.motivo}. NO la ejecutes. Aclárale al cliente lo que falte o pásalo a un asesor.` });
+            continue;
+          }
+        }
         try { out = await ejecutarHerramienta(tu.name, tu.input || {}, conv); }
         catch (e) { out = 'Error ejecutando la herramienta: ' + e.message; }
         if (typeof out === 'string' && out.startsWith('AGENTE_APAGADO')) apagado = true;
-        // El contacto inicial ya manda saludo + fotos + cierre completo: cerramos el turno.
         if (tu.name === 'enviar_contacto_inicial') cerrarSinTexto = true;
         results.push({ type: 'tool_result', tool_use_id: tu.id, content: out });
       }
       messages.push({ role: 'user', content: results });
       if (cerrarSinTexto && !apagado) break;
       if (apagado) {
-        // dar una última vuelta para el mensaje de despedida y cortar
         const resp2 = await fetch(ANTHROPIC_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
@@ -393,9 +496,14 @@ export default async function handler(req, res) {
       }
     }
 
-    await supabaseAdmin.from('conversaciones_whatsapp').update({ agente_procesando_at: null }).eq('id', conv.id);
+    await soltarLock(conv);
     return res.status(200).json({ status: 'ok', agente_activo: !apagado });
   } catch (e) {
     return res.status(500).json({ status: 'error', mensaje: e.message });
   }
+}
+
+// Libera el candado de la conversación (best-effort).
+async function soltarLock(conv) {
+  try { await supabaseAdmin.from('conversaciones_whatsapp').update({ agente_procesando_at: null }).eq('id', conv.id); } catch (_) {}
 }
