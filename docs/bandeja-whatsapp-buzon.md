@@ -81,6 +81,7 @@ Tablas y columnas del **Agente de IA** (ver §8):
 - **`agente_config`** (config del agente por línea): `(linea_id, estado [apagado|sombra|encendido], nombre_agente, prompt, modelo, variables jsonb [valores de las variables del libreto: {{nombre}}, {{pagos}}, …], actualizado_por, actualizado_at)`.
 - **`agente_herramientas`** (qué acciones tiene prendidas cada línea): `(id, linea_id, clave, nombre, descripcion, riesgo, activa, orden)`.
 - **`agente_actividad`** (bitácora de lo que hace): `(id, linea_id, telefono, tipo, resumen, created_at)`.
+- **`recordatorios`** (seguimiento automático del agente, <24h — ver §8.12): `(id uuid, linea_id, telefono, conversacion_id uuid→conversaciones_whatsapp [cascade], programado_para, motivo, ultimo_msg_cliente_at, estado [pendiente|enviado|cancelado|fallido], creado_por, intentos, created_at, enviado_at)`. Índice parcial `(programado_para) where estado='pendiente'` (el cron lee SOLO los vencidos, no toda la tabla → escala) y `(linea_id, telefono) where estado='pendiente'` (cancelar al instante cuando el cliente vuelve a escribir). **Tabla ya creada** (jun-2026); falta el cron + la herramienta del agente + el gancho en `recibir.js`.
 - Nuevas columnas en **`conversaciones_whatsapp`**: `agente_activo` (bool, el botón 🤖 prende el agente en ese chat) y `agente_procesando_at` (timestamp, el candado anti-mensaje-doble).
 - Nueva columna en **`mensajes_whatsapp`**: `responde_a` (id/wa del mensaje citado, para mostrar la cita). Las **notas** del agente se guardan aquí mismo con `direccion='nota'`.
 
@@ -280,15 +281,16 @@ número que ya había revisado).
 >   recordatorio, el recordatorio **se elimina** (ya retomaron la conversación). Ej.: a las 9:00am
 >   pide "escríbeme a las 2:00pm" → se agenda para las 2:00pm; si a las 11:00am el cliente escribe,
 >   el recordatorio se borra.
-> - **Cómo se haría (plan técnico):** (1) tabla nueva `recordatorios` (`linea_id`, `telefono`,
->   `programado_para`, `motivo`, `ultimo_msg_cliente_at`, `estado` [pendiente|enviado|cancelado]);
->   (2) una **tarea programada (cron)** que cada ~1 min revise los que ya vencen y dispare el motor
->   del agente para que redacte y envíe el seguimiento; (3) `recibir.js` **cancela** los
->   recordatorios pendientes de esa conversación cuando entra un mensaje del cliente; (4) una
->   **herramienta nueva del agente** `programar_recordatorio(minutos, motivo)` (que valida el
->   límite de 24h) — el agente la llama y confirma al cliente.
-> - Falta decidir el mecanismo del cron (Vercel Cron por minuto, o `pg_cron` de Supabase) y
->   confirmarlo con Mateo. **Toca crear tabla nueva → confirmar antes de tocar la base.**
+> - **Plan técnico y avance:**
+>   1. ✅ **Tabla `recordatorios` creada** (jun-2026, ver §3) con índices para escala.
+>   2. ⬜ **Tarea programada (cron)** que cada ~1 min lea los vencidos pendientes (índice parcial,
+>      lee solo esos) y dispare el motor del agente para redactar y enviar el seguimiento. Procesa
+>      por lotes para aguantar muchos a la vez (como las difusiones). Falta decidir mecanismo:
+>      **Vercel Cron** (por minuto) o **`pg_cron` de Supabase**.
+>   3. ⬜ **`recibir.js`** cancela (`estado='cancelado'`) los recordatorios pendientes de esa
+>      conversación cuando entra un mensaje del cliente (auto-cancelación).
+>   4. ⬜ **Herramienta nueva del agente** `programar_recordatorio(minutos, motivo)` que valida el
+>      límite de 24h; el agente la llama y confirma al cliente. (Y dejar nota 🤖 como las demás.)
 
 - **Soltarlo con clientes reales** (hoy es solo-Mateo, solo-su-chat) cuando Mateo lo decida.
 - **Conectarlo a las líneas grandes** (Línea 1 y Línea 2); hoy solo se prueba en la línea
