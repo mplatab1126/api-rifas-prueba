@@ -266,6 +266,30 @@ número que ya había revisado).
   cabina, sin tocar código.
 
 ### 8.12 Qué falta del agente (pendiente)
+
+> **🚧 EN DESARROLLO — Recordatorios que el agente se programa a sí mismo (seguimiento automático)**
+> Idea de Mateo (jun-2026). El agente debe poder **agendar un seguimiento dentro de la misma
+> conversación**. Ejemplo real: el cliente dice "estoy en el trabajo, dame 20 minutos y te
+> escribo" → el agente responde "Dale, en 20 minutos te vuelvo a escribir" **y a los 20 minutos
+> le escribe solo** retomando el hilo (qué número le había gustado, etc.).
+> - **Límite duro: solo recordatorios a menos de 24 horas** del último mensaje del cliente (es
+>   decir, dentro de la ventana de WhatsApp, normalmente "el mismo día"). Si el cliente pide algo
+>   tipo "llámame en 3 días", eso queda FUERA de esta función (sería otra cosa, con plantilla,
+>   porque la ventana de 24h ya estaría cerrada).
+> - **Auto-cancelación:** si el cliente **vuelve a escribir antes** de que se cumpla el
+>   recordatorio, el recordatorio **se elimina** (ya retomaron la conversación). Ej.: a las 9:00am
+>   pide "escríbeme a las 2:00pm" → se agenda para las 2:00pm; si a las 11:00am el cliente escribe,
+>   el recordatorio se borra.
+> - **Cómo se haría (plan técnico):** (1) tabla nueva `recordatorios` (`linea_id`, `telefono`,
+>   `programado_para`, `motivo`, `ultimo_msg_cliente_at`, `estado` [pendiente|enviado|cancelado]);
+>   (2) una **tarea programada (cron)** que cada ~1 min revise los que ya vencen y dispare el motor
+>   del agente para que redacte y envíe el seguimiento; (3) `recibir.js` **cancela** los
+>   recordatorios pendientes de esa conversación cuando entra un mensaje del cliente; (4) una
+>   **herramienta nueva del agente** `programar_recordatorio(minutos, motivo)` (que valida el
+>   límite de 24h) — el agente la llama y confirma al cliente.
+> - Falta decidir el mecanismo del cron (Vercel Cron por minuto, o `pg_cron` de Supabase) y
+>   confirmarlo con Mateo. **Toca crear tabla nueva → confirmar antes de tocar la base.**
+
 - **Soltarlo con clientes reales** (hoy es solo-Mateo, solo-su-chat) cuando Mateo lo decida.
 - **Conectarlo a las líneas grandes** (Línea 1 y Línea 2); hoy solo se prueba en la línea
   "Compra con Lili".
@@ -328,8 +352,15 @@ variable: úsala como `{{otra}}` en el prompt y guárdala en `variables`.
 - ~~Difusiones / broadcasts (con plantillas aprobadas por Meta)~~ → **HECHO** (menú Difusiones: Plantillas + Campañas). Pendiente de pulir: más filtros de audiencia, programar envíos (cron), pegar lista propia de números, y para audiencias muy grandes (decenas de miles) mover el "preparar" a un proceso en segundo plano.
 - ~~**Enviar fotos/archivos sueltos** desde la barra del chat~~ → **HECHO** (botón clip 📎; sube foto o PDF desde el computador; `enviar-archivo.js`).
 - ~~**Búsqueda de chats en servidor**~~ → **HECHO** (`conversaciones.js` con `q`; busca en toda la base por nombre o número).
-- **Avisos de mensaje nuevo**: sonido + contador en la pestaña + botón para silenciar → **HECHO**. Falta solo **marcar qué asesor atiende** un chat (para que en una línea con varios asesores no se pisen; toca cómo se reparten los chats).
-- **Plantillas**: la sección de Plantillas YA existe (Difusiones → Plantillas: crear, sincronizar estados, eliminar) y las Campañas masivas también. Lo que **falta** es poder **mandar una plantilla a un chat puntual** desde la conversación cuando la ventana de 24h está cerrada (hoy el chat solo muestra el aviso, sin botón para enviarla y reabrir la ventana).
+- ~~**Avisos de mensaje nuevo**: sonido + contador en la pestaña + botón para silenciar~~ → **HECHO**.
+- ~~**Plantillas desde el chat**: mandar una plantilla aprobada a un chat puntual para reabrir conversaciones de +24h~~ → **HECHO** (botón "Enviar plantilla" en el aviso de 24h; `plantillas.js` acción `enviar-chat`). *(La sección de Plantillas y las Campañas masivas ya existían en Difusiones.)*
+
+**Pendientes pequeños de la bandeja:**
+- **Marcar qué asesor atiende** un chat (para que en una línea con varios asesores no se pisen; toca cómo se reparten los chats).
+- **Pulir difusiones**: más filtros de audiencia, **programar envíos** (cron), pegar lista propia de números, y para audiencias enormes (decenas de miles) mover el "preparar" a un proceso en segundo plano.
+
+**Otros próximos pasos:**
+- **Recordatorios del agente** (seguimiento automático <24h) → **en desarrollo**, especificado en §8.12.
 - Migrar las **líneas grandes** (Línea 1, Línea 2) cuando se decida (es el "corte" desde ChateaPro).
 - Mover la lógica pesada de venta del Admin a la bandeja si se quiere todo integrado (ya se empezó: verificar/abonar/ficha).
 
