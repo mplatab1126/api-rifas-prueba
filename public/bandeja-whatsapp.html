@@ -157,6 +157,13 @@
     .media audio { max-width: 250px; }
     .media a { color: inherit; text-decoration: underline; }
     .cap { margin-top: 5px; }
+    /* Galería: varias fotos seguidas se agrupan en cuadrícula, como WhatsApp */
+    .galeria { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; width: 304px; max-width: 72vw; }
+    .galeria .gt { position: relative; min-width: 0; }
+    .galeria .gt img { width: 100%; height: 148px; object-fit: cover; border-radius: 8px; display: block; cursor: pointer; }
+    .galeria .gt .media { min-width: 0; height: 148px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.06); border-radius: 8px; font-size: 0.72rem; opacity: 0.85; }
+    .galeria .gt.oculta { display: none; }
+    .galeria .gt .mas { position: absolute; inset: 0; background: rgba(0,0,0,0.5); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 600; border-radius: 8px; cursor: pointer; }
     #aviso24 { display: none; background: var(--cream-100); color: var(--ink-soft); border-bottom: 1px solid var(--gray-200); text-align: center; font-size: 0.78rem; padding: 9px 16px; }
 
     /* Columna derecha · ficha */
@@ -1054,6 +1061,46 @@ function cuerpoMensaje(m){
   return `(${esc(m.tipo)})${m.texto ? ' ' + esc(m.texto) : ''}`;
 }
 
+/* Agrupa imágenes seguidas del mismo lado en una sola galería (como WhatsApp). */
+function esImagenAgrupable(m){
+  return (m.tipo === 'image' || m.tipo === 'sticker') && (m.media_url || m.media_id)
+    && !(m.texto || '').trim() && !m.responde_a
+    && (m.direccion === 'entrante' || m.direccion === 'saliente');
+}
+function agruparParaRender(mensajes){
+  const items = [];
+  let i = 0;
+  while(i < mensajes.length){
+    const m = mensajes[i];
+    if(esImagenAgrupable(m)){
+      const grupo = [m];
+      let j = i + 1;
+      while(j < mensajes.length && esImagenAgrupable(mensajes[j]) && mensajes[j].direccion === m.direccion){
+        const prev = grupo[grupo.length-1];
+        const tPrev = new Date(prev.timestamp_wa || prev.created_at).getTime();
+        const tCur = new Date(mensajes[j].timestamp_wa || mensajes[j].created_at).getTime();
+        if(Math.abs(tCur - tPrev) > 120000) break;   // más de 2 min: ya no es la misma ráfaga
+        grupo.push(mensajes[j]); j++;
+      }
+      if(grupo.length >= 2){ items.push({ tipo:'galeria', dir:m.direccion, ms:grupo }); i = j; continue; }
+    }
+    items.push({ tipo:'msg', m }); i++;
+  }
+  return items;
+}
+function burbujaGaleria(dir, ms){
+  const MAX = 4;
+  const tiles = ms.map((m, idx) => {
+    const oculta = (ms.length > MAX && idx >= MAX) ? ' oculta' : '';
+    const overlay = (ms.length > MAX && idx === MAX - 1)
+      ? `<div class="mas" onclick="expandirGaleria(this)">+${ms.length - MAX}</div>` : '';
+    return `<div class="gt${oculta}">${cuerpoMensaje(m)}${overlay}</div>`;
+  }).join('');
+  const u = ms[ms.length-1];
+  const estado = dir === 'saliente' ? estadoIcono(u.estado_envio) : '';
+  return `<div class="b ${dir==='entrante'?'ent':'sal'}"><div class="galeria">${tiles}</div><div class="h">${hora(u.timestamp_wa || u.created_at)}${estado ? ' · ' + estado : ''}</div></div>`;
+}
+
 const mediaCache = {};
 async function hidratarMedia(){
   // De abajo hacia arriba: los archivos más nuevos (los de abajo) cargan primero
@@ -1124,7 +1171,9 @@ async function cargarMensajes(scroll){
   const abajo = cont.scrollHeight - cont.scrollTop - cont.clientHeight < 80;
   const porWaId = {};
   r.mensajes.forEach(x => { if(x.wa_message_id) porWaId[x.wa_message_id] = x; });
-  cont.innerHTML = r.mensajes.map(m => {
+  cont.innerHTML = agruparParaRender(r.mensajes).map(it => {
+    if(it.tipo === 'galeria') return burbujaGaleria(it.dir, it.ms);
+    const m = it.m;
     if(m.direccion === 'nota'){
       return `<div class="b nota">${esc(m.texto||'')}<div class="h">${hora(m.timestamp_wa || m.created_at)}</div></div>`;
     }
@@ -1284,6 +1333,7 @@ $('modalBg').addEventListener('click', e => { if(e.target === $('modalBg')) cerr
 function cerrarFoto(){ $('fotoBg').classList.remove('show'); $('fotoBg').innerHTML = ''; }
 $('fotoBg').addEventListener('click', cerrarFoto);
 window.verImagen = function(url){ $('fotoBg').innerHTML = `<img class="vimg" src="${url}">`; $('fotoBg').classList.add('show'); };
+window.expandirGaleria = function(el){ const g = el.closest('.galeria'); if(g) g.querySelectorAll('.gt.oculta').forEach(t => t.classList.remove('oculta')); el.remove(); };
 
 // Clics dentro de la ventana de verificación: ver foto y botones de abono
 $('modal').addEventListener('click', e => {
