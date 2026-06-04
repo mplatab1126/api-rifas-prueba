@@ -19,7 +19,7 @@ import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 import { supabase, supabaseAdmin } from '../lib/supabase.js';
 import { esMateo, puedeVerLinea } from '../lib/asesores.js';
-import { enviarTexto, enviarImagenPorId, enviarImagen, enviarDocumento } from '../lib/whatsapp.js';
+import { enviarTexto, enviarImagenPorId, enviarImagen, enviarDocumento, descargarMediaBase64 } from '../lib/whatsapp.js';
 import { numerosDisponibles } from '../lib/numeros-disponibles.js';
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
@@ -38,6 +38,29 @@ function contextoFechaHora() {
     timeZone: 'America/Bogota', weekday: 'long', day: '2-digit', month: 'long',
     year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true,
   });
+}
+
+// Transcribe un audio de WhatsApp a texto con OpenAI Whisper (Claude no "oye").
+async function transcribirAudio(mediaId, lineaId) {
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) return null;
+  try {
+    const media = await descargarMediaBase64(mediaId, lineaId);
+    if (!media.ok || !media.base64) return null;
+    const buffer = Buffer.from(media.base64, 'base64');
+    const mime = media.mimeType || 'audio/ogg';
+    const ext = /mp3|mpeg/.test(mime) ? 'mp3' : /wav/.test(mime) ? 'wav' : /m4a|mp4/.test(mime) ? 'm4a' : 'ogg';
+    const form = new FormData();
+    form.append('file', new Blob([buffer], { type: mime }), 'audio.' + ext);
+    form.append('model', 'whisper-1');
+    form.append('language', 'es');
+    const r = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST', headers: { Authorization: 'Bearer ' + key }, body: form,
+    });
+    const data = await r.json();
+    if (data.error || !data.text) return null;
+    return String(data.text).trim();
+  } catch (_) { return null; }
 }
 
 // Contraseña de gerencia (Mateo) para llamar los endpoints internos con la MISMA
@@ -386,50 +409,8 @@ export default async function handler(req, res) {
     if (!conv) return res.status(200).json({ status: 'error', mensaje: 'No existe esa conversación.' });
     if (!conv.agente_activo) return res.status(200).json({ status: 'ok', skip: 'El agente no está activo en este chat.' });
 
-    // 2) Historial. Si el último mensaje NO es del cliente, ya está respondido → no hago nada.
-    const { data: histAsc } = await supabase
-      .from('mensajes_whatsapp')
-      .select('direccion, tipo, texto, timestamp_wa, created_at')
-      .eq('conversacion_id', conv.id)
-      .order('timestamp_wa', { ascending: false })
-      .limit(MAX_HISTORIAL);
-    const historial = (histAsc || []).slice().reverse();
-    const reales = historial.filter(m => m.direccion === 'entrante' || m.direccion === 'saliente');
-    if (!reales.length || reales[reales.length - 1].direccion !== 'entrante') {
-      return res.status(200).json({ status: 'ok', skip: 'No hay un mensaje del cliente pendiente de responder.' });
-    }
-
-    // 3) Configuración del agente (prompt + modelo).
-    const { data: cfg } = await supabase
-      .from('agente_config').select('prompt, modelo, nombre_agente').eq('linea_id', linea_id).maybeSingle();
-    const prompt = String(cfg?.prompt || '').trim();
-    if (!prompt) return res.status(200).json({ status: 'error', mensaje: 'El agente no tiene instrucciones guardadas.' });
-    const modelo = MODELOS_OK.includes(cfg?.modelo) ? cfg.modelo : 'claude-sonnet-4-6';
-
-    // Solo se le ofrecen a la IA las herramientas IMPLEMENTADAS que estén ACTIVAS en la cabina.
-    const { data: hsAct } = await supabase.from('agente_herramientas')
-      .select('clave').eq('linea_id', linea_id).eq('activa', true);
-    const activas = new Set((hsAct || []).map(h => h.clave));
-    const toolsActivas = TOOLS.filter(t => activas.has(t.name));
-
-    const system = prompt +
-      `\n\n---\nCONTEXTO (no lo menciones literalmente): hoy es ${contextoFechaHora()} (Colombia). ` +
-      `Hablas por WhatsApp con el cliente cuyo número es ${conv.telefono}. ` +
-      `Tienes herramientas para actuar; úsalas cuando corresponda en vez de inventar. ` +
-      `Mira el historial: si el cliente acaba de llegar y aún no se ha enviado la presentación inicial en el chat, ` +
-      `usa primero enviar_contacto_inicial. Después de usar una herramienta, sigue la conversación con naturalidad ` +
-      `y mensajes cortos. No repitas información que ya esté en el chat.`;
-
-    const messages = construirMensajes(reales);
-    if (!messages.length) return res.status(200).json({ status: 'ok', skip: 'Sin mensajes para procesar.' });
-
-    // Contexto en texto para el supervisor Opus (revisa las acciones sensibles).
-    const contextoOpus = messages.slice(-12).map(m => {
-      const c = typeof m.content === 'string' ? m.content : '[el agente usó una herramienta]';
-      return (m.role === 'user' ? 'Cliente' : 'Liliana') + ': ' + c;
-    }).join('\n');
-
-    // Candado anti-duplicado: solo UNA corrida responde este chat a la vez (webhook + bandeja).
+    // 2) CANDADO PRIMERO: solo UNA corrida responde a la vez. Tomarlo ANTES de leer
+    //    el historial cierra la ventana de doble respuesta (y de doble abono).
     let bloqueado = false;
     try {
       const expira = new Date(Date.now() - 45000).toISOString();
@@ -444,7 +425,66 @@ export default async function handler(req, res) {
     } catch (_) { /* si el candado falla, seguimos: mejor responder que quedar callados */ }
     if (bloqueado) return res.status(200).json({ status: 'ok', skip: 'Otra corrida ya está respondiendo.' });
 
-    // 4) Bucle de razonamiento + herramientas.
+    // 3) Historial. Si el último mensaje NO es del cliente, ya está respondido.
+    const { data: histAsc } = await supabase
+      .from('mensajes_whatsapp')
+      .select('id, direccion, tipo, texto, media_id, timestamp_wa, created_at')
+      .eq('conversacion_id', conv.id)
+      .order('timestamp_wa', { ascending: false })
+      .limit(MAX_HISTORIAL);
+    const historial = (histAsc || []).slice().reverse();
+    const reales = historial.filter(m => m.direccion === 'entrante' || m.direccion === 'saliente');
+    if (!reales.length || reales[reales.length - 1].direccion !== 'entrante') {
+      await soltarLock(conv);
+      return res.status(200).json({ status: 'ok', skip: 'No hay un mensaje del cliente pendiente de responder.' });
+    }
+
+    // 3b) Transcribir los audios que el cliente mandó (Claude no oye; Whisper sí).
+    //     Guardamos la transcripción para no repetirla en futuras corridas.
+    let transcritos = 0;
+    for (const m of reales) {
+      if (transcritos >= 4) break;
+      if (m.direccion === 'entrante' && m.tipo === 'audio' && m.media_id && !(m.texto || '').trim()) {
+        const txt = await transcribirAudio(m.media_id, conv.linea_id);
+        if (txt) {
+          m.texto = '[audio del cliente] ' + txt;
+          transcritos++;
+          try { await supabaseAdmin.from('mensajes_whatsapp').update({ texto: m.texto }).eq('id', m.id); } catch (_) {}
+        }
+      }
+    }
+
+    // 4) Configuración del agente (prompt + modelo).
+    const { data: cfg } = await supabase
+      .from('agente_config').select('prompt, modelo, nombre_agente').eq('linea_id', linea_id).maybeSingle();
+    const prompt = String(cfg?.prompt || '').trim();
+    if (!prompt) { await soltarLock(conv); return res.status(200).json({ status: 'error', mensaje: 'El agente no tiene instrucciones guardadas.' }); }
+    const modelo = MODELOS_OK.includes(cfg?.modelo) ? cfg.modelo : 'claude-sonnet-4-6';
+
+    // Solo se le ofrecen a la IA las herramientas IMPLEMENTADAS que estén ACTIVAS en la cabina.
+    const { data: hsAct } = await supabase.from('agente_herramientas')
+      .select('clave').eq('linea_id', linea_id).eq('activa', true);
+    const activas = new Set((hsAct || []).map(h => h.clave));
+    const toolsActivas = TOOLS.filter(t => activas.has(t.name));
+
+    const system = prompt +
+      `\n\n---\nCONTEXTO (no lo menciones literalmente): hoy es ${contextoFechaHora()} (Colombia). ` +
+      `Hablas por WhatsApp con el cliente cuyo número es ${conv.telefono}. ` +
+      `Tienes herramientas para actuar; úsalas cuando corresponda en vez de inventar. ` +
+      `Si el cliente acaba de llegar y aún no se ha enviado la presentación, usa primero enviar_contacto_inicial. ` +
+      `Si ves "[audio del cliente] ...", es lo que dijo en un audio (ya transcrito): respóndelo como si lo hubiera escrito, sin decir que no puedes oír audios. ` +
+      `Después de usar una herramienta, sigue la conversación con naturalidad y mensajes cortos. No repitas información que ya esté en el chat.`;
+
+    const messages = construirMensajes(reales);
+    if (!messages.length) { await soltarLock(conv); return res.status(200).json({ status: 'ok', skip: 'Sin mensajes para procesar.' }); }
+
+    // Contexto en texto para el supervisor Opus (revisa las acciones sensibles).
+    const contextoOpus = messages.slice(-12).map(m => {
+      const c = typeof m.content === 'string' ? m.content : '[el agente usó una herramienta]';
+      return (m.role === 'user' ? 'Cliente' : 'Liliana') + ': ' + c;
+    }).join('\n');
+
+    // 5) Bucle de razonamiento + herramientas.
     let apagado = false;
     for (let iter = 0; iter < MAX_ITER; iter++) {
       const resp = await fetch(ANTHROPIC_URL, {
