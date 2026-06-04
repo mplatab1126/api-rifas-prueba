@@ -32,7 +32,7 @@ const BASE_URL = 'https://www.losplata.com.co';
 // ve fotos ni ejecuta esos chequeos, solo frenaba acciones legítimas en falso.
 const ACCIONES_SENSIBLES = new Set();
 const MAX_ITER = 6;          // tope de idas/vueltas con la IA por cada mensaje del cliente
-const MAX_HISTORIAL = 40;    // últimos mensajes que lee del chat
+const MAX_HISTORIAL = 150;   // últimos mensajes que lee del chat (Sonnet aguanta de sobra; cubre charlas largas sin disparar costo)
 const PAUSA_MS = 800;        // entre los pasos del contacto inicial (para que lleguen en orden)
 
 const dormir = (ms) => new Promise(r => setTimeout(r, ms));
