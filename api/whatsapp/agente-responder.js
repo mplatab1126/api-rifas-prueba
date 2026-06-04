@@ -550,19 +550,17 @@ export default async function handler(req, res) {
     //     (webhook); cuando Mateo prueba manual desde la bandeja, responde de una.
     if (interno) {
       const inicioEspera = Date.now();
-      let marcaPrevia = null;
       while (Date.now() - inicioEspera < DEBOUNCE_MAX_MS) {
         const { data: ult } = await supabase
           .from('mensajes_whatsapp')
-          .select('id, direccion, timestamp_wa')
+          .select('direccion, timestamp_wa, created_at')
           .eq('conversacion_id', conv.id)
           .order('timestamp_wa', { ascending: false }).limit(1);
         const u = ult && ult[0];
-        if (!u || u.direccion !== 'entrante') break;   // ya no hay nada pendiente del cliente
-        const marca = String(u.id || u.timestamp_wa);
-        if (marca === marcaPrevia) break;              // pasó la pausa sin nada nuevo → responder
-        marcaPrevia = marca;
-        await dormir(DEBOUNCE_MS);
+        if (!u || u.direccion !== 'entrante') break;        // ya no hay nada pendiente del cliente
+        const silencioMs = Date.now() - new Date(u.timestamp_wa || u.created_at).getTime();
+        if (silencioMs >= DEBOUNCE_MS) break;               // ya lleva la pausa callado desde su ÚLTIMO mensaje → responder
+        await dormir(DEBOUNCE_MS - silencioMs + 250);       // espera lo que falta; si entra otro mensaje, su hora más nueva reinicia el conteo
       }
     }
 
