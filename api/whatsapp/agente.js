@@ -125,10 +125,19 @@ export default async function handler(req, res) {
       for (const [k, val] of Object.entries(varsIn)) {
         if (/^\w{1,40}$/.test(k)) variables[k] = String(val == null ? '' : val).slice(0, 4000);
       }
+      // Casillas de resultados de los sorteos (ganadores). Cada una: { titulo, texto }.
+      // Se conservan las que tengan al menos título; el texto vacío = "aún no se ha jugado".
+      const resultados = [];
+      const resIn = Array.isArray(req.body.resultados) ? req.body.resultados : [];
+      for (const r of resIn.slice(0, 40)) {
+        const titulo = String(r?.titulo || '').trim().slice(0, 120);
+        const texto = String(r?.texto || '').trim().slice(0, 2000);
+        if (titulo || texto) resultados.push({ titulo, texto });
+      }
       await asegurarConfig(linea_id);   // garantiza que la fila exista
       const { data, error } = await supabaseAdmin
         .from('agente_config')
-        .update({ estado, modelo, prompt, nombre_agente, variables, actualizado_por: nombre, actualizado_at: new Date().toISOString() })
+        .update({ estado, modelo, prompt, nombre_agente, variables, resultados, actualizado_por: nombre, actualizado_at: new Date().toISOString() })
         .eq('linea_id', linea_id)
         .select('*')
         .single();

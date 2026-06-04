@@ -423,6 +423,15 @@
     .ag-save { margin-top: 12px; padding: 11px 20px; border: 1px solid var(--mint); background: var(--mint); border-radius: 10px; font-family: inherit; font-size: 0.86rem; font-weight: 600; color: var(--ink); cursor: pointer; }
     .ag-save:hover { background: var(--mint-light); }
     .ag-savemsg { margin-left: 12px; font-size: 0.82rem; color: #1c7a37; }
+    /* Casillas de resultados de los sorteos */
+    .ag-res { border: 1px solid var(--gray-200); border-radius: 12px; padding: 12px; margin-bottom: 10px; background: var(--cream-50); }
+    .ag-res-top { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .ag-res-titulo { flex: 1; margin-bottom: 0 !important; font-weight: 600; }
+    .ag-res-texto { width: 100%; min-height: 58px; resize: vertical; margin-bottom: 0 !important; }
+    .ag-res-del { flex-shrink: 0; width: 34px; height: 34px; border: 1px solid var(--gray-200); background: #fff; border-radius: 9px; color: var(--ink-mute); cursor: pointer; font-size: 0.9rem; }
+    .ag-res-del:hover { color: var(--danger); background: #fdecec; border-color: #f3c9c9; }
+    .ag-ghost { margin: 2px 0 10px; padding: 9px 16px; border: 1px dashed var(--gray-300); background: #fff; border-radius: 10px; font-family: inherit; font-size: 0.84rem; font-weight: 600; color: var(--ink); cursor: pointer; }
+    .ag-ghost:hover { background: var(--cream-50); border-color: var(--ink-mute); }
     .ag-tools { display: flex; flex-direction: column; }
     .ag-tool { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-top: 1px solid var(--gray-100); }
     .ag-tool:first-child { border-top: none; }
@@ -1802,6 +1811,14 @@ function agCapturarForm(){
   if($('agNombre')) agData.config.nombre_agente = $('agNombre').value;
   if($('agModelo')) agData.config.modelo = $('agModelo').value;
   if($('agPagos')) agData.config.variables = Object.assign({}, agData.config.variables, { pagos: $('agPagos').value });
+  if($('agResLista')){
+    // Capturamos TODAS las casillas tal cual (sin filtrar), para no descuadrar los índices al
+    // agregar/quitar; el servidor descarta las que queden completamente vacías al guardar.
+    agData.config.resultados = [...document.querySelectorAll('#agResLista .ag-res')].map(row => ({
+      titulo: (row.querySelector('.ag-res-titulo') || {}).value || '',
+      texto: (row.querySelector('.ag-res-texto') || {}).value || '',
+    }));
+  }
 }
 
 function pintarAgente(){
@@ -1830,6 +1847,16 @@ function pintarAgente(){
     ? act.map(a => `<div class="ag-log-row"><div class="ag-log-when">${esc(agFechaHora(a.created_at))}</div><div class="ag-log-txt">${esc(a.resumen || a.tipo || '')}</div></div>`).join('')
     : '<div class="ag-empty">Aún no hay actividad. Cuando el agente empiece a trabajar, aquí verás cada acción y a qué hora la hizo.</div>';
 
+  const resultados = Array.isArray(c.resultados) ? c.resultados : [];
+  const resRows = resultados.map((r, i) => `
+      <div class="ag-res" data-i="${i}">
+        <div class="ag-res-top">
+          <input class="cc-input ag-res-titulo" placeholder="Título (ej: Premio mayor — 4 jul)" value="${esc(r.titulo||'')}">
+          <button class="ag-res-del" title="Quitar casilla" onclick="agDelResultado(${i})">✕</button>
+        </div>
+        <textarea class="cc-input ag-res-texto" placeholder="Resultado (déjalo vacío si aún no se ha jugado). Ej: Lotería de Boyacá 15-22, ganó María Elena de Chinchiná.">${esc(r.texto||'')}</textarea>
+      </div>`).join('');
+
   $('agBody').innerHTML = `
     <div class="ag-card">
       <h3>Encendido</h3>
@@ -1847,6 +1874,13 @@ function pintarAgente(){
       <div class="ag-sub" style="margin-top:14px"><b>Datos de pago de esta línea</b> — rellena la variable <code>{{pagos}}</code> del manual (a quién y a qué cuentas paga el cliente). Esto es lo que cambia entre asesores; el resto del manual es igual para todos.</div>
       <textarea id="agPagos" class="ag-prompt" style="min-height:64px" placeholder="Ej: *Nequi, Daviplata o llave Bre-B 3128732266* (a nombre de *Maria Buitrago*)">${esc((c.variables&&c.variables.pagos)||'')}</textarea>
       <div><button class="ag-save" onclick="agGuardar()">Guardar cambios</button><span id="agSaveMsg" class="ag-savemsg"></span></div>
+    </div>
+    <div class="ag-card">
+      <h3>Resultados de los sorteos (ganadores)</h3>
+      <div class="ag-sub">Escribe el resultado de cada sorteo. Cuando un cliente pregunte “¿qué número ganó?”, el agente responde con esto. <b>Casilla vacía = aún no se ha jugado.</b> Puedes poner el número y el ganador, o algo como “nadie tenía la boleta, el premio se acumula”.</div>
+      <div id="agResLista">${resRows || '<div class="ag-empty">Sin casillas todavía. Agrega la primera con el botón de abajo.</div>'}</div>
+      <button class="ag-ghost" onclick="agAddResultado()">+ Agregar casilla</button>
+      <div><button class="ag-save" onclick="agGuardar()">Guardar cambios</button><span class="ag-savemsg"></span></div>
     </div>
     <div class="ag-card">
       <h3>Herramientas</h3>
@@ -1883,14 +1917,32 @@ async function agGuardar(silencioso){
   const c = agData.config;
   const r = await api('agente', { accion:'guardar', linea_id: lineaActual,
     estado: c.estado||'apagado', prompt: c.prompt||'', nombre_agente: c.nombre_agente||'', modelo: c.modelo||'claude-sonnet-4-6',
-    variables: c.variables || {} });
+    variables: c.variables || {}, resultados: Array.isArray(c.resultados) ? c.resultados : [] });
   if(r.status === 'ok'){
     agData.config = r.config;
-    if(silencioso !== true && $('agSaveMsg')){ $('agSaveMsg').textContent = 'Guardado ✓'; setTimeout(()=>{ if($('agSaveMsg')) $('agSaveMsg').textContent=''; }, 2500); }
+    if(silencioso !== true){
+      document.querySelectorAll('.ag-savemsg').forEach(el => { el.textContent = 'Guardado ✓'; });
+      setTimeout(() => document.querySelectorAll('.ag-savemsg').forEach(el => { el.textContent = ''; }), 2500);
+    }
   } else {
     alert(r.mensaje || 'No se pudo guardar.');
   }
 }
+
+// Agregar / quitar casillas de resultados (se ven al instante; se guardan con "Guardar cambios").
+window.agAddResultado = function(){
+  if(!agData) return;
+  agCapturarForm();
+  agData.config.resultados = Array.isArray(agData.config.resultados) ? agData.config.resultados : [];
+  agData.config.resultados.push({ titulo: '', texto: '' });
+  pintarAgente();
+};
+window.agDelResultado = function(i){
+  if(!agData) return;
+  agCapturarForm();
+  if(Array.isArray(agData.config.resultados)) agData.config.resultados.splice(i, 1);
+  pintarAgente();
+};
 
 /* ── Probador del agente (simulador) ───────────────────────────────────────
    NO envía nada por WhatsApp: corre el prompt actual contra los mensajes de

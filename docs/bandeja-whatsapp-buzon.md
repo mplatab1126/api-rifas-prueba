@@ -78,7 +78,7 @@ Tablas nuevas creadas para el buzón:
 - **`difusion_destinatarios`** (cola de envío, escala 50k–100k): `(id bigint, difusion_id→difusiones [cascade], telefono, nombre, estado [pendiente|enviado|fallido], error, wa_message_id, enviado_at)`. Índice `(difusion_id, estado)` y único `(difusion_id, telefono)`.
 
 Tablas y columnas del **Agente de IA** (ver §8):
-- **`agente_config`** (config del agente por línea): `(linea_id, estado [apagado|sombra|encendido], nombre_agente, prompt, modelo, variables jsonb [valores de las variables del libreto: {{nombre}}, {{pagos}}, …], actualizado_por, actualizado_at)`.
+- **`agente_config`** (config del agente por línea): `(linea_id, estado [apagado|sombra|encendido], nombre_agente, prompt, modelo, variables jsonb [valores de las variables del libreto: {{nombre}}, {{pagos}}, …], resultados jsonb [casillas de ganadores de los sorteos: array de {titulo, texto}; ver §8.16], actualizado_por, actualizado_at)`.
 - **`agente_herramientas`** (qué acciones tiene prendidas cada línea): `(id, linea_id, clave, nombre, descripcion, riesgo, activa, orden)`.
 - **`agente_actividad`** (bitácora de lo que hace): `(id, linea_id, telefono, tipo, resumen, created_at)`.
 - **`recordatorios`** (seguimiento automático del agente, <24h — ver §8.12): `(id uuid, linea_id, telefono, conversacion_id uuid→conversaciones_whatsapp [cascade], programado_para, motivo, ultimo_msg_cliente_at, estado [pendiente|enviado|cancelado|fallido], creado_por, intentos, created_at, enviado_at)`. Índice parcial `(programado_para) where estado='pendiente'` (el cron lee SOLO los vencidos, no toda la tabla → escala) y `(linea_id, telefono) where estado='pendiente'` (cancelar al instante cuando el cliente vuelve a escribir). **Tabla ya creada** (jun-2026); falta el cron + la herramienta del agente + el gancho en `recibir.js`.
@@ -368,6 +368,20 @@ cuando el cliente pide tiempo (ej. "estoy ocupado, escríbeme en 20 min"). Cómo
   chat **apenas el cliente vuelve a escribir** (ya retomaron solos; no hace falta el seguimiento).
 - **Escala**: el cron lee solo los vencidos (índice), reclama en atómico (sin dobles) y procesa por
   lote (40 por corrida). El secreto interno del cron es `WHATSAPP_VERIFY_TOKEN`.
+
+### 8.16 Resultados de los sorteos (ganadores) — HECHO
+Después de cada sorteo, los clientes preguntan mucho "¿qué número ganó?". Ahora Mateo escribe los
+resultados en la cabina y el agente responde con eso.
+- **Cabina** (pestaña Agente): tarjeta **"Resultados de los sorteos (ganadores)"** con casillas que
+  Mateo **agrega/edita/quita** él mismo. Cada casilla = **título** (ej. "Premio mayor — 4 jul") +
+  **texto** del resultado (ej. "Lotería de Boyacá 15-22, ganó María Elena de Chinchiná", o "nadie
+  tenía la boleta, el premio se acumula"). **Casilla vacía = aún no se ha jugado.**
+- Se guardan en **`agente_config.resultados`** (jsonb, array de `{titulo, texto}`); `agente.js`
+  acción `guardar` las sanea (descarta las totalmente vacías, máx 40).
+- **Motor** (`agente-responder.js`): inyecta un bloque "RESULTADOS DE LOS SORTEOS" al system, con la
+  regla de usarlos **solo si el cliente pregunta** qué número ganó / quién ganó / si ya jugó; si la
+  casilla está vacía, le dice con cariño que aún no se ha jugado. No los menciona si no preguntan.
+- Es **por línea** (cada línea tiene sus casillas), como el resto de la config del agente.
 
 ## 9. Pendientes / próximos pasos
 - **Agente de IA** → **HECHO** (ver §8); pendientes propios del agente en §8.12.

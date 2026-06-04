@@ -716,7 +716,7 @@ export default async function handler(req, res) {
 
     // 4) Configuración del agente (prompt + modelo).
     const { data: cfg } = await supabase
-      .from('agente_config').select('prompt, modelo, nombre_agente, variables').eq('linea_id', linea_id).maybeSingle();
+      .from('agente_config').select('prompt, modelo, nombre_agente, variables, resultados').eq('linea_id', linea_id).maybeSingle();
     const promptBase = String(cfg?.prompt || '').trim();
     if (!promptBase) { await soltarLock(conv); return res.status(200).json({ status: 'error', mensaje: 'El agente no tiene instrucciones guardadas.' }); }
     // Rellenar las variables {{nombre}}, {{pagos}}, etc. con lo configurado en esta línea.
@@ -747,6 +747,14 @@ export default async function handler(req, res) {
     // presentó). Si es así, al activarlo NO debe reenviar el contacto inicial: continúa.
     const yaHuboSalientes = reales.some(m => m.direccion === 'saliente');
 
+    // Resultados de los sorteos (ganadores) que Mateo escribió en la cabina. El agente los
+    // lee SOLO para responder "¿qué número ganó?". Casilla vacía = aún no se ha jugado.
+    const resultadosCfg = Array.isArray(cfg?.resultados) ? cfg.resultados : [];
+    const bloqueResultados = resultadosCfg.length
+      ? '\n\n---\nRESULTADOS DE LOS SORTEOS (úsalos SOLO si el cliente pregunta qué número ganó, quién ganó, o si ya jugó tal premio; NO los menciones si no preguntan). Para cada sorteo: si tiene resultado, díselo con tus palabras; si dice "(aún no se ha jugado)", explícale con cariño que todavía no se ha realizado:\n' +
+        resultadosCfg.map(r => `- ${String(r.titulo || 'Sorteo').trim()}: ${String(r.texto || '').trim() || '(aún no se ha jugado)'}`).join('\n')
+      : '';
+
     const system = prompt +
       `\n\n---\nCONTEXTO (no lo menciones literalmente): hoy es ${contextoFechaHora()} (Colombia). ` +
       `Hablas por WhatsApp con el cliente cuyo número es ${conv.telefono}. ` +
@@ -762,7 +770,8 @@ export default async function handler(req, res) {
         : '') +
       (yaHuboSalientes
         ? `\n\n---\nESTE CHAT YA TIENE MENSAJES PREVIOS (un asesor lo atendió a mano o ya te presentaste). NO uses enviar_contacto_inicial, NO te vuelvas a presentar y NO repitas información ya enviada. Lee TODO el historial y CONTINÚA desde donde quedó, respondiendo lo ÚLTIMO que preguntó el cliente.`
-        : '');
+        : '') +
+      bloqueResultados;
 
     const messages = construirMensajes(reales, imagenesVistas);
     // Disparo por RECORDATORIO: no hay mensaje nuevo del cliente; le inyectamos una nota
