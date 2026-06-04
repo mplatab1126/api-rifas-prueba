@@ -31,11 +31,12 @@ const HERRAMIENTAS_DEFAULT = [
   { clave: 'consultar_disponibles',    nombre: 'Consultar números disponibles',      descripcion: 'Mira en el sistema qué boletas están libres para ofrecerlas.',          riesgo: 'bajo',  orden: 2 },
   { clave: 'verificar_disponibilidad', nombre: 'Verificar si un número está libre',   descripcion: 'Revisa si un número puntual (ej: 1234) está disponible u ocupado.',      riesgo: 'bajo',  orden: 3 },
   { clave: 'consultar_cliente',        nombre: 'Ver boletas y saldo de un cliente',   descripcion: 'Consulta las boletas, abonos y deuda de un cliente por su teléfono.',    riesgo: 'bajo',  orden: 4 },
-  { clave: 'pasar_a_humano',           nombre: 'Pasar la conversación a un asesor',   descripcion: 'Cuando no está seguro o el cliente lo pide, entrega el chat a una persona.', riesgo: 'bajo', orden: 5 },
-  { clave: 'apartar_numero',           nombre: 'Apartar un número (Fase 2)',          descripcion: 'Reserva una boleta a nombre del cliente. Aún no disponible.',            riesgo: 'medio', orden: 6 },
-  { clave: 'enviar_boleta',            nombre: 'Enviar la boleta (Fase 2)',           descripcion: 'Manda al cliente su boleta digital. Aún no disponible.',                 riesgo: 'medio', orden: 7 },
-  { clave: 'registrar_abono',          nombre: 'Registrar un abono · dinero (Fase 2)', descripcion: 'Registra un pago verificado contra una transferencia real. Aún no disponible.', riesgo: 'alto',  orden: 8 },
-  { clave: 'enviar_resolucion',        nombre: 'Enviar la resolución (PDF de EDSA)',  descripcion: 'Le manda al cliente el PDF de la resolución oficial que autoriza la rifa.', riesgo: 'bajo',  orden: 9 },
+  { clave: 'enviar_resolucion',        nombre: 'Enviar la resolución (PDF de EDSA)',  descripcion: 'Le manda al cliente el PDF de la resolución oficial que autoriza la rifa.', riesgo: 'bajo',  orden: 5 },
+  { clave: 'apartar_numero',           nombre: 'Apartar un número',                  descripcion: 'Reserva una boleta a nombre del cliente. Lo supervisa Opus.',            riesgo: 'medio', orden: 6 },
+  { clave: 'enviar_boleta',            nombre: 'Enviar la boleta',                   descripcion: 'Manda al cliente su boleta digital.',                                   riesgo: 'medio', orden: 7 },
+  { clave: 'registrar_abono',          nombre: 'Registrar un abono (dinero)',         descripcion: 'Verifica el comprobante contra el pago real del banco y abona. Lo supervisa Opus.', riesgo: 'alto', orden: 8 },
+  { clave: 'liberar_boleta',           nombre: 'Liberar / cancelar una boleta',       descripcion: 'Cancela una boleta si el cliente ya no quiere (solo si no ha abonado). Lo supervisa Opus.', riesgo: 'alto', orden: 9 },
+  { clave: 'pasar_a_humano',           nombre: 'Pasar la conversación a un asesor',   descripcion: 'Cuando no está seguro o el cliente lo pide, entrega el chat a una persona.', riesgo: 'bajo', orden: 10 },
 ];
 
 // Devuelve la config de la línea; si no existe, la crea con valores por defecto.
