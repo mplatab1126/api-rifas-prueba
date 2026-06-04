@@ -40,9 +40,10 @@ protegida con contraseña de asesor (las mismas del Admin, `ASESORES_SECRETO`).
 - **Bandeja** estilo WhatsApp/ChateaPro/Manychat con: menú lateral contraíble (Chats / Contactos), lista de chats, conversación, panel derecho de ficha del cliente.
 - **Multi-línea**: varias cuentas de WhatsApp en el mismo sistema (ver §5).
 - **Filtro "Sin respuesta"** (chats donde el último mensaje lo mandó el cliente), con conteo, calculado en el servidor.
-- **Ver comprobantes** (fotos/audios) dentro del chat; miniaturas cuadradas; clic = visor grande.
+- **Ver comprobantes** (fotos/audios) dentro del chat; miniaturas cuadradas; clic = visor grande. Cuando llegan **varias fotos seguidas** del mismo lado se **agrupan en cuadrícula** (galería estilo WhatsApp, con "+N" para desplegar el resto).
 - **Ficha del cliente** (panel derecho): tarjeta del cliente (nombre, ciudad, documento, correo, saldo total) + **una tarjeta por boleta** con su saldo y su **historial de pagos** (fecha · referencia/método · asesor · valor), con **basurero para eliminar abono**.
-  - **Muestra al cliente registrado aunque NO tenga boletas en la rifa actual**: si el teléfono existe en la tabla `clientes` (emparejando por los **últimos 10 dígitos**), la primera tarjeta muestra sus datos (nombre, ciudad, documento, correo). La segunda tarjeta dice "Sin boletas en la rifa actual"; solo si no existe en la base dice "Cliente nuevo". El "Saldo total" solo aparece cuando tiene boletas.
+  - **Registrado vs nuevo**: si el teléfono existe en `clientes` (por los **últimos 10 dígitos**), muestra su tarjeta (nombre, ciudad, documento, correo) y, si no tiene boletas, "Sin boletas en la rifa actual". Si **NO está registrado**, ya **no** repite su nombre/teléfono: solo muestra "Cliente nuevo — no está registrado ni tiene boletas". El "Saldo total" solo aparece cuando tiene boletas.
+  - **Botón "Actualizar"** en la cabecera del chat (junto a ver-ficha, etiquetas y eliminar): refresca el chat y la ficha del cliente al instante, **sin recargar toda la página**.
   - **Autocompleta el indicativo**: WhatsApp siempre llega con el número completo; si en la base el teléfono está más corto (sin indicativo) y el cliente no tiene boletas, al abrir el chat se actualiza solo al número de WhatsApp. Es best-effort (si la base lo rechaza no pasa nada, la ficha se muestra igual).
 - **Verificar pago (clic derecho en el comprobante → "Buscar el pago")**: lee la imagen con IA, la compara contra las **transferencias REALES** del sistema (no abona por la foto), sugiere la coincidencia, muestra si ya está asignada, compara las 2 fotos lado a lado. Si está LIBRE → botón **"Abonar"** (una boleta o **repartir** entre varias, suma exacta). Reusa `/api/admin/abono`.
 - **Eliminar abono** desde la bandeja (y arreglado en Admin): si el pago está **repartido**, borrar una parte **borra todas** y libera la transferencia; avisa antes.
@@ -72,7 +73,7 @@ Tablas nuevas creadas para el buzón:
 - **`difusion_destinatarios`** (cola de envío, escala 50k–100k): `(id bigint, difusion_id→difusiones [cascade], telefono, nombre, estado [pendiente|enviado|fallido], error, wa_message_id, enviado_at)`. Índice `(difusion_id, estado)` y único `(difusion_id, telefono)`.
 
 Tablas y columnas del **Agente de IA** (ver §8):
-- **`agente_config`** (config del agente por línea): `(linea_id, estado [apagado|sombra|encendido], nombre_agente, prompt, modelo, actualizado_por, actualizado_at)`.
+- **`agente_config`** (config del agente por línea): `(linea_id, estado [apagado|sombra|encendido], nombre_agente, prompt, modelo, variables jsonb [valores de las variables del libreto: {{nombre}}, {{pagos}}, …], actualizado_por, actualizado_at)`.
 - **`agente_herramientas`** (qué acciones tiene prendidas cada línea): `(id, linea_id, clave, nombre, descripcion, riesgo, activa, orden)`.
 - **`agente_actividad`** (bitácora de lo que hace): `(id, linea_id, telefono, tipo, resumen, created_at)`.
 - Nuevas columnas en **`conversaciones_whatsapp`**: `agente_activo` (bool, el botón 🤖 prende el agente en ese chat) y `agente_procesando_at` (timestamp, el candado anti-mensaje-doble).
@@ -97,11 +98,11 @@ Tablas y columnas del **Agente de IA** (ver §8):
 - **`difusiones.js`** — campañas. Acciones: `listar`, `crear`/`editar`, `eliminar`, `preparar` (calcula audiencia y llena la cola), `estado` (progreso), `enviar-lote` (manda un lote y devuelve avance), `cancelar`, `prueba` (un envío a un número). En `lib/whatsapp.js` se agregaron `construirComponentesPlantilla`, `crearPlantillaMeta`, `listarPlantillasMeta`, `eliminarPlantillaMeta`, `enviarPlantilla`; y `resolverLinea` ahora devuelve también `wabaId`.
 - **`respuestas-rapidas.js`** — respuestas rápidas (tabla `respuestas_rapidas`, columna `pasos` jsonb). Acciones: `listar`, `crear`, `editar`, `eliminar`, y **`enviar`** (manda todos los pasos del flujo en orden y los guarda en el chat). Reusa `enviarTexto`/`enviarImagen` de `lib/whatsapp.js`.
 - **`agente.js`** — **cabina** del agente (SOLO Mateo, `esMateo`). NO conversa con clientes; solo LEE/GUARDA su configuración por línea. Acciones: `config` (siembra config + las 10 herramientas la 1ª vez y trae la actividad), `guardar` (estado/nombre/prompt/modelo), `herramienta` (prende/apaga una acción), `activar_conversacion` (el botón 🤖: `agente_activo`+`estado='bot'`), `probar` (simulador que NO toca WhatsApp; ya casi no se usa).
-- **`agente-responder.js`** — **MOTOR** del agente (el que de verdad responde). Lo dispara el webhook. Conversa con Claude usando las 10 herramientas, con supervisor Opus para las acciones de plata/inventario, transcribe audios con Whisper, deja notas en el chat y tiene candado anti-duplicado. **Es el archivo más importante del agente; todo el detalle en §8.**
+- **`agente-responder.js`** — **MOTOR** del agente (el que de verdad responde). Lo dispara el webhook. Conversa con Claude usando las 11 herramientas, **VE las imágenes** del cliente, le inyecta el **estado del cliente** y sus **acciones ya hechas**, junta los mensajes en ráfaga (**debounce ~7s**), lee el historial **desde el inicio de la rifa activa**, rellena las **variables** del prompt (`{{nombre}}`/`{{pagos}}` con `aplicarVariables`), transcribe audios con Whisper, deja notas y tiene candado anti-duplicado. El supervisor Opus quedó **desactivado** (§8.5). **Es el archivo más importante del agente; detalle en §8.**
 - **`recibir.js`** (webhook) ahora, además de guardar el mensaje, **dispara el motor** si el agente está activo (`dispararAgenteSiActivo` → `fetch` al motor con el secreto interno y corte a 1.5s) y captura la **cita** (`m.context.id → responde_a`).
 - **libs**: `lib/whatsapp.js` (`resolverLinea`, `enviarTexto`, `enviarImagen`, `enviarImagenPorId`, `enviarDocumento` [PDF de la resolución], `descargarMediaBase64`, `configWhatsapp`), `lib/comprobante.js` (`extraerDatos` — lee comprobante con Claude, solo lectura), `lib/asesores.js` (`esGerencia`, `esMateo` [agente solo-Mateo], `lineasDeAsesor`, `puedeVerLinea`; **GERENCIA = ['mateo','alejo plata']**, editable ahí). El motor reusa además `lib/numeros-disponibles.js`.
 
-Se REUSAN (no se reescriben) endpoints de plata del Admin: `/api/admin/abono` (abonar) y `/api/admin/eliminar-abono` (se **modificó** para que borrar una parte de un pago repartido borre todas y libere la transferencia — también beneficia al Admin).
+Se REUSAN (no se reescriben) endpoints de plata del Admin: `/api/admin/abono` (abonar), `/api/admin/eliminar-abono` (se **modificó** para que borrar una parte de un pago repartido borre todas y libere la transferencia — también beneficia al Admin) y `/api/admin/liberar-boleta`. **NUEVO**: `/api/admin/trasladar-abono.js` — mueve abono entre boletas del mismo cliente (todo o un monto parcial; parte el abono y reparte la transferencia); lo usa la herramienta `trasladar_abono`.
 
 ## 5. Multi-línea y permisos (importante)
 - **Una sola tabla para todas las líneas**, con `linea_id` + índices. NO una tabla por línea. Esto escala bien (Postgres aguanta millones de filas si se filtra por índice).
@@ -168,7 +169,7 @@ trabajando en su propia ejecución serverless. Resultado: responde casi al insta
 **ya NO** dispara el agente desde el navegador (eso causaba los mensajes dobles).
 
 ### 8.4 Las herramientas (lo que sabe hacer)
-Usa "tool use" de Claude: en vez de inventar, llama funciones reales. Son 10 y cada una se
+Usa "tool use" de Claude: en vez de inventar, llama funciones reales. Son **11** y cada una se
 **prende/apaga** desde la cabina (`agente_herramientas`):
 1. **enviar_contacto_inicial** — saludo + fotos de la casa + cierre (precio, legalidad, responde
    su pregunta y "¿Te explico los premios?"). Lo redacta la IA y va en UN solo cierre para no
@@ -177,20 +178,29 @@ Usa "tool use" de Claude: en vez de inventar, llama funciones reales. Son 10 y c
 3. **verificar_disponibilidad** — revisa si un número puntual (ej. 1234) está libre u ocupado.
 4. **consultar_cliente** — boletas y saldo de un teléfono.
 5. **enviar_resolucion** — manda el PDF de EDSA (`/resolucion.pdf`) como prueba legal.
-6. **apartar_numero** — reserva una boleta (pide número+nombre+apellido+ciudad). *Sensible.*
+6. **apartar_numero** — reserva una boleta. Pide número + nombre + apellido + ciudad, y también
+   **cédula y correo** (para la factura electrónica, que se emite cuando la boleta queda paga al
+   100%). Si el cliente ya está registrado, **reusa** sus datos guardados y no los re-pide.
 7. **enviar_boleta** — manda la boleta digital con su enlace.
-8. **registrar_abono** — registra un pago (solo con comprobante verificado). *Sensible.*
-9. **liberar_boleta** — cancela una boleta si el cliente ya no quiere (y no ha abonado). *Sensible.*
-10. **pasar_a_humano** — entrega el chat a un asesor y se apaga.
+8. **registrar_abono** — registra un pago (solo con comprobante verificado contra el banco).
+9. **liberar_boleta** — cancela una boleta si el cliente ya no quiere (y no ha abonado).
+10. **trasladar_abono** — mueve el abono (dinero ya pagado) de una boleta a otra **del mismo
+    cliente**; puede mover TODO o **una parte** (para dividir, ej. $40.000 a una y $20.000 a otra).
+    Candado: ambas boletas deben ser del mismo teléfono; nunca toca la de otra persona.
+11. **pasar_a_humano** — entrega el chat a un asesor y se apaga.
 
-### 8.5 Supervisor Opus para lo que mueve plata o inventario
-Las 3 acciones *sensibles* (apartar, abonar, liberar) **NO se ejecutan solas**: antes, un
-**supervisor Opus** (`claude-opus-4-8`) revisa la conversación y la decisión y responde
-"APRUEBO" o "RECHAZO: motivo". Si rechaza, no se hace y queda nota. La conversación normal corre
-en el modelo configurado (Sonnet, más rápido/barato); solo las decisiones de plata suben a Opus
-(el modelo más cuidadoso). Si Opus está caído, no bloquea (los otros candados —pago real, dueño
-de la boleta— siguen protegiendo). Cambiar de modelo **NO borra la memoria**: el contexto es el
-mismo historial del chat; solo cambia "quién" piensa esa decisión puntual.
+> Las acciones de plata/inventario (apartar, abonar, liberar, trasladar) **ya no pasan por el
+> supervisor Opus** (§8.5): cada una tiene su propio candado fuerte.
+
+### 8.5 Supervisor Opus — DESACTIVADO (cada acción se cuida sola)
+Existió un **supervisor Opus** (`claude-opus-4-8`) que revisaba las acciones de plata/inventario
+antes de ejecutarlas. **Se desactivó** (la lista `ACCIONES_SENSIBLES` quedó vacía) porque, al no
+"ver" las fotos ni ejecutar los chequeos reales, **frenaba acciones legítimas en falso** (ej.
+confundió el apellido "Plata" con dinero; o no veía el comprobante y bloqueaba un abono real).
+Cada acción **ya tiene su propio candado fuerte**: el abono verifica contra el banco; liberar
+valida dueño + $0 abonado; trasladar valida que ambas boletas sean del cliente; apartar es
+reversible. El código del supervisor sigue en el motor por si se quiere reactivar para alguna
+acción puntual, pero hoy no se usa.
 
 ### 8.6 Abono "anti-fraude" y liberar (reúso de lo ya probado)
 - **registrar_abono** NO le cree a la foto del cliente. Reusa la lógica del Admin: toma el último
@@ -201,6 +211,10 @@ mismo historial del chat; solo cambia "quién" piensa esa decisión puntual.
 - **liberar_boleta** solo cancela si la boleta es de ese cliente y **no tiene nada abonado**
   (`total_abonado=0`); si ya pagó algo, NO la libera (un asesor gestiona la devolución). Reusa
   `/api/admin/liberar-boleta`.
+- **trasladar_abono** mueve el dinero ya abonado de una boleta a otra **del mismo cliente**
+  (`/api/admin/trasladar-abono`): puede mover todo o un monto parcial (parte el abono y reparte la
+  transferencia entre las dos boletas), recalcula los saldos desde los abonos y deja bitácora.
+  Candado central: ambas boletas deben pertenecer al teléfono del cliente.
 - El motor llama estos endpoints internos con la **contraseña de Mateo** (sale de
   `ASESORES_SECRETO` con `contrasenaGerencia()`), para usar exactamente la misma lógica probada
   que un asesor humano.
@@ -249,11 +263,59 @@ número que ya había revisado).
 - **Soltarlo con clientes reales** (hoy es solo-Mateo, solo-su-chat) cuando Mateo lo decida.
 - **Conectarlo a las líneas grandes** (Línea 1 y Línea 2); hoy solo se prueba en la línea
   "Compra con Lili".
-- Afinar el `prompt` (su manual de ventas) con la experiencia real.
-- Posible: subir `maxDuration` si el combo abono+Opus+buscar-pago se vuelve lento.
-- Quitar el simulador `probar` de la cabina (ya no se usa la tarjeta, pero el código sigue ahí).
-- "Agrupar mensajes": juntar varios mensajes seguidos del cliente antes de responder (hoy el
-  candado evita pisarse, pero no agrupa a propósito) — el viejo dolor de ChateaPro/Manychat.
+- Seguir afinando el `prompt` con más pruebas (ver §8.13).
+- Posible: subir `maxDuration` si la respuesta se vuelve lenta (el debounce ya espera hasta ~20s).
+- Posible mejora: botón **"copiar configuración de otra línea"** para replicar sin pegar el manual.
+- ~~"Agrupar mensajes"~~ → **HECHO** (debounce, §8.13).
+- El simulador `probar` de la cabina **ya no se usa** (Mateo lo confirmó); el código sigue en
+  `agente.js`, se puede limpiar.
+
+### 8.13 Cómo conversa: afinado con pruebas reales (sesión jun-2026)
+Tras muchas pruebas con Mateo (probando con su propio número en la línea de Lili) se afinó el
+comportamiento. Todo vive en `agente-responder.js` (motor) y en el `prompt` (libreto, en la base):
+- **VE las fotos**: cuando el cliente manda una imagen (ej. comprobante), el motor le pasa la
+  **foto de verdad** a Claude (no solo "[imagen]"). Así reconoce el comprobante en vez de
+  ignorarlo. Descarga las últimas imágenes con `descargarMediaBase64` y las adjunta como bloques.
+- **Estado del cliente SIEMPRE**: antes de responder, el motor consulta por teléfono los datos y
+  boletas del cliente (`resumenCliente`) y se los inyecta al prompt (`bloqueEstadoCliente`). Así,
+  desde el PRIMER mensaje, sabe si ya es cliente → lo **saluda por su nombre**, le recuerda sus
+  boletas, **no le vende de cero** ni le re-pide datos. Funciona **entre líneas** (las boletas se
+  guardan por teléfono). Muestra nombre, apellido, ciudad, cédula, correo y, por boleta, lo
+  **abonado** y lo que falta.
+- **Memoria de acciones (arreglo clave)**: las notas 🤖 de lo ya hecho **no le llegaban** (a
+  `construirMensajes` se le pasaba `reales`, que filtra las notas). Ahora se le inyecta un bloque
+  "ACCIONES QUE YA EJECUTASTE" para que no repita ni se contradiga (ej. liberar una boleta y luego
+  decir que "no es del cliente"). **Nota de diagnóstico:** un error parecido NO fue falta de
+  memoria sino que el modelo no usaba el dato que tenía → se arregló con prompt + dato más claro,
+  **sin subir a Opus** (más caro/lento).
+- **No narra el proceso**: ya no manda "voy a verificar...", "un momento...". El motor **suprime
+  el texto que acompaña a una herramienta** y solo envía el mensaje final con el resultado.
+- **No pregunta lo que ya sabe** (regla dura + el estado del cliente le muestra el dato).
+- **Juntar mensajes (debounce)**: si el cliente escribe en ráfaga, el motor **espera ~7s de
+  silencio desde su ÚLTIMO mensaje** (cada mensaje nuevo reinicia el conteo, tope 20s) y junta
+  todo en UNA respuesta. Solo en el disparo del webhook; en prueba manual responde de una. Resuelve
+  el viejo dolor de "agrupar mensajes" de ChateaPro/Manychat.
+- **Memoria por RIFA, no por nº de mensajes**: lee el historial **desde la `fecha_inicio` de la
+  rifa con `estado='activa'`** (tope de seguridad 300). Al marcar otra rifa como activa, el corte
+  se mueve solo y no arrastra el contexto de rifas pasadas.
+- **No reenvía la presentación**: si activan el agente en un chat con mensajes previos, no manda el
+  contacto inicial otra vez; lee todo y continúa el hilo (`yaHuboSalientes`).
+- **Libreto reforzado** con: horarios de las loterías (Boyacá 10:30 / Manizales 11:00), urgencia
+  del próximo sorteo, factura electrónica (cédula+correo), confianza/garantía (NIT 902.003.134-4,
+  verificar en Gobernación de Caldas o EDSA), pagos a María Buitrago (autorizada), **devoluciones**
+  (solo si la boleta NO ha entrado a ningún sorteo), boleta digital como comprobante, no hay boleta
+  física, tono para clientes mayores, y reglas de seguridad (no regala/descuenta, no adelanta
+  plata, no toca boletas ajenas, no se sale de su rol).
+
+### 8.14 Variables del libreto (para replicar el agente en varias líneas)
+El `prompt` (manual) es **igual para todas las líneas**; solo cambian unas **variables** que se
+escriben como `{{clave}}` y el motor rellena antes de responder (`aplicarVariables`):
+- **`{{nombre}}`** — el nombre del agente (campo "Nombre" de la cabina = `agente_config.nombre_agente`).
+- **`{{pagos}}`** — los datos de pago de esa línea (a quién y a qué cuentas paga el cliente). Campo
+  nuevo "Datos de pago" en la cabina; se guarda en **`agente_config.variables`** (jsonb).
+Para montar el agente en otra cuenta de WhatsApp: se pega el **mismo manual base** y solo se
+llenan esos dos campos (ej. la línea oficial usa Bancolombia; Liliana no). Para agregar otra
+variable: úsala como `{{otra}}` en el prompt y guárdala en `variables`.
 
 ## 9. Pendientes / próximos pasos
 - **Agente de IA** → **HECHO** (ver §8); pendientes propios del agente en §8.12.
