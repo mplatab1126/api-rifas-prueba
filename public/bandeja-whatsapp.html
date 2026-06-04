@@ -284,8 +284,12 @@
     .ficha-dot { display: none; position: absolute; top: 2px; right: 2px; width: 9px; height: 9px; border-radius: 50%; background: #22C55E; border: 2px solid #fff; }
     #btnFicha.tiene-boletas .ficha-dot { display: block; }
     #cerrarFicha { display: none; }
-    #btnEtiquetas { margin-left: auto; background: none; border: none; cursor: pointer; color: var(--ink-mute); padding: 6px; border-radius: 8px; display: flex; }
+    #btnEtiquetas { background: none; border: none; cursor: pointer; color: var(--ink-mute); padding: 6px; border-radius: 8px; display: flex; }
     #btnEtiquetas:hover { background: var(--cream-100); color: var(--ink); }
+    #btnActualizar { background: none; border: none; cursor: pointer; color: var(--ink-mute); padding: 6px; border-radius: 8px; display: flex; }
+    #btnActualizar:hover { background: var(--cream-100); color: var(--ink); }
+    #btnActualizar.cargando svg { animation: girarRefresco 0.8s linear infinite; }
+    @keyframes girarRefresco { to { transform: rotate(360deg); } }
     #btnEliminarChat { background: none; border: none; cursor: pointer; color: var(--ink-mute); padding: 6px; border-radius: 8px; display: flex; }
     #btnEliminarChat:hover { background: #fdecec; color: var(--danger); }
     .cont-del { margin-left: auto; flex-shrink: 0; background: none; border: none; cursor: pointer; color: var(--gray-400); padding: 8px; border-radius: 8px; display: flex; }
@@ -603,6 +607,9 @@
           <button id="btnFicha" title="Ver ficha del cliente" onclick="toggleFicha(true)">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             <span class="ficha-dot" title="Este cliente tiene boletas"></span>
+          </button>
+          <button id="btnActualizar" title="Actualizar este chat y la ficha del cliente" onclick="actualizarChatActual()">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
           </button>
           <button id="btnEtiquetas" title="Etiquetas" onclick="abrirEtiquetas()">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
@@ -923,6 +930,14 @@ window.cerrarChat = function(){
 
 // Mostrar/ocultar la ficha del cliente (en celular se abre como pantalla
 // completa; en computador grande ya se ve siempre al lado).
+// Botón "actualizar": recarga el chat y la ficha del cliente sin recargar la página.
+window.actualizarChatActual = async function(){
+  if(!actual) return;
+  const b = $('btnActualizar'); if(b) b.classList.add('cargando');
+  try { await Promise.all([ cargarMensajes(true), cargarFicha(actual) ]); }
+  catch(e){}
+  finally { if(b) b.classList.remove('cargando'); }
+};
 window.toggleFicha = function(abrir){
   const on = (abrir === undefined) ? !$('app').classList.contains('ficha-abierta') : !!abrir;
   $('app').classList.toggle('ficha-abierta', on);
@@ -990,13 +1005,24 @@ async function cargarFicha(telefono){
     ? [r.nombre, r.apellido].filter(Boolean).join(' ')
     : (c.nombre_perfil || telefono);
 
-  // Tarjeta del cliente: si está registrado mostramos ciudad, documento y correo.
+  // Si el cliente NO está registrado en la base ni tiene boletas, NO repetimos su
+  // nombre/teléfono (ya están arriba en el chat): solo avisamos que es nuevo.
+  if(r.status !== 'ok'){
+    p.innerHTML = `<div class="pcard"><div class="pmuted">No se pudo cargar la ficha.</div></div>`;
+    return;
+  }
+  if(!registrado){
+    p.innerHTML = `<div class="pcard"><div class="pnuevo"><b>Cliente nuevo</b><br><span>No está registrado en la base de datos ni tiene boletas.</span></div></div>`;
+    return;
+  }
+
+  // Cliente registrado: su tarjeta con ciudad, documento y correo.
   // El "Saldo total" solo se muestra cuando tiene boletas en la rifa actual.
-  const datosCliente = registrado ? `
+  const datosCliente = `
       <div class="prow" style="margin-top:16px"><span class="plabel">Ciudad</span><b>${esc(r.ciudad || '—')}</b></div>
       <div class="prow"><span class="plabel">Documento</span><b>${esc(r.documento || '—')}</b></div>
       <div class="prow"${tieneBol ? '' : ' style="border-bottom:none"'}><span class="plabel">Correo</span><b>${esc(r.correo || '—')}</b></div>
-      ${tieneBol ? `<div class="prow" style="border-bottom:none"><span class="plabel">Saldo total</span><b>${pesos(r.deuda)}</b></div>` : ''}` : '';
+      ${tieneBol ? `<div class="prow" style="border-bottom:none"><span class="plabel">Saldo total</span><b>${pesos(r.deuda)}</b></div>` : ''}`;
   const cardCliente = `
     <div class="pcard">
       <div class="pavatar">${esc(inicial(c))}</div>
@@ -1005,17 +1031,9 @@ async function cargarFicha(telefono){
       ${datosCliente}
     </div>`;
 
-  // Segunda tarjeta: boletas de la rifa actual, o el estado del cliente.
-  let resto;
-  if(r.status !== 'ok'){
-    resto = `<div class="pcard"><div class="pmuted">No se pudo cargar la ficha.</div></div>`;
-  } else if(tieneBol){
-    resto = r.boletas.map(tarjetaBoleta).join('');
-  } else if(registrado){
-    resto = `<div class="pcard"><div class="pnuevo"><b>Sin boletas en la rifa actual</b><br><span>Este cliente está registrado pero no tiene boletas de la rifa actual.</span></div></div>`;
-  } else {
-    resto = `<div class="pcard"><div class="pnuevo"><b>Cliente nuevo</b><br><span>No tiene boletas registradas con este número.</span></div></div>`;
-  }
+  const resto = tieneBol
+    ? r.boletas.map(tarjetaBoleta).join('')
+    : `<div class="pcard"><div class="pnuevo"><b>Sin boletas en la rifa actual</b><br><span>Este cliente está registrado pero no tiene boletas de la rifa actual.</span></div></div>`;
 
   p.innerHTML = cardCliente + resto;
 }
