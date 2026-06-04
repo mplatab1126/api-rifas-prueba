@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
   <title>Bandeja — Los Plata</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -505,9 +505,12 @@
       #app.viendo-chat #lista { display: none; }
       #app:not(.viendo-chat) #conv { display: none; }
       #convHead .volver { display: block; }
-      #convHead { padding: 10px 12px; gap: 10px; }
+      #convHead { padding: 10px 12px; gap: 8px; }
+      #convHead .avatar { display: none; }                 /* el avatar no aporta en celular y da espacio a los botones */
+      #convHead > div:not(.avatar) { flex: 1; min-width: 0; }   /* el nombre ocupa el espacio libre y se recorta */
+      #convHead .nom, #convHead .sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       #msgs { padding: 18px 5%; }
-      #barra { padding: 10px 10px; gap: 8px; }
+      #barra { padding: 10px 10px calc(10px + env(safe-area-inset-bottom)); gap: 8px; }
       #texto { font-size: 16px; }            /* 16px evita el zoom automático del iPhone al escribir */
       .b { max-width: 82%; }
       /* Módulos (Contactos, Difusiones, Respuestas) a lo ancho y cómodos */
@@ -519,6 +522,13 @@
       /* Ventanas (modales) usan casi toda la pantalla del celular */
       #modalBg { padding: 10px; align-items: flex-end; }
       .modal { padding: 18px; max-height: 92vh; border-radius: 16px 16px 0 0; }
+    }
+    /* Celulares angostos: botones de la barra más compactos para dar espacio al texto */
+    @media (max-width: 480px) {
+      #barra { gap: 6px; padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); }
+      #btnResp, #btnBoleta, #btnAdjuntar { width: 40px; height: 40px; min-width: 40px; }
+      #enviar { width: 42px; height: 42px; min-width: 42px; }
+      #texto { padding: 10px 14px; }
     }
   </style>
 </head>
