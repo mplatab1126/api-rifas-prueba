@@ -56,6 +56,17 @@ function contextoFechaHora() {
   });
 }
 
+// "2026-07-04" → "sábado 4 de julio" (se parte la fecha a mano para no descuadrar por zona horaria).
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+function etiquetaFecha(iso) {
+  const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return '';
+  const y = +m[1], mo = +m[2], d = +m[3];
+  const dia = DIAS[new Date(Date.UTC(y, mo - 1, d)).getUTCDay()];
+  return `${dia} ${d} de ${MESES[mo - 1] || ''}`;
+}
+
 // Reemplaza las variables {{clave}} del libreto por su valor (el nombre del agente,
 // los datos de pago, etc.). El prompt base es IGUAL para todas las líneas; solo
 // cambian estas variables. Lo que no esté definido queda vacío.
@@ -657,11 +668,15 @@ export default async function handler(req, res) {
     //    Al marcar una rifa nueva como 'activa', el corte se mueve solo. El límite es un
     //    colchón de seguridad por si un chat acumula muchísimos mensajes en una misma rifa.
     let desdeRifa = null;
+    let rifaSorteos = [];
     try {
       const { data: rifas } = await supabase
-        .from('rifas').select('fecha_inicio').eq('estado', 'activa')
+        .from('rifas').select('fecha_inicio, sorteos').eq('estado', 'activa')
         .order('fecha_inicio', { ascending: false }).limit(1);
-      if (rifas && rifas[0] && rifas[0].fecha_inicio) desdeRifa = String(rifas[0].fecha_inicio) + 'T00:00:00-05:00';
+      if (rifas && rifas[0]) {
+        if (rifas[0].fecha_inicio) desdeRifa = String(rifas[0].fecha_inicio) + 'T00:00:00-05:00';
+        if (Array.isArray(rifas[0].sorteos)) rifaSorteos = rifas[0].sorteos;
+      }
     } catch (_) {}
     let qHist = supabase
       .from('mensajes_whatsapp')
@@ -747,12 +762,17 @@ export default async function handler(req, res) {
     // presentó). Si es así, al activarlo NO debe reenviar el contacto inicial: continúa.
     const yaHuboSalientes = reales.some(m => m.direccion === 'saliente');
 
-    // Resultados de los sorteos (ganadores) que Mateo escribió en la cabina. El agente los
-    // lee SOLO para responder "¿qué número ganó?". Casilla vacía = aún no se ha jugado.
-    const resultadosCfg = Array.isArray(cfg?.resultados) ? cfg.resultados : [];
-    const bloqueResultados = resultadosCfg.length
+    // Resultados de los sorteos. Las casillas (qué sorteos y sus fechas) salen del CALENDARIO
+    // de la rifa activa; el ganador lo escribe Mateo en la cabina (se guarda por fecha). El
+    // agente los lee SOLO para responder "¿qué número ganó?". Vacío = aún no se ha jugado.
+    const ganadorPorFecha = {};
+    for (const g of (Array.isArray(cfg?.resultados) ? cfg.resultados : [])) {
+      if (g && g.fecha) ganadorPorFecha[g.fecha] = String(g.texto || '').trim();
+    }
+    const sorteosOrden = (rifaSorteos || []).slice().sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
+    const bloqueResultados = sorteosOrden.length
       ? '\n\n---\nRESULTADOS DE LOS SORTEOS (úsalos SOLO si el cliente pregunta qué número ganó, quién ganó, o si ya jugó tal premio; NO los menciones si no preguntan). Para cada sorteo: si tiene resultado, díselo con tus palabras; si dice "(aún no se ha jugado)", explícale con cariño que todavía no se ha realizado:\n' +
-        resultadosCfg.map(r => `- ${String(r.titulo || 'Sorteo').trim()}: ${String(r.texto || '').trim() || '(aún no se ha jugado)'}`).join('\n')
+        sorteosOrden.map(s => `- ${String(s.titulo || 'Sorteo').trim()} — ${etiquetaFecha(s.fecha)}: ${ganadorPorFecha[s.fecha] || '(aún no se ha jugado)'}`).join('\n')
       : '';
 
     const system = prompt +

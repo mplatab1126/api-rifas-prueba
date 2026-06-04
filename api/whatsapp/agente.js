@@ -89,6 +89,31 @@ function contextoFechaHora() {
   return 'hoy es ' + fecha + ' (hora de Colombia)';
 }
 
+// ── Casillas de resultados de los sorteos (salen del calendario de la rifa activa) ──
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+// "2026-07-04" → "sábado 4 de julio" (sin líos de zona horaria: se parte la fecha a mano).
+function etiquetaFecha(iso) {
+  const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return '';
+  const y = +m[1], mo = +m[2], d = +m[3];
+  const dia = DIAS[new Date(Date.UTC(y, mo - 1, d)).getUTCDay()];
+  return `${dia} ${d} de ${MESES[mo - 1] || ''}`;
+}
+async function sorteosRifaActiva() {
+  const { data } = await supabase.from('rifas').select('sorteos')
+    .eq('estado', 'activa').order('fecha_inicio', { ascending: false }).limit(1);
+  return (data && data[0] && Array.isArray(data[0].sorteos)) ? data[0].sorteos : [];
+}
+// Una casilla por sorteo (ordenadas por fecha), con el ganador YA guardado (se busca por fecha).
+function construirCajasResultados(sorteos, guardados) {
+  const porFecha = {};
+  for (const g of (Array.isArray(guardados) ? guardados : [])) if (g && g.fecha) porFecha[g.fecha] = g.texto || '';
+  return (sorteos || []).slice()
+    .sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)))
+    .map(s => ({ fecha: s.fecha, titulo: `${s.titulo} — ${etiquetaFecha(s.fecha)}`, texto: porFecha[s.fecha] || '' }));
+}
+
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
@@ -104,6 +129,9 @@ export default async function handler(req, res) {
   try {
     if (accion === 'config') {
       const config = await asegurarConfig(linea_id);
+      // Las casillas de resultados se arman SOLAS desde el calendario de la rifa activa
+      // (el asesor no las crea); se les pega el ganador que ya hubiera guardado.
+      config.resultados = construirCajasResultados(await sorteosRifaActiva(), config.resultados);
       const herramientas = await asegurarHerramientas(linea_id);
       const { data: actividad } = await supabase
         .from('agente_actividad')
@@ -125,14 +153,14 @@ export default async function handler(req, res) {
       for (const [k, val] of Object.entries(varsIn)) {
         if (/^\w{1,40}$/.test(k)) variables[k] = String(val == null ? '' : val).slice(0, 4000);
       }
-      // Casillas de resultados de los sorteos (ganadores). Cada una: { titulo, texto }.
-      // Se conservan las que tengan al menos título; el texto vacío = "aún no se ha jugado".
+      // Ganadores de los sorteos: se guardan por FECHA (la casilla/título sale de la rifa).
+      // Solo se persisten los que tienen ganador escrito; vacío = aún no se ha jugado.
       const resultados = [];
       const resIn = Array.isArray(req.body.resultados) ? req.body.resultados : [];
-      for (const r of resIn.slice(0, 40)) {
-        const titulo = String(r?.titulo || '').trim().slice(0, 120);
+      for (const r of resIn.slice(0, 60)) {
+        const fecha = String(r?.fecha || '').trim().slice(0, 20);
         const texto = String(r?.texto || '').trim().slice(0, 2000);
-        if (titulo || texto) resultados.push({ titulo, texto });
+        if (fecha && texto) resultados.push({ fecha, texto });
       }
       await asegurarConfig(linea_id);   // garantiza que la fila exista
       const { data, error } = await supabaseAdmin
@@ -142,6 +170,8 @@ export default async function handler(req, res) {
         .select('*')
         .single();
       if (error) return res.status(200).json({ status: 'error', mensaje: error.message });
+      // Devolver las casillas rearmadas (calendario de la rifa + ganadores), como en 'config'.
+      if (data) data.resultados = construirCajasResultados(await sorteosRifaActiva(), data.resultados);
       return res.status(200).json({ status: 'ok', config: data });
     }
 
