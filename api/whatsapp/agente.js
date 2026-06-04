@@ -38,6 +38,7 @@ const HERRAMIENTAS_DEFAULT = [
   { clave: 'liberar_boleta',           nombre: 'Liberar / cancelar una boleta',       descripcion: 'Cancela una boleta del cliente si ya no la quiere (solo si no ha abonado).', riesgo: 'alto', orden: 9 },
   { clave: 'trasladar_abono',          nombre: 'Trasladar un abono entre boletas',    descripcion: 'Mueve lo ya abonado de una boleta a otra del MISMO cliente. Nunca de otro.', riesgo: 'alto', orden: 10 },
   { clave: 'pasar_a_humano',           nombre: 'Pasar la conversación a un asesor',   descripcion: 'Cuando no está seguro o el cliente lo pide, entrega el chat a una persona.', riesgo: 'bajo', orden: 11 },
+  { clave: 'programar_recordatorio',   nombre: 'Programar recordatorio (seguimiento)', descripcion: 'El agente se agenda volver a escribirle al cliente más tarde HOY (si pide tiempo). Solo dentro de las 24h.', riesgo: 'bajo', orden: 12 },
 ];
 
 // Devuelve la config de la línea; si no existe, la crea con valores por defecto.
@@ -56,8 +57,21 @@ async function asegurarConfig(lineaId) {
 async function asegurarHerramientas(lineaId) {
   const cols = 'id, clave, nombre, descripcion, riesgo, activa, orden';
   let { data } = await supabase.from('agente_herramientas').select(cols).eq('linea_id', lineaId).order('orden', { ascending: true });
+  let cambio = false;
   if (!data || data.length === 0) {
     await supabaseAdmin.from('agente_herramientas').insert(HERRAMIENTAS_DEFAULT.map(h => ({ ...h, linea_id: lineaId })));
+    cambio = true;
+  } else {
+    // Backfill: si se agregaron herramientas NUEVAS al código, insértalas en las líneas que ya
+    // existían (así no hay que tocar la base a mano cuando el agente aprende algo nuevo).
+    const tiene = new Set(data.map(h => h.clave));
+    const faltan = HERRAMIENTAS_DEFAULT.filter(h => !tiene.has(h.clave));
+    if (faltan.length) {
+      await supabaseAdmin.from('agente_herramientas').insert(faltan.map(h => ({ ...h, linea_id: lineaId })));
+      cambio = true;
+    }
+  }
+  if (cambio) {
     const r2 = await supabase.from('agente_herramientas').select(cols).eq('linea_id', lineaId).order('orden', { ascending: true });
     data = r2.data;
   }

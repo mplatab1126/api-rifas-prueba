@@ -106,7 +106,8 @@ Tablas y columnas del **Agente de IA** (ver §8):
 - **`respuestas-rapidas.js`** — respuestas rápidas (tabla `respuestas_rapidas`, columna `pasos` jsonb). Acciones: `listar`, `crear`, `editar`, `eliminar`, y **`enviar`** (manda todos los pasos del flujo en orden y los guarda en el chat). Reusa `enviarTexto`/`enviarImagen` de `lib/whatsapp.js`.
 - **`agente.js`** — **cabina** del agente (SOLO Mateo, `esMateo`). NO conversa con clientes; solo LEE/GUARDA su configuración por línea. Acciones: `config` (siembra config + las 10 herramientas la 1ª vez y trae la actividad), `guardar` (estado/nombre/prompt/modelo), `herramienta` (prende/apaga una acción), `activar_conversacion` (el botón 🤖: `agente_activo`+`estado='bot'`), `probar` (simulador que NO toca WhatsApp; ya casi no se usa).
 - **`agente-responder.js`** — **MOTOR** del agente (el que de verdad responde). Lo dispara el webhook. Conversa con Claude usando las 11 herramientas, **VE las imágenes** del cliente, le inyecta el **estado del cliente** y sus **acciones ya hechas**, junta los mensajes en ráfaga (**debounce ~7s**), lee el historial **desde el inicio de la rifa activa**, rellena las **variables** del prompt (`{{nombre}}`/`{{pagos}}` con `aplicarVariables`), transcribe audios con Whisper, deja notas y tiene candado anti-duplicado. El supervisor Opus quedó **desactivado** (§8.5). **Es el archivo más importante del agente; detalle en §8.**
-- **`recibir.js`** (webhook) ahora, además de guardar el mensaje, **dispara el motor** si el agente está activo (`dispararAgenteSiActivo` → `fetch` al motor con el secreto interno y corte a 1.5s) y captura la **cita** (`m.context.id → responde_a`).
+- **`recibir.js`** (webhook) ahora, además de guardar el mensaje, **dispara el motor** si el agente está activo (`dispararAgenteSiActivo` → `fetch` al motor con el secreto interno y corte a 1.5s), **cancela los recordatorios pendientes** del chat cuando el cliente vuelve a escribir (`cancelarRecordatorios`, ver §8.15) y captura la **cita** (`m.context.id → responde_a`).
+- **`recordatorios-cron.js`** — el **relojito** de los recordatorios del agente (§8.15). Lo llama `pg_cron` de Supabase cada minuto (con el secreto interno); busca los recordatorios vencidos, los reclama en atómico (sin doble disparo) y despierta el motor del agente para el seguimiento.
 - **libs**: `lib/whatsapp.js` (`resolverLinea`, `enviarTexto`, `enviarImagen`, `enviarImagenPorId`, `subirMediaDesdeBuffer` [subir foto/PDF desde bytes, lo usa `enviar-archivo.js`], `enviarDocumento` [PDF de la resolución], `enviarDocumentoPorId`, `descargarMediaBase64`, `configWhatsapp`), `lib/comprobante.js` (`extraerDatos` — lee comprobante con Claude, solo lectura), `lib/asesores.js` (`esGerencia`, `esMateo` [agente solo-Mateo], `lineasDeAsesor`, `puedeVerLinea`; **GERENCIA = ['mateo','alejo plata']**, editable ahí). El motor reusa además `lib/numeros-disponibles.js`.
 
 Se REUSAN (no se reescriben) endpoints de plata del Admin: `/api/admin/abono` (abonar), `/api/admin/eliminar-abono` (se **modificó** para que borrar una parte de un pago repartido borre todas y libere la transferencia — también beneficia al Admin) y `/api/admin/liberar-boleta`. **NUEVO**: `/api/admin/trasladar-abono.js` — mueve abono entre boletas del mismo cliente (todo o un monto parcial; parte el abono y reparte la transferencia); lo usa la herramienta `trasladar_abono`.
@@ -176,7 +177,7 @@ trabajando en su propia ejecución serverless. Resultado: responde casi al insta
 **ya NO** dispara el agente desde el navegador (eso causaba los mensajes dobles).
 
 ### 8.4 Las herramientas (lo que sabe hacer)
-Usa "tool use" de Claude: en vez de inventar, llama funciones reales. Son **11** y cada una se
+Usa "tool use" de Claude: en vez de inventar, llama funciones reales. Son **12** y cada una se
 **prende/apaga** desde la cabina (`agente_herramientas`):
 1. **enviar_contacto_inicial** — saludo + fotos de la casa + cierre (precio, legalidad, responde
    su pregunta y "¿Te explico los premios?"). Lo redacta la IA y va en UN solo cierre para no
@@ -195,6 +196,9 @@ Usa "tool use" de Claude: en vez de inventar, llama funciones reales. Son **11**
     cliente**; puede mover TODO o **una parte** (para dividir, ej. $40.000 a una y $20.000 a otra).
     Candado: ambas boletas deben ser del mismo teléfono; nunca toca la de otra persona.
 11. **pasar_a_humano** — entrega el chat a un asesor y se apaga.
+12. **programar_recordatorio** — el agente **se agenda a sí mismo** volver a escribirle al cliente
+    más tarde HOY (cuando el cliente pide tiempo: "escríbeme en 20 min"). Recibe `minutos` y
+    `motivo`. Candado: solo **dentro de las 24h** desde el último mensaje del cliente (ver §8.15).
 
 > Las acciones de plata/inventario (apartar, abonar, liberar, trasladar) **ya no pasan por el
 > supervisor Opus** (§8.5): cada una tiene su propio candado fuerte.
@@ -268,29 +272,10 @@ número que ya había revisado).
 
 ### 8.12 Qué falta del agente (pendiente)
 
-> **🚧 EN DESARROLLO — Recordatorios que el agente se programa a sí mismo (seguimiento automático)**
-> Idea de Mateo (jun-2026). El agente debe poder **agendar un seguimiento dentro de la misma
-> conversación**. Ejemplo real: el cliente dice "estoy en el trabajo, dame 20 minutos y te
-> escribo" → el agente responde "Dale, en 20 minutos te vuelvo a escribir" **y a los 20 minutos
-> le escribe solo** retomando el hilo (qué número le había gustado, etc.).
-> - **Límite duro: solo recordatorios a menos de 24 horas** del último mensaje del cliente (es
->   decir, dentro de la ventana de WhatsApp, normalmente "el mismo día"). Si el cliente pide algo
->   tipo "llámame en 3 días", eso queda FUERA de esta función (sería otra cosa, con plantilla,
->   porque la ventana de 24h ya estaría cerrada).
-> - **Auto-cancelación:** si el cliente **vuelve a escribir antes** de que se cumpla el
->   recordatorio, el recordatorio **se elimina** (ya retomaron la conversación). Ej.: a las 9:00am
->   pide "escríbeme a las 2:00pm" → se agenda para las 2:00pm; si a las 11:00am el cliente escribe,
->   el recordatorio se borra.
-> - **Plan técnico y avance:**
->   1. ✅ **Tabla `recordatorios` creada** (jun-2026, ver §3) con índices para escala.
->   2. ⬜ **Tarea programada (cron)** que cada ~1 min lea los vencidos pendientes (índice parcial,
->      lee solo esos) y dispare el motor del agente para redactar y enviar el seguimiento. Procesa
->      por lotes para aguantar muchos a la vez (como las difusiones). Falta decidir mecanismo:
->      **Vercel Cron** (por minuto) o **`pg_cron` de Supabase**.
->   3. ⬜ **`recibir.js`** cancela (`estado='cancelado'`) los recordatorios pendientes de esa
->      conversación cuando entra un mensaje del cliente (auto-cancelación).
->   4. ⬜ **Herramienta nueva del agente** `programar_recordatorio(minutos, motivo)` que valida el
->      límite de 24h; el agente la llama y confirma al cliente. (Y dejar nota 🤖 como las demás.)
+> **✅ Recordatorios que el agente se programa a sí mismo (seguimiento automático <24h) → HECHO**
+> (jun-2026). El detalle completo está en **§8.15**. Tabla `recordatorios` (§3) + herramienta
+> `programar_recordatorio` (§8.4 nº12) + relojito `recordatorios-cron.js` con `pg_cron` cada minuto
+> + auto-cancelación en `recibir.js`. **Falta probarlo con un caso real** (Mateo).
 
 - **Soltarlo con clientes reales** (hoy es solo-Mateo, solo-su-chat) cuando Mateo lo decida.
 - **Conectarlo a las líneas grandes** (Línea 1 y Línea 2); hoy solo se prueba en la línea
@@ -348,6 +333,27 @@ escriben como `{{clave}}` y el motor rellena antes de responder (`aplicarVariabl
 Para montar el agente en otra cuenta de WhatsApp: se pega el **mismo manual base** y solo se
 llenan esos dos campos (ej. la línea oficial usa Bancolombia; Liliana no). Para agregar otra
 variable: úsala como `{{otra}}` en el prompt y guárdala en `variables`.
+
+### 8.15 Recordatorios de seguimiento (el agente se vuelve a escribir solo) — HECHO
+El agente puede **agendarse a sí mismo** volver a escribirle al cliente más tarde el MISMO día,
+cuando el cliente pide tiempo (ej. "estoy ocupado, escríbeme en 20 min"). Cómo funciona:
+- **Herramienta `programar_recordatorio(minutos, motivo)`** (§8.4 nº12): el agente la llama, valida
+  que el momento quede **dentro de las 24h** del último mensaje del cliente (5 min de colchón) y
+  guarda una fila en **`recordatorios`** (§3). Si el cliente pide en DÍAS, NO agenda (se lo dice).
+  Solo **un recordatorio activo por chat**: si agenda otro, reemplaza el anterior.
+- **El relojito** = `api/whatsapp/recordatorios-cron.js`, llamado por **`pg_cron` de Supabase cada
+  minuto** (job `recordatorios-agente-cada-minuto`, usa `pg_net` para hacer `http_post` al endpoint
+  con el secreto interno). Busca los vencidos pendientes (índice parcial → instantáneo), los
+  **reclama de forma atómica** (`estado`→`enviado` solo si seguía `pendiente`, evita doble disparo)
+  y **despierta el motor** del agente (fire-and-forget, como el webhook).
+- **El motor** (`agente-responder.js`) acepta un disparo `{ recordatorio: { motivo } }`: se salta el
+  debounce y la regla de "el último mensaje debe ser del cliente", e inyecta una **nota interna**
+  (que el cliente NO ve) pidiéndole retomar la conversación con un mensaje natural. Reusa TODO el
+  motor (herramientas, estado del cliente, candado anti-duplicado).
+- **Auto-cancelación**: `recibir.js` cancela (`estado='cancelado'`) los recordatorios pendientes del
+  chat **apenas el cliente vuelve a escribir** (ya retomaron solos; no hace falta el seguimiento).
+- **Escala**: el cron lee solo los vencidos (índice), reclama en atómico (sin dobles) y procesa por
+  lote (40 por corrida). El secreto interno del cron es `WHATSAPP_VERIFY_TOKEN`.
 
 ## 9. Pendientes / próximos pasos
 - **Agente de IA** → **HECHO** (ver §8); pendientes propios del agente en §8.12.
