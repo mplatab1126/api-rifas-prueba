@@ -246,6 +246,11 @@ const TOOLS = [
     input_schema: { type: 'object', properties: { origen: { type: 'string', description: 'Boleta de la que SALE el abono (4 cifras), del cliente.' }, destino: { type: 'string', description: 'Boleta del MISMO cliente que RECIBE el abono (4 cifras).' }, monto: { type: 'number', description: '(Opcional) cuánto mover. Si no lo pones, mueve TODO el abono de la boleta origen.' } }, required: ['origen', 'destino'] },
   },
   {
+    name: 'actualizar_datos_cliente',
+    description: 'Corrige o completa los datos de ESTE cliente (el del chat): nombre, apellido, ciudad, cédula o correo. Úsala cuando el cliente pide cambiar/corregir un dato ("mi correo es X", "mi cédula está mal", "soy de Medellín, no Cali") o cuando necesitas completar la cédula/correo para la factura electrónica. Pasa SOLO los campos que cambian; los demás se conservan solos. NO sirve para cambiar el número de teléfono.',
+    input_schema: { type: 'object', properties: { nombre: { type: 'string' }, apellido: { type: 'string' }, ciudad: { type: 'string' }, documento: { type: 'string', description: 'Número de cédula del cliente.' }, correo: { type: 'string', description: 'Correo del cliente (para la factura electrónica).' } }, required: [] },
+  },
+  {
     name: 'programar_recordatorio',
     description: 'Agenda que TÚ MISMO le vuelvas a escribir al cliente más tarde HOY, cuando él te pide tiempo ("estoy ocupado, escríbeme en 20 minutos", "dame una hora y te escribo", "más tardecito"). Indica en cuántos MINUTOS volver a escribirle y el motivo (qué ibas a preguntar/hacer). SOLO sirve para hoy: máximo dentro de las 24 horas desde el último mensaje del cliente. Si el cliente pide en DÍAS ("llámame en 3 días"), NO la uses: dile que un asesor lo contacta. Si el cliente vuelve a escribir antes, el recordatorio se cancela solo.',
     input_schema: { type: 'object', properties: { minutos: { type: 'number', description: 'En cuántos minutos debes volver a escribirle (ej. 20, 60).' }, motivo: { type: 'string', description: 'Qué ibas a preguntar/hacer al volver (ej. "saber qué número le gustó").' } }, required: ['minutos'] },
@@ -461,6 +466,42 @@ async function ejecutarHerramienta(nombre, input, conv) {
     await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: '📄 Resolución oficial de EDSA (PDF enviado)', wa_message_id: env.wa_message_id });
     await nota(conv, 'Envié la resolución oficial (PDF de EDSA).');
     return 'Listo, le envié el PDF de la resolución oficial de EDSA. Aprovecha para reforzar la confianza y retomar la venta.';
+  }
+
+  if (nombre === 'actualizar_datos_cliente') {
+    const pwd = contrasenaGerencia();
+    if (!pwd) return 'No puedo actualizar datos ahora (falta configuración). Pásalo a un asesor.';
+    // Buscar al cliente por sus últimos 10 dígitos y MEZCLAR lo nuevo con lo que ya tiene
+    // (el endpoint hace upsert y exige nombre+apellido+ciudad; así no se borran ni se duplican).
+    const last10 = String(conv.telefono).replace(/\D/g, '').slice(-10);
+    const { data: ex } = await supabase.from('clientes')
+      .select('telefono, nombre, apellido, ciudad, documento_numero, correo')
+      .like('telefono', '%' + last10).limit(1).maybeSingle();
+    const prev = ex || {};
+    const nom = String(input?.nombre || prev.nombre || '').trim();
+    const ape = String(input?.apellido || prev.apellido || '').trim();
+    const ciu = String(input?.ciudad || prev.ciudad || '').trim();
+    const doc = String(input?.documento || prev.documento_numero || '').replace(/\D/g, '').trim();
+    const cor = String(input?.correo || prev.correo || '').trim();
+    if (!nom || !ape || !ciu) {
+      return 'Para guardar los datos necesito al menos nombre, apellido y ciudad. Pídele los que falten al cliente y vuelve a intentar.';
+    }
+    const cuerpo = { telefono: prev.telefono || conv.telefono, nombre: nom, apellido: ape, ciudad: ciu, contrasena: pwd };
+    if (doc) { cuerpo.documento_tipo = 'CC'; cuerpo.documento_numero = doc; }
+    if (cor) cuerpo.correo = cor;
+    const d = await llamarApi('/api/admin/actualizar-cliente', cuerpo);
+    if (d.status !== 'ok') {
+      await nota(conv, 'Intenté actualizar los datos del cliente pero no se pudo: ' + (d.mensaje || 'error'));
+      return 'No se pudo actualizar: ' + (d.mensaje || 'error') + '. Si el dato es importante, pásalo a un asesor.';
+    }
+    const cambios = [];
+    if (input?.nombre) cambios.push('nombre');
+    if (input?.apellido) cambios.push('apellido');
+    if (input?.ciudad) cambios.push('ciudad');
+    if (input?.documento) cambios.push('cédula');
+    if (input?.correo) cambios.push('correo');
+    await nota(conv, 'Actualicé los datos del cliente' + (cambios.length ? ' (' + cambios.join(', ') + ')' : '') + '.');
+    return 'Listo: actualicé los datos del cliente. Confírmaselo con naturalidad y sigue la conversación.';
   }
 
   if (nombre === 'programar_recordatorio') {

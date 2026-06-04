@@ -39,6 +39,7 @@ const HERRAMIENTAS_DEFAULT = [
   { clave: 'trasladar_abono',          nombre: 'Trasladar un abono entre boletas',    descripcion: 'Mueve lo ya abonado de una boleta a otra del MISMO cliente. Nunca de otro.', riesgo: 'alto', orden: 10 },
   { clave: 'pasar_a_humano',           nombre: 'Pasar la conversación a un asesor',   descripcion: 'Cuando no está seguro o el cliente lo pide, entrega el chat a una persona.', riesgo: 'bajo', orden: 11 },
   { clave: 'programar_recordatorio',   nombre: 'Programar recordatorio (seguimiento)', descripcion: 'El agente se agenda volver a escribirle al cliente más tarde HOY (si pide tiempo). Solo dentro de las 24h.', riesgo: 'bajo', orden: 12 },
+  { clave: 'actualizar_datos_cliente', nombre: 'Actualizar datos del cliente',         descripcion: 'Corrige nombre, apellido, ciudad, cédula o correo del cliente (ej. para la factura electrónica).', riesgo: 'medio', orden: 13 },
 ];
 
 // Devuelve la config de la línea; si no existe, la crea con valores por defecto.

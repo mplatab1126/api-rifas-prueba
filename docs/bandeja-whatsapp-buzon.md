@@ -177,7 +177,7 @@ trabajando en su propia ejecución serverless. Resultado: responde casi al insta
 **ya NO** dispara el agente desde el navegador (eso causaba los mensajes dobles).
 
 ### 8.4 Las herramientas (lo que sabe hacer)
-Usa "tool use" de Claude: en vez de inventar, llama funciones reales. Son **12** y cada una se
+Usa "tool use" de Claude: en vez de inventar, llama funciones reales. Son **13** y cada una se
 **prende/apaga** desde la cabina (`agente_herramientas`):
 1. **enviar_contacto_inicial** — saludo + fotos de la casa + cierre (precio, legalidad, responde
    su pregunta y "¿Te explico los premios?"). Lo redacta la IA y va en UN solo cierre para no
@@ -199,6 +199,10 @@ Usa "tool use" de Claude: en vez de inventar, llama funciones reales. Son **12**
 12. **programar_recordatorio** — el agente **se agenda a sí mismo** volver a escribirle al cliente
     más tarde HOY (cuando el cliente pide tiempo: "escríbeme en 20 min"). Recibe `minutos` y
     `motivo`. Candado: solo **dentro de las 24h** desde el último mensaje del cliente (ver §8.15).
+13. **actualizar_datos_cliente** — corrige/completa **nombre, apellido, ciudad, cédula o correo**
+    del cliente (ej. para la factura electrónica). Reusa `/api/admin/actualizar-cliente`. Busca al
+    cliente por sus últimos 10 dígitos y **mezcla** lo nuevo con lo que ya tiene (no borra ni
+    duplica). Solo cambia datos; **no** cambia el teléfono.
 
 > Las acciones de plata/inventario (apartar, abonar, liberar, trasladar) **ya no pasan por el
 > supervisor Opus** (§8.5): cada una tiene su propio candado fuerte.
@@ -277,6 +281,16 @@ número que ya había revisado).
 > `programar_recordatorio` (§8.4 nº12) + relojito `recordatorios-cron.js` con `pg_cron` cada minuto
 > + auto-cancelación en `recibir.js`. **Falta probarlo con un caso real** (Mateo).
 
+- **Ideas de la revisión "qué sabe el asesor que el agente no" (jun-2026):**
+  - ✅ **Actualizar datos del cliente** (correo/cédula/nombre/ciudad) → HECHO (herramienta nº13).
+  - ⬜ **Pago en línea (Wompi)**: existe el flujo `/abonar` (tarjeta/PSE/Nequi) que **registra el
+    abono solo** vía `api/abonar/wompi-webhook.js`. El agente NO lo ofrece (solo pide transferencia
+    + foto). Darle una herramienta para enviar el **link de pago en línea** subiría conversión.
+    Mateo lo dejó para después (toca plata). Páginas: `public/abonar.html` + `abonar-app.jsx`.
+  - ⬜ **Reusar flujos curados** (respuestas rápidas "Información", "Método de pago") en vez de que
+    el agente redacte ese texto. Consistencia de marca. Opcional/menor.
+  - **Dejar SOLO para humanos** (no dar al agente): devoluciones (`marcar-devolucion`), eliminar
+    abonos (`eliminar-abono`) y todo el back-office (caja, finanzas, sorteo, permisos, cobros).
 - **Soltarlo con clientes reales** (hoy es solo-Mateo, solo-su-chat) cuando Mateo lo decida.
 - **Conectarlo a las líneas grandes** (Línea 1 y Línea 2); hoy solo se prueba en la línea
   "Compra con Lili".
