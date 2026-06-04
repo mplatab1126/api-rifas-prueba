@@ -34,6 +34,8 @@ const ACCIONES_SENSIBLES = new Set();
 const MAX_ITER = 6;          // tope de idas/vueltas con la IA por cada mensaje del cliente
 const MAX_HISTORIAL = 300;   // TOPE de seguridad de mensajes; el corte normal es por RIFA (ver abajo)
 const PAUSA_MS = 800;        // entre los pasos del contacto inicial (para que lleguen en orden)
+const DEBOUNCE_MS = 7000;    // silencio que esperamos para dar por terminada la ráfaga del cliente
+const DEBOUNCE_MAX_MS = 20000; // tope total de espera por si el cliente escribe sin parar
 
 const dormir = (ms) => new Promise(r => setTimeout(r, ms));
 const MAX_IMAGENES = 2;   // imágenes entrantes recientes que se le muestran a la IA (comprobantes)
@@ -540,6 +542,29 @@ export default async function handler(req, res) {
       if (!lockErr && !lock) bloqueado = true;
     } catch (_) { /* si el candado falla, seguimos: mejor responder que quedar callados */ }
     if (bloqueado) return res.status(200).json({ status: 'ok', skip: 'Otra corrida ya está respondiendo.' });
+
+    // 2b) JUNTAR MENSAJES (debounce): la gente escribe en ráfaga ("hola" / "cómo estás" /
+    //     "una pregunta") en mensajes separados. En vez de responder atropellado al primero,
+    //     esperamos un silencio; si entra otro mensaje, esperamos otro poco (hasta un tope).
+    //     Así juntamos toda la ráfaga en UNA sola respuesta. Solo en el disparo automático
+    //     (webhook); cuando Mateo prueba manual desde la bandeja, responde de una.
+    if (interno) {
+      const inicioEspera = Date.now();
+      let marcaPrevia = null;
+      while (Date.now() - inicioEspera < DEBOUNCE_MAX_MS) {
+        const { data: ult } = await supabase
+          .from('mensajes_whatsapp')
+          .select('id, direccion, timestamp_wa')
+          .eq('conversacion_id', conv.id)
+          .order('timestamp_wa', { ascending: false }).limit(1);
+        const u = ult && ult[0];
+        if (!u || u.direccion !== 'entrante') break;   // ya no hay nada pendiente del cliente
+        const marca = String(u.id || u.timestamp_wa);
+        if (marca === marcaPrevia) break;              // pasó la pausa sin nada nuevo → responder
+        marcaPrevia = marca;
+        await dormir(DEBOUNCE_MS);
+      }
+    }
 
     // 3) Historial. El agente recuerda SOLO desde que empezó la rifa activa (no arrastra
     //    el contexto de rifas pasadas: precios, premios y números viejos ya no aplican).
