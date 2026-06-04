@@ -32,7 +32,7 @@ const BASE_URL = 'https://www.losplata.com.co';
 // ve fotos ni ejecuta esos chequeos, solo frenaba acciones legítimas en falso.
 const ACCIONES_SENSIBLES = new Set();
 const MAX_ITER = 6;          // tope de idas/vueltas con la IA por cada mensaje del cliente
-const MAX_HISTORIAL = 150;   // últimos mensajes que lee del chat (Sonnet aguanta de sobra; cubre charlas largas sin disparar costo)
+const MAX_HISTORIAL = 300;   // TOPE de seguridad de mensajes; el corte normal es por RIFA (ver abajo)
 const PAUSA_MS = 800;        // entre los pasos del contacto inicial (para que lleguen en orden)
 
 const dormir = (ms) => new Promise(r => setTimeout(r, ms));
@@ -538,13 +538,25 @@ export default async function handler(req, res) {
     } catch (_) { /* si el candado falla, seguimos: mejor responder que quedar callados */ }
     if (bloqueado) return res.status(200).json({ status: 'ok', skip: 'Otra corrida ya está respondiendo.' });
 
-    // 3) Historial. Si el último mensaje NO es del cliente, ya está respondido.
-    const { data: histAsc } = await supabase
+    // 3) Historial. El agente recuerda SOLO desde que empezó la rifa activa (no arrastra
+    //    el contexto de rifas pasadas: precios, premios y números viejos ya no aplican).
+    //    Al marcar una rifa nueva como 'activa', el corte se mueve solo. El límite es un
+    //    colchón de seguridad por si un chat acumula muchísimos mensajes en una misma rifa.
+    let desdeRifa = null;
+    try {
+      const { data: rifas } = await supabase
+        .from('rifas').select('fecha_inicio').eq('estado', 'activa')
+        .order('fecha_inicio', { ascending: false }).limit(1);
+      if (rifas && rifas[0] && rifas[0].fecha_inicio) desdeRifa = String(rifas[0].fecha_inicio) + 'T00:00:00-05:00';
+    } catch (_) {}
+    let qHist = supabase
       .from('mensajes_whatsapp')
       .select('id, direccion, tipo, texto, media_id, timestamp_wa, created_at')
       .eq('conversacion_id', conv.id)
       .order('timestamp_wa', { ascending: false })
       .limit(MAX_HISTORIAL);
+    if (desdeRifa) qHist = qHist.gte('timestamp_wa', desdeRifa);
+    const { data: histAsc } = await qHist;
     const historial = (histAsc || []).slice().reverse();
     const reales = historial.filter(m => m.direccion === 'entrante' || m.direccion === 'saliente');
     if (!reales.length || reales[reales.length - 1].direccion !== 'entrante') {
