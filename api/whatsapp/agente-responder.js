@@ -62,7 +62,7 @@ async function resumenCliente(telefono) {
   const last10 = String(telefono || '').replace(/\D/g, '').slice(-10);
   if (!last10) return { cli: null, boletas: [] };
   const [rc, rb] = await Promise.all([
-    supabase.from('clientes').select('nombre, apellido, ciudad').like('telefono', '%' + last10).limit(1),
+    supabase.from('clientes').select('nombre, apellido, ciudad, documento_numero, correo').like('telefono', '%' + last10).limit(1),
     supabase.from('boletas').select('numero, saldo_restante, total_abonado').like('telefono_cliente', '%' + last10),
   ]);
   return { cli: (rc.data && rc.data[0]) || null, boletas: rb.data || [] };
@@ -74,12 +74,16 @@ function bloqueEstadoCliente({ cli, boletas }) {
   const nombre = cli && cli.nombre ? String(cli.nombre).trim() : '';
   const apellido = cli && cli.apellido ? String(cli.apellido).trim() : '';
   const ciudad = cli && cli.ciudad ? String(cli.ciudad).trim() : '';
+  const documento = cli && cli.documento_numero ? String(cli.documento_numero).trim() : '';
+  const correo = cli && cli.correo ? String(cli.correo).trim() : '';
   const datos = [];
   if (nombre) datos.push('nombre: ' + nombre);
   if (apellido) datos.push('apellido: ' + apellido);
   if (ciudad) datos.push('ciudad: ' + ciudad);
+  if (documento) datos.push('cédula: ' + documento);
+  if (correo) datos.push('correo: ' + correo);
   const datosTxt = datos.length
-    ? 'Datos que YA tienes guardados de este cliente (úsalos y NUNCA se los vuelvas a pedir, ni la ciudad): ' + datos.join(', ') + '.'
+    ? 'Datos que YA tienes guardados de este cliente (úsalos y NUNCA se los vuelvas a pedir): ' + datos.join(', ') + '.'
     : '';
   if (boletas && boletas.length) {
     const lista = boletas.slice()
@@ -202,8 +206,8 @@ const TOOLS = [
   },
   {
     name: 'apartar_numero',
-    description: 'Aparta (reserva) una boleta a nombre del cliente. Úsala SOLO cuando ya tengas los CUATRO datos: el número de 4 cifras, el nombre, el apellido y la ciudad del cliente. El teléfono es el de este chat.',
-    input_schema: { type: 'object', properties: { numero: { type: 'string', description: 'Número de 4 cifras a apartar.' }, nombre: { type: 'string' }, apellido: { type: 'string' }, ciudad: { type: 'string' } }, required: ['numero', 'nombre', 'apellido', 'ciudad'] },
+    description: 'Aparta (reserva) una boleta a nombre del cliente. Úsala cuando tengas al menos el número de 4 cifras, el nombre, el apellido y la ciudad. Pídele también la CÉDULA y el CORREO (para la factura electrónica) y pásalos si los tienes; si el cliente ya está registrado con esos datos, se reutilizan solos. El teléfono es el de este chat.',
+    input_schema: { type: 'object', properties: { numero: { type: 'string', description: 'Número de 4 cifras a apartar.' }, nombre: { type: 'string' }, apellido: { type: 'string' }, ciudad: { type: 'string' }, documento: { type: 'string', description: 'Número de cédula del cliente (para la factura electrónica).' }, correo: { type: 'string', description: 'Correo del cliente (para enviarle la factura electrónica).' } }, required: ['numero', 'nombre', 'apellido', 'ciudad'] },
   },
   {
     name: 'enviar_boleta',
@@ -314,15 +318,26 @@ async function ejecutarHerramienta(nombre, input, conv) {
     let nom = String(input?.nombre || '').trim();
     let ape = String(input?.apellido || '').trim();
     let ciu = String(input?.ciudad || '').trim();
+    let doc = String(input?.documento || '').replace(/\D/g, '').trim();
+    let cor = String(input?.correo || '').trim();
     // Si faltan datos pero el cliente YA está registrado, tómalos de su ficha (no re-preguntar).
-    if (!nom || !ape || !ciu) {
+    if (!nom || !ape || !ciu || !doc || !cor) {
       const { cli } = await resumenCliente(conv.telefono);
-      if (cli) { nom = nom || String(cli.nombre || '').trim(); ape = ape || String(cli.apellido || '').trim(); ciu = ciu || String(cli.ciudad || '').trim(); }
+      if (cli) {
+        nom = nom || String(cli.nombre || '').trim();
+        ape = ape || String(cli.apellido || '').trim();
+        ciu = ciu || String(cli.ciudad || '').trim();
+        doc = doc || String(cli.documento_numero || '').replace(/\D/g, '').trim();
+        cor = cor || String(cli.correo || '').trim();
+      }
     }
     if (!/^\d{4}$/.test(num) || !nom || !ape || !ciu) {
       return 'Faltan datos para apartar. Necesito el número de 4 cifras, nombre, apellido y ciudad del cliente. Pídeselos antes de apartar.';
     }
-    const d = await llamarApi('/api/rifa/reservar', { numeros: [num], nombre: nom, apellido: ape, ciudad: ciu, telefono: conv.telefono });
+    const cuerpo = { numeros: [num], nombre: nom, apellido: ape, ciudad: ciu, telefono: conv.telefono };
+    if (doc) { cuerpo.documento_tipo = 'CC'; cuerpo.documento_numero = doc; }
+    if (cor) cuerpo.correo = cor;
+    const d = await llamarApi('/api/rifa/reservar', cuerpo);
     if (!d.exito) { await nota(conv, 'Intenté apartar el ' + num + ' pero no se pudo: ' + (d.error || 'error')); return 'No se pudo apartar: ' + (d.error || 'error') + '. Cuéntaselo al cliente y ofrécele otra opción.'; }
     await nota(conv, `Aparté el número ${num} a nombre de ${nom} ${ape} (${ciu}).`);
     return `Listo: el número ${num} quedó apartado a nombre de ${nom} ${ape}. Total por pagar: $${Number(d.total || 0).toLocaleString('es-CO')}. Si el cliente quería MÁS números, apártalos PRIMERO; cuando ya estén TODOS apartados, envía la boleta UNA sola vez con enviar_boleta (esa ya muestra TODAS sus boletas en un mensaje). NO envíes la boleta después de cada número.`;
