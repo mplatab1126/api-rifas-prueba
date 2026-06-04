@@ -1614,6 +1614,7 @@ function agCapturarForm(){
   if($('agPrompt')) agData.config.prompt = $('agPrompt').value;
   if($('agNombre')) agData.config.nombre_agente = $('agNombre').value;
   if($('agModelo')) agData.config.modelo = $('agModelo').value;
+  if($('agPagos')) agData.config.variables = Object.assign({}, agData.config.variables, { pagos: $('agPagos').value });
 }
 
 function pintarAgente(){
@@ -1656,6 +1657,8 @@ function pintarAgente(){
         <select id="agModelo" class="cc-input">${modeloOpts}</select>
       </div>
       <textarea id="agPrompt" class="ag-prompt" placeholder="Ej: Eres la asesora de Los Plata. Vendemos rifas de 4 cifras (0000–9999)...">${esc(c.prompt||'')}</textarea>
+      <div class="ag-sub" style="margin-top:14px"><b>Datos de pago de esta línea</b> — rellena la variable <code>{{pagos}}</code> del manual (a quién y a qué cuentas paga el cliente). Esto es lo que cambia entre asesores; el resto del manual es igual para todos.</div>
+      <textarea id="agPagos" class="ag-prompt" style="min-height:64px" placeholder="Ej: *Nequi, Daviplata o llave Bre-B 3128732266* (a nombre de *Maria Buitrago*)">${esc((c.variables&&c.variables.pagos)||'')}</textarea>
       <div><button class="ag-save" onclick="agGuardar()">Guardar cambios</button><span id="agSaveMsg" class="ag-savemsg"></span></div>
     </div>
     <div class="ag-card">
@@ -1692,7 +1695,8 @@ async function agGuardar(silencioso){
   agCapturarForm();
   const c = agData.config;
   const r = await api('agente', { accion:'guardar', linea_id: lineaActual,
-    estado: c.estado||'apagado', prompt: c.prompt||'', nombre_agente: c.nombre_agente||'', modelo: c.modelo||'claude-sonnet-4-6' });
+    estado: c.estado||'apagado', prompt: c.prompt||'', nombre_agente: c.nombre_agente||'', modelo: c.modelo||'claude-sonnet-4-6',
+    variables: c.variables || {} });
   if(r.status === 'ok'){
     agData.config = r.config;
     if(silencioso !== true && $('agSaveMsg')){ $('agSaveMsg').textContent = 'Guardado ✓'; setTimeout(()=>{ if($('agSaveMsg')) $('agSaveMsg').textContent=''; }, 2500); }

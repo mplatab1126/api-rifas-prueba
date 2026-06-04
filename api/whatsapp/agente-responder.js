@@ -56,6 +56,17 @@ function contextoFechaHora() {
   });
 }
 
+// Reemplaza las variables {{clave}} del libreto por su valor (el nombre del agente,
+// los datos de pago, etc.). El prompt base es IGUAL para todas las líneas; solo
+// cambian estas variables. Lo que no esté definido queda vacío.
+function aplicarVariables(texto, vars) {
+  const v = vars || {};
+  return String(texto || '').replace(/\{\{\s*(\w+)\s*\}\}/g, (_m, clave) => {
+    const val = v[clave];
+    return (val == null || val === '') ? '' : String(val);
+  });
+}
+
 // Resumen del cliente (datos guardados + boletas que ya tiene), buscando por
 // teléfono. Las boletas se guardan por teléfono, así que esto encuentra al cliente
 // aunque haya comprado por OTRA línea. Sirve para que el agente sepa, desde el
@@ -628,9 +639,14 @@ export default async function handler(req, res) {
 
     // 4) Configuración del agente (prompt + modelo).
     const { data: cfg } = await supabase
-      .from('agente_config').select('prompt, modelo, nombre_agente').eq('linea_id', linea_id).maybeSingle();
-    const prompt = String(cfg?.prompt || '').trim();
-    if (!prompt) { await soltarLock(conv); return res.status(200).json({ status: 'error', mensaje: 'El agente no tiene instrucciones guardadas.' }); }
+      .from('agente_config').select('prompt, modelo, nombre_agente, variables').eq('linea_id', linea_id).maybeSingle();
+    const promptBase = String(cfg?.prompt || '').trim();
+    if (!promptBase) { await soltarLock(conv); return res.status(200).json({ status: 'error', mensaje: 'El agente no tiene instrucciones guardadas.' }); }
+    // Rellenar las variables {{nombre}}, {{pagos}}, etc. con lo configurado en esta línea.
+    const prompt = aplicarVariables(promptBase, {
+      nombre: (cfg?.nombre_agente || '').trim() || 'del equipo de Los Plata',
+      ...(cfg?.variables && typeof cfg.variables === 'object' ? cfg.variables : {}),
+    });
     const modelo = MODELOS_OK.includes(cfg?.modelo) ? cfg.modelo : 'claude-sonnet-4-6';
 
     // Solo se le ofrecen a la IA las herramientas IMPLEMENTADAS que estén ACTIVAS en la cabina.

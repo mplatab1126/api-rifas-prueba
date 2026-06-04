@@ -104,10 +104,16 @@ export default async function handler(req, res) {
       const modelo = MODELOS.includes(req.body.modelo) ? req.body.modelo : 'claude-sonnet-4-6';
       const prompt = String(req.body.prompt || '').slice(0, MAX_PROMPT);
       const nombre_agente = String(req.body.nombre_agente || '').trim().slice(0, MAX_NOMBRE) || null;
+      // Variables que cambian por línea (ej. pagos). Solo claves simples y texto.
+      const variables = {};
+      const varsIn = (req.body.variables && typeof req.body.variables === 'object' && !Array.isArray(req.body.variables)) ? req.body.variables : {};
+      for (const [k, val] of Object.entries(varsIn)) {
+        if (/^\w{1,40}$/.test(k)) variables[k] = String(val == null ? '' : val).slice(0, 4000);
+      }
       await asegurarConfig(linea_id);   // garantiza que la fila exista
       const { data, error } = await supabaseAdmin
         .from('agente_config')
-        .update({ estado, modelo, prompt, nombre_agente, actualizado_por: nombre, actualizado_at: new Date().toISOString() })
+        .update({ estado, modelo, prompt, nombre_agente, variables, actualizado_por: nombre, actualizado_at: new Date().toISOString() })
         .eq('linea_id', linea_id)
         .select('*')
         .single();
