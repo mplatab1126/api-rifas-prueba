@@ -4,10 +4,11 @@
  * Devuelve los chats ordenados por el más reciente, con su vista previa y
  * cuántos mensajes sin leer tienen. Protegido con contraseña de asesor.
  *
- * Recibe (POST, JSON): { contrasena, soloSinRespuesta }
+ * Recibe (POST, JSON): { contrasena, soloSinRespuesta, q }
+ *   q - texto de búsqueda (nombre o teléfono). Opcional. Busca en TODA la base.
  *
- * Pensado para escala (50k-100k chats): el filtro "sin respuesta" y su conteo
- * se hacen EN LA BASE DE DATOS (con índice), no en el navegador.
+ * Pensado para escala (50k-100k chats): el filtro "sin respuesta", la búsqueda y
+ * su conteo se hacen EN LA BASE DE DATOS (con índice), no en el navegador.
  */
 
 import { aplicarCors } from '../lib/cors.js';
@@ -21,7 +22,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
   }
 
-  const { contrasena, soloSinRespuesta, linea_id } = req.body || {};
+  const { contrasena, soloSinRespuesta, q, linea_id } = req.body || {};
   const nombre = validarAsesor(contrasena);
   if (!nombre) {
     return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido.' });
@@ -43,6 +44,15 @@ export default async function handler(req, res) {
     .limit(300);
   if (linea_id) query = query.eq('linea_id', linea_id);
   if (soloSinRespuesta) query = query.eq('ultimo_entrante', true);
+
+  // Búsqueda en TODA la base (no solo en lo cargado): por teléfono si escribieron
+  // números, o por nombre del perfil si escribieron letras. Mismo criterio que Contactos.
+  const filtro = String(q || '').trim();
+  if (filtro) {
+    const soloDigitos = filtro.replace(/\D/g, '');
+    if (soloDigitos.length >= 3) query = query.ilike('telefono', `%${soloDigitos}%`);
+    else query = query.ilike('nombre_perfil', `%${filtro}%`);
+  }
 
   const { data, error } = await query;
   if (error) {
