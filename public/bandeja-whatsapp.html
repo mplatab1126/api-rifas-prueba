@@ -1140,7 +1140,7 @@ async function cargarMensajes(scroll){
   let ultEnt = null;
   for(let i = r.mensajes.length - 1; i >= 0; i--){ if(r.mensajes[i].direccion === 'entrante'){ ultEnt = r.mensajes[i]; break; } }
   actualizarVentana(ultEnt ? new Date(ultEnt.timestamp_wa || ultEnt.created_at).getTime() + 24*3600*1000 : 0);
-  dispararAgenteSiCorresponde(r.mensajes);
+  // El disparo del agente lo hace el SERVIDOR (webhook); aquí ya no, para no responder dos veces.
 }
 
 function estadoIcono(e){
