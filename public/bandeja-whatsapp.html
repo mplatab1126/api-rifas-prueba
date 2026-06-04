@@ -326,9 +326,9 @@
     .resp-texto { margin-top: 7px; color: var(--ink-mute); font-size: 0.84rem; line-height: 1.45; white-space: pre-wrap; word-wrap: break-word; max-height: 5.2em; overflow: hidden; }
 
     /* Botón ⚡ y selector flotante de respuestas en el chat */
-    #btnResp, #btnBoleta { width: 44px; height: 44px; min-width: 44px; border-radius: 50%; border: 1px solid var(--gray-200); background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--ink-mute); transition: .15s; }
-    #btnResp:hover, #btnBoleta:hover { background: var(--cream-50); color: var(--ink); border-color: var(--gray-300); }
-    #btnBoleta:disabled { opacity: 0.5; cursor: default; }
+    #btnResp, #btnBoleta, #btnAdjuntar { width: 44px; height: 44px; min-width: 44px; border-radius: 50%; border: 1px solid var(--gray-200); background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--ink-mute); transition: .15s; }
+    #btnResp:hover, #btnBoleta:hover, #btnAdjuntar:hover { background: var(--cream-50); color: var(--ink); border-color: var(--gray-300); }
+    #btnBoleta:disabled, #btnAdjuntar:disabled { opacity: 0.5; cursor: default; }
     #respPicker { display: none; position: absolute; left: 14px; right: 14px; bottom: calc(100% + 8px); max-height: 320px; overflow-y: auto; background: #fff; border: 1px solid var(--gray-200); border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.14); padding: 6px; z-index: 50; }
     .rp-item { display: block; width: 100%; text-align: left; background: none; border: none; padding: 10px 12px; border-radius: 10px; cursor: pointer; }
     .rp-item:hover { background: var(--cream-100); }
@@ -622,6 +622,10 @@
         <div id="msgs"></div>
         <div id="barra">
           <div id="respPicker"></div>
+          <input id="fileChat" type="file" accept="image/*,application/pdf" style="display:none">
+          <button id="btnAdjuntar" title="Enviar foto o archivo (PDF)" aria-label="Adjuntar archivo">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          </button>
           <button id="btnBoleta" title="Enviar boleta al cliente" aria-label="Enviar boleta">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V8z"/><line x1="13" y1="6" x2="13" y2="18" stroke-dasharray="2 2"/></svg>
           </button>
@@ -1225,6 +1229,7 @@ function actualizarVentana(venceMs){
   const t = $('texto'), e = $('enviar');
   if(t){ t.disabled = cerrada; t.placeholder = cerrada ? 'Ventana de 24h cerrada — espera a que el cliente escriba' : 'Escribe un mensaje'; }
   if(e) e.disabled = cerrada;
+  if($('btnAdjuntar')) $('btnAdjuntar').disabled = cerrada;
 }
 
 /* ── Enviar ── */
@@ -1247,6 +1252,40 @@ async function enviarMsg(){
   }
 }
 $('enviar').onclick = enviarMsg;
+
+/* ── Enviar foto o PDF adjunto desde el computador ── */
+function leerBase64(file){
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result).split(',')[1] || '');
+    fr.onerror = () => reject(fr.error);
+    fr.readAsDataURL(file);
+  });
+}
+async function enviarArchivo(file){
+  if(!ventanaAbierta()){ alert('No puedes enviar archivos ahora.\n\nPasaron más de 24 horas desde el último mensaje del cliente, y WhatsApp solo permite responder dentro de esa ventana.'); return; }
+  if(!file || !actual) return;
+  const esImg = file.type.startsWith('image/');
+  const esPdf = file.type === 'application/pdf';
+  if(!esImg && !esPdf){ alert('Solo puedes enviar imágenes o archivos PDF.'); return; }
+  if(file.size > 5*1024*1024){ alert('El archivo es muy grande (máximo 5 MB).\n\nSi es una foto, tómala con menor calidad o comprímela.'); return; }
+  const tel = actual, linea = actualLinea;
+  let b64;
+  try { b64 = await leerBase64(file); } catch(_){ alert('No se pudo leer el archivo.'); return; }
+  const previewUrl = esImg ? URL.createObjectURL(file) : null;
+  const p = agregarPendiente({ tipo: esImg ? 'imagen' : 'archivo', url: previewUrl, texto: esPdf ? ('📄 ' + file.name) : '', tel });
+  const r = await api('enviar-archivo', { telefono: tel, linea_id: linea, archivo_base64: b64, mime: file.type, nombre_archivo: file.name });
+  quitarPendiente(p);
+  if(previewUrl) URL.revokeObjectURL(previewUrl);
+  if(r.status === 'ok'){
+    if(actual === tel) cargarMensajes(true);
+    cargarLista();
+  } else {
+    alert('No se pudo enviar: ' + (r.mensaje || 'error'));
+  }
+}
+$('btnAdjuntar').onclick = () => { if(!$('btnAdjuntar').disabled) $('fileChat').click(); };
+$('fileChat').onchange = (e) => { const f = e.target.files[0]; e.target.value = ''; if(f) enviarArchivo(f); };
 $('texto').addEventListener('keydown', e => {
   if(pickerAbierto()){
     if(e.key === 'Escape'){ e.preventDefault(); cerrarPicker(); return; }

@@ -177,6 +177,41 @@ export async function subirMediaDesdeUrl(url, lineaId) {
 }
 
 /**
+ * Sube un archivo (foto o PDF) a Meta a partir de sus BYTES (no de un URL) y
+ * devuelve su media_id. Lo usa la bandeja cuando el asesor adjunta un archivo
+ * desde su propio computador.
+ *
+ * @returns {Promise<{ok:boolean, media_id?:string, error?:string}>}
+ */
+export async function subirMediaDesdeBuffer(buffer, mime, filename, lineaId) {
+  const { token, phoneNumberId } = await resolverLinea(lineaId);
+  if (!token || !phoneNumberId) {
+    return { ok: false, error: 'No hay token/número configurado para esta línea.' };
+  }
+
+  try {
+    const tipo = (mime || 'application/octet-stream').split(';')[0].trim();
+    const form = new FormData();
+    form.append('messaging_product', 'whatsapp');
+    form.append('type', tipo);
+    form.append('file', new Blob([buffer], { type: tipo }), filename || 'archivo');
+
+    const up = await fetch(`${GRAPH}/${phoneNumberId}/media`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: form,
+    });
+    const data = await up.json();
+    if (!up.ok || data.error || !data.id) {
+      return { ok: false, error: data.error?.message || `HTTP ${up.status}` };
+    }
+    return { ok: true, media_id: data.id };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+/**
  * Envía una imagen que YA está subida a Meta (por su media_id).
  *
  * @returns {Promise<{ok:boolean, wa_message_id?:string, error?:string, raw?:object}>}
@@ -232,6 +267,38 @@ export async function enviarDocumento(telefono, url, filename, caption, lineaId)
   }
   try {
     const document = { link: url };
+    if (filename) document.filename = filename;
+    if (caption) document.caption = caption;
+    const resp = await fetch(`${GRAPH}/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp', recipient_type: 'individual',
+        to: telefono, type: 'document', document,
+      }),
+    });
+    const data = await resp.json();
+    if (!resp.ok || data.error) {
+      return { ok: false, error: data.error?.message || `HTTP ${resp.status}`, raw: data };
+    }
+    return { ok: true, wa_message_id: data.messages?.[0]?.id, raw: data };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+/**
+ * Envía un DOCUMENTO (PDF, etc.) que YA está subido a Meta (por su media_id).
+ *
+ * @returns {Promise<{ok:boolean, wa_message_id?:string, error?:string, raw?:object}>}
+ */
+export async function enviarDocumentoPorId(telefono, mediaId, filename, caption, lineaId) {
+  const { token, phoneNumberId } = await resolverLinea(lineaId);
+  if (!token || !phoneNumberId) {
+    return { ok: false, error: 'No hay token/número configurado para esta línea.' };
+  }
+  try {
+    const document = { id: mediaId };
     if (filename) document.filename = filename;
     if (caption) document.caption = caption;
     const resp = await fetch(`${GRAPH}/${phoneNumberId}/messages`, {
