@@ -100,8 +100,42 @@ async function guardarEntrante(m, nombrePerfil, lineaId) {
   // para este chat (ya retomaron la conversación, no hace falta el seguimiento automático).
   await cancelarRecordatorios(telefono, lineaId);
 
+  // Disparadores: si el mensaje contiene una palabra clave configurada, prende el agente en este chat.
+  await activarPorDisparador(telefono, lineaId, texto);
+
   // Si el agente está activo en este chat, dispararlo de una (sin depender del navegador).
   await dispararAgenteSiActivo(telefono, lineaId);
+}
+
+// ── Disparadores: prender el agente automáticamente por palabra clave ────────
+// Si el mensaje del cliente contiene una palabra clave (tabla `disparadores`), prende el agente
+// en ese chat. No lo hace si: el agente ya está activo, un humano tomó el chat (estado='humano'),
+// o la línea tiene el agente en 'apagado'. El estado de línea (sombra/encendido) lo respeta el motor.
+async function activarPorDisparador(telefono, lineaId, texto) {
+  try {
+    const t = String(texto || '').toLowerCase().trim();
+    if (!t) return;
+    const { data: c } = await supabaseAdmin
+      .from('conversaciones_whatsapp').select('agente_activo, estado')
+      .eq('telefono', telefono).eq('linea_id', lineaId).maybeSingle();
+    if (!c || c.agente_activo || c.estado === 'humano') return;
+
+    const { data: cfg } = await supabaseAdmin
+      .from('agente_config').select('estado').eq('linea_id', lineaId).maybeSingle();
+    if (cfg && cfg.estado === 'apagado') return;   // línea apagada: los disparadores no actúan
+
+    const { data: disp } = await supabaseAdmin
+      .from('disparadores').select('palabra').eq('linea_id', lineaId).eq('activo', true);
+    const hay = (disp || []).some(d => {
+      const p = String(d.palabra || '').toLowerCase().trim();
+      return p && t.includes(p);
+    });
+    if (!hay) return;
+
+    await supabaseAdmin.from('conversaciones_whatsapp')
+      .update({ agente_activo: true, estado: 'bot' })
+      .eq('telefono', telefono).eq('linea_id', lineaId);
+  } catch (_) { /* si falla, simplemente no se auto-prende */ }
 }
 
 // ── Cancelar recordatorios pendientes de una conversación ───────────────────

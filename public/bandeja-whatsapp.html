@@ -410,6 +410,18 @@
 
     /* ── Agente de IA (cabina de control · solo gerencia) ── */
     #modAgente { flex: 1; display: none; flex-direction: column; min-width: 0; background: var(--cream-50); overflow: hidden; }
+    /* Módulo Disparadores */
+    #modDisparadores { flex: 1; display: none; flex-direction: column; min-width: 0; background: var(--cream-50); overflow: hidden; }
+    #nuevoDisparador { flex: 1; min-width: 200px; padding: 10px 16px; border: 1px solid var(--gray-200); border-radius: 10px; background: var(--cream-50); font-family: inherit; font-size: 0.88rem; color: var(--ink); outline: none; }
+    #nuevoDisparador:focus { border-color: var(--gray-300); background: #fff; }
+    #btnCrearDisparador { padding: 10px 18px; border: 1px solid var(--mint); background: var(--mint); border-radius: 10px; font-family: inherit; font-size: 0.84rem; font-weight: 600; color: var(--ink); cursor: pointer; }
+    #btnCrearDisparador:hover { background: var(--mint-light); }
+    #listaDisparadores { flex: 1; overflow-y: auto; padding: 14px 24px 20px; }
+    .disp-row { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid var(--gray-200); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; }
+    .disp-palabra { flex: 1; font-size: 0.92rem; color: var(--ink); word-break: break-word; }
+    .disp-palabra.off { color: var(--gray-400); text-decoration: line-through; }
+    .disp-del { background: none; border: none; padding: 6px; border-radius: 8px; color: var(--ink-mute); cursor: pointer; display: flex; flex-shrink: 0; }
+    .disp-del:hover { color: var(--danger); background: #fdecec; }
     #modAgente .ag-sub { color: var(--ink-mute); font-size: 0.82rem; line-height: 1.5; }
     .ag-wrap { flex: 1; overflow-y: auto; padding: 16px; }
     .ag-card { background: #fff; border: 1px solid var(--gray-200); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
@@ -630,6 +642,10 @@
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M12 8V5"/><circle cx="12" cy="3.5" r="1.2"/><circle cx="9" cy="13.5" r="1"/><circle cx="15" cy="13.5" r="1"/></svg>
           <span>Agente</span>
         </button>
+        <button class="nav-item" id="navDisparadores" data-mod="disparadores" style="display:none">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 10 14 9 22 19 10 12 10 13 2"/><circle cx="18" cy="5" r="2.3"/></svg>
+          <span>Disparadores</span>
+        </button>
       </div>
       <div class="nav-foot">
         <div class="nav-user" id="quien"></div>
@@ -779,6 +795,19 @@
       </div>
       <div id="agBody" class="ag-wrap"></div>
     </div><!-- /modAgente -->
+
+    <!-- MÓDULO: DISPARADORES -->
+    <div id="modDisparadores">
+      <div class="cont-head">
+        <h2>Disparadores</h2>
+        <div class="ag-sub" style="margin-bottom:12px">Palabras clave que <b>prenden el agente solo</b> en un chat. Cuando un cliente escriba un mensaje que <b>contenga</b> alguna de estas palabras, el agente se activa en ese chat y le responde (respeta el Modo sombra/Apagado de la cabina).</div>
+        <div class="cont-actions">
+          <input id="nuevoDisparador" placeholder="Palabra o frase clave (ej: quiero más información)">
+          <button id="btnCrearDisparador">Agregar</button>
+        </div>
+      </div>
+      <div id="listaDisparadores"></div>
+    </div><!-- /modDisparadores -->
   </div><!-- /app -->
 
   <div id="ctxMenu"></div>
@@ -885,7 +914,7 @@ async function cargarLineas(){
   gerencia = !!(r && r.esGerencia);
   soyMateo = !!(r && r.soyMateo);
   // La cabina del Agente es solo para gerencia: mostrar su entrada del menú.
-  if(soyMateo){ $('navSecAgente').style.display = ''; $('navAgente').style.display = ''; }
+  if(soyMateo){ $('navSecAgente').style.display = ''; $('navAgente').style.display = ''; $('navDisparadores').style.display = ''; }
   const sel = $('selLinea');
   if(lineas.length){
     const guardada = localStorage.getItem('wa_linea');
@@ -1813,12 +1842,55 @@ function irA(mod){
   $('modRespuestas').style.display = (mod === 'respuestas') ? 'flex' : 'none';
   $('modDifusiones').style.display = (mod === 'difusiones') ? 'flex' : 'none';
   $('modAgente').style.display = (mod === 'agente') ? 'flex' : 'none';
+  $('modDisparadores').style.display = (mod === 'disparadores') ? 'flex' : 'none';
   if(mod === 'contactos'){ contactosPage = 0; cargarContactos(true); }
   else if(mod === 'respuestas'){ cargarRespuestas(); }
   else if(mod === 'difusiones'){ cargarModuloDifusiones(); }
   else if(mod === 'agente'){ cargarAgente(); }
+  else if(mod === 'disparadores'){ cargarDisparadores(); }
   else { pintarLista(); }
 }
+
+/* ── Disparadores (palabras clave que prenden el agente) ── */
+let disparadoresCache = [];
+async function cargarDisparadores(){
+  if(!soyMateo){ $('listaDisparadores').innerHTML = '<div class="vacio-lista">Solo Mateo puede ver esta sección.</div>'; return; }
+  if(!lineaActual){ $('listaDisparadores').innerHTML = '<div class="vacio-lista">No hay una línea seleccionada.</div>'; return; }
+  $('listaDisparadores').innerHTML = '<div class="vacio-lista">Cargando…</div>';
+  const r = await api('disparadores', { accion:'listar', linea_id: lineaActual });
+  if(vista !== 'disparadores') return;
+  if(r.status !== 'ok'){ $('listaDisparadores').innerHTML = `<div class="vacio-lista">${esc(r.mensaje||'No se pudo cargar.')}</div>`; return; }
+  disparadoresCache = r.disparadores || [];
+  pintarDisparadores();
+}
+function pintarDisparadores(){
+  $('listaDisparadores').innerHTML = disparadoresCache.map(d => `
+    <div class="disp-row">
+      <label class="ag-switch"><input type="checkbox" ${d.activo?'checked':''} onchange="toggleDisparador('${d.id}', this.checked)"><span class="sl"></span></label>
+      <span class="disp-palabra ${d.activo?'':'off'}">${esc(d.palabra)}</span>
+      <button class="disp-del" onclick="eliminarDisparador('${d.id}')" title="Eliminar">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    </div>`).join('') || '<div class="vacio-lista">Aún no hay disparadores. Agrega una palabra clave arriba — por ejemplo "quiero más información" (el mensaje con que llegan tus clientes del anuncio de Meta).</div>';
+}
+async function crearDisparador(){
+  const palabra = $('nuevoDisparador').value.trim();
+  if(!palabra) return;
+  const r = await api('disparadores', { accion:'crear', linea_id: lineaActual, palabra });
+  if(r.status === 'ok'){ $('nuevoDisparador').value = ''; cargarDisparadores(); }
+  else alert(r.mensaje || 'No se pudo agregar.');
+}
+window.toggleDisparador = async function(id, activo){
+  const r = await api('disparadores', { accion:'toggle', linea_id: lineaActual, id, activo });
+  if(r.status !== 'ok'){ alert(r.mensaje || 'No se pudo cambiar.'); cargarDisparadores(); }
+};
+window.eliminarDisparador = async function(id){
+  if(!confirm('¿Eliminar este disparador?')) return;
+  const r = await api('disparadores', { accion:'eliminar', linea_id: lineaActual, id });
+  if(r.status === 'ok') cargarDisparadores(); else alert(r.mensaje || 'No se pudo eliminar.');
+};
+if($('btnCrearDisparador')) $('btnCrearDisparador').onclick = crearDisparador;
+if($('nuevoDisparador')) $('nuevoDisparador').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); crearDisparador(); } });
 
 /* ── Agente de IA · cabina de control (solo gerencia) ──────────────────────
    Por ahora SOLO configura (todavía no hay "cerebro" conectado): el estado
