@@ -343,6 +343,11 @@ comportamiento. Todo vive en `agente-responder.js` (motor) y en el `prompt` (lib
   se mueve solo y no arrastra el contexto de rifas pasadas.
 - **No reenvía la presentación**: si activan el agente en un chat con mensajes previos, no manda el
   contacto inicial otra vez; lee todo y continúa el hilo (`yaHuboSalientes`).
+- **Fechas calculadas por código (no por el modelo)**: los LLM se equivocan con los días de la
+  semana (ej. decían "sábado 7 de junio" cuando el 7 es domingo). El motor inyecta un bloque
+  "FECHAS EXACTAS" con HOY, el PRÓXIMO sorteo y el calendario, cada uno con su día de semana ya
+  calculado (`etiquetaFecha` desde `rifas.sorteos`), y la regla de NUNCA calcular el día él mismo.
+  Por eso NO hizo falta subir a Opus: el problema era de datos, no de modelo.
 - **Libreto reforzado** con: horarios de las loterías (Boyacá 10:30 / Manizales 11:00), urgencia
   del próximo sorteo, factura electrónica (cédula+correo), confianza/garantía (NIT 902.003.134-4,
   verificar en Gobernación de Caldas o EDSA), pagos a María Buitrago (autorizada), **devoluciones**
@@ -471,7 +476,7 @@ normal de 12 dígitos** (ver siguiente punto).
 
 ### 8.18 Supervisor del agente (control de calidad que reporta a Mateo) — HECHO
 Un "vigilante" que revisa al agente y le avisa a Mateo los errores. (jun-2026.)
-- **Qué hace:** cada **5 minutos** (`pg_cron` job `supervisor-agente-cada-5min` → `qa-agente-cron.js`),
+- **Qué hace:** cada **30 minutos** (`pg_cron` job `supervisor-agente-cada-5min` —el nombre quedó así pero corre `*/30`— → `qa-agente-cron.js`),
   revisa las conversaciones con la etiqueta **AGENTE** de la línea de Lili, toma SOLO lo nuevo desde la
   última revisión (marca de agua `agente_qa_estado`), arma el transcrito y se lo pasa a **Claude
   (Sonnet)** junto con el MANUAL del agente (su `prompt`) para que detecte errores. **Si hay errores**,
@@ -484,6 +489,9 @@ Un "vigilante" que revisa al agente y le avisa a Mateo los errores. (jun-2026.)
   el historial viejo).
 - **Sirve en sombra y en vivo:** incluye las notas `🌓 (modo sombra) le diría…` como respuestas de
   Liliana, así que durante el piloto en sombra también detecta errores.
+- **Fechas correctas (arreglo jun-2026):** se le inyecta el calendario de sorteos con el día de la
+  semana YA calculado por código, para que el supervisor **cache** los errores de fecha de Liliana
+  (ej. "sábado 7 de junio" cuando el 7 es domingo) en vez de repetirlos.
 - **Distingue agente vs asesor humano (arreglo jun-2026):** los mensajes salientes del AGENTE se
   guardan con `raw.agente=true`; los de un **asesor humano** (cuando toma el chat tras `pasar_a_humano`)
   NO la tienen. El supervisor etiqueta cada saliente como "Liliana" o "Asesor humano" y se le instruye
