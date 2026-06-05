@@ -15,7 +15,9 @@ import { supabase, supabaseAdmin } from '../lib/supabase.js';
 import { configWhatsapp, enviarTexto } from '../lib/whatsapp.js';
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
-const MODELO = 'claude-sonnet-4-6';
+// El supervisor usa OPUS (modelo más alto): de nada sirve que Sonnet evalúe a Sonnet. Es 1 sola
+// llamada cada 30 min, así que el costo de Opus es bajo y el criterio para juzgar es mejor.
+const MODELO = 'claude-opus-4-8';
 
 // "2026-07-04" → "sábado 4 de julio" (día de semana calculado por código, sin líos de zona horaria).
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
@@ -142,7 +144,9 @@ export default async function handler(req, res) {
     'NO inventes errores; si algo está bien, NO lo menciones. NO juzgues lo que diga el Cliente ni el Asesor humano.\n\n' +
     'Responde EXACTAMENTE así:\n' +
     '- Si NO hay errores: escribe solo  SIN ERRORES\n' +
-    '- Si hay errores: una lista corta (un error por línea, empezando con "• "), con el nombre del cliente entre paréntesis. Breve y concreto, máximo ~10 líneas.';
+    '- Si hay errores: SÉ MUY BREVE (telegráfico). Máximo 5 viñetas "• ", una por error IMPORTANTE; ' +
+    'AGRUPA los repetidos en una sola viñeta; pon el nombre del cliente entre paréntesis. Nada de explicaciones largas; ' +
+    'si hay muchos, reporta solo los 5 más graves.';
 
   let reporte = '';
   try {
