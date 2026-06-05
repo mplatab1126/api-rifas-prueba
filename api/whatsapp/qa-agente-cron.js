@@ -142,32 +142,49 @@ export default async function handler(req, res) {
     '- "(nota de Liliana): 🤖 ..." = acciones que Liliana hizo o intentó (úsalas como contexto, no como error salvo que sean claramente incorrectas).\n\n' +
     'Reporta SOLO errores CLAROS de LILIANA en lo [NUEVO]: información equivocada o inventada, romper una regla del manual (precios, premios, fechas, registrar con otro número, tocar boletas ajenas, etc.), confundir al cliente, ofrecer algo que no debe, o respuestas raras/robóticas. ' +
     'NO inventes errores; si algo está bien, NO lo menciones. NO juzgues lo que diga el Cliente ni el Asesor humano.\n\n' +
-    'Responde EXACTAMENTE así:\n' +
-    '- Si NO hay errores: escribe solo  SIN ERRORES\n' +
-    '- Si hay errores: SÉ MUY BREVE (telegráfico). Máximo 5 viñetas "• ", una por error IMPORTANTE; ' +
-    'AGRUPA los repetidos en una sola viñeta; pon el nombre del cliente entre paréntesis. Nada de explicaciones largas; ' +
-    'si hay muchos, reporta solo los 5 más graves.';
+    'Responde SOLO un JSON válido (sin texto antes ni después, sin ```), con esta forma:\n' +
+    '{"errores":[{"cliente":"nombre del cliente","error":"qué hizo mal Liliana, MUY corto","regla":"una regla concreta y corta, en imperativo, para AGREGAR al manual de Liliana y que NO vuelva a pasar"}]}\n' +
+    'Si NO hay errores: {"errores":[]}. Máximo 5 errores, los más graves. AGRUPA los repetidos en uno. ' +
+    'La "regla" debe ser accionable y general (no sobre un cliente puntual), lista para pegar al manual.';
 
-  let reporte = '';
+  let crudo = '';
   try {
     const resp = await fetch(ANTHROPIC_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: MODELO, max_tokens: 800, system, messages: [{ role: 'user', content: bloques.join('\n\n') }] }),
+      body: JSON.stringify({ model: MODELO, max_tokens: 1000, system, messages: [{ role: 'user', content: bloques.join('\n\n') }] }),
     });
     const data = await resp.json();
     if (data.error) return res.status(200).json({ status: 'error', mensaje: 'IA: ' + (data.error.message || 'error') });   // no avanza la marca: reintenta
-    reporte = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+    crudo = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
   } catch (e) {
     return res.status(200).json({ status: 'error', mensaje: e.message });   // no avanza la marca
   }
 
-  // 7) Si hay errores, mandar el resumen a Mateo.
+  // Sacar el JSON de la respuesta (por si viene con texto/``` alrededor).
+  let errores = [];
+  try {
+    const a = crudo.indexOf('{'), b = crudo.lastIndexOf('}');
+    const parsed = (a >= 0 && b > a) ? JSON.parse(crudo.slice(a, b + 1)) : { errores: [] };
+    if (Array.isArray(parsed.errores)) errores = parsed.errores.slice(0, 5);
+  } catch (_) { errores = []; }
+
+  // 7) Guardar cada error como SUGERENCIA (error + regla) para el ciclo de mejora, y avisar a Mateo.
   let enviado = false, errorEnvio = null;
-  const hayErrores = reporte && !/^\s*SIN ERRORES/i.test(reporte);
+  const hayErrores = errores.length > 0;
   if (hayErrores) {
+    const filas = errores.map(e => ({
+      linea_id: LINEA,
+      cliente: String(e.cliente || '').slice(0, 120) || null,
+      error: String(e.error || '').slice(0, 500),
+      regla: String(e.regla || '').slice(0, 500),
+      estado: 'nuevo',
+    })).filter(f => f.error && f.regla);
+    if (filas.length) { try { await supabaseAdmin.from('agente_sugerencias').insert(filas); } catch (_) {} }
+
     const hora = new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit', hour12: true });
-    const msg = `🔎 *Supervisor del agente* (${hora})\nRevisé las conversaciones con etiqueta ${ETIQUETA} y encontré:\n\n${reporte}`;
+    const lista = errores.map(e => `• (${String(e.cliente || '').trim() || 'chat'}) ${String(e.error || '').trim()}`).join('\n');
+    const msg = `🔎 *Supervisor del agente* (${hora})\nEncontré:\n\n${lista}\n\nRevisa "Mejorar el agente" en la cabina para aplicar las correcciones.`;
     const env = await enviarTexto(REPORTE_A, msg, LINEA);
     enviado = !!env.ok;
     if (!env.ok) errorEnvio = env.error;

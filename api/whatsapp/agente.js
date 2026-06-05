@@ -151,7 +151,12 @@ export default async function handler(req, res) {
         .eq('linea_id', linea_id)
         .order('created_at', { ascending: false })
         .limit(50);
-      return res.status(200).json({ status: 'ok', config, herramientas, actividad: actividad || [] });
+      const { data: sugerencias } = await supabase
+        .from('agente_sugerencias')
+        .select('id, cliente, error, regla, created_at')
+        .eq('linea_id', linea_id).eq('estado', 'nuevo')
+        .order('created_at', { ascending: false }).limit(50);
+      return res.status(200).json({ status: 'ok', config, herramientas, actividad: actividad || [], sugerencias: sugerencias || [] });
     }
 
     if (accion === 'guardar') {
@@ -221,6 +226,46 @@ export default async function handler(req, res) {
         .eq('telefono', tel).eq('linea_id', linea_id);
       if (error) return res.status(200).json({ status: 'error', mensaje: error.message });
       return res.status(200).json({ status: 'ok', activa });
+    }
+
+    // Lista las sugerencias de mejora pendientes (las del supervisor que aún no se aplican).
+    if (accion === 'sugerencias') {
+      const { data } = await supabase
+        .from('agente_sugerencias').select('id, cliente, error, regla, created_at')
+        .eq('linea_id', linea_id).eq('estado', 'nuevo')
+        .order('created_at', { ascending: false }).limit(50);
+      return res.status(200).json({ status: 'ok', sugerencias: data || [] });
+    }
+
+    // Aplica una sugerencia: agrega su REGLA al manual del agente y la marca como aplicada.
+    if (accion === 'aplicar_sugerencia') {
+      const id = String(req.body.id || '').trim();
+      if (!id) return res.status(200).json({ status: 'error', mensaje: 'Falta la sugerencia.' });
+      const { data: sug } = await supabaseAdmin
+        .from('agente_sugerencias').select('regla, estado').eq('id', id).eq('linea_id', linea_id).maybeSingle();
+      if (!sug) return res.status(200).json({ status: 'error', mensaje: 'No se encontró la sugerencia.' });
+      if (sug.estado !== 'nuevo') return res.status(200).json({ status: 'error', mensaje: 'Esa sugerencia ya fue resuelta.' });
+      const regla = String(sug.regla || '').trim();
+      if (!regla) return res.status(200).json({ status: 'error', mensaje: 'La sugerencia no tiene una regla.' });
+      const cfg = await asegurarConfig(linea_id);
+      const nuevoPrompt = (String(cfg.prompt || '') + '\n- ' + regla).slice(0, MAX_PROMPT);
+      const { error: e1 } = await supabaseAdmin.from('agente_config')
+        .update({ prompt: nuevoPrompt, actualizado_por: nombre, actualizado_at: new Date().toISOString() })
+        .eq('linea_id', linea_id);
+      if (e1) return res.status(200).json({ status: 'error', mensaje: e1.message });
+      await supabaseAdmin.from('agente_sugerencias')
+        .update({ estado: 'aplicado', resuelto_at: new Date().toISOString(), resuelto_por: nombre }).eq('id', id);
+      return res.status(200).json({ status: 'ok' });
+    }
+
+    // Descarta una sugerencia (no la aplica).
+    if (accion === 'descartar_sugerencia') {
+      const id = String(req.body.id || '').trim();
+      if (!id) return res.status(200).json({ status: 'error', mensaje: 'Falta la sugerencia.' });
+      await supabaseAdmin.from('agente_sugerencias')
+        .update({ estado: 'descartado', resuelto_at: new Date().toISOString(), resuelto_por: nombre })
+        .eq('id', id).eq('linea_id', linea_id);
+      return res.status(200).json({ status: 'ok' });
     }
 
     // Simulador: corre el prompt contra una conversación de prueba. NO toca WhatsApp.
