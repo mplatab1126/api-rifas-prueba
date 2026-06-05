@@ -272,6 +272,9 @@ número que ya había revisado).
   mensaje citado arriba (como WhatsApp), recortado a 2 líneas con "…". Se guarda en `responde_a`.
 - **Resolución PDF**: se subió `public/resolucion.pdf` (resolución de EDSA) para que el agente la
   mande como prueba legal con `enviar_resolucion`.
+- **Marca "🤖 Liliana" en el chat**: las burbujas que envió el AGENTE muestran "🤖 Liliana" arriba,
+  para distinguirlas a la vista de las de un asesor humano. El dato sale de `raw.agente=true`;
+  `mensajes.js` lo expone como `por_agente` (sin mandar el `raw` completo al navegador).
 
 ### 8.11 Decisiones clave del agente
 - En prueba: **solo Mateo**, solo su chat, con TODAS las herramientas (para probar todo de una).
