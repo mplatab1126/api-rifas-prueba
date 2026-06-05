@@ -19,6 +19,7 @@
 
 import { supabaseAdmin } from '../lib/supabase.js';
 import { configWhatsapp } from '../lib/whatsapp.js';
+import { ponerEtiqueta } from '../lib/etiquetas.js';
 
 export default async function handler(req, res) {
   // ── 1) Verificación del webhook (GET) ─────────────────────────────────────
@@ -116,7 +117,7 @@ async function activarPorDisparador(telefono, lineaId, texto) {
     const t = String(texto || '').toLowerCase().trim();
     if (!t) return;
     const { data: c } = await supabaseAdmin
-      .from('conversaciones_whatsapp').select('agente_activo, estado')
+      .from('conversaciones_whatsapp').select('id, agente_activo, estado')
       .eq('telefono', telefono).eq('linea_id', lineaId).maybeSingle();
     if (!c || c.agente_activo || c.estado === 'humano') return;
 
@@ -135,6 +136,8 @@ async function activarPorDisparador(telefono, lineaId, texto) {
     await supabaseAdmin.from('conversaciones_whatsapp')
       .update({ agente_activo: true, estado: 'bot' })
       .eq('telefono', telefono).eq('linea_id', lineaId);
+    // Etiquetar el chat como AGENTE (lo usa el supervisor y para filtrar).
+    await ponerEtiqueta(c.id, lineaId, 'AGENTE', { icono: '🤖', color: '#dff7e4' });
   } catch (_) { /* si falla, simplemente no se auto-prende */ }
 }
 

@@ -21,6 +21,7 @@ import { supabase, supabaseAdmin } from '../lib/supabase.js';
 import { esMateo, puedeVerLinea } from '../lib/asesores.js';
 import { enviarTexto, enviarImagenPorId, enviarImagen, enviarDocumento, descargarMediaBase64 } from '../lib/whatsapp.js';
 import { numerosDisponibles } from '../lib/numeros-disponibles.js';
+import { ponerEtiqueta } from '../lib/etiquetas.js';
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const MODELOS_OK = ['claude-opus-4-8', 'claude-sonnet-4-6', 'claude-haiku-4-5'];
@@ -34,8 +35,8 @@ const ACCIONES_SENSIBLES = new Set();
 const MAX_ITER = 6;          // tope de idas/vueltas con la IA por cada mensaje del cliente
 const MAX_HISTORIAL = 300;   // TOPE de seguridad de mensajes; el corte normal es por RIFA (ver abajo)
 const PAUSA_MS = 800;        // entre los pasos del contacto inicial (para que lleguen en orden)
-const DEBOUNCE_MS = 7000;    // silencio que esperamos para dar por terminada la ráfaga del cliente
-const DEBOUNCE_MAX_MS = 12000; // tope total de espera por si el cliente escribe sin parar (margen ante el límite de 60s)
+const DEBOUNCE_MS = 4000;    // silencio que esperamos para dar por terminada la ráfaga del cliente (responde más rápido)
+const DEBOUNCE_MAX_MS = 8000; // tope total de espera por si el cliente escribe sin parar
 
 const dormir = (ms) => new Promise(r => setTimeout(r, ms));
 const MAX_IMAGENES = 2;   // imágenes entrantes recientes que se le muestran a la IA (comprobantes)
@@ -442,6 +443,7 @@ async function ejecutarHerramienta(nombre, input, conv) {
     if (v.status !== 'ok') return 'No pude leer o verificar el comprobante: ' + (v.mensaje || 'error') + '. Pásalo a un asesor para que lo revise a mano.';
     if (!v.sugerida_id) {
       await nota(conv, 'Recibí un comprobante pero NO encontré el pago real en el sistema. ' + (v.diagnostico || ''));
+      await ponerEtiqueta(conv.id, conv.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' });
       return 'El comprobante NO coincide con ningún pago real cargado en el sistema. NO registres el abono. Avísale con tacto que un asesor va a verificar su pago, y pásalo a un asesor.';
     }
     // Seguridad: si la ÚNICA coincidencia es "mismo minuto" (cualquier plataforma), NO basta para
@@ -449,6 +451,7 @@ async function ejecutarHerramienta(nombre, input, conv) {
     // Las coincidencias por referencia o por el celular del cliente sí valen.
     if (v.razon_sugerida === 'Misma hora') {
       await nota(conv, 'Encontré un pago del mismo valor a la misma hora, pero NO pude confirmar que sea de este cliente (sin referencia ni su celular). Lo dejo para que un asesor lo verifique.');
+      await ponerEtiqueta(conv.id, conv.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' });
       return 'Hay un pago del mismo valor a la misma hora, pero NO puedo confirmar con seguridad que sea de este cliente (no coincide la referencia ni su celular). NO registres el abono: avísale con tacto que un asesor confirma su pago enseguida, y pásalo a un asesor.';
     }
     const trans = (v.candidatas || []).find(c => c.id === v.sugerida_id);
@@ -588,6 +591,7 @@ async function ejecutarHerramienta(nombre, input, conv) {
       await supabaseAdmin.from('recordatorios').update({ estado: 'cancelado' })
         .eq('linea_id', conv.linea_id).eq('telefono', conv.telefono).eq('estado', 'pendiente');
     } catch (_) {}
+    await ponerEtiqueta(conv.id, conv.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' });
     await nota(conv, 'Pasé el chat a un asesor y me apagué. Motivo: ' + motivo);
     return 'AGENTE_APAGADO: el chat quedó en manos de un asesor humano. Envía un último mensaje breve y cálido avisando que un asesor lo atiende enseguida, y no hagas nada más.';
   }

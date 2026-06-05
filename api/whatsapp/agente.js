@@ -18,6 +18,7 @@ import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 import { supabase, supabaseAdmin } from '../lib/supabase.js';
 import { esMateo, puedeVerLinea } from '../lib/asesores.js';
+import { ponerEtiqueta } from '../lib/etiquetas.js';
 
 const ESTADOS = ['apagado', 'sombra', 'encendido'];
 const MODELOS = ['claude-opus-4-8', 'claude-sonnet-4-6', 'claude-haiku-4-5'];
@@ -220,11 +221,14 @@ export default async function handler(req, res) {
       if (!tel) return res.status(200).json({ status: 'error', mensaje: 'Falta el teléfono.' });
       const patch = { agente_activo: activa };
       if (activa) patch.estado = 'bot';
-      const { error } = await supabaseAdmin
+      const { data: convAct, error } = await supabaseAdmin
         .from('conversaciones_whatsapp')
         .update(patch)
-        .eq('telefono', tel).eq('linea_id', linea_id);
+        .eq('telefono', tel).eq('linea_id', linea_id)
+        .select('id').maybeSingle();
       if (error) return res.status(200).json({ status: 'error', mensaje: error.message });
+      // Al PRENDER el agente, etiquetar el chat como AGENTE (lo usa el supervisor y para filtrar).
+      if (activa && convAct) await ponerEtiqueta(convAct.id, linea_id, 'AGENTE', { icono: '🤖', color: '#dff7e4' });
       return res.status(200).json({ status: 'ok', activa });
     }
 
