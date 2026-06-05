@@ -765,14 +765,27 @@ export default async function handler(req, res) {
     // Resultados de los sorteos. Las casillas (qué sorteos y sus fechas) salen del CALENDARIO
     // de la rifa activa; el ganador lo escribe Mateo en la cabina (se guarda por fecha). El
     // agente los lee SOLO para responder "¿qué número ganó?". Vacío = aún no se ha jugado.
-    const ganadorPorFecha = {};
+    const datosPorFecha = {};
     for (const g of (Array.isArray(cfg?.resultados) ? cfg.resultados : [])) {
-      if (g && g.fecha) ganadorPorFecha[g.fecha] = String(g.texto || '').trim();
+      if (g && g.fecha) datosPorFecha[g.fecha] = g;
     }
+    // Describe el resultado de un sorteo a partir de los campos exactos guardados.
+    const describirResultado = (g) => {
+      if (!g) return '(aún no se ha jugado)';
+      if (g.acumulado) {
+        return 'ya se jugó, pero NO hubo ganador; el premio se ACUMULÓ para el próximo sorteo' +
+          (g.acumulado_monto ? ` (el premio del próximo sube a ${String(g.acumulado_monto).trim()})` : '');
+      }
+      const partes = [];
+      if (g.numero) partes.push('número ganador: ' + String(g.numero).trim());
+      if (g.nombre) partes.push('ganador(a): ' + String(g.nombre).trim());
+      if (g.ciudad) partes.push('ciudad: ' + String(g.ciudad).trim());
+      return partes.length ? partes.join(', ') : '(aún no se ha jugado)';
+    };
     const sorteosOrden = (rifaSorteos || []).slice().sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
     const bloqueResultados = sorteosOrden.length
-      ? '\n\n---\nRESULTADOS DE LOS SORTEOS (úsalos SOLO si el cliente pregunta qué número ganó, quién ganó, o si ya jugó tal premio; NO los menciones si no preguntan). Para cada sorteo: si tiene resultado, díselo con tus palabras; si dice "(aún no se ha jugado)", explícale con cariño que todavía no se ha realizado:\n' +
-        sorteosOrden.map(s => `- ${String(s.titulo || 'Sorteo').trim()} — ${etiquetaFecha(s.fecha)}: ${ganadorPorFecha[s.fecha] || '(aún no se ha jugado)'}`).join('\n')
+      ? '\n\n---\nRESULTADOS DE LOS SORTEOS (úsalos SOLO si el cliente pregunta qué número ganó, quién ganó, o si ya jugó tal premio; NO los menciones si no preguntan). Para cada sorteo tienes los datos exactos; díselos al cliente con tus palabras, de forma natural. Si dice "(aún no se ha jugado)", explícale con cariño que todavía no se ha realizado:\n' +
+        sorteosOrden.map(s => `- ${String(s.titulo || 'Sorteo').trim()} — ${etiquetaFecha(s.fecha)}: ${describirResultado(datosPorFecha[s.fecha])}`).join('\n')
       : '';
 
     const system = prompt +

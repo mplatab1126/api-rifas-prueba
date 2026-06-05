@@ -78,7 +78,7 @@ Tablas nuevas creadas para el buzón:
 - **`difusion_destinatarios`** (cola de envío, escala 50k–100k): `(id bigint, difusion_id→difusiones [cascade], telefono, nombre, estado [pendiente|enviado|fallido], error, wa_message_id, enviado_at)`. Índice `(difusion_id, estado)` y único `(difusion_id, telefono)`.
 
 Tablas y columnas del **Agente de IA** (ver §8):
-- **`agente_config`** (config del agente por línea): `(linea_id, estado [apagado|sombra|encendido], nombre_agente, prompt, modelo, variables jsonb [valores de las variables del libreto: {{nombre}}, {{pagos}}, …], resultados jsonb [ganadores de los sorteos: array de {fecha, texto}, la fecha es la llave; las casillas/títulos salen del calendario `rifas.sorteos`; ver §8.16], actualizado_por, actualizado_at)`.
+- **`agente_config`** (config del agente por línea): `(linea_id, estado [apagado|sombra|encendido], nombre_agente, prompt, modelo, variables jsonb [valores de las variables del libreto: {{nombre}}, {{pagos}}, …], resultados jsonb [ganadores de los sorteos: array de {fecha, numero, nombre, ciudad, acumulado, acumulado_monto}, la fecha es la llave; las casillas/títulos salen del calendario `rifas.sorteos`; ver §8.16], actualizado_por, actualizado_at)`.
 - **`agente_herramientas`** (qué acciones tiene prendidas cada línea): `(id, linea_id, clave, nombre, descripcion, riesgo, activa, orden)`.
 - **`agente_actividad`** (bitácora de lo que hace): `(id, linea_id, telefono, tipo, resumen, created_at)`.
 - **`recordatorios`** (seguimiento automático del agente, <24h — ver §8.12): `(id uuid, linea_id, telefono, conversacion_id uuid→conversaciones_whatsapp [cascade], programado_para, motivo, ultimo_msg_cliente_at, estado [pendiente|enviado|cancelado|fallido], creado_por, intentos, created_at, enviado_at)`. Índice parcial `(programado_para) where estado='pendiente'` (el cron lee SOLO los vencidos, no toda la tabla → escala) y `(linea_id, telefono) where estado='pendiente'` (cancelar al instante cuando el cliente vuelve a escribir). **Tabla ya creada** (jun-2026); falta el cron + la herramienta del agente + el gancho en `recibir.js`.
@@ -380,14 +380,19 @@ mano; salen **solas del calendario de la rifa**, y él solo llena el ganador.
   cambian solas. (premios_rifa está vacío y sin fechas; por eso el calendario vive en `rifas.sorteos`.)
 - **Cabina** (pestaña Agente): tarjeta **"Resultados de los sorteos"** con UNA casilla por sorteo,
   ordenadas por fecha. El **título es fijo** (sale del calendario, ej. "Premio Mayor (la casa) —
-  sábado 4 de julio"); el asesor solo escribe el **ganador**. **Sin botones de agregar/quitar.**
-  Casilla vacía = aún no se ha jugado.
-- **Dónde se guarda el ganador:** en **`agente_config.resultados`** (jsonb, array de `{fecha, texto}`,
-  la **fecha es la llave**; solo se guardan los que tienen ganador escrito). `agente.js` arma las
-  casillas mezclando `rifas.sorteos` (activa) con estos ganadores.
+  sábado 4 de julio"); **sin botones de agregar/quitar**. Cada casilla es **desplegable/contraíble**
+  (con una pastilla de estado: "Sin jugar" / el número+nombre / "Acumulado") para no ocupar espacio.
+  Dentro tiene **campos exactos**: *número ganador*, *nombre del ganador*, *ciudad*; y un
+  **interruptor "Acumulado"** (ya jugó, nadie ganó → se acumuló) con un campo opcional del *monto que
+  se acumula* para el próximo. Casilla vacía = aún no se ha jugado.
+- **Dónde se guarda:** en **`agente_config.resultados`** (jsonb, array de
+  `{fecha, numero, nombre, ciudad, acumulado, acumulado_monto}`, la **fecha es la llave**; solo se
+  guardan los que tienen algún dato). `agente.js` arma las casillas mezclando `rifas.sorteos` (activa)
+  con estos datos. Campos exactos = el agente puede decir el ganador de varias formas.
 - **Motor** (`agente-responder.js`): toma el calendario de la rifa activa (`rifas.sorteos`) + los
-  ganadores (`agente_config.resultados`, por fecha) e inyecta el bloque "RESULTADOS DE LOS SORTEOS",
-  con la regla de usarlo **solo si el cliente pregunta**. Así nunca muestra sorteos de otra rifa.
+  datos (`agente_config.resultados`, por fecha) e inyecta el bloque "RESULTADOS DE LOS SORTEOS"
+  (número/nombre/ciudad, o "acumulado", o "aún no se ha jugado"), con la regla de usarlo **solo si el
+  cliente pregunta**. Así nunca muestra sorteos de otra rifa.
 - El ganador es por línea hoy (vive en `agente_config`); el calendario es global (vive en la rifa).
 
 ## 9. Pendientes / próximos pasos

@@ -105,13 +105,25 @@ async function sorteosRifaActiva() {
     .eq('estado', 'activa').order('fecha_inicio', { ascending: false }).limit(1);
   return (data && data[0] && Array.isArray(data[0].sorteos)) ? data[0].sorteos : [];
 }
-// Una casilla por sorteo (ordenadas por fecha), con el ganador YA guardado (se busca por fecha).
+// Una casilla por sorteo (ordenadas por fecha), con los datos YA guardados (se buscan por fecha).
+// Cada casilla tiene campos exactos: número ganador, nombre, ciudad, o el interruptor "acumulado".
 function construirCajasResultados(sorteos, guardados) {
   const porFecha = {};
-  for (const g of (Array.isArray(guardados) ? guardados : [])) if (g && g.fecha) porFecha[g.fecha] = g.texto || '';
+  for (const g of (Array.isArray(guardados) ? guardados : [])) if (g && g.fecha) porFecha[g.fecha] = g;
   return (sorteos || []).slice()
     .sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)))
-    .map(s => ({ fecha: s.fecha, titulo: `${s.titulo} — ${etiquetaFecha(s.fecha)}`, texto: porFecha[s.fecha] || '' }));
+    .map(s => {
+      const g = porFecha[s.fecha] || {};
+      return {
+        fecha: s.fecha,
+        titulo: `${s.titulo} — ${etiquetaFecha(s.fecha)}`,
+        numero: g.numero || '',
+        nombre: g.nombre || '',
+        ciudad: g.ciudad || '',
+        acumulado: !!g.acumulado,
+        acumulado_monto: g.acumulado_monto || '',
+      };
+    });
 }
 
 export default async function handler(req, res) {
@@ -154,13 +166,21 @@ export default async function handler(req, res) {
         if (/^\w{1,40}$/.test(k)) variables[k] = String(val == null ? '' : val).slice(0, 4000);
       }
       // Ganadores de los sorteos: se guardan por FECHA (la casilla/título sale de la rifa).
-      // Solo se persisten los que tienen ganador escrito; vacío = aún no se ha jugado.
+      // Campos exactos: número, nombre, ciudad; o el interruptor "acumulado" (+ monto opcional).
+      // Solo se persisten los que tienen algún dato; vacío = aún no se ha jugado.
       const resultados = [];
       const resIn = Array.isArray(req.body.resultados) ? req.body.resultados : [];
       for (const r of resIn.slice(0, 60)) {
         const fecha = String(r?.fecha || '').trim().slice(0, 20);
-        const texto = String(r?.texto || '').trim().slice(0, 2000);
-        if (fecha && texto) resultados.push({ fecha, texto });
+        if (!fecha) continue;
+        const numero = String(r?.numero || '').trim().slice(0, 40);
+        const nombre = String(r?.nombre || '').trim().slice(0, 120);
+        const ciudad = String(r?.ciudad || '').trim().slice(0, 120);
+        const acumulado = !!r?.acumulado;
+        const acumulado_monto = String(r?.acumulado_monto || '').trim().slice(0, 60);
+        if (numero || nombre || ciudad || acumulado) {
+          resultados.push({ fecha, numero, nombre, ciudad, acumulado, acumulado_monto });
+        }
       }
       await asegurarConfig(linea_id);   // garantiza que la fila exista
       const { data, error } = await supabaseAdmin

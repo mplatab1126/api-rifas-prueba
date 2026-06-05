@@ -424,15 +424,22 @@
     .ag-save:hover { background: var(--mint-light); }
     .ag-savemsg { margin-left: 12px; font-size: 0.82rem; color: #1c7a37; }
     /* Casillas de resultados de los sorteos */
-    .ag-res { border: 1px solid var(--gray-200); border-radius: 12px; padding: 12px; margin-bottom: 10px; background: var(--cream-50); }
-    .ag-res-titfijo { font-weight: 600; font-size: 0.9rem; color: var(--ink); margin-bottom: 8px; }
-    .ag-res-top { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
-    .ag-res-titulo { flex: 1; margin-bottom: 0 !important; font-weight: 600; }
-    .ag-res-texto { width: 100%; min-height: 58px; resize: vertical; margin-bottom: 0 !important; }
-    .ag-res-del { flex-shrink: 0; width: 34px; height: 34px; border: 1px solid var(--gray-200); background: #fff; border-radius: 9px; color: var(--ink-mute); cursor: pointer; font-size: 0.9rem; }
-    .ag-res-del:hover { color: var(--danger); background: #fdecec; border-color: #f3c9c9; }
-    .ag-ghost { margin: 2px 0 10px; padding: 9px 16px; border: 1px dashed var(--gray-300); background: #fff; border-radius: 10px; font-family: inherit; font-size: 0.84rem; font-weight: 600; color: var(--ink); cursor: pointer; }
-    .ag-ghost:hover { background: var(--cream-50); border-color: var(--ink-mute); }
+    .ag-res { border: 1px solid var(--gray-200); border-radius: 12px; margin-bottom: 10px; background: var(--cream-50); overflow: hidden; }
+    .ag-res-head { width: 100%; display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: none; border: none; cursor: pointer; font-family: inherit; text-align: left; }
+    .ag-res-head:hover { background: var(--cream-100); }
+    .ag-res-titfijo { flex: 1; font-weight: 600; font-size: 0.9rem; color: var(--ink); }
+    .ag-res-chip { flex-shrink: 0; font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 100px; white-space: nowrap; max-width: 240px; overflow: hidden; text-overflow: ellipsis; }
+    .ag-res-chip.vacio { background: var(--gray-100); color: var(--gray-400); }
+    .ag-res-chip.ok { background: #dff7e4; color: #1c7a37; }
+    .ag-res-chip.acum { background: #fdf4d3; color: #6b541a; }
+    .ag-res-chevron { flex-shrink: 0; color: var(--ink-mute); font-size: 0.8rem; transition: transform .15s; }
+    .ag-res.abierta .ag-res-chevron { transform: rotate(180deg); }
+    .ag-res-body { display: none; padding: 0 14px 14px; }
+    .ag-res.abierta .ag-res-body { display: block; }
+    .ag-res-acum { display: flex; align-items: center; gap: 9px; font-size: 0.85rem; color: var(--ink-soft); margin: 4px 0 12px; cursor: pointer; }
+    .ag-res-acum input { width: 18px; height: 18px; flex-shrink: 0; cursor: pointer; }
+    .ag-res-ganador { display: flex; flex-direction: column; gap: 8px; }
+    .ag-res-ganador .cc-input, .ag-res-monto .cc-input { margin-bottom: 0; }
     .ag-tools { display: flex; flex-direction: column; }
     .ag-tool { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-top: 1px solid var(--gray-100); }
     .ag-tool:first-child { border-top: none; }
@@ -1814,11 +1821,15 @@ function agCapturarForm(){
   if($('agPagos')) agData.config.variables = Object.assign({}, agData.config.variables, { pagos: $('agPagos').value });
   if($('agResLista')){
     // El título/fecha de cada casilla vienen del calendario de la rifa (no se editan); solo
-    // capturamos el ganador que escribió el asesor. La fecha es la llave para guardarlo.
+    // capturamos los datos del ganador. La fecha es la llave para guardarlos.
     agData.config.resultados = [...document.querySelectorAll('#agResLista .ag-res')].map(row => ({
       fecha: row.getAttribute('data-fecha') || '',
       titulo: row.getAttribute('data-titulo') || '',
-      texto: (row.querySelector('.ag-res-texto') || {}).value || '',
+      numero: (row.querySelector('.ag-res-f-numero') || {}).value || '',
+      nombre: (row.querySelector('.ag-res-f-nombre') || {}).value || '',
+      ciudad: (row.querySelector('.ag-res-f-ciudad') || {}).value || '',
+      acumulado: !!(row.querySelector('.ag-res-f-acumulado') || {}).checked,
+      acumulado_monto: (row.querySelector('.ag-res-f-monto') || {}).value || '',
     }));
   }
 }
@@ -1850,11 +1861,34 @@ function pintarAgente(){
     : '<div class="ag-empty">Aún no hay actividad. Cuando el agente empiece a trabajar, aquí verás cada acción y a qué hora la hizo.</div>';
 
   const resultados = Array.isArray(c.resultados) ? c.resultados : [];
-  const resRows = resultados.map(r => `
+  const resRows = resultados.map(r => {
+    const lleno = r.acumulado || r.numero || r.nombre || r.ciudad;
+    const chip = r.acumulado ? 'Acumulado'
+               : (lleno ? (esc(r.numero||'') + (r.nombre ? ' · ' + esc(r.nombre) : '')) : 'Sin jugar');
+    const chipClase = r.acumulado ? 'acum' : (lleno ? 'ok' : 'vacio');
+    return `
       <div class="ag-res" data-fecha="${esc(r.fecha||'')}" data-titulo="${esc(r.titulo||'')}">
-        <div class="ag-res-titfijo">${esc(r.titulo||'')}</div>
-        <textarea class="cc-input ag-res-texto" placeholder="Escribe el ganador (déjalo vacío si aún no se ha jugado). Ej: 15-22, ganó María Elena de Chinchiná.">${esc(r.texto||'')}</textarea>
-      </div>`).join('');
+        <button type="button" class="ag-res-head" onclick="agResToggle(this)">
+          <span class="ag-res-titfijo">${esc(r.titulo||'')}</span>
+          <span class="ag-res-chip ${chipClase}">${chip}</span>
+          <span class="ag-res-chevron">▾</span>
+        </button>
+        <div class="ag-res-body">
+          <label class="ag-res-acum">
+            <input type="checkbox" class="ag-res-f-acumulado" ${r.acumulado?'checked':''} onchange="agResAcum(this)">
+            <span>Ya jugó, pero <b>nadie ganó</b> (se acumuló para el próximo)</span>
+          </label>
+          <div class="ag-res-monto" ${r.acumulado?'':'style="display:none"'}>
+            <input class="cc-input ag-res-f-monto" placeholder="Premio que se acumula para el próximo (opcional). Ej: $10.000.000" value="${esc(r.acumulado_monto||'')}">
+          </div>
+          <div class="ag-res-ganador" ${r.acumulado?'style="display:none"':''}>
+            <input class="cc-input ag-res-f-numero" placeholder="Número ganador (ej: 7324)" value="${esc(r.numero||'')}">
+            <input class="cc-input ag-res-f-nombre" placeholder="Nombre del ganador (ej: Marta Atehortúa)" value="${esc(r.nombre||'')}">
+            <input class="cc-input ag-res-f-ciudad" placeholder="Ciudad del ganador (ej: Zona Bananera)" value="${esc(r.ciudad||'')}">
+          </div>
+        </div>
+      </div>`;
+  }).join('');
 
   $('agBody').innerHTML = `
     <div class="ag-card">
@@ -1927,6 +1961,16 @@ async function agGuardar(silencioso){
   }
 }
 
+
+// Desplegar / contraer una casilla de resultado.
+window.agResToggle = function(btn){ const b = btn.closest('.ag-res'); if(b) b.classList.toggle('abierta'); };
+// Interruptor "acumulado": muestra el campo de monto y oculta los del ganador (o al revés).
+window.agResAcum = function(chk){
+  const box = chk.closest('.ag-res'); if(!box) return;
+  const acum = chk.checked;
+  const monto = box.querySelector('.ag-res-monto'); if(monto) monto.style.display = acum ? '' : 'none';
+  const gan = box.querySelector('.ag-res-ganador'); if(gan) gan.style.display = acum ? 'none' : '';
+};
 
 /* ── Probador del agente (simulador) ───────────────────────────────────────
    NO envía nada por WhatsApp: corre el prompt actual contra los mensajes de
