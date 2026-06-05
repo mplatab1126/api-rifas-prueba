@@ -86,6 +86,7 @@ Tablas y columnas del **Agente de IA** (ver §8):
 - **`recordatorios`** (seguimiento automático del agente, <24h — ver §8.12): `(id uuid, linea_id, telefono, conversacion_id uuid→conversaciones_whatsapp [cascade], programado_para, motivo, ultimo_msg_cliente_at, estado [pendiente|enviado|cancelado|fallido], creado_por, intentos, created_at, enviado_at)`. Índice parcial `(programado_para) where estado='pendiente'` (el cron lee SOLO los vencidos, no toda la tabla → escala) y `(linea_id, telefono) where estado='pendiente'` (cancelar al instante cuando el cliente vuelve a escribir). **HECHO** (jun-2026): tabla + cron (`recordatorios-cron.js` con `pg_cron` cada minuto) + herramienta `programar_recordatorio` + auto-cancelación en `recibir.js`. Detalle en §8.15.
 - **`agente_qa_estado`** (supervisor del agente — ver §8.18): `(linea_id pk, ultimo_revisado_at, actualizado_at)`. Marca de agua: hasta qué momento ya revisó el supervisor, para no re-reportar los mismos errores.
 - **`agente_sugerencias`** (ciclo de mejora — ver §8.18): `(id uuid, linea_id, cliente, error, regla, estado [nuevo|aplicado|descartado], created_at, resuelto_at, resuelto_por)`. El supervisor guarda aquí cada error + la REGLA propuesta; Mateo las aplica (se agregan al manual) o descarta desde la cabina.
+- **`disparadores`** (palabras clave que prenden el agente — ver §8.19): `(id uuid, linea_id, palabra, activo, created_at)`. Si un mensaje entrante contiene una `palabra` activa, `recibir.js` prende el agente en ese chat.
 - Nuevas columnas en **`conversaciones_whatsapp`**: `agente_activo` (bool, el botón 🤖 prende el agente en ese chat) y `agente_procesando_at` (timestamp, el candado anti-mensaje-doble).
 - Nueva columna en **`mensajes_whatsapp`**: `responde_a` (id/wa del mensaje citado, para mostrar la cita). Las **notas** del agente se guardan aquí mismo con `direccion='nota'`.
 
@@ -112,6 +113,7 @@ Tablas y columnas del **Agente de IA** (ver §8):
 - **`agente-responder.js`** — **MOTOR** del agente (el que de verdad responde). Lo dispara el webhook (o el cron de recordatorios). Conversa con Claude usando las **13 herramientas**, **VE las imágenes** del cliente, le inyecta el **estado del cliente**, sus **acciones ya hechas** y los **resultados de los sorteos** (calendario de la rifa + ganadores), junta los mensajes en ráfaga (**debounce ~7s**), lee el historial **desde el inicio de la rifa activa**, rellena las **variables** del prompt (`{{nombre}}`/`{{pagos}}` con `aplicarVariables`), transcribe audios con Whisper, deja notas y tiene candado anti-duplicado. También atiende el disparo por **recordatorio** (`{recordatorio:{motivo}}`, §8.15). El supervisor Opus quedó **desactivado** (§8.5). **Es el archivo más importante del agente; detalle en §8.**
 - **`recibir.js`** (webhook) ahora, además de guardar el mensaje, **dispara el motor** si el agente está activo (`dispararAgenteSiActivo` → `fetch` al motor con el secreto interno y corte a 1.5s), **cancela los recordatorios pendientes** del chat cuando el cliente vuelve a escribir (`cancelarRecordatorios`, ver §8.15) y captura la **cita** (`m.context.id → responde_a`).
 - **`recordatorios-cron.js`** — el **relojito** de los recordatorios del agente (§8.15). Lo llama `pg_cron` de Supabase cada minuto (con el secreto interno); busca los recordatorios vencidos, los reclama en atómico (sin doble disparo) y despierta el motor del agente para el seguimiento.
+- **`disparadores.js`** — administra las palabras clave que prenden el agente (§8.19). SOLO Mateo (`esMateo`). Acciones: `listar`, `crear`, `eliminar`, `toggle`. El disparo real lo hace `recibir.js` (`activarPorDisparador`): si un mensaje entrante contiene una palabra activa y el chat no está en manos de un humano ni la línea apagada, pone `agente_activo=true`.
 - **`qa-agente-cron.js`** — el **supervisor** del agente (§8.18). `pg_cron` cada 5 min; revisa los chats con etiqueta AGENTE, le pasa lo NUEVO a Claude junto con el manual del agente para detectar errores, y si los hay le manda un resumen a Mateo por WhatsApp. Usa la marca de agua `agente_qa_estado` para no repetir.
 - **libs**: `lib/whatsapp.js` (`resolverLinea`, `enviarTexto`, `enviarImagen`, `enviarImagenPorId`, `subirMediaDesdeBuffer` [subir foto/PDF desde bytes, lo usa `enviar-archivo.js`], `enviarDocumento` [PDF de la resolución], `enviarDocumentoPorId`, `descargarMediaBase64`, `configWhatsapp`), `lib/comprobante.js` (`extraerDatos` — lee comprobante con Claude, solo lectura), `lib/asesores.js` (`esGerencia`, `esMateo` [agente solo-Mateo], `lineasDeAsesor`, `puedeVerLinea`; **GERENCIA = ['mateo','alejo plata']**, editable ahí). El motor reusa además `lib/numeros-disponibles.js`.
 
@@ -511,6 +513,19 @@ Un "vigilante" que revisa al agente y le avisa a Mateo los errores. (jun-2026.)
 - **Ajustables (constantes en `qa-agente-cron.js`):** la línea, el número de Mateo, la etiqueta
   (`AGENTE`) y el modelo. Pendiente al escalar: usar plantilla para que el reporte llegue siempre
   (sin depender de la ventana de 24h) y, si se vigilan muchos chats, paginar/limitar por corrida.
+
+### 8.19 Disparadores (palabras clave que prenden el agente) — HECHO
+Como los disparadores de ChateaPro. Menú **Disparadores** (bajo "Inteligencia", **solo Mateo**).
+- **Qué hace:** Mateo guarda palabras/frases clave por línea (tabla `disparadores`). Cuando entra un
+  mensaje del cliente que **contiene** una de ellas (sin distinguir mayúsculas), `recibir.js`
+  (`activarPorDisparador`) **prende el agente** en ese chat (`agente_activo=true`, `estado='bot'`) y
+  el webhook lo dispara de una.
+- **Candados:** NO se auto-prende si el agente ya estaba activo, si un **humano** tomó el chat
+  (`estado='humano'`), o si la **línea está en Apagado**. El **Modo sombra** se respeta (el motor
+  redacta pero no envía), así que con la línea en sombra es seguro para probar.
+- **Cabina:** lista para agregar palabra, prender/apagar cada una (interruptor) y eliminar
+  (`disparadores.js` + módulo `#modDisparadores`). Se sembró una de ejemplo: "quiero más información"
+  (el mensaje con que llegan los clientes del anuncio de Meta).
 
 ## 9. Pendientes / próximos pasos
 - **Agente de IA** → **HECHO** (ver §8); pendientes propios del agente en §8.12.
