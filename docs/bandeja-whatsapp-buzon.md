@@ -395,6 +395,46 @@ mano; salen **solas del calendario de la rifa**, y él solo llena el ganador.
   cliente pregunta**. Así nunca muestra sorteos de otra rifa.
 - El ganador es por línea hoy (vive en `agente_config`); el calendario es global (vive en la rifa).
 
+### 8.17 Auditoría pre-lanzamiento (jun-2026): qué arreglar antes de soltar con clientes reales
+Antes de soltar el agente se hizo una **auditoría adversarial** (4 revisores sobre el código real).
+**Veredicto: NO hay bloqueantes** para un piloto SUPERVISADO de 2 clientes; sí hay arreglos recomendados.
+
+**Lo que YA está bien blindado (confirmado):** no abona de más (usa el monto REAL del banco, sin
+`permitirExceso`), no registra el mismo pago dos veces (candado por `idTransferencia` en `abono.js`),
+no libera/traslada boletas ajenas (liberar exige dueño+$0; trasladar exige misma persona), candado
+anti-doble-mensaje (`agente_procesando_at`), reintento de Meta no duplica (upsert por `wa_message_id`),
+y `pasar_a_humano` apaga bien.
+
+**Arreglar ANTES de soltar (recomendado, no bloqueante para 2 clientes):**
+- **"Modo sombra" y estado de línea son DECORATIVOS:** el motor solo mira `conv.agente_activo`,
+  NUNCA lee `agente_config.estado`. No existe modo sombra real ni apaga-todo → da falsa seguridad.
+  Lo ideal: implementar **modo sombra de verdad** (el motor genera y deja la respuesta como nota 🤖,
+  pero NO la envía ni ejecuta acciones) — es el mejor camino para "ver errores sin riesgo".
+- **No hay botón de pánico de línea/global:** reusar la tabla `configuracion` (patrón del modo
+  Pendiente) para un interruptor global que el motor revise al inicio.
+- **Apagar un chat NO frena la corrida en curso** (~60s de inercia): el motor lee `agente_activo`
+  una sola vez (línea ~627) → releerlo antes de cada envío/acción de plata.
+- **Cruce de comprobante por "mismo minuto"** (`buscar-pago.js` estrategia 4): dos pagos del mismo
+  monto el mismo minuto pueden cruzarse (la plata cae en la boleta correcta, pero consume el
+  comprobante ajeno y descuadra la conciliación). → exigir referencia o celular, o pasar a humano si
+  solo coincide el minuto.
+- **Identificación por ÚLTIMOS 10 DÍGITOS** puede mezclar 2 clientes (hay teléfonos guardados con
+  9/10/13 dígitos; la cola `4655028879` ya agrupa 2). Afecta saludo, `enviar_boleta` y a qué boleta
+  abona. → para el piloto, elegir clientes con número normal de 12 dígitos y ficha sin choque; a
+  futuro comparar por teléfono COMPLETO normalizado.
+- **Contenido editable:** actualizar la sección "DATOS DE LA RIFA ACTUAL" del libreto (el Sueldazo
+  del 3 jun ya pasó) y confirmar los resultados de los sorteos.
+
+**Vigilar DURANTE el piloto:** las notas 🤖 dentro de cada chat (no hay registro central —
+`agente_actividad` nunca se llena); si el agente se queda mudo (lock trabado si la función se pasa de
+60s → baja el tope del debounce o el expira del lock); recordatorio que se marca `enviado` aunque no
+alcance a escribir; Whisper/descarga de media que fallan en silencio (respuestas "a ciegas").
+
+**Para cuando ESCALE (más clientes, sin supervisión):** arreglar la carrera de la reserva (UPDATE
+condicional en `reservar.js`), llenar `agente_actividad` para tener un tablero central, reconsiderar
+el supervisor Opus para `registrar_abono`, proteger el link público de boleta, y que
+`consultar_cliente` ignore el teléfono ajeno (forzar el del chat).
+
 ## 9. Pendientes / próximos pasos
 - **Agente de IA** → **HECHO** (ver §8); pendientes propios del agente en §8.12.
 - ~~Difusiones / broadcasts (con plantillas aprobadas por Meta)~~ → **HECHO** (menú Difusiones: Plantillas + Campañas). Pendiente de pulir: más filtros de audiencia, programar envíos (cron), pegar lista propia de números, y para audiencias muy grandes (decenas de miles) mover el "preparar" a un proceso en segundo plano.
