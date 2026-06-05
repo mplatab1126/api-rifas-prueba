@@ -16,6 +16,16 @@ import { configWhatsapp, enviarTexto } from '../lib/whatsapp.js';
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const MODELO = 'claude-sonnet-4-6';
+
+// "2026-07-04" → "sábado 4 de julio" (día de semana calculado por código, sin líos de zona horaria).
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+function etiquetaFecha(iso) {
+  const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return '';
+  const y = +m[1], mo = +m[2], d = +m[3];
+  return `${DIAS[new Date(Date.UTC(y, mo - 1, d)).getUTCDay()]} ${d} de ${MESES[mo - 1] || ''}`;
+}
 const LINEA = '1128258647034751';        // línea de Lili (de donde se envía y donde está la etiqueta)
 const REPORTE_A = '573123354789';         // WhatsApp de Mateo (debe tener ventana de 24h abierta con la línea)
 const ETIQUETA = 'AGENTE';
@@ -99,15 +109,28 @@ export default async function handler(req, res) {
     return res.status(200).json({ status: 'ok', sin_actividad_nueva: true });
   }
 
-  // 5) Manual del agente (para que el revisor juzgue si lo siguió).
+  // 5) Manual del agente (para que el revisor juzgue si lo siguió) + calendario con fechas correctas.
   const { data: cfg } = await supabase.from('agente_config').select('prompt').eq('linea_id', LINEA).maybeSingle();
   const libreto = (cfg && cfg.prompt) || '(sin manual)';
+
+  // Calendario de sorteos con el día de la semana YA calculado, para que el supervisor cache los
+  // errores de fecha de Liliana (ej. decir "sábado 7 de junio" cuando el 7 es domingo).
+  const { data: rif } = await supabase.from('rifas').select('sorteos').eq('estado', 'activa')
+    .order('fecha_inicio', { ascending: false }).limit(1);
+  const sorteos = (rif && rif[0] && Array.isArray(rif[0].sorteos)) ? rif[0].sorteos : [];
+  const hoyCol = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
+  const bloqueFechas = sorteos.length
+    ? '\n\nFECHAS CORRECTAS (calculadas por código; si Liliana dice un día de la semana o una fecha que NO coincide con estas, es un ERROR y debes reportarlo):\n' +
+      '- Hoy es ' + etiquetaFecha(hoyCol) + '.\n' +
+      sorteos.slice().sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)))
+        .map(s => '- ' + String(s.titulo || 'Sorteo').trim() + ' — ' + etiquetaFecha(s.fecha)).join('\n') + '\n'
+    : '';
 
   // 6) Revisión con Claude.
   const system =
     'Eres un SUPERVISOR DE CALIDAD del agente de ventas por WhatsApp llamado Liliana (rifa colombiana "Los Plata"). ' +
     'Tu trabajo es detectar ERRORES que cometió Liliana, para avisarle al dueño (Mateo).\n\n' +
-    'Este es el MANUAL que Liliana DEBE seguir:\n"""\n' + libreto + '\n"""\n\n' +
+    'Este es el MANUAL que Liliana DEBE seguir:\n"""\n' + libreto + '\n"""\n' + bloqueFechas + '\n' +
     'Te paso varias conversaciones en orden. Los mensajes marcados [NUEVO] son los recientes aún sin revisar: CONCÉNTRATE en esos.\n' +
     'MUY IMPORTANTE — quién dijo cada cosa:\n' +
     '- "Liliana:" = el agente (lo que TÚ debes evaluar).\n' +

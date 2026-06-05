@@ -840,6 +840,17 @@ export default async function handler(req, res) {
         sorteosOrden.map(s => `- ${String(s.titulo || 'Sorteo').trim()} — ${etiquetaFecha(s.fecha)}: ${describirResultado(datosPorFecha[s.fecha])}`).join('\n')
       : '';
 
+    // FECHAS ya calculadas por código (los modelos se equivocan con los días de la semana).
+    const hoyCol = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });   // YYYY-MM-DD
+    const proximo = sorteosOrden.find(s => String(s.fecha) >= hoyCol);
+    const bloqueFechas = sorteosOrden.length
+      ? '\n\n---\nFECHAS EXACTAS (ya calculadas; ÚSALAS TAL CUAL. NUNCA calcules tú el día de la semana de una fecha, ni digas "este sábado" con una fecha que no esté aquí):\n' +
+        '- Hoy es ' + etiquetaFecha(hoyCol) + '.\n' +
+        (proximo ? '- El PRÓXIMO sorteo es: ' + String(proximo.titulo).trim() + ' — ' + etiquetaFecha(proximo.fecha) + '.\n' : '') +
+        '- Calendario de sorteos de esta rifa:\n' +
+        sorteosOrden.map(s => '   · ' + String(s.titulo || 'Sorteo').trim() + ' — ' + etiquetaFecha(s.fecha)).join('\n')
+      : '';
+
     const system = prompt +
       `\n\n---\nCONTEXTO (no lo menciones literalmente): hoy es ${contextoFechaHora()} (Colombia). ` +
       `Hablas por WhatsApp con el cliente cuyo número es ${conv.telefono}. ` +
@@ -856,7 +867,8 @@ export default async function handler(req, res) {
       (yaHuboSalientes
         ? `\n\n---\nESTE CHAT YA TIENE MENSAJES PREVIOS (un asesor lo atendió a mano o ya te presentaste). NO uses enviar_contacto_inicial, NO te vuelvas a presentar y NO repitas información ya enviada. Lee TODO el historial y CONTINÚA desde donde quedó, respondiendo lo ÚLTIMO que preguntó el cliente.`
         : '') +
-      bloqueResultados;
+      bloqueResultados +
+      bloqueFechas;
 
     const messages = construirMensajes(reales, imagenesVistas);
     // Disparo por RECORDATORIO: no hay mensaje nuevo del cliente; le inyectamos una nota
