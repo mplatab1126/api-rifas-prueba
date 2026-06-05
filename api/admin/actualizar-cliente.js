@@ -15,8 +15,11 @@ export default async function handler(req, res) {
 
   // Validación defensiva: no dejar que se actualice el cliente si el teléfono está corrupto.
   // NO lo limpiamos aquí porque cambiaría la clave primaria de la tabla clientes.
-  if (!esTelefonoValido(telefono)) {
-    return res.status(400).json({ status: 'error', mensaje: `🚫 El teléfono "${telefono}" no es válido (debe ser 12 dígitos: 57 + celular colombiano que empieza con 3). Corrígelo antes de guardar.` });
+  // Aceptamos celular colombiano (esTelefonoValido) O un número internacional de 7 a 15 dígitos
+  // (el sistema vende a clientes de cualquier país; el número es el de su WhatsApp).
+  const soloDigitos = String(telefono).replace(/\D/g, '');
+  if (!esTelefonoValido(telefono) && (soloDigitos.length < 7 || soloDigitos.length > 15)) {
+    return res.status(400).json({ status: 'error', mensaje: `🚫 El teléfono "${telefono}" no es válido (debe tener entre 7 y 15 dígitos, incluyendo el código del país).` });
   }
 
   // La tabla clientes exige que estos campos no estén vacíos.

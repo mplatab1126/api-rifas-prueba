@@ -431,6 +431,16 @@ y `pasar_a_humano` apaga bien.
 - **Anti-mute:** debounce bajado a 12s y candado se recupera a los 30s (antes 20s/45s).
 - **`pasar_a_humano` cancela** el recordatorio pendiente del chat.
 
+**Errores corregidos en la 1ª prueba real (jun-2026, chats con etiqueta AGENTE):**
+- **Teléfono internacional:** la boleta se aparta/actualiza con el WhatsApp del chat **de cualquier
+  país**. Antes `reservar.js` exigía número colombiano y el agente le pedía otro número al cliente
+  (caso Polo, +507). Arreglo: `apartar_numero` llama a `reservar.js` con `esColombia:false` (camino
+  internacional), y `actualizar-cliente.js` acepta 7–15 dígitos. **Regla en el libreto:** registrar
+  SIEMPRE con el número de WhatsApp del chat; NUNCA pedir otro.
+- **"Todos los sábados $20.000.000":** el agente generalizaba el acumulado del próximo sorteo a todos.
+  **Regla en el libreto:** el premio BASE de cada sábado es $5.000.000; el acumulado aplica SOLO al
+  próximo. (Ambas reglas en una sección "CORRECCIONES IMPORTANTES" al final del prompt en la BD.)
+
 **Falta hacer ANTES de soltar (lo hace Mateo, es contenido):** actualizar la sección "DATOS DE LA RIFA
 ACTUAL" del libreto (el Sueldazo del 3 jun ya pasó) y confirmar los resultados de los sorteos.
 

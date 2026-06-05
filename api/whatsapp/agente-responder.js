@@ -402,7 +402,9 @@ async function ejecutarHerramienta(nombre, input, conv) {
     if (!/^\d{4}$/.test(num) || !nom || !ape || !ciu) {
       return 'Faltan datos para apartar. Necesito el número de 4 cifras, nombre, apellido y ciudad del cliente. Pídeselos antes de apartar.';
     }
-    const cuerpo = { numeros: [num], nombre: nom, apellido: ape, ciudad: ciu, telefono: conv.telefono };
+    // La boleta SIEMPRE se registra con el número de WhatsApp del chat, sea del país que sea
+    // (esColombia:false usa el camino internacional de reservar.js: no exige número colombiano).
+    const cuerpo = { numeros: [num], nombre: nom, apellido: ape, ciudad: ciu, telefono: conv.telefono, esColombia: false };
     if (doc) { cuerpo.documento_tipo = 'CC'; cuerpo.documento_numero = doc; }
     if (cor) cuerpo.correo = cor;
     const d = await llamarApi('/api/rifa/reservar', cuerpo);
