@@ -110,7 +110,7 @@ Tablas y columnas del **Agente de IA** (ver §8):
 - **`difusiones.js`** — campañas. Acciones: `listar`, `crear`/`editar`, `eliminar`, `preparar` (calcula audiencia y llena la cola), `estado` (progreso), `enviar-lote` (manda un lote y devuelve avance), `cancelar`, `prueba` (un envío a un número). En `lib/whatsapp.js` se agregaron `construirComponentesPlantilla`, `crearPlantillaMeta`, `listarPlantillasMeta`, `eliminarPlantillaMeta`, `enviarPlantilla`; y `resolverLinea` ahora devuelve también `wabaId`.
 - **`respuestas-rapidas.js`** — respuestas rápidas (tabla `respuestas_rapidas`, columna `pasos` jsonb). Acciones: `listar`, `crear`, `editar`, `eliminar`, y **`enviar`** (manda todos los pasos del flujo en orden y los guarda en el chat). Reusa `enviarTexto`/`enviarImagen` de `lib/whatsapp.js`.
 - **`agente.js`** — **cabina** del agente (SOLO Mateo, `esMateo`). NO conversa con clientes; solo LEE/GUARDA su configuración por línea. Acciones: `config` (siembra config + las **13 herramientas** la 1ª vez —y **rellena solas** las nuevas en líneas que ya existían—, arma las **casillas de resultados** desde el calendario de la rifa activa, y trae la actividad), `guardar` (estado/nombre/prompt/modelo/**variables**/**resultados** [ganadores por fecha]), `herramienta` (prende/apaga una acción), `activar_conversacion` (el botón 🤖: `agente_activo`+`estado='bot'`), `sugerencias`/`aplicar_sugerencia`/`descartar_sugerencia` (ciclo de mejora, §8.18: aplicar agrega la regla al `prompt`), `probar` (simulador que NO toca WhatsApp; ya casi no se usa).
-- **`agente-responder.js`** — **MOTOR** del agente (el que de verdad responde). Lo dispara el webhook (o el cron de recordatorios). Conversa con Claude usando las **13 herramientas**, **VE las imágenes** del cliente, le inyecta el **estado del cliente**, sus **acciones ya hechas** y los **resultados de los sorteos** (calendario de la rifa + ganadores), junta los mensajes en ráfaga (**debounce ~4s**, tope 8s), lee el historial **desde el inicio de la rifa activa**, rellena las **variables** del prompt (`{{nombre}}`/`{{pagos}}` con `aplicarVariables`), transcribe audios con Whisper, deja notas y tiene candado anti-duplicado. También atiende el disparo por **recordatorio** (`{recordatorio:{motivo}}`, §8.15). El supervisor Opus quedó **desactivado** (§8.5). **Es el archivo más importante del agente; detalle en §8.**
+- **`agente-responder.js`** — **MOTOR** del agente (el que de verdad responde). Lo dispara el webhook (o el cron de recordatorios). Conversa con Claude usando las **13 herramientas**, **VE las imágenes** del cliente, le inyecta el **estado del cliente**, sus **acciones ya hechas** y los **resultados de los sorteos** (calendario de la rifa + ganadores), junta los mensajes en ráfaga (**debounce 30s**, refresca el candado), lee el historial **desde el inicio de la rifa activa**, rellena las **variables** del prompt (`{{nombre}}`/`{{pagos}}` con `aplicarVariables`), transcribe audios con Whisper, deja notas y tiene candado anti-duplicado. También atiende el disparo por **recordatorio** (`{recordatorio:{motivo}}`, §8.15). El supervisor Opus quedó **desactivado** (§8.5). **Es el archivo más importante del agente; detalle en §8.**
 - **`recibir.js`** (webhook) ahora, además de guardar el mensaje, **dispara el motor** si el agente está activo (`dispararAgenteSiActivo` → `fetch` al motor con el secreto interno y corte a 1.5s), **cancela los recordatorios pendientes** del chat cuando el cliente vuelve a escribir (`cancelarRecordatorios`, ver §8.15) y captura la **cita** (`m.context.id → responde_a`).
 - **`recordatorios-cron.js`** — el **relojito** de los recordatorios del agente (§8.15). Lo llama `pg_cron` de Supabase cada minuto (con el secreto interno); busca los recordatorios vencidos, los reclama en atómico (sin doble disparo) y despierta el motor del agente para el seguimiento.
 - **`disparadores.js`** — administra las palabras clave que prenden el agente (§8.19). SOLO Mateo (`esMateo`). Acciones: `listar`, `crear`, `eliminar`, `toggle`. El disparo real lo hace `recibir.js` (`activarPorDisparador`): si un mensaje entrante contiene una palabra activa y el chat no está en manos de un humano ni la línea apagada, pone `agente_activo=true`.
@@ -280,6 +280,13 @@ número que ya había revisado).
   agente en un chat (botón 🤖 o por disparador) se le pone la etiqueta **AGENTE**; cuando el agente
   **pasa a un humano** o **no encuentra el pago real** de un comprobante, se le pone **ASESOR**. Crean
   la etiqueta si no existe. (AGENTE = lo que revisa el supervisor; ASESOR = chats que necesitan persona.)
+- **Liliana no ve los chats que atiende el agente** (jun-2026): si el asesor es **Liliana** y el
+  interruptor está activo, `conversaciones.js` le oculta los chats con `agente_activo=true` (filtro en
+  el servidor: `agente_activo is null or false`). Cuando el agente le ENTREGA un chat
+  (`pasar_a_humano` → `agente_activo=false`), ella SÍ lo ve. El interruptor es global, en la tabla
+  `configuracion` (clave `ocultar_agente_liliana`), y se prende/apaga desde un **switch en la cabina**
+  ("Privacidad de Liliana"). Se usa `agente_activo`, NO la etiqueta AGENTE (que es permanente y
+  ocultaría también los chats ya entregados). Default: activo.
 - **Marca "🤖 Liliana" en el chat**: las burbujas que envió el AGENTE muestran "🤖 Liliana" arriba,
   para distinguirlas a la vista de las de un asesor humano. El dato sale de `raw.agente=true`;
   `mensajes.js` lo expone como `por_agente` (sin mandar el `raw` completo al navegador).
@@ -341,8 +348,10 @@ comportamiento. Todo vive en `agente-responder.js` (motor) y en el `prompt` (lib
 - **No narra el proceso**: ya no manda "voy a verificar...", "un momento...". El motor **suprime
   el texto que acompaña a una herramienta** y solo envía el mensaje final con el resultado.
 - **No pregunta lo que ya sabe** (regla dura + el estado del cliente le muestra el dato).
-- **Juntar mensajes (debounce)**: si el cliente escribe en ráfaga, el motor **espera ~4s de
-  silencio desde su ÚLTIMO mensaje** (cada mensaje nuevo reinicia el conteo, tope 8s) y junta
+- **Juntar mensajes (debounce)**: si el cliente escribe en ráfaga, el motor **espera 30s de
+  silencio desde su ÚLTIMO mensaje** (cada mensaje nuevo reinicia el conteo; tope invisible de 4 min,
+  que ningún cliente real alcanza; `maxDuration` del motor subido a 300s). Durante la espera **refresca
+  el candado cada ≤3s** para que no se venza y arranque otra corrida (evita respuesta/abono doble). Junta
   todo en UNA respuesta. Solo en el disparo del webhook; en prueba manual responde de una. Resuelve
   el viejo dolor de "agrupar mensajes" de ChateaPro/Manychat.
 - **Memoria por RIFA, no por nº de mensajes**: lee el historial **desde la `fecha_inicio` de la
@@ -446,7 +455,7 @@ y `pasar_a_humano` apaga bien.
   `agente_actividad`, así la cabina deja de salir vacía.
 - **`consultar_cliente` forzado al teléfono del chat** (privacidad: el cliente no puede pedir datos de
   otro número).
-- **Anti-mute / más rápido:** debounce **4s (tope 8s)** y candado se recupera a los 30s. La espera larga (12s) hacía que, al activar, la respuesta tardara ~20s cuando salía por el webhook.
+- **Contador de respuesta (debounce) = 30s** (decisión de Mateo, jun-2026): espera 30s de silencio desde el último mensaje del cliente, se reinicia con cada mensaje, sin tope práctico (4 min invisible). El candado se refresca cada ≤3s durante la espera y se recupera a los 60s; `maxDuration` del motor = 300s. **Ojo:** NO confundir con la activación (encender el agente es instantáneo); el debounce es solo cuánto espera para responder y agrupar.
 - **`pasar_a_humano` cancela** el recordatorio pendiente del chat.
 
 **Errores corregidos en la 1ª prueba real (jun-2026, chats con etiqueta AGENTE):**
