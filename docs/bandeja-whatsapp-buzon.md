@@ -160,6 +160,11 @@ en su propio chat para probarlo; **no está suelto con clientes reales todavía*
 - El botón **y todo el menú "Agente"** (la cabina) son **SOLO de Mateo**. Ni Liliana ni Alejo
   los ven ni pueden activarlos — es a propósito, para no soltar el agente por error mientras se
   prueba. El candado está en el servidor (`esMateo`) y también escondido en pantalla (`soyMateo`).
+- **Dos interruptores que mandan (desde jun-2026 el motor SÍ los respeta):** (1) el botón **🤖 por
+  chat** (`agente_activo`) y (2) el **estado de LÍNEA** de la cabina: **Apagado** = el agente no
+  responde en toda la línea (kill switch), **Modo sombra** = piensa y deja notas 🌓 pero NO le escribe
+  al cliente ni ejecuta acciones (para probar sin riesgo), **Encendido** = en vivo. Apagar un chat o
+  la línea **frena incluso la respuesta en curso** (ver §8.17).
 
 ### 8.2 Las dos partes: cabina + motor
 - **Cabina** = `api/whatsapp/agente.js` + la pestaña "Agente" de la bandeja. Aquí Mateo
@@ -323,7 +328,7 @@ comportamiento. Todo vive en `agente-responder.js` (motor) y en el `prompt` (lib
   el texto que acompaña a una herramienta** y solo envía el mensaje final con el resultado.
 - **No pregunta lo que ya sabe** (regla dura + el estado del cliente le muestra el dato).
 - **Juntar mensajes (debounce)**: si el cliente escribe en ráfaga, el motor **espera ~7s de
-  silencio desde su ÚLTIMO mensaje** (cada mensaje nuevo reinicia el conteo, tope 20s) y junta
+  silencio desde su ÚLTIMO mensaje** (cada mensaje nuevo reinicia el conteo, tope 12s) y junta
   todo en UNA respuesta. Solo en el disparo del webhook; en prueba manual responde de una. Resuelve
   el viejo dolor de "agrupar mensajes" de ChateaPro/Manychat.
 - **Memoria por RIFA, no por nº de mensajes**: lee el historial **desde la `fecha_inicio` de la
@@ -405,35 +410,44 @@ no libera/traslada boletas ajenas (liberar exige dueño+$0; trasladar exige mism
 anti-doble-mensaje (`agente_procesando_at`), reintento de Meta no duplica (upsert por `wa_message_id`),
 y `pasar_a_humano` apaga bien.
 
-**Arreglar ANTES de soltar (recomendado, no bloqueante para 2 clientes):**
-- **"Modo sombra" y estado de línea son DECORATIVOS:** el motor solo mira `conv.agente_activo`,
-  NUNCA lee `agente_config.estado`. No existe modo sombra real ni apaga-todo → da falsa seguridad.
-  Lo ideal: implementar **modo sombra de verdad** (el motor genera y deja la respuesta como nota 🤖,
-  pero NO la envía ni ejecuta acciones) — es el mejor camino para "ver errores sin riesgo".
-- **No hay botón de pánico de línea/global:** reusar la tabla `configuracion` (patrón del modo
-  Pendiente) para un interruptor global que el motor revise al inicio.
-- **Apagar un chat NO frena la corrida en curso** (~60s de inercia): el motor lee `agente_activo`
-  una sola vez (línea ~627) → releerlo antes de cada envío/acción de plata.
-- **Cruce de comprobante por "mismo minuto"** (`buscar-pago.js` estrategia 4): dos pagos del mismo
-  monto el mismo minuto pueden cruzarse (la plata cae en la boleta correcta, pero consume el
-  comprobante ajeno y descuadra la conciliación). → exigir referencia o celular, o pasar a humano si
-  solo coincide el minuto.
+**✅ Arreglado en la ronda de seguridad (jun-2026), antes del piloto:**
+- **Modo sombra REAL:** el motor ahora lee `agente_config.estado`. `sombra` = el agente PIENSA y deja
+  notas 🌓 ("le diría: …", "habría usado …") pero **NO le escribe al cliente ni ejecuta acciones**
+  (las herramientas de solo lectura sí corren). Es el modo del piloto. La línea de Lili quedó en
+  `sombra`.
+- **Botón de pánico de línea (kill switch):** `estado='apagado'` → el motor no responde en TODA la
+  línea, aunque algún chat tenga el 🤖 prendido. Los 3 botones de la cabina (Apagado/Sombra/Encendido)
+  ahora SÍ funcionan de verdad.
+- **Apagar un chat frena la corrida en curso:** el motor re-chequea `agente_activo` (`sigueActivo`)
+  tras el debounce y en cada vuelta del bucle; si lo apagaron, deja de escribir/actuar.
+- **Abono no se hace solo si solo coincide "la misma hora":** si la única coincidencia del comprobante
+  es el minuto (sin referencia ni celular del cliente), el agente NO abona y pasa a un humano (evita
+  cruzar el pago de otro cliente). Usa `razon_sugerida` que ya devuelve `buscar-pago.js`.
+- **Registro central de actividad:** cada nota (real o de sombra) también se guarda en
+  `agente_actividad`, así la cabina deja de salir vacía.
+- **`consultar_cliente` forzado al teléfono del chat** (privacidad: el cliente no puede pedir datos de
+  otro número).
+- **Anti-mute:** debounce bajado a 12s y candado se recupera a los 30s (antes 20s/45s).
+- **`pasar_a_humano` cancela** el recordatorio pendiente del chat.
+
+**Falta hacer ANTES de soltar (lo hace Mateo, es contenido):** actualizar la sección "DATOS DE LA RIFA
+ACTUAL" del libreto (el Sueldazo del 3 jun ya pasó) y confirmar los resultados de los sorteos.
+
+**Vigilar DURANTE el piloto:** las notas (🤖 reales / 🌓 sombra) en cada chat y en el registro de
+actividad; recordatorio que se marca `enviado` aunque el motor no alcance a escribir; Whisper/descarga
+de media que fallan en silencio (respuestas "a ciegas"). Para el piloto, **elegir clientes con número
+normal de 12 dígitos** (ver siguiente punto).
+
+**Para cuando ESCALE (más clientes, sin supervisión) — pendiente:**
 - **Identificación por ÚLTIMOS 10 DÍGITOS** puede mezclar 2 clientes (hay teléfonos guardados con
   9/10/13 dígitos; la cola `4655028879` ya agrupa 2). Afecta saludo, `enviar_boleta` y a qué boleta
-  abona. → para el piloto, elegir clientes con número normal de 12 dígitos y ficha sin choque; a
-  futuro comparar por teléfono COMPLETO normalizado.
-- **Contenido editable:** actualizar la sección "DATOS DE LA RIFA ACTUAL" del libreto (el Sueldazo
-  del 3 jun ya pasó) y confirmar los resultados de los sorteos.
-
-**Vigilar DURANTE el piloto:** las notas 🤖 dentro de cada chat (no hay registro central —
-`agente_actividad` nunca se llena); si el agente se queda mudo (lock trabado si la función se pasa de
-60s → baja el tope del debounce o el expira del lock); recordatorio que se marca `enviado` aunque no
-alcance a escribir; Whisper/descarga de media que fallan en silencio (respuestas "a ciegas").
-
-**Para cuando ESCALE (más clientes, sin supervisión):** arreglar la carrera de la reserva (UPDATE
-condicional en `reservar.js`), llenar `agente_actividad` para tener un tablero central, reconsiderar
-el supervisor Opus para `registrar_abono`, proteger el link público de boleta, y que
-`consultar_cliente` ignore el teléfono ajeno (forzar el del chat).
+  abona. Mitigado en el piloto eligiendo números normales; el arreglo de fondo (comparar por teléfono
+  COMPLETO normalizado) toca varios sitios y se dejó para después por riesgo.
+- **Carrera de la reserva** (`reservar.js`: SELECT + UPDATE sin candado atómico) — dos clientes podrían
+  quedar con la misma boleta. No se tocó (endpoint compartido con web/Admin); arreglo = UPDATE
+  condicional a que siga libre.
+- Reconsiderar el supervisor Opus para `registrar_abono`, proteger el link público de boleta
+  (`/boleta?telefono=`), y que el cron de recordatorios marque `enviado` solo cuando el motor confirme.
 
 ## 9. Pendientes / próximos pasos
 - **Agente de IA** → **HECHO** (ver §8); pendientes propios del agente en §8.12.
