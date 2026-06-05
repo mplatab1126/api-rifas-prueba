@@ -32,7 +32,7 @@ export default async function handler(req, res) {
 
   let query = supabase
     .from('mensajes_whatsapp')
-    .select('id, direccion, tipo, texto, media_id, media_url, estado_envio, error, timestamp_wa, created_at, wa_message_id, responde_a')
+    .select('id, direccion, tipo, texto, media_id, media_url, estado_envio, error, timestamp_wa, created_at, wa_message_id, responde_a, raw')
     .eq('telefono', telefono)
     .order('created_at', { ascending: true })
     .limit(500);
@@ -43,10 +43,18 @@ export default async function handler(req, res) {
     return res.status(200).json({ status: 'error', mensaje: error.message });
   }
 
+  // Marcar cuáles mensajes los envió el AGENTE (raw.agente=true) vs un humano, para mostrarlo
+  // en el chat. No mandamos el `raw` completo al navegador (puede ser grande): solo el flag.
+  const mensajes = (data || []).map(m => {
+    const por_agente = !!(m.raw && m.raw.agente === true);
+    const { raw, ...resto } = m;
+    return { ...resto, por_agente };
+  });
+
   // Marcar la conversación como leída (no rompemos si falla)
   let upd = supabaseAdmin.from('conversaciones_whatsapp').update({ no_leidos: 0 }).eq('telefono', telefono);
   if (linea_id) upd = upd.eq('linea_id', linea_id);
   await upd;
 
-  return res.status(200).json({ status: 'ok', mensajes: data || [] });
+  return res.status(200).json({ status: 'ok', mensajes });
 }

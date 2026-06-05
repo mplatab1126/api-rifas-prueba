@@ -160,6 +160,7 @@
     .b.ent { align-self: flex-start; background: #fff; border: 1px solid var(--gray-200); color: var(--ink); border-bottom-left-radius: 4px; }
     .b.sal { align-self: flex-end; background: var(--ink); color: var(--cream-50); border-bottom-right-radius: 4px; }
     .b .h { font-size: 0.62rem; text-align: right; margin-top: 4px; }
+    .b .autor { font-size: 0.62rem; font-weight: 700; opacity: 0.7; margin-bottom: 3px; letter-spacing: 0.01em; }
     .b.ent .h { color: var(--gray-400); }
     .b.sal .h { color: rgba(250,250,247,0.5); }
     .b.medio { color: var(--ink-mute); }
@@ -1347,7 +1348,8 @@ async function cargarMensajes(scroll){
     const estado = m.direccion === 'saliente' ? estadoIcono(m.estado_envio) : '';
     const cit = m.responde_a ? porWaId[m.responde_a] : null;
     const cita = cit ? `<div class="cita">${esc((cit.texto || ('['+(cit.tipo||'mensaje')+']')).replace(/\s+/g,' ').trim().slice(0,200))}</div>` : '';
-    return `<div class="b ${m.direccion==='entrante'?'ent':'sal'}${claseMedio}">${cita}${cuerpoMensaje(m)}<div class="h">${hora(m.timestamp_wa || m.created_at)}${estado ? ' · ' + estado : ''}</div></div>`;
+    const autor = (m.direccion === 'saliente' && m.por_agente) ? '<div class="autor">🤖 Liliana</div>' : '';
+    return `<div class="b ${m.direccion==='entrante'?'ent':'sal'}${claseMedio}">${cita}${autor}${cuerpoMensaje(m)}<div class="h">${hora(m.timestamp_wa || m.created_at)}${estado ? ' · ' + estado : ''}</div></div>`;
   }).join('') + propios.map(burbujaPendiente).join('');
   hidratarMedia();
   if(scroll || abajo) cont.scrollTop = cont.scrollHeight;
