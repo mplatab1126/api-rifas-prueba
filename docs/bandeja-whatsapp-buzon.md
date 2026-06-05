@@ -86,7 +86,7 @@ Tablas y columnas del **Agente de IA** (ver §8):
 - **`recordatorios`** (seguimiento automático del agente, <24h — ver §8.12): `(id uuid, linea_id, telefono, conversacion_id uuid→conversaciones_whatsapp [cascade], programado_para, motivo, ultimo_msg_cliente_at, estado [pendiente|enviado|cancelado|fallido], creado_por, intentos, created_at, enviado_at)`. Índice parcial `(programado_para) where estado='pendiente'` (el cron lee SOLO los vencidos, no toda la tabla → escala) y `(linea_id, telefono) where estado='pendiente'` (cancelar al instante cuando el cliente vuelve a escribir). **HECHO** (jun-2026): tabla + cron (`recordatorios-cron.js` con `pg_cron` cada minuto) + herramienta `programar_recordatorio` + auto-cancelación en `recibir.js`. Detalle en §8.15.
 - **`agente_qa_estado`** (supervisor del agente — ver §8.18): `(linea_id pk, ultimo_revisado_at, actualizado_at)`. Marca de agua: hasta qué momento ya revisó el supervisor, para no re-reportar los mismos errores.
 - **`agente_sugerencias`** (ciclo de mejora — ver §8.18): `(id uuid, linea_id, cliente, error, regla, estado [nuevo|aplicado|descartado], created_at, resuelto_at, resuelto_por)`. El supervisor guarda aquí cada error + la REGLA propuesta; Mateo las aplica (se agregan al manual) o descarta desde la cabina.
-- **`disparadores`** (palabras clave que prenden el agente — ver §8.19): `(id uuid, linea_id, palabra, activo, created_at)`. Si un mensaje entrante contiene una `palabra` activa, `recibir.js` prende el agente en ese chat.
+- **`disparadores`** (disparadores que prenden el agente — ver §8.19): `(id uuid, linea_id, palabra [null si no es por palabra], tipo ['palabra'|'nuevo_contacto'], activo, created_at)`. `recibir.js` prende el agente si un mensaje contiene una `palabra` activa, o si es un **cliente nuevo** (primer mensaje) y hay un disparador `nuevo_contacto`.
 - Nuevas columnas en **`conversaciones_whatsapp`**: `agente_activo` (bool, el botón 🤖 prende el agente en ese chat) y `agente_procesando_at` (timestamp, el candado anti-mensaje-doble).
 - Nueva columna en **`mensajes_whatsapp`**: `responde_a` (id/wa del mensaje citado, para mostrar la cita). Las **notas** del agente se guardan aquí mismo con `direccion='nota'`.
 
@@ -518,12 +518,17 @@ Un "vigilante" que revisa al agente y le avisa a Mateo los errores. (jun-2026.)
   (`AGENTE`) y el modelo. Pendiente al escalar: usar plantilla para que el reporte llegue siempre
   (sin depender de la ventana de 24h) y, si se vigilan muchos chats, paginar/limitar por corrida.
 
-### 8.19 Disparadores (palabras clave que prenden el agente) — HECHO
+### 8.19 Disparadores (prenden el agente automáticamente) — HECHO
 Como los disparadores de ChateaPro. Menú **Disparadores** (bajo "Inteligencia", **solo Mateo**).
-- **Qué hace:** Mateo guarda palabras/frases clave por línea (tabla `disparadores`). Cuando entra un
-  mensaje del cliente que **contiene** una de ellas (sin distinguir mayúsculas), `recibir.js`
-  (`activarPorDisparador`) **prende el agente** en ese chat (`agente_activo=true`, `estado='bot'`) y
-  el webhook lo dispara de una.
+Dos tipos (columna `tipo`):
+- **Por palabra clave** (`palabra`): cuando el mensaje del cliente **contiene** la palabra/frase
+  (sin distinguir mayúsculas).
+- **Cliente nuevo** (`nuevo_contacto`): cuando un cliente escribe por **primera vez** (su
+  conversación se acaba de crear), sin importar qué diga. Solo se permite UNO por línea. ⚠️ Atiende a
+  TODOS los clientes nuevos automáticamente.
+- **Qué hace (ambos):** `recibir.js` (`activarPorDisparador`) **prende el agente** en ese chat
+  (`agente_activo=true`, `estado='bot'`, etiqueta AGENTE) y el webhook lo dispara de una. El "cliente
+  nuevo" usa el flag `esNuevo` que devuelve `upsertConversacion`.
 - **Candados:** NO se auto-prende si el agente ya estaba activo, si un **humano** tomó el chat
   (`estado='humano'`), o si la **línea está en Apagado**. El **Modo sombra** se respeta (el motor
   redacta pero no envía), así que con la línea en sombra es seguro para probar.
