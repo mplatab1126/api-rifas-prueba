@@ -71,16 +71,23 @@ export default async function handler(req, res) {
     if (!nuevos || !nuevos.length) continue;   // el agente no dijo nada nuevo aquí
 
     const { data: msgs } = await supabaseAdmin
-      .from('mensajes_whatsapp').select('direccion, tipo, texto, timestamp_wa')
+      .from('mensajes_whatsapp').select('direccion, tipo, texto, timestamp_wa, raw')
       .eq('conversacion_id', c.id)
       .order('timestamp_wa', { ascending: false }).limit(MAX_MSGS);
     const orden = (msgs || []).slice().reverse();
+    // Solo cuenta como salida NUEVA de LILIANA si hay un saliente/nota con marca de agente.
+    const hayNuevoDeLiliana = orden.some(m =>
+      m.timestamp_wa && m.timestamp_wa > desde && (m.direccion === 'nota' || (m.direccion === 'saliente' && m.raw && m.raw.agente === true)));
+    if (!hayNuevoDeLiliana) continue;
     const lineas = orden.map(m => {
       const nuevo = (m.timestamp_wa && m.timestamp_wa > desde) ? '[NUEVO] ' : '';
       let quien, txt;
       if (m.direccion === 'entrante') { quien = 'Cliente'; txt = (m.texto || '').trim() || '[' + (m.tipo || 'mensaje') + ']'; }
-      else if (m.direccion === 'saliente') { quien = 'Liliana'; txt = (m.texto || '').trim() || '[' + (m.tipo || '') + ']'; }
-      else { quien = '(nota)'; txt = (m.texto || '').trim(); }
+      else if (m.direccion === 'saliente') {
+        // Distinguir Liliana (agente) de un asesor HUMANO que tomó el chat (marca raw.agente).
+        quien = (m.raw && m.raw.agente === true) ? 'Liliana' : 'Asesor humano';
+        txt = (m.texto || '').trim() || '[' + (m.tipo || '') + ']';
+      } else { quien = '(nota de Liliana)'; txt = (m.texto || '').trim(); }
       if (!txt) return null;
       return `${nuevo}${quien}: ${txt}`;
     }).filter(Boolean).join('\n');
@@ -101,11 +108,15 @@ export default async function handler(req, res) {
     'Eres un SUPERVISOR DE CALIDAD del agente de ventas por WhatsApp llamado Liliana (rifa colombiana "Los Plata"). ' +
     'Tu trabajo es detectar ERRORES que cometió Liliana, para avisarle al dueño (Mateo).\n\n' +
     'Este es el MANUAL que Liliana DEBE seguir:\n"""\n' + libreto + '\n"""\n\n' +
-    'Te paso varias conversaciones en orden. Los mensajes marcados [NUEVO] son los recientes aún sin revisar: CONCÉNTRATE en esos. ' +
-    'Las líneas "(nota): 🌓 (modo sombra) le diría: «X»" son lo que Liliana RESPONDERÍA en modo prueba: evalúalas como si lo hubiera dicho. ' +
-    'Las líneas "(nota): 🤖 ..." son acciones que hizo o intentó (úsalas como contexto).\n\n' +
-    'Reporta SOLO errores CLAROS de Liliana en lo [NUEVO]: información equivocada o inventada, romper una regla del manual (precios, premios, fechas, registrar con otro número, tocar boletas ajenas, etc.), confundir al cliente, ofrecer algo que no debe, o respuestas raras/robóticas. ' +
-    'NO inventes errores; si algo está bien, NO lo menciones. Los mensajes del Cliente NO son errores de Liliana.\n\n' +
+    'Te paso varias conversaciones en orden. Los mensajes marcados [NUEVO] son los recientes aún sin revisar: CONCÉNTRATE en esos.\n' +
+    'MUY IMPORTANTE — quién dijo cada cosa:\n' +
+    '- "Liliana:" = el agente (lo que TÚ debes evaluar).\n' +
+    '- "Cliente:" = el cliente. NO es error de Liliana.\n' +
+    '- "Asesor humano:" = una PERSONA real (un asesor que tomó el chat después de que Liliana se apagó o lo pasó a un humano). Esto NO es Liliana: NUNCA lo reportes como error de Liliana ni se lo atribuyas a ella.\n' +
+    '- "(nota de Liliana): 🌓 (modo sombra) le diría: «X»" = lo que Liliana RESPONDERÍA en modo prueba (evalúala como si lo hubiera dicho).\n' +
+    '- "(nota de Liliana): 🤖 ..." = acciones que Liliana hizo o intentó (úsalas como contexto, no como error salvo que sean claramente incorrectas).\n\n' +
+    'Reporta SOLO errores CLAROS de LILIANA en lo [NUEVO]: información equivocada o inventada, romper una regla del manual (precios, premios, fechas, registrar con otro número, tocar boletas ajenas, etc.), confundir al cliente, ofrecer algo que no debe, o respuestas raras/robóticas. ' +
+    'NO inventes errores; si algo está bien, NO lo menciones. NO juzgues lo que diga el Cliente ni el Asesor humano.\n\n' +
     'Responde EXACTAMENTE así:\n' +
     '- Si NO hay errores: escribe solo  SIN ERRORES\n' +
     '- Si hay errores: una lista corta (un error por línea, empezando con "• "), con el nombre del cliente entre paréntesis. Breve y concreto, máximo ~10 líneas.';
