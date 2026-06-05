@@ -440,6 +440,9 @@ y `pasar_a_humano` apaga bien.
 - **"Todos los sábados $20.000.000":** el agente generalizaba el acumulado del próximo sorteo a todos.
   **Regla en el libreto:** el premio BASE de cada sábado es $5.000.000; el acumulado aplica SOLO al
   próximo. (Ambas reglas en una sección "CORRECCIONES IMPORTANTES" al final del prompt en la BD.)
+- **Horarios de los sorteos:** el agente los listaba sin que se lo pidieran (suena raro). **Regla:**
+  no menciona horarios por su cuenta; SOLO da la hora si el cliente pregunta hasta qué hora puede
+  consignar el día del sorteo.
 
 **Falta hacer ANTES de soltar (lo hace Mateo, es contenido):** actualizar la sección "DATOS DE LA RIFA
 ACTUAL" del libreto (el Sueldazo del 3 jun ya pasó) y confirmar los resultados de los sorteos.
