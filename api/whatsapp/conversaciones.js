@@ -16,6 +16,7 @@ import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 import { supabase } from '../lib/supabase.js';
 import { esGerencia, puedeVerLinea } from '../lib/asesores.js';
+import { obtenerConfig } from '../lib/configuracion.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -49,6 +50,13 @@ export default async function handler(req, res) {
   if (linea_id) query = query.eq('linea_id', linea_id);
   if (soloSinRespuesta) query = query.eq('ultimo_entrante', true);
   if (etiqueta_id) query = query.eq('conversacion_etiquetas.etiqueta_id', etiqueta_id);
+
+  // Liliana NO ve los chats que el agente está atendiendo (si el interruptor está activo).
+  // Cuando el agente le entrega un chat (agente_activo=false), sí lo ve.
+  const esLiliana = String(nombre || '').trim().toLowerCase() === 'liliana';
+  if (esLiliana && (await obtenerConfig('ocultar_agente_liliana')) === 'true') {
+    query = query.or('agente_activo.is.null,agente_activo.eq.false');
+  }
 
   // Búsqueda en TODA la base (no solo en lo cargado): por teléfono si escribieron
   // números, o por nombre del perfil si escribieron letras. Mismo criterio que Contactos.

@@ -19,6 +19,7 @@ import { validarAsesor } from '../lib/auth.js';
 import { supabase, supabaseAdmin } from '../lib/supabase.js';
 import { esMateo, puedeVerLinea } from '../lib/asesores.js';
 import { ponerEtiqueta } from '../lib/etiquetas.js';
+import { obtenerConfig, guardarConfig } from '../lib/configuracion.js';
 
 const ESTADOS = ['apagado', 'sombra', 'encendido'];
 const MODELOS = ['claude-opus-4-8', 'claude-sonnet-4-6', 'claude-haiku-4-5'];
@@ -157,7 +158,8 @@ export default async function handler(req, res) {
         .select('id, cliente, error, regla, created_at')
         .eq('linea_id', linea_id).eq('estado', 'nuevo')
         .order('created_at', { ascending: false }).limit(50);
-      return res.status(200).json({ status: 'ok', config, herramientas, actividad: actividad || [], sugerencias: sugerencias || [] });
+      const ocultarLiliana = (await obtenerConfig('ocultar_agente_liliana')) === 'true';
+      return res.status(200).json({ status: 'ok', config, herramientas, actividad: actividad || [], sugerencias: sugerencias || [], ocultarLiliana });
     }
 
     if (accion === 'guardar') {
@@ -270,6 +272,12 @@ export default async function handler(req, res) {
         .update({ estado: 'descartado', resuelto_at: new Date().toISOString(), resuelto_por: nombre })
         .eq('id', id).eq('linea_id', linea_id);
       return res.status(200).json({ status: 'ok' });
+    }
+
+    // Interruptor: ocultarle a Liliana los chats que el agente está atendiendo.
+    if (accion === 'privacidad_liliana') {
+      await guardarConfig('ocultar_agente_liliana', req.body.activar ? 'true' : 'false');
+      return res.status(200).json({ status: 'ok', activo: !!req.body.activar });
     }
 
     // Simulador: corre el prompt contra una conversación de prueba. NO toca WhatsApp.

@@ -22,3 +22,10 @@ export async function obtenerConfig(clave) {
 export async function pendienteHabilitado() {
   return (await obtenerConfig('pendiente_habilitado')) === 'true';
 }
+
+// Guarda (o actualiza) un interruptor global.
+export async function guardarConfig(clave, valor) {
+  await supabaseAdmin
+    .from('configuracion')
+    .upsert({ clave, valor: String(valor) }, { onConflict: 'clave' });
+}

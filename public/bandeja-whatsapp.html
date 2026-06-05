@@ -443,6 +443,8 @@
     .ag-save { margin-top: 12px; padding: 11px 20px; border: 1px solid var(--mint); background: var(--mint); border-radius: 10px; font-family: inherit; font-size: 0.86rem; font-weight: 600; color: var(--ink); cursor: pointer; }
     .ag-save:hover { background: var(--mint-light); }
     .ag-savemsg { margin-left: 12px; font-size: 0.82rem; color: #1c7a37; }
+    .ag-priv { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: var(--ink); cursor: pointer; }
+    .ag-priv input { width: 18px; height: 18px; flex-shrink: 0; cursor: pointer; }
     /* Casillas de resultados de los sorteos */
     .ag-res { border: 1px solid var(--gray-200); border-radius: 12px; margin-bottom: 10px; background: var(--cream-50); overflow: hidden; }
     .ag-res-head { width: 100%; display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: none; border: none; cursor: pointer; font-family: inherit; text-align: left; }
@@ -2036,6 +2038,11 @@ function pintarAgente(){
       <div class="ag-estado">${estadoBtns}</div>
     </div>
     <div class="ag-card">
+      <h3>Privacidad de Liliana</h3>
+      <div class="ag-sub">Cuando está activo, Liliana NO ve en su bandeja los chats que el agente está atendiendo. En cuanto el agente le entrega un chat (lo pasa a un asesor), sí lo ve.</div>
+      <label class="ag-priv"><input type="checkbox" id="agOcultarLiliana" ${agData.ocultarLiliana ? 'checked' : ''} onchange="agTogglePrivacidad(this.checked)"> <span>Ocultarle a Liliana los chats que atiende el agente</span></label>
+    </div>
+    <div class="ag-card">
       <h3>Instrucciones del agente</h3>
       <div class="ag-sub">El “manual”: cómo se comporta, qué sabe de la rifa, precios, premios, tono. Puedes escribir mucho.</div>
       <div class="ag-field-row">
@@ -2086,6 +2093,13 @@ async function agToggleTool(clave, activa){
   const r = await api('agente', { accion:'herramienta', linea_id: lineaActual, clave, activa });
   if(r.status !== 'ok'){ alert(r.mensaje || 'No se pudo cambiar la herramienta.'); cargarAgente(); }
 }
+
+// Interruptor: ocultarle a Liliana los chats que el agente atiende.
+window.agTogglePrivacidad = async function(activar){
+  const r = await api('agente', { accion:'privacidad_liliana', linea_id: lineaActual, activar });
+  if(r.status !== 'ok'){ alert(r.mensaje || 'No se pudo guardar.'); cargarAgente(); }
+  else if(agData) agData.ocultarLiliana = activar;
+};
 
 // Aplicar una sugerencia del supervisor (agrega la regla al manual) o descartarla.
 window.agAplicarSugerencia = async function(id){

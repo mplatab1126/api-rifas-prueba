@@ -41,7 +41,7 @@
       "maxDuration": 30
     },
     "api/whatsapp/agente-responder.js": {
-      "maxDuration": 60
+      "maxDuration": 300
     },
     "api/whatsapp/qa-agente-cron.js": {
       "maxDuration": 60

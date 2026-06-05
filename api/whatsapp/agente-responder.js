@@ -35,8 +35,8 @@ const ACCIONES_SENSIBLES = new Set();
 const MAX_ITER = 6;          // tope de idas/vueltas con la IA por cada mensaje del cliente
 const MAX_HISTORIAL = 300;   // TOPE de seguridad de mensajes; el corte normal es por RIFA (ver abajo)
 const PAUSA_MS = 800;        // entre los pasos del contacto inicial (para que lleguen en orden)
-const DEBOUNCE_MS = 4000;    // silencio que esperamos para dar por terminada la ráfaga del cliente (responde más rápido)
-const DEBOUNCE_MAX_MS = 8000; // tope total de espera por si el cliente escribe sin parar
+const DEBOUNCE_MS = 30000;     // silencio que esperamos desde el ÚLTIMO mensaje del cliente antes de responder (se reinicia con cada mensaje)
+const DEBOUNCE_MAX_MS = 240000; // límite invisible (4 min) — el servidor no puede esperar infinito; en la práctica ningún cliente lo alcanza
 
 const dormir = (ms) => new Promise(r => setTimeout(r, ms));
 const MAX_IMAGENES = 2;   // imágenes entrantes recientes que se le muestran a la IA (comprobantes)
@@ -683,7 +683,7 @@ export default async function handler(req, res) {
     //    el historial cierra la ventana de doble respuesta (y de doble abono).
     let bloqueado = false;
     try {
-      const expira = new Date(Date.now() - 30000).toISOString();   // candado se recupera en 30s si una corrida se cae
+      const expira = new Date(Date.now() - 60000).toISOString();   // candado se recupera en 60s si una corrida se cae (se refresca durante la espera)
       const { data: lock, error: lockErr } = await supabaseAdmin
         .from('conversaciones_whatsapp')
         .update({ agente_procesando_at: new Date().toISOString() })
@@ -712,7 +712,10 @@ export default async function handler(req, res) {
         if (!u || u.direccion !== 'entrante') break;        // ya no hay nada pendiente del cliente
         const silencioMs = Date.now() - new Date(u.timestamp_wa || u.created_at).getTime();
         if (silencioMs >= DEBOUNCE_MS) break;               // ya lleva la pausa callado desde su ÚLTIMO mensaje → responder
-        await dormir(DEBOUNCE_MS - silencioMs + 250);       // espera lo que falta; si entra otro mensaje, su hora más nueva reinicia el conteo
+        // Refrescar el candado para que NO se venza mientras esperamos (si no, otra corrida podría
+        // arrancar y responder doble). Se revisa en trocitos de máx 3s para refrescarlo seguido.
+        try { await supabaseAdmin.from('conversaciones_whatsapp').update({ agente_procesando_at: new Date().toISOString() }).eq('id', conv.id); } catch (_) {}
+        await dormir(Math.min(3000, DEBOUNCE_MS - silencioMs + 250));   // espera un poco; si entra otro mensaje, su hora más nueva reinicia el conteo
       }
     }
 
