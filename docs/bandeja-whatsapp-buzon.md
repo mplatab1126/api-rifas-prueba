@@ -480,6 +480,11 @@ Un "vigilante" que revisa al agente y le avisa a Mateo los errores. (jun-2026.)
   el historial viejo).
 - **Sirve en sombra y en vivo:** incluye las notas `🌓 (modo sombra) le diría…` como respuestas de
   Liliana, así que durante el piloto en sombra también detecta errores.
+- **Distingue agente vs asesor humano (arreglo jun-2026):** los mensajes salientes del AGENTE se
+  guardan con `raw.agente=true`; los de un **asesor humano** (cuando toma el chat tras `pasar_a_humano`)
+  NO la tienen. El supervisor etiqueta cada saliente como "Liliana" o "Asesor humano" y se le instruye
+  **NO atribuirle a Liliana lo que dijo un humano** (antes reportaba como error de Liliana mensajes del
+  asesor, ej. "Ya mismo te envío tu boleta con el abono").
 - **Ajustables (constantes en `qa-agente-cron.js`):** la línea, el número de Mateo, la etiqueta
   (`AGENTE`) y el modelo. Pendiente al escalar: usar plantilla para que el reporte llegue siempre
   (sin depender de la ventana de 24h) y, si se vigilan muchos chats, paginar/limitar por corrida.
