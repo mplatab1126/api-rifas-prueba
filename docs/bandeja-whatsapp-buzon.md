@@ -83,6 +83,7 @@ Tablas y columnas del **Agente de IA** (ver §8):
 - **`agente_herramientas`** (qué acciones tiene prendidas cada línea): `(id, linea_id, clave, nombre, descripcion, riesgo, activa, orden)`.
 - **`agente_actividad`** (bitácora de lo que hace): `(id, linea_id, telefono, tipo, resumen, created_at)`.
 - **`recordatorios`** (seguimiento automático del agente, <24h — ver §8.12): `(id uuid, linea_id, telefono, conversacion_id uuid→conversaciones_whatsapp [cascade], programado_para, motivo, ultimo_msg_cliente_at, estado [pendiente|enviado|cancelado|fallido], creado_por, intentos, created_at, enviado_at)`. Índice parcial `(programado_para) where estado='pendiente'` (el cron lee SOLO los vencidos, no toda la tabla → escala) y `(linea_id, telefono) where estado='pendiente'` (cancelar al instante cuando el cliente vuelve a escribir). **HECHO** (jun-2026): tabla + cron (`recordatorios-cron.js` con `pg_cron` cada minuto) + herramienta `programar_recordatorio` + auto-cancelación en `recibir.js`. Detalle en §8.15.
+- **`agente_qa_estado`** (supervisor del agente — ver §8.18): `(linea_id pk, ultimo_revisado_at, actualizado_at)`. Marca de agua: hasta qué momento ya revisó el supervisor, para no re-reportar los mismos errores cada 5 min.
 - Nuevas columnas en **`conversaciones_whatsapp`**: `agente_activo` (bool, el botón 🤖 prende el agente en ese chat) y `agente_procesando_at` (timestamp, el candado anti-mensaje-doble).
 - Nueva columna en **`mensajes_whatsapp`**: `responde_a` (id/wa del mensaje citado, para mostrar la cita). Las **notas** del agente se guardan aquí mismo con `direccion='nota'`.
 
@@ -109,6 +110,7 @@ Tablas y columnas del **Agente de IA** (ver §8):
 - **`agente-responder.js`** — **MOTOR** del agente (el que de verdad responde). Lo dispara el webhook (o el cron de recordatorios). Conversa con Claude usando las **13 herramientas**, **VE las imágenes** del cliente, le inyecta el **estado del cliente**, sus **acciones ya hechas** y los **resultados de los sorteos** (calendario de la rifa + ganadores), junta los mensajes en ráfaga (**debounce ~7s**), lee el historial **desde el inicio de la rifa activa**, rellena las **variables** del prompt (`{{nombre}}`/`{{pagos}}` con `aplicarVariables`), transcribe audios con Whisper, deja notas y tiene candado anti-duplicado. También atiende el disparo por **recordatorio** (`{recordatorio:{motivo}}`, §8.15). El supervisor Opus quedó **desactivado** (§8.5). **Es el archivo más importante del agente; detalle en §8.**
 - **`recibir.js`** (webhook) ahora, además de guardar el mensaje, **dispara el motor** si el agente está activo (`dispararAgenteSiActivo` → `fetch` al motor con el secreto interno y corte a 1.5s), **cancela los recordatorios pendientes** del chat cuando el cliente vuelve a escribir (`cancelarRecordatorios`, ver §8.15) y captura la **cita** (`m.context.id → responde_a`).
 - **`recordatorios-cron.js`** — el **relojito** de los recordatorios del agente (§8.15). Lo llama `pg_cron` de Supabase cada minuto (con el secreto interno); busca los recordatorios vencidos, los reclama en atómico (sin doble disparo) y despierta el motor del agente para el seguimiento.
+- **`qa-agente-cron.js`** — el **supervisor** del agente (§8.18). `pg_cron` cada 5 min; revisa los chats con etiqueta AGENTE, le pasa lo NUEVO a Claude junto con el manual del agente para detectar errores, y si los hay le manda un resumen a Mateo por WhatsApp. Usa la marca de agua `agente_qa_estado` para no repetir.
 - **libs**: `lib/whatsapp.js` (`resolverLinea`, `enviarTexto`, `enviarImagen`, `enviarImagenPorId`, `subirMediaDesdeBuffer` [subir foto/PDF desde bytes, lo usa `enviar-archivo.js`], `enviarDocumento` [PDF de la resolución], `enviarDocumentoPorId`, `descargarMediaBase64`, `configWhatsapp`), `lib/comprobante.js` (`extraerDatos` — lee comprobante con Claude, solo lectura), `lib/asesores.js` (`esGerencia`, `esMateo` [agente solo-Mateo], `lineasDeAsesor`, `puedeVerLinea`; **GERENCIA = ['mateo','alejo plata']**, editable ahí). El motor reusa además `lib/numeros-disponibles.js`.
 
 Se REUSAN (no se reescriben) endpoints de plata del Admin: `/api/admin/abono` (abonar), `/api/admin/eliminar-abono` (se **modificó** para que borrar una parte de un pago repartido borre todas y libere la transferencia — también beneficia al Admin) y `/api/admin/liberar-boleta`. **NUEVO**: `/api/admin/trasladar-abono.js` — mueve abono entre boletas del mismo cliente (todo o un monto parcial; parte el abono y reparte la transferencia); lo usa la herramienta `trasladar_abono`.
@@ -462,6 +464,25 @@ normal de 12 dígitos** (ver siguiente punto).
   condicional a que siga libre.
 - Reconsiderar el supervisor Opus para `registrar_abono`, proteger el link público de boleta
   (`/boleta?telefono=`), y que el cron de recordatorios marque `enviado` solo cuando el motor confirme.
+
+### 8.18 Supervisor del agente (control de calidad que reporta a Mateo) — HECHO
+Un "vigilante" que revisa al agente y le avisa a Mateo los errores. (jun-2026.)
+- **Qué hace:** cada **5 minutos** (`pg_cron` job `supervisor-agente-cada-5min` → `qa-agente-cron.js`),
+  revisa las conversaciones con la etiqueta **AGENTE** de la línea de Lili, toma SOLO lo nuevo desde la
+  última revisión (marca de agua `agente_qa_estado`), arma el transcrito y se lo pasa a **Claude
+  (Sonnet)** junto con el MANUAL del agente (su `prompt`) para que detecte errores. **Si hay errores**,
+  le manda a Mateo un **resumen corto por WhatsApp**; si no, no manda nada.
+- **A quién/cómo reporta:** texto libre a **573123354789** (Mateo), enviado **desde la línea de Lili**.
+  ⚠️ Solo llega si ese número tiene la **ventana de 24h abierta** con la línea (le escribió en 24h);
+  si no, el envío falla en silencio (`enviado:false`). Para reactivarlo, Mateo manda un "hola" a Lili.
+- **Sin spam:** la marca de agua avanza tras cada corrida y al revisor se le pide reportar SOLO errores
+  en los mensajes `[NUEVO]`; así un mismo error no se repite. La 1ª corrida solo inicializa (no revisa
+  el historial viejo).
+- **Sirve en sombra y en vivo:** incluye las notas `🌓 (modo sombra) le diría…` como respuestas de
+  Liliana, así que durante el piloto en sombra también detecta errores.
+- **Ajustables (constantes en `qa-agente-cron.js`):** la línea, el número de Mateo, la etiqueta
+  (`AGENTE`) y el modelo. Pendiente al escalar: usar plantilla para que el reporte llegue siempre
+  (sin depender de la ventana de 24h) y, si se vigilan muchos chats, paginar/limitar por corrida.
 
 ## 9. Pendientes / próximos pasos
 - **Agente de IA** → **HECHO** (ver §8); pendientes propios del agente en §8.12.
