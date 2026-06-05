@@ -755,6 +755,33 @@ export default async function handler(req, res) {
       return res.status(200).json({ status: 'ok', skip: 'No hay un mensaje del cliente pendiente de responder.' });
     }
 
+    // 3a-bis) ANTI-DUPLICADO A PRUEBA DE BALAS: el candado de arriba (agente_procesando_at) a veces
+    //     NO frena la segunda corrida cuando el cliente manda 2 mensajes muy seguidos (ráfaga) y
+    //     ambas terminan respondiendo el MISMO segundo con el mismo texto. Aquí, ya pasado el
+    //     debounce, marcamos de forma ATÓMICA "ya respondí hasta el último mensaje del cliente".
+    //     Las dos corridas calculan el mismo último mensaje; solo UNA gana el UPDATE (la condición
+    //     `lt` falla para la segunda porque el valor ya quedó igual) y responde. La otra se sale.
+    //     No aplica a recordatorios (ahí el último mensaje puede ser nuestro, a propósito).
+    if (!recordatorio) {
+      const ultEnt = [...reales].reverse().find(m => m.direccion === 'entrante');
+      const hastaIso = ultEnt ? (ultEnt.timestamp_wa || ultEnt.created_at) : null;
+      if (hastaIso) {
+        const { data: gano, error: geClaim } = await supabaseAdmin
+          .from('conversaciones_whatsapp')
+          .update({ agente_respondido_hasta: hastaIso })
+          .eq('id', conv.id)
+          .or('agente_respondido_hasta.is.null,agente_respondido_hasta.lt.' + hastaIso)
+          .select('id')
+          .maybeSingle();
+        // Si el UPDATE falla (geClaim), seguimos (mejor responder que quedar callados); solo nos
+        // salimos cuando el UPDATE corrió bien y NO ganamos (otra corrida ya respondió este mensaje).
+        if (!geClaim && !gano) {
+          await soltarLock(conv);
+          return res.status(200).json({ status: 'ok', skip: 'Otra corrida ya respondió a este mensaje (anti-duplicado).' });
+        }
+      }
+    }
+
     // 3b) Transcribir los audios que el cliente mandó (Claude no oye; Whisper sí).
     //     Guardamos la transcripción para no repetirla en futuras corridas.
     let transcritos = 0;

@@ -442,7 +442,7 @@ y `pasar_a_humano` apaga bien.
 - **Modo sombra REAL:** el motor ahora lee `agente_config.estado`. `sombra` = el agente PIENSA y deja
   notas 🌓 ("le diría: …", "habría usado …") pero **NO le escribe al cliente ni ejecuta acciones**
   (las herramientas de solo lectura sí corren). Es el modo del piloto. La línea de Lili quedó en
-  `sombra`.
+  `sombra`. **(jun-2026: ya pasó a `encendido`, en vivo con clientes reales — ver §8.20.)**
 - **Botón de pánico de línea (kill switch):** `estado='apagado'` → el motor no responde en TODA la
   línea, aunque algún chat tenga el 🤖 prendido. Los 3 botones de la cabina (Apagado/Sombra/Encendido)
   ahora SÍ funcionan de verdad.
@@ -544,6 +544,44 @@ Dos tipos (columna `tipo`):
 - **Cabina:** lista para agregar palabra, prender/apagar cada una (interruptor) y eliminar
   (`disparadores.js` + módulo `#modDisparadores`). Se sembró una de ejemplo: "quiero más información"
   (el mensaje con que llegan los clientes del anuncio de Meta).
+
+### 8.20 Liliana EN VIVO: anti-duplicados y supervisor afinado (jun-2026)
+Liliana ya NO está en prueba: la línea de Lili está en **`encendido`** (en vivo con clientes reales) y
+con un disparador **`nuevo_contacto`** activo, así que atiende SOLA a todo cliente que escribe por
+primera vez. (Corrige lo que decían §8 y §8.17 sobre "modo PRUEBA / sombra / solo Mateo".)
+
+**Problema: mensajes duplicados.** El supervisor reportaba que Liliana mandaba el mismo mensaje dos
+veces. Revisando chats reales se vio el patrón: cuando el cliente manda **2 mensajes muy seguidos**
+(ráfaga), se disparan dos corridas del motor y **ambas responden el mismo segundo con el mismo texto**.
+El candado `agente_procesando_at` (§8.9) no siempre frena la segunda.
+
+**Arreglo — candado a prueba de balas por mensaje (idempotencia por tanda):**
+- Nueva columna `conversaciones_whatsapp.agente_respondido_hasta` (timestamptz, aditiva, nullable).
+- En `agente-responder.js`, pasado el debounce y ANTES de gastar trabajo (Whisper/fotos), el motor hace
+  un **UPDATE atómico condicional**: `set agente_respondido_hasta = <ts del último mensaje del cliente>
+  where id=... and (agente_respondido_hasta is null or < ese ts)`. Las dos corridas calculan el MISMO
+  último mensaje; solo UNA gana (la 2ª ve el valor ya igual y se sale). Falla-abierto si el UPDATE diera
+  error (mejor responder que callar). Mata el duplicado aunque el candado viejo no frene. La marca solo
+  avanza; un mensaje nuevo (ts mayor) sí permite responder. No aplica a recordatorios.
+- **Escala/costo:** es un UPDATE por clave primaria (O(1)); no recorre la tabla. Además **ahorra**
+  dinero: la corrida perdedora se sale antes de llamar a Claude, así que un duplicado deja de pagar dos
+  respuestas.
+
+**Arreglo — supervisor sin falsas alarmas:** el supervisor (`qa-agente-cron.js`) solo recibía el manual
+("$5.000.000 base") y por eso reportaba como "inventado" que Liliana dijera el **acumulado de
+$20.000.000** del próximo sábado, que es CORRECTO (sale de `agente_config.resultados`, cargado por
+Mateo). Ahora se le inyecta el bloque de **resultados/acumulados reales** y se le instruye NO reportar
+como error que Liliana diga un ganador o un acumulado que coincida con esos datos. Reportes limpios
+(solo errores reales).
+
+**Afinado del manual (en `agente_config.prompt`, sección CORRECCIONES IMPORTANTES):** dos reglas nuevas
+por errores reales que sí detectó el supervisor:
+- NO decir cuántas semanas lleva acumulado el premio ("3 semanas sin ganador"): solo el monto.
+- Usar SIEMPRE la misma cifra del premio del próximo sábado dentro de una conversación (no mezclar
+  $5.000.000 y el acumulado en mensajes distintos).
+
+Las sugerencias viejas del supervisor (duplicados ya resueltos por código + los falsos positivos del
+acumulado) se marcaron resueltas en la cabina.
 
 ## 9. Pendientes / próximos pasos
 - **Agente de IA** → **HECHO** (ver §8); pendientes propios del agente en §8.12.

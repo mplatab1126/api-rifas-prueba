@@ -112,7 +112,7 @@ export default async function handler(req, res) {
   }
 
   // 5) Manual del agente (para que el revisor juzgue si lo siguió) + calendario con fechas correctas.
-  const { data: cfg } = await supabase.from('agente_config').select('prompt').eq('linea_id', LINEA).maybeSingle();
+  const { data: cfg } = await supabase.from('agente_config').select('prompt, resultados').eq('linea_id', LINEA).maybeSingle();
   const libreto = (cfg && cfg.prompt) || '(sin manual)';
 
   // Calendario de sorteos con el día de la semana YA calculado, para que el supervisor cache los
@@ -128,11 +128,31 @@ export default async function handler(req, res) {
         .map(s => '- ' + String(s.titulo || 'Sorteo').trim() + ' — ' + etiquetaFecha(s.fecha)).join('\n') + '\n'
     : '';
 
+  // Resultados/acumulados que Liliana SÍ conoce (el motor se los inyecta). SIN esto, el supervisor
+  // reportaba como "inventado" que Liliana dijera el ganador o el monto ACUMULADO del próximo sábado,
+  // cuando en realidad son datos correctos cargados por Mateo en la cabina.
+  const porFecha = {};
+  for (const g of (Array.isArray(cfg?.resultados) ? cfg.resultados : [])) if (g && g.fecha) porFecha[g.fecha] = g;
+  const describirResultado = (g) => {
+    if (!g) return '(aún no se ha jugado)';
+    if (g.acumulado) return 'se jugó SIN ganador; el premio se ACUMULÓ' + (g.acumulado_monto ? ' (el del próximo sube a ' + String(g.acumulado_monto).trim() + ')' : '');
+    const p = [];
+    if (g.numero) p.push('número ' + String(g.numero).trim());
+    if (g.nombre) p.push('ganador ' + String(g.nombre).trim());
+    if (g.ciudad) p.push(String(g.ciudad).trim());
+    return p.length ? p.join(', ') : '(aún no se ha jugado)';
+  };
+  const bloqueResultados = sorteos.length
+    ? '\nRESULTADOS REALES DE LOS SORTEOS (Liliana SÍ conoce estos datos y son CORRECTOS; el monto ACUMULADO del próximo sorteo es un dato real, NO un invento). NO reportes como error ni como "dato inventado" que Liliana diga el ganador o el monto acumulado de un sorteo si coincide con esto:\n' +
+      sorteos.slice().sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)))
+        .map(s => '- ' + String(s.titulo || 'Sorteo').trim() + ' — ' + etiquetaFecha(s.fecha) + ': ' + describirResultado(porFecha[s.fecha])).join('\n') + '\n'
+    : '';
+
   // 6) Revisión con Claude.
   const system =
     'Eres un SUPERVISOR DE CALIDAD del agente de ventas por WhatsApp llamado Liliana (rifa colombiana "Los Plata"). ' +
     'Tu trabajo es detectar ERRORES que cometió Liliana, para avisarle al dueño (Mateo).\n\n' +
-    'Este es el MANUAL que Liliana DEBE seguir:\n"""\n' + libreto + '\n"""\n' + bloqueFechas + '\n' +
+    'Este es el MANUAL que Liliana DEBE seguir:\n"""\n' + libreto + '\n"""\n' + bloqueFechas + bloqueResultados + '\n' +
     'Te paso varias conversaciones en orden. Los mensajes marcados [NUEVO] son los recientes aún sin revisar: CONCÉNTRATE en esos.\n' +
     'MUY IMPORTANTE — quién dijo cada cosa:\n' +
     '- "Liliana:" = el agente (lo que TÚ debes evaluar).\n' +
