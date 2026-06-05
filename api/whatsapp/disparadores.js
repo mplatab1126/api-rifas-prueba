@@ -27,15 +27,25 @@ export default async function handler(req, res) {
   try {
     if (accion === 'listar') {
       const { data } = await supabase
-        .from('disparadores').select('id, palabra, activo, created_at')
+        .from('disparadores').select('id, palabra, tipo, activo, created_at')
         .eq('linea_id', linea_id).order('created_at', { ascending: true });
       return res.status(200).json({ status: 'ok', disparadores: data || [] });
     }
 
     if (accion === 'crear') {
+      const tipo = req.body.tipo === 'nuevo_contacto' ? 'nuevo_contacto' : 'palabra';
+      if (tipo === 'nuevo_contacto') {
+        // Solo uno por línea (es un on/off: "atender a todo cliente nuevo").
+        const { data: yaHay } = await supabase
+          .from('disparadores').select('id').eq('linea_id', linea_id).eq('tipo', 'nuevo_contacto').maybeSingle();
+        if (yaHay) return res.status(200).json({ status: 'error', mensaje: 'Ya existe un disparador de "cliente nuevo".' });
+        const { error } = await supabaseAdmin.from('disparadores').insert({ linea_id, palabra: null, tipo, activo: true });
+        if (error) return res.status(200).json({ status: 'error', mensaje: error.message });
+        return res.status(200).json({ status: 'ok' });
+      }
       const palabra = String(req.body.palabra || '').trim().slice(0, 200);
       if (!palabra) return res.status(200).json({ status: 'error', mensaje: 'Escribe la palabra o frase clave.' });
-      const { error } = await supabaseAdmin.from('disparadores').insert({ linea_id, palabra, activo: true });
+      const { error } = await supabaseAdmin.from('disparadores').insert({ linea_id, palabra, tipo: 'palabra', activo: true });
       if (error) return res.status(200).json({ status: 'error', mensaje: error.message });
       return res.status(200).json({ status: 'ok' });
     }

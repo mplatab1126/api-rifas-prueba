@@ -414,6 +414,8 @@
     #modDisparadores { flex: 1; display: none; flex-direction: column; min-width: 0; background: var(--cream-50); overflow: hidden; }
     #nuevoDisparador { flex: 1; min-width: 200px; padding: 10px 16px; border: 1px solid var(--gray-200); border-radius: 10px; background: var(--cream-50); font-family: inherit; font-size: 0.88rem; color: var(--ink); outline: none; }
     #nuevoDisparador:focus { border-color: var(--gray-300); background: #fff; }
+    #tipoDisparador { padding: 10px 12px; border: 1px solid var(--gray-200); border-radius: 10px; background: var(--cream-50); font-family: inherit; font-size: 0.84rem; color: var(--ink); outline: none; cursor: pointer; }
+    .disp-sub { color: var(--ink-mute); font-weight: 400; font-size: 0.8rem; }
     #btnCrearDisparador { padding: 10px 18px; border: 1px solid var(--mint); background: var(--mint); border-radius: 10px; font-family: inherit; font-size: 0.84rem; font-weight: 600; color: var(--ink); cursor: pointer; }
     #btnCrearDisparador:hover { background: var(--mint-light); }
     #listaDisparadores { flex: 1; overflow-y: auto; padding: 14px 24px 20px; }
@@ -802,6 +804,10 @@
         <h2>Disparadores</h2>
         <div class="ag-sub" style="margin-bottom:12px">Palabras clave que <b>prenden el agente solo</b> en un chat. Cuando un cliente escriba un mensaje que <b>contenga</b> alguna de estas palabras, el agente se activa en ese chat y le responde (respeta el Modo sombra/Apagado de la cabina).</div>
         <div class="cont-actions">
+          <select id="tipoDisparador">
+            <option value="palabra">Por palabra clave</option>
+            <option value="nuevo_contacto">Cliente nuevo (primer mensaje)</option>
+          </select>
           <input id="nuevoDisparador" placeholder="Palabra o frase clave (ej: quiero más información)">
           <button id="btnCrearDisparador">Agregar</button>
         </div>
@@ -1867,19 +1873,24 @@ function pintarDisparadores(){
   $('listaDisparadores').innerHTML = disparadoresCache.map(d => `
     <div class="disp-row">
       <label class="ag-switch"><input type="checkbox" ${d.activo?'checked':''} onchange="toggleDisparador('${d.id}', this.checked)"><span class="sl"></span></label>
-      <span class="disp-palabra ${d.activo?'':'off'}">${esc(d.palabra)}</span>
+      <span class="disp-palabra ${d.activo?'':'off'}">${d.tipo === 'nuevo_contacto' ? '🆕 Cliente nuevo <span class="disp-sub">(cualquier primer mensaje)</span>' : '💬 ' + esc(d.palabra||'')}</span>
       <button class="disp-del" onclick="eliminarDisparador('${d.id}')" title="Eliminar">
         <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
       </button>
     </div>`).join('') || '<div class="vacio-lista">Aún no hay disparadores. Agrega una palabra clave arriba — por ejemplo "quiero más información" (el mensaje con que llegan tus clientes del anuncio de Meta).</div>';
 }
 async function crearDisparador(){
+  const tipo = $('tipoDisparador') ? $('tipoDisparador').value : 'palabra';
   const palabra = $('nuevoDisparador').value.trim();
-  if(!palabra) return;
-  const r = await api('disparadores', { accion:'crear', linea_id: lineaActual, palabra });
+  if(tipo === 'palabra' && !palabra) return;
+  const r = await api('disparadores', { accion:'crear', linea_id: lineaActual, tipo, palabra });
   if(r.status === 'ok'){ $('nuevoDisparador').value = ''; cargarDisparadores(); }
   else alert(r.mensaje || 'No se pudo agregar.');
 }
+// Si el tipo es "cliente nuevo", la palabra clave no aplica → oculta el cuadro de texto.
+if($('tipoDisparador')) $('tipoDisparador').onchange = function(){
+  if($('nuevoDisparador')) $('nuevoDisparador').style.display = (this.value === 'nuevo_contacto') ? 'none' : '';
+};
 window.toggleDisparador = async function(id, activo){
   const r = await api('disparadores', { accion:'toggle', linea_id: lineaActual, id, activo });
   if(r.status !== 'ok'){ alert(r.mensaje || 'No se pudo cambiar.'); cargarDisparadores(); }

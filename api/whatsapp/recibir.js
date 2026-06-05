@@ -101,8 +101,9 @@ async function guardarEntrante(m, nombrePerfil, lineaId) {
   // para este chat (ya retomaron la conversación, no hace falta el seguimiento automático).
   await cancelarRecordatorios(telefono, lineaId);
 
-  // Disparadores: si el mensaje contiene una palabra clave configurada, prende el agente en este chat.
-  await activarPorDisparador(telefono, lineaId, texto);
+  // Disparadores: si el mensaje contiene una palabra clave configurada, o si es un cliente NUEVO
+  // (primer mensaje) y hay un disparador de ese tipo, prende el agente en este chat.
+  await activarPorDisparador(telefono, lineaId, texto, !!(conversacion && conversacion.esNuevo));
 
   // Si el agente está activo en este chat, dispararlo de una (sin depender del navegador).
   await dispararAgenteSiActivo(telefono, lineaId);
@@ -112,10 +113,9 @@ async function guardarEntrante(m, nombrePerfil, lineaId) {
 // Si el mensaje del cliente contiene una palabra clave (tabla `disparadores`), prende el agente
 // en ese chat. No lo hace si: el agente ya está activo, un humano tomó el chat (estado='humano'),
 // o la línea tiene el agente en 'apagado'. El estado de línea (sombra/encendido) lo respeta el motor.
-async function activarPorDisparador(telefono, lineaId, texto) {
+async function activarPorDisparador(telefono, lineaId, texto, esConvNueva) {
   try {
     const t = String(texto || '').toLowerCase().trim();
-    if (!t) return;
     const { data: c } = await supabaseAdmin
       .from('conversaciones_whatsapp').select('id, agente_activo, estado')
       .eq('telefono', telefono).eq('linea_id', lineaId).maybeSingle();
@@ -126,9 +126,10 @@ async function activarPorDisparador(telefono, lineaId, texto) {
     if (cfg && cfg.estado === 'apagado') return;   // línea apagada: los disparadores no actúan
 
     const { data: disp } = await supabaseAdmin
-      .from('disparadores').select('palabra').eq('linea_id', lineaId).eq('activo', true);
+      .from('disparadores').select('palabra, tipo').eq('linea_id', lineaId).eq('activo', true);
     const hay = (disp || []).some(d => {
-      const p = String(d.palabra || '').toLowerCase().trim();
+      if (d.tipo === 'nuevo_contacto') return !!esConvNueva;          // cliente nuevo: cualquier 1er mensaje
+      const p = String(d.palabra || '').toLowerCase().trim();         // palabra clave: el texto la contiene
       return p && t.includes(p);
     });
     if (!hay) return;
@@ -212,7 +213,7 @@ async function upsertConversacion(telefono, nombrePerfil, preview, ts, esEntrant
       .from('conversaciones_whatsapp')
       .update(cambios)
       .eq('id', existente.id);
-    return existente;
+    return { id: existente.id, esNuevo: false };
   }
 
   const fila = { telefono, linea_id: lineaId, ...cambios };
@@ -225,7 +226,7 @@ async function upsertConversacion(telefono, nombrePerfil, preview, ts, esEntrant
     .insert(fila)
     .select('id')
     .single();
-  return nueva;
+  return { id: nueva?.id, esNuevo: true };   // esNuevo = es la primera vez que este cliente escribe
 }
 
 // ── Sacar el texto y el tipo de cualquier mensaje que mande Meta ────────────
