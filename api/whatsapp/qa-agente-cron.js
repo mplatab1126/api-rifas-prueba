@@ -170,17 +170,19 @@ export default async function handler(req, res) {
   } catch (_) { errores = []; }
 
   // 7) Guardar cada error como SUGERENCIA (error + regla) para el ciclo de mejora, y avisar a Mateo.
-  let enviado = false, errorEnvio = null;
+  let enviado = false, errorEnvio = null, insertadas = 0, errIns = null;
   const hayErrores = errores.length > 0;
   if (hayErrores) {
-    const filas = errores.map(e => ({
-      linea_id: LINEA,
-      cliente: String(e.cliente || '').slice(0, 120) || null,
-      error: String(e.error || '').slice(0, 500),
-      regla: String(e.regla || '').slice(0, 500),
-      estado: 'nuevo',
-    })).filter(f => f.error && f.regla);
-    if (filas.length) { try { await supabaseAdmin.from('agente_sugerencias').insert(filas); } catch (_) {} }
+    const filas = errores.map(e => {
+      const error = String(e.error || '').trim().slice(0, 500);
+      let regla = String(e.regla || '').trim().slice(0, 500);
+      if (!regla && error) regla = 'Evitar: ' + error;   // por si el modelo no propuso una regla
+      return { linea_id: LINEA, cliente: String(e.cliente || '').slice(0, 120) || null, error, regla, estado: 'nuevo' };
+    }).filter(f => f.error);
+    if (filas.length) {
+      const { error: e1 } = await supabaseAdmin.from('agente_sugerencias').insert(filas);
+      if (e1) errIns = e1.message; else insertadas = filas.length;
+    }
 
     const hora = new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit', hour12: true });
     const lista = errores.map(e => `• (${String(e.cliente || '').trim() || 'chat'}) ${String(e.error || '').trim()}`).join('\n');
@@ -192,7 +194,7 @@ export default async function handler(req, res) {
 
   // 8) Avanzar la marca de agua (ya revisamos hasta 'ahora').
   await avanzar(ahora);
-  return res.status(200).json({ status: 'ok', revisadas: bloques.length, hay_errores: hayErrores, enviado, errorEnvio });
+  return res.status(200).json({ status: 'ok', revisadas: bloques.length, hay_errores: hayErrores, insertadas, errIns, enviado, errorEnvio });
 }
 
 async function avanzar(ts) {
