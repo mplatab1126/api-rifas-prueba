@@ -105,10 +105,15 @@
     #buscar { margin: 12px 16px; padding: 10px 16px; border-radius: 10px; border: 1px solid transparent; background: var(--cream-100); font-family: inherit; font-size: 0.86rem; color: var(--ink); outline: none; }
     #buscar:focus { border-color: var(--gray-200); background: #fff; }
     #buscar::placeholder { color: var(--gray-400); }
-    #filtroSinResp { margin: 0 16px 10px; align-self: flex-start; padding: 7px 14px; border: 1px solid var(--gray-200); background: #fff; border-radius: 100px; font-family: inherit; font-size: 0.8rem; color: var(--ink-mute); cursor: pointer; display: flex; align-items: center; gap: 7px; transition: .15s; }
+    #filtros { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 16px 10px; }
+    #filtrosEtiq { display: flex; flex-wrap: wrap; gap: 6px; }
+    #filtroSinResp { padding: 7px 14px; border: 1px solid var(--gray-200); background: #fff; border-radius: 100px; font-family: inherit; font-size: 0.8rem; color: var(--ink-mute); cursor: pointer; display: flex; align-items: center; gap: 7px; transition: .15s; }
     #filtroSinResp:hover { border-color: var(--gray-300); }
     #filtroSinResp.on { background: var(--mint); color: var(--ink); border-color: var(--mint); font-weight: 600; }
     #filtroSinResp .cnt { background: rgba(0,0,0,0.10); border-radius: 100px; padding: 1px 8px; font-size: 0.72rem; min-width: 18px; text-align: center; }
+    .filtro-etiq { padding: 7px 12px; border: 1px solid var(--gray-200); background: #fff; border-radius: 100px; font-family: inherit; font-size: 0.78rem; color: var(--ink-mute); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: .15s; white-space: nowrap; }
+    .filtro-etiq:hover { border-color: var(--gray-300); }
+    .filtro-etiq.on { background: var(--mint); color: var(--ink); border-color: var(--mint); font-weight: 600; }
     #tabs { display: flex; gap: 6px; margin: 12px 16px 0; }
     .tab { flex: 1; padding: 8px; border: 1px solid var(--gray-200); background: #fff; border-radius: 8px; font-family: inherit; font-size: 0.84rem; color: var(--ink-mute); cursor: pointer; }
     .tab.on { background: var(--cream-100); color: var(--ink); font-weight: 600; border-color: var(--gray-300); }
@@ -633,7 +638,10 @@
     <div id="modChats">
       <div id="lista">
         <input id="buscar" placeholder="Buscar por nombre o número">
-        <button id="filtroSinResp">Sin respuesta <span class="cnt" id="cntSinResp">0</span></button>
+        <div id="filtros">
+          <button id="filtroSinResp">Sin respuesta <span class="cnt" id="cntSinResp">0</span></button>
+          <span id="filtrosEtiq"></span>
+        </div>
         <div id="chats"></div>
       </div>
 
@@ -786,6 +794,9 @@ let actualLinea = null;       // línea del chat abierto
 let vista = 'chats';          // 'chats' | 'contactos' | 'difusiones' | 'respuestas'
 let dfTab = 'campanas';       // pestaña activa dentro de Difusiones: 'campanas' | 'plantillas'
 let difusionesCache = [], plantillasCache = [], etiquetasCache = [];
+let filtroEtiqueta = null;    // etiqueta por la que se filtra la lista de chats (o null)
+let etiquetasFiltro = [];     // etiquetas de la línea, para los chips de filtro
+let etiqFiltroLinea = null;   // de qué línea se cargaron los chips (para recargarlos al cambiar)
 let dfEnviando = false;       // candado para no disparar dos envíos a la vez
 let dfForm = null;            // borrador del formulario de difusión en edición
 let contactosPage = 0, contactosTotal = 0, timerBuscar = null;
@@ -944,7 +955,9 @@ window.toggleSonido = function(){
 };
 
 async function cargarLista(){
-  const r = await api('conversaciones', { soloSinRespuesta, q: buscarChatsQ, linea_id: lineaActual });
+  // Si cambió la línea, recargar los chips de etiquetas y soltar el filtro (las etiquetas son por línea).
+  if(lineaActual && lineaActual !== etiqFiltroLinea){ etiqFiltroLinea = lineaActual; filtroEtiqueta = null; cargarEtiquetasFiltro(); }
+  const r = await api('conversaciones', { soloSinRespuesta, q: buscarChatsQ, etiqueta_id: filtroEtiqueta, linea_id: lineaActual });
   if(r.status !== 'ok'){ if(r.mensaje && /restringido/i.test(r.mensaje)){ localStorage.removeItem(PWD_KEY); location.reload(); } return; }
   conversaciones = r.conversaciones;
   if(typeof r.sinRespuestaTotal === 'number') $('cntSinResp').textContent = r.sinRespuestaTotal;
@@ -970,12 +983,30 @@ $('filtroSinResp').onclick = () => {
   cargarLista();
 };
 
+/* ── Filtros por etiqueta (chips junto a "Sin respuesta") ── */
+async function cargarEtiquetasFiltro(){
+  const r = await api('etiquetas', { accion:'listar', linea_id: lineaActual });
+  etiquetasFiltro = (r && r.etiquetas) || [];
+  pintarFiltrosEtiq();
+}
+function pintarFiltrosEtiq(){
+  const cont = $('filtrosEtiq'); if(!cont) return;
+  cont.innerHTML = etiquetasFiltro.map(e =>
+    `<button class="filtro-etiq ${filtroEtiqueta===e.id?'on':''}" onclick="toggleFiltroEtiqueta('${e.id}')">${e.icono?esc(e.icono)+' ':''}${esc(e.nombre)}</button>`
+  ).join('');
+}
+window.toggleFiltroEtiqueta = function(id){
+  filtroEtiqueta = (filtroEtiqueta === id) ? null : id;   // clic en la activa la apaga
+  pintarFiltrosEtiq();
+  cargarLista();
+};
+
 let firmaLista = '';
 function pintarLista(){
   const cont = $('chats');
   const visibles = conversaciones;   // el servidor ya filtró por la búsqueda (en TODA la base)
   // Solo redibujar si de verdad cambió algo (evita parpadeo y trabajo innecesario cada 5s)
-  const firma = buscarChatsQ + '|' + actual + '|' + visibles.map(c =>
+  const firma = buscarChatsQ + '|' + (filtroEtiqueta||'') + '|' + soloSinRespuesta + '|' + actual + '|' + visibles.map(c =>
     c.telefono + ':' + c.ultimo_at + ':' + c.no_leidos + ':' + (c.ultimo_mensaje || '').length + ':' + (c.etiquetas || []).map(e => e.id).join('.')
   ).join('|');
   if(firma === firmaLista) return;
@@ -992,7 +1023,7 @@ function pintarLista(){
         <div class="hora">${hora(c.ultimo_at)}</div>
         ${c.no_leidos > 0 ? `<div class="badge">${c.no_leidos}</div>` : ''}
       </div>
-    </div>`).join('') || `<div class="vacio-lista">${buscarChatsQ ? 'Sin resultados para tu búsqueda' : 'Aún no hay conversaciones'}</div>`;
+    </div>`).join('') || `<div class="vacio-lista">${buscarChatsQ ? 'Sin resultados para tu búsqueda' : (filtroEtiqueta ? 'Ningún chat con esa etiqueta' : (soloSinRespuesta ? 'No hay chats sin responder' : 'Aún no hay conversaciones'))}</div>`;
 }
 
 // Buscar chats EN EL SERVIDOR (en toda la base, no solo en lo cargado), con una
