@@ -35,7 +35,7 @@ const MAX_ITER = 6;          // tope de idas/vueltas con la IA por cada mensaje 
 const MAX_HISTORIAL = 300;   // TOPE de seguridad de mensajes; el corte normal es por RIFA (ver abajo)
 const PAUSA_MS = 800;        // entre los pasos del contacto inicial (para que lleguen en orden)
 const DEBOUNCE_MS = 7000;    // silencio que esperamos para dar por terminada la ráfaga del cliente
-const DEBOUNCE_MAX_MS = 20000; // tope total de espera por si el cliente escribe sin parar
+const DEBOUNCE_MAX_MS = 12000; // tope total de espera por si el cliente escribe sin parar (margen ante el límite de 60s)
 
 const dormir = (ms) => new Promise(r => setTimeout(r, ms));
 const MAX_IMAGENES = 2;   // imágenes entrantes recientes que se le muestran a la IA (comprobantes)
@@ -289,6 +289,14 @@ async function guardarEnChat(conv, { direccion, tipo = 'text', texto = null, med
     await supabaseAdmin.from('conversaciones_whatsapp')
       .update({ ultimo_mensaje: String(texto || '📷').slice(0, 200), ultimo_at: ts, ultimo_entrante: false })
       .eq('id', conv.id);
+  } else {
+    // Las notas (acciones del agente, reales o de modo sombra) también van al registro central
+    // de actividad, para que Mateo las vea todas juntas en la cabina, no chat por chat.
+    try {
+      await supabaseAdmin.from('agente_actividad').insert({
+        linea_id: conv.linea_id, telefono: conv.telefono, tipo: 'nota', resumen: String(texto || '').slice(0, 500),
+      });
+    } catch (_) { /* no es crítico */ }
   }
 }
 
@@ -301,12 +309,29 @@ async function nota(conv, texto) {
 async function decir(conv, texto) {
   const t = String(texto || '').trim();
   if (!t) return;
+  // MODO SOMBRA: no le escribe al cliente; deja una nota con lo que diría.
+  if (conv.sombra) { await guardarEnChat(conv, { direccion: 'nota', tipo: 'nota', texto: '🌓 (modo sombra) le diría: «' + t + '»' }); return; }
   const env = await enviarTexto(conv.telefono, t, conv.linea_id);
   await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: t, wa_message_id: env.wa_message_id || null });
 }
 
+// Herramientas que ENVÍAN mensajes o mueven plata/inventario. En MODO SOMBRA estas NO se
+// ejecutan (se deja una nota de "qué haría"); las de solo lectura sí corren para que la prueba
+// sea realista.
+const HERRAMIENTAS_CON_EFECTO = new Set([
+  'enviar_contacto_inicial', 'enviar_boleta', 'enviar_resolucion', 'apartar_numero',
+  'registrar_abono', 'liberar_boleta', 'trasladar_abono', 'programar_recordatorio',
+  'actualizar_datos_cliente', 'pasar_a_humano',
+]);
+
 // ── Ejecutores de cada herramienta. Devuelven texto-resultado para la IA. ────
 async function ejecutarHerramienta(nombre, input, conv) {
+  // MODO SOMBRA: no ejecutar las herramientas con efecto real; solo registrar qué haría.
+  if (conv.sombra && HERRAMIENTAS_CON_EFECTO.has(nombre)) {
+    const det = (input && Object.keys(input).length) ? ' → ' + JSON.stringify(input) : '';
+    await guardarEnChat(conv, { direccion: 'nota', tipo: 'nota', texto: '🌓 (modo sombra) habría usado «' + nombre + '»' + det });
+    return '[MODO SOMBRA] La acción "' + nombre + '" NO se ejecutó (es una prueba). Continúa la conversación como si hubiera salido bien.';
+  }
   if (nombre === 'consultar_disponibles') {
     const { texto } = await numerosDisponibles({ canal: 'bandeja' });
     await nota(conv, 'Consulté los números disponibles.');
@@ -323,7 +348,8 @@ async function ejecutarHerramienta(nombre, input, conv) {
   }
 
   if (nombre === 'consultar_cliente') {
-    const tel = String(input?.telefono || conv.telefono || '').replace(/\D/g, '');
+    // SIEMPRE el teléfono del chat (privacidad: que el cliente no pueda consultar datos de otro).
+    const tel = String(conv.telefono || '').replace(/\D/g, '');
     const last10 = tel.slice(-10);
     const { data: boletas } = await supabase
       .from('boletas')
@@ -415,6 +441,13 @@ async function ejecutarHerramienta(nombre, input, conv) {
     if (!v.sugerida_id) {
       await nota(conv, 'Recibí un comprobante pero NO encontré el pago real en el sistema. ' + (v.diagnostico || ''));
       return 'El comprobante NO coincide con ningún pago real cargado en el sistema. NO registres el abono. Avísale con tacto que un asesor va a verificar su pago, y pásalo a un asesor.';
+    }
+    // Seguridad: si la ÚNICA coincidencia es "mismo minuto" (cualquier plataforma), NO basta para
+    // abonar solo (dos clientes pueden pagar el mismo valor el mismo minuto). Lo pasa a un humano.
+    // Las coincidencias por referencia o por el celular del cliente sí valen.
+    if (v.razon_sugerida === 'Misma hora') {
+      await nota(conv, 'Encontré un pago del mismo valor a la misma hora, pero NO pude confirmar que sea de este cliente (sin referencia ni su celular). Lo dejo para que un asesor lo verifique.');
+      return 'Hay un pago del mismo valor a la misma hora, pero NO puedo confirmar con seguridad que sea de este cliente (no coincide la referencia ni su celular). NO registres el abono: avísale con tacto que un asesor confirma su pago enseguida, y pásalo a un asesor.';
     }
     const trans = (v.candidatas || []).find(c => c.id === v.sugerida_id);
     if (!trans) return 'No pude identificar el pago con seguridad. Pásalo a un asesor.';
@@ -548,6 +581,11 @@ async function ejecutarHerramienta(nombre, input, conv) {
     await supabaseAdmin.from('conversaciones_whatsapp')
       .update({ agente_activo: false, estado: 'humano' })
       .eq('id', conv.id);
+    // Si quedaba un recordatorio pendiente, cancelarlo (ya lo atiende un humano).
+    try {
+      await supabaseAdmin.from('recordatorios').update({ estado: 'cancelado' })
+        .eq('linea_id', conv.linea_id).eq('telefono', conv.telefono).eq('estado', 'pendiente');
+    } catch (_) {}
     await nota(conv, 'Pasé el chat a un asesor y me apagué. Motivo: ' + motivo);
     return 'AGENTE_APAGADO: el chat quedó en manos de un asesor humano. Envía un último mensaje breve y cálido avisando que un asesor lo atiende enseguida, y no hagas nada más.';
   }
@@ -626,11 +664,20 @@ export default async function handler(req, res) {
     if (!conv) return res.status(200).json({ status: 'error', mensaje: 'No existe esa conversación.' });
     if (!conv.agente_activo) return res.status(200).json({ status: 'ok', skip: 'El agente no está activo en este chat.' });
 
+    // 1b) Estado de la LÍNEA (interruptor de la cabina): 'apagado' = no responde (apaga toda la
+    //     línea de golpe); 'sombra' = el agente PIENSA y deja notas pero NO le escribe al cliente
+    //     ni ejecuta acciones (probar viendo errores SIN riesgo); cualquier otra cosa = en vivo.
+    const { data: cfgEstado } = await supabase
+      .from('agente_config').select('estado').eq('linea_id', linea_id).maybeSingle();
+    const estadoLinea = (cfgEstado && cfgEstado.estado) || 'encendido';
+    if (estadoLinea === 'apagado') return res.status(200).json({ status: 'ok', skip: 'La línea tiene el agente en Apagado.' });
+    conv.sombra = (estadoLinea === 'sombra');
+
     // 2) CANDADO PRIMERO: solo UNA corrida responde a la vez. Tomarlo ANTES de leer
     //    el historial cierra la ventana de doble respuesta (y de doble abono).
     let bloqueado = false;
     try {
-      const expira = new Date(Date.now() - 45000).toISOString();
+      const expira = new Date(Date.now() - 30000).toISOString();   // candado se recupera en 30s si una corrida se cae
       const { data: lock, error: lockErr } = await supabaseAdmin
         .from('conversaciones_whatsapp')
         .update({ agente_procesando_at: new Date().toISOString() })
@@ -662,6 +709,9 @@ export default async function handler(req, res) {
         await dormir(DEBOUNCE_MS - silencioMs + 250);       // espera lo que falta; si entra otro mensaje, su hora más nueva reinicia el conteo
       }
     }
+
+    // Botón de pánico: si apagaron el agente en este chat durante la espera (debounce), parar ya.
+    if (!(await sigueActivo(conv.id))) { await soltarLock(conv); return res.status(200).json({ status: 'ok', skip: 'Apagaron el agente antes de responder.' }); }
 
     // 3) Historial. El agente recuerda SOLO desde que empezó la rifa activa (no arrastra
     //    el contexto de rifas pasadas: precios, premios y números viejos ya no aplican).
@@ -835,6 +885,9 @@ export default async function handler(req, res) {
     // 5) Bucle de razonamiento + herramientas.
     let apagado = false;
     for (let iter = 0; iter < MAX_ITER; iter++) {
+      // Botón de pánico a mitad de la respuesta: si apagaron el agente en este chat, parar ya
+      // (no mandar más mensajes ni ejecutar más acciones).
+      if (iter > 0 && !(await sigueActivo(conv.id))) { await soltarLock(conv); return res.status(200).json({ status: 'ok', skip: 'Apagaron el agente a mitad de la respuesta.' }); }
       const resp = await fetch(ANTHROPIC_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
@@ -898,4 +951,13 @@ export default async function handler(req, res) {
 // Libera el candado de la conversación (best-effort).
 async function soltarLock(conv) {
   try { await supabaseAdmin.from('conversaciones_whatsapp').update({ agente_procesando_at: null }).eq('id', conv.id); } catch (_) {}
+}
+
+// ¿El agente SIGUE prendido en este chat? (para el "botón de pánico": si lo apagaron a mitad
+// de la respuesta, dejamos de escribir/actuar). Ante duda (error de consulta), asumimos que sí.
+async function sigueActivo(convId) {
+  try {
+    const { data } = await supabase.from('conversaciones_whatsapp').select('agente_activo').eq('id', convId).maybeSingle();
+    return !data || data.agente_activo !== false;
+  } catch (_) { return true; }
 }
