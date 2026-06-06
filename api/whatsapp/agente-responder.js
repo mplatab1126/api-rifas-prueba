@@ -774,9 +774,29 @@ export default async function handler(req, res) {
           .or('agente_respondido_ms.is.null,agente_respondido_ms.lt.' + hastaMs)
           .select('id')
           .maybeSingle();
-        // Solo nos salimos cuando el UPDATE corrió bien y NO ganamos (otra corrida ya tomó este
-        // mensaje). Si el UPDATE diera error, seguimos (mejor responder que quedar callados).
-        if (!geClaim && !gano) {
+        if (geClaim) {
+          // El candado atómico FALLÓ. Causa típica: la API no "ve" la columna por CACHÉ DE ESQUEMA
+          // (§8.9) — fue justo lo que tuvo el agente meses dejando pasar saludos duplicados. Aquí ya
+          // NO fallamos en silencio: (1) dejamos rastro VISIBLE en la actividad para detectarlo, y
+          // (2) aplicamos un respaldo que NO depende de la columna nueva: si OTRA corrida ya le
+          // escribió al cliente DESPUÉS de su último mensaje, esta se sale. Si nadie ha escrito aún,
+          // seguimos (nunca dejar a Liliana callada).
+          try {
+            await supabaseAdmin.from('agente_actividad').insert({
+              linea_id: conv.linea_id, telefono: conv.telefono, tipo: 'error',
+              resumen: 'Candado anti-duplicado falló: ' + (geClaim.message || 'error') + '. Recargar el esquema (apply_migration).',
+            });
+          } catch (_) {}
+          const { data: yaResp } = await supabaseAdmin
+            .from('mensajes_whatsapp').select('id')
+            .eq('conversacion_id', conv.id).eq('direccion', 'saliente')
+            .gt('timestamp_wa', new Date(hastaMs).toISOString()).limit(1);
+          if (yaResp && yaResp.length) {
+            await soltarLock(conv);
+            return res.status(200).json({ status: 'ok', skip: 'Otra corrida ya respondió (respaldo anti-duplicado).' });
+          }
+        } else if (!gano) {
+          // El UPDATE corrió bien y NO ganamos: otra corrida ya tomó este mensaje. Nos salimos.
           await soltarLock(conv);
           return res.status(200).json({ status: 'ok', skip: 'Otra corrida ya respondió a este mensaje (anti-duplicado).' });
         }
