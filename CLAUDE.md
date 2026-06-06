@@ -43,6 +43,29 @@ Si "publicaste pero no se ve", el código casi nunca es el problema. Revisa **PR
 
 - Responde siempre en español.
 
+## Memoria del proyecto (MUY IMPORTANTE)
+
+El sistema tiene memoria en dos niveles. Respétalos:
+
+1. **Este archivo (`CLAUDE.md`) = las reglas de la casa.** Corto, se lee en cada
+   chat. Aquí van reglas, convenciones y advertencias — NO detalles largos.
+   Mantenerlo breve para no llenar la memoria del chat.
+2. **`docs/MAPA-DEL-SISTEMA.md` = el archivador.** Tiene el detalle de cada
+   página y cada función. NO hace falta leerlo entero; ábrelo solo cuando
+   necesites entender o tocar una parte específica.
+
+**Reglas obligatorias para cada chat:**
+
+- Antes de crear una función nueva, revisa en el mapa la sección "Piezas
+  reutilizables" (`api/lib/`). Si ya existe algo que sirve, reutilízalo en vez de
+  duplicarlo.
+- Cuando termines un cambio que cree, borre o modifique de forma importante una
+  página o función, **actualiza `docs/MAPA-DEL-SISTEMA.md`** (su línea y la fecha)
+  antes de cerrar.
+- Si detectas código que ya no se usa, anótalo en la sección "Candidatos a
+  revisar" del mapa. **No lo borres sin confirmarlo con Mateo primero.**
+- No agregues detalles largos a este `CLAUDE.md`; van en el mapa.
+
 ---
 
 # Proyecto: Sistema de Rifas "Los Plata S.A.S."
