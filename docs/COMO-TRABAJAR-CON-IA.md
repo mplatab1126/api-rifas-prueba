@@ -12,25 +12,34 @@
 Copia esto y pégalo apenas abras un chat nuevo, antes de pedir nada:
 
 ```
-Antes de empezar, lee los archivos CLAUDE.md y docs/BITACORA-DE-DECISIONES.md
-para entender las reglas y las decisiones del proyecto. Si vamos a tocar una
-parte específica, abre también su sección en docs/MAPA-DEL-SISTEMA.md. No crees
-nada nuevo sin revisar antes las piezas reutilizables en api/lib/. Si el cambio
-toca pagos, abonos, permisos o la base de datos, explícame qué vas a hacer ANTES
-de tocar nada.
+Antes de empezar, lee estos archivos para entender el proyecto:
+- CLAUDE.md (las reglas de la casa).
+- docs/BITACORA-DE-DECISIONES.md (las decisiones importantes y su porqué).
+- docs/PENDIENTES.md (las tareas que quedaron pendientes de otros chats).
+Si vamos a tocar una parte específica, abre también su sección en
+docs/MAPA-DEL-SISTEMA.md. No crees nada nuevo sin revisar antes las piezas
+reutilizables en api/lib/. Si el cambio toca pagos, abonos, permisos o la base de
+datos, explícame qué vas a hacer ANTES de tocar nada. Para terminar, dime si hay
+algo pendiente importante antes de arrancar.
 ```
 
 ---
 
 ## 2️⃣ Frase para CERRAR el chat
 
-Copia esto y pégalo cuando ya terminen el trabajo, antes de cerrar:
+Copia esto y pégalo cuando vayas a cerrar este chat para abrir uno nuevo:
 
 ```
-Antes de cerrar: 1) si creaste, borraste o cambiaste una página o función,
-actualiza docs/MAPA-DEL-SISTEMA.md con la fecha; 2) si tomamos una decisión
-importante (de dinero, seguridad o qué quitar), agrégala arriba en
-docs/BITACORA-DE-DECISIONES.md con la fecha, qué y por qué; 3) publica el cambio.
+Voy a cerrar este chat y abrir uno nuevo, así que deja todo en orden:
+1. Publica directo a la rama main TODO cambio que hayamos hecho y que falte por
+   publicar (NO crees solicitudes/PR). Confírmame que quedó al aire.
+2. Si creaste, borraste o cambiaste una página o función, actualiza
+   docs/MAPA-DEL-SISTEMA.md con la fecha.
+3. Si tomamos una decisión importante (dinero, seguridad o qué quitar), agrégala
+   arriba en docs/BITACORA-DE-DECISIONES.md con la fecha, qué y por qué.
+4. Actualiza docs/PENDIENTES.md: anota las tareas que quedaron sin terminar y
+   borra (o marca como hechas) las que ya completamos.
+5. Confírmame que todo quedó publicado en main y la documentación al día.
 ```
 
 ---

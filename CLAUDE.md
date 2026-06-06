@@ -57,24 +57,30 @@ El sistema tiene memoria en tres niveles. Respétalos:
    las decisiones importantes (dinero, seguridad, base de datos, qué se quitó).
    Revísalo antes de cambiar o eliminar algo, para no deshacer una decisión.
 
+Además existe **`docs/PENDIENTES.md` = la lista de tareas a medias**, para pasar
+el hilo de un chat a otro sin perder nada.
+
 ### Protocolo de cada chat (inicio y cierre)
 
 **AL EMPEZAR un trabajo:**
-1. Lee `CLAUDE.md` y `docs/BITACORA-DE-DECISIONES.md`.
+1. Lee `CLAUDE.md`, `docs/BITACORA-DE-DECISIONES.md` y `docs/PENDIENTES.md`.
 2. Si vas a tocar una parte específica, abre su sección en
    `docs/MAPA-DEL-SISTEMA.md`.
 3. Antes de crear algo nuevo, revisa las "Piezas reutilizables" (`api/lib/`).
 4. Para cambios delicados (pagos, abonos, permisos, base de datos), explícale a
    Mateo qué vas a hacer ANTES de tocar nada.
 
-**AL TERMINAR un trabajo:**
-1. Si creaste/borraste/cambiaste una página o función, actualiza
+**AL TERMINAR un trabajo (Mateo suele cerrar el chat y abrir uno nuevo):**
+1. Publica directo a `main` TODO cambio hecho que falte por publicar (sin crear
+   solicitudes/PR; ver "Publicar cambios en internet") y confírmalo al aire.
+2. Si creaste/borraste/cambiaste una página o función, actualiza
    `docs/MAPA-DEL-SISTEMA.md` (su línea y la fecha).
-2. Si tomaste una decisión importante, agrégala arriba en
+3. Si tomaste una decisión importante, agrégala arriba en
    `docs/BITACORA-DE-DECISIONES.md` (fecha, qué y por qué).
-3. Si detectaste código sin usar, anótalo en "Candidatos a revisar" del mapa
+4. Actualiza `docs/PENDIENTES.md`: anota lo que quedó sin terminar y borra/marca
+   lo ya completado.
+5. Si detectaste código sin usar, anótalo en "Candidatos a revisar" del mapa
    (NO lo borres sin confirmarlo con Mateo).
-4. Publica el cambio (ver sección "Publicar cambios en internet").
 
 > No agregues detalles largos a este `CLAUDE.md`; los detalles van en el mapa y
 > los porqués en la bitácora.

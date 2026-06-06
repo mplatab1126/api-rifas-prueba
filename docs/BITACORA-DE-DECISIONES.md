@@ -42,6 +42,20 @@ memoria del chat). Los detalles van en el mapa; los porqués, aquí.
 
 ---
 
+## 2026-06-06 — [Documentación] — Lista de pendientes para pasar el hilo entre chats
+
+**Qué decidimos:** crear `docs/PENDIENTES.md` y agregar al protocolo de cierre que
+cada chat, antes de cerrar, publique todo a `main`, anote las tareas a medias y
+borre las ya terminadas.
+
+**Por qué:** Mateo cierra un chat y abre otro nuevo seguido. Sin una lista de
+pendientes, las tareas a medias se perdían al cambiar de chat.
+
+**Cuidado / qué NO hacer:** publicar siempre directo a `main`, sin crear
+solicitudes/PR.
+
+---
+
 ## 2026-06-06 — [Documentación] — Una sola bitácora, no una por sistema
 
 **Qué decidimos:** mantener UN solo archivo de bitácora de decisiones, con una
