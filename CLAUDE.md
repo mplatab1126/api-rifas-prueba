@@ -45,7 +45,7 @@ Si "publicaste pero no se ve", el código casi nunca es el problema. Revisa **PR
 
 ## Memoria del proyecto (MUY IMPORTANTE)
 
-El sistema tiene memoria en dos niveles. Respétalos:
+El sistema tiene memoria en tres niveles. Respétalos:
 
 1. **Este archivo (`CLAUDE.md`) = las reglas de la casa.** Corto, se lee en cada
    chat. Aquí van reglas, convenciones y advertencias — NO detalles largos.
@@ -53,18 +53,31 @@ El sistema tiene memoria en dos niveles. Respétalos:
 2. **`docs/MAPA-DEL-SISTEMA.md` = el archivador.** Tiene el detalle de cada
    página y cada función. NO hace falta leerlo entero; ábrelo solo cuando
    necesites entender o tocar una parte específica.
+3. **`docs/BITACORA-DE-DECISIONES.md` = el diario de decisiones.** El PORQUÉ de
+   las decisiones importantes (dinero, seguridad, base de datos, qué se quitó).
+   Revísalo antes de cambiar o eliminar algo, para no deshacer una decisión.
 
-**Reglas obligatorias para cada chat:**
+### Protocolo de cada chat (inicio y cierre)
 
-- Antes de crear una función nueva, revisa en el mapa la sección "Piezas
-  reutilizables" (`api/lib/`). Si ya existe algo que sirve, reutilízalo en vez de
-  duplicarlo.
-- Cuando termines un cambio que cree, borre o modifique de forma importante una
-  página o función, **actualiza `docs/MAPA-DEL-SISTEMA.md`** (su línea y la fecha)
-  antes de cerrar.
-- Si detectas código que ya no se usa, anótalo en la sección "Candidatos a
-  revisar" del mapa. **No lo borres sin confirmarlo con Mateo primero.**
-- No agregues detalles largos a este `CLAUDE.md`; van en el mapa.
+**AL EMPEZAR un trabajo:**
+1. Lee `CLAUDE.md` y `docs/BITACORA-DE-DECISIONES.md`.
+2. Si vas a tocar una parte específica, abre su sección en
+   `docs/MAPA-DEL-SISTEMA.md`.
+3. Antes de crear algo nuevo, revisa las "Piezas reutilizables" (`api/lib/`).
+4. Para cambios delicados (pagos, abonos, permisos, base de datos), explícale a
+   Mateo qué vas a hacer ANTES de tocar nada.
+
+**AL TERMINAR un trabajo:**
+1. Si creaste/borraste/cambiaste una página o función, actualiza
+   `docs/MAPA-DEL-SISTEMA.md` (su línea y la fecha).
+2. Si tomaste una decisión importante, agrégala arriba en
+   `docs/BITACORA-DE-DECISIONES.md` (fecha, qué y por qué).
+3. Si detectaste código sin usar, anótalo en "Candidatos a revisar" del mapa
+   (NO lo borres sin confirmarlo con Mateo).
+4. Publica el cambio (ver sección "Publicar cambios en internet").
+
+> No agregues detalles largos a este `CLAUDE.md`; los detalles van en el mapa y
+> los porqués en la bitácora.
 
 ---
 
