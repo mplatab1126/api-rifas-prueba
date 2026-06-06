@@ -151,9 +151,17 @@ mensajes), `enviar.js`, `enviar-archivo.js`, `enviar-boleta.js`, `mensajes.js`,
 **Agente de IA (Claude):** `agente.js` (cabina de control), `agente-responder.js`
 (el motor que conversa y ejecuta acciones), `agente-costo.js` (cuánto cuesta en
 dólares), `disparadores.js` (palabras que prenden el agente),
-`qa-agente-cron.js` (supervisor automático cada 5 min),
+`qa-agente-cron.js` (supervisor automático — **PAUSADO** desde 2026-06-06, ver
+bitácora; código intacto pero no corre),
 `recordatorios-cron.js` (recordatorios del agente cada minuto),
 `abono-reparto.js`, `buscar-pago.js`.
+
+**Candados anti-duplicado del agente (funciones EN LA BASE DE DATOS):**
+`agente_tomar_lock`, `agente_refrescar_lock`, `agente_claim_respuesta`,
+`agente_soltar_lock`. `agente-responder.js` las llama por RPC para que una sola
+copia de Liliana responda cada mensaje (antes mandaba el saludo varias veces).
+Viven en la base —no en columnas— para no depender de la caché de esquema de
+PostgREST. Ver bitácora 2026-06-06. Deben tener permiso `EXECUTE`.
 
 **Líneas y conexión:** `lineas.js`, `conectar-linea.js`.
 

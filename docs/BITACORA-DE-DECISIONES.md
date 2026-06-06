@@ -26,6 +26,48 @@
 
 ---
 
+## 2026-06-06 — [WhatsApp] / [Base de datos] — Liliana: candados anti-duplicado en funciones de la base (RPC)
+
+**Qué decidimos:** los "candados" que evitan que Liliana responda dos veces el
+mismo mensaje (el de proceso y el anti-duplicado por tanda) ahora viven en
+**funciones de la base de datos** (`agente_tomar_lock`, `agente_refrescar_lock`,
+`agente_claim_respuesta`, `agente_soltar_lock`), y `agente-responder.js` las llama
+por RPC, en vez de escribir directo en columnas de `conversaciones_whatsapp`.
+
+**Por qué:** durante semanas Liliana mandaba el saludo 2 a 4 veces a cada cliente
+nuevo. La causa NO era la IA: las columnas de los candados (`agente_procesando_at`,
+`agente_respondido_ms`) se habían agregado **después** de la última recarga de la
+API de Supabase (PostgREST), y la API **no las "veía"** (error `column ... does
+not exist`). Como el candado fallaba en silencio, corrían varias copias de Liliana
+a la vez y cada una mandaba su saludo. Metiendo la lógica en funciones de la base,
+el candado deja de depender de esa caché y queda inmune. Verificado: 0 duplicados
+desde el arreglo.
+
+**Cuidado / qué NO hacer:** NO volver a hacer el candado escribiendo directo a una
+columna NUEVA de `conversaciones_whatsapp`. Si agregas una columna que la API va a
+usar y sale `column ... does not exist`, es la caché de PostgREST: hay que
+**reiniciar la API desde el panel de Supabase** (un NOTIFY/ALTER por SQL no bastó).
+Las 4 funciones deben conservar permiso `EXECUTE` para `service_role`,
+`authenticated` y `anon`.
+
+---
+
+## 2026-06-06 — [WhatsApp] — Supervisor automático de Liliana PAUSADO
+
+**Qué decidimos:** apagar el supervisor que revisaba a Liliana y le mandaba a
+Mateo reportes de errores por WhatsApp. Se pausó su tarea programada en Supabase
+(`cron.job` id 2, `supervisor-agente-cada-5min` → `active=false`). El código
+(`api/whatsapp/qa-agente-cron.js`) queda intacto; solo no se ejecuta.
+
+**Por qué:** decisión de Mateo. Generaba muchas sugerencias repetidas y varias
+trataban como "error de Liliana" cosas que en realidad eran un bug del sistema
+(los saludos duplicados), no de la IA.
+
+**Cuidado / qué NO hacer:** para reactivarlo, en Supabase:
+`select cron.alter_job(job_id := 2, active := true);`. No hace falta tocar código.
+
+---
+
 ## 2026-06-06 — [Documentación] — Memoria del proyecto en tres niveles
 
 **Qué decidimos:** crear un sistema de memoria escrita en tres archivos:
