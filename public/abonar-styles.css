@@ -1027,3 +1027,17 @@ input { font-family: inherit; }
   .ab-boleta-numero { font-size: 26px; }
   .ab-resumen-value { font-size: 26px; }
 }
+
+/* ───── Computador / pantallas anchas ─────
+   (Aplica a "Abonar" y a "Ver mi boleta", que comparten esta hoja.)
+   Fondo crema con sutil resplandor menta + columna un poco más ancha, para que
+   no se vea como una tira perdida. SOLO de 768px en adelante; el celular igual. */
+@media (min-width: 768px) {
+  body {
+    background-color: var(--cream-100);
+    background-image: radial-gradient(120% 60% at 50% 0%, rgba(155,250,176,0.10), transparent 60%);
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+  }
+  .abonar { max-width: 600px; }
+}

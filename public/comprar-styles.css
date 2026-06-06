@@ -1995,4 +1995,18 @@ body.cb-body-exito {
   font-weight: 600;
 }
 
+/* ───── Computador / pantallas anchas ─────
+   Para que en el computador no se vea como una tira perdida en un fondo vacío:
+   se le da un fondo crema con un sutil resplandor menta y se ensancha un poco
+   la columna. SOLO aplica de 768px en adelante; el celular NO cambia nada. */
+@media (min-width: 768px) {
+  body {
+    background-color: var(--cream-100);
+    background-image: radial-gradient(120% 60% at 50% 0%, rgba(155,250,176,0.10), transparent 60%);
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+  }
+  .cb { max-width: 600px; }
+}
+
 
