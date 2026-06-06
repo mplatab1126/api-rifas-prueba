@@ -1,634 +1,284 @@
 # Buzón propio de WhatsApp (bandeja) — Contexto y handoff
 
-> **Para Claude en un chat nuevo:** lee este documento ANTES de seguir. Aquí está
-> todo lo construido, las decisiones clave, la arquitectura y lo que falta del
-> sistema de **bandeja de WhatsApp propia** (reemplazo de ChateaPro). Está
-> resumido pero completo. Sigue las reglas de `CLAUDE.md` (responder en español,
-> simple; Mateo no es programador; no reescribir lógica de plata; publicar a
-> `main` que Vercel despliega en ~1 min en www.losplata.com.co).
+> **Para Claude en un chat nuevo:** lee este documento ANTES de seguir. Resume todo lo
+> construido del sistema de **bandeja de WhatsApp propia** (reemplazo de ChateaPro) y del
+> **agente de IA "Liliana"**. Sigue `CLAUDE.md` (responder en español simple; Mateo no es
+> programador; no reescribir lógica de plata; publicar a `main` → Vercel despliega en ~1 min
+> en www.losplata.com.co).
+>
+> Este doc se **condensó** (jun-2026) para no llenar la ventana de contexto. El relato
+> paso-a-paso de bugs viejos se resumió en "lecciones". Si necesitas un detalle histórico que
+> no esté aquí, está en el `git log` o en el código.
 
-## 0. Regla de oro: pensar EN GRANDE (escala)
-Todo lo que se construya aquí debe aguantar **escala real**: líneas con **50.000–100.000
-contactos**, **5+ líneas** conectadas a la vez, cada una con un flujo enorme. Antes de crear
-algo, pregúntate si sirve a ese tamaño. Reglas prácticas:
-- **Filtros, conteos, búsquedas y paginación SIEMPRE en el servidor**, apoyados en índices.
-  Nunca traer todos los contactos/mensajes al navegador para filtrarlos ahí.
-- **Una sola tabla por concepto** con columna `linea_id` + índices (no una tabla por línea).
-- Datos **grandes** (contactos, conversaciones, mensajes) → paginar y consultar por índice.
-  Datos de **configuración** (etiquetas, respuestas rápidas) son pocos por línea → ahí sí se
-  pueden cargar completos sin problema.
+## 0. Regla de oro: escala + que se sienta rápido
+Todo debe aguantar **escala real** (líneas con 50.000–100.000 contactos, 5+ líneas):
+- **Filtros, conteos, búsquedas y paginación SIEMPRE en el servidor**, por índice. Nunca traer
+  todo al navegador. Datos de configuración (etiquetas, respuestas rápidas) sí se cargan completos.
+- **Una tabla por concepto** con columna `linea_id` + índices (NO una tabla por línea).
 
-**Y que se sienta RÁPIDO, LIGERO y FÁCIL para el asesor.** Concretamente:
-- **UI optimista**: mostrar la acción al instante (el mensaje aparece al enviar) sin esperar al servidor.
-- **No redibujar pantallas completas si no cambió nada** (guardas de "firma" en lista y chat).
-- **Cachear/subir lo pesado UNA vez y reusarlo** (ej: imágenes a Meta por `media_id`, no re-subir en cada envío).
-- **Peticiones cortas**, no una sola petición larga que el navegador corte por tiempo (ej: el flujo se envía paso por paso).
-- La velocidad casi nunca se arregla pagando más plan de Vercel/Supabase: es **diseño del código**.
+Y que sea **rápido y liviano** para el asesor: UI optimista (la acción se ve al instante), no
+redibujar si nada cambió, cachear lo pesado (subir imágenes a Meta una vez por `media_id`),
+peticiones cortas. La velocidad es **diseño del código**, no plan de Vercel/Supabase.
 
 ## 1. Objetivo
-Mateo (gerencia, empresa de rifas "Los Plata") está **saliendo de ChateaPro**
-(falla mucho) y probó Manychat (limitado). Decisión: **construir su propio buzón
-de WhatsApp** conectándose **directo a la WhatsApp Cloud API de Meta**, con la
-lógica (bot/IA, bandeja, etc.) en su propio backend. El "CRM" como tal ya lo
-tenía (Supabase + panel admin); lo que faltaba era la **capa de WhatsApp**.
+Mateo (rifas "Los Plata") salió de ChateaPro (fallaba) y Manychat (limitado). Construyó su
+**propio buzón** conectado **directo a la WhatsApp Cloud API de Meta**, con bot/IA y bandeja en
+su backend. El CRM ya existía (Supabase + panel admin); faltaba la capa de WhatsApp.
+La página es **`/bandeja-whatsapp`** (`public/bandeja-whatsapp.html`), protegida con la
+contraseña de asesor (`ASESORES_SECRETO`, las mismas del Admin).
 
-La página de la bandeja es **`/bandeja-whatsapp`** (`public/bandeja-whatsapp.html`),
-protegida con contraseña de asesor (las mismas del Admin, `ASESORES_SECRETO`).
+## 2. Qué YA funciona
+- **Recibir/enviar** WhatsApp por la Cloud API, todo guardado en Supabase.
+- **Bandeja** estilo WhatsApp: menú lateral (Chats/Contactos), lista, conversación, ficha del cliente.
+- **Multi-línea** con permisos por línea (§5). **Selector de línea** arriba; gerencia ve "Conectar línea".
+- **Filtros en servidor**: "Sin respuesta" (último mensaje del cliente) con conteo, y por **etiqueta**
+  (chips, INNER JOIN a `conversacion_etiquetas`). Se combinan con la búsqueda.
+- **Buscar chats en servidor** (`q`): busca en TODA la base por nombre o número, no solo lo cargado.
+- **Ver comprobantes** (fotos/audios) en el chat; varias fotos seguidas se agrupan en galería.
+- **Ficha del cliente** (panel derecho): tarjeta del cliente + una por boleta con saldo, historial de
+  pagos y basurero para eliminar abono. Distingue registrado vs nuevo; autocompleta el indicativo;
+  botón "Actualizar" sin recargar.
+- **Verificar pago** (clic derecho en comprobante → "Buscar el pago"): lee la imagen con IA y la compara
+  contra las **transferencias REALES** (no abona por la foto); si está libre → "Abonar" (una boleta o
+  repartir, suma exacta). Reusa `/api/admin/abono`.
+- **Eliminar abono** desde la bandeja (y arreglado en Admin): si el pago está repartido, borrar una parte
+  borra todas y libera la transferencia (avisa antes).
+- **Etiquetas** por conversación (ícono+color+nombre). 4 por defecto. **Automáticas de estado de pago**
+  (Separada/Abonada/Pagada) vía función `sincronizar_etiquetas_estado()` por pg_cron cada 5 min.
+- **Contactos**: lista paginada con buscador en servidor, crear e importar CSV (entiende el export de ChateaPro).
+- **Difusiones** (menú Difusiones): **Plantillas** (se crean contra Meta, estado en colores, "Actualizar estados")
+  y **Campañas** (asistente: plantilla → audiencia → envío **por lotes** con cola `difusion_destinatarios`,
+  prueba y barra de progreso). También "Enviar plantilla" a un chat puntual para reabrir +24h.
+- **Respuestas rápidas (flujos)**: cada una son varios pasos (texto/imágenes). Se usan con ⚡ o `/`.
+- **Enviar fotos/PDF** desde el chat (clip 📎; `enviar-archivo.js`, máx 5 MB).
+- **Ventana de 24h**: bloquea la caja de texto cuando está cerrada. **Cita de mensajes** (`responde_a`).
+- **Avisos de mensaje nuevo**: "ding" + contador en la pestaña + botón silenciar (recuerda en `localStorage`).
+- **Campo correo** agregado a clientes/boletas en todo el sistema (factura electrónica).
+- **Favicon** (logo) en todas las páginas. **Optimización para celular** (íconos, hojas, zona segura iPhone).
+- **Agente de IA "Liliana"**: vendedor automático con la API de Claude, **EN VIVO** con clientes reales
+  en la línea "Compra con Lili". Todo el detalle en §8.
 
-## 2. Estado actual: qué YA funciona
-- **Recibir y enviar** WhatsApp por la Cloud API, guardando todo en Supabase (sin ChateaPro).
-- **Bandeja** estilo WhatsApp/ChateaPro/Manychat con: menú lateral contraíble (Chats / Contactos), lista de chats, conversación, panel derecho de ficha del cliente.
-- **Multi-línea**: varias cuentas de WhatsApp en el mismo sistema (ver §5).
-- **Filtro "Sin respuesta"** (chats donde el último mensaje lo mandó el cliente), con conteo, calculado en el servidor.
-- **Filtro por etiqueta**: chips junto a "Sin respuesta" (uno por etiqueta de la línea); al elegir uno, la lista muestra solo los chats con esa etiqueta. Se filtra **en el servidor** con un INNER JOIN a `conversacion_etiquetas` (por índice, escala). Se combina con "Sin respuesta" y con la búsqueda.
-- **Ver comprobantes** (fotos/audios) dentro del chat; miniaturas cuadradas; clic = visor grande. Cuando llegan **varias fotos seguidas** del mismo lado se **agrupan en cuadrícula** (galería estilo WhatsApp, con "+N" para desplegar el resto).
-- **Ficha del cliente** (panel derecho): tarjeta del cliente (nombre, ciudad, documento, correo, saldo total) + **una tarjeta por boleta** con su saldo y su **historial de pagos** (fecha · referencia/método · asesor · valor), con **basurero para eliminar abono**.
-  - **Registrado vs nuevo**: si el teléfono existe en `clientes` (por los **últimos 10 dígitos**), muestra su tarjeta (nombre, ciudad, documento, correo) y, si no tiene boletas, "Sin boletas en la rifa actual". Si **NO está registrado**, ya **no** repite su nombre/teléfono: solo muestra "Cliente nuevo — no está registrado ni tiene boletas". El "Saldo total" solo aparece cuando tiene boletas.
-  - **Botón "Actualizar"** en la cabecera del chat (junto a ver-ficha, etiquetas y eliminar): refresca el chat y la ficha del cliente al instante, **sin recargar toda la página**.
-  - **Autocompleta el indicativo**: WhatsApp siempre llega con el número completo; si en la base el teléfono está más corto (sin indicativo) y el cliente no tiene boletas, al abrir el chat se actualiza solo al número de WhatsApp. Es best-effort (si la base lo rechaza no pasa nada, la ficha se muestra igual).
-- **Verificar pago (clic derecho en el comprobante → "Buscar el pago")**: lee la imagen con IA, la compara contra las **transferencias REALES** del sistema (no abona por la foto), sugiere la coincidencia, muestra si ya está asignada, compara las 2 fotos lado a lado. Si está LIBRE → botón **"Abonar"** (una boleta o **repartir** entre varias, suma exacta). Reusa `/api/admin/abono`.
-- **Eliminar abono** desde la bandeja (y arreglado en Admin): si el pago está **repartido**, borrar una parte **borra todas** y libera la transferencia; avisa antes.
-- **Etiquetas** por conversación (estilo Manychat): ícono + color + nombre, pastillas en la lista, menú para asignar/crear/eliminar. 4 por defecto: 🟢 Pagada, 🟡 Abonada, 🔵 Separada, 🔴 Pendiente.
-- **Etiqueta automática de estado de pago**: los chats CON boleta se etiquetan solos según el abono — **Separada** (abonó $0), **Abonada** (abonó algo pero le falta), **Pagada** (saldo $0). Se hace 100% en la base con la función `sincronizar_etiquetas_estado()` que corre por **pg_cron cada 5 min** (job `etiquetas-estado-cada-5min`); empareja chat↔boleta por los últimos 10 dígitos y solo toca esas 3 etiquetas en chats con boleta. Son automáticas: si un asesor las pone a mano, el sistema las corrige según el abono real.
-- **Contactos** (módulo): lista paginada con buscador **en servidor**, **crear contacto** e **importar CSV** (parser entiende el export de ChateaPro: columnas `name`, `phone`, `email`).
-- **Campo correo** (opcional) agregado a clientes/boletas en todo el sistema (venta, editar, reserva web, búsqueda, abonar, ficha).
-- **Permisos por línea**: gerencia ve todas; cada asesor solo las suyas (ver §5).
-- **Permisos por grupo en la ficha (solo lectura)**: igual que el Admin, un asesor solo puede **modificar** boletas de su mismo **grupo** (`grupoDeAsesor`: 'independiente' vs 'regular'). Las boletas de otro grupo se **ven** pero con banner "🔒 Esta boleta no es de tu equipo": sin basurero (no borrar abonos) y no aparecen como opción para abonar. El flag `puede_modificar` lo calculan en el servidor `cliente.js` y `buscar-pago.js`; el servidor (`/api/admin/abono`, `eliminar-abono`, `liberar-boleta`) ya bloqueaba la acción, esto es el bloqueo **preventivo** en pantalla.
-- **Difusiones (broadcasts)** en el menú **Difusiones**, con dos pestañas: **Plantillas** y **Campañas**.
-  - **Plantillas**: se crean de punta a punta contra Meta (`POST /{waba}/message_templates`), se guardan en `plantillas_whatsapp` y se ve su estado en colores (borrador / en revisión / aprobada / rechazada). Botón "Actualizar estados" consulta a Meta (`GET .../message_templates`) y refleja aprobaciones/rechazos. WhatsApp obliga a usar una plantilla aprobada para escribir fuera de la ventana de 24h.
-  - **Campañas**: asistente elegir plantilla aprobada → audiencia (todos los contactos de la línea, o filtrados por una etiqueta) → revisar → enviar. Variables de la plantilla ({{1}}, {{2}}…) se llenan con texto fijo o tokens `{nombre}`/`{telefono}`. El envío es **por lotes** (`enviar-lote`, ~25 por llamada) con cola en `difusion_destinatarios` → resistente y retomable; incluye **conteo previo**, **envío de prueba a un número** y barra de progreso. Cada mensaje enviado queda en el chat del cliente.
-- **Respuestas rápidas (flujos)** en **Herramientas → Respuestas rápidas**. Cada una es un **flujo de varios mensajes** (texto e imágenes por URL) en el orden que el asesor defina. Se **administran** en esa pantalla (crear/editar/reordenar/borrar) y se **usan** en el chat con el botón **⚡** o escribiendo **`/`** (filtra por título); al elegirla se **envían todos los pasos en orden** al cliente. **Compartidas por línea** (como las etiquetas). Las imágenes se mandan por `link` y se guardan con `media_url` para verse en el historial.
-- **Enviar fotos y PDF desde el chat** (botón clip 📎 en la barra): el asesor adjunta un archivo de su computador y se envía al cliente al instante; queda en el historial. Antes solo salían imágenes por URL vía respuestas rápidas. Se bloquea (como el texto) si la ventana de 24h está cerrada. Backend: `enviar-archivo.js`.
-- **Buscar chats en el servidor**: el buscador de Chats encuentra en TODA la base (por nombre o número), no solo en los ~300 cargados. Antes "no aparecían" clientes viejos. Con pausa de 300 ms al teclear. (`conversaciones.js` con parámetro `q`.)
-- **Avisos de mensaje nuevo**: suena un "ding" cuando sube el total de no leídos (solo por mensajes que llegan, no por los que se envían) y la **pestaña del navegador muestra el contador** `(3) Bandeja…`. Hay un **botón en el menú lateral para silenciar/activar** el sonido, y recuerda la elección (`localStorage`). El sonido se genera con Web Audio (sin archivo) y se desbloquea al primer clic. Falta: marcar qué asesor atiende un chat.
-- **Favicon**: el logo de Los Plata (1080×1080) es el ícono de la pestaña en **todas** las páginas del sistema (admin, caja, boleta, etc.), no solo la bandeja.
-- **Optimización para celular**: además de lo que ya había (menú a íconos, lista a pantalla completa con "volver", ficha deslizable, modales tipo hoja, texto a 16px anti-zoom), se afinó la cabecera del chat (oculta avatar, nombre con "…", botones siempre visibles), la barra de envío en pantallas angostas y la **zona segura del iPhone** (la barra de enviar no queda tapada por la rayita de inicio).
-- **Agente de IA "Liliana"** (vendedor automático con Claude): atiende WhatsApp solo —saluda, muestra la casa, explica premios y legalidad, ofrece números, recoge datos, aparta, envía la boleta, registra abonos verificados, libera boletas y pasa a un humano—. Hoy está **operativo pero en modo PRUEBA**: solo Mateo lo prende, solo en su propio chat. **Todo el detalle está en §8.**
-- **Ventana de 24h, cita de mensajes y notas del agente** en el chat (ver §8.10): la caja de texto se bloquea cuando la ventana de WhatsApp está cerrada, se muestra el mensaje citado cuando el cliente responde citando, y las acciones del agente dejan notas grises en el chat.
+## 3. Base de datos (Supabase, proyecto `ikvzmojzgpxuhnbymtxm`)
+Tablas del buzón:
+- **`lineas_whatsapp`**: config de cada línea — `phone_number_id` (PK), `nombre`, `token` (null = usa env),
+  `activa`, `waba_id`, `suscrita`.
+- **`lineas_asesores`** `(phone_number_id, asesor)`: qué asesores ven cada línea (gerencia no necesita fila).
+- **`conversaciones_whatsapp`**: un chat por `(linea_id, telefono)` (único). Campos: `nombre_perfil`,
+  `ultimo_mensaje`, `ultimo_at`, `ultimo_entrante`, `no_leidos`, `estado`, `correo`, `linea_id`.
+  Contacto importado = fila con `ultimo_at` null (sale en Contactos, no en Chats).
+  Columnas del agente: `agente_activo` (bool, el botón 🤖), `agente_procesando_at` (candado de proceso),
+  `agente_respondido_ms` (bigint, candado anti-duplicado por tanda — ver §8.5). *(Existe también
+  `agente_respondido_hasta` timestamptz de una versión previa; el código vivo usa `agente_respondido_ms`.)*
+- **`mensajes_whatsapp`**: `conversacion_id`, `telefono`, `linea_id`, `direccion` (entrante/saliente/**nota**),
+  `tipo`, `texto`, `media_id`, `media_url`, `wa_message_id` (único, anti-duplicado), `estado_envio`,
+  `timestamp_wa`, `responde_a` (cita), `raw` (incluye `agente:true` en lo que envía Liliana).
+- **`etiquetas`** `(id, linea_id, nombre, icono, color)` y **`conversacion_etiquetas`** `(conversacion_id, etiqueta_id)`.
+- **`plantillas_whatsapp`** y **`difusiones`** + **`difusion_destinatarios`** (cola de envío, escala).
+- Columna **`correo`** en `clientes` y `boletas`.
 
-## 3. Arquitectura — Base de datos (Supabase, proyecto `ikvzmojzgpxuhnbymtxm`)
-Tablas nuevas creadas para el buzón:
-- **`lineas_whatsapp`** (config de cada línea): `phone_number_id` (PK), `nombre`, `token` (si null usa el de env), `activa`, `waba_id`, `suscrita` (si su webhook ya está conectado).
-- **`lineas_asesores`** (permisos): `(phone_number_id, asesor)`. Qué asesores ven cada línea. Gerencia no necesita fila (ve todas).
-- **`conversaciones_whatsapp`**: un chat por (`linea_id`,`telefono`). Campos clave: `nombre_perfil`, `ultimo_mensaje`, `ultimo_at`, `ultimo_entrante` (último msj fue del cliente → "sin respuesta"), `no_leidos`, `estado`, `correo`, `linea_id`. Único `(linea_id, telefono)`. Un contacto importado es una fila aquí con `ultimo_at` null (no aparece en Chats, sí en Contactos).
-- **`mensajes_whatsapp`**: `conversacion_id`, `telefono`, `linea_id`, `direccion` (entrante/saliente), `tipo`, `texto`, `media_id`, `wa_message_id` (único, anti-duplicado), `estado_envio`, `timestamp_wa`, `raw`.
-- **`etiquetas`**: `(id, linea_id, nombre, icono, color)`. **Por línea.**
-- **`conversacion_etiquetas`**: `(conversacion_id, etiqueta_id)`.
-- También se agregó columna **`correo`** a `clientes` y `boletas` (feature de email).
-- **`plantillas_whatsapp`** (difusiones): `(id, linea_id, nombre, categoria [MARKETING/UTILITY], idioma, encabezado, cuerpo, pie, ejemplo_variables jsonb, meta_template_id, estado, motivo_rechazo)`. Nombre único por línea. El `estado` se sincroniza desde Meta.
-- **`difusiones`** (campañas): `(id, linea_id, nombre, plantilla_id→plantillas_whatsapp, variables jsonb, filtros jsonb {tipo:'todos'|'etiqueta', etiqueta_id}, estado [borrador|preparada|enviando|completada|cancelada], total, enviados, fallidos, creada_por, ...)`.
-- **`difusion_destinatarios`** (cola de envío, escala 50k–100k): `(id bigint, difusion_id→difusiones [cascade], telefono, nombre, estado [pendiente|enviado|fallido], error, wa_message_id, enviado_at)`. Índice `(difusion_id, estado)` y único `(difusion_id, telefono)`.
+Tablas del agente:
+- **`agente_config`** (por línea): `estado` (apagado|sombra|encendido), `nombre_agente`, `prompt` (el manual),
+  `modelo`, `variables` (jsonb: `{{nombre}}`, `{{pagos}}`…), `resultados` (jsonb: ganadores por fecha),
+  `actualizado_por/at`.
+- **`agente_herramientas`** `(linea_id, clave, …, activa)`: qué acciones tiene prendidas cada línea.
+- **`agente_actividad`** `(linea_id, telefono, tipo, resumen, created_at)`: bitácora de lo que hace + errores.
+- **`recordatorios`**: seguimiento automático <24h (§8.6). Índices parciales por `estado='pendiente'`.
+- **`agente_qa_estado`** y **`agente_sugerencias`**: supervisor + ciclo de mejora (§8.7).
+- **`disparadores`** `(linea_id, palabra, tipo ['palabra'|'nuevo_contacto'], activo)` (§8.8).
 
-Tablas y columnas del **Agente de IA** (ver §8):
-- **`agente_config`** (config del agente por línea): `(linea_id, estado [apagado|sombra|encendido], nombre_agente, prompt, modelo, variables jsonb [valores de las variables del libreto: {{nombre}}, {{pagos}}, …], resultados jsonb [ganadores de los sorteos: array de {fecha, numero, nombre, ciudad, acumulado, acumulado_monto}, la fecha es la llave; las casillas/títulos salen del calendario `rifas.sorteos`; ver §8.16], actualizado_por, actualizado_at)`.
-- **`agente_herramientas`** (qué acciones tiene prendidas cada línea): `(id, linea_id, clave, nombre, descripcion, riesgo, activa, orden)`.
-- **`agente_actividad`** (bitácora de lo que hace): `(id, linea_id, telefono, tipo, resumen, created_at)`.
-- **`recordatorios`** (seguimiento automático del agente, <24h — ver §8.12): `(id uuid, linea_id, telefono, conversacion_id uuid→conversaciones_whatsapp [cascade], programado_para, motivo, ultimo_msg_cliente_at, estado [pendiente|enviado|cancelado|fallido], creado_por, intentos, created_at, enviado_at)`. Índice parcial `(programado_para) where estado='pendiente'` (el cron lee SOLO los vencidos, no toda la tabla → escala) y `(linea_id, telefono) where estado='pendiente'` (cancelar al instante cuando el cliente vuelve a escribir). **HECHO** (jun-2026): tabla + cron (`recordatorios-cron.js` con `pg_cron` cada minuto) + herramienta `programar_recordatorio` + auto-cancelación en `recibir.js`. Detalle en §8.15.
-- **`agente_qa_estado`** (supervisor del agente — ver §8.18): `(linea_id pk, ultimo_revisado_at, actualizado_at)`. Marca de agua: hasta qué momento ya revisó el supervisor, para no re-reportar los mismos errores.
-- **`agente_sugerencias`** (ciclo de mejora — ver §8.18): `(id uuid, linea_id, cliente, error, regla, estado [nuevo|aplicado|descartado], created_at, resuelto_at, resuelto_por)`. El supervisor guarda aquí cada error + la REGLA propuesta; Mateo las aplica (se agregan al manual) o descarta desde la cabina.
-- **`disparadores`** (disparadores que prenden el agente — ver §8.19): `(id uuid, linea_id, palabra [null si no es por palabra], tipo ['palabra'|'nuevo_contacto'], activo, created_at)`. `recibir.js` prende el agente si un mensaje contiene una `palabra` activa, o si es un **cliente nuevo** (primer mensaje) y hay un disparador `nuevo_contacto`.
-- Nuevas columnas en **`conversaciones_whatsapp`**: `agente_activo` (bool, el botón 🤖 prende el agente en ese chat) y `agente_procesando_at` (timestamp, el candado anti-mensaje-doble).
-- Nueva columna en **`mensajes_whatsapp`**: `responde_a` (id/wa del mensaje citado, para mostrar la cita). Las **notas** del agente se guardan aquí mismo con `direccion='nota'`.
+Índices pensados para escala: por `linea_id`, `ultimo_at`, parcial de "sin respuesta", etc.
 
-Índices pensados para **escala (50k–100k chats por línea)**: por `linea_id`, por `ultimo_at`, parcial de "sin respuesta", etc.
+## 4. Endpoints (`api/whatsapp/`)
+- **`recibir.js`** — webhook (GET verifica, POST mensajes/acuses). Detecta la línea por `phone_number_id`
+  (todas usan la misma URL). Además: **dispara el motor** del agente si está activo (`dispararAgenteSiActivo`,
+  corte a 1.5s), **cancela recordatorios** pendientes cuando el cliente vuelve a escribir, **prende el agente
+  por disparador** (`activarPorDisparador`) y captura la cita (`m.context.id → responde_a`).
+- **`enviar.js`** / **`enviar-archivo.js`** (foto/PDF del computador) / **`media.js`** (descarga con token de la línea).
+- **`conversaciones.js`** — lista de chats (filtro sin-respuesta + conteo + etiquetas; acepta `q` y `etiqueta_id`).
+  Le **oculta a Liliana** los chats con `agente_activo=true` si el switch `ocultar_agente_liliana` está activo.
+- **`mensajes.js`** — mensajes de un chat (expone `por_agente` desde `raw.agente`).
+- **`cliente.js`** — ficha (boletas/deuda/pagos por boleta; empareja por últimos 10 dígitos; calcula `puede_modificar`).
+- **`buscar-pago.js`** — verifica el comprobante vs transferencias reales (lo usa "verificar pago" y el abono del agente).
+- **`contactos*.js`**, **`lineas.js`**, **`conectar-linea.js`** (suscribe la WABA), **`etiquetas.js`**,
+  **`plantillas.js`**, **`difusiones.js`**, **`respuestas-rapidas.js`**.
+- **Agente**: `agente.js` (cabina, SOLO Mateo), `agente-responder.js` (motor), `recordatorios-cron.js`,
+  `disparadores.js` (SOLO Mateo), `qa-agente-cron.js` (supervisor). Detalle en §8.
+- **libs**: `lib/whatsapp.js` (resolverLinea, enviarTexto/Imagen/Documento, subir/descargar media…),
+  `lib/comprobante.js` (lee comprobante con Claude), `lib/asesores.js` (`esGerencia`, `esMateo`,
+  `lineasDeAsesor`, `puedeVerLinea`; **GERENCIA = ['mateo','alejo plata']**), `lib/etiquetas.js` (`ponerEtiqueta`),
+  `lib/numeros-disponibles.js`.
 
-## 4. Arquitectura — Endpoints (carpeta `api/whatsapp/`)
-- **`recibir.js`** — webhook (el "timbre"). GET = verificación; POST = mensajes + acuses. Detecta la línea por `value.metadata.phone_number_id`. **Todas las líneas usan la misma URL de webhook.**
-- **`enviar.js`** — enviar texto (token/número de esa línea).
-- **`enviar-archivo.js`** — enviar una **foto o PDF** que el asesor adjunta desde su computador (botón clip 📎 en la barra del chat). Sube el archivo a Meta (media_id), lo manda al cliente y lo guarda en el historial. Límite 5 MB. Solo imágenes o PDF.
-- **`conversaciones.js`** — lista de chats de una línea (filtro sin-respuesta + conteo, adjunta etiquetas). Solo trae chats con `ultimo_at` no nulo. **Acepta `q`**: busca en TODA la base por teléfono (si son dígitos) o por nombre (si son letras), igual que Contactos — el buscador de Chats ya no filtra solo lo cargado. **Acepta `etiqueta_id`**: filtra los chats con esa etiqueta vía INNER JOIN a `conversacion_etiquetas`.
-- **`mensajes.js`** — mensajes de un chat.
-- **`media.js`** — descarga foto/audio con el token de la línea.
-- **`cliente.js`** — ficha (boletas, deuda, pagos agrupados por boleta). Empareja por **últimos 10 dígitos**. Devuelve también los datos del cliente **registrado aunque no tenga boletas** (`registrado:true`, `boletas:[]`) y **autocompleta el indicativo** del teléfono cuando está corto y el cliente no tiene boletas (best-effort).
-- **`buscar-pago.js`** — verificación del comprobante vs transferencias reales (Fase 1) + boletas del cliente (Fase 2 abona con `/api/admin/abono`).
-- **`abono-reparto.js`** — dice si un abono es parte de un pago repartido (para el aviso al borrar).
-- **`contactos.js` / `contacto-crear.js` / `contactos-importar.js`** — apartado Contactos.
-- **`lineas.js`** — lista de líneas que el asesor puede ver (+ flag `esGerencia`).
-- **`conectar-linea.js`** — (gerencia) suscribe la app a la WABA (`POST /{waba}/subscribed_apps`) con el token de env. Marca `suscrita=true`.
-- **`etiquetas.js`** — acciones: `listar` (siembra 4 por defecto), `crear`, `eliminar`, `conversacion`, `toggle`.
-- **`plantillas.js`** — plantillas de WhatsApp. Acciones: `listar`, `crear` (las manda a revisión a Meta), `sincronizar` (trae estados de Meta y actualiza), `eliminar` (borra en Meta + base), **`enviar-chat`** (manda una plantilla aprobada a UN chat puntual para reabrir conversaciones de +24h; botón "Enviar plantilla" en el aviso de 24h del chat).
-- **`difusiones.js`** — campañas. Acciones: `listar`, `crear`/`editar`, `eliminar`, `preparar` (calcula audiencia y llena la cola), `estado` (progreso), `enviar-lote` (manda un lote y devuelve avance), `cancelar`, `prueba` (un envío a un número). En `lib/whatsapp.js` se agregaron `construirComponentesPlantilla`, `crearPlantillaMeta`, `listarPlantillasMeta`, `eliminarPlantillaMeta`, `enviarPlantilla`; y `resolverLinea` ahora devuelve también `wabaId`.
-- **`respuestas-rapidas.js`** — respuestas rápidas (tabla `respuestas_rapidas`, columna `pasos` jsonb). Acciones: `listar`, `crear`, `editar`, `eliminar`, y **`enviar`** (manda todos los pasos del flujo en orden y los guarda en el chat). Reusa `enviarTexto`/`enviarImagen` de `lib/whatsapp.js`.
-- **`agente.js`** — **cabina** del agente (SOLO Mateo, `esMateo`). NO conversa con clientes; solo LEE/GUARDA su configuración por línea. Acciones: `config` (siembra config + las **13 herramientas** la 1ª vez —y **rellena solas** las nuevas en líneas que ya existían—, arma las **casillas de resultados** desde el calendario de la rifa activa, y trae la actividad), `guardar` (estado/nombre/prompt/modelo/**variables**/**resultados** [ganadores por fecha]), `herramienta` (prende/apaga una acción), `activar_conversacion` (el botón 🤖: `agente_activo`+`estado='bot'`), `sugerencias`/`aplicar_sugerencia`/`descartar_sugerencia` (ciclo de mejora, §8.18: aplicar agrega la regla al `prompt`), `probar` (simulador que NO toca WhatsApp; ya casi no se usa).
-- **`agente-responder.js`** — **MOTOR** del agente (el que de verdad responde). Lo dispara el webhook (o el cron de recordatorios). Conversa con Claude usando las **13 herramientas**, **VE las imágenes** del cliente, le inyecta el **estado del cliente**, sus **acciones ya hechas** y los **resultados de los sorteos** (calendario de la rifa + ganadores), junta los mensajes en ráfaga (**debounce 30s**, refresca el candado), lee el historial **desde el inicio de la rifa activa**, rellena las **variables** del prompt (`{{nombre}}`/`{{pagos}}` con `aplicarVariables`), transcribe audios con Whisper, deja notas y tiene candado anti-duplicado. También atiende el disparo por **recordatorio** (`{recordatorio:{motivo}}`, §8.15). El supervisor Opus quedó **desactivado** (§8.5). **Es el archivo más importante del agente; detalle en §8.**
-- **`recibir.js`** (webhook) ahora, además de guardar el mensaje, **dispara el motor** si el agente está activo (`dispararAgenteSiActivo` → `fetch` al motor con el secreto interno y corte a 1.5s), **cancela los recordatorios pendientes** del chat cuando el cliente vuelve a escribir (`cancelarRecordatorios`, ver §8.15) y captura la **cita** (`m.context.id → responde_a`).
-- **`recordatorios-cron.js`** — el **relojito** de los recordatorios del agente (§8.15). Lo llama `pg_cron` de Supabase cada minuto (con el secreto interno); busca los recordatorios vencidos, los reclama en atómico (sin doble disparo) y despierta el motor del agente para el seguimiento.
-- **`disparadores.js`** — administra las palabras clave que prenden el agente (§8.19). SOLO Mateo (`esMateo`). Acciones: `listar`, `crear`, `eliminar`, `toggle`. El disparo real lo hace `recibir.js` (`activarPorDisparador`): si un mensaje entrante contiene una palabra activa y el chat no está en manos de un humano ni la línea apagada, pone `agente_activo=true`.
-- **`qa-agente-cron.js`** — el **supervisor** del agente (§8.18). `pg_cron` cada 5 min; revisa los chats con etiqueta AGENTE, le pasa lo NUEVO a Claude junto con el manual del agente para detectar errores, y si los hay le manda un resumen a Mateo por WhatsApp. Usa la marca de agua `agente_qa_estado` para no repetir.
-- **libs**: `lib/whatsapp.js` (`resolverLinea`, `enviarTexto`, `enviarImagen`, `enviarImagenPorId`, `subirMediaDesdeBuffer` [subir foto/PDF desde bytes, lo usa `enviar-archivo.js`], `enviarDocumento` [PDF de la resolución], `enviarDocumentoPorId`, `descargarMediaBase64`, `configWhatsapp`), `lib/comprobante.js` (`extraerDatos` — lee comprobante con Claude, solo lectura), `lib/asesores.js` (`esGerencia`, `esMateo` [agente solo-Mateo], `lineasDeAsesor`, `puedeVerLinea`; **GERENCIA = ['mateo','alejo plata']**, editable ahí). El motor reusa además `lib/numeros-disponibles.js`.
+Se REUSAN endpoints de plata del Admin (no se reescriben): `/api/admin/abono`, `/api/admin/eliminar-abono`
+(modificado: borrar una parte de un pago repartido borra todas y libera la transferencia),
+`/api/admin/liberar-boleta`, `/api/admin/trasladar-abono` (mueve abono entre boletas del mismo cliente),
+`/api/admin/actualizar-cliente`, `/api/rifa/reservar`.
 
-Se REUSAN (no se reescriben) endpoints de plata del Admin: `/api/admin/abono` (abonar), `/api/admin/eliminar-abono` (se **modificó** para que borrar una parte de un pago repartido borre todas y libere la transferencia — también beneficia al Admin) y `/api/admin/liberar-boleta`. **NUEVO**: `/api/admin/trasladar-abono.js` — mueve abono entre boletas del mismo cliente (todo o un monto parcial; parte el abono y reparte la transferencia); lo usa la herramienta `trasladar_abono`.
+## 5. Multi-línea y permisos
+- Una sola tabla para todas las líneas con `linea_id`. Un chat es único por `(linea_id, telefono)`: el mismo
+  cliente en 2 líneas son 2 chats.
+- **Permisos por LÍNEA**: gerencia (Mateo, Alejo Plata) ve todas; un asesor ve solo las de `lineas_asesores`.
+  Una línea con 10 asesores → todos ven los mismos chats/etiquetas. Un independiente (ej. Liliana) ve solo la suya.
+- Los endpoints validan en el servidor (`puedeVerLinea`).
 
-## 5. Multi-línea y permisos (importante)
-- **Una sola tabla para todas las líneas**, con `linea_id` + índices. NO una tabla por línea. Esto escala bien (Postgres aguanta millones de filas si se filtra por índice).
-- Cada chat/mensaje/etiqueta lleva su `linea_id`. Un chat es único por `(linea_id, telefono)` → el mismo cliente puede escribirle a 2 líneas y son chats separados.
-- **Permisos por LÍNEA, no por asesor:**
-  - **Gerencia** (Mateo, Alejo Plata) ve **todas** las líneas.
-  - Un asesor ve solo las líneas en `lineas_asesores`.
-  - Una línea con **10 asesores del grupo** → todos ven **la misma línea, mismos chats, mismas etiquetas**.
-  - Un **independiente** (ej. Liliana) con su línea → solo él la ve.
-- El frontend tiene un **selector de línea** (arriba en el menú). Gerencia ve el botón **"Conectar línea"** (solo en líneas no `suscrita`).
-- Los endpoints validan el permiso en el servidor (`puedeVerLinea`), no solo en pantalla.
+## 6. Configuración en Meta (ya hecho)
+- App **"Buzón Los Plata"** (id `2607182326463882`), Business `6736642543036723`.
+- **System User token** permanente en Vercel como `WHATSAPP_TOKEN` (permisos `whatsapp_business_messaging` +
+  `whatsapp_business_management`). Otras env: `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN`
+  (=`losplata-buzon-2026`, es también el **secreto interno** del webhook/cron).
+- Webhook: `https://www.losplata.com.co/api/whatsapp/recibir`, suscrito a `messages`.
 
-## 6. Configuración en Meta (lo ya hecho)
-- App de Meta **"Buzón Los Plata"** (id `2607182326463882`), Business `6736642543036723`.
-- **System User token** permanente "Buzon Los Plata Token" (permisos `whatsapp_business_messaging` + `whatsapp_business_management`). Vive en Vercel como `WHATSAPP_TOKEN`.
-- Variables en Vercel: `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` (= número de prueba `1147348345124937`), `WHATSAPP_VERIFY_TOKEN` (= `losplata-buzon-2026`).
-- Webhook de la app: URL `https://www.losplata.com.co/api/whatsapp/recibir`, verify token `losplata-buzon-2026`, suscrito a `messages`.
+**Líneas registradas:**
+1. **Número de prueba** — phone_number_id `1147348345124937`, WABA `1522272816231368`. Solo gerencia. Agente **apagado**.
+2. **Compra con Lili** (Liliana) — phone_number_id `1128258647034751`, WABA `4314997218789282`, asesor `Liliana`,
+   operativa. Agente **EN VIVO** (`estado='encendido'`, modelo Sonnet).
 
-### Líneas registradas hoy
-1. **Número de prueba** — phone_number_id `1147348345124937`, WABA `1522272816231368`. Solo gerencia (sin fila en `lineas_asesores`).
-2. **Compra con Lili** (Liliana) — phone_number_id `1128258647034751`, WABA `4314997218789282`, asesor `Liliana`, `suscrita=true`, **operativa** (recibe y envía).
+**Conectar una línea nueva:** en Meta conectar el número a la Cloud API bajo la app, sacar Phone number ID +
+WABA id, dar al token acceso a esa WABA → insertar fila en `lineas_whatsapp` + `lineas_asesores` → en la bandeja
+darle "Conectar línea". (Opcional: apagar su bot en ChateaPro.)
 
-### Para conectar una línea NUEVA (proceso)
-1. En Meta: conectar el número a la Cloud API bajo la app "Buzón Los Plata"; sacar su **Phone number ID** y su **WABA id**; darle al **token** acceso a esa WABA (Usuarios del sistema → asignar activos).
-2. Insertar fila en `lineas_whatsapp` (phone_number_id, nombre, waba_id, token=null si usa el de env) y en `lineas_asesores` (línea ↔ asesor).
-3. En la bandeja, seleccionar la línea y darle **"Conectar línea"** (suscribe el webhook). Listo.
-4. (Opcional) Quitar de ChateaPro: solo apagar su bot ("Desvincular" gratis); el control real está en Meta.
-
-## 7. Decisiones clave tomadas
-- El comprobante del cliente es solo una **afirmación**; la plata se verifica contra **transferencias reales** (cargadas con Carga IA). El sistema **sugiere**, el asesor **confirma**; nunca abona solo por una foto.
-- Coincidencia de transferencia: **fecha exacta** + (referencia, o mismo minuto, o teléfono del cliente en la referencia). Mostrar solo las que coinciden de verdad, no todas las del monto.
-- Repartir un pago entre boletas: la 1ª llamada consume la transferencia, las demás llevan la referencia (igual que el Admin). Borrar una parte borra todas.
-- Escala siempre: filtros, conteos y búsquedas **en el servidor** con índices.
+## 7. Decisiones clave
+- El comprobante del cliente es solo una **afirmación**; la plata se verifica contra **transferencias reales**.
+  El sistema sugiere, el asesor confirma; **nunca se abona por una foto**.
+- Coincidencia de transferencia: fecha exacta + (referencia, o mismo minuto, o teléfono en la referencia).
+  Si la ÚNICA coincidencia es "misma hora" → NO basta para abonar solo (pasa a humano).
+- Repartir un pago: la 1ª llamada consume la transferencia; borrar una parte borra todas.
 - Reusar la lógica de plata del Admin; no reescribirla.
-- Estética = la del sitio (Inter, fondo crema `#FAFAF7`, acento menta `#9BFAB0`, minimalista, sin exceso de emojis).
+- Estética = la del sitio (Inter, fondo crema `#FAFAF7`, acento menta `#9BFAB0`, minimalista).
 
-## 8. Agente de IA — vendedor automático "Liliana"
-Es lo más grande que se construyó después de la bandeja: un **vendedor automático** que
-atiende WhatsApp solo, con la API de Claude, dentro de la misma bandeja. Reemplaza el bot de
-ChateaPro/Manychat. Hoy está **listo y operativo, pero en modo PRUEBA**: Mateo lo prende SOLO
-en su propio chat para probarlo; **no está suelto con clientes reales todavía**.
+## 8. Agente de IA "Liliana"
+Vendedor automático que atiende WhatsApp solo con la API de Claude, dentro de la misma bandeja. **EN VIVO**
+con clientes reales en la línea "Compra con Lili", con un disparador `nuevo_contacto` activo (atiende sola a
+todo cliente nuevo). La **cabina y el botón 🤖 son SOLO de Mateo** (candado `esMateo` en servidor y oculto en pantalla).
 
-### 8.1 Cómo se prende (y quién puede)
-- En cada conversación hay un botón **🤖 Agente ON/OFF** (verde = prendido). Prenderlo pone
-  `conversaciones_whatsapp.agente_activo = true` y `estado='bot'`. Desde ahí, cada mensaje que
-  entre en ese chat lo responde el agente solo.
-- El botón **y todo el menú "Agente"** (la cabina) son **SOLO de Mateo**. Ni Liliana ni Alejo
-  los ven ni pueden activarlos — es a propósito, para no soltar el agente por error mientras se
-  prueba. El candado está en el servidor (`esMateo`) y también escondido en pantalla (`soyMateo`).
-- **Dos interruptores que mandan (desde jun-2026 el motor SÍ los respeta):** (1) el botón **🤖 por
-  chat** (`agente_activo`) y (2) el **estado de LÍNEA** de la cabina: **Apagado** = el agente no
-  responde en toda la línea (kill switch), **Modo sombra** = piensa y deja notas 🌓 pero NO le escribe
-  al cliente ni ejecuta acciones (para probar sin riesgo), **Encendido** = en vivo. Apagar un chat o
-  la línea **frena incluso la respuesta en curso** (ver §8.17).
+### 8.1 Cabina + motor, y cómo se prende
+- **Cabina** = `agente.js` + pestaña "Agente". Mateo configura: `prompt` (manual), `modelo`, `estado`, prende/apaga
+  cada herramienta, datos de pago `{{pagos}}`, resultados de sorteos. NO conversa con clientes.
+- **Motor** = `agente-responder.js`. El que **de verdad responde**. Lo dispara el webhook al instante (no depende
+  del navegador). También lo dispara el cron de recordatorios.
+- **Dos interruptores que mandan:** (1) botón **🤖 por chat** (`agente_activo`), (2) **estado de LÍNEA** de la cabina:
+  **Apagado** = no responde en toda la línea (kill switch), **Sombra** = piensa y deja notas 🌓 pero NO escribe ni
+  ejecuta acciones, **Encendido** = en vivo. Apagar un chat o la línea **frena hasta la respuesta en curso** (`sigueActivo`).
+- **Disparadores** (§8.8) prenden el agente por palabra clave o por cliente nuevo.
 
-### 8.2 Las dos partes: cabina + motor
-- **Cabina** = `api/whatsapp/agente.js` + la pestaña "Agente" de la bandeja. Aquí Mateo
-  **configura** al agente de una línea: el `prompt` (su "manual" de cómo vender), el `modelo`,
-  el estado, y **prende/apaga cada herramienta**. NO conversa con clientes.
-- **Motor** = `api/whatsapp/agente-responder.js`. Es el que **de verdad responde** a los
-  clientes. Lo dispara el webhook cuando entra un mensaje en un chat con el agente prendido.
+### 8.2 Las 13 herramientas (tool use; cada una se prende/apaga en la cabina)
+1. **enviar_contacto_inicial** — saludo + fotos de la casa + cierre (precio, legalidad, responde su pregunta, "¿Te explico los premios?"). UNA vez.
+2. **consultar_disponibles** — muestra parcial de números libres (cambia cada vez).
+3. **verificar_disponibilidad** — si un número puntual está libre.
+4. **consultar_cliente** — boletas y saldo (forzado al teléfono del chat, por privacidad).
+5. **enviar_resolucion** — PDF de EDSA (`/resolucion.pdf`).
+6. **apartar_numero** — reserva con número+nombre+apellido+ciudad (+cédula y correo para la factura). Reusa datos si ya está registrado. Registra SIEMPRE con el WhatsApp del chat, de cualquier país.
+7. **enviar_boleta** — manda la boleta digital con su enlace (todas las boletas en un mensaje).
+8. **registrar_abono** — solo con comprobante verificado contra el banco (§8.3).
+9. **liberar_boleta** — cancela si es del cliente y **$0 abonado**; si abonó, pasa a humano.
+10. **trasladar_abono** — mueve abono (todo o parte) entre boletas **del mismo cliente**.
+11. **actualizar_datos_cliente** — corrige nombre/apellido/ciudad/cédula/correo (mezcla, no borra; no cambia teléfono).
+12. **programar_recordatorio** — se agenda volver a escribir HOY (§8.6).
+13. **pasar_a_humano** — entrega el chat a un asesor y se apaga.
 
-### 8.3 Cómo se dispara (rápido, sin depender del navegador)
-Antes el agente dependía de que el navegador de Mateo "viera" el mensaje nuevo, y eso lo volvía
-lento (segundos o minutos) y a veces lo disparaba dos veces. Ahora **el webhook `recibir.js`
-llama al motor directo** apenas entra el mensaje (`dispararAgenteSiActivo`): le manda el secreto
-interno (`WHATSAPP_VERIFY_TOKEN`) y corta a 1.5s sin esperar respuesta — el motor sigue
-trabajando en su propia ejecución serverless. Resultado: responde casi al instante. La bandeja
-**ya NO** dispara el agente desde el navegador (eso causaba los mensajes dobles).
+### 8.3 Abono anti-fraude y candados de plata (cada acción se cuida sola)
+- **registrar_abono** NO cree a la foto: toma el último comprobante del chat → `buscar-pago` lo compara contra las
+  transferencias reales → solo si hay coincidencia REAL (`sugerida_id`) abona con `/api/admin/abono`. Si solo coincide
+  "misma hora" o no hay match → NO abona, etiqueta ASESOR y pasa a humano.
+- **liberar_boleta**: solo dueño + $0 abonado. **trasladar_abono**: ambas boletas del mismo teléfono.
+- El motor llama estos endpoints con la **contraseña de gerencia** (`ASESORES_SECRETO` → `contrasenaGerencia()`),
+  usando la misma lógica probada que un humano.
+- **Supervisor Opus DESACTIVADO** (`ACCIONES_SENSIBLES` vacío): no veía las fotos ni los chequeos reales y frenaba
+  acciones legítimas en falso. El código sigue por si se reactiva, pero hoy no se usa.
 
-### 8.4 Las herramientas (lo que sabe hacer)
-Usa "tool use" de Claude: en vez de inventar, llama funciones reales. Son **13** y cada una se
-**prende/apaga** desde la cabina (`agente_herramientas`):
-1. **enviar_contacto_inicial** — saludo + fotos de la casa + cierre (precio, legalidad, responde
-   su pregunta y "¿Te explico los premios?"). Lo redacta la IA y va en UN solo cierre para no
-   duplicar mensajes.
-2. **consultar_disponibles** — trae una MUESTRA de números libres (no son todos; cambia cada vez).
-3. **verificar_disponibilidad** — revisa si un número puntual (ej. 1234) está libre u ocupado.
-4. **consultar_cliente** — boletas y saldo de un teléfono.
-5. **enviar_resolucion** — manda el PDF de EDSA (`/resolucion.pdf`) como prueba legal.
-6. **apartar_numero** — reserva una boleta. Pide número + nombre + apellido + ciudad, y también
-   **cédula y correo** (para la factura electrónica, que se emite cuando la boleta queda paga al
-   100%). Si el cliente ya está registrado, **reusa** sus datos guardados y no los re-pide.
-7. **enviar_boleta** — manda la boleta digital con su enlace.
-8. **registrar_abono** — registra un pago (solo con comprobante verificado contra el banco).
-9. **liberar_boleta** — cancela una boleta si el cliente ya no quiere (y no ha abonado).
-10. **trasladar_abono** — mueve el abono (dinero ya pagado) de una boleta a otra **del mismo
-    cliente**; puede mover TODO o **una parte** (para dividir, ej. $40.000 a una y $20.000 a otra).
-    Candado: ambas boletas deben ser del mismo teléfono; nunca toca la de otra persona.
-11. **pasar_a_humano** — entrega el chat a un asesor y se apaga.
-12. **programar_recordatorio** — el agente **se agenda a sí mismo** volver a escribirle al cliente
-    más tarde HOY (cuando el cliente pide tiempo: "escríbeme en 20 min"). Recibe `minutos` y
-    `motivo`. Candado: solo **dentro de las 24h** desde el último mensaje del cliente (ver §8.15).
-13. **actualizar_datos_cliente** — corrige/completa **nombre, apellido, ciudad, cédula o correo**
-    del cliente (ej. para la factura electrónica). Reusa `/api/admin/actualizar-cliente`. Busca al
-    cliente por sus últimos 10 dígitos y **mezcla** lo nuevo con lo que ya tiene (no borra ni
-    duplica). Solo cambia datos; **no** cambia el teléfono.
+### 8.4 Cómo conversa (afinado con pruebas reales)
+- **VE las fotos** (le pasa la imagen real a Claude, no "[imagen]"). **Transcribe audios** con Whisper (`OPENAI_API_KEY`).
+- **Estado del cliente SIEMPRE**: antes de responder consulta por teléfono datos+boletas (`resumenCliente`) y se los
+  inyecta. Saluda por su nombre, no le vende de cero, no re-pide datos. Funciona entre líneas (boletas por teléfono).
+- **Memoria de acciones**: las notas 🤖 de lo ya hecho se le inyectan como "ACCIONES QUE YA EJECUTASTE" para que no repita.
+- **No narra el proceso** ("voy a verificar…"): el motor suprime el texto que acompaña a una herramienta y solo manda el resultado.
+- **Memoria por RIFA**: lee el historial desde `fecha_inicio` de la rifa `activa` (tope 300). Al cambiar de rifa, el corte se mueve solo.
+- **No reenvía la presentación** si el chat ya tiene mensajes (`yaHuboSalientes`).
+- **Fechas por código**: inyecta "FECHAS EXACTAS" con el día de la semana ya calculado (`etiquetaFecha` desde `rifas.sorteos`).
+  Los LLM se equivocan con los días; por eso NO se sube a Opus.
+- El nombre/`prompt`/herramientas viven en la **base de datos** (cabina), sin tocar código. El `prompt` es igual para
+  todas las líneas; solo cambian las **variables** `{{nombre}}` y `{{pagos}}` (`aplicarVariables`).
 
-> Las acciones de plata/inventario (apartar, abonar, liberar, trasladar) **ya no pasan por el
-> supervisor Opus** (§8.5): cada una tiene su propio candado fuerte.
+### 8.5 Sin mensajes dobles (candados anti-duplicado)
+La gente escribe en ráfaga → se disparan 2-4 corridas del motor. Tres capas evitan el duplicado:
+- **Debounce 30s**: espera 30s de silencio desde el ÚLTIMO mensaje del cliente (cada mensaje reinicia; tope invisible 4 min;
+  `maxDuration`=300s). Junta la ráfaga en UNA respuesta. Refresca el candado cada ≤3s para que no se venza.
+- **Candado de proceso** (`agente_procesando_at`): UPDATE condicional; si otra corrida lo tiene, esta se sale. Se recupera a los 60s.
+- **Candado por tanda** (`agente_respondido_ms`, bigint): UPDATE atómico "ya tomé hasta el último mensaje" comparando por
+  **milisegundos** (no texto de fecha, que rompía la consulta). Solo una corrida gana; las demás se salen. Falla-abierto.
 
-### 8.5 Supervisor Opus — DESACTIVADO (cada acción se cuida sola)
-Existió un **supervisor Opus** (`claude-opus-4-8`) que revisaba las acciones de plata/inventario
-antes de ejecutarlas. **Se desactivó** (la lista `ACCIONES_SENSIBLES` quedó vacía) porque, al no
-"ver" las fotos ni ejecutar los chequeos reales, **frenaba acciones legítimas en falso** (ej.
-confundió el apellido "Plata" con dinero; o no veía el comprobante y bloqueaba un abono real).
-Cada acción **ya tiene su propio candado fuerte**: el abono verifica contra el banco; liberar
-valida dueño + $0 abonado; trasladar valida que ambas boletas sean del cliente; apartar es
-reversible. El código del supervisor sigue en el motor por si se quiere reactivar para alguna
-acción puntual, pero hoy no se usa.
+### 8.6 Recordatorios de seguimiento (<24h) — HECHO
+`programar_recordatorio(minutos, motivo)` agenda volver a escribir HOY (dentro de las 24h del último mensaje; si pide en días,
+no agenda). Un recordatorio activo por chat. El **relojito** `recordatorios-cron.js` lo llama `pg_cron` cada minuto, reclama los
+vencidos de forma atómica (sin doble disparo) y despierta el motor. `recibir.js` los **cancela** cuando el cliente vuelve a escribir.
 
-### 8.6 Abono "anti-fraude" y liberar (reúso de lo ya probado)
-- **registrar_abono** NO le cree a la foto del cliente. Reusa la lógica del Admin: toma el último
-  comprobante (imagen) del chat → `/api/whatsapp/buscar-pago` lo compara contra las
-  **transferencias reales** del banco → solo si hay coincidencia real (`sugerida_id`) abona con
-  `/api/admin/abono`. Si no coincide, NO abona y pasa a un asesor. Decisión de Mateo: **solo con
-  pago real verificado** (nada de abonar por una foto).
-- **liberar_boleta** solo cancela si la boleta es de ese cliente y **no tiene nada abonado**
-  (`total_abonado=0`); si ya pagó algo, NO la libera (un asesor gestiona la devolución). Reusa
-  `/api/admin/liberar-boleta`.
-- **trasladar_abono** mueve el dinero ya abonado de una boleta a otra **del mismo cliente**
-  (`/api/admin/trasladar-abono`): puede mover todo o un monto parcial (parte el abono y reparte la
-  transferencia entre las dos boletas), recalcula los saldos desde los abonos y deja bitácora.
-  Candado central: ambas boletas deben pertenecer al teléfono del cliente.
-- El motor llama estos endpoints internos con la **contraseña de Mateo** (sale de
-  `ASESORES_SECRETO` con `contrasenaGerencia()`), para usar exactamente la misma lógica probada
-  que un asesor humano.
+### 8.7 Supervisor + ciclo de mejora — HECHO, **PAUSADO (5-jun-2026)**
+- **Qué hace** (`qa-agente-cron.js`, era `pg_cron` cada 30 min): revisa los chats con etiqueta **AGENTE**, le pasa lo NUEVO a
+  **Claude Opus** (más alto que Sonnet) con el manual, detecta errores y manda a Mateo un resumen por WhatsApp (a 573123354789,
+  desde la línea de Lili; solo llega si la ventana de 24h está abierta). Marca de agua `agente_qa_estado` para no repetir.
+- **Ciclo de mejora**: guarda cada error+regla en `agente_sugerencias`; en la cabina, tarjeta "Mejorar el agente" con
+  "Aplicar al manual" (agrega la regla al `prompt`) / "Descartar". Nada cambia sin el visto bueno de Mateo.
+- **PAUSADO**: el cron (jobid 2 en `cron.job`) está en `active=false`. Reactivar: `select cron.alter_job(job_id := 2, active := true);`.
 
-### 8.7 Entiende audios
-Si el cliente manda una nota de voz, el motor la **transcribe con OpenAI Whisper** (`whisper-1`,
-`OPENAI_API_KEY`) y la trata como si la hubiera escrito (no dice "no puedo oír audios"). Guarda
-la transcripción en el mensaje para no repetir el trabajo. (Claude no "oye"; Whisper convierte
-el audio en texto — mismo patrón que `api/contenido/transcribir.js`.)
+### 8.8 Disparadores — HECHO
+Menú **Disparadores** (SOLO Mateo). Por **palabra clave** (el mensaje la contiene) o **cliente nuevo** (primer mensaje, uno por línea).
+`recibir.js` prende el agente (`agente_activo=true`, `estado='bot'`, etiqueta AGENTE). Candados: no se auto-prende si ya estaba activo,
+si un humano tomó el chat, o si la línea está Apagada (Sombra sí se respeta).
 
-### 8.8 Deja notas en el chat y "recuerda" lo que hizo
-Cada acción deja una **nota gris** ("🤖 Consulté el número 1234", "🤖 Registré un abono de $…").
-Sirve para dos cosas: (1) Mateo ve qué hizo el agente, y (2) esas notas se le vuelven a dar a la
-IA como memoria ("ya hice esto → …") para que **no repita** acciones (antes ofrecía revisar un
-número que ya había revisado).
+### 8.9 Resultados de los sorteos — HECHO
+Las casillas salen del **calendario de la rifa** (`rifas.sorteos`, jsonb array de `{titulo, fecha}`); el ganador lo escribe Mateo en
+la cabina (`agente_config.resultados`, por fecha: `{fecha, numero, nombre, ciudad, acumulado, acumulado_monto}`). El motor inyecta
+"RESULTADOS DE LOS SORTEOS" SOLO para responder "¿qué número ganó?" (ver el arreglo anti-conteo en §8.11).
 
-### 8.9 Sin mensajes dobles, sin pisarse
-- **Candado**: antes de responder, el motor marca `agente_procesando_at` con un UPDATE
-  condicional; si otra corrida ya lo tiene, esta se sale. Así nunca responden dos a la vez (ni
-  hacen doble abono). El candado se toma **antes** de leer el historial.
-- ⚠️ **Lección importante para el próximo chat:** el candado falló un tiempo porque PostgREST no
-  "veía" la columna nueva (**caché de esquema** con pgbouncer). NO se arregla con `NOTIFY`; se
-  arregla **recargando el esquema con `apply_migration`** (Management API de Supabase). Tras
-  agregar columnas con `execute_sql`, recarga el esquema o PostgREST seguirá diciendo
-  "column … does not exist" y la acción fallará en silencio.
+### 8.10 Etiquetado y privacidad de Liliana
+- Al **prender** el agente → etiqueta **AGENTE**; al **pasar a humano** o no encontrar el pago → etiqueta **ASESOR**.
+- **Liliana no ve** los chats que atiende el agente (switch `ocultar_agente_liliana` en tabla `configuracion`, default activo);
+  cuando el agente le ENTREGA el chat (`pasar_a_humano`), sí lo ve. Las burbujas del agente muestran "🤖 Liliana".
 
-### 8.10 Cosas de la bandeja que se hicieron junto con el agente
-- **Ventana de 24h**: WhatsApp solo deja escribir gratis 24h después del último mensaje del
-  cliente. La bandeja ahora **bloquea la caja de texto** y avisa cuando la ventana está cerrada
-  (antes Mateo escribía y no llegaba nada).
-- **Cita de mensajes**: cuando el cliente responde citando un mensaje, la bandeja muestra el
-  mensaje citado arriba (como WhatsApp), recortado a 2 líneas con "…". Se guarda en `responde_a`.
-- **Resolución PDF**: se subió `public/resolucion.pdf` (resolución de EDSA) para que el agente la
-  mande como prueba legal con `enviar_resolucion`.
-- **Etiquetado automático del agente** (`lib/etiquetas.js` → `ponerEtiqueta`): al **prender** el
-  agente en un chat (botón 🤖 o por disparador) se le pone la etiqueta **AGENTE**; cuando el agente
-  **pasa a un humano** o **no encuentra el pago real** de un comprobante, se le pone **ASESOR**. Crean
-  la etiqueta si no existe. (AGENTE = lo que revisa el supervisor; ASESOR = chats que necesitan persona.)
-- **Liliana no ve los chats que atiende el agente** (jun-2026): si el asesor es **Liliana** y el
-  interruptor está activo, `conversaciones.js` le oculta los chats con `agente_activo=true` (filtro en
-  el servidor: `agente_activo is null or false`). Cuando el agente le ENTREGA un chat
-  (`pasar_a_humano` → `agente_activo=false`), ella SÍ lo ve. El interruptor es global, en la tabla
-  `configuracion` (clave `ocultar_agente_liliana`), y se prende/apaga desde un **switch en la cabina**
-  ("Privacidad de Liliana"). Se usa `agente_activo`, NO la etiqueta AGENTE (que es permanente y
-  ocultaría también los chats ya entregados). Default: activo.
-- **Marca "🤖 Liliana" en el chat**: las burbujas que envió el AGENTE muestran "🤖 Liliana" arriba,
-  para distinguirlas a la vista de las de un asesor humano. El dato sale de `raw.agente=true`;
-  `mensajes.js` lo expone como `por_agente` (sin mandar el `raw` completo al navegador).
+### 8.11 Arreglos recientes (6-jun-2026)
+- **Caché de esquema de Supabase trabada (LECCIÓN CRÍTICA, ya pasó 3 veces).** PostgREST guarda en memoria la lista de columnas
+  y NO "ve" las columnas nuevas agregadas con `execute_sql` → el código falla en silencio con "column … does not exist". Pasó con
+  `agente_respondido_ms`: el candado anti-duplicado quedó muerto y Liliana mandaba saludos dobles/triples (confirmado en chats
+  reales: 107 errores en `agente_actividad`). **NO se arregla con `NOTIFY`, `COMMENT` ni `ALTER` vía SQL.** Se arregla
+  **recargando el esquema con `apply_migration`** (Management API de Supabase) — corriendo cualquier DDL idempotente (ej.
+  `add column if not exists …`). Verificado: tras la migración, la API REST ya devuelve las columnas (HTTP 200) y los errores
+  pararon. **Regla:** después de agregar columnas con `execute_sql`, SIEMPRE recarga con `apply_migration`.
+- **Liliana contaba los sábados acumulados** ("lleva 3 sábados sin ganador", prohibido) y decía "el primer sorteo". La regla ya
+  existía en el manual pero la rompía porque el bloque de RESULTADOS le mostraba los sábados acumulados uno por uno → los contaba.
+  **Arreglo doble:** (1) motor (`agente-responder.js`) — el bloque de resultados ya NO enumera los sábados acumulados; muestra los
+  sorteos CON ganador y resume el acumulado en UNA línea con solo el monto del próximo; (2) prompt — bloque "REGLAS DURAS DEL PREMIO
+  ACUMULADO" al inicio del manual (di solo el monto; nunca cuántos sábados/semanas; nunca "el primer sorteo").
+- **Tuteo consistente:** Liliana mezclaba *tú*, *usted* y *vos* ("podés", "ganás") en la misma conversación. Regla nueva en
+  "# CÓMO ESCRIBES": tratar SIEMPRE de *tú* en toda la conversación, sin mezclar ni cambiar entre mensajes.
 
-### 8.11 Decisiones clave del agente
-- **EN VIVO** (jun-2026) con clientes reales en la línea "Compra con Lili", con todas las herramientas. La **cabina y el botón 🤖 siguen siendo solo de Mateo**; los disparadores también lo activan solo.
-- Plata/inventario: cada acción tiene su **propio candado fuerte** (verificación real banco/dueño). El supervisor Opus que existía quedó **desactivado** (§8.5).
-- Abono: **solo con pago real verificado**; nunca por la foto.
-- Modelo: toda la conversación corre en el modelo configurado en la cabina (hoy **Sonnet**). (El supervisor Opus ya no se usa; ver §8.5.)
-- El agente se presenta como **Liliana** (no "Camila", el nombre del prompt viejo de ChateaPro).
-- El nombre, el `prompt` y las herramientas viven en la **base de datos** y se editan desde la
-  cabina, sin tocar código.
+## 9. Pendientes
+**Agente:**
+- ⬜ **Pago en línea (Wompi)** como herramienta (enviar link de `/abonar`). Subiría conversión. Toca plata; Mateo lo dejó para después.
+- ⬜ **Conectar las líneas grandes** (Línea 1 y Línea 2) — el "corte" final desde ChateaPro (cargarles prompt, herramientas, `{{pagos}}`,
+  disparadores y calendario de sorteos).
+- ⬜ **Reporte del supervisor por PLANTILLA** (hoy depende de que la ventana de 24h esté abierta). **Reactivar el supervisor** cuando Mateo quiera (§8.7).
+- ⬜ **Costo de IA por chat y del día** (PROPUESTO 6-jun): guardar los tokens (input/output) que devuelve cada respuesta de Claude
+  + el costo de Whisper, sumar por conversación y por día, y mostrarlo en la ficha del chat y en un panel de "gasto del día".
+- ⬜ **Pantalla para el calendario de sorteos** (hoy se carga por SQL en `rifas.sorteos`).
+- ⬜ Limpiar el simulador `probar` de la cabina (ya no se usa). Revisar/descartar sugerencias viejas del supervisor en la cabina.
 
-### 8.12 Qué falta del agente (pendiente)
-
-**ESTADO (jun-2026): el agente está ENCENDIDO con clientes REALES** en la línea "Compra con Lili"
-(ya no es solo-Mateo / solo-sombra). El botón 🤖 y la cabina siguen siendo **solo de Mateo**.
-
-**Ya HECHO en esta etapa** (detalle en cada sección): recordatorios de seguimiento <24h (§8.15),
-resultados de los sorteos (§8.16), supervisor con **Opus** + reportes a WhatsApp cada 30 min (§8.18),
-**ciclo de mejora** "el supervisor sugiere y Mateo aprueba" (§8.18), **disparadores** por palabra
-clave y por cliente nuevo (§8.19), **etiqueta automática** de estado de pago (§2), auto-etiqueta
-**AGENTE/ASESOR** (§8.10), **Liliana no ve** los chats que atiende el agente (§8.10), herramienta
-**actualizar_datos_cliente** (§8.4 nº13), **teléfono internacional** al apartar, **fechas calculadas
-por código** (§8.13), **contador de respuesta 30s** (§8.13).
-
-**PENDIENTE:**
-- ⬜ **Pago en línea (Wompi)** como herramienta del agente: enviar el link de `/abonar` (tarjeta/PSE/
-  Nequi) que registra el abono solo (`api/abonar/wompi-webhook.js`). Subiría la conversión. Mateo lo
-  dejó para después (toca plata). Páginas: `public/abonar.html` + `abonar-app.jsx`.
-- ⬜ **Conectar las líneas grandes** (Línea 1 y Línea 2) — es el "corte" final desde ChateaPro. Hay
-  que cargarles su `prompt`, herramientas, `{{pagos}}`, disparadores y calendario de sorteos.
-- ⬜ **Reporte del supervisor por PLANTILLA**, para que SIEMPRE llegue (hoy depende de que Mateo le
-  haya escrito a la línea en las últimas 24h; si no, el reporte no llega — §8.18).
-- ⬜ **Pantalla para el calendario de sorteos** de cada rifa nueva (hoy se carga por SQL en
-  `rifas.sorteos`; falta una UI para que Mateo lo haga solo — §8.16).
-- ⬜ **Reusar flujos curados** ("Información"/"Método de pago") en vez de que el agente redacte ese
-  texto. Opcional, consistencia de marca.
-- ⬜ Posible: botón **"copiar configuración de otra línea"** para replicar sin pegar el manual.
-- ⬜ Limpiar el simulador `probar` de la cabina (ya no se usa; el código sigue en `agente.js`).
-- ⬜ Revisar/descartar las primeras 5 sugerencias del supervisor (son de chats viejos, ya corregidos).
-- Seguir afinando el `prompt` con más pruebas (§8.13).
-
-**Para cuando ESCALE (no urgente, ver §8.17):**
+**Para cuando ESCALE (no urgente):**
+- Identificación por **últimos 10 dígitos** puede mezclar 2 clientes; a futuro comparar por teléfono COMPLETO.
 - Carrera de la reserva (`reservar.js`: SELECT+UPDATE sin candado atómico) → UPDATE condicional.
-- Identificación por últimos 10 dígitos puede mezclar 2 clientes (mitigado eligiendo números
-  colombianos normales de 12 dígitos); a futuro comparar por teléfono COMPLETO.
 - Proteger el link público de boleta (`/boleta?telefono=`).
-- El cron de recordatorios marca 'enviado' ANTES de confirmar el envío (podría perderse un
-  seguimiento si justo falla; §8.15).
-- Whisper / descarga de media fallan en silencio → respuestas "a ciegas". Vigilar.
-- **Costo:** con el debounce en 30s la función queda abierta más tiempo por mensaje (más GB-seg en
-  Vercel). Aceptable al volumen actual; vigilar si crece mucho.
+- El cron de recordatorios marca 'enviado' ANTES de confirmar el envío.
+- Whisper/descarga de media fallan en silencio → respuestas "a ciegas". Vigilar.
+- Costo: el debounce de 30s deja la función abierta más tiempo (más GB-seg). Aceptable hoy.
 
-**Dejar SOLO para humanos** (no dar al agente): devoluciones (`marcar-devolucion`), eliminar abonos
-(`eliminar-abono`), y todo el back-office (caja, finanzas, sorteo, permisos, cobros).
+**Bandeja:**
+- Marcar qué asesor atiende un chat (para líneas con varios asesores).
+- Pulir difusiones (más filtros, programar envíos, pegar lista propia, "preparar" en segundo plano para audiencias enormes).
+- Enviar video y audios salientes desde la barra (hoy solo foto/PDF).
 
-### 8.13 Cómo conversa: afinado con pruebas reales (sesión jun-2026)
-Tras muchas pruebas con Mateo (probando con su propio número en la línea de Lili) se afinó el
-comportamiento. Todo vive en `agente-responder.js` (motor) y en el `prompt` (libreto, en la base):
-- **VE las fotos**: cuando el cliente manda una imagen (ej. comprobante), el motor le pasa la
-  **foto de verdad** a Claude (no solo "[imagen]"). Así reconoce el comprobante en vez de
-  ignorarlo. Descarga las últimas imágenes con `descargarMediaBase64` y las adjunta como bloques.
-- **Estado del cliente SIEMPRE**: antes de responder, el motor consulta por teléfono los datos y
-  boletas del cliente (`resumenCliente`) y se los inyecta al prompt (`bloqueEstadoCliente`). Así,
-  desde el PRIMER mensaje, sabe si ya es cliente → lo **saluda por su nombre**, le recuerda sus
-  boletas, **no le vende de cero** ni le re-pide datos. Funciona **entre líneas** (las boletas se
-  guardan por teléfono). Muestra nombre, apellido, ciudad, cédula, correo y, por boleta, lo
-  **abonado** y lo que falta.
-- **Memoria de acciones (arreglo clave)**: las notas 🤖 de lo ya hecho **no le llegaban** (a
-  `construirMensajes` se le pasaba `reales`, que filtra las notas). Ahora se le inyecta un bloque
-  "ACCIONES QUE YA EJECUTASTE" para que no repita ni se contradiga (ej. liberar una boleta y luego
-  decir que "no es del cliente"). **Nota de diagnóstico:** un error parecido NO fue falta de
-  memoria sino que el modelo no usaba el dato que tenía → se arregló con prompt + dato más claro,
-  **sin subir a Opus** (más caro/lento).
-- **No narra el proceso**: ya no manda "voy a verificar...", "un momento...". El motor **suprime
-  el texto que acompaña a una herramienta** y solo envía el mensaje final con el resultado.
-- **No pregunta lo que ya sabe** (regla dura + el estado del cliente le muestra el dato).
-- **Juntar mensajes (debounce)**: si el cliente escribe en ráfaga, el motor **espera 30s de
-  silencio desde su ÚLTIMO mensaje** (cada mensaje nuevo reinicia el conteo; tope invisible de 4 min,
-  que ningún cliente real alcanza; `maxDuration` del motor subido a 300s). Durante la espera **refresca
-  el candado cada ≤3s** para que no se venza y arranque otra corrida (evita respuesta/abono doble). Junta
-  todo en UNA respuesta. Solo en el disparo del webhook; en prueba manual responde de una. Resuelve
-  el viejo dolor de "agrupar mensajes" de ChateaPro/Manychat.
-- **Memoria por RIFA, no por nº de mensajes**: lee el historial **desde la `fecha_inicio` de la
-  rifa con `estado='activa'`** (tope de seguridad 300). Al marcar otra rifa como activa, el corte
-  se mueve solo y no arrastra el contexto de rifas pasadas.
-- **No reenvía la presentación**: si activan el agente en un chat con mensajes previos, no manda el
-  contacto inicial otra vez; lee todo y continúa el hilo (`yaHuboSalientes`).
-- **Fechas calculadas por código (no por el modelo)**: los LLM se equivocan con los días de la
-  semana (ej. decían "sábado 7 de junio" cuando el 7 es domingo). El motor inyecta un bloque
-  "FECHAS EXACTAS" con HOY, el PRÓXIMO sorteo y el calendario, cada uno con su día de semana ya
-  calculado (`etiquetaFecha` desde `rifas.sorteos`), y la regla de NUNCA calcular el día él mismo.
-  Por eso NO hizo falta subir a Opus: el problema era de datos, no de modelo.
-- **Libreto reforzado** con: horarios de las loterías (Boyacá 10:30 / Manizales 11:00), urgencia
-  del próximo sorteo, factura electrónica (cédula+correo), confianza/garantía (NIT 902.003.134-4,
-  verificar en Gobernación de Caldas o EDSA), pagos a María Buitrago (autorizada), **devoluciones**
-  (solo si la boleta NO ha entrado a ningún sorteo), boleta digital como comprobante, no hay boleta
-  física, tono para clientes mayores, y reglas de seguridad (no regala/descuenta, no adelanta
-  plata, no toca boletas ajenas, no se sale de su rol).
+**Dejar SOLO para humanos** (no dar al agente): devoluciones, eliminar abonos, y el back-office (caja, finanzas, sorteo, permisos, cobros).
 
-### 8.14 Variables del libreto (para replicar el agente en varias líneas)
-El `prompt` (manual) es **igual para todas las líneas**; solo cambian unas **variables** que se
-escriben como `{{clave}}` y el motor rellena antes de responder (`aplicarVariables`):
-- **`{{nombre}}`** — el nombre del agente (campo "Nombre" de la cabina = `agente_config.nombre_agente`).
-- **`{{pagos}}`** — los datos de pago de esa línea (a quién y a qué cuentas paga el cliente). Campo
-  nuevo "Datos de pago" en la cabina; se guarda en **`agente_config.variables`** (jsonb).
-Para montar el agente en otra cuenta de WhatsApp: se pega el **mismo manual base** y solo se
-llenan esos dos campos (ej. la línea oficial usa Bancolombia; Liliana no). Para agregar otra
-variable: úsala como `{{otra}}` en el prompt y guárdala en `variables`.
-
-### 8.15 Recordatorios de seguimiento (el agente se vuelve a escribir solo) — HECHO
-El agente puede **agendarse a sí mismo** volver a escribirle al cliente más tarde el MISMO día,
-cuando el cliente pide tiempo (ej. "estoy ocupado, escríbeme en 20 min"). Cómo funciona:
-- **Herramienta `programar_recordatorio(minutos, motivo)`** (§8.4 nº12): el agente la llama, valida
-  que el momento quede **dentro de las 24h** del último mensaje del cliente (5 min de colchón) y
-  guarda una fila en **`recordatorios`** (§3). Si el cliente pide en DÍAS, NO agenda (se lo dice).
-  Solo **un recordatorio activo por chat**: si agenda otro, reemplaza el anterior.
-- **El relojito** = `api/whatsapp/recordatorios-cron.js`, llamado por **`pg_cron` de Supabase cada
-  minuto** (job `recordatorios-agente-cada-minuto`, usa `pg_net` para hacer `http_post` al endpoint
-  con el secreto interno). Busca los vencidos pendientes (índice parcial → instantáneo), los
-  **reclama de forma atómica** (`estado`→`enviado` solo si seguía `pendiente`, evita doble disparo)
-  y **despierta el motor** del agente (fire-and-forget, como el webhook).
-- **El motor** (`agente-responder.js`) acepta un disparo `{ recordatorio: { motivo } }`: se salta el
-  debounce y la regla de "el último mensaje debe ser del cliente", e inyecta una **nota interna**
-  (que el cliente NO ve) pidiéndole retomar la conversación con un mensaje natural. Reusa TODO el
-  motor (herramientas, estado del cliente, candado anti-duplicado).
-- **Auto-cancelación**: `recibir.js` cancela (`estado='cancelado'`) los recordatorios pendientes del
-  chat **apenas el cliente vuelve a escribir** (ya retomaron solos; no hace falta el seguimiento).
-- **Escala**: el cron lee solo los vencidos (índice), reclama en atómico (sin dobles) y procesa por
-  lote (40 por corrida). El secreto interno del cron es `WHATSAPP_VERIFY_TOKEN`.
-
-### 8.16 Resultados de los sorteos (ganadores) — HECHO
-Después de cada sorteo, los clientes preguntan mucho "¿qué número ganó?". Mateo escribe el ganador
-en la cabina y el agente responde con eso. **Decisión de Mateo:** las casillas NO las crea él a
-mano; salen **solas del calendario de la rifa**, y él solo llena el ganador.
-- **Calendario en la rifa:** la tabla `rifas` tiene una columna **`sorteos`** (jsonb, array de
-  `{titulo, fecha}`) con los sorteos de esa rifa. Para la rifa activa "Rica casa Santa Teresita" se
-  cargaron los 9: El Sueldazo (3 jun), $5.000.000 de los 7 sábados (16/23/30 may, 6/13/20/27 jun) y
-  el Premio Mayor / la casa (4 jul). Con cada rifa nueva se llena su `sorteos` y las casillas
-  cambian solas. (premios_rifa está vacío y sin fechas; por eso el calendario vive en `rifas.sorteos`.)
-- **Cabina** (pestaña Agente): tarjeta **"Resultados de los sorteos"** con UNA casilla por sorteo,
-  ordenadas por fecha. El **título es fijo** (sale del calendario, ej. "Premio Mayor (la casa) —
-  sábado 4 de julio"); **sin botones de agregar/quitar**. Cada casilla es **desplegable/contraíble**
-  (con una pastilla de estado: "Sin jugar" / el número+nombre / "Acumulado") para no ocupar espacio.
-  Dentro tiene **campos exactos**: *número ganador*, *nombre del ganador*, *ciudad*; y un
-  **interruptor "Acumulado"** (ya jugó, nadie ganó → se acumuló) con un campo opcional del *monto que
-  se acumula* para el próximo. Casilla vacía = aún no se ha jugado.
-- **Dónde se guarda:** en **`agente_config.resultados`** (jsonb, array de
-  `{fecha, numero, nombre, ciudad, acumulado, acumulado_monto}`, la **fecha es la llave**; solo se
-  guardan los que tienen algún dato). `agente.js` arma las casillas mezclando `rifas.sorteos` (activa)
-  con estos datos. Campos exactos = el agente puede decir el ganador de varias formas.
-- **Motor** (`agente-responder.js`): toma el calendario de la rifa activa (`rifas.sorteos`) + los
-  datos (`agente_config.resultados`, por fecha) e inyecta el bloque "RESULTADOS DE LOS SORTEOS"
-  (número/nombre/ciudad, o "acumulado", o "aún no se ha jugado"), con la regla de usarlo **solo si el
-  cliente pregunta**. Así nunca muestra sorteos de otra rifa.
-- El ganador es por línea hoy (vive en `agente_config`); el calendario es global (vive en la rifa).
-
-### 8.17 Auditoría pre-lanzamiento (jun-2026): qué arreglar antes de soltar con clientes reales
-Antes de soltar el agente se hizo una **auditoría adversarial** (4 revisores sobre el código real).
-**Veredicto: NO hay bloqueantes** para un piloto SUPERVISADO de 2 clientes; sí hay arreglos recomendados.
-
-**Lo que YA está bien blindado (confirmado):** no abona de más (usa el monto REAL del banco, sin
-`permitirExceso`), no registra el mismo pago dos veces (candado por `idTransferencia` en `abono.js`),
-no libera/traslada boletas ajenas (liberar exige dueño+$0; trasladar exige misma persona), candado
-anti-doble-mensaje (`agente_procesando_at`), reintento de Meta no duplica (upsert por `wa_message_id`),
-y `pasar_a_humano` apaga bien.
-
-**✅ Arreglado en la ronda de seguridad (jun-2026), antes del piloto:**
-- **Modo sombra REAL:** el motor ahora lee `agente_config.estado`. `sombra` = el agente PIENSA y deja
-  notas 🌓 ("le diría: …", "habría usado …") pero **NO le escribe al cliente ni ejecuta acciones**
-  (las herramientas de solo lectura sí corren). Es el modo del piloto. La línea de Lili quedó en
-  `sombra`. **(jun-2026: ya pasó a `encendido`, en vivo con clientes reales — ver §8.20.)**
-- **Botón de pánico de línea (kill switch):** `estado='apagado'` → el motor no responde en TODA la
-  línea, aunque algún chat tenga el 🤖 prendido. Los 3 botones de la cabina (Apagado/Sombra/Encendido)
-  ahora SÍ funcionan de verdad.
-- **Apagar un chat frena la corrida en curso:** el motor re-chequea `agente_activo` (`sigueActivo`)
-  tras el debounce y en cada vuelta del bucle; si lo apagaron, deja de escribir/actuar.
-- **Abono no se hace solo si solo coincide "la misma hora":** si la única coincidencia del comprobante
-  es el minuto (sin referencia ni celular del cliente), el agente NO abona y pasa a un humano (evita
-  cruzar el pago de otro cliente). Usa `razon_sugerida` que ya devuelve `buscar-pago.js`.
-- **Registro central de actividad:** cada nota (real o de sombra) también se guarda en
-  `agente_actividad`, así la cabina deja de salir vacía.
-- **`consultar_cliente` forzado al teléfono del chat** (privacidad: el cliente no puede pedir datos de
-  otro número).
-- **Contador de respuesta (debounce) = 30s** (decisión de Mateo, jun-2026): espera 30s de silencio desde el último mensaje del cliente, se reinicia con cada mensaje, sin tope práctico (4 min invisible). El candado se refresca cada ≤3s durante la espera y se recupera a los 60s; `maxDuration` del motor = 300s. **Ojo:** NO confundir con la activación (encender el agente es instantáneo); el debounce es solo cuánto espera para responder y agrupar.
-- **`pasar_a_humano` cancela** el recordatorio pendiente del chat.
-
-**Errores corregidos en la 1ª prueba real (jun-2026, chats con etiqueta AGENTE):**
-- **Teléfono internacional:** la boleta se aparta/actualiza con el WhatsApp del chat **de cualquier
-  país**. Antes `reservar.js` exigía número colombiano y el agente le pedía otro número al cliente
-  (caso Polo, +507). Arreglo: `apartar_numero` llama a `reservar.js` con `esColombia:false` (camino
-  internacional), y `actualizar-cliente.js` acepta 7–15 dígitos. **Regla en el libreto:** registrar
-  SIEMPRE con el número de WhatsApp del chat; NUNCA pedir otro.
-- **"Todos los sábados $20.000.000":** el agente generalizaba el acumulado del próximo sorteo a todos.
-  **Regla en el libreto:** el premio BASE de cada sábado es $5.000.000; el acumulado aplica SOLO al
-  próximo. (Ambas reglas en una sección "CORRECCIONES IMPORTANTES" al final del prompt en la BD.)
-- **Horarios de los sorteos:** el agente los listaba sin que se lo pidieran (suena raro). **Regla:**
-  no menciona horarios por su cuenta; SOLO da la hora si el cliente pregunta hasta qué hora puede
-  consignar el día del sorteo.
-
-**Falta hacer ANTES de soltar (lo hace Mateo, es contenido):** actualizar la sección "DATOS DE LA RIFA
-ACTUAL" del libreto (el Sueldazo del 3 jun ya pasó) y confirmar los resultados de los sorteos.
-
-**Vigilar DURANTE el piloto:** las notas (🤖 reales / 🌓 sombra) en cada chat y en el registro de
-actividad; recordatorio que se marca `enviado` aunque el motor no alcance a escribir; Whisper/descarga
-de media que fallan en silencio (respuestas "a ciegas"). Para el piloto, **elegir clientes con número
-normal de 12 dígitos** (ver siguiente punto).
-
-**Para cuando ESCALE (más clientes, sin supervisión) — pendiente:**
-- **Identificación por ÚLTIMOS 10 DÍGITOS** puede mezclar 2 clientes (hay teléfonos guardados con
-  9/10/13 dígitos; la cola `4655028879` ya agrupa 2). Afecta saludo, `enviar_boleta` y a qué boleta
-  abona. Mitigado en el piloto eligiendo números normales; el arreglo de fondo (comparar por teléfono
-  COMPLETO normalizado) toca varios sitios y se dejó para después por riesgo.
-- **Carrera de la reserva** (`reservar.js`: SELECT + UPDATE sin candado atómico) — dos clientes podrían
-  quedar con la misma boleta. No se tocó (endpoint compartido con web/Admin); arreglo = UPDATE
-  condicional a que siga libre.
-- Reconsiderar el supervisor Opus para `registrar_abono`, proteger el link público de boleta
-  (`/boleta?telefono=`), y que el cron de recordatorios marque `enviado` solo cuando el motor confirme.
-
-### 8.18 Supervisor del agente (control de calidad que reporta a Mateo) — HECHO (PAUSADO 5-jun-2026)
-> ⏸️ **DESACTIVADO el 5-jun-2026 por decisión de Mateo.** El cron `supervisor-agente-cada-5min`
-> (jobid 2 en `cron.job`) quedó en `active=false`; ya NO revisa ni manda reportes. Liliana sigue
-> funcionando igual (esto solo apagaba la vigilancia). Para reactivarlo:
-> `select cron.alter_job(job_id := 2, active := true);`. El código (`qa-agente-cron.js`) sigue intacto.
-
-Un "vigilante" que revisa al agente y le avisa a Mateo los errores. (jun-2026.)
-- **Qué hace:** cada **30 minutos** (`pg_cron` job `supervisor-agente-cada-5min` —el nombre quedó así pero corre `*/30`— → `qa-agente-cron.js`),
-  revisa las conversaciones con la etiqueta **AGENTE** de la línea de Lili, toma SOLO lo nuevo desde la
-  última revisión (marca de agua `agente_qa_estado`), arma el transcrito y se lo pasa a **Claude
-  (Sonnet)** junto con el MANUAL del agente (su `prompt`) para que detecte errores. **Si hay errores**,
-  le manda a Mateo un **resumen corto por WhatsApp**; si no, no manda nada.
-- **A quién/cómo reporta:** texto libre a **573123354789** (Mateo), enviado **desde la línea de Lili**.
-  ⚠️ Solo llega si ese número tiene la **ventana de 24h abierta** con la línea (le escribió en 24h);
-  si no, el envío falla en silencio (`enviado:false`). Para reactivarlo, Mateo manda un "hola" a Lili.
-- **Sin spam:** la marca de agua avanza tras cada corrida y al revisor se le pide reportar SOLO errores
-  en los mensajes `[NUEVO]`; así un mismo error no se repite. La 1ª corrida solo inicializa (no revisa
-  el historial viejo).
-- **Sirve en sombra y en vivo:** incluye las notas `🌓 (modo sombra) le diría…` como respuestas de
-  Liliana, así que durante el piloto en sombra también detecta errores.
-- **Fechas correctas (arreglo jun-2026):** se le inyecta el calendario de sorteos con el día de la
-  semana YA calculado por código, para que el supervisor **cache** los errores de fecha de Liliana
-  (ej. "sábado 7 de junio" cuando el 7 es domingo) en vez de repetirlos.
-- **Distingue agente vs asesor humano (arreglo jun-2026):** los mensajes salientes del AGENTE se
-  guardan con `raw.agente=true`; los de un **asesor humano** (cuando toma el chat tras `pasar_a_humano`)
-  NO la tienen. El supervisor etiqueta cada saliente como "Liliana" o "Asesor humano" y se le instruye
-  **NO atribuirle a Liliana lo que dijo un humano** (antes reportaba como error de Liliana mensajes del
-  asesor, ej. "Ya mismo te envío tu boleta con el abono").
-- **Modelo:** el supervisor usa **Opus** (`claude-opus-4-8`), más alto que el agente (Sonnet) — no
-  sirve que Sonnet evalúe a Sonnet. Es 1 llamada cada 30 min, así que el costo de Opus es bajo. El
-  reporte de WhatsApp es **resumido** (máx 5 viñetas).
-- **CICLO DE MEJORA ("sugerir y Mateo aprueba"):** el supervisor devuelve los errores en JSON
-  (`{cliente, error, regla}`), guarda cada uno en `agente_sugerencias` y, en la cabina, la tarjeta
-  **"Mejorar el agente"** los muestra con su regla y botones **"Aplicar al manual"** / **"Descartar"**.
-  Aplicar **agrega la regla al `prompt`** del agente (acción `aplicar_sugerencia` en `agente.js`), así
-  el agente deja de cometer ese error. Nada cambia el agente sin el visto bueno de Mateo.
-  ⚠️ **Volvió a aparecer la caché de esquema de PostgREST (§8.9):** tras crear `agente_sugerencias`
-  los `insert` fallaban en silencio hasta **recargar el esquema con `apply_migration`**.
-- **Ajustables (constantes en `qa-agente-cron.js`):** la línea, el número de Mateo, la etiqueta
-  (`AGENTE`) y el modelo. Pendiente al escalar: usar plantilla para que el reporte llegue siempre
-  (sin depender de la ventana de 24h) y, si se vigilan muchos chats, paginar/limitar por corrida.
-
-### 8.19 Disparadores (prenden el agente automáticamente) — HECHO
-Como los disparadores de ChateaPro. Menú **Disparadores** (bajo "Inteligencia", **solo Mateo**).
-Dos tipos (columna `tipo`):
-- **Por palabra clave** (`palabra`): cuando el mensaje del cliente **contiene** la palabra/frase
-  (sin distinguir mayúsculas).
-- **Cliente nuevo** (`nuevo_contacto`): cuando un cliente escribe por **primera vez** (su
-  conversación se acaba de crear), sin importar qué diga. Solo se permite UNO por línea. ⚠️ Atiende a
-  TODOS los clientes nuevos automáticamente.
-- **Qué hace (ambos):** `recibir.js` (`activarPorDisparador`) **prende el agente** en ese chat
-  (`agente_activo=true`, `estado='bot'`, etiqueta AGENTE) y el webhook lo dispara de una. El "cliente
-  nuevo" usa el flag `esNuevo` que devuelve `upsertConversacion`.
-- **Candados:** NO se auto-prende si el agente ya estaba activo, si un **humano** tomó el chat
-  (`estado='humano'`), o si la **línea está en Apagado**. El **Modo sombra** se respeta (el motor
-  redacta pero no envía), así que con la línea en sombra es seguro para probar.
-- **Cabina:** lista para agregar palabra, prender/apagar cada una (interruptor) y eliminar
-  (`disparadores.js` + módulo `#modDisparadores`). Se sembró una de ejemplo: "quiero más información"
-  (el mensaje con que llegan los clientes del anuncio de Meta).
-
-### 8.20 Liliana EN VIVO: anti-duplicados y supervisor afinado (jun-2026)
-Liliana ya NO está en prueba: la línea de Lili está en **`encendido`** (en vivo con clientes reales) y
-con un disparador **`nuevo_contacto`** activo, así que atiende SOLA a todo cliente que escribe por
-primera vez. (Corrige lo que decían §8 y §8.17 sobre "modo PRUEBA / sombra / solo Mateo".)
-
-**Problema: mensajes duplicados.** El supervisor reportaba que Liliana mandaba el mismo mensaje dos
-veces. Revisando chats reales se vio el patrón: cuando el cliente manda **2 mensajes muy seguidos**
-(ráfaga), se disparan dos corridas del motor y **ambas responden el mismo segundo con el mismo texto**.
-El candado `agente_procesando_at` (§8.9) no siempre frena la segunda.
-
-**Arreglo — candado a prueba de balas por mensaje (idempotencia por tanda):**
-- Nueva columna `conversaciones_whatsapp.agente_respondido_hasta` (timestamptz, aditiva, nullable).
-- En `agente-responder.js`, pasado el debounce y ANTES de gastar trabajo (Whisper/fotos), el motor hace
-  un **UPDATE atómico condicional**: `set agente_respondido_hasta = <ts del último mensaje del cliente>
-  where id=... and (agente_respondido_hasta is null or < ese ts)`. Las dos corridas calculan el MISMO
-  último mensaje; solo UNA gana (la 2ª ve el valor ya igual y se sale). Falla-abierto si el UPDATE diera
-  error (mejor responder que callar). Mata el duplicado aunque el candado viejo no frene. La marca solo
-  avanza; un mensaje nuevo (ts mayor) sí permite responder. No aplica a recordatorios.
-- **Escala/costo:** es un UPDATE por clave primaria (O(1)); no recorre la tabla. Además **ahorra**
-  dinero: la corrida perdedora se sale antes de llamar a Claude, así que un duplicado deja de pagar dos
-  respuestas.
-
-**Arreglo — supervisor sin falsas alarmas:** el supervisor (`qa-agente-cron.js`) solo recibía el manual
-("$5.000.000 base") y por eso reportaba como "inventado" que Liliana dijera el **acumulado de
-$20.000.000** del próximo sábado, que es CORRECTO (sale de `agente_config.resultados`, cargado por
-Mateo). Ahora se le inyecta el bloque de **resultados/acumulados reales** y se le instruye NO reportar
-como error que Liliana diga un ganador o un acumulado que coincida con esos datos. Reportes limpios
-(solo errores reales).
-
-**Afinado del manual (en `agente_config.prompt`, sección CORRECCIONES IMPORTANTES):** dos reglas nuevas
-por errores reales que sí detectó el supervisor:
-- NO decir cuántas semanas lleva acumulado el premio ("3 semanas sin ganador"): solo el monto.
-- Usar SIEMPRE la misma cifra del premio del próximo sábado dentro de una conversación (no mezclar
-  $5.000.000 y el acumulado en mensajes distintos).
-
-Las sugerencias viejas del supervisor (duplicados ya resueltos por código + los falsos positivos del
-acumulado) se marcaron resueltas en la cabina.
-
-## 9. Pendientes / próximos pasos
-- **Agente de IA** → **HECHO** (ver §8); pendientes propios del agente en §8.12.
-- ~~Difusiones / broadcasts (con plantillas aprobadas por Meta)~~ → **HECHO** (menú Difusiones: Plantillas + Campañas). Pendiente de pulir: más filtros de audiencia, programar envíos (cron), pegar lista propia de números, y para audiencias muy grandes (decenas de miles) mover el "preparar" a un proceso en segundo plano.
-- ~~**Enviar fotos/archivos sueltos** desde la barra del chat~~ → **HECHO** (botón clip 📎; sube foto o PDF desde el computador; `enviar-archivo.js`).
-- ~~**Búsqueda de chats en servidor**~~ → **HECHO** (`conversaciones.js` con `q`; busca en toda la base por nombre o número).
-- ~~**Avisos de mensaje nuevo**: sonido + contador en la pestaña + botón para silenciar~~ → **HECHO**.
-- ~~**Plantillas desde el chat**: mandar una plantilla aprobada a un chat puntual para reabrir conversaciones de +24h~~ → **HECHO** (botón "Enviar plantilla" en el aviso de 24h; `plantillas.js` acción `enviar-chat`). *(La sección de Plantillas y las Campañas masivas ya existían en Difusiones.)*
-- ~~**Filtro por etiqueta** en la lista de chats~~ → **HECHO** (chips junto a "Sin respuesta"; filtro en servidor, §2).
-- ~~**Etiqueta automática de estado de pago** (Separada/Abonada/Pagada)~~ → **HECHO** (cron en la base, §2).
-- ~~**Disparadores** (palabra clave + cliente nuevo) que prenden el agente~~ → **HECHO** (menú Disparadores, §8.19).
-- ~~**Agente: recordatorios, resultados de sorteos, supervisor + ciclo de mejora, actualizar datos**~~ → **HECHO** (§8.15–8.19).
-
-**PENDIENTE — bandeja:**
-- **Marcar qué asesor atiende** un chat (para una línea con varios asesores; toca cómo se reparten). Hoy solo está la etiqueta ASESOR (necesita humano) y que Liliana no vea los del agente.
-- **Pulir difusiones**: más filtros de audiencia, **programar envíos** (cron), pegar lista propia de números, y para audiencias enormes mover el "preparar" a segundo plano.
-- **Enviar fotos/archivos desde la barra** ya está; falta **video** y **audios** salientes si se quisieran.
-
-**PENDIENTE — agente:** todo en **§8.12** (lo más grande: pago en línea Wompi, conectar las líneas grandes, reporte del supervisor por plantilla, pantalla del calendario de sorteos).
-
-**PENDIENTE — general:**
-- Migrar las **líneas grandes** (Línea 1, Línea 2) — el "corte" definitivo desde ChateaPro.
-- Mover la lógica pesada de venta del Admin a la bandeja si se quiere todo integrado (ya se empezó: verificar/abonar/ficha).
-
-## 10. Cómo trabajar (recordatorio)
-- Publicar: `git push origin main` → Vercel despliega ~1 min. Verificar en vivo.
-- Build de JSX (esbuild) corre solo en el deploy de Vercel; localmente faltan `node_modules` (instalar esbuild si se necesita compilar para verificar).
-- Tocar lógica de plata o esquema → explicar y confirmar con Mateo primero.
+## 10. Cómo trabajar
+- Publicar: `git push origin main` → Vercel despliega ~1 min. **Verificar en vivo** (curl o Ctrl+Shift+R). Si "no se ve",
+  revisar PRIMERO si hay **rollback activo** en Vercel (Overview → "Promote to Production"/"Undo Rollback").
+- El `prompt` y la config del agente están en la **base de datos** → editarlos tiene efecto **inmediato** (sin desplegar).
+- Tocar lógica de plata o esquema → explicar y confirmar con Mateo primero. Tras agregar columnas, recargar el esquema (§8.11).
+- Build de JSX (esbuild) corre solo en el deploy de Vercel.

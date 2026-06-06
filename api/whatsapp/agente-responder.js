@@ -890,13 +890,35 @@ export default async function handler(req, res) {
       return partes.length ? partes.join(', ') : '(aún no se ha jugado)';
     };
     const sorteosOrden = (rifaSorteos || []).slice().sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
-    const bloqueResultados = sorteosOrden.length
-      ? '\n\n---\nRESULTADOS DE LOS SORTEOS (úsalos SOLO si el cliente pregunta qué número ganó, quién ganó, o si ya jugó tal premio; NO los menciones si no preguntan). Para cada sorteo tienes los datos exactos; díselos al cliente con tus palabras, de forma natural. Si dice "(aún no se ha jugado)", explícale con cariño que todavía no se ha realizado:\n' +
-        sorteosOrden.map(s => `- ${String(s.titulo || 'Sorteo').trim()} — ${etiquetaFecha(s.fecha)}: ${describirResultado(datosPorFecha[s.fecha])}`).join('\n')
+    // Fecha de hoy (Colombia), ya calculada por código (los modelos se equivocan con los días).
+    const hoyCol = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });   // YYYY-MM-DD
+
+    // RESULTADOS para "¿qué número ganó?". Mostramos uno por uno SOLO los sorteos CON ganador
+    // (los que el cliente realmente pregunta). Los sábados que se ACUMULARON ya NO se enumeran
+    // uno por uno: verlos en lista hacía que Liliana CONTARA ("lleva 3 sábados sin ganador",
+    // que está prohibido decir). Ahora se resumen en UNA sola línea con el monto que se traslada
+    // al próximo sorteo, sin revelar cuántos sábados llevan ni llamarlo "el primer sorteo".
+    const conGanador = sorteosOrden.filter(s => {
+      const g = datosPorFecha[s.fecha];
+      return g && !g.acumulado && (g.numero || g.nombre);
+    });
+    let montoAcumProximo = '';
+    for (const s of sorteosOrden) {
+      const g = datosPorFecha[s.fecha];
+      if (g && g.acumulado && g.acumulado_monto && String(s.fecha) < hoyCol) montoAcumProximo = String(g.acumulado_monto).trim();
+    }
+    const lineasResultados = conGanador.map(s =>
+      `- ${String(s.titulo || 'Sorteo').trim()} — ${etiquetaFecha(s.fecha)}: ${describirResultado(datosPorFecha[s.fecha])}`);
+    const bloqueResultados = (lineasResultados.length || montoAcumProximo)
+      ? '\n\n---\nRESULTADOS DE LOS SORTEOS (úsalos SOLO si el cliente pregunta qué número ganó, quién ganó, o si ya jugó tal premio; NO los menciones si no preguntan):\n' +
+        (lineasResultados.length ? lineasResultados.join('\n') + '\n' : '') +
+        (montoAcumProximo
+          ? `- El premio del PRÓXIMO sorteo de los sábados está acumulado en ${montoAcumProximo}. Di SOLO ese monto; NUNCA digas cuántos sábados ni semanas lleva acumulado, ni "sin ganador", ni lo llames "el primer sorteo".\n`
+          : '') +
+        'Si el cliente pregunta por un sorteo que no aparece aquí, no inventes: dile con cariño que todavía no se ha realizado o que un asesor le confirma.'
       : '';
 
     // FECHAS ya calculadas por código (los modelos se equivocan con los días de la semana).
-    const hoyCol = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });   // YYYY-MM-DD
     const proximo = sorteosOrden.find(s => String(s.fecha) >= hoyCol);
     const bloqueFechas = sorteosOrden.length
       ? '\n\n---\nFECHAS EXACTAS (ya calculadas; ÚSALAS TAL CUAL. NUNCA calcules tú el día de la semana de una fecha, ni digas "este sábado" con una fecha que no esté aquí):\n' +
