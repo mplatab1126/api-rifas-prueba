@@ -812,6 +812,48 @@
       .s-prize-amount { font-size: 28px; }
       .s-cd-num { font-size: 27px; }
     }
+
+    /* ───── Computador / pantallas anchas ─────
+       En el celular la página es una columna (eso no cambia).
+       En el computador se presenta como una TARJETA centrada y elegante
+       sobre un fondo con un sutil resplandor menta, para que no se vea
+       como una tira perdida. Solo aplica de 768px de ancho en adelante. */
+    @media (min-width: 768px) {
+      body {
+        padding: 48px 24px;
+        background-color: var(--cream-100);
+        background-image: radial-gradient(120% 70% at 50% -5%, rgba(155,250,176,0.12), transparent 60%);
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+      }
+      .s-shell {
+        max-width: 640px;
+        margin: 0 auto;
+        min-height: auto;
+        border-radius: var(--r-xl);
+        box-shadow: 0 28px 70px rgba(10,10,10,0.18), 0 10px 28px rgba(10,10,10,0.08);
+        padding-bottom: 0;
+      }
+      .s-hero {
+        border-radius: 0;
+        padding: 44px 40px 36px;
+      }
+      .s-logo { height: 64px; }
+      .s-hero-title { font-size: 46px; }
+      .s-hero-desc { font-size: 17px; max-width: 40ch; }
+      .s-body { padding: 0 32px; }
+      .s-card { padding: 28px 28px; }
+      .sf-footer { margin: 34px 0 0; border-radius: 0; }
+      .success-screen, .duplicate-screen { padding-left: 32px; padding-right: 32px; }
+      /* El botón flotante de WhatsApp se ancla cerca del borde del card */
+      .float-wa { right: max(22px, calc(50% - 320px + 16px)); bottom: 28px; }
+    }
+
+    /* Pantallas muy anchas: un poco más de aire */
+    @media (min-width: 1200px) {
+      .s-shell { max-width: 680px; }
+      .s-hero-title { font-size: 50px; }
+    }
   </style>
 </head>
 <body>
