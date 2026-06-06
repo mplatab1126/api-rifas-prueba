@@ -507,7 +507,12 @@ normal de 12 dígitos** (ver siguiente punto).
 - Reconsiderar el supervisor Opus para `registrar_abono`, proteger el link público de boleta
   (`/boleta?telefono=`), y que el cron de recordatorios marque `enviado` solo cuando el motor confirme.
 
-### 8.18 Supervisor del agente (control de calidad que reporta a Mateo) — HECHO
+### 8.18 Supervisor del agente (control de calidad que reporta a Mateo) — HECHO (PAUSADO 5-jun-2026)
+> ⏸️ **DESACTIVADO el 5-jun-2026 por decisión de Mateo.** El cron `supervisor-agente-cada-5min`
+> (jobid 2 en `cron.job`) quedó en `active=false`; ya NO revisa ni manda reportes. Liliana sigue
+> funcionando igual (esto solo apagaba la vigilancia). Para reactivarlo:
+> `select cron.alter_job(job_id := 2, active := true);`. El código (`qa-agente-cron.js`) sigue intacto.
+
 Un "vigilante" que revisa al agente y le avisa a Mateo los errores. (jun-2026.)
 - **Qué hace:** cada **30 minutos** (`pg_cron` job `supervisor-agente-cada-5min` —el nombre quedó así pero corre `*/30`— → `qa-agente-cron.js`),
   revisa las conversaciones con la etiqueta **AGENTE** de la línea de Lili, toma SOLO lo nuevo desde la
