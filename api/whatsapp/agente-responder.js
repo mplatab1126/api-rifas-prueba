@@ -943,13 +943,19 @@ export default async function handler(req, res) {
       : '';
 
     // FECHAS ya calculadas por código (los modelos se equivocan con los días de la semana).
+    // Mostramos SOLO los sorteos de HOY en adelante: ver los sábados YA jugados hacía que
+    // Liliana CONTARA el acumulado ("lleva 3 sábados sin ganador", prohibido). Los sorteos
+    // pasados, si el cliente pregunta qué número ganó, ya están cubiertos por bloqueResultados.
+    // Al PRÓXIMO sorteo le pegamos el monto acumulado para que no se confunda con el título $5M.
     const proximo = sorteosOrden.find(s => String(s.fecha) >= hoyCol);
-    const bloqueFechas = sorteosOrden.length
+    const sorteosFuturos = sorteosOrden.filter(s => String(s.fecha) >= hoyCol);
+    const bloqueFechas = sorteosFuturos.length
       ? '\n\n---\nFECHAS EXACTAS (ya calculadas; ÚSALAS TAL CUAL. NUNCA calcules tú el día de la semana de una fecha, ni digas "este sábado" con una fecha que no esté aquí):\n' +
         '- Hoy es ' + etiquetaFecha(hoyCol) + '.\n' +
-        (proximo ? '- El PRÓXIMO sorteo es: ' + String(proximo.titulo).trim() + ' — ' + etiquetaFecha(proximo.fecha) + '.\n' : '') +
-        '- Calendario de sorteos de esta rifa:\n' +
-        sorteosOrden.map(s => '   · ' + String(s.titulo || 'Sorteo').trim() + ' — ' + etiquetaFecha(s.fecha)).join('\n')
+        (proximo ? '- El PRÓXIMO sorteo es: ' + String(proximo.titulo).trim() + ' — ' + etiquetaFecha(proximo.fecha) +
+          (montoAcumProximo ? ' (este premio está ACUMULADO en ' + montoAcumProximo + ': di SOLO ese monto)' : '') + '.\n' : '') +
+        '- Próximos sorteos de esta rifa (solo los que faltan):\n' +
+        sorteosFuturos.map(s => '   · ' + String(s.titulo || 'Sorteo').trim() + ' — ' + etiquetaFecha(s.fecha)).join('\n')
       : '';
 
     const system = prompt +
