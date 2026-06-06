@@ -26,6 +26,31 @@
 
 ---
 
+## 2026-06-06 — [WhatsApp] — Liliana: recordatorios a DÍAS por plantilla (reabrir conversaciones de +24h)
+
+**Qué decidimos:** que Liliana pueda agendar volver a escribirle al cliente DÍAS después
+(antes solo el mismo día, dentro de la ventana de 24h de WhatsApp). Como pasadas 24h Meta NO
+deja texto libre, al vencer el recordatorio el reloj revisa la ventana: si sigue abierta,
+escribe texto normal (como antes); si ya se cerró, envía la PLANTILLA de seguimiento aprobada
+por Meta (`seguimiento_los_plata`, con el nombre del cliente como variable {{1}}) para reabrir;
+cuando el cliente responde, el motor retoma la venta. Además: el ÚNICO canal es WhatsApp —
+Liliana NO promete llamadas ni "un asesor te contacta", siempre resuelve por aquí (manual).
+
+**Por qué:** un cliente real (3215605048) pidió que lo contactaran el martes y Liliana
+respondió que no podía, y de paso prometió una llamada (que no se hace). Eso pierde ventas.
+
+**Piezas:** `programar_recordatorio` acepta `dias` (tope 30; cae a las 10 a.m. Colombia de ese
+día); `recordatorios-cron.js` decide texto-libre vs plantilla según la ventana de 24h y envía
+la plantilla reusando `enviarPlantilla`. Publicado a `main` (commit 21ac3ba).
+
+**Cuidado / qué NO hacer:** FALTA crear y APROBAR la plantilla `seguimiento_los_plata` en la
+línea de Lili (Difusiones → Plantillas; el código no la pudo crear porque el token bueno solo
+vive en Vercel). Mientras no esté aprobada, un recordatorio a días NO reabre (queda como error
+en `agente_actividad`). La plantilla solo "toca la puerta": Liliana sigue solo si el cliente
+RESPONDE. Cada plantilla enviada tiene costo Meta.
+
+---
+
 ## 2026-06-06 — [WhatsApp] — Liliana: arreglo de errores de conversación (acumulado, "primer sorteo", voseo, Sueldazo)
 
 **Qué decidimos:** corregir 5 errores recurrentes detectados al revisar 629 respuestas

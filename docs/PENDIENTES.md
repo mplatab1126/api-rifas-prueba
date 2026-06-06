@@ -15,6 +15,12 @@
 
 ## Tareas pendientes
 
+- [ ] (2026-06-06) **CREAR y APROBAR la plantilla `seguimiento_los_plata`** en la línea
+  "Compra con Lili" (Difusiones → Plantillas). Es lo que falta para que funcionen los
+  recordatorios a DÍAS de Liliana (el código ya está al aire). Categoría MARKETING, idioma
+  `es`, cuerpo: *Hola {{1}} 👋 Te saludamos de Los Plata. Queremos retomar lo de tu boleta de
+  la casa 🏡 ¿Aún tienes alguna duda? Con gusto te ayudamos.* (ejemplo de {{1}}: Carlos).
+  Cuando Meta la apruebe, queda activo solo. Ver bitácora 2026-06-06.
 - [ ] (2026-06-06) **Verificar el EFECTO del arreglo de errores de Liliana**: medir en
   los mensajes NUEVOS (de hoy en adelante) que ya NO cuente sábados/semanas, NO diga
   "primer sorteo", NO vosee y NO mencione el Sueldazo. Ver bitácora 2026-06-06.
@@ -42,6 +48,10 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-06) **Recordatorios a DÍAS de Liliana** (código): puede agendar seguimiento
+  para otro día; el reloj manda la plantilla de seguimiento si ya pasaron 24h. Regla nueva:
+  canal único WhatsApp, nunca prometer llamadas. Publicado. FALTA crear la plantilla (arriba).
+- [x] (2026-06-06) Reforzado el manual: frase modelo "cada sábado $5M / hoy acumulado $20M".
 - [x] (2026-06-06) **Arreglados 5 errores de conversación de Liliana** (contaba los
   sábados del acumulado; "cada sábado $20M"; voseo; "primer sorteo"; Sueldazo ya
   pasado). Motor (en FECHAS solo sorteos futuros) + manual (bloque "LO QUE MÁS SE
