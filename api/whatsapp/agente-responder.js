@@ -758,23 +758,24 @@ export default async function handler(req, res) {
     // 3a-bis) ANTI-DUPLICADO A PRUEBA DE BALAS: el candado de arriba (agente_procesando_at) a veces
     //     NO frena la segunda corrida cuando el cliente manda 2 mensajes muy seguidos (ráfaga) y
     //     ambas terminan respondiendo el MISMO segundo con el mismo texto. Aquí, ya pasado el
-    //     debounce, marcamos de forma ATÓMICA "ya respondí hasta el último mensaje del cliente".
-    //     Las dos corridas calculan el mismo último mensaje; solo UNA gana el UPDATE (la condición
-    //     `lt` falla para la segunda porque el valor ya quedó igual) y responde. La otra se sale.
-    //     No aplica a recordatorios (ahí el último mensaje puede ser nuestro, a propósito).
+    //     debounce, marcamos de forma ATÓMICA "ya tomé hasta el último mensaje del cliente".
+    //     Comparamos NÚMEROS (el momento del último mensaje en milisegundos), NO texto de fecha:
+    //     las fechas con zona horaria (+00:00) rompían la consulta y dejaban pasar a las dos
+    //     corridas. Con números no hay líos de formato. Las dos corridas calculan el mismo valor;
+    //     solo UNA gana el UPDATE (la 2ª ve el valor ya igual y se sale). No aplica a recordatorios.
     if (!recordatorio) {
       const ultEnt = [...reales].reverse().find(m => m.direccion === 'entrante');
-      const hastaIso = ultEnt ? (ultEnt.timestamp_wa || ultEnt.created_at) : null;
-      if (hastaIso) {
+      const hastaMs = ultEnt ? new Date(ultEnt.timestamp_wa || ultEnt.created_at).getTime() : 0;
+      if (hastaMs && Number.isFinite(hastaMs)) {
         const { data: gano, error: geClaim } = await supabaseAdmin
           .from('conversaciones_whatsapp')
-          .update({ agente_respondido_hasta: hastaIso })
+          .update({ agente_respondido_ms: hastaMs })
           .eq('id', conv.id)
-          .or('agente_respondido_hasta.is.null,agente_respondido_hasta.lt.' + hastaIso)
+          .or('agente_respondido_ms.is.null,agente_respondido_ms.lt.' + hastaMs)
           .select('id')
           .maybeSingle();
-        // Si el UPDATE falla (geClaim), seguimos (mejor responder que quedar callados); solo nos
-        // salimos cuando el UPDATE corrió bien y NO ganamos (otra corrida ya respondió este mensaje).
+        // Solo nos salimos cuando el UPDATE corrió bien y NO ganamos (otra corrida ya tomó este
+        // mensaje). Si el UPDATE diera error, seguimos (mejor responder que quedar callados).
         if (!geClaim && !gano) {
           await soltarLock(conv);
           return res.status(200).json({ status: 'ok', skip: 'Otra corrida ya respondió a este mensaje (anti-duplicado).' });
