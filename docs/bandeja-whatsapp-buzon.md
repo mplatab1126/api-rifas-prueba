@@ -292,7 +292,7 @@ número que ya había revisado).
   `mensajes.js` lo expone como `por_agente` (sin mandar el `raw` completo al navegador).
 
 ### 8.11 Decisiones clave del agente
-- En prueba: **solo Mateo**, solo su chat, con TODAS las herramientas (para probar todo de una).
+- **EN VIVO** (jun-2026) con clientes reales en la línea "Compra con Lili", con todas las herramientas. La **cabina y el botón 🤖 siguen siendo solo de Mateo**; los disparadores también lo activan solo.
 - Plata/inventario: cada acción tiene su **propio candado fuerte** (verificación real banco/dueño). El supervisor Opus que existía quedó **desactivado** (§8.5).
 - Abono: **solo con pago real verificado**; nunca por la foto.
 - Modelo: toda la conversación corre en el modelo configurado en la cabina (hoy **Sonnet**). (El supervisor Opus ya no se usa; ver §8.5.)
@@ -302,30 +302,47 @@ número que ya había revisado).
 
 ### 8.12 Qué falta del agente (pendiente)
 
-> **✅ Recordatorios que el agente se programa a sí mismo (seguimiento automático <24h) → HECHO**
-> (jun-2026). El detalle completo está en **§8.15**. Tabla `recordatorios` (§3) + herramienta
-> `programar_recordatorio` (§8.4 nº12) + relojito `recordatorios-cron.js` con `pg_cron` cada minuto
-> + auto-cancelación en `recibir.js`. **Falta probarlo con un caso real** (Mateo).
+**ESTADO (jun-2026): el agente está ENCENDIDO con clientes REALES** en la línea "Compra con Lili"
+(ya no es solo-Mateo / solo-sombra). El botón 🤖 y la cabina siguen siendo **solo de Mateo**.
 
-- **Ideas de la revisión "qué sabe el asesor que el agente no" (jun-2026):**
-  - ✅ **Actualizar datos del cliente** (correo/cédula/nombre/ciudad) → HECHO (herramienta nº13).
-  - ⬜ **Pago en línea (Wompi)**: existe el flujo `/abonar` (tarjeta/PSE/Nequi) que **registra el
-    abono solo** vía `api/abonar/wompi-webhook.js`. El agente NO lo ofrece (solo pide transferencia
-    + foto). Darle una herramienta para enviar el **link de pago en línea** subiría conversión.
-    Mateo lo dejó para después (toca plata). Páginas: `public/abonar.html` + `abonar-app.jsx`.
-  - ⬜ **Reusar flujos curados** (respuestas rápidas "Información", "Método de pago") en vez de que
-    el agente redacte ese texto. Consistencia de marca. Opcional/menor.
-  - **Dejar SOLO para humanos** (no dar al agente): devoluciones (`marcar-devolucion`), eliminar
-    abonos (`eliminar-abono`) y todo el back-office (caja, finanzas, sorteo, permisos, cobros).
-- **Soltarlo con clientes reales** (hoy es solo-Mateo, solo-su-chat) cuando Mateo lo decida.
-- **Conectarlo a las líneas grandes** (Línea 1 y Línea 2); hoy solo se prueba en la línea
-  "Compra con Lili".
-- Seguir afinando el `prompt` con más pruebas (ver §8.13).
-- Posible: subir `maxDuration` si la respuesta se vuelve lenta (el debounce ya espera hasta ~20s).
-- Posible mejora: botón **"copiar configuración de otra línea"** para replicar sin pegar el manual.
-- ~~"Agrupar mensajes"~~ → **HECHO** (debounce, §8.13).
-- El simulador `probar` de la cabina **ya no se usa** (Mateo lo confirmó); el código sigue en
-  `agente.js`, se puede limpiar.
+**Ya HECHO en esta etapa** (detalle en cada sección): recordatorios de seguimiento <24h (§8.15),
+resultados de los sorteos (§8.16), supervisor con **Opus** + reportes a WhatsApp cada 30 min (§8.18),
+**ciclo de mejora** "el supervisor sugiere y Mateo aprueba" (§8.18), **disparadores** por palabra
+clave y por cliente nuevo (§8.19), **etiqueta automática** de estado de pago (§2), auto-etiqueta
+**AGENTE/ASESOR** (§8.10), **Liliana no ve** los chats que atiende el agente (§8.10), herramienta
+**actualizar_datos_cliente** (§8.4 nº13), **teléfono internacional** al apartar, **fechas calculadas
+por código** (§8.13), **contador de respuesta 30s** (§8.13).
+
+**PENDIENTE:**
+- ⬜ **Pago en línea (Wompi)** como herramienta del agente: enviar el link de `/abonar` (tarjeta/PSE/
+  Nequi) que registra el abono solo (`api/abonar/wompi-webhook.js`). Subiría la conversión. Mateo lo
+  dejó para después (toca plata). Páginas: `public/abonar.html` + `abonar-app.jsx`.
+- ⬜ **Conectar las líneas grandes** (Línea 1 y Línea 2) — es el "corte" final desde ChateaPro. Hay
+  que cargarles su `prompt`, herramientas, `{{pagos}}`, disparadores y calendario de sorteos.
+- ⬜ **Reporte del supervisor por PLANTILLA**, para que SIEMPRE llegue (hoy depende de que Mateo le
+  haya escrito a la línea en las últimas 24h; si no, el reporte no llega — §8.18).
+- ⬜ **Pantalla para el calendario de sorteos** de cada rifa nueva (hoy se carga por SQL en
+  `rifas.sorteos`; falta una UI para que Mateo lo haga solo — §8.16).
+- ⬜ **Reusar flujos curados** ("Información"/"Método de pago") en vez de que el agente redacte ese
+  texto. Opcional, consistencia de marca.
+- ⬜ Posible: botón **"copiar configuración de otra línea"** para replicar sin pegar el manual.
+- ⬜ Limpiar el simulador `probar` de la cabina (ya no se usa; el código sigue en `agente.js`).
+- ⬜ Revisar/descartar las primeras 5 sugerencias del supervisor (son de chats viejos, ya corregidos).
+- Seguir afinando el `prompt` con más pruebas (§8.13).
+
+**Para cuando ESCALE (no urgente, ver §8.17):**
+- Carrera de la reserva (`reservar.js`: SELECT+UPDATE sin candado atómico) → UPDATE condicional.
+- Identificación por últimos 10 dígitos puede mezclar 2 clientes (mitigado eligiendo números
+  colombianos normales de 12 dígitos); a futuro comparar por teléfono COMPLETO.
+- Proteger el link público de boleta (`/boleta?telefono=`).
+- El cron de recordatorios marca 'enviado' ANTES de confirmar el envío (podría perderse un
+  seguimiento si justo falla; §8.15).
+- Whisper / descarga de media fallan en silencio → respuestas "a ciegas". Vigilar.
+- **Costo:** con el debounce en 30s la función queda abierta más tiempo por mensaje (más GB-seg en
+  Vercel). Aceptable al volumen actual; vigilar si crece mucho.
+
+**Dejar SOLO para humanos** (no dar al agente): devoluciones (`marcar-devolucion`), eliminar abonos
+(`eliminar-abono`), y todo el back-office (caja, finanzas, sorteo, permisos, cobros).
 
 ### 8.13 Cómo conversa: afinado con pruebas reales (sesión jun-2026)
 Tras muchas pruebas con Mateo (probando con su propio número en la línea de Lili) se afinó el
@@ -590,17 +607,20 @@ acumulado) se marcaron resueltas en la cabina.
 - ~~**Búsqueda de chats en servidor**~~ → **HECHO** (`conversaciones.js` con `q`; busca en toda la base por nombre o número).
 - ~~**Avisos de mensaje nuevo**: sonido + contador en la pestaña + botón para silenciar~~ → **HECHO**.
 - ~~**Plantillas desde el chat**: mandar una plantilla aprobada a un chat puntual para reabrir conversaciones de +24h~~ → **HECHO** (botón "Enviar plantilla" en el aviso de 24h; `plantillas.js` acción `enviar-chat`). *(La sección de Plantillas y las Campañas masivas ya existían en Difusiones.)*
+- ~~**Filtro por etiqueta** en la lista de chats~~ → **HECHO** (chips junto a "Sin respuesta"; filtro en servidor, §2).
+- ~~**Etiqueta automática de estado de pago** (Separada/Abonada/Pagada)~~ → **HECHO** (cron en la base, §2).
+- ~~**Disparadores** (palabra clave + cliente nuevo) que prenden el agente~~ → **HECHO** (menú Disparadores, §8.19).
+- ~~**Agente: recordatorios, resultados de sorteos, supervisor + ciclo de mejora, actualizar datos**~~ → **HECHO** (§8.15–8.19).
 
-**Pendientes pequeños de la bandeja:**
-- **Marcar qué asesor atiende** un chat (para que en una línea con varios asesores no se pisen; toca cómo se reparten los chats).
-- **Pulir difusiones**: más filtros de audiencia, **programar envíos** (cron), pegar lista propia de números, y para audiencias enormes (decenas de miles) mover el "preparar" a un proceso en segundo plano.
+**PENDIENTE — bandeja:**
+- **Marcar qué asesor atiende** un chat (para una línea con varios asesores; toca cómo se reparten). Hoy solo está la etiqueta ASESOR (necesita humano) y que Liliana no vea los del agente.
+- **Pulir difusiones**: más filtros de audiencia, **programar envíos** (cron), pegar lista propia de números, y para audiencias enormes mover el "preparar" a segundo plano.
+- **Enviar fotos/archivos desde la barra** ya está; falta **video** y **audios** salientes si se quisieran.
 
-**Otros próximos pasos:**
-- ~~**Recordatorios del agente** (seguimiento automático <24h)~~ → **HECHO** (§8.15). Falta probarlo con un caso real.
-- ~~**Resultados de los sorteos** (el agente dice qué número/quién ganó)~~ → **HECHO** (§8.16).
-- ~~**Actualizar datos del cliente** desde el agente (correo/cédula/nombre/ciudad)~~ → **HECHO** (herramienta nº13, §8.4).
-- Migrar las **líneas grandes** (Línea 1, Línea 2) cuando se decida (es el "corte" desde ChateaPro).
-- **Pago en línea (Wompi)** para el agente y **reusar flujos curados** → ideas pendientes (§8.12).
+**PENDIENTE — agente:** todo en **§8.12** (lo más grande: pago en línea Wompi, conectar las líneas grandes, reporte del supervisor por plantilla, pantalla del calendario de sorteos).
+
+**PENDIENTE — general:**
+- Migrar las **líneas grandes** (Línea 1, Línea 2) — el "corte" definitivo desde ChateaPro.
 - Mover la lógica pesada de venta del Admin a la bandeja si se quiere todo integrado (ya se empezó: verificar/abonar/ficha).
 
 ## 10. Cómo trabajar (recordatorio)
