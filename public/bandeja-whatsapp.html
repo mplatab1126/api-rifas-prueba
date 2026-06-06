@@ -870,6 +870,13 @@ async function api(path, body){
   return r.json();
 }
 
+/* ── Costo de IA (formato) ──
+   Anthropic factura en DÓLARES; mostramos USD (la cifra real) y, como referencia, pesos
+   aproximados con una tasa fija editable. La tasa real cambia a diario: el peso es solo guía. */
+const USD_COP = 4000;
+function fmtUSD(v){ v = Number(v||0); return '$' + (v >= 1 ? v.toFixed(2) : v.toFixed(4)); }
+function copAprox(v){ return '$' + Math.round(Number(v||0) * USD_COP).toLocaleString('es-CO'); }
+
 /* ── Acceso ── */
 $('btnLogin').onclick = async () => {
   const pwd = $('loginPwd').value.trim();
@@ -1209,6 +1216,7 @@ async function cargarFicha(telefono){
   }
   if(!registrado){
     p.innerHTML = `<div class="pcard"><div class="pnuevo"><b>Cliente nuevo</b><br><span>No está registrado en la base de datos ni tiene boletas.</span></div></div>`;
+    fichaCostoIA(c);
     return;
   }
 
@@ -1232,6 +1240,31 @@ async function cargarFicha(telefono){
     : `<div class="pcard"><div class="pnuevo"><b>Sin boletas en la rifa actual</b><br><span>Este cliente está registrado pero no tiene boletas de la rifa actual.</span></div></div>`;
 
   p.innerHTML = cardCliente + resto;
+  fichaCostoIA(c);
+}
+
+// Costo de IA acumulado en ESTE chat (solo Mateo). Se agrega al final de la ficha; si el
+// agente no ha gastado nada en este chat, no se muestra la tarjeta.
+function fichaCostoIA(conv){
+  if(!soyMateo || !conv || !conv.id) return;
+  const tel = conv.telefono;
+  const box = document.createElement('div');
+  box.className = 'pcard';
+  box.id = 'fichaCostoIA';
+  box.innerHTML = '<div class="psub">🤖 Costo de IA en este chat</div><div class="pmuted" style="text-align:left;padding:6px 0">Calculando…</div>';
+  $('panel').appendChild(box);
+  api('agente-costo', { accion:'chat', linea_id: lineaActual, conversacion_id: conv.id }).then(r => {
+    if(actual !== tel) return;            // el usuario cambió de chat mientras cargaba
+    const el = $('fichaCostoIA'); if(!el) return;
+    if(r.status === 'ok' && r.chat && Number(r.chat.llamadas||0) > 0){
+      const ch = r.chat;
+      el.innerHTML = `<div class="psub">🤖 Costo de IA en este chat</div>
+        <div class="prow" style="margin-top:8px"><span class="plabel">Gastado</span><b>${fmtUSD(ch.costo_usd)} <span style="color:#9a9a9a;font-weight:400">≈ ${copAprox(ch.costo_usd)} COP</span></b></div>
+        <div class="prow" style="border-bottom:none"><span class="plabel">Respuestas de la IA</span><b>${Number(ch.llamadas||0)}</b></div>`;
+    } else {
+      el.remove();
+    }
+  }).catch(() => { const el = $('fichaCostoIA'); if(el) el.remove(); });
 }
 
 function tarjetaBoleta(b){
@@ -2071,12 +2104,38 @@ function pintarAgente(){
       <div class="ag-sugs">${sugRows}</div>
     </div>
     <div class="ag-card">
+      <h3>Gasto de IA</h3>
+      <div class="ag-sub">Cuánto cuesta la IA que responde por esta línea (los tokens de Claude). Anthropic factura en <b>dólares</b>; el valor en pesos es solo una referencia aproximada.</div>
+      <div id="agCostoBox"><div class="ag-empty">Calculando…</div></div>
+    </div>
+    <div class="ag-card">
       <h3>Registro de actividad</h3>
       <div class="ag-sub">Qué hace el agente y cuándo, en vivo.</div>
       <div class="ag-log">${logRows}</div>
     </div>`;
 
   agPbRender();
+  agCargarCosto();
+}
+
+// Carga el gasto de IA de la línea (hoy / mes / total) en la tarjeta de la cabina.
+async function agCargarCosto(){
+  if(!$('agCostoBox')) return;
+  const r = await api('agente-costo', { accion:'resumen', linea_id: lineaActual });
+  const box = $('agCostoBox');
+  if(!box) return;
+  if(r.status !== 'ok' || !r.resumen){ box.innerHTML = '<div class="ag-empty">Aún no hay datos de costo.</div>'; return; }
+  const s = r.resumen;
+  const cell = (usd, lbl, sub) => `<div style="flex:1;min-width:130px;background:#fff;border:1px solid #ececec;border-radius:12px;padding:12px 14px">
+      <div style="font-size:21px;font-weight:700;letter-spacing:-.3px">${fmtUSD(usd)}</div>
+      <div style="font-size:12px;color:#666;margin-top:3px">${lbl} · ≈ ${copAprox(usd)} COP</div>
+      ${sub ? `<div style="font-size:11px;color:#9a9a9a;margin-top:2px">${sub}</div>` : ''}
+    </div>`;
+  box.innerHTML = `<div style="display:flex;gap:10px;flex-wrap:wrap">
+      ${cell(s.hoy_usd, 'Hoy', (Number(s.hoy_llamadas||0)) + ' respuestas')}
+      ${cell(s.mes_usd, 'Este mes', (Number(s.mes_llamadas||0)) + ' respuestas')}
+      ${cell(s.total_usd, 'Total', '')}
+    </div>`;
 }
 
 function agSetEstado(v){

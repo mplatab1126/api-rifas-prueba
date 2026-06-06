@@ -250,14 +250,27 @@ la cabina (`agente_config.resultados`, por fecha: `{fecha, numero, nombre, ciuda
 - **Tuteo consistente:** Liliana mezclaba *tú*, *usted* y *vos* ("podés", "ganás") en la misma conversación. Regla nueva en
   "# CÓMO ESCRIBES": tratar SIEMPRE de *tú* en toda la conversación, sin mezclar ni cambiar entre mensajes.
 
+### 8.12 Costo de IA por chat y panel del día — HECHO (6-jun-2026)
+Mide cuánto cuesta la IA que responde (los tokens que devuelve Claude en cada respuesta).
+- **Tabla `agente_uso`** (§3): una fila por respuesta de la IA (`linea_id`, `telefono`, `conversacion_id`, `modelo`,
+  tokens de entrada/salida/caché, `costo_usd`, `origen`). RLS activado → solo el rol de servicio la lee/escribe.
+- **Motor** (`agente-responder.js`): tras cada llamada a Claude, `registrarUso()` convierte el `usage` a dólares con la
+  tabla `PRECIOS` (Sonnet $3/$15 por millón; caché 1.25×/0.1×) e inserta la fila. Best-effort (nunca frena al agente).
+- **Suma en la base** (escala): funciones `agente_costo_resumen(linea)` (hoy/mes/total, hora de Colombia) y
+  `agente_costo_chat(conv)` (acumulado de un chat). No se traen miles de filas al navegador.
+- **Endpoint** `agente-costo.js` (SOLO Mateo): acciones `resumen` y `chat`.
+- **Interfaz**: tarjeta **"Gasto de IA"** en la cabina (hoy/mes/total) y, en la **ficha de cada chat**, el costo acumulado
+  de ese cliente (solo lo ve Mateo). Se muestra en USD (lo que de verdad factura Anthropic) + pesos aproximados de
+  referencia (tasa fija `USD_COP` editable en `bandeja-whatsapp.html`).
+- **Pendiente menor**: el costo de Whisper (audios) aún no se registra (es mínimo); la tabla ya tiene la columna `origen`.
+
 ## 9. Pendientes
 **Agente:**
 - ⬜ **Pago en línea (Wompi)** como herramienta (enviar link de `/abonar`). Subiría conversión. Toca plata; Mateo lo dejó para después.
 - ⬜ **Conectar las líneas grandes** (Línea 1 y Línea 2) — el "corte" final desde ChateaPro (cargarles prompt, herramientas, `{{pagos}}`,
   disparadores y calendario de sorteos).
 - ⬜ **Reporte del supervisor por PLANTILLA** (hoy depende de que la ventana de 24h esté abierta). **Reactivar el supervisor** cuando Mateo quiera (§8.7).
-- ⬜ **Costo de IA por chat y del día** (PROPUESTO 6-jun): guardar los tokens (input/output) que devuelve cada respuesta de Claude
-  + el costo de Whisper, sumar por conversación y por día, y mostrarlo en la ficha del chat y en un panel de "gasto del día".
+- ✅ **Costo de IA por chat y del día** → HECHO (§8.12). Pendiente menor: registrar también el costo de Whisper (audios).
 - ⬜ **Pantalla para el calendario de sorteos** (hoy se carga por SQL en `rifas.sorteos`).
 - ⬜ Limpiar el simulador `probar` de la cabina (ya no se usa). Revisar/descartar sugerencias viejas del supervisor en la cabina.
 
