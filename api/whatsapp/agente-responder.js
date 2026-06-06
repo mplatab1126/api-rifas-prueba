@@ -297,8 +297,8 @@ const TOOLS = [
   },
   {
     name: 'programar_recordatorio',
-    description: 'Agenda que TÚ MISMO le vuelvas a escribir al cliente más tarde HOY, cuando él te pide tiempo ("estoy ocupado, escríbeme en 20 minutos", "dame una hora y te escribo", "más tardecito"). Indica en cuántos MINUTOS volver a escribirle y el motivo (qué ibas a preguntar/hacer). SOLO sirve para hoy: máximo dentro de las 24 horas desde el último mensaje del cliente. Si el cliente pide en DÍAS ("llámame en 3 días"), NO la uses: dile que un asesor lo contacta. Si el cliente vuelve a escribir antes, el recordatorio se cancela solo.',
-    input_schema: { type: 'object', properties: { minutos: { type: 'number', description: 'En cuántos minutos debes volver a escribirle (ej. 20, 60).' }, motivo: { type: 'string', description: 'Qué ibas a preguntar/hacer al volver (ej. "saber qué número le gustó").' } }, required: ['minutos'] },
+    description: 'Agenda que TÚ MISMO le vuelvas a escribir al cliente más tarde, cuando él pide tiempo. Para HOY (en unas horas) usa "minutos" (ej. "escríbeme en 20 minutos" → minutos:20). Para OTRO DÍA usa "dias" (ej. "escríbeme el martes" → calcula cuántos días faltan desde HOY usando la fecha que tienes en el contexto, ej. dias:3; "en una semana" → dias:7). Pon también el motivo (qué ibas a preguntar/hacer). Cuando agendes, díselo al cliente por WhatsApp ("dale, te escribo el martes por aquí"); NUNCA le ofrezcas una llamada ni otro medio. Si el cliente vuelve a escribir antes, el recordatorio se cancela solo. Un solo recordatorio activo por chat.',
+    input_schema: { type: 'object', properties: { minutos: { type: 'number', description: 'Para HOY: en cuántos minutos volver a escribirle (ej. 20, 60).' }, dias: { type: 'number', description: 'Para OTRO DÍA: en cuántos días desde hoy volver a escribirle (ej. 3 = en 3 días). Úsalo en vez de minutos cuando el cliente pida en días.' }, motivo: { type: 'string', description: 'Qué ibas a preguntar/hacer al volver (ej. "saber qué número le gustó").' } }, required: [] },
   },
   {
     name: 'pasar_a_humano',
@@ -588,17 +588,27 @@ async function ejecutarHerramienta(nombre, input, conv) {
 
   if (nombre === 'programar_recordatorio') {
     const minutos = Math.round(Number(input?.minutos || 0));
+    const dias = Math.round(Number(input?.dias || 0));
     const motivo = String(input?.motivo || '').trim().slice(0, 300);
-    if (!minutos || minutos < 1) return 'Dime en cuántos minutos debo volver a escribirle (mínimo 1).';
-    // Ventana de 24h: solo se permite agendar DENTRO de las 24h desde el último mensaje del cliente.
+    if (minutos < 1 && dias < 1) return 'Dime en cuántos minutos (hoy) o en cuántos días debo volver a escribirle.';
+    // Guardamos cuándo fue el último mensaje del cliente: al vencer el recordatorio, el reloj
+    // mira esto para saber si la ventana de 24h sigue abierta (le escribe texto normal) o ya
+    // se cerró (entonces le manda la PLANTILLA de seguimiento para reabrir). Ver recordatorios-cron.js.
     const { data: ult } = await supabase.from('mensajes_whatsapp')
       .select('timestamp_wa, created_at').eq('conversacion_id', conv.id).eq('direccion', 'entrante')
       .order('timestamp_wa', { ascending: false }).limit(1);
     const ultMs = ult && ult[0] ? new Date(ult[0].timestamp_wa || ult[0].created_at).getTime() : Date.now();
-    const programadoMs = Date.now() + minutos * 60000;
-    const limiteMs = ultMs + 24 * 3600 * 1000 - 5 * 60000;   // 5 min de colchón antes de que cierre la ventana
-    if (programadoMs > limiteMs) {
-      return 'No puedo agendar tan lejos: solo recordatorios DENTRO de las 24 horas desde el último mensaje del cliente (es decir, hoy). Si el cliente pide en días, dile con cariño que un asesor lo contacta luego; NO agendes.';
+    // A DÍAS: lo dejamos a las 10:00 a.m. hora Colombia (15:00 UTC) de ese día, no a medianoche.
+    // A MINUTOS (hoy): tal cual.
+    let programadoMs;
+    if (dias >= 1) {
+      const d = Math.min(dias, 30);   // tope de seguridad: máximo 30 días
+      const f = new Date(Date.now() + d * 86400000);
+      f.setUTCHours(15, 0, 0, 0);
+      if (f.getTime() < Date.now() + 60 * 60000) f.setTime(Date.now() + d * 86400000);   // nunca en el pasado
+      programadoMs = f.getTime();
+    } else {
+      programadoMs = Date.now() + Math.max(1, minutos) * 60000;
     }
     // Un solo recordatorio activo por chat: si había otro pendiente, se reemplaza.
     await supabaseAdmin.from('recordatorios').update({ estado: 'cancelado' })
@@ -609,9 +619,9 @@ async function ejecutarHerramienta(nombre, input, conv) {
       ultimo_msg_cliente_at: new Date(ultMs).toISOString(), estado: 'pendiente', creado_por: 'agente',
     });
     if (error) return 'No pude agendar el recordatorio (' + error.message + '). Sigue la conversación normal.';
-    const cuando = new Date(programadoMs).toLocaleString('es-CO', { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit', hour12: true });
-    await nota(conv, `Programé un recordatorio: le escribo en ${minutos} min (~${cuando})${motivo ? ' — ' + motivo : ''}.`);
-    return `Listo: te recordaré escribirle en ${minutos} minutos. Confírmale al cliente con naturalidad (ej. "Dale, te escribo en un rato"), sin sonar a robot. Si él vuelve a escribir antes, el recordatorio se cancela solo.`;
+    const cuando = new Date(programadoMs).toLocaleString('es-CO', { timeZone: 'America/Bogota', weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', hour12: true });
+    await nota(conv, `Programé un recordatorio para el ${cuando}${motivo ? ' — ' + motivo : ''}.`);
+    return `Listo: le escribirás de nuevo el ${cuando}. Confírmaselo al cliente con naturalidad y SIEMPRE por WhatsApp (ej. "Dale, te escribo el martes por aquí"), sin prometer llamadas. Si él vuelve a escribir antes, el recordatorio se cancela solo.`;
   }
 
   if (nombre === 'pasar_a_humano') {
