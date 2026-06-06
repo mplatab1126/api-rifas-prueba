@@ -35,10 +35,6 @@
   en Vercel (y revisar RLS de las tablas). Ver bitácora.
 - [ ] (2026-06-06) Resincronizar la copia de **Google Drive del Mac** con GitHub (está
   desactualizada; por eso ahora se publica clonando fresco del repo).
-- [ ] (2026-06-06) `public/home-sorteo-apartamento.html`: en la nube YA lo BORRARON
-  (era residuo de una rifa vieja, apartamento 2024). Mateo tenía cambios locales sin
-  guardar en él; quedó como archivo SIN seguimiento en el repo local (y en `stash@{0}`).
-  Decidir con Mateo: dejarlo ir (borrar local) o recuperar su versión (`git add`).
 - [ ] (2026-06-06) Revisar con Mateo si `public/vendedores.html` todavía se usa o
   está duplicado con `rendimiento.html`.
 - [ ] (2026-06-06) Opcional / cosmético: limpiar las ~147 filas de error
@@ -47,6 +43,17 @@
   funciones RPC). No afectan nada; solo ensucian la actividad del agente.
 
 ## Hecho recientemente
+
+- [x] (2026-06-06) **Página del sorteo final en vivo: rediseñada + renombrada.**
+  `home-sorteo-apartamento.html` NO era residuo de apartamento: es la página que se usa
+  al final de cada rifa para anunciar al ganador en vivo y regalar 3 chances de
+  $1.000.000. Se rediseñó al estilo de marca (crema/menta/Inter; antes dorada) y se
+  renombró a **`sorteo-en-vivo.html`** (`/sorteo-en-vivo`), adaptada a celular y
+  computador. Lógica de registro intacta. NO restaurar la vieja. Ver bitácora.
+- [x] (2026-06-06) **Páginas de cliente adaptadas al computador** (comprar, abonar,
+  boleta): fondo elegante + columna más ancha en pantallas grandes; el celular no
+  cambió. Las internas NO se tocaron (decisión de Mateo). Falta que Mateo confirme en
+  su computador que comprar/boleta/abonar se ven bien. Ver bitácora.
 
 - [x] (2026-06-06) **Recordatorios a DÍAS de Liliana** (código): puede agendar seguimiento
   para otro día; el reloj manda la plantilla de seguimiento si ya pasaron 24h. Regla nueva:

@@ -26,6 +26,48 @@
 
 ---
 
+## 2026-06-06 — [Página clientes] — Página del sorteo final: rediseño, renombrado y vista de computador
+
+**Qué decidimos:** la página `home-sorteo-apartamento.html` NO era residuo de una
+rifa vieja de apartamento (como se había anotado): es la página del **sorteo final
+en vivo** que se usa al cerrar cada rifa para anunciar al ganador y regalarle a los
+clientes registrados **3 oportunidades de $1.000.000**. Se decidió conservarla,
+**rediseñarla al estilo de marca actual** (fondo crema, acento verde menta, fuentes
+Inter + Cormorant; antes era oscura/dorada con Playfair) y **renombrarla a
+`sorteo-en-vivo.html`** (URL `/sorteo-en-vivo`; el nombre viejo no estaba enlazado en
+ningún lado). También se le agregó **vista de computador** (tarjeta centrada premium).
+La fecha del en vivo se configura en el `<script>` (`FECHA_EN_VIVO`); hoy quedó el
+4-jul-2026 22:30. Toda la lógica de registro (`/api/registro-sorteo`) quedó intacta.
+
+**Por qué:** la página estaba totalmente desalineada con la marca oficial (que
+evolucionó a crema/menta/Inter, ver `comprar-styles.css`). Es una plantilla que se
+reutiliza en cada sorteo: solo se cambia el nombre de la rifa, la fecha y el link de
+Facebook (comentado dentro del archivo).
+
+**Cuidado / qué NO hacer:** NO "recuperar" ni restaurar `home-sorteo-apartamento.html`
+pensando que es residuo borrado — su contenido vive ahora en `sorteo-en-vivo.html`.
+Restaurarlo duplicaría/revertiría el trabajo.
+
+---
+
+## 2026-06-06 — [Página clientes] — Páginas de cliente adaptadas al computador (no las internas)
+
+**Qué decidimos:** que las páginas **que ve el cliente** (sorteo en vivo, comprar,
+abonar, ver boleta) se vean bien tanto en celular como en computador. Se hizo con
+reglas CSS **solo para pantallas anchas** (`@media (min-width: 768px)`): fondo crema
+con un sutil resplandor menta y la columna un poco más ancha/centrada, para que no se
+vean como una "tira" perdida en un fondo vacío. El celular NO cambió.
+
+**Por qué:** decisión de Mateo. En el computador las páginas mobile-first se veían
+como una columna angosta con los lados vacíos.
+
+**Cuidado / qué NO hacer:** las **herramientas internas** (admin, caja, rifas,
+rendimiento, estado-resultados, llamadas, bandeja, permisos, etc.) **NO se tocan**
+(decisión explícita de Mateo). Las páginas del "hub" (index, canales, términos) ya
+eran responsive (escalan hasta 1080px); no se modificaron.
+
+---
+
 ## 2026-06-06 — [WhatsApp] — Liliana: recordatorios a DÍAS por plantilla (reabrir conversaciones de +24h)
 
 **Qué decidimos:** que Liliana pueda agendar volver a escribirle al cliente DÍAS después
