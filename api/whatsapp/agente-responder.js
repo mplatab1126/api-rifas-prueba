@@ -716,15 +716,12 @@ export default async function handler(req, res) {
     //    el historial cierra la ventana de doble respuesta (y de doble abono).
     let bloqueado = false;
     try {
-      const expira = new Date(Date.now() - 60000).toISOString();   // candado se recupera en 60s si una corrida se cae (se refresca durante la espera)
-      const { data: lock, error: lockErr } = await supabaseAdmin
-        .from('conversaciones_whatsapp')
-        .update({ agente_procesando_at: new Date().toISOString() })
-        .eq('id', conv.id)
-        .or('agente_procesando_at.is.null,agente_procesando_at.lt.' + expira)
-        .select('id')
-        .maybeSingle();
-      if (!lockErr && !lock) bloqueado = true;
+      // El candado vive en una función de la base (RPC) para NO depender de que PostgREST
+      // tenga la columna en su caché de esquema (eso fallaba "column does not exist"). La
+      // función se recupera sola a los 60s. Devuelve true si ESTA corrida tomó el candado.
+      const { data: tomo, error: lockErr } = await supabaseAdmin
+        .rpc('agente_tomar_lock', { p_conv: conv.id });
+      if (!lockErr && tomo === false) bloqueado = true;
     } catch (_) { /* si el candado falla, seguimos: mejor responder que quedar callados */ }
     if (bloqueado) return res.status(200).json({ status: 'ok', skip: 'Otra corrida ya está respondiendo.' });
 
@@ -747,7 +744,7 @@ export default async function handler(req, res) {
         if (silencioMs >= DEBOUNCE_MS) break;               // ya lleva la pausa callado desde su ÚLTIMO mensaje → responder
         // Refrescar el candado para que NO se venza mientras esperamos (si no, otra corrida podría
         // arrancar y responder doble). Se revisa en trocitos de máx 3s para refrescarlo seguido.
-        try { await supabaseAdmin.from('conversaciones_whatsapp').update({ agente_procesando_at: new Date().toISOString() }).eq('id', conv.id); } catch (_) {}
+        try { await supabaseAdmin.rpc('agente_refrescar_lock', { p_conv: conv.id }); } catch (_) {}
         await dormir(Math.min(3000, DEBOUNCE_MS - silencioMs + 250));   // espera un poco; si entra otro mensaje, su hora más nueva reinicia el conteo
       }
     }
@@ -801,23 +798,17 @@ export default async function handler(req, res) {
       const hastaMs = ultEnt ? new Date(ultEnt.timestamp_wa || ultEnt.created_at).getTime() : 0;
       if (hastaMs && Number.isFinite(hastaMs)) {
         const { data: gano, error: geClaim } = await supabaseAdmin
-          .from('conversaciones_whatsapp')
-          .update({ agente_respondido_ms: hastaMs })
-          .eq('id', conv.id)
-          .or('agente_respondido_ms.is.null,agente_respondido_ms.lt.' + hastaMs)
-          .select('id')
-          .maybeSingle();
+          .rpc('agente_claim_respuesta', { p_conv: conv.id, p_hasta_ms: hastaMs });
         if (geClaim) {
-          // El candado atómico FALLÓ. Causa típica: la API no "ve" la columna por CACHÉ DE ESQUEMA
-          // (§8.9) — fue justo lo que tuvo el agente meses dejando pasar saludos duplicados. Aquí ya
-          // NO fallamos en silencio: (1) dejamos rastro VISIBLE en la actividad para detectarlo, y
-          // (2) aplicamos un respaldo que NO depende de la columna nueva: si OTRA corrida ya le
-          // escribió al cliente DESPUÉS de su último mensaje, esta se sale. Si nadie ha escrito aún,
-          // seguimos (nunca dejar a Liliana callada).
+          // El candado atómico FALLÓ (raro: ahora vive en una función de la base, RPC, que NO
+          // depende de la caché de esquema de PostgREST). No fallamos en silencio: (1) dejamos
+          // rastro VISIBLE en la actividad, y (2) aplicamos un respaldo: si OTRA corrida ya le
+          // escribió al cliente DESPUÉS de su último mensaje, esta se sale. Si nadie ha escrito
+          // aún, seguimos (nunca dejar a Liliana callada).
           try {
             await supabaseAdmin.from('agente_actividad').insert({
               linea_id: conv.linea_id, telefono: conv.telefono, tipo: 'error',
-              resumen: 'Candado anti-duplicado falló: ' + (geClaim.message || 'error') + '. Recargar el esquema (apply_migration).',
+              resumen: 'Candado anti-duplicado (RPC) falló: ' + (geClaim.message || 'error'),
             });
           } catch (_) {}
           const { data: yaResp } = await supabaseAdmin
@@ -828,8 +819,8 @@ export default async function handler(req, res) {
             await soltarLock(conv);
             return res.status(200).json({ status: 'ok', skip: 'Otra corrida ya respondió (respaldo anti-duplicado).' });
           }
-        } else if (!gano) {
-          // El UPDATE corrió bien y NO ganamos: otra corrida ya tomó este mensaje. Nos salimos.
+        } else if (gano === false) {
+          // La función corrió bien y NO ganamos: otra corrida ya tomó este mensaje. Nos salimos.
           await soltarLock(conv);
           return res.status(200).json({ status: 'ok', skip: 'Otra corrida ya respondió a este mensaje (anti-duplicado).' });
         }
@@ -1075,7 +1066,7 @@ export default async function handler(req, res) {
 
 // Libera el candado de la conversación (best-effort).
 async function soltarLock(conv) {
-  try { await supabaseAdmin.from('conversaciones_whatsapp').update({ agente_procesando_at: null }).eq('id', conv.id); } catch (_) {}
+  try { await supabaseAdmin.rpc('agente_soltar_lock', { p_conv: conv.id }); } catch (_) {}
 }
 
 // ¿El agente SIGUE prendido en este chat? (para el "botón de pánico": si lo apagaron a mitad
