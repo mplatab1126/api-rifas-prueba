@@ -26,6 +26,38 @@
 
 ---
 
+## 2026-06-06 — [WhatsApp] — Liliana: arreglo de errores de conversación (acumulado, "primer sorteo", voseo, Sueldazo)
+
+**Qué decidimos:** corregir 5 errores recurrentes detectados al revisar 629 respuestas
+reales de Liliana (últimos 8 días). (1) Contaba los sábados/semanas del acumulado
+("lleva 3 sábados", ~34 veces — prohibido). (2) Presentaba el acumulado como si "cada
+sábado" valiera $20M (es $5M; solo el PRÓXIMO está acumulado). (3) Voseo paisa
+("podés", "entrás", ~17 veces) en vez de tutear. (4) Decía "el primer sorteo" (5
+veces). (5) Ofreció el Sueldazo cuando ya pasó (3-jun). Lo bueno: nunca se delató como
+IA, los montos/fechas eran correctos y pasa a humano cuando debe.
+
+Arreglo en dos frentes:
+- **MOTOR** (`api/whatsapp/agente-responder.js`, `bloqueFechas`): ahora solo se le
+  muestran los sorteos de HOY en adelante (antes veía los sábados ya jugados y de ahí
+  "contaba"); al PRÓXIMO sorteo se le pega el monto acumulado para que no choque con el
+  título "$5.000.000". Publicado a `main` (commit 52307f0).
+- **MANUAL** (cabina, `agente_config.prompt` de la línea de Lili `1128258647034751`):
+  bloque nuevo arriba "LO QUE MÁS SE ROMPE" con lista de voseo prohibido
+  (podés→puedes, etc.), regla $5M-cada-sábado / $20M-solo-el-próximo, prohibición de
+  contar sábados y de "primer sorteo", y "el Sueldazo ya jugó: no mencionarlo".
+
+**Por qué:** los montos y fechas eran correctos, pero la forma confundía a clientes
+(personas mayores) y sonaba inventada. El intento previo (mismo 6-jun) de reforzar solo
+el manual no bastó porque el motor le seguía dando la "materia prima" (los sábados
+pasados) para contar.
+
+**Cuidado / qué NO hacer:** el `prompt` se editó por SQL con `replace()` puntual (NO se
+reescribió entero); el resto del manual quedó intacto. El manual tiene efecto
+inmediato; el motor depende del deploy de Vercel. Falta confirmar el efecto observando
+los mensajes NUEVOS de Liliana.
+
+---
+
 ## 2026-06-06 — [Pagos] — Verificación de pagos con reintentos (DECISIÓN DE DISEÑO, falta construir)
 
 **Qué decidimos:** cuando el cliente manda el comprobante, Liliana le dirá "Listo, voy a verificar tu pago" y reintentará buscarlo cada ~15 min (con la MISMA lógica de la función "buscar pago" de la bandeja) hasta ~1 hora; si el pago aparece, abona sola; si tras ~1 hora no aparece, recién ahí avisa a un asesor.
