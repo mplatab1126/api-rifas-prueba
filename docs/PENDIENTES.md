@@ -15,4 +15,7 @@
 
 ## Tareas pendientes
 
-(ninguna por ahora)
+- [ ] (2026-06-06) Revisar con Mateo si `public/home-sorteo-apartamento.html` es
+  residuo de una rifa vieja (apartamento, 2024) y se puede borrar.
+- [ ] (2026-06-06) Revisar con Mateo si `public/vendedores.html` todavía se usa o
+  está duplicado con `rendimiento.html`.
