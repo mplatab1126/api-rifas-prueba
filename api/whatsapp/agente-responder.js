@@ -41,6 +41,39 @@ const DEBOUNCE_MAX_MS = 240000; // límite invisible (4 min) — el servidor no 
 const dormir = (ms) => new Promise(r => setTimeout(r, ms));
 const MAX_IMAGENES = 2;   // imágenes entrantes recientes que se le muestran a la IA (comprobantes)
 
+// Precios de la IA por MILLÓN de tokens (USD). Caché de escritura = 1.25× entrada,
+// caché de lectura = 0.1× entrada. Sirve para calcular cuánto costó atender cada chat.
+const PRECIOS = {
+  'claude-opus-4-8':   { in: 5, out: 25, cw: 6.25, cr: 0.5 },
+  'claude-sonnet-4-6': { in: 3, out: 15, cw: 3.75, cr: 0.3 },
+  'claude-haiku-4-5':  { in: 1, out: 5,  cw: 1.25, cr: 0.1 },
+};
+
+// Convierte los tokens que devuelve Claude (usage) a dólares, según el modelo.
+function costoUSD(modelo, usage) {
+  const p = PRECIOS[modelo] || PRECIOS['claude-sonnet-4-6'];
+  const inp = usage.input_tokens || 0;
+  const out = usage.output_tokens || 0;
+  const cw = usage.cache_creation_input_tokens || 0;
+  const cr = usage.cache_read_input_tokens || 0;
+  return (inp * p.in + out * p.out + cw * p.cw + cr * p.cr) / 1e6;
+}
+
+// Guarda lo que costó UNA respuesta de la IA en este chat (tokens + dólares).
+// Best-effort: si falla, no rompe la conversación. Lo suma luego la ficha y el panel del día.
+async function registrarUso(conv, modelo, usage) {
+  if (!usage) return;
+  try {
+    await supabaseAdmin.from('agente_uso').insert({
+      linea_id: conv.linea_id, telefono: conv.telefono, conversacion_id: conv.id, modelo,
+      input_tokens: usage.input_tokens || 0, output_tokens: usage.output_tokens || 0,
+      cache_write_tokens: usage.cache_creation_input_tokens || 0,
+      cache_read_tokens: usage.cache_read_input_tokens || 0,
+      costo_usd: costoUSD(modelo, usage), origen: 'agente',
+    });
+  } catch (_) { /* el registro de costo nunca debe frenar al agente */ }
+}
+
 // Normaliza el tipo de imagen al formato que acepta la API de la IA.
 function mediaTypeImagen(mime) {
   const m = String(mime || '').toLowerCase();
@@ -890,13 +923,35 @@ export default async function handler(req, res) {
       return partes.length ? partes.join(', ') : '(aún no se ha jugado)';
     };
     const sorteosOrden = (rifaSorteos || []).slice().sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
-    const bloqueResultados = sorteosOrden.length
-      ? '\n\n---\nRESULTADOS DE LOS SORTEOS (úsalos SOLO si el cliente pregunta qué número ganó, quién ganó, o si ya jugó tal premio; NO los menciones si no preguntan). Para cada sorteo tienes los datos exactos; díselos al cliente con tus palabras, de forma natural. Si dice "(aún no se ha jugado)", explícale con cariño que todavía no se ha realizado:\n' +
-        sorteosOrden.map(s => `- ${String(s.titulo || 'Sorteo').trim()} — ${etiquetaFecha(s.fecha)}: ${describirResultado(datosPorFecha[s.fecha])}`).join('\n')
+    // Fecha de hoy (Colombia), ya calculada por código (los modelos se equivocan con los días).
+    const hoyCol = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });   // YYYY-MM-DD
+
+    // RESULTADOS para "¿qué número ganó?". Mostramos uno por uno SOLO los sorteos CON ganador
+    // (los que el cliente realmente pregunta). Los sábados que se ACUMULARON ya NO se enumeran
+    // uno por uno: verlos en lista hacía que Liliana CONTARA ("lleva 3 sábados sin ganador",
+    // que está prohibido decir). Ahora se resumen en UNA sola línea con el monto que se traslada
+    // al próximo sorteo, sin revelar cuántos sábados llevan ni llamarlo "el primer sorteo".
+    const conGanador = sorteosOrden.filter(s => {
+      const g = datosPorFecha[s.fecha];
+      return g && !g.acumulado && (g.numero || g.nombre);
+    });
+    let montoAcumProximo = '';
+    for (const s of sorteosOrden) {
+      const g = datosPorFecha[s.fecha];
+      if (g && g.acumulado && g.acumulado_monto && String(s.fecha) < hoyCol) montoAcumProximo = String(g.acumulado_monto).trim();
+    }
+    const lineasResultados = conGanador.map(s =>
+      `- ${String(s.titulo || 'Sorteo').trim()} — ${etiquetaFecha(s.fecha)}: ${describirResultado(datosPorFecha[s.fecha])}`);
+    const bloqueResultados = (lineasResultados.length || montoAcumProximo)
+      ? '\n\n---\nRESULTADOS DE LOS SORTEOS (úsalos SOLO si el cliente pregunta qué número ganó, quién ganó, o si ya jugó tal premio; NO los menciones si no preguntan):\n' +
+        (lineasResultados.length ? lineasResultados.join('\n') + '\n' : '') +
+        (montoAcumProximo
+          ? `- El premio del PRÓXIMO sorteo de los sábados está acumulado en ${montoAcumProximo}. Di SOLO ese monto; NUNCA digas cuántos sábados ni semanas lleva acumulado, ni "sin ganador", ni lo llames "el primer sorteo".\n`
+          : '') +
+        'Si el cliente pregunta por un sorteo que no aparece aquí, no inventes: dile con cariño que todavía no se ha realizado o que un asesor le confirma.'
       : '';
 
     // FECHAS ya calculadas por código (los modelos se equivocan con los días de la semana).
-    const hoyCol = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });   // YYYY-MM-DD
     const proximo = sorteosOrden.find(s => String(s.fecha) >= hoyCol);
     const bloqueFechas = sorteosOrden.length
       ? '\n\n---\nFECHAS EXACTAS (ya calculadas; ÚSALAS TAL CUAL. NUNCA calcules tú el día de la semana de una fecha, ni digas "este sábado" con una fecha que no esté aquí):\n' +
@@ -964,6 +1019,7 @@ export default async function handler(req, res) {
       });
       const data = await resp.json();
       if (data.error) { await nota(conv, 'No pude responder (problema con la IA): ' + (data.error.message || 'error')); await soltarLock(conv); return res.status(200).json({ status: 'error', mensaje: 'IA: ' + (data.error.message || 'error') }); }
+      await registrarUso(conv, modelo, data.usage);   // anotar lo que costó esta respuesta
 
       const bloques = data.content || [];
       const toolUses = bloques.filter(b => b.type === 'tool_use');
@@ -1005,7 +1061,7 @@ export default async function handler(req, res) {
           body: JSON.stringify({ model: modelo, max_tokens: 400, system, messages }),
         });
         const d2 = await resp2.json();
-        if (!d2.error) for (const b of (d2.content || [])) if (b.type === 'text' && b.text?.trim()) await decir(conv, b.text.trim());
+        if (!d2.error) { await registrarUso(conv, modelo, d2.usage); for (const b of (d2.content || [])) if (b.type === 'text' && b.text?.trim()) await decir(conv, b.text.trim()); }
         break;
       }
     }
