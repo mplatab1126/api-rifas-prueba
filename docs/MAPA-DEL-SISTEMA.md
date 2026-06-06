@@ -25,7 +25,7 @@
 | `api/lib/` | **Piezas reutilizables.** Herramientas compartidas que usan muchas funciones. Antes de crear algo nuevo, revisa aquí si ya existe. |
 | `sql/` | Definiciones de tablas de la base de datos (Supabase). |
 | `scripts/` | Utilidades de construcción (ej: convertir `.jsx` a `.js`). |
-| `docs/` | Documentación (incluido este mapa). |
+| `docs/` | Documentación: este mapa, la `BITACORA-DE-DECISIONES.md` (el porqué de las decisiones) y `COMO-TRABAJAR-CON-IA.md` (la guía de Mateo con las frases de inicio/cierre de cada chat). |
 
 **Importante sobre los archivos `.jsx` y `.js` en `public/`:** muchos vienen en
 pareja (ej: `house-app.jsx` y `house-app.js`). El `.jsx` es el que se escribe a

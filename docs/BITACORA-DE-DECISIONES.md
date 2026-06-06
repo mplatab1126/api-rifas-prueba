@@ -42,6 +42,23 @@ memoria del chat). Los detalles van en el mapa; los porqués, aquí.
 
 ---
 
+## 2026-06-06 — [Documentación] — Una sola bitácora, no una por sistema
+
+**Qué decidimos:** mantener UN solo archivo de bitácora de decisiones, con una
+etiqueta de categoría en cada entrada (ej: `[Pagos]`, `[WhatsApp]`), en vez de
+crear una bitácora separada por cada parte del sistema.
+
+**Por qué:** muchas decisiones se cruzan entre varios sistemas (ej: una regla de
+pagos toca la página del cliente, el admin y la base de datos), así que no
+cabrían bien en una sola bitácora separada. Además, varios archivos serían más
+difíciles de mantener al día para una sola persona. Las etiquetas permiten
+filtrar por sistema sin partir el archivo.
+
+**Cuidado / qué NO hacer:** no crear bitácoras separadas por sistema. Si algún
+día esta crece demasiado, se parte; pero por ahora, una sola.
+
+---
+
 ## (histórica) — [Rifas/Finanzas] — Solo existe la rifa principal de 4 cifras
 
 **Qué decidimos:** eliminar del sistema las rifas diarias de 2 y 3 cifras
