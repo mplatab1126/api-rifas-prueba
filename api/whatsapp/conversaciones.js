@@ -62,13 +62,17 @@ export default async function handler(req, res) {
   const etiquetas = [];
   let pSinResp = false;
   let pRecordatorio = false;
+  let pRecordatorioEstado = 'pendiente';
   let creadoDesde = null;
   let creadoHasta = null;
   for (const c of condiciones) {
     if (!c || !c.tipo) continue;
     if (c.tipo === 'etiqueta' && c.etiqueta_id) etiquetas.push(c.etiqueta_id);
     else if (c.tipo === 'sin_respuesta') pSinResp = true;
-    else if (c.tipo === 'recordatorio') pRecordatorio = true;
+    else if (c.tipo === 'recordatorio') {
+      pRecordatorio = true;
+      if (c.estado === 'enviado' || c.estado === 'pendiente') pRecordatorioEstado = c.estado;
+    }
     else if (c.tipo === 'creado') {
       const { desde, hasta } = rangoCreado(c);
       if (desde) creadoDesde = desde;
@@ -90,6 +94,7 @@ export default async function handler(req, res) {
     p_etiquetas: etiquetas,
     p_sin_respuesta: pSinResp,
     p_recordatorio: pRecordatorio,
+    p_recordatorio_estado: pRecordatorioEstado,
     p_creado_desde: creadoDesde,
     p_creado_hasta: creadoHasta,
     p_q: q || null,

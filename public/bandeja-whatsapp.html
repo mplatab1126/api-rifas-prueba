@@ -1078,7 +1078,7 @@ window.abrirFiltros = function(){
 const FTIPOS = [
   { v:'etiqueta', t:'Tiene la etiqueta' },
   { v:'sin_respuesta', t:'Sin respuesta' },
-  { v:'recordatorio', t:'Tiene recordatorio pendiente' },
+  { v:'recordatorio', t:'Recordatorio' },
   { v:'creado', t:'Contacto creado' },
 ];
 function filaCondicion(c, i){
@@ -1102,6 +1102,12 @@ function filaCondicion(c, i){
       ? `<input type="number" min="1" max="3650" value="${Number(c.dias)||7}" style="width:64px" onchange="filtroSetDias(${i}, this.value)"> días`
       : `<input type="date" value="${esc(c.fecha||'')}" onchange="filtroSetFecha(${i}, this.value)">`;
     valor = opSel + ' ' + input;
+  } else if(c.tipo === 'recordatorio'){
+    const est = c.estado || 'pendiente';
+    valor = `<select onchange="filtroSetRecEstado(${i}, this.value)">
+      <option value="pendiente" ${est==='pendiente'?'selected':''}>pendiente</option>
+      <option value="enviado" ${est==='enviado'?'selected':''}>enviado (exitoso)</option>
+    </select>`;
   }
   return `<div class="fcond">${tipoSel} ${valor}<button class="fdel" title="Quitar" onclick="filtroDelCond(${i})">&times;</button></div>`;
 }
@@ -1129,11 +1135,13 @@ window.filtroAddCond = function(){
 window.filtroSetTipo = function(i, tipo){
   const c = { tipo };
   if(tipo==='etiqueta') c.etiqueta_id = (etiquetasFiltro[0]&&etiquetasFiltro[0].id)||'';
+  if(tipo==='recordatorio') c.estado = 'pendiente';
   if(tipo==='creado'){ c.op = 'ultimos_dias'; c.dias = 7; }
   filtroDraft.condiciones[i] = c;
   renderFiltros();
 };
 window.filtroSetEtiqueta = function(i, id){ filtroDraft.condiciones[i].etiqueta_id = id; };
+window.filtroSetRecEstado = function(i, v){ filtroDraft.condiciones[i].estado = (v==='enviado')?'enviado':'pendiente'; };
 window.filtroSetOp = function(i, op){ filtroDraft.condiciones[i].op = op; if(op==='ultimos_dias' && filtroDraft.condiciones[i].dias==null) filtroDraft.condiciones[i].dias = 7; renderFiltros(); };
 window.filtroSetDias = function(i, v){ filtroDraft.condiciones[i].dias = Math.max(1, Math.min(parseInt(v,10)||1, 3650)); };
 window.filtroSetFecha = function(i, v){ filtroDraft.condiciones[i].fecha = v; };
