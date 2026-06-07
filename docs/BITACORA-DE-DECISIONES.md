@@ -30,21 +30,27 @@
 
 **Qué decidimos:** reemplazar los chips de etiqueta sueltos por un solo botón **"Filtros"**
 (estilo Manychat/ChateaPro) que abre una ventanita donde se arman condiciones combinadas con
-**Y** (todas) u **O** (cualquiera). Condiciones v1: **etiqueta** (una o varias), **sin respuesta**,
-**recordatorio** (eligiendo su estado: *pendiente* o *enviado/exitoso*) y **contacto creado**
-(últimos N días / antes de / después de una fecha). También se agregó un **botón de relojito** en la barra del chat que muestra los
-recordatorios pendientes de ese chat con su motivo (endpoint `recordatorios.js`).
+**Y** (todas) u **O** (cualquiera). Cada condición tiene su **operador tiene / no tiene**:
+- **etiqueta**: *tiene alguna de* / *no tiene ninguna de* + **varias** etiquetas por condición
+  (chips). Así se expresa el caso de Mateo: "(Pagada **o** Separada **o** Abonada) **y NO** AGENTE"
+  = una condición "tiene alguna de [P,S,A]" + otra "no tiene ninguna de [AGENTE]", modo Y.
+- **sin respuesta**, **recordatorio** (*tiene/no tiene* + estado *pendiente* o *enviado/exitoso*),
+  **contacto creado** (últimos N días / antes / después de una fecha).
+También se agregó un **botón de relojito** en la barra del chat que muestra los recordatorios
+pendientes de ese chat con su motivo (endpoint `recordatorios.js`).
 
-**Por qué:** Mateo necesitaba filtrar combinando criterios (ej. "AGENTE **y** Abonada", o "con
-recordatorio **o** sin respuesta"), cosa que los chips de una sola etiqueta no permitían.
+**Por qué:** Mateo necesitaba combinar criterios con Y/O y, sobre todo, **negar** (ej. los de
+P/S/A pero SIN la etiqueta AGENTE), cosa que los chips de una sola etiqueta no permitían.
 
 **Piezas:** TODO el filtrado corre EN LA BASE (regla de escala), con la función
-**`bandeja_filtrar(p_linea_id, p_modo, p_etiquetas[], p_sin_respuesta, p_recordatorio,
-p_recordatorio_estado, p_creado_desde, p_creado_hasta, p_q, p_ocultar_agente, p_limite)`** (`security definer`, devuelve
-`setof conversaciones_whatsapp`, `EXECUTE` a `anon/authenticated/service_role`). `conversaciones.js`
-traduce las condiciones del frontend a esos parámetros y llama la función por RPC; ya NO arma la
-query a mano. El frontend manda `{ filtros:{ modo, condiciones[] } }`. Verificado con datos reales:
-AGENTE∧Abonada=12, recordatorio∨sin_respuesta=18, etc. Publicado a `main`.
+**`bandeja_filtrar(p_linea_id, p_modo, p_condiciones jsonb, p_q, p_ocultar_agente, p_limite)`**
+(`plpgsql`, `security definer`, devuelve `setof conversaciones_whatsapp`, `EXECUTE` a
+`anon/authenticated/service_role`). Recibe las condiciones como **JSONB** (cada una con su
+operador y, para etiquetas, su lista) y arma el WHERE con SQL dinámico SEGURO (uuids validados por
+regex + `format %L`; estados/días/fechas acotados). `conversaciones.js` solo normaliza y reenvía
+las condiciones (`normalizarCondiciones`). El frontend manda
+`{ filtros:{ modo, condiciones:[{tipo, op, etiquetas|estado|dias|fecha}] } }`. Verificado con datos
+reales: (P∨S∨A)∧¬AGENTE=35, AGENTE∧Abonada=12, etc. Publicado a `main`.
 
 **Cuidado / qué NO hacer:** la función es de SOLO LECTURA (no cambia datos). Si se le agregan
 columnas/condiciones nuevas, recordar recargar el esquema (ver lección de la caché de PostgREST) y
