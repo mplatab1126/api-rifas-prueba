@@ -15,10 +15,6 @@
 
 ## Tareas pendientes
 
-- [ ] (2026-06-07) **Esperar la APROBACIÓN de Meta de la plantilla `seguimiento_los_plata`**
-  (ya creada el 7-jun con DOS variables: {{1}} nombre, {{2}} motivo de cara al cliente).
-  Cuando Meta la apruebe, los recordatorios a DÍAS de Liliana quedan activos solos. Si Meta la
-  rechaza, ajustar el texto y reenviar. Ver bitácora 2026-06-07.
 - [ ] (2026-06-07) **Corregir la plantilla de enviar boleta (`boleta_cliente`)**: su primera línea
   SIEMPRE dice "🎉 ¡Quedaste participando!", pero a veces la boleta se envía con **abonado $0**
   (solo separada, falta pagar todo). En ese caso "quedaste participando" está mal. Hay que ajustar
@@ -60,6 +56,22 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-07) **Plantilla `seguimiento_los_plata` creada** con DOS variables ({{1}} nombre,
+  {{2}} motivo de cara al cliente). El reloj de recordatorios ya pasa el motivo como {{2}}.
+  FALTA solo que **Meta la apruebe** (pasa a "aprobada" sola; si la rechaza, ajustar y reenviar).
+- [x] (2026-06-07) **Filtro avanzado de la bandeja** (botón "Filtros"): condiciones combinables con
+  **Y/O**; etiqueta con operador *tiene alguna de / tiene todas de / no tiene ninguna de* y varias
+  etiquetas por condición (desplegable con casillas); **recordatorio** (pendiente/enviado, tiene/no
+  tiene); **sin respuesta**; **contacto creado** (fecha). Todo en la base con `bandeja_filtrar`.
+- [x] (2026-06-07) **Botón de recordatorios en el chat** (relojito): muestra los recordatorios
+  pendientes del chat con su motivo (endpoint `recordatorios.js`). Y el botón **actualizar** se
+  movió a la esquina de la ficha del cliente.
+- [x] (2026-06-07) **Etiquetas: orden propio** (arrastrar ⠿, se respeta en todos lados),
+  seleccionar tocando toda la fila, y ancho de la píldora ajustado al nombre. Campo `etiquetas.orden`.
+- [x] (2026-06-07) **Liliana: cédula y correo OPCIONALES** al apartar (solo nombre completo, apellido
+  y ciudad son obligatorios). Manual + descripción de la herramienta. Ver bitácora.
+- [x] (2026-06-07) **Liliana: la boleta se envía por WhatsApp** (no por correo ni mandando a la web).
+  Al correo solo va la factura electrónica, y solo cuando la boleta está pagada al 100%. Ver bitácora.
 - [x] (2026-06-07) **Copia de trabajo limpia FUERA de Google Drive** (`~/los-platas-rifas` en
   el Mac). La copia del Drive tenía el git corrupto (Drive lo daña). Ahora se trabaja y publica
   desde el clon limpio; GitHub sincroniza Mac y Windows. Quedó escrito en `CLAUDE.md`. Ver bitácora.
