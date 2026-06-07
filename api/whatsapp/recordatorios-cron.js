@@ -63,7 +63,12 @@ async function enviarSeguimientoPorPlantilla(r) {
       return;
     }
 
-    const params = [nombreCliente];
+    // {{1}} = nombre del cliente. {{2}} = el motivo que guardó Liliana, como frase de cara al
+    // cliente (ej. "me dijiste que hoy ibas a separar tu boleta"). Si no hay motivo, va una genérica.
+    // WhatsApp NO acepta saltos de línea ni espacios de más en los parámetros de una plantilla.
+    const motivoLimpio = String(r.motivo || '').replace(/\s+/g, ' ').trim();
+    const contexto = motivoLimpio || 'Queríamos retomar lo de tu boleta de la casa.';
+    const params = [nombreCliente, contexto];
     const env = await enviarPlantilla(r.telefono, { nombre: pl.nombre, idioma: pl.idioma, parametros: params }, r.linea_id);
     const ts = new Date().toISOString();
     if (!env.ok) {

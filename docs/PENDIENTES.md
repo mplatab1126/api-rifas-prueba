@@ -15,12 +15,18 @@
 
 ## Tareas pendientes
 
-- [ ] (2026-06-06) **CREAR y APROBAR la plantilla `seguimiento_los_plata`** en la línea
-  "Compra con Lili" (Difusiones → Plantillas). Es lo que falta para que funcionen los
-  recordatorios a DÍAS de Liliana (el código ya está al aire). Categoría MARKETING, idioma
-  `es`, cuerpo: *Hola {{1}} 👋 Te saludamos de Los Plata. Queremos retomar lo de tu boleta de
-  la casa 🏡 ¿Aún tienes alguna duda? Con gusto te ayudamos.* (ejemplo de {{1}}: Carlos).
-  Cuando Meta la apruebe, queda activo solo. Ver bitácora 2026-06-06.
+- [ ] (2026-06-07) **Esperar la APROBACIÓN de Meta de la plantilla `seguimiento_los_plata`**
+  (ya creada el 7-jun con DOS variables: {{1}} nombre, {{2}} motivo de cara al cliente).
+  Cuando Meta la apruebe, los recordatorios a DÍAS de Liliana quedan activos solos. Si Meta la
+  rechaza, ajustar el texto y reenviar. Ver bitácora 2026-06-07.
+- [ ] (2026-06-07) **Corregir la plantilla de enviar boleta (`boleta_cliente`)**: su primera línea
+  SIEMPRE dice "🎉 ¡Quedaste participando!", pero a veces la boleta se envía con **abonado $0**
+  (solo separada, falta pagar todo). En ese caso "quedaste participando" está mal. Hay que ajustar
+  el mensaje según el estado de pago. Va junto con el punto de abajo.
+- [ ] (2026-06-07) **Plantillas/mensaje de boleta según el estado de pago**: decidir con Mateo si se
+  crean varias plantillas (separada / sin dinero / abono / pagada) o UNA sola con una variable que
+  diga el estado. Objetivo: que el primer renglón refleje la realidad (no siempre "quedaste
+  participando"). Relacionado con la corrección de `boleta_cliente` de arriba.
 - [ ] (2026-06-06) **Verificar el EFECTO del arreglo de errores de Liliana**: medir en
   los mensajes NUEVOS (de hoy en adelante) que ya NO cuente sábados/semanas, NO diga
   "primer sorteo", NO vosee y NO mencione el Sueldazo. Ver bitácora 2026-06-06.
