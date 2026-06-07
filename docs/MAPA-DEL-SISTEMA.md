@@ -46,8 +46,16 @@ mano; el `.js` se genera **solo** con el comando de construcción
 | `comprar-la-plata-house.html` | Flujo de compra/reserva de boleta. |
 | `abonar.html` | El cliente paga el saldo pendiente de su boleta. |
 | `boleta.html` | El cliente consulta su boleta con el teléfono. |
+| `sorteo-en-vivo.html` | **Sorteo final en vivo.** Al cerrar cada rifa, el cliente se registra con su número de boleta para participar por premios sorpresa ($1.000.000 x3) que se anuncian en el en vivo de Facebook. Conecta con `registro-sorteo.js`. Es una **plantilla reutilizable**: el nombre de la rifa, la fecha del en vivo y el link de Facebook se cambian dentro del archivo. *(Antes `home-sorteo-apartamento.html`; rediseñada al estilo de marca el 2026-06-06.)* |
 | `canales-oficiales.html` | Lista de canales verificados (redes, WhatsApp, cuentas de pago). |
 | `terminos-y-condiciones.html` | Términos y condiciones legales. |
+
+> **Responsive — vista de computador (2026-06-06):** las páginas de cliente
+> (`sorteo-en-vivo`, `comprar-la-plata-house`, `abonar`, `boleta`) se ven bien en
+> celular y en computador. En pantallas anchas se muestran como columna/tarjeta
+> centrada sobre fondo crema (reglas CSS **solo de computador**, `@media min-width:768px`;
+> el celular no cambió). Las **páginas internas NO se tocaron** (decisión de Mateo). El
+> "hub" (`index`, `canales`, `términos`, vía `hub-styles.css`) ya era responsive.
 
 ### Páginas internas (asesores y gerencia, con clave)
 
