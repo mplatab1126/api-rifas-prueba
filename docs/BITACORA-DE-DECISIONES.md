@@ -38,14 +38,22 @@ cuando iba con abonado $0.
 **Piezas (dos vías de envío de la boleta):**
 - **Liliana (agente)** — `agente-responder.js`, herramienta `enviar_boleta`: arma el texto libre con un
   encabezado según el estado (separada / participando / pagada). HECHO y publicado.
-- **Botón "Enviar boleta" de la bandeja** — `enviar-boleta.js`: usa una plantilla de Meta. Como la
-  plantilla aprobada tenía la 1ª línea FIJA, se creó una **`boleta_cliente_v2`** con la 1ª línea
-  VARIABLE ({{1}} = estado, {{2}} = lista de boletas); la vieja `boleta_cliente` queda de RESPALDO
-  hasta que Meta apruebe la v2 (el código prefiere v2 si está aprobada, si no la vieja, si no texto).
+- **Botón "Enviar boleta" de la bandeja** — `enviar-boleta.js`: ahora elige según la **ventana de 24h**
+  (`conversaciones.ventana_vence_at`):
+  - **Dentro de 24h** (el cliente escribió hace poco): se manda como **TEXTO normal** → gratis, al
+    instante, SIN saludo, con encabezado según el estado. Es el caso casi siempre.
+  - **Fuera de 24h**: se usa una **plantilla** para reabrir (cuesta). Se creó **`boleta_cliente_v2`**
+    con la 1ª línea VARIABLE ({{1}} = estado, {{2}} = lista); la vieja `boleta_cliente` queda de
+    RESPALDO hasta que Meta apruebe la v2.
+
+**Por qué la lógica de ventana:** una plantilla solo hace falta pasadas 24h (WhatsApp bloquea texto
+libre); usarla dentro de la ventana es innecesario y **cuesta dinero**. Dentro de 24h el texto libre
+es gratis y más natural (sin saludo de más).
 
 **Cuidado / qué NO hacer:** Meta **NO permite que el cuerpo de una plantilla empiece/termine con una
-variable, ni dos variables seguidas** → por eso la v2 arranca con "Hola 👋" fijo y separa {{1}} y
-{{2}} con texto. Mientras Meta aprueba la v2, sigue enviando la vieja (sin caídas).
+variable, ni dos variables seguidas** → por eso la v2 arranca con "Hola 👋" fijo (que además tiene
+sentido al reabrir tras +24h) y separa {{1}} y {{2}} con texto. Mientras Meta aprueba la v2, la vía
+fuera-de-ventana usa la vieja (sin caídas).
 
 ---
 
