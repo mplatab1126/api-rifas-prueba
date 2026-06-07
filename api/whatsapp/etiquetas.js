@@ -41,22 +41,37 @@ export default async function handler(req, res) {
 
   try {
     if (accion === 'listar') {
-      let { data } = await supabase.from('etiquetas').select('id, nombre, icono, color').eq('linea_id', linea_id).order('created_at', { ascending: true });
+      const sel = 'id, nombre, icono, color, orden';
+      let { data } = await supabase.from('etiquetas').select(sel).eq('linea_id', linea_id)
+        .order('orden', { ascending: true }).order('created_at', { ascending: true });
       if ((!data || data.length === 0) && linea_id) {
-        await supabaseAdmin.from('etiquetas').insert(DEFAULTS.map(d => ({ ...d, linea_id })));
-        const r2 = await supabase.from('etiquetas').select('id, nombre, icono, color').eq('linea_id', linea_id).order('created_at', { ascending: true });
+        await supabaseAdmin.from('etiquetas').insert(DEFAULTS.map((d, i) => ({ ...d, linea_id, orden: i })));
+        const r2 = await supabase.from('etiquetas').select(sel).eq('linea_id', linea_id)
+          .order('orden', { ascending: true }).order('created_at', { ascending: true });
         data = r2.data;
       }
       return res.status(200).json({ status: 'ok', etiquetas: data || [] });
     }
 
+    if (accion === 'reordenar') {
+      // Guarda el orden elegido por Mateo (posición en la lista 0,1,2,...) para esta línea.
+      const ids = Array.isArray(req.body.ids) ? req.body.ids : [];
+      for (let i = 0; i < ids.length; i++) {
+        await supabaseAdmin.from('etiquetas').update({ orden: i }).eq('id', ids[i]).eq('linea_id', linea_id);
+      }
+      return res.status(200).json({ status: 'ok' });
+    }
+
     if (accion === 'crear') {
       const { nombre: nm, icono, color } = req.body;
       if (!String(nm || '').trim()) return res.status(200).json({ status: 'error', mensaje: 'Falta el nombre.' });
+      // La nueva queda de última en el orden.
+      const { count } = await supabaseAdmin.from('etiquetas')
+        .select('id', { count: 'exact', head: true }).eq('linea_id', linea_id);
       const { data, error } = await supabaseAdmin
         .from('etiquetas')
-        .insert({ linea_id, nombre: String(nm).trim().slice(0, 40), icono: icono || null, color: color || null })
-        .select('id, nombre, icono, color')
+        .insert({ linea_id, nombre: String(nm).trim().slice(0, 40), icono: icono || null, color: color || null, orden: count || 0 })
+        .select('id, nombre, icono, color, orden')
         .single();
       if (error) return res.status(200).json({ status: 'error', mensaje: error.message });
       return res.status(200).json({ status: 'ok', etiqueta: data });

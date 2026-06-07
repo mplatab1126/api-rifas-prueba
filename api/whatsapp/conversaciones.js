@@ -105,11 +105,15 @@ export default async function handler(req, res) {
   if (ids.length) {
     const { data: asign } = await supabase
       .from('conversacion_etiquetas')
-      .select('conversacion_id, etiquetas (id, nombre, icono, color)')
+      .select('conversacion_id, etiquetas (id, nombre, icono, color, orden)')
       .in('conversacion_id', ids);
     for (const a of (asign || [])) {
       if (!a.etiquetas) continue;
       (etiqPorConv[a.conversacion_id] = etiqPorConv[a.conversacion_id] || []).push(a.etiquetas);
+    }
+    // Las píldoras de cada chat se muestran en el orden elegido por Mateo.
+    for (const k of Object.keys(etiqPorConv)) {
+      etiqPorConv[k].sort((x, y) => (x.orden ?? 0) - (y.orden ?? 0));
     }
   }
   // Solo devolvemos los campos que la bandeja usa (no las columnas internas del agente).
