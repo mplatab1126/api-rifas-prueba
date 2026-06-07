@@ -105,15 +105,23 @@
     #buscar { margin: 12px 16px; padding: 10px 16px; border-radius: 10px; border: 1px solid transparent; background: var(--cream-100); font-family: inherit; font-size: 0.86rem; color: var(--ink); outline: none; }
     #buscar:focus { border-color: var(--gray-200); background: #fff; }
     #buscar::placeholder { color: var(--gray-400); }
-    #filtros { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 16px 10px; }
-    #filtrosEtiq { display: flex; flex-wrap: wrap; gap: 6px; }
-    #filtroSinResp { padding: 7px 14px; border: 1px solid var(--gray-200); background: #fff; border-radius: 100px; font-family: inherit; font-size: 0.8rem; color: var(--ink-mute); cursor: pointer; display: flex; align-items: center; gap: 7px; transition: .15s; }
-    #filtroSinResp:hover { border-color: var(--gray-300); }
-    #filtroSinResp.on { background: var(--mint); color: var(--ink); border-color: var(--mint); font-weight: 600; }
-    #filtroSinResp .cnt { background: rgba(0,0,0,0.10); border-radius: 100px; padding: 1px 8px; font-size: 0.72rem; min-width: 18px; text-align: center; }
-    .filtro-etiq { padding: 7px 12px; border: 1px solid var(--gray-200); background: #fff; border-radius: 100px; font-family: inherit; font-size: 0.78rem; color: var(--ink-mute); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: .15s; white-space: nowrap; }
-    .filtro-etiq:hover { border-color: var(--gray-300); }
-    .filtro-etiq.on { background: var(--mint); color: var(--ink); border-color: var(--mint); font-weight: 600; }
+    #filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 16px 10px; }
+    #btnFiltros { padding: 7px 14px; border: 1px solid var(--gray-200); background: #fff; border-radius: 100px; font-family: inherit; font-size: 0.8rem; color: var(--ink-mute); cursor: pointer; display: flex; align-items: center; gap: 7px; transition: .15s; }
+    #btnFiltros:hover { border-color: var(--gray-300); color: var(--ink); }
+    #btnFiltros .cnt { background: var(--mint); color: var(--ink); border-radius: 100px; padding: 1px 8px; font-size: 0.72rem; min-width: 18px; text-align: center; font-weight: 600; }
+    #btnLimpiarFiltros { padding: 7px 12px; border: none; background: none; font-family: inherit; font-size: 0.8rem; color: var(--ink-mute); cursor: pointer; text-decoration: underline; }
+    #btnLimpiarFiltros:hover { color: var(--ink); }
+    /* Ventanita de filtros */
+    .fmodo { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--ink); margin-bottom: 14px; flex-wrap: wrap; }
+    .fcond { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .fcond select, .fcond input, .fmodo select { font-family: inherit; font-size: 0.82rem; padding: 7px 9px; border: 1px solid var(--gray-200); border-radius: 9px; background: #fff; color: var(--ink); }
+    .fcond .fdel { margin-left: auto; background: none; border: none; color: var(--ink-mute); cursor: pointer; font-size: 1.1rem; padding: 2px 6px; border-radius: 6px; line-height: 1; }
+    .fcond .fdel:hover { background: #fdecec; color: var(--danger); }
+    .fadd { background: none; border: 1px dashed var(--gray-300); border-radius: 10px; padding: 9px; width: 100%; font-family: inherit; font-size: 0.83rem; color: var(--ink-mute); cursor: pointer; margin: 4px 0 14px; }
+    .fadd:hover { color: var(--ink); border-color: var(--ink-mute); }
+    .facciones { display: flex; gap: 10px; }
+    .facciones .fap { flex: 1; background: var(--mint); border: none; border-radius: 10px; padding: 11px; font-family: inherit; font-weight: 600; font-size: 0.88rem; color: var(--ink); cursor: pointer; }
+    .facciones .flimp { background: none; border: 1px solid var(--gray-200); border-radius: 10px; padding: 11px 16px; font-family: inherit; font-size: 0.85rem; color: var(--ink-mute); cursor: pointer; }
     #tabs { display: flex; gap: 6px; margin: 12px 16px 0; }
     .tab { flex: 1; padding: 8px; border: 1px solid var(--gray-200); background: #fff; border-radius: 8px; font-family: inherit; font-size: 0.84rem; color: var(--ink-mute); cursor: pointer; }
     .tab.on { background: var(--cream-100); color: var(--ink); font-weight: 600; border-color: var(--gray-300); }
@@ -676,8 +684,11 @@
       <div id="lista">
         <input id="buscar" placeholder="Buscar por nombre o número">
         <div id="filtros">
-          <button id="filtroSinResp">Sin respuesta <span class="cnt" id="cntSinResp">0</span></button>
-          <span id="filtrosEtiq"></span>
+          <button id="btnFiltros" onclick="abrirFiltros()">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            Filtros<span class="cnt" id="cntFiltros" style="display:none">0</span>
+          </button>
+          <button id="btnLimpiarFiltros" onclick="limpiarFiltros()" style="display:none">Limpiar</button>
         </div>
         <div id="chats"></div>
       </div>
@@ -839,7 +850,7 @@ let actual = null;        // telefono del chat abierto
 let conversaciones = [];
 let timerLista = null, timerChat = null;
 let firmaMsgs = '';
-let soloSinRespuesta = false; // filtro: solo chats donde el último mensaje fue del cliente
+let filtroAvanzado = { modo:'y', condiciones:[] };  // filtro avanzado de la lista (Y/O + condiciones)
 let buscarChatsQ = '';        // texto de búsqueda de chats (se filtra EN EL SERVIDOR)
 let timerBuscarChats = null;  // pausa antes de pedir la búsqueda al servidor
 let sonidoAvisos = localStorage.getItem('bandeja_sonido') !== 'off'; // ¿suena cuando llega un mensaje nuevo?
@@ -853,8 +864,8 @@ let actualLinea = null;       // línea del chat abierto
 let vista = 'chats';          // 'chats' | 'contactos' | 'difusiones' | 'respuestas'
 let dfTab = 'campanas';       // pestaña activa dentro de Difusiones: 'campanas' | 'plantillas'
 let difusionesCache = [], plantillasCache = [], etiquetasCache = [];
-let filtroEtiqueta = null;    // etiqueta por la que se filtra la lista de chats (o null)
-let etiquetasFiltro = [];     // etiquetas de la línea, para los chips de filtro
+let filtroDraft = { modo:'y', condiciones:[] };  // copia de trabajo mientras la ventanita de filtros está abierta
+let etiquetasFiltro = [];     // etiquetas de la línea, para elegirlas como condición del filtro
 let etiqFiltroLinea = null;   // de qué línea se cargaron los chips (para recargarlos al cambiar)
 let dfEnviando = false;       // candado para no disparar dos envíos a la vez
 let dfForm = null;            // borrador del formulario de difusión en edición
@@ -1022,11 +1033,10 @@ window.toggleSonido = function(){
 
 async function cargarLista(){
   // Si cambió la línea, recargar los chips de etiquetas y soltar el filtro (las etiquetas son por línea).
-  if(lineaActual && lineaActual !== etiqFiltroLinea){ etiqFiltroLinea = lineaActual; filtroEtiqueta = null; cargarEtiquetasFiltro(); }
-  const r = await api('conversaciones', { soloSinRespuesta, q: buscarChatsQ, etiqueta_id: filtroEtiqueta, linea_id: lineaActual });
+  if(lineaActual && lineaActual !== etiqFiltroLinea){ etiqFiltroLinea = lineaActual; filtroAvanzado = { modo:'y', condiciones:[] }; actualizarBtnFiltros(); cargarEtiquetasFiltro(); }
+  const r = await api('conversaciones', { filtros: filtroAvanzado, q: buscarChatsQ, linea_id: lineaActual });
   if(r.status !== 'ok'){ if(r.mensaje && /restringido/i.test(r.mensaje)){ localStorage.removeItem(PWD_KEY); location.reload(); } return; }
   conversaciones = r.conversaciones;
-  if(typeof r.sinRespuestaTotal === 'number') $('cntSinResp').textContent = r.sinRespuestaTotal;
   // Aviso de mensaje nuevo: si subió el total de no leídos, suena y se actualiza la pestaña.
   // (Solo cuando NO se está buscando, para no contar sobre una lista filtrada.)
   if(!buscarChatsQ){
@@ -1043,27 +1053,102 @@ async function cargarLista(){
   if(vista === 'chats') pintarLista();
 }
 
-$('filtroSinResp').onclick = () => {
-  soloSinRespuesta = !soloSinRespuesta;
-  $('filtroSinResp').classList.toggle('on', soloSinRespuesta);
-  cargarLista();
-};
-
-/* ── Filtros por etiqueta (chips junto a "Sin respuesta") ── */
+/* ── Filtro avanzado (botón "Filtros") ── */
+// Cargamos las etiquetas de la línea para poder elegirlas como condición.
 async function cargarEtiquetasFiltro(){
   const r = await api('etiquetas', { accion:'listar', linea_id: lineaActual });
   etiquetasFiltro = (r && r.etiquetas) || [];
-  pintarFiltrosEtiq();
 }
-function pintarFiltrosEtiq(){
-  const cont = $('filtrosEtiq'); if(!cont) return;
-  cont.innerHTML = etiquetasFiltro.map(e =>
-    `<button class="filtro-etiq ${filtroEtiqueta===e.id?'on':''}" onclick="toggleFiltroEtiqueta('${e.id}')">${e.icono?esc(e.icono)+' ':''}${esc(e.nombre)}</button>`
-  ).join('');
+function actualizarBtnFiltros(){
+  const n = (filtroAvanzado.condiciones || []).length;
+  const badge = $('cntFiltros'); if(badge){ badge.style.display = n ? '' : 'none'; badge.textContent = n; }
+  const limp = $('btnLimpiarFiltros'); if(limp) limp.style.display = n ? '' : 'none';
 }
-window.toggleFiltroEtiqueta = function(id){
-  filtroEtiqueta = (filtroEtiqueta === id) ? null : id;   // clic en la activa la apaga
-  pintarFiltrosEtiq();
+window.limpiarFiltros = function(){
+  filtroAvanzado = { modo:'y', condiciones:[] };
+  actualizarBtnFiltros();
+  cargarLista();
+};
+
+// Abrir la ventanita (trabaja sobre una COPIA; solo "Aplicar" la confirma).
+window.abrirFiltros = function(){
+  filtroDraft = JSON.parse(JSON.stringify(filtroAvanzado || { modo:'y', condiciones:[] }));
+  renderFiltros();
+};
+const FTIPOS = [
+  { v:'etiqueta', t:'Tiene la etiqueta' },
+  { v:'sin_respuesta', t:'Sin respuesta' },
+  { v:'recordatorio', t:'Tiene recordatorio pendiente' },
+  { v:'creado', t:'Contacto creado' },
+];
+function filaCondicion(c, i){
+  const tipoSel = `<select onchange="filtroSetTipo(${i}, this.value)">${
+    FTIPOS.map(o => `<option value="${o.v}" ${c.tipo===o.v?'selected':''}>${o.t}</option>`).join('')
+  }</select>`;
+  let valor = '';
+  if(c.tipo === 'etiqueta'){
+    valor = etiquetasFiltro.length
+      ? `<select onchange="filtroSetEtiqueta(${i}, this.value)">${etiquetasFiltro.map(e =>
+          `<option value="${e.id}" ${c.etiqueta_id===e.id?'selected':''}>${(e.icono?esc(e.icono)+' ':'')+esc(e.nombre)}</option>`).join('')}</select>`
+      : `<span style="color:var(--ink-mute);font-size:0.8rem">No hay etiquetas en esta línea</span>`;
+  } else if(c.tipo === 'creado'){
+    const op = c.op || 'ultimos_dias';
+    const opSel = `<select onchange="filtroSetOp(${i}, this.value)">
+      <option value="ultimos_dias" ${op==='ultimos_dias'?'selected':''}>en los últimos</option>
+      <option value="antes" ${op==='antes'?'selected':''}>antes del</option>
+      <option value="despues" ${op==='despues'?'selected':''}>después del</option>
+    </select>`;
+    const input = op === 'ultimos_dias'
+      ? `<input type="number" min="1" max="3650" value="${Number(c.dias)||7}" style="width:64px" onchange="filtroSetDias(${i}, this.value)"> días`
+      : `<input type="date" value="${esc(c.fecha||'')}" onchange="filtroSetFecha(${i}, this.value)">`;
+    valor = opSel + ' ' + input;
+  }
+  return `<div class="fcond">${tipoSel} ${valor}<button class="fdel" title="Quitar" onclick="filtroDelCond(${i})">&times;</button></div>`;
+}
+function renderFiltros(){
+  const conds = filtroDraft.condiciones || [];
+  const rows = conds.map(filaCondicion).join('') || '<div style="color:var(--ink-mute);font-size:0.82rem;margin-bottom:12px">Aún no agregaste condiciones. Sin condiciones, se muestran todos los chats.</div>';
+  const modoSel = `<select onchange="filtroSetModo(this.value)">
+    <option value="y" ${filtroDraft.modo!=='o'?'selected':''}>TODAS (Y)</option>
+    <option value="o" ${filtroDraft.modo==='o'?'selected':''}>CUALQUIERA (O)</option>
+  </select>`;
+  abrirModal(`<h3>Filtros</h3>
+    <div class="fmodo">Mostrar los chats que cumplan ${modoSel} las condiciones:</div>
+    ${rows}
+    <button class="fadd" onclick="filtroAddCond()">+ Agregar condición</button>
+    <div class="facciones">
+      <button class="flimp" onclick="filtroLimpiarModal()">Limpiar</button>
+      <button class="fap" onclick="aplicarFiltros()">Aplicar</button>
+    </div>`);
+}
+window.filtroSetModo = function(v){ filtroDraft.modo = (v==='o')?'o':'y'; };
+window.filtroAddCond = function(){
+  filtroDraft.condiciones.push({ tipo:'etiqueta', etiqueta_id:(etiquetasFiltro[0]&&etiquetasFiltro[0].id)||'' });
+  renderFiltros();
+};
+window.filtroSetTipo = function(i, tipo){
+  const c = { tipo };
+  if(tipo==='etiqueta') c.etiqueta_id = (etiquetasFiltro[0]&&etiquetasFiltro[0].id)||'';
+  if(tipo==='creado'){ c.op = 'ultimos_dias'; c.dias = 7; }
+  filtroDraft.condiciones[i] = c;
+  renderFiltros();
+};
+window.filtroSetEtiqueta = function(i, id){ filtroDraft.condiciones[i].etiqueta_id = id; };
+window.filtroSetOp = function(i, op){ filtroDraft.condiciones[i].op = op; if(op==='ultimos_dias' && filtroDraft.condiciones[i].dias==null) filtroDraft.condiciones[i].dias = 7; renderFiltros(); };
+window.filtroSetDias = function(i, v){ filtroDraft.condiciones[i].dias = Math.max(1, Math.min(parseInt(v,10)||1, 3650)); };
+window.filtroSetFecha = function(i, v){ filtroDraft.condiciones[i].fecha = v; };
+window.filtroDelCond = function(i){ filtroDraft.condiciones.splice(i,1); renderFiltros(); };
+window.filtroLimpiarModal = function(){ filtroDraft = { modo:'y', condiciones:[] }; renderFiltros(); };
+window.aplicarFiltros = function(){
+  // Descarta condiciones incompletas (etiqueta sin elegir, fecha vacía).
+  const limpias = (filtroDraft.condiciones||[]).filter(c => {
+    if(c.tipo==='etiqueta') return !!c.etiqueta_id;
+    if(c.tipo==='creado') return c.op==='ultimos_dias' ? !!c.dias : !!c.fecha;
+    return c.tipo==='sin_respuesta' || c.tipo==='recordatorio';
+  });
+  filtroAvanzado = { modo: filtroDraft.modo==='o'?'o':'y', condiciones: limpias };
+  actualizarBtnFiltros();
+  cerrarModal();
   cargarLista();
 };
 
@@ -1072,7 +1157,7 @@ function pintarLista(){
   const cont = $('chats');
   const visibles = conversaciones;   // el servidor ya filtró por la búsqueda (en TODA la base)
   // Solo redibujar si de verdad cambió algo (evita parpadeo y trabajo innecesario cada 5s)
-  const firma = buscarChatsQ + '|' + (filtroEtiqueta||'') + '|' + soloSinRespuesta + '|' + actual + '|' + visibles.map(c =>
+  const firma = buscarChatsQ + '|' + JSON.stringify(filtroAvanzado) + '|' + actual + '|' + visibles.map(c =>
     c.telefono + ':' + c.ultimo_at + ':' + c.no_leidos + ':' + (c.ultimo_mensaje || '').length + ':' + (c.etiquetas || []).map(e => e.id).join('.')
   ).join('|');
   if(firma === firmaLista) return;
@@ -1089,7 +1174,7 @@ function pintarLista(){
         <div class="hora">${hora(c.ultimo_at)}</div>
         ${c.no_leidos > 0 ? `<div class="badge">${c.no_leidos}</div>` : ''}
       </div>
-    </div>`).join('') || `<div class="vacio-lista">${buscarChatsQ ? 'Sin resultados para tu búsqueda' : (filtroEtiqueta ? 'Ningún chat con esa etiqueta' : (soloSinRespuesta ? 'No hay chats sin responder' : 'Aún no hay conversaciones'))}</div>`;
+    </div>`).join('') || `<div class="vacio-lista">${buscarChatsQ ? 'Sin resultados para tu búsqueda' : ((filtroAvanzado.condiciones && filtroAvanzado.condiciones.length) ? 'Ningún chat con esos filtros' : 'Aún no hay conversaciones')}</div>`;
 }
 
 // Buscar chats EN EL SERVIDOR (en toda la base, no solo en lo cargado), con una
