@@ -33,8 +33,13 @@
   sábados / no mencionar el Sueldazo — ver "Hecho recientemente" y bitácora.)
 - [ ] (2026-06-06) Arreglar **"Gasto de IA = $0"**: configurar `SUPABASE_SERVICE_ROLE_KEY`
   en Vercel (y revisar RLS de las tablas). Ver bitácora.
-- [ ] (2026-06-06) Resincronizar la copia de **Google Drive del Mac** con GitHub (está
-  desactualizada; por eso ahora se publica clonando fresco del repo).
+- [ ] (2026-06-07) **Preparar la copia de trabajo en WINDOWS** (Mateo trabaja la mayoría
+  de veces en Windows). La primera vez que abra Claude Code allá, clonar fresco de GitHub a
+  una carpeta FUERA de Google Drive (ej. `C:\los-platas-rifas`) y trabajar siempre desde ahí.
+  La instrucción ya quedó en `CLAUDE.md`, así que el chat de Windows lo hace solo al leerlo.
+- [ ] (2026-06-07) Revisar si **"perla roja"** (rifa vieja) en el CÓDIGO es residuo:
+  aparece en `public/rendimiento.html`, `api/app/mis-boletas.js`, `api/contenido/copy-gen.js`,
+  `public/ver-house-app.jsx`. NO borrar sin confirmar con Mateo.
 - [ ] (2026-06-06) Revisar con Mateo si `public/vendedores.html` todavía se usa o
   está duplicado con `rendimiento.html`.
 - [ ] (2026-06-06) Opcional / cosmético: limpiar las ~147 filas de error
@@ -44,6 +49,15 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-07) **Copia de trabajo limpia FUERA de Google Drive** (`~/los-platas-rifas` en
+  el Mac). La copia del Drive tenía el git corrupto (Drive lo daña). Ahora se trabaja y publica
+  desde el clon limpio; GitHub sincroniza Mac y Windows. Quedó escrito en `CLAUDE.md`. Ver bitácora.
+- [x] (2026-06-07) **Frases de inicio/cierre mejoradas** (`docs/COMO-TRABAJAR-CON-IA.md`):
+  separan lo que se lee SIEMPRE (3 esenciales) de lo que se abre SOLO por tema (mapa, bandeja).
+  La de cierre recuerda actualizar también la bitácora de la bandeja/Liliana.
+- [x] (2026-06-07) **Limpieza de documentos viejos**: borrados `migracion-manychat.md`,
+  `evaluacion-crm-propio.md`, `terminos-y-condiciones-la-perla-roja.md` y la carpeta
+  `docs/sync/` (auditorías de abril). Ya no aplicaban; ningún código los usaba.
 - [x] (2026-06-06) **Página del sorteo final en vivo: rediseñada + renombrada.**
   `home-sorteo-apartamento.html` NO era residuo de apartamento: es la página que se usa
   al final de cada rifa para anunciar al ganador en vivo y regalar 3 chances de

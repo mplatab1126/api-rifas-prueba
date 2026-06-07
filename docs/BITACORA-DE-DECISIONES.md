@@ -26,6 +26,27 @@
 
 ---
 
+## 2026-06-07 — [General] — Carpeta de trabajo FUERA de Google Drive (clon limpio); Drive ya no se usa para el código
+
+**Qué decidimos:** dejar de trabajar/publicar desde la carpeta del proyecto en Google
+Drive y usar en su lugar un **clon limpio fuera de Drive** (en el Mac: `~/los-platas-rifas`;
+en Windows: una carpeta tipo `C:\los-platas-rifas`). **GitHub** es el punto central que
+sincroniza las máquinas de Mateo (Mac y Windows): al empezar se hace `git pull`, al
+terminar se publica a `main`. Google Drive ya NO se usa para el código.
+
+**Por qué:** la copia de Drive tenía el git **corrupto** (git local sin commits,
+`origin/main` "gone", 258 archivos en staging sueltos). Google Drive y git no se llevan:
+Drive sincroniza a su manera y daña el control de versiones. Publicar desde ahí podía
+fallar o pisar producción con una versión vieja (era la causa de "publiqué pero no se ve").
+
+**Cuidado / qué NO hacer:** NO trabajar ni publicar desde una carpeta dentro de Drive
+(`.../Mi unidad/...` o `.../CloudStorage/GoogleDrive-...`). Si un chat abre ahí, debe clonar
+fresco de GitHub a una carpeta fuera de Drive y trabajar desde esa. La regla quedó escrita en
+`CLAUDE.md` (sección "Dónde está el código"). La carpeta vieja de Drive se dejó quieta (no se
+borró).
+
+---
+
 ## 2026-06-06 — [Página clientes] — Página del sorteo final: rediseño, renombrado y vista de computador
 
 **Qué decidimos:** la página `home-sorteo-apartamento.html` NO era residuo de una
