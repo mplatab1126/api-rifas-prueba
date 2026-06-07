@@ -26,6 +26,31 @@
 
 ---
 
+## 2026-06-07 — [WhatsApp] — Plantilla de seguimiento de Liliana con DOS variables (nombre + motivo)
+
+**Qué decidimos:** crear la plantilla `seguimiento_los_plata` (la que reabre conversaciones de
++24h cuando Liliana agenda un recordatorio a días) con **dos** variables en vez de una:
+`{{1}}` = nombre del cliente; `{{2}}` = el **motivo**, redactado de cara al cliente (ej. "me
+dijiste que hoy ibas a separar tu boleta"). Cuerpo aprobado por Mateo: *"Hola {{1}} 👋 Te
+escribimos de Los Plata. {{2}} ¿Seguimos por aquí? Con gusto te ayudamos. 🏡"*. Categoría
+MARKETING, idioma `es`. Creada en Meta el 7-jun (estado "pendiente" de aprobación).
+
+**Por qué:** una sola variable (el nombre) daba un mensaje genérico. Con el motivo, el cliente
+recuerda POR QUÉ Liliana le vuelve a escribir y la reapertura se siente personal, no spam.
+
+**Piezas:** el `{{2}}` reusa el `motivo` que el agente YA guardaba en `recordatorios` (no se
+agregó columna). Se ajustó la instrucción del tool `programar_recordatorio`
+(`agente-responder.js`) para que el motivo se escriba en 2ª persona (sirve igual para la
+plantilla y para el texto libre cuando la ventana sigue abierta). `recordatorios-cron.js` ahora
+arma `params = [nombre, motivo]`, limpia saltos de línea/espacios (Meta los rechaza) y, si no hay
+motivo, usa un respaldo ("Queríamos retomar lo de tu boleta de la casa."). Publicado a `main`.
+
+**Cuidado / qué NO hacer:** `{{2}}` NUNCA puede ir vacío (Meta rechaza el envío) → por eso el
+respaldo. Si Meta rechaza la plantilla (texto libre en `{{2}}`), ajustar y reenviar. La plantilla
+solo "toca la puerta": Liliana sigue la venta solo si el cliente RESPONDE. Cada envío cuesta.
+
+---
+
 ## 2026-06-07 — [General] — Carpeta de trabajo FUERA de Google Drive (clon limpio); Drive ya no se usa para el código
 
 **Qué decidimos:** dejar de trabajar/publicar desde la carpeta del proyecto en Google
