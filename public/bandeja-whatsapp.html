@@ -365,6 +365,11 @@
     #btnCrearResp:hover { background: var(--mint-light); }
     #listaResp { flex: 1; overflow-y: auto; padding: 14px 16px 20px; }
     .resp-card { background: #fff; border: 1px solid var(--gray-200); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
+    /* Módulo de gestión de Etiquetas (menú izquierdo) */
+    #modEtiquetas { flex: 1; display: none; flex-direction: column; min-width: 0; background: var(--cream-50); overflow: hidden; }
+    #btnCrearEtiquetaMenu { padding: 10px 16px; border: 1px solid var(--mint); background: var(--mint); border-radius: 10px; font-family: inherit; font-size: 0.84rem; font-weight: 600; color: var(--ink); cursor: pointer; }
+    #btnCrearEtiquetaMenu:hover { background: var(--mint-light); }
+    #listaEtiquetasAdmin { flex: 1; overflow-y: auto; padding: 12px 16px 20px; max-width: 620px; }
     .resp-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
     .resp-titulo { font-weight: 600; font-size: 0.92rem; color: var(--ink); word-break: break-word; }
     .resp-acc { display: flex; gap: 2px; flex-shrink: 0; }
@@ -608,7 +613,7 @@
       .cont-head, .df-head { padding: 14px 14px 0; }
       .df-bar, .cont-actions { padding: 12px 14px; }
       .df-bar input, #buscarContacto, #buscarResp, #buscarPlantilla, #buscarDifusion { min-width: 0; }
-      #listaDifusiones, #listaPlantillas, #listaContactos, #listaResp { padding: 4px 12px 18px; }
+      #listaDifusiones, #listaPlantillas, #listaContactos, #listaResp, #listaEtiquetasAdmin { padding: 4px 12px 18px; }
       .df-acc { width: 100%; justify-content: flex-start; margin-top: 8px; }
       /* Ventanas (modales) usan casi toda la pantalla del celular */
       #modalBg { padding: 10px; align-items: flex-end; }
@@ -667,6 +672,10 @@
         <button class="nav-item" data-mod="respuestas">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 10 14 9 22 19 10 12 10 13 2"/></svg>
           <span>Respuestas rápidas</span>
+        </button>
+        <button class="nav-item" data-mod="etiquetas">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          <span>Etiquetas</span>
         </button>
         <div class="nav-sec" id="navSecAgente" style="display:none">Inteligencia</div>
         <button class="nav-item" id="navAgente" data-mod="agente" style="display:none">
@@ -796,6 +805,18 @@
       </div>
       <div id="listaResp"></div>
     </div><!-- /modRespuestas -->
+
+    <!-- MÓDULO: ETIQUETAS (crear / ordenar / eliminar) -->
+    <div id="modEtiquetas">
+      <div class="cont-head">
+        <h2>Etiquetas</h2>
+        <div class="ag-sub" style="margin-bottom:12px">Crea, <b>ordena</b> (arrastra ⠿) y elimina las etiquetas de esta línea. El orden que dejes se respeta en todos lados (filtros, chats y la ventana de cada cliente). Para marcar/desmarcar una etiqueta a un cliente, hazlo desde el chat con el ícono de etiqueta.</div>
+        <div class="cont-actions">
+          <button id="btnCrearEtiquetaMenu" onclick="nuevaEtiquetaForm()">+ Nueva etiqueta</button>
+        </div>
+      </div>
+      <div id="listaEtiquetasAdmin"></div>
+    </div><!-- /modEtiquetas -->
 
     <!-- MÓDULO: DIFUSIONES -->
     <div id="modDifusiones">
@@ -2076,11 +2097,13 @@ function irA(mod){
   $('modChats').style.display = (mod === 'chats') ? 'flex' : 'none';
   $('modContactos').style.display = (mod === 'contactos') ? 'flex' : 'none';
   $('modRespuestas').style.display = (mod === 'respuestas') ? 'flex' : 'none';
+  $('modEtiquetas').style.display = (mod === 'etiquetas') ? 'flex' : 'none';
   $('modDifusiones').style.display = (mod === 'difusiones') ? 'flex' : 'none';
   $('modAgente').style.display = (mod === 'agente') ? 'flex' : 'none';
   $('modDisparadores').style.display = (mod === 'disparadores') ? 'flex' : 'none';
   if(mod === 'contactos'){ contactosPage = 0; cargarContactos(true); }
   else if(mod === 'respuestas'){ cargarRespuestas(); }
+  else if(mod === 'etiquetas'){ cargarEtiquetasAdmin(); }
   else if(mod === 'difusiones'){ cargarModuloDifusiones(); }
   else if(mod === 'agente'){ cargarAgente(); }
   else if(mod === 'disparadores'){ cargarDisparadores(); }
@@ -2600,8 +2623,8 @@ function pildoraEtiq(e){
 
 let etiquetasModal = [];
 let asignadasModal = new Set();
-let etiqDragIdx = null;
 
+/* ── Etiquetas en el CHAT: SOLO marcar/desmarcar las del cliente ── */
 window.abrirEtiquetas = async function(){
   if(!actual) return;
   abrirModal('<div class="mcargando">Cargando etiquetas…</div>');
@@ -2614,61 +2637,75 @@ window.abrirEtiquetas = async function(){
   renderEtiquetasModal();
 };
 function renderEtiquetasModal(){
-  const filas = etiquetasModal.map((e, idx) => `
-    <div class="etiq-row" draggable="true" data-idx="${idx}"
-         ondragstart="etiqDragStart(event, ${idx})" ondragover="etiqDragOver(event)" ondrop="etiqDrop(event, ${idx})" ondragend="etiqDragEnd(event)"
-         onclick="filaEtiqClick(event, '${e.id}')">
-      <span class="etiq-handle" title="Arrastra para cambiar el orden">⠿</span>
+  const filas = etiquetasModal.map((e) => `
+    <div class="etiq-row" onclick="filaEtiqClick(event, '${e.id}')">
       <input type="checkbox" tabindex="-1" ${asignadasModal.has(e.id) ? 'checked' : ''}>
       <span class="etiq" style="background:${tinte(e.color)}">${e.icono ? esc(e.icono) + ' ' : ''}${esc(e.nombre)}</span>
-      <button class="etiq-del" title="Eliminar etiqueta" onclick="event.stopPropagation(); eliminarEtiqueta('${e.id}')">&times;</button>
-    </div>`).join('') || '<div class="mnone">Aún no hay etiquetas. Crea la primera.</div>';
+    </div>`).join('') || '<div class="mnone">Aún no hay etiquetas. Créalas en el menú <b>Etiquetas</b> (a la izquierda).</div>';
   abrirModal(`
     <h3>Etiquetas</h3>
-    <div class="msub">Toca una fila para marcarla. Arrastra ⠿ para cambiar el orden (se respeta en todos lados).</div>
+    <div class="msub">Toca una fila para marcar o desmarcar las etiquetas de este cliente.</div>
     ${filas}
-    <button class="ab-igual" style="margin-top:10px" onclick="nuevaEtiquetaForm()">+ Nueva etiqueta</button>
     <button class="mcerrar" onclick="cerrarModal()">Listo</button>
   `);
 }
-// Clic en cualquier parte de la fila (menos la × o la manija) marca/desmarca la etiqueta.
+// Clic en cualquier parte de la fila marca/desmarca la etiqueta de este cliente.
 window.filaEtiqClick = function(ev, id){
-  if(ev.target.closest('.etiq-del') || ev.target.closest('.etiq-handle')) return;
   const cb = ev.currentTarget.querySelector('input[type=checkbox]');
   const nuevo = !cb.checked; cb.checked = nuevo;
   asignadasModal[nuevo ? 'add' : 'delete'](id);
   toggleEtiqueta(id, nuevo);
 };
-// Arrastrar para reordenar.
-window.etiqDragStart = function(ev, idx){ etiqDragIdx = idx; ev.dataTransfer.effectAllowed = 'move'; ev.currentTarget.classList.add('fila-arrastrando'); };
-window.etiqDragOver = function(ev){ ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; };
-window.etiqDrop = function(ev, idx){
-  ev.preventDefault();
-  if(etiqDragIdx === null || etiqDragIdx === idx) return;
-  const [m] = etiquetasModal.splice(etiqDragIdx, 1);
-  etiquetasModal.splice(idx, 0, m);
-  etiqDragIdx = null;
-  renderEtiquetasModal();
-  persistirOrdenEtiquetas();
-};
-window.etiqDragEnd = function(){ etiqDragIdx = null; document.querySelectorAll('.fila-arrastrando').forEach(el => el.classList.remove('fila-arrastrando')); };
-async function persistirOrdenEtiquetas(){
-  const ids = etiquetasModal.map(e => e.id);
-  etiquetasFiltro = etiquetasModal.slice();   // el filtro usa el mismo orden de inmediato
-  await api('etiquetas', { accion:'reordenar', linea_id: actualLinea, ids });
-  cargarLista();                              // refresca las píldoras en la lista de chats
-}
-
 window.toggleEtiqueta = async function(id, checked){
   await api('etiquetas', { accion:'toggle', linea_id: actualLinea, telefono: actual, etiqueta_id: id, asignar: checked });
   cargarLista();
 };
 
+/* ── Menú "Etiquetas": crear / ordenar (arrastrar) / eliminar ── */
+let etiquetasAdmin = [];
+let etiqAdminDragIdx = null;
+async function cargarEtiquetasAdmin(){
+  const cont = $('listaEtiquetasAdmin'); if(!cont) return;
+  if(!lineaActual){ cont.innerHTML = '<div class="vacio-lista">No hay una línea seleccionada.</div>'; return; }
+  cont.innerHTML = '<div class="vacio-lista">Cargando…</div>';
+  const r = await api('etiquetas', { accion:'listar', linea_id: lineaActual });
+  if(vista !== 'etiquetas') return;
+  etiquetasAdmin = (r && r.etiquetas) || [];
+  renderEtiquetasAdmin();
+}
+function renderEtiquetasAdmin(){
+  const cont = $('listaEtiquetasAdmin'); if(!cont) return;
+  cont.innerHTML = etiquetasAdmin.map((e, idx) => `
+    <div class="etiq-row" draggable="true"
+         ondragstart="admEtiqDragStart(event, ${idx})" ondragover="admEtiqDragOver(event)" ondrop="admEtiqDrop(event, ${idx})" ondragend="admEtiqDragEnd(event)">
+      <span class="etiq-handle" title="Arrastra para cambiar el orden">⠿</span>
+      <span class="etiq" style="background:${tinte(e.color)}">${e.icono ? esc(e.icono) + ' ' : ''}${esc(e.nombre)}</span>
+      <button class="etiq-del" title="Eliminar etiqueta" onclick="eliminarEtiqueta('${e.id}')">&times;</button>
+    </div>`).join('') || '<div class="vacio-lista">Aún no hay etiquetas. Crea la primera con "+ Nueva etiqueta".</div>';
+}
+window.admEtiqDragStart = function(ev, idx){ etiqAdminDragIdx = idx; ev.dataTransfer.effectAllowed = 'move'; ev.currentTarget.classList.add('fila-arrastrando'); };
+window.admEtiqDragOver = function(ev){ ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; };
+window.admEtiqDrop = function(ev, idx){
+  ev.preventDefault();
+  if(etiqAdminDragIdx === null || etiqAdminDragIdx === idx) return;
+  const [m] = etiquetasAdmin.splice(etiqAdminDragIdx, 1);
+  etiquetasAdmin.splice(idx, 0, m);
+  etiqAdminDragIdx = null;
+  renderEtiquetasAdmin();
+  persistirOrdenEtiquetas();
+};
+window.admEtiqDragEnd = function(){ etiqAdminDragIdx = null; document.querySelectorAll('.fila-arrastrando').forEach(el => el.classList.remove('fila-arrastrando')); };
+async function persistirOrdenEtiquetas(){
+  const ids = etiquetasAdmin.map(e => e.id);
+  etiquetasFiltro = etiquetasAdmin.slice();   // el filtro usa el mismo orden de inmediato
+  await api('etiquetas', { accion:'reordenar', linea_id: lineaActual, ids });
+  cargarLista();                              // refresca las píldoras en la lista de chats
+}
 window.eliminarEtiqueta = async function(id){
   if(!confirm('¿Eliminar esta etiqueta? Se quitará de todos los chats que la tengan.')) return;
-  await api('etiquetas', { accion:'eliminar', linea_id: actualLinea, id });
+  await api('etiquetas', { accion:'eliminar', linea_id: lineaActual, id });
   cargarLista();
-  abrirEtiquetas();
+  cargarEtiquetasAdmin();
 };
 
 window.nuevaEtiquetaForm = function(){
@@ -2682,7 +2719,7 @@ window.nuevaEtiquetaForm = function(){
     <div class="et-label">Color</div>
     <div class="et-palette">${COLORES.map(c => `<button class="et-color ${c===nuevaColor?'on':''}" style="background:${c}" onclick="selColor(this,'${c}')"></button>`).join('')}</div>
     <button class="ab-confirm" style="margin-top:14px" onclick="crearEtiqueta()">Crear etiqueta</button>
-    <button class="mcerrar" onclick="abrirEtiquetas()">Atrás</button>
+    <button class="mcerrar" onclick="cerrarModal()">Cancelar</button>
   `);
 };
 window.selEmoji = function(btn, e){ nuevaIcono = e; document.querySelectorAll('.et-emoji').forEach(b => b.classList.remove('on')); btn.classList.add('on'); };
@@ -2690,8 +2727,8 @@ window.selColor = function(btn, c){ nuevaColor = c; document.querySelectorAll('.
 window.crearEtiqueta = async function(){
   const nm = $('etNombre').value.trim();
   if(!nm) return alert('Ponle un nombre a la etiqueta.');
-  const r = await api('etiquetas', { accion:'crear', linea_id: actualLinea, nombre: nm, icono: nuevaIcono, color: nuevaColor });
-  if(r.status === 'ok') abrirEtiquetas(); else alert(r.mensaje || 'No se pudo crear.');
+  const r = await api('etiquetas', { accion:'crear', linea_id: lineaActual, nombre: nm, icono: nuevaIcono, color: nuevaColor });
+  if(r.status === 'ok'){ cerrarModal(); cargarEtiquetasAdmin(); } else alert(r.mensaje || 'No se pudo crear.');
 };
 
 /* ── Respuestas rápidas ── */
