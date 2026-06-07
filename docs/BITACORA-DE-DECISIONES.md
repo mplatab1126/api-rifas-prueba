@@ -26,6 +26,25 @@
 
 ---
 
+## 2026-06-07 — [WhatsApp] — Liliana: la boleta se envía por WhatsApp (no por correo ni mandando a la web)
+
+**Qué decidimos:** Liliana debe enviar la **boleta digital por WhatsApp ahí mismo** (con su enlace).
+NO debe decir que la boleta "llega al correo" ni mandar al cliente a la página web / botón "Ver mi
+boleta" para consultarla. Si el cliente quiere ver sus pagos, Liliana los **consulta ella** y se los
+dice por WhatsApp (o le reenvía el enlace de su boleta). Al **correo** solo va la **factura
+electrónica**, y solo cuando la boleta está **pagada al 100%**.
+
+**Por qué:** no hacer que el cliente se salga de WhatsApp para ver su boleta (baja conversión y
+confunde a clientes mayores). Liliana confundía boleta ↔ factura y mandaba a la web.
+
+**Piezas:** edición del MANUAL (`agente_config.prompt`, línea `1128258647034751`) por SQL con
+`replace()` puntual en dos bloques: paso "5) BOLETA" (aclara boleta por WhatsApp, correo = factura
+al 100%) y "CERTIFICAR QUE YA PAGÓ / ver sus pagos" (Liliana resuelve por WhatsApp, ya no guía a
+*Ver mi boleta*). Efecto inmediato. La sección reactiva "# LA PÁGINA WEB…" se dejó (solo aplica si
+el cliente pregunta por la web).
+
+---
+
 ## 2026-06-07 — [WhatsApp] — Liliana: cédula y correo OPCIONALES al apartar (solo nombre, apellido y ciudad obligatorios)
 
 **Qué decidimos:** para apartar una boleta, lo ÚNICO obligatorio es **nombre completo, apellido y
