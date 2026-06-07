@@ -1,20 +1,19 @@
 /**
  * Enviar la boleta al cliente desde la bandeja (atajo del chat).
  *
- * Dado el teléfono del chat abierto: busca en la base las boletas asignadas a
- * ese número y se las envía. Hay dos formas de envío:
+ * Dado el teléfono del chat abierto: busca en la base las boletas de ese número
+ * y se las envía. Hay tres caminos (en este orden de preferencia):
  *
- *   - Plantilla "boleta_cliente" (Utilidad) si existe y está APROBADA por Meta:
- *     se ve bonita (encabezado, pie y botón "Ver mi boleta"). Es gratis cuando el
- *     cliente escribió en las últimas 24h.
- *   - Texto normal (respaldo): si aún no hay plantilla aprobada, se manda como
- *     texto para que el botón nunca deje de funcionar. Al aprobarse la plantilla,
- *     pasa a usarla solo.
+ *   - Plantilla "boleta_cliente_v2" (Utilidad) si está APROBADA: su PRIMERA línea
+ *     es variable, así que refleja el estado real (separada / participando / pagada).
+ *   - Plantilla vieja "boleta_cliente" (1 sola variable, primera línea fija) como
+ *     RESPALDO, mientras Meta aprueba la v2 (para no dejar de enviar).
+ *   - Texto normal: si no hay ninguna plantilla aprobada.
  *
  * Acciones (POST, JSON): { contrasena, accion, linea_id, telefono }
  *   previsualizar  → arma el mensaje y dice si saldrá como plantilla o texto
  *   enviar         → lo envía y lo deja en el historial del chat
- *   crear-plantilla→ crea la plantilla "boleta_cliente" en Meta (1 sola vez)
+ *   crear-plantilla→ crea la plantilla v2 en Meta (1 sola vez)
  */
 
 import { aplicarCors } from '../lib/cors.js';
@@ -25,11 +24,19 @@ import { enviarTexto, enviarPlantilla, crearPlantillaMeta } from '../lib/whatsap
 
 const pesos = (v) => '$' + Number(v || 0).toLocaleString('es-CO');
 
-// ── Definición de la plantilla "bonita" de la boleta (Utilidad) ──
-const TPL_NOMBRE = 'boleta_cliente';
+// ── Plantilla "bonita" de la boleta (Utilidad) ──
+// v2: la PRIMERA línea es variable ({{1}}, el estado) y {{2}} es la lista de boletas.
+const TPL_NOMBRE = 'boleta_cliente_v2';
+const TPL_NOMBRE_VIEJA = 'boleta_cliente';     // respaldo (1 variable, primera línea fija)
 const TPL_IDIOMA = 'es';
 const TPL_HEADER = 'Tu boleta de Los Plata';
 const TPL_BODY =
+  '{{1}}\n\n' +
+  'Estas son tus boletas para la rifa de Los Plata:\n\n' +
+  '{{2}}\n\n' +
+  'Guárdalas y consúltalas cuando quieras con el botón de abajo. ¡Te deseamos mucha suerte! 🍀';
+// Cuerpo de la plantilla VIEJA (solo para la vista previa cuando se usa de respaldo).
+const TPL_BODY_VIEJA =
   '🎉 ¡Quedaste participando!\n\n' +
   'Estas son tus boletas para la rifa de Los Plata:\n\n' +
   '{{1}}\n\n' +
@@ -38,11 +45,11 @@ const TPL_FOOTER = 'LOS PLATA S.A.S. — Pagos solo a nuestro nombre';
 const TPL_BTN_TEXTO = 'Ver mi boleta';
 const TPL_BTN_URL_BASE = 'https://www.losplata.com.co/boleta?telefono=';
 
-// Componentes en el formato que pide Meta para CREAR la plantilla.
+// Componentes en el formato que pide Meta para CREAR la plantilla v2 (2 variables en el cuerpo).
 function componentesBoleta() {
   return [
     { type: 'HEADER', format: 'TEXT', text: TPL_HEADER },
-    { type: 'BODY', text: TPL_BODY, example: { body_text: [['🎟️ 1234 (Pagada)']] } },
+    { type: 'BODY', text: TPL_BODY, example: { body_text: [['🎉 ¡Ya estás participando!', '1234 (falta $50.000)']] } },
     { type: 'FOOTER', text: TPL_FOOTER },
     { type: 'BUTTONS', buttons: [
       { type: 'URL', text: TPL_BTN_TEXTO, url: TPL_BTN_URL_BASE + '{{1}}', example: [TPL_BTN_URL_BASE + '3001234567'] },
@@ -50,44 +57,43 @@ function componentesBoleta() {
   ];
 }
 
+// Encabezado según el estado de pago. Regla: con $0 abonado la boleta SOLO está separada
+// (aún NO participa); con cualquier abono ya participa; pagada al 100% es lo máximo.
+function encabezadoBoleta(boletas) {
+  const una = boletas.length === 1;
+  const todasPagadas = boletas.every(b => Number(b.saldo_restante || 0) <= 0);
+  const totalAbonado = boletas.reduce((s, b) => s + Number(b.total_abonado || 0), 0);
+  if (todasPagadas) return una ? '✅ ¡Tu boleta está paga al 100%! Ya estás participando 🎉' : '✅ ¡Tus boletas están pagas al 100%! Ya estás participando 🎉';
+  if (totalAbonado > 0) return una ? '🎉 ¡Ya estás participando con tu boleta!' : '🎉 ¡Ya estás participando con tus boletas!';
+  return una ? '📝 ¡Tu boleta quedó separada! Haz tu primer abono para entrar al sorteo.' : '📝 ¡Tus boletas quedaron separadas! Hagan su primer abono para entrar al sorteo.';
+}
+
 const estadoBoleta = (b) => Number(b.saldo_restante || 0) <= 0 ? '✅ Pagada' : ('Te falta abonar *' + pesos(b.saldo_restante) + '*');
-
-// Una línea por boleta, limpia: número en negrita + estado. Sin enlaces ni
-// emojis repetidos (el enlace va UNA sola vez, abajo).
 const lineaBoleta = (b) => `*${b.numero}*  ·  ${estadoBoleta(b)}`;
-
-// Enlace único para ver la(s) boleta(s): abre la página que, si hay varias,
-// le deja elegir cuál ver.
 const enlaceBoletas = (last10) => `https://www.losplata.com.co/boleta?telefono=${last10}`;
 
-// La variable {{1}} de la plantilla: lista de boletas en UNA sola línea
-// (Meta no permite saltos de línea dentro de una variable).
-function variableBoletas(boletas) {
-  const est = (b) => Number(b.saldo_restante || 0) <= 0 ? 'Pagada' : ('falta ' + pesos(b.saldo_restante));
-  return boletas.map(b => `${b.numero} (${est(b)})`).join('  ·  ');
-}
+// Lista de boletas en VARIAS líneas (para la vista previa / texto legible).
+const listaMultilinea = (boletas) => boletas.map(b => `${b.numero} (${Number(b.saldo_restante || 0) <= 0 ? 'Pagada' : ('falta ' + pesos(b.saldo_restante))})`).join('\n');
+// Lista en UNA sola línea (Meta no permite saltos dentro de una variable de plantilla).
+const listaUnaLinea = (boletas) => boletas.map(b => `${b.numero} (${Number(b.saldo_restante || 0) <= 0 ? 'Pagada' : ('falta ' + pesos(b.saldo_restante))})`).join('  ·  ');
 
-// Cómo se verá la plantilla para el cliente (para mostrar en la vista previa).
-function previewPlantilla(boletas, last10) {
-  const est = (b) => Number(b.saldo_restante || 0) <= 0 ? 'Pagada' : ('falta ' + pesos(b.saldo_restante));
-  const cuerpo = TPL_BODY.replace('{{1}}', boletas.map(b => `${b.numero} (${est(b)})`).join('\n'));
+// Vista previa de la plantilla v2 (encabezado variable + lista).
+function previewV2(boletas, last10) {
+  const cuerpo = TPL_BODY.replace('{{1}}', encabezadoBoleta(boletas)).replace('{{2}}', listaMultilinea(boletas));
   return `*${TPL_HEADER}*\n\n${cuerpo}\n\n[ ${TPL_BTN_TEXTO} ]  →  ${enlaceBoletas(last10)}\n\n_${TPL_FOOTER}_`;
 }
-
-// Texto de respaldo (cuando no hay plantilla aprobada). Es el "cierre feliz"
-// de la compra: no saluda, celebra, lista las boletas y deja UN solo enlace.
+// Vista previa de la plantilla VIEJA (primera línea fija).
+function previewV1(boletas, last10) {
+  const cuerpo = TPL_BODY_VIEJA.replace('{{1}}', listaMultilinea(boletas));
+  return `*${TPL_HEADER}*\n\n${cuerpo}\n\n[ ${TPL_BTN_TEXTO} ]  →  ${enlaceBoletas(last10)}\n\n_${TPL_FOOTER}_`;
+}
+// Texto de respaldo (cuando NO hay ninguna plantilla aprobada). Mismo encabezado por estado.
 function textoRespaldo(boletas, last10) {
-  const todasPagadas = boletas.every(b => Number(b.saldo_restante || 0) <= 0);
   const una = boletas.length === 1;
-  const header = todasPagadas
-    ? '🎉 ¡Quedaste participando!'
-    : (una ? 'Aquí está tu boleta 🎟️' : 'Aquí están tus boletas 🎟️');
-  const intro = una
-    ? 'Esta es tu boleta para la rifa de *Los Plata*:'
-    : 'Estas son tus boletas para la rifa de *Los Plata*:';
+  const intro = una ? 'Esta es tu boleta para la rifa de *Los Plata*:' : 'Estas son tus boletas para la rifa de *Los Plata*:';
   const lista = boletas.map(lineaBoleta).join('\n');
   const verbo = una ? 'Consulta tu boleta aquí' : 'Consulta tus boletas aquí';
-  return `${header}\n\n${intro}\n\n${lista}\n\n👉 ${verbo}:\n${enlaceBoletas(last10)}\n\n¡Te deseamos mucha suerte! 🍀`;
+  return `${encabezadoBoleta(boletas)}\n\n${intro}\n\n${lista}\n\n👉 ${verbo}:\n${enlaceBoletas(last10)}`;
 }
 
 // Busca (o crea) la conversación de un teléfono en una línea y devuelve su id.
@@ -103,10 +109,10 @@ async function asegurarConv(telefono, lineaId, asesor) {
   return nueva ? nueva.id : null;
 }
 
-// ¿Hay plantilla "boleta_cliente" en esta línea? Devuelve su estado o null.
-async function estadoPlantilla(lineaId) {
+// Estado de una plantilla por nombre en esta línea (o null si no existe).
+async function estadoPlantilla(lineaId, nombre) {
   const { data } = await supabase
-    .from('plantillas_whatsapp').select('estado').eq('linea_id', lineaId).eq('nombre', TPL_NOMBRE).maybeSingle();
+    .from('plantillas_whatsapp').select('estado').eq('linea_id', lineaId).eq('nombre', nombre).maybeSingle();
   return data ? data.estado : null;
 }
 
@@ -123,9 +129,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Crear la plantilla bonita (una sola vez por línea).
+    // Crear la plantilla v2 (una sola vez por línea).
     if (accion === 'crear-plantilla') {
-      const yaEstado = await estadoPlantilla(linea_id);
+      const yaEstado = await estadoPlantilla(linea_id, TPL_NOMBRE);
       if (yaEstado) return res.status(200).json({ status: 'ok', yaExistia: true, estado: yaEstado });
       const meta = await crearPlantillaMeta(linea_id, {
         nombre: TPL_NOMBRE, categoria: 'UTILITY', idioma: TPL_IDIOMA, componentes: componentesBoleta(),
@@ -156,24 +162,32 @@ export default async function handler(req, res) {
     const nombre = (boletas[0].clientes && boletas[0].clientes.nombre) || '';
     boletas.sort((a, b) => Number(a.numero) - Number(b.numero));
 
-    const estTpl = await estadoPlantilla(linea_id);
-    const usarPlantilla = estTpl === 'aprobada';
-    const mensaje = usarPlantilla ? previewPlantilla(boletas, last10) : textoRespaldo(boletas, last10);
+    // Preferimos la v2 (encabezado variable); si aún no está aprobada, usamos la vieja; si no, texto.
+    const estV2 = await estadoPlantilla(linea_id, TPL_NOMBRE);
+    const estV1 = await estadoPlantilla(linea_id, TPL_NOMBRE_VIEJA);
+    const via = estV2 === 'aprobada' ? 'v2' : (estV1 === 'aprobada' ? 'v1' : 'texto');
+    const usarPlantilla = via !== 'texto';
+    const mensaje = via === 'v2' ? previewV2(boletas, last10) : (via === 'v1' ? previewV1(boletas, last10) : textoRespaldo(boletas, last10));
 
     if (accion === 'previsualizar') {
       return res.status(200).json({
         status: 'ok', encontrado: true, nombre, total: boletas.length,
         modo: usarPlantilla ? 'plantilla' : 'texto',
-        plantillaEstado: estTpl, puedeCrear: !estTpl, mensaje,
+        plantillaEstado: estV2, puedeCrear: !estV2, mensaje,
       });
     }
 
     if (accion === 'enviar') {
       let env;
-      if (usarPlantilla) {
+      if (via === 'v2') {
         env = await enviarPlantilla(telefono, {
           nombre: TPL_NOMBRE, idioma: TPL_IDIOMA,
-          parametros: [variableBoletas(boletas)], botonUrlParam: last10,
+          parametros: [encabezadoBoleta(boletas), listaUnaLinea(boletas)], botonUrlParam: last10,
+        }, linea_id);
+      } else if (via === 'v1') {
+        env = await enviarPlantilla(telefono, {
+          nombre: TPL_NOMBRE_VIEJA, idioma: TPL_IDIOMA,
+          parametros: [listaUnaLinea(boletas)], botonUrlParam: last10,
         }, linea_id);
       } else {
         env = await enviarTexto(telefono, mensaje, linea_id);
@@ -181,7 +195,7 @@ export default async function handler(req, res) {
       if (!env || !env.ok) return res.status(200).json({ status: 'error', mensaje: (env && env.error) || 'No se pudo enviar.' });
 
       // Texto que se guarda en el historial (legible, con saltos de línea).
-      const textoHistorial = usarPlantilla ? previewPlantilla(boletas, last10) : mensaje;
+      const textoHistorial = via === 'v2' ? previewV2(boletas, last10) : (via === 'v1' ? previewV1(boletas, last10) : mensaje);
       const conversacion_id = await asegurarConv(telefono, linea_id, nombreAsesor);
       const ts = new Date().toISOString();
       await supabaseAdmin.from('mensajes_whatsapp').insert({
