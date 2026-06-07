@@ -94,8 +94,12 @@ Tablas del agente:
   corte a 1.5s), **cancela recordatorios** pendientes cuando el cliente vuelve a escribir, **prende el agente
   por disparador** (`activarPorDisparador`) y captura la cita (`m.context.id → responde_a`).
 - **`enviar.js`** / **`enviar-archivo.js`** (foto/PDF del computador) / **`media.js`** (descarga con token de la línea).
-- **`conversaciones.js`** — lista de chats (filtro sin-respuesta + conteo + etiquetas; acepta `q` y `etiqueta_id`).
-  Le **oculta a Liliana** los chats con `agente_activo=true` si el switch `ocultar_agente_liliana` está activo.
+- **`conversaciones.js`** — lista de chats. Acepta `q` (búsqueda) y **`filtros`** (filtro avanzado del
+  botón "Filtros": `{ modo:'y'|'o', condiciones:[etiqueta | sin_respuesta | recordatorio | creado] }`).
+  TODO el filtrado lo hace la base con la función **`bandeja_filtrar(...)`** (escala). Le **oculta a
+  Liliana** los chats con `agente_activo=true` si el switch `ocultar_agente_liliana` está activo.
+- **`recordatorios.js`** — solo lectura: recordatorios PENDIENTES de un chat con su motivo (lo usa el
+  botón de relojito de la barra del chat). No confundir con `recordatorios-cron.js` (el reloj que los envía).
 - **`mensajes.js`** — mensajes de un chat (expone `por_agente` desde `raw.agente`).
 - **`cliente.js`** — ficha (boletas/deuda/pagos por boleta; empareja por últimos 10 dígitos; calcula `puede_modificar`).
 - **`buscar-pago.js`** — verifica el comprobante vs transferencias reales (lo usa "verificar pago" y el abono del agente).

@@ -26,6 +26,33 @@
 
 ---
 
+## 2026-06-07 — [WhatsApp] / [Base de datos] — Bandeja: filtro avanzado (Y/O) con función de base de datos
+
+**Qué decidimos:** reemplazar los chips de etiqueta sueltos por un solo botón **"Filtros"**
+(estilo Manychat/ChateaPro) que abre una ventanita donde se arman condiciones combinadas con
+**Y** (todas) u **O** (cualquiera). Condiciones v1: **etiqueta** (una o varias), **sin respuesta**,
+**tiene recordatorio pendiente** y **contacto creado** (últimos N días / antes de / después de una
+fecha). También se agregó un **botón de relojito** en la barra del chat que muestra los
+recordatorios pendientes de ese chat con su motivo (endpoint `recordatorios.js`).
+
+**Por qué:** Mateo necesitaba filtrar combinando criterios (ej. "AGENTE **y** Abonada", o "con
+recordatorio **o** sin respuesta"), cosa que los chips de una sola etiqueta no permitían.
+
+**Piezas:** TODO el filtrado corre EN LA BASE (regla de escala), con la función
+**`bandeja_filtrar(p_linea_id, p_modo, p_etiquetas[], p_sin_respuesta, p_recordatorio,
+p_creado_desde, p_creado_hasta, p_q, p_ocultar_agente, p_limite)`** (`security definer`, devuelve
+`setof conversaciones_whatsapp`, `EXECUTE` a `anon/authenticated/service_role`). `conversaciones.js`
+traduce las condiciones del frontend a esos parámetros y llama la función por RPC; ya NO arma la
+query a mano. El frontend manda `{ filtros:{ modo, condiciones[] } }`. Verificado con datos reales:
+AGENTE∧Abonada=12, recordatorio∨sin_respuesta=18, etc. Publicado a `main`.
+
+**Cuidado / qué NO hacer:** la función es de SOLO LECTURA (no cambia datos). Si se le agregan
+columnas/condiciones nuevas, recordar recargar el esquema (ver lección de la caché de PostgREST) y
+mantener el `grant execute` a `anon` (el endpoint llama con la llave anónima). El límite es 300
+chats por carga (como antes); a escala real conviene paginar.
+
+---
+
 ## 2026-06-07 — [WhatsApp] — Plantilla de seguimiento de Liliana con DOS variables (nombre + motivo)
 
 **Qué decidimos:** crear la plantilla `seguimiento_los_plata` (la que reabre conversaciones de
