@@ -153,7 +153,9 @@ mensajes), `enviar.js`, `enviar-archivo.js`, `enviar-boleta.js`, `mensajes.js`,
 dólares), `disparadores.js` (palabras que prenden el agente),
 `qa-agente-cron.js` (supervisor automático — **PAUSADO** desde 2026-06-06, ver
 bitácora; código intacto pero no corre),
-`recordatorios-cron.js` (recordatorios del agente cada minuto),
+`recordatorios-cron.js` (recordatorios del agente cada minuto; **2026-06-06**: también a
+DÍAS — al vencer, si la ventana de 24h ya se cerró, manda la plantilla `seguimiento_los_plata`
+para reabrir la conversación; si sigue abierta, texto normal. Ver bitácora),
 `abono-reparto.js`, `buscar-pago.js`.
 
 **Candados anti-duplicado del agente (funciones EN LA BASE DE DATOS):**
@@ -232,8 +234,9 @@ audios de videos con Whisper).
 Cosas que *parecen* viejas o duplicadas. **No están confirmadas** — hay que
 revisarlas una por una con Mateo antes de tocar nada:
 
-- `home-sorteo-apartamento.html` — parece de una rifa vieja (apartamento, 2024).
-  Probable residuo, pero confirmar antes de borrar.
+- ~~`home-sorteo-apartamento.html`~~ — **RESUELTO (2026-06-06): NO era residuo.** Era la
+  página del sorteo final en vivo; se rediseñó y se renombró a `sorteo-en-vivo.html`
+  (ver bitácora). NO restaurar la vieja.
 - `vendedores.html` — panel de métricas de vendedor que podría estar duplicado
   con `rendimiento.html`. Confirmar si todavía se usa.
 
