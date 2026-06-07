@@ -165,18 +165,29 @@ export default async function handler(req, res) {
     const nombre = (boletas[0].clientes && boletas[0].clientes.nombre) || '';
     boletas.sort((a, b) => Number(a.numero) - Number(b.numero));
 
-    // Preferimos la v2 (encabezado variable); si aún no está aprobada, usamos la vieja; si no, texto.
+    // ¿La ventana de 24h está abierta? (el cliente escribió hace menos de 24h). Si SÍ, mandamos
+    // TEXTO normal: gratis, al instante y sin saludo. Solo si ya se cerró usamos una PLANTILLA
+    // (que cuesta y sirve para reabrir la conversación).
+    const { data: convRow } = await supabase
+      .from('conversaciones_whatsapp').select('ventana_vence_at')
+      .eq('telefono', telefono).eq('linea_id', linea_id).maybeSingle();
+    const ventanaAbierta = !!(convRow && convRow.ventana_vence_at && new Date(convRow.ventana_vence_at).getTime() > Date.now());
+
     const estV2 = await estadoPlantilla(linea_id, TPL_NOMBRE);
     const estV1 = await estadoPlantilla(linea_id, TPL_NOMBRE_VIEJA);
-    const via = estV2 === 'aprobada' ? 'v2' : (estV1 === 'aprobada' ? 'v1' : 'texto');
-    const usarPlantilla = via !== 'texto';
+    let via;
+    if (ventanaAbierta) via = 'texto';                  // dentro de 24h → texto libre (gratis, sin saludo)
+    else if (estV2 === 'aprobada') via = 'v2';          // fuera de 24h → plantilla v2 (reabre)
+    else if (estV1 === 'aprobada') via = 'v1';          // respaldo mientras Meta aprueba la v2
+    else via = 'texto';                                 // sin plantilla: intento texto (fuera de 24h puede fallar)
+    const usarPlantilla = via === 'v2' || via === 'v1';
     const mensaje = via === 'v2' ? previewV2(boletas, last10) : (via === 'v1' ? previewV1(boletas, last10) : textoRespaldo(boletas, last10));
 
     if (accion === 'previsualizar') {
       return res.status(200).json({
         status: 'ok', encontrado: true, nombre, total: boletas.length,
         modo: usarPlantilla ? 'plantilla' : 'texto',
-        plantillaEstado: estV2, puedeCrear: !estV2, mensaje,
+        ventanaAbierta, plantillaEstado: estV2, puedeCrear: !ventanaAbierta && !estV2, mensaje,
       });
     }
 

@@ -2898,18 +2898,24 @@ async function abrirBoleta(){
     return;
   }
   const esPlantilla = r.modo === 'plantilla';
-  const badge = esPlantilla
-    ? '<span class="estado-pill estado-aprobada">Plantilla bonita</span>'
-    : '<span class="estado-pill estado-borrador">Texto normal</span>';
-  let extra = '';
-  if(!esPlantilla){
-    if(r.plantillaEstado === 'pendiente'){
-      extra = '<div class="df-aviso">✨ La plantilla bonita está en revisión de Meta. Mientras la aprueban, la boleta se envía como texto; apenas la aprueben se usará sola.</div>';
-    } else if(r.plantillaEstado === 'rechazada'){
-      extra = '<div class="df-aviso">La plantilla bonita fue rechazada por Meta. Revísala en Difusiones → Plantillas. Por ahora se envía como texto.</div>';
-    } else if(r.puedeCrear){
-      extra = `<div class="df-aviso">💡 También puedes enviarla como <b>plantilla bonita</b> (encabezado, pie y botón "Ver mi boleta"). Se crea una sola vez y Meta la aprueba en minutos u horas.<br>
-        <button class="df-ghost" style="margin-top:8px" onclick="crearPlantillaBoleta()">✨ Crear la plantilla bonita</button></div>`;
+  let badge, extra = '';
+  if(r.ventanaAbierta){
+    // El cliente escribió hace poco: se manda como mensaje normal (gratis, al instante, sin saludo).
+    badge = '<span class="estado-pill estado-aprobada">Mensaje normal · gratis</span>';
+    extra = '<div class="df-aviso">😊 El cliente escribió hace poco, así que la boleta se envía como <b>mensaje normal</b> (gratis y al instante). La plantilla solo se usa si pasan 24 horas sin que el cliente escriba.</div>';
+  } else {
+    badge = esPlantilla
+      ? '<span class="estado-pill estado-aprobada">Plantilla</span>'
+      : '<span class="estado-pill estado-borrador">Texto normal</span>';
+    if(!esPlantilla){
+      if(r.plantillaEstado === 'pendiente'){
+        extra = '<div class="df-aviso">✨ La plantilla está en revisión de Meta. Mientras la aprueban, la boleta se envía como texto; apenas la aprueben se usará sola cuando haga falta (pasadas 24h).</div>';
+      } else if(r.plantillaEstado === 'rechazada'){
+        extra = '<div class="df-aviso">La plantilla fue rechazada por Meta. Revísala en Difusiones → Plantillas. Por ahora se envía como texto.</div>';
+      } else if(r.puedeCrear){
+        extra = `<div class="df-aviso">💡 Como ya pasaron 24h sin que el cliente escriba, conviene una <b>plantilla</b> (encabezado, pie y botón "Ver mi boleta") para poder reabrir. Se crea una sola vez y Meta la aprueba en minutos u horas.<br>
+          <button class="df-ghost" style="margin-top:8px" onclick="crearPlantillaBoleta()">✨ Crear la plantilla</button></div>`;
+      }
     }
   }
   abrirModal(`
