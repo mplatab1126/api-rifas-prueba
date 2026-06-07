@@ -19,6 +19,13 @@
   línea VARIABLE según estado: separada / participando / pagada). Ya creada el 7-jun; mientras Meta la
   aprueba, el botón de la bandeja sigue enviando la vieja `boleta_cliente` (sin caídas). Cuando pase a
   "aprobada", el código la usa sola. La boleta que manda **Liliana** ya quedó corregida. Ver bitácora.
+- [ ] (2026-06-07) **Bandeja: ver los mensajes como los ve el CLIENTE.** Hoy la bandeja no muestra
+  algunos mensajes igual que como le llegan al cliente. Ejemplo claro: el mensaje de la boleta
+  (plantilla) lleva un **botón** ("Ver mi boleta") que el asesor NO ve en la bandeja. Mostrar los
+  mensajes salientes tal cual los recibe el cliente (botones de plantilla, encabezado/pie, etc.).
+- [ ] (2026-06-07) **Bandeja: mostrar FECHA + HORA en los mensajes del chat.** Hoy un mensaje de HOY
+  muestra la hora (ej. 3:53 a. m.), pero uno de días anteriores muestra SOLO la fecha (ej. "6/6") sin
+  la hora, y queda confuso. Que los mensajes de días pasados muestren también la hora (fecha + hora).
 - [ ] (2026-06-07) **Liliana: que pueda ELEGIR un número al azar si el cliente se lo pide.** Hoy,
   tras mostrarle los números disponibles, si el cliente le dice "no, escógelo tú / dame tu suerte /
   elige cualquiera", Liliana se niega. Debería poder tomar un número LIBRE al azar (de los
