@@ -26,6 +26,28 @@
 
 ---
 
+## 2026-06-07 — [WhatsApp] / [Base de datos] — Etiquetas: orden propio, clic en toda la fila, ancho ajustado
+
+**Qué decidimos:** las etiquetas ahora tienen un **orden** que elige Mateo (arrastrando ⠿ en la
+ventana de Etiquetas) y ese orden se respeta **en todos lados** (la ventana, el desplegable del
+filtro y las píldoras de cada chat). Además, en la ventana de Etiquetas se **marca tocando toda la
+fila** (no solo la casilla) y la píldora de color **se ajusta al nombre** (antes ocupaba todo el
+ancho de la fila, se veía enorme).
+
+**Por qué:** Mateo quería un orden estable y consistente, una selección más cómoda y una vista más
+limpia/minimalista.
+
+**Piezas:** columna nueva `etiquetas.orden` (int, rellenada con el orden por `created_at`).
+`etiquetas.js`: `listar` ordena por `orden`; al `crear` queda de última; acción nueva `reordenar`
+(`{ ids:[...] }` → `orden` = posición). `conversaciones.js` ordena las píldoras de cada chat por
+`orden`. Frontend: la ventana de Etiquetas se reordena con arrastrar (HTML5 drag), guarda con
+`reordenar` y refresca el filtro y la lista. Verificado: `listar` devuelve por orden, `reordenar` ok.
+
+**Cuidado / qué NO hacer:** el arrastre usa drag-and-drop (pensado para computador); en celular se
+usa el orden que se haya dejado desde el computador. El orden es metadato (no toca dinero).
+
+---
+
 ## 2026-06-07 — [WhatsApp] / [Base de datos] — Bandeja: filtro avanzado (Y/O) con función de base de datos
 
 **Qué decidimos:** reemplazar los chips de etiqueta sueltos por un solo botón **"Filtros"**

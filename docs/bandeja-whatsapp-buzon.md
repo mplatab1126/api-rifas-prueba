@@ -72,7 +72,8 @@ Tablas del buzón:
 - **`mensajes_whatsapp`**: `conversacion_id`, `telefono`, `linea_id`, `direccion` (entrante/saliente/**nota**),
   `tipo`, `texto`, `media_id`, `media_url`, `wa_message_id` (único, anti-duplicado), `estado_envio`,
   `timestamp_wa`, `responde_a` (cita), `raw` (incluye `agente:true` en lo que envía Liliana).
-- **`etiquetas`** `(id, linea_id, nombre, icono, color)` y **`conversacion_etiquetas`** `(conversacion_id, etiqueta_id)`.
+- **`etiquetas`** `(id, linea_id, nombre, icono, color, orden)` y **`conversacion_etiquetas`** `(conversacion_id, etiqueta_id)`.
+  `orden` = el orden que eligió Mateo (arrastrando en la ventana de Etiquetas); se respeta en la ventana, el filtro y las píldoras.
 - **`plantillas_whatsapp`** y **`difusiones`** + **`difusion_destinatarios`** (cola de envío, escala).
 - Columna **`correo`** en `clientes` y `boletas`.
 
