@@ -26,6 +26,21 @@
 
 ---
 
+## 2026-06-07 — [WhatsApp] — Liliana: no repetir lo ya dicho + respuestas un poco más cortas
+
+**Qué decidimos:** Liliana no debe **repetir** información que ya dio en la misma conversación (ej.
+el precio de la boleta o que se separa con $20.000, que repetía en el contacto inicial y otra vez al
+explicar premios). Y bajar un POCO el largo: ~30-35 palabras en promedio (antes "máximo 40"), tope
+~40 y hasta ~70 al explicar premios por primera vez. Reducción **leve**, no drástica.
+
+**Por qué:** Mateo notó redundancia (repetía precio/condiciones en mensajes seguidos) y quería
+respuestas un poquito más resumidas, sin volverse cortante.
+
+**Piezas:** edición del MANUAL (`agente_config.prompt`, línea `1128258647034751`), sección
+"# CÓMO ESCRIBES", por SQL con `replace()` puntual. Efecto inmediato.
+
+---
+
 ## 2026-06-07 — [Pagos] / [WhatsApp] — Verificación de pagos con reintentos (CONSTRUIDA)
 
 **Qué hicimos:** cuando el cliente manda el comprobante y el pago aún NO aparece (el asesor lo sube
