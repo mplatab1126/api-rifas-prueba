@@ -449,13 +449,28 @@ async function ejecutarHerramienta(nombre, input, conv) {
 
   if (nombre === 'enviar_boleta') {
     const last10 = String(conv.telefono).replace(/\D/g, '').slice(-10);
-    const { data: boletas } = await supabase.from('boletas').select('numero, saldo_restante').like('telefono_cliente', '%' + last10);
+    const { data: boletas } = await supabase.from('boletas').select('numero, saldo_restante, total_abonado').like('telefono_cliente', '%' + last10);
     if (!boletas || !boletas.length) return 'El cliente todavía no tiene ninguna boleta apartada. Primero aparta su número con apartar_numero.';
     boletas.sort((a, b) => Number(a.numero) - Number(b.numero));
     const una = boletas.length === 1;
     const lista = boletas.map(b => `*${b.numero}*  ·  ${Number(b.saldo_restante || 0) <= 0 ? '✅ Pagada' : ('te falta abonar $' + Number(b.saldo_restante || 0).toLocaleString('es-CO'))}`).join('\n');
     const enlace = `${BASE_URL}/boleta?telefono=${last10}`;
-    const texto = `🎉 ¡Quedaste participando!\n\n${una ? 'Esta es tu boleta' : 'Estas son tus boletas'} para la rifa de *Los Plata*:\n\n${lista}\n\n👉 ${una ? 'Consulta tu boleta aquí' : 'Consulta tus boletas aquí'}:\n${enlace}\n\n¡Te deseamos mucha suerte! 🍀`;
+    // El encabezado refleja la realidad: con $0 abonado la boleta SOLO está separada (aún NO
+    // participa); con cualquier abono ya participa; pagada al 100% es lo máximo.
+    const totalAbonado = boletas.reduce((s, b) => s + Number(b.total_abonado || 0), 0);
+    const todasPagadas = boletas.every(b => Number(b.saldo_restante || 0) <= 0);
+    let encabezado, cola;
+    if (todasPagadas) {
+      encabezado = una ? '✅ ¡Tu boleta está paga al 100%! Ya estás participando 🎉' : '✅ ¡Tus boletas están pagas al 100%! Ya estás participando 🎉';
+      cola = '\n\n¡Te deseamos mucha suerte! 🍀';
+    } else if (totalAbonado > 0) {
+      encabezado = una ? '🎉 ¡Ya estás participando con tu boleta!' : '🎉 ¡Ya estás participando con tus boletas!';
+      cola = '\n\nPuedes seguir abonando hasta completar el valor. ¡Mucha suerte! 🍀';
+    } else {
+      encabezado = una ? '📝 ¡Tu boleta quedó separada!' : '📝 ¡Tus boletas quedaron separadas!';
+      cola = '\n\nPara *entrar al sorteo* haz tu primer abono y mándame la foto del comprobante 😊';
+    }
+    const texto = `${encabezado}\n\n${una ? 'Esta es tu boleta' : 'Estas son tus boletas'} para la rifa de *Los Plata*:\n\n${lista}\n\n👉 ${una ? 'Consulta tu boleta aquí' : 'Consulta tus boletas aquí'}:\n${enlace}${cola}`;
     const env = await enviarTexto(conv.telefono, texto, conv.linea_id);
     if (env && env.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto, wa_message_id: env.wa_message_id });
     await nota(conv, 'Envié la boleta digital al cliente.');
