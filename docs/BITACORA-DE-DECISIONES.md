@@ -26,6 +26,23 @@
 
 ---
 
+## 2026-06-07 — [WhatsApp] — Liliana: SIEMPRE envía la boleta tras apartar (red de seguridad)
+
+**Qué decidimos:** cuando Liliana aparta un número, el cliente DEBE recibir su boleta (con el enlace).
+Antes dependía de que la IA llamara `enviar_boleta`, y a veces no lo hacía (boletas apartadas sin
+enviar el link). Ahora hay una **red de seguridad determinística**: si en un turno se apartó número(s)
+pero NO se envió la boleta, el código la envía solo al cerrar el turno.
+
+**Por qué:** Mateo vio varios chats con la boleta apartada pero sin enviarle el link al cliente.
+
+**Piezas:** en `agente-responder.js`, el bucle marca `apartoNumero`/`envioBoleta` por turno; al
+terminar, si apartó y no envió (y el agente sigue activo, no apagado), llama `enviar_boleta` una vez
+(muestra TODAS las boletas). Además se reforzó el resultado de `apartar_numero` para que la IA la
+mande ella misma en el mismo turno (así la red casi nunca actúa y no se duplica el envío). Como el
+envío de la boleta es texto libre dentro de las 24h, es gratis.
+
+---
+
 ## 2026-06-07 — [WhatsApp] — Boleta: el encabezado refleja el estado de pago (no siempre "Quedaste participando")
 
 **Qué decidimos:** el primer renglón del mensaje de la boleta debe reflejar la realidad. Regla:
