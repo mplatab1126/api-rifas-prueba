@@ -113,14 +113,18 @@
     #btnLimpiarFiltros:hover { color: var(--ink); }
     /* Ventanita de filtros */
     .fmodo { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--ink); margin-bottom: 14px; flex-wrap: wrap; }
-    .fcond { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .fcond { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
     .fcond select, .fcond input, .fmodo select { font-family: inherit; font-size: 0.82rem; padding: 7px 9px; border: 1px solid var(--gray-200); border-radius: 9px; background: #fff; color: var(--ink); }
     .fcond .fdel { margin-left: auto; background: none; border: none; color: var(--ink-mute); cursor: pointer; font-size: 1.1rem; padding: 2px 6px; border-radius: 6px; line-height: 1; }
     .fcond .fdel:hover { background: #fdecec; color: var(--danger); }
-    .fchips { display: flex; flex-wrap: wrap; gap: 6px; flex-basis: 100%; margin-top: 2px; }
-    .fchip { padding: 5px 10px; border: 1px solid var(--gray-200); background: #fff; border-radius: 100px; font-family: inherit; font-size: 0.76rem; color: var(--ink-mute); cursor: pointer; }
-    .fchip:hover { border-color: var(--gray-300); }
-    .fchip.on { background: var(--mint); border-color: var(--mint); color: var(--ink); font-weight: 600; }
+    .fdrop > summary { list-style: none; cursor: pointer; padding: 7px 10px; border: 1px solid var(--gray-200); border-radius: 9px; background: #fff; font-size: 0.82rem; color: var(--ink); display: flex; align-items: center; gap: 10px; min-width: 150px; justify-content: space-between; }
+    .fdrop > summary::-webkit-details-marker { display: none; }
+    .fdrop > summary::after { content: '▾'; color: var(--ink-mute); font-size: 0.7rem; }
+    .fdrop[open] > summary::after { content: '▴'; }
+    .fdrop-list { margin-top: 6px; border: 1px solid var(--gray-200); border-radius: 9px; padding: 4px; max-height: 190px; overflow-y: auto; background: #fff; min-width: 185px; }
+    .fdrop-item { display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 7px; cursor: pointer; font-size: 0.82rem; color: var(--ink); }
+    .fdrop-item:hover { background: var(--cream-100); }
+    .fdrop-item input { width: 15px; height: 15px; accent-color: var(--mint); cursor: pointer; flex: none; }
     .fadd { background: none; border: 1px dashed var(--gray-300); border-radius: 10px; padding: 9px; width: 100%; font-family: inherit; font-size: 0.83rem; color: var(--ink-mute); cursor: pointer; margin: 4px 0 14px; }
     .fadd:hover { color: var(--ink); border-color: var(--ink-mute); }
     .facciones { display: flex; gap: 10px; }
@@ -1085,6 +1089,12 @@ const FTIPOS = [
   { v:'recordatorio', t:'Recordatorio' },
   { v:'creado', t:'Contacto creado' },
 ];
+// Texto que resume cuántas etiquetas están elegidas en el desplegable.
+function resumenEtiquetas(sel){
+  if(!sel || !sel.length) return 'Elegir etiquetas';
+  if(sel.length === 1){ const e = etiquetasFiltro.find(x => x.id === sel[0]); return e ? ((e.icono?e.icono+' ':'')+e.nombre) : '1 etiqueta'; }
+  return sel.length + ' etiquetas';
+}
 function filaCondicion(c, i){
   const tipoSel = `<select onchange="filtroSetTipo(${i}, this.value)">${
     FTIPOS.map(o => `<option value="${o.v}" ${c.tipo===o.v?'selected':''}>${o.t}</option>`).join('')
@@ -1098,11 +1108,13 @@ function filaCondicion(c, i){
       <option value="todas" ${op==='todas'?'selected':''}>tiene todas de</option>
       <option value="no_tiene" ${op==='no_tiene'?'selected':''}>no tiene ninguna de</option>
     </select>`;
-    const chips = etiquetasFiltro.length
-      ? `<div class="fchips">${etiquetasFiltro.map(e =>
-          `<button type="button" class="fchip ${sel.includes(e.id)?'on':''}" onclick="filtroToggleEtiq(${i}, '${e.id}')">${(e.icono?esc(e.icono)+' ':'')+esc(e.nombre)}</button>`).join('')}</div>`
+    const dropdown = etiquetasFiltro.length
+      ? `<details class="fdrop"><summary id="fdsum-${i}">${esc(resumenEtiquetas(sel))}</summary>
+          <div class="fdrop-list">${etiquetasFiltro.map(e =>
+            `<label class="fdrop-item"><input type="checkbox" ${sel.includes(e.id)?'checked':''} onchange="filtroToggleEtiq(${i}, '${e.id}', this.checked)"><span>${(e.icono?esc(e.icono)+' ':'')+esc(e.nombre)}</span></label>`).join('')}</div>
+        </details>`
       : `<span style="color:var(--ink-mute);font-size:0.8rem">No hay etiquetas en esta línea</span>`;
-    valor = opSel + chips;
+    valor = opSel + dropdown;
   } else if(c.tipo === 'creado'){
     const op = c.op || 'ultimos_dias';
     const opSel = `<select onchange="filtroSetOp(${i}, this.value)">
@@ -1159,11 +1171,12 @@ window.filtroSetTipo = function(i, tipo){
   renderFiltros();
 };
 window.filtroSetEtiqOp = function(i, v){ filtroDraft.condiciones[i].op = (v==='no_tiene'||v==='todas')?v:'tiene'; };
-window.filtroToggleEtiq = function(i, id){
+window.filtroToggleEtiq = function(i, id, checked){
   const c = filtroDraft.condiciones[i]; c.etiquetas = c.etiquetas || [];
   const k = c.etiquetas.indexOf(id);
-  if(k >= 0) c.etiquetas.splice(k, 1); else c.etiquetas.push(id);
-  renderFiltros();
+  if(checked){ if(k < 0) c.etiquetas.push(id); } else { if(k >= 0) c.etiquetas.splice(k, 1); }
+  // Actualizamos solo el texto del resumen (sin redibujar, para no cerrar la lista).
+  const sum = document.getElementById('fdsum-' + i); if(sum) sum.textContent = resumenEtiquetas(c.etiquetas);
 };
 window.filtroSetRecOp = function(i, v){ filtroDraft.condiciones[i].op = (v==='no_tiene')?'no_tiene':'tiene'; };
 window.filtroSetRecEstado = function(i, v){ filtroDraft.condiciones[i].estado = (v==='enviado')?'enviado':'pendiente'; };
