@@ -444,7 +444,7 @@ async function ejecutarHerramienta(nombre, input, conv) {
     const d = await llamarApi('/api/rifa/reservar', cuerpo);
     if (!d.exito) { await nota(conv, 'Intenté apartar el ' + num + ' pero no se pudo: ' + (d.error || 'error')); return 'No se pudo apartar: ' + (d.error || 'error') + '. Cuéntaselo al cliente y ofrécele otra opción.'; }
     await nota(conv, `Aparté el número ${num} a nombre de ${nom} ${ape} (${ciu}).`);
-    return `Listo: el número ${num} quedó apartado a nombre de ${nom} ${ape}. Total por pagar: $${Number(d.total || 0).toLocaleString('es-CO')}. Si el cliente quería MÁS números, apártalos PRIMERO; cuando ya estén TODOS apartados, envía la boleta UNA sola vez con enviar_boleta (esa ya muestra TODAS sus boletas en un mensaje). NO envíes la boleta después de cada número.`;
+    return `Listo: el número ${num} quedó apartado a nombre de ${nom} ${ape}. Total por pagar: $${Number(d.total || 0).toLocaleString('es-CO')}. AHORA, en este MISMO turno, envíale la boleta con enviar_boleta — es OBLIGATORIO: el cliente SIEMPRE debe recibir su boleta con el enlace (esa herramienta muestra TODAS sus boletas en un solo mensaje). Si el cliente quería MÁS números, apártalos PRIMERO y recién entonces envía la boleta UNA sola vez; NO la envíes después de cada número.`;
   }
 
   if (nombre === 'enviar_boleta') {
@@ -1030,6 +1030,8 @@ export default async function handler(req, res) {
 
     // 5) Bucle de razonamiento + herramientas.
     let apagado = false;
+    let apartoNumero = false;   // ¿se apartó algún número en este turno?
+    let envioBoleta = false;    // ¿se envió la boleta en este turno?
     for (let iter = 0; iter < MAX_ITER; iter++) {
       // Botón de pánico a mitad de la respuesta: si apagaron el agente en este chat, parar ya
       // (no mandar más mensajes ni ejecutar más acciones).
@@ -1071,6 +1073,8 @@ export default async function handler(req, res) {
         try { out = await ejecutarHerramienta(tu.name, tu.input || {}, conv); }
         catch (e) { out = 'Error ejecutando la herramienta: ' + e.message; }
         if (typeof out === 'string' && out.startsWith('AGENTE_APAGADO')) apagado = true;
+        if (tu.name === 'apartar_numero' && typeof out === 'string' && out.startsWith('Listo: el número')) apartoNumero = true;
+        if (tu.name === 'enviar_boleta') envioBoleta = true;
         if (tu.name === 'enviar_contacto_inicial') cerrarSinTexto = true;
         results.push({ type: 'tool_result', tool_use_id: tu.id, content: out });
       }
@@ -1086,6 +1090,12 @@ export default async function handler(req, res) {
         if (!d2.error) { await registrarUso(conv, modelo, d2.usage); for (const b of (d2.content || [])) if (b.type === 'text' && b.text?.trim()) await decir(conv, b.text.trim()); }
         break;
       }
+    }
+
+    // Red de seguridad: si en este turno se apartó boleta(s) pero NO se envió la boleta, se envía
+    // sola (el cliente SIEMPRE debe recibir su boleta con el enlace). enviar_boleta muestra TODAS.
+    if (apartoNumero && !envioBoleta && !apagado && (await sigueActivo(conv.id))) {
+      try { await ejecutarHerramienta('enviar_boleta', {}, conv); } catch (_) {}
     }
 
     await soltarLock(conv);
