@@ -56,6 +56,11 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-07) **Etiquetas: nuevo menú de gestión** (izquierda) para crear / ordenar (arrastrar) /
+  eliminar. El ícono de etiqueta del chat ahora SOLO marca/desmarca. Acceso directo **"Sin respuesta"**
+  junto a "Filtros" (prende/apaga con un clic, sincronizado con el filtro avanzado).
+- [x] (2026-06-07) **Liliana: no repetir lo ya dicho + mensajes un poco más cortos en promedio** (pero
+  puede alargarse si necesita explicar). Manual ajustado. Ver bitácora.
 - [x] (2026-06-07) **Verificación de pagos con reintentos de Liliana** (TOCA DINERO, aprobado por
   Mateo). Si el pago aún no aparece, Liliana dice que está verificando y el sistema reintenta cada
   ~15 min hasta ~1h: si aparece, abona sola; si no, pasa a asesor. Nunca abona por "misma hora" sola;

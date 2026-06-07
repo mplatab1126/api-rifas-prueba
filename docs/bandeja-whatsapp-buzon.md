@@ -109,6 +109,7 @@ Tablas del agente:
 - **`contactos*.js`**, **`lineas.js`**, **`conectar-linea.js`** (suscribe la WABA), **`etiquetas.js`**,
   **`plantillas.js`**, **`difusiones.js`**, **`respuestas-rapidas.js`**.
 - **Agente**: `agente.js` (cabina, SOLO Mateo), `agente-responder.js` (motor), `recordatorios-cron.js`,
+  `verificar-pagos-cron.js` (**7-jun**: verificación de pagos con reintentos; usa `lib/abono-agente.js`),
   `disparadores.js` (SOLO Mateo), `qa-agente-cron.js` (supervisor). Detalle en §8.
 - **libs**: `lib/whatsapp.js` (resolverLinea, enviarTexto/Imagen/Documento, subir/descargar media…),
   `lib/comprobante.js` (lee comprobante con Claude), `lib/asesores.js` (`esGerencia`, `esMateo`,
@@ -270,6 +271,18 @@ Mide cuánto cuesta la IA que responde (los tokens que devuelve Claude en cada r
   de ese cliente (solo lo ve Mateo). Se muestra en USD (lo que de verdad factura Anthropic) + pesos aproximados de
   referencia (tasa fija `USD_COP` editable en `bandeja-whatsapp.html`).
 - **Pendiente menor**: el costo de Whisper (audios) aún no se registra (es mínimo); la tabla ya tiene la columna `origen`.
+
+### 8.13 Novedades del 7-jun-2026 (Liliana y boleta). Detalle en la bitácora.
+- **Verificación de pagos con reintentos** (TOCA DINERO, aprobado): si el pago no aparece, NO pasa a
+  asesor de una; dice "estoy verificando" y `verificar-pagos-cron.js` reintenta cada ~15 min hasta ~1h.
+  Si aparece (match sólido), abona solo; si no, pasa a asesor. Nunca abona por "misma hora" sola; una
+  transferencia se consume una vez (no duplica). Cola `verificaciones_pago`, lógica en `lib/abono-agente.js`.
+- **Boleta**: dentro de 24h se manda como TEXTO normal (gratis, sin saludo, encabezado según estado de
+  pago: separada / participando / pagada); plantilla solo fuera de 24h (`boleta_cliente_v2`, 1ª línea
+  variable). **Red de seguridad**: si se aparta pero no se envía la boleta, el motor la envía solo.
+- **Manual**: cédula y correo OPCIONALES al apartar (solo nombre/apellido/ciudad obligatorios); la
+  boleta va por WhatsApp (no por correo/web); NO repetir lo ya dicho + mensajes un poco más cortos en
+  promedio (pero puede alargarse si hace falta explicar).
 
 ## 9. Pendientes
 **Agente:**

@@ -12,7 +12,7 @@
 > modifique de forma importante una página o función, **actualiza este archivo**
 > antes de cerrar (la línea correspondiente y, si aplica, la fecha de abajo).
 >
-> Última actualización: 2026-06-06
+> Última actualización: 2026-06-07
 
 ---
 
@@ -110,6 +110,7 @@ Compartidos por varias páginas:
 | `asesores.js` | Permisos: quién es gerencia, quién ve qué línea, quién es independiente. | **Alta** — 20+ funciones. |
 | `telefono.js` | Limpia y normaliza teléfonos (agrega 57, detecta duplicados). | **Alta**. |
 | `comprobante.js` | Lee comprobantes bancarios con IA (monto, referencia, fecha). | **Media**. |
+| `abono-agente.js` | Verifica un comprobante contra los pagos reales y abona si hay match sólido (misma lógica probada). La usan el agente y el cron de reintentos de pago. **2026-06-07.** | **Media**. |
 | `etiquetas.js` | Pone etiquetas a conversaciones de WhatsApp (sin duplicar). | **Media**. |
 | `auth-app.js` | Valida la sesión de la app móvil (token). | **Media**. |
 | `configuracion.js` | Interruptores globales del sistema (encender/apagar funciones). | **Baja**. |
@@ -147,8 +148,12 @@ Compartidos por varias páginas:
 ### WhatsApp — `api/whatsapp/` (la bandeja y el agente IA)
 
 **Bandeja (mensajes):** `recibir.js` (el "timbre": webhook de Meta que recibe
-mensajes), `enviar.js`, `enviar-archivo.js`, `enviar-boleta.js`, `mensajes.js`,
-`conversaciones.js`, `media.js`.
+mensajes), `enviar.js`, `enviar-archivo.js`, `enviar-boleta.js` (**2026-06-07**: manda la boleta
+como TEXTO normal dentro de las 24h —gratis, encabezado según estado de pago— y solo usa plantilla
+fuera de 24h; plantilla `boleta_cliente_v2` con 1ª línea variable), `mensajes.js`,
+`conversaciones.js` (**2026-06-07**: el filtro avanzado de la bandeja corre en la base con la
+función `bandeja_filtrar`), `recordatorios.js` (**2026-06-07**: lee los recordatorios pendientes de
+un chat para mostrarlos en la bandeja), `media.js`.
 
 **Contactos y etiquetas:** `contactos.js`, `contacto-crear.js`,
 `contacto-eliminar.js`, `contactos-importar.js`, `etiquetas.js`, `cliente.js`.
@@ -164,7 +169,16 @@ bitácora; código intacto pero no corre),
 `recordatorios-cron.js` (recordatorios del agente cada minuto; **2026-06-06**: también a
 DÍAS — al vencer, si la ventana de 24h ya se cerró, manda la plantilla `seguimiento_los_plata`
 para reabrir la conversación; si sigue abierta, texto normal. Ver bitácora),
+`verificar-pagos-cron.js` (**2026-06-07**: verificación de pagos con reintentos — cada ~15 min hasta
+~1h reintenta buscar el pago; abona solo si aparece de forma sólida, si no pasa a asesor;
+pg_cron `verificar-pagos-cada-5min`. Ver bitácora),
 `abono-reparto.js`, `buscar-pago.js`.
+
+**Funciones y tablas EN LA BASE (agente/bandeja, 2026-06-07):**
+- Función `bandeja_filtrar(...)` — todo el filtrado avanzado de la bandeja (etiquetas con operador
+  tiene/todas/no tiene, sin respuesta, recordatorio por estado, fecha de creación; combina Y/O).
+- Tabla `verificaciones_pago` — cola de la verificación de pagos con reintentos.
+- Columna `etiquetas.orden` — orden de las etiquetas elegido por Mateo (se respeta en todos lados).
 
 **Candados anti-duplicado del agente (funciones EN LA BASE DE DATOS):**
 `agente_tomar_lock`, `agente_refrescar_lock`, `agente_claim_respuesta`,
