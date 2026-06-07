@@ -27,6 +27,11 @@
   crean varias plantillas (separada / sin dinero / abono / pagada) o UNA sola con una variable que
   diga el estado. Objetivo: que el primer renglón refleje la realidad (no siempre "quedaste
   participando"). Relacionado con la corrección de `boleta_cliente` de arriba.
+- [ ] (2026-06-07) **Liliana: que pueda ELEGIR un número al azar si el cliente se lo pide.** Hoy,
+  tras mostrarle los números disponibles, si el cliente le dice "no, escógelo tú / dame tu suerte /
+  elige cualquiera", Liliana se niega. Debería poder tomar un número LIBRE al azar (de los
+  disponibles reales) y proponérselo/apartárselo. Revisar si se hace con una herramienta nueva o
+  ampliando `consultar_disponibles`/`apartar_numero`, y reforzar el manual para que no se niegue.
 - [ ] (2026-06-06) **Verificar el EFECTO del arreglo de errores de Liliana**: medir en
   los mensajes NUEVOS (de hoy en adelante) que ya NO cuente sábados/semanas, NO diga
   "primer sorteo", NO vosee y NO mencione el Sueldazo. Ver bitácora 2026-06-06.
