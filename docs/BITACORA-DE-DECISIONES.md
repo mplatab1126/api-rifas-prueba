@@ -31,9 +31,11 @@
 **Qué decidimos:** reemplazar los chips de etiqueta sueltos por un solo botón **"Filtros"**
 (estilo Manychat/ChateaPro) que abre una ventanita donde se arman condiciones combinadas con
 **Y** (todas) u **O** (cualquiera). Cada condición tiene su **operador tiene / no tiene**:
-- **etiqueta**: *tiene alguna de* / *no tiene ninguna de* + **varias** etiquetas por condición
-  (chips). Así se expresa el caso de Mateo: "(Pagada **o** Separada **o** Abonada) **y NO** AGENTE"
-  = una condición "tiene alguna de [P,S,A]" + otra "no tiene ninguna de [AGENTE]", modo Y.
+- **etiqueta**: *tiene alguna de* (cualquiera) / *tiene todas de* (todas, obligatorio) /
+  *no tiene ninguna de* (negación) + **varias** etiquetas por condición (chips). Así se expresan
+  casos como "(Pagada **o** Separada **o** Abonada) **y NO** AGENTE" (tiene alguna de [P,S,A] +
+  no tiene ninguna de [AGENTE]) o "AGENTE **obligatorio y** alguna de [P,S,A]" (tiene todas de
+  [AGENTE] + tiene alguna de [P,S,A]), todo en modo Y.
 - **sin respuesta**, **recordatorio** (*tiene/no tiene* + estado *pendiente* o *enviado/exitoso*),
   **contacto creado** (últimos N días / antes / después de una fecha).
 También se agregó un **botón de relojito** en la barra del chat que muestra los recordatorios
