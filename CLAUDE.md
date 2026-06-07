@@ -28,6 +28,20 @@
 - Si vas a borrar o modificar algo importante, pide confirmación primero.
 - Si notas que algo en el sistema podría mejorarse o tiene un riesgo, sugiéremelo aunque no te lo haya pedido.
 
+## Dónde está el código (carpeta de trabajo) — MUY IMPORTANTE
+
+El código vive en **GitHub** (`github.com/mplatab1126/api-rifas-prueba`, rama
+`main`); de ahí Vercel publica el sitio. GitHub es la "nube" del código y
+sincroniza las máquinas de Mateo (Mac y Windows): NO se usa Google Drive para el
+código (Drive corrompe git).
+
+- **Trabajar SIEMPRE desde una copia clonada FUERA de Google Drive.** En el Mac:
+  `~/los-platas-rifas`. En Windows: una carpeta tipo `C:\los-platas-rifas`.
+- Si el chat abrió dentro de una carpeta de Google Drive (`.../Mi unidad/...` o
+  `.../CloudStorage/GoogleDrive-...`), **NO trabajes ni publiques ahí**: clona
+  fresco de GitHub a una carpeta fuera de Drive y trabaja desde esa.
+- Al empezar haz `git pull` (traer lo último); al terminar, publica (ver abajo).
+
 ## Publicar cambios en internet (MUY IMPORTANTE)
 
 Cuando termines un cambio funcional, **publícalo tú mismo sin que Mateo lo pida**. El sitio vive en **Vercel** y sale al aire solo al hacer `push` a la rama `main`. Pasos:
@@ -37,7 +51,7 @@ Cuando termines un cambio funcional, **publícalo tú mismo sin que Mateo lo pid
 3. `git push origin main`. Vercel publica solo en ~1 minuto (dominio `www.losplata.com.co`).
 4. **Verifica que el cambio quedó AL AIRE de verdad** (con `curl` al sitio en vivo, o pidiéndole a Mateo que recargue con Ctrl+Shift+R). No digas "listo" hasta haberlo confirmado en producción.
 
-Si "publicaste pero no se ve", el código casi nunca es el problema. Revisa **PRIMERO** en Vercel si hay un **rollback activo** (Overview → botón "Undo Rollback" / "Promote to Production"): un rollback congela producción aunque todos los despliegues estén en verde. Mateo NO es programador y trabaja desde una sola máquina (Windows): no le pidas que use git ni la terminal; en Vercel solo guíalo a dar el clic que únicamente él puede dar.
+Si "publicaste pero no se ve", el código casi nunca es el problema. Revisa **PRIMERO** en Vercel si hay un **rollback activo** (Overview → botón "Undo Rollback" / "Promote to Production"): un rollback congela producción aunque todos los despliegues estén en verde. Mateo NO es programador y trabaja desde Mac y Windows: no le pidas que use git ni la terminal; en Vercel solo guíalo a dar el clic que únicamente él puede dar.
 
 ## Idioma
 
