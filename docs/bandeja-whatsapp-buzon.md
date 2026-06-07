@@ -45,6 +45,8 @@ contraseña de asesor (`ASESORES_SECRETO`, las mismas del Admin).
   borra todas y libera la transferencia (avisa antes).
 - **Etiquetas** por conversación (ícono+color+nombre). 4 por defecto. **Automáticas de estado de pago**
   (Separada/Abonada/Pagada) vía función `sincronizar_etiquetas_estado()` por pg_cron cada 5 min.
+  Dos lugares separados: el **ícono de etiqueta en el chat** SOLO marca/desmarca etiquetas de ese
+  cliente; **crear / ordenar (arrastrar) / eliminar** etiquetas se hace en el menú izquierdo **"Etiquetas"**.
 - **Contactos**: lista paginada con buscador en servidor, crear e importar CSV (entiende el export de ChateaPro).
 - **Difusiones** (menú Difusiones): **Plantillas** (se crean contra Meta, estado en colores, "Actualizar estados")
   y **Campañas** (asistente: plantilla → audiencia → envío **por lotes** con cola `difusion_destinatarios`,
