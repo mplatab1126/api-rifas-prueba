@@ -188,7 +188,8 @@
     .pl-chat-tip { font-size: 0.76rem; color: var(--ink-mute); margin: 6px 2px 0; line-height: 1.4; }
 
     /* Columna derecha · ficha */
-    #panel { width: 320px; min-width: 320px; background: var(--cream-50); border-left: 1px solid var(--gray-200); overflow-y: auto; display: none; }
+    #panel { width: 320px; min-width: 320px; background: var(--cream-50); border-left: 1px solid var(--gray-200); position: relative; display: none; }
+    #panelBody { height: 100%; overflow-y: auto; }
     .pcard { background: #fff; margin: 14px; border: 1px solid var(--gray-200); border-radius: 14px; padding: 18px; }
     .pavatar { width: 64px; height: 64px; border-radius: 50%; background: var(--cream-100); color: var(--ink-soft); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 600; margin: 0 auto 12px; }
     .pnombre { text-align: center; font-weight: 600; font-size: 1rem; color: var(--ink); }
@@ -307,8 +308,8 @@
     #cerrarFicha { display: none; }
     #btnEtiquetas { background: none; border: none; cursor: pointer; color: var(--ink-mute); padding: 6px; border-radius: 8px; display: flex; }
     #btnEtiquetas:hover { background: var(--cream-100); color: var(--ink); }
-    #btnActualizar { background: none; border: none; cursor: pointer; color: var(--ink-mute); padding: 6px; border-radius: 8px; display: flex; }
-    #btnActualizar:hover { background: var(--cream-100); color: var(--ink); }
+    #btnActualizar { position: absolute; top: 12px; right: 12px; z-index: 22; background: rgba(255,255,255,0.9); border: 1px solid var(--gray-200); cursor: pointer; color: var(--ink-mute); padding: 7px; border-radius: 10px; display: flex; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    #btnActualizar:hover { background: #fff; color: var(--ink); }
     #btnActualizar.cargando svg { animation: girarRefresco 0.8s linear infinite; }
     @keyframes girarRefresco { to { transform: rotate(360deg); } }
     #btnEliminarChat { background: none; border: none; cursor: pointer; color: var(--ink-mute); padding: 6px; border-radius: 8px; display: flex; }
@@ -694,9 +695,6 @@
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             <span class="ficha-dot" title="Este cliente tiene boletas"></span>
           </button>
-          <button id="btnActualizar" title="Actualizar este chat y la ficha del cliente" onclick="actualizarChatActual()">
-            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-          </button>
           <button id="btnEtiquetas" title="Etiquetas" onclick="abrirEtiquetas()">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
           </button>
@@ -732,7 +730,12 @@
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
         <span>Ficha del cliente</span>
       </button>
-      <div id="panel"></div>
+      <div id="panel">
+        <button id="btnActualizar" title="Actualizar este chat y la ficha del cliente" onclick="actualizarChatActual()">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        </button>
+        <div id="panelBody"></div>
+      </div>
     </div><!-- /modChats -->
 
     <!-- MÓDULO: CONTACTOS -->
@@ -1126,7 +1129,7 @@ window.cerrarChat = function(){
   $('app').classList.remove('ficha-abierta');
   $('btnFicha').classList.remove('tiene-boletas');
   $('convReal').style.display = 'none';
-  $('panel').innerHTML = '';
+  $('panelBody').innerHTML = '';
   $('vacio').style.display = 'flex';
   pintarLista();
 };
@@ -1193,7 +1196,7 @@ async function dispararAgenteSiCorresponde(mensajes){
 
 /* ── Ficha del cliente (panel derecho) ── */
 async function cargarFicha(telefono){
-  const p = $('panel');
+  const p = $('panelBody');
   p.innerHTML = '<div class="pcard"><div class="pmuted">Buscando cliente…</div></div>';
   const r = await api('cliente', { telefono });
   if(telefono !== actual) return;
@@ -1252,7 +1255,7 @@ function fichaCostoIA(conv){
   box.className = 'pcard';
   box.id = 'fichaCostoIA';
   box.innerHTML = '<div class="psub">🤖 Costo de IA en este chat</div><div class="pmuted" style="text-align:left;padding:6px 0">Calculando…</div>';
-  $('panel').appendChild(box);
+  $('panelBody').appendChild(box);
   api('agente-costo', { accion:'chat', linea_id: lineaActual, conversacion_id: conv.id }).then(r => {
     if(actual !== tel) return;            // el usuario cambió de chat mientras cargaba
     const el = $('fichaCostoIA'); if(!el) return;
