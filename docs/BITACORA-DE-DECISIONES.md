@@ -26,6 +26,28 @@
 
 ---
 
+## 2026-06-07 — [WhatsApp] — Liliana: cédula y correo OPCIONALES al apartar (solo nombre, apellido y ciudad obligatorios)
+
+**Qué decidimos:** para apartar una boleta, lo ÚNICO obligatorio es **nombre completo, apellido y
+ciudad**. La **cédula** y el **correo** quedan **opcionales**: Liliana los pide UNA vez (sirven para
+la factura electrónica), pero si el cliente no los tiene o no los quiere dar, **aparta la boleta
+igual** sin insistir.
+
+**Por qué:** Liliana estaba exigiendo cédula y correo como si fueran obligatorios y eso frenaba
+ventas (clientes que no quieren dar la cédula). El código nunca los exigió (la herramienta
+`apartar_numero` ya pedía solo `numero, nombre, apellido, ciudad`); la "exigencia" venía del MANUAL.
+
+**Piezas:** se editó el MANUAL (`agente_config.prompt` de la línea `1128258647034751`) por SQL con
+`replace()` puntual en dos bloques ("Para apartar la boleta…" y "3) DATOS:") — efecto inmediato. Y
+se ajustó la descripción de la herramienta `apartar_numero` en `agente-responder.js` para dejar
+explícito que cédula/correo son opcionales. La factura electrónica se sigue emitiendo solo cuando la
+boleta queda pagada al 100%; sin cédula/correo no se podrá emitir, pero la venta no se frena.
+
+**Cuidado / qué NO hacer:** el manual vive en la base (no en el código); se edita por SQL/cabina con
+`replace()` puntual, sin reescribirlo entero.
+
+---
+
 ## 2026-06-07 — [WhatsApp] / [Base de datos] — Etiquetas: orden propio, clic en toda la fila, ancho ajustado
 
 **Qué decidimos:** las etiquetas ahora tienen un **orden** que elige Mateo (arrastrando ⠿ en la
