@@ -30,7 +30,10 @@ const TPL_NOMBRE = 'boleta_cliente_v2';
 const TPL_NOMBRE_VIEJA = 'boleta_cliente';     // respaldo (1 variable, primera línea fija)
 const TPL_IDIOMA = 'es';
 const TPL_HEADER = 'Tu boleta de Los Plata';
+// OJO: Meta NO permite que el cuerpo empiece (ni termine) con una variable, ni dos variables
+// seguidas. Por eso arranca con un saludo fijo y {{1}} y {{2}} van separadas por texto fijo.
 const TPL_BODY =
+  'Hola 👋\n\n' +
   '{{1}}\n\n' +
   'Estas son tus boletas para la rifa de Los Plata:\n\n' +
   '{{2}}\n\n' +
