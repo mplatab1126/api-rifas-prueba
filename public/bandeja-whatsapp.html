@@ -1091,10 +1091,11 @@ function filaCondicion(c, i){
   }</select>`;
   let valor = '';
   if(c.tipo === 'etiqueta'){
-    const op = c.op==='no_tiene'?'no_tiene':'tiene';
+    const op = (c.op==='no_tiene'||c.op==='todas')?c.op:'tiene';
     const sel = c.etiquetas || [];
     const opSel = `<select onchange="filtroSetEtiqOp(${i}, this.value)">
-      <option value="tiene" ${op!=='no_tiene'?'selected':''}>tiene alguna de</option>
+      <option value="tiene" ${op==='tiene'?'selected':''}>tiene alguna de</option>
+      <option value="todas" ${op==='todas'?'selected':''}>tiene todas de</option>
       <option value="no_tiene" ${op==='no_tiene'?'selected':''}>no tiene ninguna de</option>
     </select>`;
     const chips = etiquetasFiltro.length
@@ -1157,7 +1158,7 @@ window.filtroSetTipo = function(i, tipo){
   filtroDraft.condiciones[i] = c;
   renderFiltros();
 };
-window.filtroSetEtiqOp = function(i, v){ filtroDraft.condiciones[i].op = (v==='no_tiene')?'no_tiene':'tiene'; };
+window.filtroSetEtiqOp = function(i, v){ filtroDraft.condiciones[i].op = (v==='no_tiene'||v==='todas')?v:'tiene'; };
 window.filtroToggleEtiq = function(i, id){
   const c = filtroDraft.condiciones[i]; c.etiquetas = c.etiquetas || [];
   const k = c.etiquetas.indexOf(id);

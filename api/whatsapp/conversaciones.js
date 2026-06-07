@@ -36,7 +36,8 @@ function normalizarCondiciones(condiciones) {
         ? c.etiquetas
         : (c.etiqueta_id ? [c.etiqueta_id] : []);
       if (!etiquetas.length) return null;
-      return { tipo: 'etiqueta', op: c.op === 'no_tiene' ? 'no_tiene' : 'tiene', etiquetas };
+      const op = (c.op === 'no_tiene' || c.op === 'todas') ? c.op : 'tiene';
+      return { tipo: 'etiqueta', op, etiquetas };
     }
     if (c.tipo === 'sin_respuesta') {
       return { tipo: 'sin_respuesta', op: c.op === 'no_tiene' ? 'no_tiene' : 'tiene' };
