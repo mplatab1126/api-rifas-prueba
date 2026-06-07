@@ -26,6 +26,29 @@
 
 ---
 
+## 2026-06-07 — [WhatsApp] — Boleta: el encabezado refleja el estado de pago (no siempre "Quedaste participando")
+
+**Qué decidimos:** el primer renglón del mensaje de la boleta debe reflejar la realidad. Regla:
+**$0 abonado = boleta SOLO separada (aún NO participa)**; **cualquier abono = ya participa**;
+**pagada al 100% = lo máximo**. Antes decía siempre "🎉 ¡Quedaste participando!", lo cual era falso
+cuando iba con abonado $0.
+
+**Por qué:** Mateo: con $0 abonado el cliente NO entra a participar; decirle que sí confunde.
+
+**Piezas (dos vías de envío de la boleta):**
+- **Liliana (agente)** — `agente-responder.js`, herramienta `enviar_boleta`: arma el texto libre con un
+  encabezado según el estado (separada / participando / pagada). HECHO y publicado.
+- **Botón "Enviar boleta" de la bandeja** — `enviar-boleta.js`: usa una plantilla de Meta. Como la
+  plantilla aprobada tenía la 1ª línea FIJA, se creó una **`boleta_cliente_v2`** con la 1ª línea
+  VARIABLE ({{1}} = estado, {{2}} = lista de boletas); la vieja `boleta_cliente` queda de RESPALDO
+  hasta que Meta apruebe la v2 (el código prefiere v2 si está aprobada, si no la vieja, si no texto).
+
+**Cuidado / qué NO hacer:** Meta **NO permite que el cuerpo de una plantilla empiece/termine con una
+variable, ni dos variables seguidas** → por eso la v2 arranca con "Hola 👋" fijo y separa {{1}} y
+{{2}} con texto. Mientras Meta aprueba la v2, sigue enviando la vieja (sin caídas).
+
+---
+
 ## 2026-06-07 — [WhatsApp] — Liliana: la boleta se envía por WhatsApp (no por correo ni mandando a la web)
 
 **Qué decidimos:** Liliana debe enviar la **boleta digital por WhatsApp ahí mismo** (con su enlace).

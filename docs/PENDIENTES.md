@@ -15,14 +15,10 @@
 
 ## Tareas pendientes
 
-- [ ] (2026-06-07) **Corregir la plantilla de enviar boleta (`boleta_cliente`)**: su primera línea
-  SIEMPRE dice "🎉 ¡Quedaste participando!", pero a veces la boleta se envía con **abonado $0**
-  (solo separada, falta pagar todo). En ese caso "quedaste participando" está mal. Hay que ajustar
-  el mensaje según el estado de pago. Va junto con el punto de abajo.
-- [ ] (2026-06-07) **Plantillas/mensaje de boleta según el estado de pago**: decidir con Mateo si se
-  crean varias plantillas (separada / sin dinero / abono / pagada) o UNA sola con una variable que
-  diga el estado. Objetivo: que el primer renglón refleje la realidad (no siempre "quedaste
-  participando"). Relacionado con la corrección de `boleta_cliente` de arriba.
+- [ ] (2026-06-07) **Esperar que Meta apruebe `boleta_cliente_v2`** (la plantilla de boleta con la 1ª
+  línea VARIABLE según estado: separada / participando / pagada). Ya creada el 7-jun; mientras Meta la
+  aprueba, el botón de la bandeja sigue enviando la vieja `boleta_cliente` (sin caídas). Cuando pase a
+  "aprobada", el código la usa sola. La boleta que manda **Liliana** ya quedó corregida. Ver bitácora.
 - [ ] (2026-06-07) **Liliana: que pueda ELEGIR un número al azar si el cliente se lo pide.** Hoy,
   tras mostrarle los números disponibles, si el cliente le dice "no, escógelo tú / dame tu suerte /
   elige cualquiera", Liliana se niega. Debería poder tomar un número LIBRE al azar (de los
