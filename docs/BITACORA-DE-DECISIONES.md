@@ -31,8 +31,8 @@
 **Qué decidimos:** reemplazar los chips de etiqueta sueltos por un solo botón **"Filtros"**
 (estilo Manychat/ChateaPro) que abre una ventanita donde se arman condiciones combinadas con
 **Y** (todas) u **O** (cualquiera). Condiciones v1: **etiqueta** (una o varias), **sin respuesta**,
-**tiene recordatorio pendiente** y **contacto creado** (últimos N días / antes de / después de una
-fecha). También se agregó un **botón de relojito** en la barra del chat que muestra los
+**recordatorio** (eligiendo su estado: *pendiente* o *enviado/exitoso*) y **contacto creado**
+(últimos N días / antes de / después de una fecha). También se agregó un **botón de relojito** en la barra del chat que muestra los
 recordatorios pendientes de ese chat con su motivo (endpoint `recordatorios.js`).
 
 **Por qué:** Mateo necesitaba filtrar combinando criterios (ej. "AGENTE **y** Abonada", o "con
@@ -40,7 +40,7 @@ recordatorio **o** sin respuesta"), cosa que los chips de una sola etiqueta no p
 
 **Piezas:** TODO el filtrado corre EN LA BASE (regla de escala), con la función
 **`bandeja_filtrar(p_linea_id, p_modo, p_etiquetas[], p_sin_respuesta, p_recordatorio,
-p_creado_desde, p_creado_hasta, p_q, p_ocultar_agente, p_limite)`** (`security definer`, devuelve
+p_recordatorio_estado, p_creado_desde, p_creado_hasta, p_q, p_ocultar_agente, p_limite)`** (`security definer`, devuelve
 `setof conversaciones_whatsapp`, `EXECUTE` a `anon/authenticated/service_role`). `conversaciones.js`
 traduce las condiciones del frontend a esos parámetros y llama la función por RPC; ya NO arma la
 query a mano. El frontend manda `{ filtros:{ modo, condiciones[] } }`. Verificado con datos reales:
