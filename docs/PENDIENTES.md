@@ -34,9 +34,6 @@
 - [ ] (2026-06-06) **Verificar el EFECTO del arreglo de errores de Liliana**: medir en
   los mensajes NUEVOS (de hoy en adelante) que ya NO cuente sábados/semanas, NO diga
   "primer sorteo", NO vosee y NO mencione el Sueldazo. Ver bitácora 2026-06-06.
-- [ ] (2026-06-06) Construir la **verificación de pagos con reintentos** de Liliana
-  (cada ~15 min hasta ~1h con la función "buscar pago"; abona sola si aparece, y si
-  no, avisa a un asesor). **TOCA DINERO** — Mateo debe aprobar el diseño primero. Ver bitácora.
 - [ ] (2026-06-06) **Afinar el manual de Liliana** — lo que FALTA aclarar con Mateo:
   ¿cuántas fotos al saludar? (hoy 12+); confirmar el mínimo de $50.000/$60.000; revisar
   el framing de los **$300.000.000**. (Ya HECHO el 6-jun: tutear siempre / no contar
@@ -59,6 +56,12 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-07) **Verificación de pagos con reintentos de Liliana** (TOCA DINERO, aprobado por
+  Mateo). Si el pago aún no aparece, Liliana dice que está verificando y el sistema reintenta cada
+  ~15 min hasta ~1h: si aparece, abona sola; si no, pasa a asesor. Nunca abona por "misma hora" sola;
+  una transferencia se consume una vez (no duplica). Cron `verificar-pagos-cada-5min`. Ver bitácora.
+- [x] (2026-06-07) **Boleta: dentro de 24h se manda como texto normal (gratis, sin saludo)**; la
+  plantilla solo si pasaron +24h. Y **red de seguridad**: si se aparta pero no se envía, se envía sola.
 - [x] (2026-06-07) **Plantilla `seguimiento_los_plata` creada** con DOS variables ({{1}} nombre,
   {{2}} motivo de cara al cliente). El reloj de recordatorios ya pasa el motivo como {{2}}.
   FALTA solo que **Meta la apruebe** (pasa a "aprobada" sola; si la rechaza, ajustar y reenviar).

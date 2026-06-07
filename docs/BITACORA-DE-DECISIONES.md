@@ -26,6 +26,38 @@
 
 ---
 
+## 2026-06-07 — [Pagos] / [WhatsApp] — Verificación de pagos con reintentos (CONSTRUIDA)
+
+**Qué hicimos:** cuando el cliente manda el comprobante y el pago aún NO aparece (el asesor lo sube
+con retraso), Liliana ya NO pasa a un asesor de una: dice que está *verificando el pago* y el sistema
+**reintenta cada ~15 min, hasta ~1 hora**. Si el pago aparece y coincide de forma sólida, **abona
+solo** y le avisa al cliente; si tras ~1h no aparece, recién ahí pasa a un asesor.
+
+**Por qué:** los pagos del banco se suben a mano y con retraso, así que muchas veces el pago no está
+cargado cuando el cliente manda la foto. Antes Liliana se rendía al primer intento (un cliente esperó
+~15h). Mateo aprobó el diseño.
+
+**Piezas:**
+- Tabla **`verificaciones_pago`** (cola: media_id, intentos, max_intentos=4, proximo_intento_at, estado).
+- Lib **`api/lib/abono-agente.js`** (`verificarYAbonar`): MISMA lógica probada (buscar-pago →
+  /api/admin/abono amarrado a la transferencia). La comparten el agente y el cron.
+- **`registrar_abono`** (en `agente-responder.js`): si el pago no aparece o solo coincide por "misma
+  hora", **agenda** la verificación en vez de rendirse.
+- **`verificar-pagos-cron.js`** + **pg_cron jobid 5** (`verificar-pagos-cada-5min`, cada 5 min):
+  reintenta; abona y avisa, o reprograma, o tras agotar intentos pasa a asesor.
+- Manual ajustado (paso "6) PAGO" y "CUÁNDO PASAR A UN ASESOR") para que NO pase a asesor mientras se
+  verifica.
+
+**Seguridad del dinero:** NUNCA abona por "misma hora" sola (referencia / celular en la referencia /
+Bancolombia+minuto sí valen). El abono va por `/api/admin/abono` con `idTransferencia`: una
+transferencia se **consume una sola vez** → los reintentos NO pueden duplicar abonos.
+
+**Cuidado / qué NO hacer:** para APAGAR el reintento:
+`select cron.unschedule('verificar-pagos-cada-5min');`. No bajar la regla de "misma hora". El cron usa
+la contraseña de gerencia (`ASESORES_SECRETO`) — no depende de `SERVICE_ROLE_KEY`.
+
+---
+
 ## 2026-06-07 — [WhatsApp] — Liliana: SIEMPRE envía la boleta tras apartar (red de seguridad)
 
 **Qué decidimos:** cuando Liliana aparta un número, el cliente DEBE recibir su boleta (con el enlace).
