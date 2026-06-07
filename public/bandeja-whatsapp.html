@@ -117,6 +117,10 @@
     .fcond select, .fcond input, .fmodo select { font-family: inherit; font-size: 0.82rem; padding: 7px 9px; border: 1px solid var(--gray-200); border-radius: 9px; background: #fff; color: var(--ink); }
     .fcond .fdel { margin-left: auto; background: none; border: none; color: var(--ink-mute); cursor: pointer; font-size: 1.1rem; padding: 2px 6px; border-radius: 6px; line-height: 1; }
     .fcond .fdel:hover { background: #fdecec; color: var(--danger); }
+    .fchips { display: flex; flex-wrap: wrap; gap: 6px; flex-basis: 100%; margin-top: 2px; }
+    .fchip { padding: 5px 10px; border: 1px solid var(--gray-200); background: #fff; border-radius: 100px; font-family: inherit; font-size: 0.76rem; color: var(--ink-mute); cursor: pointer; }
+    .fchip:hover { border-color: var(--gray-300); }
+    .fchip.on { background: var(--mint); border-color: var(--mint); color: var(--ink); font-weight: 600; }
     .fadd { background: none; border: 1px dashed var(--gray-300); border-radius: 10px; padding: 9px; width: 100%; font-family: inherit; font-size: 0.83rem; color: var(--ink-mute); cursor: pointer; margin: 4px 0 14px; }
     .fadd:hover { color: var(--ink); border-color: var(--ink-mute); }
     .facciones { display: flex; gap: 10px; }
@@ -1087,10 +1091,17 @@ function filaCondicion(c, i){
   }</select>`;
   let valor = '';
   if(c.tipo === 'etiqueta'){
-    valor = etiquetasFiltro.length
-      ? `<select onchange="filtroSetEtiqueta(${i}, this.value)">${etiquetasFiltro.map(e =>
-          `<option value="${e.id}" ${c.etiqueta_id===e.id?'selected':''}>${(e.icono?esc(e.icono)+' ':'')+esc(e.nombre)}</option>`).join('')}</select>`
+    const op = c.op==='no_tiene'?'no_tiene':'tiene';
+    const sel = c.etiquetas || [];
+    const opSel = `<select onchange="filtroSetEtiqOp(${i}, this.value)">
+      <option value="tiene" ${op!=='no_tiene'?'selected':''}>tiene alguna de</option>
+      <option value="no_tiene" ${op==='no_tiene'?'selected':''}>no tiene ninguna de</option>
+    </select>`;
+    const chips = etiquetasFiltro.length
+      ? `<div class="fchips">${etiquetasFiltro.map(e =>
+          `<button type="button" class="fchip ${sel.includes(e.id)?'on':''}" onclick="filtroToggleEtiq(${i}, '${e.id}')">${(e.icono?esc(e.icono)+' ':'')+esc(e.nombre)}</button>`).join('')}</div>`
       : `<span style="color:var(--ink-mute);font-size:0.8rem">No hay etiquetas en esta línea</span>`;
+    valor = opSel + chips;
   } else if(c.tipo === 'creado'){
     const op = c.op || 'ultimos_dias';
     const opSel = `<select onchange="filtroSetOp(${i}, this.value)">
@@ -1103,11 +1114,17 @@ function filaCondicion(c, i){
       : `<input type="date" value="${esc(c.fecha||'')}" onchange="filtroSetFecha(${i}, this.value)">`;
     valor = opSel + ' ' + input;
   } else if(c.tipo === 'recordatorio'){
+    const op = c.op==='no_tiene'?'no_tiene':'tiene';
     const est = c.estado || 'pendiente';
-    valor = `<select onchange="filtroSetRecEstado(${i}, this.value)">
+    const opSel = `<select onchange="filtroSetRecOp(${i}, this.value)">
+      <option value="tiene" ${op!=='no_tiene'?'selected':''}>tiene</option>
+      <option value="no_tiene" ${op==='no_tiene'?'selected':''}>no tiene</option>
+    </select>`;
+    const estSel = `<select onchange="filtroSetRecEstado(${i}, this.value)">
       <option value="pendiente" ${est==='pendiente'?'selected':''}>pendiente</option>
       <option value="enviado" ${est==='enviado'?'selected':''}>enviado (exitoso)</option>
     </select>`;
+    valor = opSel + ' ' + estSel;
   }
   return `<div class="fcond">${tipoSel} ${valor}<button class="fdel" title="Quitar" onclick="filtroDelCond(${i})">&times;</button></div>`;
 }
@@ -1129,18 +1146,25 @@ function renderFiltros(){
 }
 window.filtroSetModo = function(v){ filtroDraft.modo = (v==='o')?'o':'y'; };
 window.filtroAddCond = function(){
-  filtroDraft.condiciones.push({ tipo:'etiqueta', etiqueta_id:(etiquetasFiltro[0]&&etiquetasFiltro[0].id)||'' });
+  filtroDraft.condiciones.push({ tipo:'etiqueta', op:'tiene', etiquetas:[] });
   renderFiltros();
 };
 window.filtroSetTipo = function(i, tipo){
   const c = { tipo };
-  if(tipo==='etiqueta') c.etiqueta_id = (etiquetasFiltro[0]&&etiquetasFiltro[0].id)||'';
-  if(tipo==='recordatorio') c.estado = 'pendiente';
+  if(tipo==='etiqueta'){ c.op = 'tiene'; c.etiquetas = []; }
+  if(tipo==='recordatorio'){ c.op = 'tiene'; c.estado = 'pendiente'; }
   if(tipo==='creado'){ c.op = 'ultimos_dias'; c.dias = 7; }
   filtroDraft.condiciones[i] = c;
   renderFiltros();
 };
-window.filtroSetEtiqueta = function(i, id){ filtroDraft.condiciones[i].etiqueta_id = id; };
+window.filtroSetEtiqOp = function(i, v){ filtroDraft.condiciones[i].op = (v==='no_tiene')?'no_tiene':'tiene'; };
+window.filtroToggleEtiq = function(i, id){
+  const c = filtroDraft.condiciones[i]; c.etiquetas = c.etiquetas || [];
+  const k = c.etiquetas.indexOf(id);
+  if(k >= 0) c.etiquetas.splice(k, 1); else c.etiquetas.push(id);
+  renderFiltros();
+};
+window.filtroSetRecOp = function(i, v){ filtroDraft.condiciones[i].op = (v==='no_tiene')?'no_tiene':'tiene'; };
 window.filtroSetRecEstado = function(i, v){ filtroDraft.condiciones[i].estado = (v==='enviado')?'enviado':'pendiente'; };
 window.filtroSetOp = function(i, op){ filtroDraft.condiciones[i].op = op; if(op==='ultimos_dias' && filtroDraft.condiciones[i].dias==null) filtroDraft.condiciones[i].dias = 7; renderFiltros(); };
 window.filtroSetDias = function(i, v){ filtroDraft.condiciones[i].dias = Math.max(1, Math.min(parseInt(v,10)||1, 3650)); };
@@ -1150,7 +1174,7 @@ window.filtroLimpiarModal = function(){ filtroDraft = { modo:'y', condiciones:[]
 window.aplicarFiltros = function(){
   // Descarta condiciones incompletas (etiqueta sin elegir, fecha vacía).
   const limpias = (filtroDraft.condiciones||[]).filter(c => {
-    if(c.tipo==='etiqueta') return !!c.etiqueta_id;
+    if(c.tipo==='etiqueta') return !!(c.etiquetas && c.etiquetas.length);
     if(c.tipo==='creado') return c.op==='ultimos_dias' ? !!c.dias : !!c.fecha;
     return c.tipo==='sin_respuesta' || c.tipo==='recordatorio';
   });

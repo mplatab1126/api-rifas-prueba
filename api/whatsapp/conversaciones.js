@@ -25,16 +25,34 @@ import { supabase } from '../lib/supabase.js';
 import { esGerencia, puedeVerLinea } from '../lib/asesores.js';
 import { obtenerConfig } from '../lib/configuracion.js';
 
-// Traduce una condición "creado" a un rango de fechas (hora de Colombia, -05:00).
-function rangoCreado(c) {
-  const op = c && c.op;
-  if (op === 'ultimos_dias') {
-    const n = Math.max(1, Math.min(parseInt(c.dias, 10) || 0, 3650));
-    return { desde: new Date(Date.now() - n * 86400000).toISOString(), hasta: null };
-  }
-  if (op === 'antes' && c.fecha) return { desde: null, hasta: `${c.fecha}T23:59:59-05:00` };
-  if (op === 'despues' && c.fecha) return { desde: `${c.fecha}T00:00:00-05:00`, hasta: null };
-  return { desde: null, hasta: null };
+// Normaliza las condiciones del filtro al formato que entiende la función de la base.
+// Cada condición lleva su operador (tiene / no_tiene). Acepta también el formato viejo
+// (etiqueta_id suelto) por si llega una llamada en caché durante un despliegue.
+function normalizarCondiciones(condiciones) {
+  return (Array.isArray(condiciones) ? condiciones : []).map(c => {
+    if (!c || !c.tipo) return null;
+    if (c.tipo === 'etiqueta') {
+      const etiquetas = (Array.isArray(c.etiquetas) && c.etiquetas.length)
+        ? c.etiquetas
+        : (c.etiqueta_id ? [c.etiqueta_id] : []);
+      if (!etiquetas.length) return null;
+      return { tipo: 'etiqueta', op: c.op === 'no_tiene' ? 'no_tiene' : 'tiene', etiquetas };
+    }
+    if (c.tipo === 'sin_respuesta') {
+      return { tipo: 'sin_respuesta', op: c.op === 'no_tiene' ? 'no_tiene' : 'tiene' };
+    }
+    if (c.tipo === 'recordatorio') {
+      return {
+        tipo: 'recordatorio',
+        op: c.op === 'no_tiene' ? 'no_tiene' : 'tiene',
+        estado: c.estado === 'enviado' ? 'enviado' : 'pendiente',
+      };
+    }
+    if (c.tipo === 'creado') {
+      return { tipo: 'creado', op: c.op, dias: c.dias, fecha: c.fecha };
+    }
+    return null;
+  }).filter(Boolean);
 }
 
 export default async function handler(req, res) {
@@ -56,32 +74,12 @@ export default async function handler(req, res) {
     return res.status(200).json({ status: 'ok', conversaciones: [], sinRespuestaTotal: 0 });
   }
 
-  // Traducir las condiciones del filtro avanzado a los parámetros de la función.
-  const condiciones = (filtros && Array.isArray(filtros.condiciones)) ? filtros.condiciones : [];
+  // Condiciones del filtro avanzado (la función de la base las valida y aplica).
   const modo = (filtros && filtros.modo === 'o') ? 'o' : 'y';
-  const etiquetas = [];
-  let pSinResp = false;
-  let pRecordatorio = false;
-  let pRecordatorioEstado = 'pendiente';
-  let creadoDesde = null;
-  let creadoHasta = null;
-  for (const c of condiciones) {
-    if (!c || !c.tipo) continue;
-    if (c.tipo === 'etiqueta' && c.etiqueta_id) etiquetas.push(c.etiqueta_id);
-    else if (c.tipo === 'sin_respuesta') pSinResp = true;
-    else if (c.tipo === 'recordatorio') {
-      pRecordatorio = true;
-      if (c.estado === 'enviado' || c.estado === 'pendiente') pRecordatorioEstado = c.estado;
-    }
-    else if (c.tipo === 'creado') {
-      const { desde, hasta } = rangoCreado(c);
-      if (desde) creadoDesde = desde;
-      if (hasta) creadoHasta = hasta;
-    }
-  }
-  // Compatibilidad con la versión anterior (por si llega una llamada vieja en caché).
-  if (soloSinRespuesta) pSinResp = true;
-  if (etiqueta_id) etiquetas.push(etiqueta_id);
+  const condiciones = normalizarCondiciones(filtros && filtros.condiciones);
+  // Compatibilidad con la versión anterior (parámetros sueltos en caché).
+  if (soloSinRespuesta) condiciones.push({ tipo: 'sin_respuesta', op: 'tiene' });
+  if (etiqueta_id) condiciones.push({ tipo: 'etiqueta', op: 'tiene', etiquetas: [etiqueta_id] });
 
   // Liliana NO ve los chats que el agente está atendiendo (si el interruptor está activo).
   const esLiliana = String(nombre || '').trim().toLowerCase() === 'liliana';
@@ -91,12 +89,7 @@ export default async function handler(req, res) {
   const { data, error } = await supabase.rpc('bandeja_filtrar', {
     p_linea_id: linea_id,
     p_modo: modo,
-    p_etiquetas: etiquetas,
-    p_sin_respuesta: pSinResp,
-    p_recordatorio: pRecordatorio,
-    p_recordatorio_estado: pRecordatorioEstado,
-    p_creado_desde: creadoDesde,
-    p_creado_hasta: creadoHasta,
+    p_condiciones: condiciones,
     p_q: q || null,
     p_ocultar_agente: ocultarAgente,
     p_limite: 300,
