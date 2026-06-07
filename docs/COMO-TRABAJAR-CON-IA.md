@@ -16,11 +16,19 @@ Antes de empezar, lee estos archivos para entender el proyecto:
 - CLAUDE.md (las reglas de la casa).
 - docs/BITACORA-DE-DECISIONES.md (las decisiones importantes y su porqué).
 - docs/PENDIENTES.md (las tareas que quedaron pendientes de otros chats).
-Si vamos a tocar una parte específica, abre también su sección en
-docs/MAPA-DEL-SISTEMA.md. No crees nada nuevo sin revisar antes las piezas
-reutilizables en api/lib/. Si el cambio toca pagos, abonos, permisos o la base de
-datos, explícame qué vas a hacer ANTES de tocar nada. Para terminar, dime si hay
-algo pendiente importante antes de arrancar.
+
+Si vamos a tocar un tema específico, abre TAMBIÉN su documento (NO los leas todos,
+solo el que aplique, para no llenar la memoria):
+- docs/MAPA-DEL-SISTEMA.md — detalle de una página o función puntual.
+- docs/bandeja-whatsapp-buzon.md — si tocamos la bandeja de WhatsApp o la agente Liliana.
+- docs/migracion-manychat.md — si avanzamos la migración de ChateaPro a Manychat.
+- docs/evaluacion-crm-propio.md — si hablamos de salir de ChateaPro / sistema propio.
+- docs/terminos-y-condiciones-la-perla-roja.md — si tocamos términos y condiciones.
+
+No crees nada nuevo sin revisar antes las piezas reutilizables en api/lib/. Si el
+cambio toca pagos, abonos, permisos o la base de datos, explícame qué vas a hacer
+ANTES de tocar nada. Para terminar, dime si hay algo pendiente importante antes de
+arrancar.
 ```
 
 ---
@@ -37,9 +45,12 @@ Voy a cerrar este chat y abrir uno nuevo, así que deja todo en orden:
    docs/MAPA-DEL-SISTEMA.md con la fecha.
 3. Si tomamos una decisión importante (dinero, seguridad o qué quitar), agrégala
    arriba en docs/BITACORA-DE-DECISIONES.md con la fecha, qué y por qué.
-4. Actualiza docs/PENDIENTES.md: anota las tareas que quedaron sin terminar y
+4. Si trabajamos en un tema que tiene su propia bitácora, actualízala también:
+   - docs/bandeja-whatsapp-buzon.md (bandeja de WhatsApp / agente Liliana).
+   - docs/migracion-manychat.md (migración a Manychat).
+5. Actualiza docs/PENDIENTES.md: anota las tareas que quedaron sin terminar y
    borra (o marca como hechas) las que ya completamos.
-5. Confírmame que todo quedó publicado en main y la documentación al día.
+6. Confírmame que todo quedó publicado en main y la documentación al día.
 ```
 
 ---

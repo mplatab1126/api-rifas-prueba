@@ -78,8 +78,13 @@ el hilo de un chat a otro sin perder nada.
 
 **AL EMPEZAR un trabajo:**
 1. Lee `CLAUDE.md`, `docs/BITACORA-DE-DECISIONES.md` y `docs/PENDIENTES.md`.
-2. Si vas a tocar una parte específica, abre su sección en
-   `docs/MAPA-DEL-SISTEMA.md`.
+2. Si vas a tocar un tema específico, abre TAMBIÉN su documento (solo el que
+   aplique, NO todos, para no llenar la memoria):
+   - `docs/MAPA-DEL-SISTEMA.md` — detalle de una página o función.
+   - `docs/bandeja-whatsapp-buzon.md` — bandeja de WhatsApp / agente Liliana.
+   - `docs/migracion-manychat.md` — migración ChateaPro → Manychat.
+   - `docs/evaluacion-crm-propio.md` — decisión de salir de ChateaPro.
+   - `docs/terminos-y-condiciones-la-perla-roja.md` — términos y condiciones.
 3. Antes de crear algo nuevo, revisa las "Piezas reutilizables" (`api/lib/`).
 4. Para cambios delicados (pagos, abonos, permisos, base de datos), explícale a
    Mateo qué vas a hacer ANTES de tocar nada.
@@ -91,9 +96,12 @@ el hilo de un chat a otro sin perder nada.
    `docs/MAPA-DEL-SISTEMA.md` (su línea y la fecha).
 3. Si tomaste una decisión importante, agrégala arriba en
    `docs/BITACORA-DE-DECISIONES.md` (fecha, qué y por qué).
-4. Actualiza `docs/PENDIENTES.md`: anota lo que quedó sin terminar y borra/marca
+4. Si trabajaste un tema con bitácora propia, actualízala también:
+   `docs/bandeja-whatsapp-buzon.md` (bandeja / Liliana) o
+   `docs/migracion-manychat.md` (migración a Manychat).
+5. Actualiza `docs/PENDIENTES.md`: anota lo que quedó sin terminar y borra/marca
    lo ya completado.
-5. Si detectaste código sin usar, anótalo en "Candidatos a revisar" del mapa
+6. Si detectaste código sin usar, anótalo en "Candidatos a revisar" del mapa
    (NO lo borres sin confirmarlo con Mateo).
 
 > No agregues detalles largos a este `CLAUDE.md`; los detalles van en el mapa y
