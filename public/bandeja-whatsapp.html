@@ -109,6 +109,9 @@
     #btnFiltros { padding: 7px 14px; border: 1px solid var(--gray-200); background: #fff; border-radius: 100px; font-family: inherit; font-size: 0.8rem; color: var(--ink-mute); cursor: pointer; display: flex; align-items: center; gap: 7px; transition: .15s; }
     #btnFiltros:hover { border-color: var(--gray-300); color: var(--ink); }
     #btnFiltros .cnt { background: var(--mint); color: var(--ink); border-radius: 100px; padding: 1px 8px; font-size: 0.72rem; min-width: 18px; text-align: center; font-weight: 600; }
+    #btnSinResp { padding: 7px 14px; border: 1px solid var(--gray-200); background: #fff; border-radius: 100px; font-family: inherit; font-size: 0.8rem; color: var(--ink-mute); cursor: pointer; transition: .15s; white-space: nowrap; }
+    #btnSinResp:hover { border-color: var(--gray-300); color: var(--ink); }
+    #btnSinResp.on { background: var(--mint); border-color: var(--mint); color: var(--ink); font-weight: 600; }
     #btnLimpiarFiltros { padding: 7px 12px; border: none; background: none; font-family: inherit; font-size: 0.8rem; color: var(--ink-mute); cursor: pointer; text-decoration: underline; }
     #btnLimpiarFiltros:hover { color: var(--ink); }
     /* Ventanita de filtros */
@@ -698,6 +701,7 @@
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
             Filtros<span class="cnt" id="cntFiltros" style="display:none">0</span>
           </button>
+          <button id="btnSinResp" onclick="toggleSinResp()" title="Mostrar solo los chats sin responder">Sin respuesta</button>
           <button id="btnLimpiarFiltros" onclick="limpiarFiltros()" style="display:none">Limpiar</button>
         </div>
         <div id="chats"></div>
@@ -1073,7 +1077,24 @@ function actualizarBtnFiltros(){
   const n = (filtroAvanzado.condiciones || []).length;
   const badge = $('cntFiltros'); if(badge){ badge.style.display = n ? '' : 'none'; badge.textContent = n; }
   const limp = $('btnLimpiarFiltros'); if(limp) limp.style.display = n ? '' : 'none';
+  // Mantener el botón directo "Sin respuesta" en sync con el filtro avanzado.
+  const bsr = $('btnSinResp'); if(bsr) bsr.classList.toggle('on', sinRespActivo());
 }
+// ¿Está activa la condición "sin respuesta" (en su forma normal, no la negada)?
+function sinRespActivo(){
+  return (filtroAvanzado.condiciones || []).some(c => c.tipo === 'sin_respuesta' && c.op !== 'no_tiene');
+}
+// Acceso directo: prende/apaga "sin respuesta" sin abrir la ventana de filtros.
+window.toggleSinResp = function(){
+  const conds = filtroAvanzado.condiciones || [];
+  if(sinRespActivo()){
+    filtroAvanzado.condiciones = conds.filter(c => !(c.tipo === 'sin_respuesta' && c.op !== 'no_tiene'));
+  } else {
+    filtroAvanzado.condiciones = [...conds, { tipo:'sin_respuesta', op:'tiene' }];
+  }
+  actualizarBtnFiltros();
+  cargarLista();
+};
 window.limpiarFiltros = function(){
   filtroAvanzado = { modo:'y', condiciones:[] };
   actualizarBtnFiltros();
