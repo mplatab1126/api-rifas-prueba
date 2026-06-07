@@ -22,6 +22,7 @@ import { esMateo, puedeVerLinea } from '../lib/asesores.js';
 import { enviarTexto, enviarImagenPorId, enviarImagen, enviarDocumento, descargarMediaBase64 } from '../lib/whatsapp.js';
 import { numerosDisponibles } from '../lib/numeros-disponibles.js';
 import { ponerEtiqueta } from '../lib/etiquetas.js';
+import { verificarYAbonar } from '../lib/abono-agente.js';
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const MODELOS_OK = ['claude-opus-4-8', 'claude-sonnet-4-6', 'claude-haiku-4-5'];
@@ -486,39 +487,31 @@ async function ejecutarHerramienta(nombre, input, conv) {
       .order('timestamp_wa', { ascending: false }).limit(1);
     const mediaId = imgs && imgs[0] && imgs[0].media_id;
     if (!mediaId) return 'El cliente NO ha mandado la foto del comprobante. Pídesela amablemente; sin el comprobante no puedo registrar el pago.';
-    // 2) Verificar el comprobante contra los pagos REALES del sistema.
-    const v = await llamarApi('/api/whatsapp/buscar-pago', { media_id: mediaId, telefono: conv.telefono, linea_id: conv.linea_id, contrasena: pwd });
-    if (v.status !== 'ok') return 'No pude leer o verificar el comprobante: ' + (v.mensaje || 'error') + '. Pásalo a un asesor para que lo revise a mano.';
-    if (!v.sugerida_id) {
-      await nota(conv, 'Recibí un comprobante pero NO encontré el pago real en el sistema. ' + (v.diagnostico || ''));
-      await ponerEtiqueta(conv.id, conv.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' });
-      return 'El comprobante NO coincide con ningún pago real cargado en el sistema. NO registres el abono. Avísale con tacto que un asesor va a verificar su pago, y pásalo a un asesor.';
+
+    // 2) Verificar contra los pagos REALES y abonar si hay coincidencia SÓLIDA (lógica probada).
+    const numeroPedido = String(input?.numero || '').replace(/\D/g, '');
+    const r = await verificarYAbonar({ telefono: conv.telefono, linea_id: conv.linea_id, conversacion_id: conv.id, mediaId, numeroPedido, pwd });
+
+    if (r.tipo === 'abonado') {
+      await cancelarVerificaciones(conv.id);
+      await nota(conv, `Registré un abono de $${Number(r.monto).toLocaleString('es-CO')} a la boleta ${r.numero} (pago verificado contra el banco).`);
+      return `Listo: registré el abono de $${Number(r.monto).toLocaleString('es-CO')} a la boleta ${r.numero}. Confírmaselo con alegría, agradécele y, si quieres que termine de pagar, recuérdale con cariño el saldo que le queda.`;
     }
-    // Seguridad: si la ÚNICA coincidencia es "mismo minuto" (cualquier plataforma), NO basta para
-    // abonar solo (dos clientes pueden pagar el mismo valor el mismo minuto). Lo pasa a un humano.
-    // Las coincidencias por referencia o por el celular del cliente sí valen.
-    if (v.razon_sugerida === 'Misma hora') {
-      await nota(conv, 'Encontré un pago del mismo valor a la misma hora, pero NO pude confirmar que sea de este cliente (sin referencia ni su celular). Lo dejo para que un asesor lo verifique.');
-      await ponerEtiqueta(conv.id, conv.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' });
-      return 'Hay un pago del mismo valor a la misma hora, pero NO puedo confirmar con seguridad que sea de este cliente (no coincide la referencia ni su celular). NO registres el abono: avísale con tacto que un asesor confirma su pago enseguida, y pásalo a un asesor.';
+    if (r.tipo === 'sin_saldo') {
+      return 'El cliente no tiene boletas con saldo pendiente para abonar. Verifícalo o pásalo a un asesor.';
     }
-    const trans = (v.candidatas || []).find(c => c.id === v.sugerida_id);
-    if (!trans) return 'No pude identificar el pago con seguridad. Pásalo a un asesor.';
-    const conSaldo = (v.boletas || []).filter(b => b.puede_modificar && Number(b.saldo) > 0);
-    if (!conSaldo.length) return 'El cliente no tiene boletas con saldo pendiente para abonar. Verifícalo o pásalo a un asesor.';
-    let destino = null;
-    const pedido = String(input?.numero || '').replace(/\D/g, '');
-    if (pedido) destino = conSaldo.find(b => String(b.numero) === pedido.padStart(4, '0') || String(b.numero) === pedido);
-    if (!destino) destino = conSaldo[0];
-    // 3) Registrar el abono con tu lógica probada (anti-duplicados, amarre de transferencia, etc.).
-    const d = await llamarApi('/api/admin/abono', {
-      numeroBoleta: String(destino.numero), valorAbono: trans.monto,
-      metodoPago: trans.plataforma || 'Transferencia', referencia: trans.referencia || 'Sin Ref',
-      idTransferencia: v.sugerida_id, contrasena: pwd,
-    });
-    if (d.status !== 'ok') return 'No se pudo registrar el abono: ' + (d.mensaje || 'error') + '. Pásalo a un asesor.';
-    await nota(conv, `Registré un abono de $${Number(trans.monto).toLocaleString('es-CO')} a la boleta ${destino.numero} (pago verificado contra el banco).`);
-    return `Listo: registré el abono de $${Number(trans.monto).toLocaleString('es-CO')} a la boleta ${destino.numero}. Confírmaselo con alegría, agradécele y, si quieres que termine de pagar, recuérdale con cariño el saldo que le queda.`;
+    if (r.tipo === 'error') {
+      await nota(conv, 'No pude verificar/registrar el comprobante: ' + (r.mensaje || 'error'));
+      await ponerEtiqueta(conv.id, conv.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' });
+      return 'No pude verificar el comprobante (' + (r.mensaje || 'error') + '). Avísale con tacto que un asesor lo revisa enseguida, y pásalo a un asesor.';
+    }
+
+    // 'no_encontrado' o 'misma_hora': el pago todavía NO aparece (el asesor lo sube con retraso).
+    // En vez de rendirse, se agenda VERIFICACIÓN automática con reintentos (cada ~15 min, hasta ~1h);
+    // si el pago aparece, el relojito abona solo. NO se pasa a un asesor todavía.
+    await agendarVerificacion(conv, mediaId, numeroPedido);
+    await nota(conv, 'Recibí el comprobante pero el pago aún no aparece cargado. Lo dejé en verificación automática (reintenta cada ~15 min, hasta ~1h). ' + (r.diagnostico || ''));
+    return 'Recibí su comprobante. El pago todavía NO aparece en el sistema (a veces el banco o el asesor lo suben con un rato de retraso). NO lo pases a un asesor todavía: dile con calma y alegría que ya RECIBISTE su comprobante y que estás *verificando su pago*, que apenas se confirme le avisas por aquí (puede tardar un ratico). NO le pidas otro comprobante.';
   }
 
   if (nombre === 'liberar_boleta') {
@@ -1108,6 +1101,30 @@ export default async function handler(req, res) {
 // Libera el candado de la conversación (best-effort).
 async function soltarLock(conv) {
   try { await supabaseAdmin.rpc('agente_soltar_lock', { p_conv: conv.id }); } catch (_) {}
+}
+
+// Cancela cualquier verificación de pago pendiente de este chat (best-effort).
+async function cancelarVerificaciones(convId) {
+  try {
+    await supabaseAdmin.from('verificaciones_pago')
+      .update({ estado: 'cancelado', actualizado_at: new Date().toISOString() })
+      .eq('conversacion_id', convId).eq('estado', 'pendiente');
+  } catch (_) {}
+}
+
+// Agenda (o reemplaza) la verificación de pago con reintentos: el relojito reintenta cada
+// ~15 min, hasta ~1 hora, buscar el pago y abonar si aparece. Una sola activa por chat.
+async function agendarVerificacion(conv, mediaId, numeroPedido) {
+  try {
+    await cancelarVerificaciones(conv.id);
+    await supabaseAdmin.from('verificaciones_pago').insert({
+      linea_id: conv.linea_id, telefono: conv.telefono, conversacion_id: conv.id,
+      media_id: mediaId, numero_pedido: numeroPedido || null,
+      intentos: 0, max_intentos: 4,
+      proximo_intento_at: new Date(Date.now() + 15 * 60000).toISOString(),
+      estado: 'pendiente',
+    });
+  } catch (_) {}
 }
 
 // ¿El agente SIGUE prendido en este chat? (para el "botón de pánico": si lo apagaron a mitad

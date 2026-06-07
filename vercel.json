@@ -46,6 +46,9 @@
     "api/whatsapp/qa-agente-cron.js": {
       "maxDuration": 60
     },
+    "api/whatsapp/verificar-pagos-cron.js": {
+      "maxDuration": 300
+    },
     "api/admin/llamadas-automaticas.js": {
       "maxDuration": 60
     },
