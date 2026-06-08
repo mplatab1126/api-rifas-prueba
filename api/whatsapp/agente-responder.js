@@ -1109,12 +1109,14 @@ export default async function handler(req, res) {
     // Caché de prompt: el manual de Liliana y la lista de herramientas son idénticos en
     // CADA llamada y CADA vuelta del bucle. Marcamos el manual (lo más grande y fijo) con
     // cache_control para que Claude lo cobre 10× más barato (lectura 0.1× en vez de precio
-    // lleno) durante los 5 min siguientes. El breakpoint en el PRIMER bloque cachea
-    // herramientas + manual juntos (orden de render: tools → system → messages); el
-    // contexto volátil (fecha, teléfono, estado del cliente, fechas) va en un 2º bloque
-    // SIN caché. No cambia nada de lo que responde Liliana: ve el mismo prompt, más barato.
+    // lleno). Usamos TTL de 1 HORA (ttl:'1h' + cabecera beta extended-cache-ttl) en vez de los
+    // 5 min por defecto: con tráfico espaciado, así el manual se reescribe MUCHO menos (un cliente
+    // nuevo a los 40 min reusa el caché del anterior en vez de reescribirlo). NO cambia NADA de lo
+    // que responde Liliana: ve el mismo prompt, solo más barato. El breakpoint en el PRIMER bloque
+    // cachea herramientas + manual juntos (orden: tools → system → messages); el contexto volátil
+    // (fecha, teléfono, estado del cliente, fechas) va en un 2º bloque SIN caché.
     const system = [
-      { type: 'text', text: prompt, cache_control: { type: 'ephemeral' } },
+      { type: 'text', text: prompt, cache_control: { type: 'ephemeral', ttl: '1h' } },
       { type: 'text', text: systemVolatil },
     ];
 
@@ -1143,7 +1145,7 @@ export default async function handler(req, res) {
       if (iter > 0 && !(await sigueActivo(conv.id))) { await soltarLock(conv); return res.status(200).json({ status: 'ok', skip: 'Apagaron el agente a mitad de la respuesta.' }); }
       const resp = await fetch(ANTHROPIC_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-beta': 'extended-cache-ttl-2025-04-11' },
         body: JSON.stringify({ model: modelo, max_tokens: 1024, system, messages, ...(toolsActivas.length ? { tools: toolsActivas } : {}) }),
       });
       const data = await resp.json();
@@ -1179,7 +1181,7 @@ export default async function handler(req, res) {
       if (apagado) {
         const resp2 = await fetch(ANTHROPIC_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+          headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-beta': 'extended-cache-ttl-2025-04-11' },
           body: JSON.stringify({ model: modelo, max_tokens: 400, system, messages }),
         });
         const d2 = await resp2.json();
