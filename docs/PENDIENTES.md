@@ -15,6 +15,17 @@
 
 ## Tareas pendientes
 
+- [ ] (2026-06-07) **BUG recordatorios: un "gracias" cancela el recordatorio a días.** Liliana dice
+  "programé un recordatorio" y SÍ lo crea, pero queda en estado `cancelado`, así que el relojito (solo
+  muestra `pendiente`) aparece vacío. Causa: `recibir.js` cancela TODO recordatorio pendiente cuando el
+  cliente vuelve a escribir (pensado para no molestar si ya retomó), pero cancela incluso con un mensaje
+  de cortesía ("Gracias 🙏") y aunque el recordatorio sea para DÍAS después. Caso real: chat
+  +573115630300, recordatorio para jue 11-jun 10:00 (motivo "abono boleta 6427"), creado 21:22 y
+  cancelado cuando el cliente escribió "Gracias" 21:10... (rev. `recordatorios` id e3fe3b03). **Arreglo a
+  pensar:** no cancelar si el recordatorio es a días y el mensaje no reabre la venta (¿o no cancelar los
+  de >X horas?, ¿o solo cancelar al volver a interactuar de fondo, no por un "gracias"?). Confirmar con
+  Mateo el criterio. (Secundario: el cliente dijo "miércoles" y se agendó "jueves 11"; revisar el
+  parseo del día.)
 - [ ] (2026-06-07) **Números de remisión que faltan** para los independientes sin número en
   `asesores_config.numero_remision`: **Alejandra Plata, Luisa Papá, Mocho, Nena, Yiny**. Mientras no
   los den, si un cliente con boleta de uno de ellos escribe a Lili, Liliana lo pasa a un asesor.
