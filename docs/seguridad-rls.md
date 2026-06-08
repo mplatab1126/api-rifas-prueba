@@ -1,8 +1,9 @@
 # Plan de seguridad — Prender RLS (Row Level Security)
 
-> **Estado:** PENDIENTE — pasada completa dedicada (Mateo la pidió el 8-jun-2026).
-> NO se ha tocado ningún seguro todavía. Este doc tiene el diagnóstico y el plan
-> para ejecutarlo con cuidado, sin tumbar producción.
+> **Estado:** ✅ HECHO (8-jun-2026). Se prendió RLS en las 56 tablas y se cerró el
+> acceso de la llave anónima. El chequeo pasó de 84 problemas (con tokens expuestos) a
+> 0 errores. Detalle del resultado al final de este doc. Abajo queda el diagnóstico
+> original y el plan, como referencia.
 
 ## Por qué (el problema)
 
@@ -78,3 +79,35 @@ verificaciones_pago.
 
 > Recordatorio de la lección de PostgREST: tras cambios de esquema, recargar el esquema con
 > `apply_migration` (un NOTIFY/ALTER por SQL no basta).
+
+---
+
+## ✅ RESULTADO (ejecutado el 8-jun-2026)
+
+**Estrategia usada (la más segura):** en vez de editar 80+ archivos, se hizo que TODO el
+backend use la llave maestra (un cambio en `api/lib/supabase.js`: el cliente `supabase`
+ahora usa `SERVICE_ROLE_KEY`). Así el backend pasa por encima de RLS y se pudo prender RLS
+en todo sin romper nada. **Confirmado antes:** ni el frontend web ni la app móvil le pegan
+directo a Supabase (solo el backend lo hace).
+
+**Lo que se hizo:**
+1. `api/lib/supabase.js`: `supabase` usa la llave maestra (Fase 1, desplegado y verificado).
+2. Migración `seguridad_enable_rls_todas_las_tablas`: se borraron 14 reglas permisivas
+   ("deja pasar a todos", incl. otp_codes y sesiones_app) y se prendió RLS en las 56 tablas.
+3. Migración `seguridad_cerrar_bandeja_filtrar_y_search_path`: `bandeja_filtrar` (SECURITY
+   DEFINER) ya NO la puede ejecutar la llave anónima (solo `service_role`); y se fijó
+   `search_path=public` en 8 funciones.
+
+**Verificado:** la llave anónima ahora ve 0 filas en boletas/clientes/lineas_whatsapp/sesiones;
+el backend sigue leyendo (disponibles, cliente, bandeja_filtrar=300 chats). Chequeo de
+seguridad: de 84 → 0 errores. Quedan 56 INFO "RLS enabled no policy" (es lo deseado: solo el
+backend entra) y 1 WARN menor (`pg_net` en esquema public; no se movió por riesgo con los crons).
+
+**Cuidado a futuro:**
+- El backend DEBE seguir usando la llave maestra (`SUPABASE_SERVICE_ROLE_KEY` en Vercel). Si se
+  borra esa variable, `supabase` cae a la anónima y, con RLS prendido, TODO el backend dejaría
+  de leer. No quitar esa variable.
+- Al crear una tabla NUEVA: prenderle RLS (`alter table ... enable row level security;`). El
+  backend (service role) la seguirá usando; la llave anónima quedará bloqueada por defecto.
+- Si alguna vez se necesita una página/app que lea Supabase DIRECTO (sin backend), habría que
+  crearle una política RLS específica para esa lectura.

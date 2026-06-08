@@ -52,6 +52,31 @@ que el agrupado siga funcionando.
 
 ---
 
+## 2026-06-08 — [Seguridad] — Prendido RLS en TODAS las tablas (la base ya no depende de la llave anónima)
+
+**Qué hicimos:** prendimos Row Level Security (RLS) en las 56 tablas y bloqueamos el acceso de la
+llave **anónima** (la semipública). Antes todo dependía de que esa llave no se filtrara; ahora, aunque
+se filtre, no puede leer ni escribir nada. El chequeo oficial de Supabase pasó de **84 problemas**
+(incluyendo **tokens de WhatsApp y de sesión expuestos**) a **0 errores**.
+
+**Cómo, sin romper nada (clave):** primero verificamos que NI el frontend web NI la app móvil le pegan
+directo a Supabase (solo el backend lo hace). Entonces hicimos que **todo el backend use la llave
+maestra** (`api/lib/supabase.js`: el cliente `supabase` ahora usa `SERVICE_ROLE_KEY`), que pasa por
+encima de RLS. Así pudimos prender RLS en todas las tablas sin tocar 80+ archivos. Luego: se borraron
+14 reglas "deja pasar a todos", se cerró `bandeja_filtrar` (security definer) a la llave anónima y se
+fijó `search_path` en 8 funciones. Detalle completo en `docs/seguridad-rls.md`.
+
+**Verificado:** anónima ve 0 filas (boletas, clientes, tokens, sesiones); backend sigue leyendo
+(disponibles, cliente, bandeja=300 chats). Quedaron 56 avisos INFO "RLS sin política" (es lo deseado:
+solo el backend entra) y 1 WARN menor (`pg_net` en public).
+
+**Cuidado / qué NO hacer:** **NO borrar `SUPABASE_SERVICE_ROLE_KEY` de Vercel** — si falta, el backend
+cae a la llave anónima y, con RLS prendido, dejaría de leer TODO. Toda **tabla nueva** debe nacer con
+`enable row level security`. Si algún día una página/app necesita leer Supabase directo (sin backend),
+hay que crearle una política RLS específica.
+
+---
+
 ## 2026-06-07 — [Seguridad] — Configurada la llave maestra (SERVICE_ROLE_KEY): el Gasto de IA ya funciona
 
 **Qué hicimos:** Mateo configuró `SUPABASE_SERVICE_ROLE_KEY` en Vercel (usó la **nueva "Secret key"**
