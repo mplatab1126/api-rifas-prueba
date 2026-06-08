@@ -99,6 +99,33 @@ confiable → la de marketing va sin nombre. Quedó pendiente que **Meta las apr
 botón de WhatsApp (mensaje entrante tipo `button`) hay que verificar que el webhook lo capte para que Liliana
 no pierda la respuesta. Por ahora la plantilla invita a responder por texto (Liliana atiende igual).
 
+## 2026-06-08 — [WhatsApp] / [General] — Ahorro de tokens de Liliana (saludo predefinido + caché de 1h)
+
+**Contexto:** con poco tráfico el gasto era alto (~$4.89/día, 231 llamadas/77 clientes). Análisis: el caché SÍ
+funciona (sin él habría sido ~$10), pero el 53% del costo era **reescribir el manual al caché** (cada cliente
+nuevo, cache de 5 min que se enfría), y **~88% de los primeros mensajes es el texto del anuncio** ("¡Hola! quiero
+más información.") — el saludo era ~la mitad de TODAS las llamadas a la IA.
+
+**Fase 1 — Saludo predefinido SIN IA** (`agente-responder.js`): en el PRIMER contacto, si el mensaje lo resuelve
+el saludo (genérico, o pregunta de precio/abono/legalidad/cuándo juega), se manda el contacto inicial FIJO
+(saludo + fotos + cierre, con la línea del próximo sorteo calculada del calendario) **sin llamar a Claude**. La
+IA entra desde el 2º mensaje o si el 1º pide algo que el saludo NO cubre (número puntual, pago/cuenta, números
+disponibles, ubicación, lista de premios) — detección por marcadores en `primerContactoLoResuelveSaludo` (función
+`enviarContactoInicial` reutilizada por la herramienta y por el atajo). Respeta candados anti-duplicado (va después
+del claim atómico) y los frenos (no a clientes con boleta, ni remisión, ni sombra, ni si el chat ya tiene mensajes).
+Quita ~la mitad de las llamadas (las más caras, que reescriben el caché). Verificado al aire: se envía sin IA y 0 errores.
+
+**Fase 2 — Caché de prompt a 1 HORA** (`ttl: '1h'` + cabecera `anthropic-beta: extended-cache-ttl-2025-04-11`):
+antes 5 min; con tráfico espaciado el manual se reescribía casi por cada cliente. Con 1h, un cliente que llega
+dentro de la hora REUSA el caché en vez de reescribirlo. **No cambia NADA de lo que responde** (validé el formato
+con Anthropic antes de tocar; 0 errores al aire). Reversible (volver a quitar `ttl`).
+
+**Cuidado / pendiente:** medir el ahorro real con un día completo y comparar con $4.89. La lista de marcadores que
+mandan a la IA (`primerContactoLoResuelveSaludo`) es afinable: si algún caso se siente robótico, ahí se ajusta.
+Faltan Fases 3-5 (cortar el bucle, más mensajes fijos, adelgazar el manual) — pendientes de hablar con Mateo.
+
+---
+
 ## 2026-06-08 — [WhatsApp] — Liliana (dueña de su línea) ya puede prender/apagar el agente por chat
 
 **Qué hicimos:** habilitamos que el **dueño de una línea** use el botón **🤖 por chat** (prender/apagar el agente

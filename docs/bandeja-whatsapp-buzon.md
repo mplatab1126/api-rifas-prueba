@@ -176,6 +176,15 @@ permiten a quien `puedeVerLinea` (gerencia o el asesor de la línea); el botón 
 (`lineas.js` devuelve `tiene_agente`). **La cabina (manual, interruptor de la línea, herramientas), el Gasto de IA
 y los disparadores siguen SOLO de gerencia/Mateo** (candado `esMateo` + ocultos en pantalla por `soyMateo`).
 
+### 8.0 Ahorro de tokens (8-jun) — saludo predefinido + caché de 1h
+- **Saludo predefinido SIN IA:** en el PRIMER contacto, si el mensaje lo resuelve el saludo (genérico, o pregunta de
+  precio/abono/legalidad/cuándo juega), `agente-responder.js` manda el contacto inicial FIJO (saludo + fotos + cierre
+  con la línea del próximo sorteo) **sin llamar a Claude** (`primerContactoLoResuelveSaludo` + `enviarContactoInicial`).
+  La IA entra desde el 2º mensaje o si el 1º pide algo que el saludo NO cubre (número, pago, disponibles, ubicación,
+  premios). El ~88% de los primeros mensajes es el texto del anuncio → quita ~la mitad de las llamadas. Ver bitácora.
+- **Caché de prompt a 1 HORA** (`ttl:'1h'` + beta `extended-cache-ttl-2025-04-11`): el manual se reescribe mucho menos
+  con tráfico espaciado. NO cambia lo que responde. Ver bitácora 8-jun "Ahorro de tokens".
+
 ### 8.1 Cabina + motor, y cómo se prende
 - **Cabina** = `agente.js` + pestaña "Agente". Mateo configura: `prompt` (manual), `modelo`, `estado`, prende/apaga
   cada herramienta, datos de pago `{{pagos}}`, resultados de sorteos. NO conversa con clientes.
