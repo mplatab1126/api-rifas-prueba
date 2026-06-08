@@ -67,8 +67,8 @@ candado fuerte —el abono se verifica contra el banco y una transferencia se co
 valida dueño + saldo $0; apartar es reversible—. El de reportes generaba ruido y ya estaba apagado.
 
 **Cuidado / qué NO hacer:** la seguridad del dinero NO bajó (vive en los candados de cada acción, intactos).
-Las tablas **`agente_sugerencias`** y **`agente_qa_estado`** quedaron sin uso (huérfanas) — se dejaron en
-la base (no estorban); borrarlas es opcional, confirmar con Mateo. El etiquetado **AGENTE** se conservó
+Las tablas **`agente_sugerencias`** (22 filas viejas) y **`agente_qa_estado`** (1 fila) quedaron sin uso y se
+**borraron el mismo 8-jun** (`drop table`, autorizado por Mateo; no tenían FKs ni vistas). El etiquetado **AGENTE** se conservó
 (sirve para filtrar la bandeja, no solo para el supervisor). Si algún día se quiere un supervisor, habrá
 que reconstruirlo (ya no está en el código).
 

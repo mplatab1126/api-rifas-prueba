@@ -86,7 +86,7 @@ Tablas del agente:
 - **`agente_herramientas`** `(linea_id, clave, …, activa)`: qué acciones tiene prendidas cada línea.
 - **`agente_actividad`** `(linea_id, telefono, tipo, resumen, created_at)`: bitácora de lo que hace + errores.
 - **`recordatorios`**: seguimiento automático <24h (§8.6). Índices parciales por `estado='pendiente'`.
-- **`agente_qa_estado`** y **`agente_sugerencias`**: eran del supervisor QA, **ELIMINADO el 2026-06-08**. Tablas huérfanas (sin uso; se dejaron en la base, candidatas a borrar).
+- *(Las tablas `agente_qa_estado` y `agente_sugerencias` eran del supervisor QA; se **BORRARON** el 2026-06-08 junto con él.)*
 - **`disparadores`** `(linea_id, palabra, tipo ['palabra'|'nuevo_contacto'], activo)` (§8.8).
 
 Índices pensados para escala: por `linea_id`, `ultimo_at`, parcial de "sin respuesta", etc.
@@ -226,7 +226,7 @@ vencidos de forma atómica (sin doble disparo) y despierta el motor. `recibir.js
   el agente" en la cabina, con "Aplicar al manual" / "Descartar"). Estuvo PAUSADO desde el 5-jun y se **eliminó del todo** el
   8-jun (lo pidió Mateo): se borró el archivo, su entrada en `vercel.json`, el cron de la base (jobid 2,
   `cron.unschedule('supervisor-agente-cada-5min')`), las acciones del backend (`agente.js`) y la tarjeta + funciones en
-  `bandeja-whatsapp.html`. Las tablas `agente_qa_estado` y `agente_sugerencias` quedaron huérfanas (sin uso). Ver bitácora.
+  `bandeja-whatsapp.html`. Las tablas `agente_qa_estado` y `agente_sugerencias` se **borraron** el mismo día. Ver bitácora.
 
 ### 8.8 Disparadores — HECHO
 Menú **Disparadores** (SOLO Mateo). Por **palabra clave** (el mensaje la contiene) o **cliente nuevo** (primer mensaje, uno por línea).
@@ -314,7 +314,6 @@ Mide cuánto cuesta la IA que responde (los tokens que devuelve Claude en cada r
 - ✅ **Costo de IA por chat y del día** → HECHO (§8.12). Pendiente menor: registrar también el costo de Whisper (audios).
 - ⬜ **Pantalla para el calendario de sorteos** (hoy se carga por SQL en `rifas.sorteos`).
 - ⬜ Limpiar el simulador `probar` de la cabina (ya no se usa).
-- ⬜ (Opcional) Borrar las tablas huérfanas `agente_qa_estado` y `agente_sugerencias` (quedaron sin uso al eliminar el supervisor el 8-jun).
 
 **Para cuando ESCALE (no urgente):**
 - Identificación por **últimos 10 dígitos** puede mezclar 2 clientes; a futuro comparar por teléfono COMPLETO.
