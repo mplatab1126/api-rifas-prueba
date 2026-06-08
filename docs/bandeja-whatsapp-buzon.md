@@ -200,6 +200,10 @@ todo cliente nuevo). La **cabina y el botón 🤖 son SOLO de Mateo** (candado `
 - **liberar_boleta**: solo dueño + $0 abonado. **trasladar_abono**: ambas boletas del mismo teléfono.
 - El motor llama estos endpoints con la **contraseña de gerencia** (`ASESORES_SECRETO` → `contrasenaGerencia()`),
   usando la misma lógica probada que un humano.
+- **Atribución (8-jun):** aunque autentica como gerencia, los movimientos (apartar/abono/liberar/trasladar) se
+  GRABAN a nombre del **asesor de la línea** (`asesorDeLinea(linea_id)` → "Liliana"), vía el override
+  `asesorRegistro` (lo honra solo gerencia) en abono/liberar/trasladar y el campo `asesor` en `reservar.js`.
+  NO cambia permisos ("Liliana" es grupo 'regular', igual que "Pagina Web"). Ver bitácora 8-jun.
 - **Supervisor Opus de movimientos ELIMINADO (2026-06-08)**: ya estaba inactivo (`ACCIONES_SENSIBLES` vacío); no veía
   las fotos ni los chequeos reales y solo frenaba acciones legítimas en falso. La seguridad del dinero vive en los
   candados de cada acción (abono verificado contra el banco, liberar valida dueño + saldo $0). Se borró del código.

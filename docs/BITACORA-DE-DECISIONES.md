@@ -26,6 +26,29 @@
 
 ---
 
+## 2026-06-08 — [WhatsApp] / [Admin] — Los movimientos del agente quedan a nombre de "Liliana"
+
+**Qué hicimos:** todo movimiento que hace el agente —**apartar, abono, liberar, trasladar**— se registra
+con `asesor = el dueño de la línea` (de `lineas_asesores`; en la línea de Lili = **"Liliana"**), no a nombre
+de gerencia ni como "Pagina Web". Así las ventas y movimientos de Liliana salen a su nombre en caja,
+rendimiento y la bitácora `registro_movimientos`.
+
+**Cómo (sin tocar permisos):** el agente **sigue autenticándose como gerencia** (mismos permisos, NO se cambió
+la validación de grupo de los endpoints). Solo se cambió **a nombre de quién queda grabado**: se agregó un
+override **`asesorRegistro`** en `/api/admin/abono`, `/api/admin/liberar-boleta` y `/api/admin/trasladar-abono`
+(el endpoint solo lo honra si quien autentica es **gerencia**, para que un asesor normal no pueda impersonar);
+y `reservar.js` acepta `asesor`. El agente manda el nombre con `asesorDeLinea(linea_id)` (en `lib/abono-agente.js`).
+`verificarYAbonar` lo **deduce solo** de la línea cuando no se lo pasan → cubre también el cron de reintentos
+(`verificar-pagos-cron.js`).
+
+**Por qué no rompe permisos:** **"Liliana" es grupo 'regular'**, igual que "Pagina Web" (no está en
+`asesores_config` como independiente), así que un humano puede abonar/liberar esas boletas igual que antes. Ya
+existían 172 boletas a nombre de "Liliana" funcionando.
+
+**Cuidado / qué NO hacer:** si algún día se marca a "Liliana" como **independiente** en `asesores_config`,
+cambiaría el grupo de TODAS sus boletas (afecta quién puede abonarlas) — no hacerlo sin pensarlo. El override
+`asesorRegistro` debe seguir aceptándose SOLO para gerencia (candado `esGerencia`).
+
 ## 2026-06-08 — [WhatsApp] — Difusiones con filtros de público, programación por hora y "Liliana atiende las respuestas"
 
 **Qué construimos:** ampliamos el módulo de Difusiones de la bandeja (línea "Compra con Lili") para poder

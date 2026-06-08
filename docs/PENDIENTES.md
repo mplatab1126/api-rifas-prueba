@@ -97,6 +97,10 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-08) **Los movimientos del agente quedan a nombre de "Liliana"**: apartar, abono, liberar y
+  trasladar que hace Liliana se registran con asesor = el dueño de la línea ("Liliana"), no gerencia/"Pagina Web".
+  No cambia permisos ("Liliana" es grupo regular). Vía override `asesorRegistro` (solo gerencia) en los endpoints
+  admin + `asesor` en reservar. Deploy sano verificado. Ver bitácora.
 - [x] (2026-06-08) **Difusiones con filtros + programar + "Liliana atiende"**: el módulo de Difusiones ahora
   segmenta por **Clientes** (con saldo / pagados / ciudad) y **Potenciales** (nunca compraron), permite
   **programar** el envío a una hora (lo manda un cron por tandas) y, con una casilla, **Liliana atiende sola**
