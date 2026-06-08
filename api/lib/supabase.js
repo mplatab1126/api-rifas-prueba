@@ -32,7 +32,13 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// SEGURIDAD (8-jun-2026): el backend SIEMPRE usa la llave maestra (service role).
+// Antes este cliente usaba la llave ANÓNIMA; al prender RLS (Row Level Security) en las
+// tablas, las consultas con la llave anónima se bloquearían. Como el backend ya valida la
+// contraseña de asesor en cada endpoint, usar la llave maestra (que pasa por encima de RLS)
+// mantiene todo funcionando y nos deja prender los seguros para bloquear el acceso externo
+// con la llave anónima (que es semipública por diseño). Si falta la maestra, cae a la anónima.
+export const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY);
 
 export const supabaseAdmin = createClient(
   SUPABASE_URL,
