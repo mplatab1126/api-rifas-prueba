@@ -119,6 +119,16 @@ Regla: un comprobante en el chat NO prueba que la venta se hizo por Lili; solo s
 apartado de la IA). De las 4 con comprobante, Mateo decidió pasar **1 a Liliana** (boleta 3681, tel ...3052152722,
 antes "Arias", $0 abonado) y dejar las otras 3 con su vendedor. **Total reatribuido a Liliana: 33 boletas.**
 
+**Abonos viejos:** además se reasignaron los **18 abonos** de esas 33 boletas (rifa activa, `fecha_pago >=
+2026-05-11`) de `asesor='Mateo'` → **`Liliana`** ($710.000). Eran abonos que el agente registró como gerencia
+ANTES de activar la atribución. Se acotó por fecha de la rifa activa para no tocar abonos de rifas pasadas con
+el mismo número.
+
+**Confirmado a futuro (verificado en código):** TODO lo que hace el agente ya queda a nombre de Liliana —
+apartar (`reservar.js`, `cuerpo.asesor=asesorDeLinea`), abonar (`abono.js` graba abono+caja+bitácora con
+`asesorReg`; el agente envía `asesorRegistro` vía `verificarYAbonar`), liberar y trasladar (envían
+`asesorRegistro`). `asesorDeLinea` = dueño de la línea en `lineas_asesores` = "Liliana".
+
 ---
 
 ## 2026-06-08 — [WhatsApp] — Liliana usa su PROPIA llave de Claude + se reinició su contador de gasto
