@@ -116,7 +116,8 @@ por Lili** (18 sin nota ni comprobante + 4 con comprobante pero ya a nombre de O
 Valencia, Saldarriaga—; una incluso del 16-may, antes de existir la IA). Esas se quedan con su vendedor real y
 **Liliana las remite** a ese vendedor (la remisión ya funciona: todos esos vendedores tienen `numero_remision`).
 Regla: un comprobante en el chat NO prueba que la venta se hizo por Lili; solo se reatribuye con prueba (nota de
-apartado de la IA). Las 4 quedaron PENDIENTES de la decisión final de Mateo.
+apartado de la IA). De las 4 con comprobante, Mateo decidió pasar **1 a Liliana** (boleta 3681, tel ...3052152722,
+antes "Arias", $0 abonado) y dejar las otras 3 con su vendedor. **Total reatribuido a Liliana: 33 boletas.**
 
 ---
 
