@@ -162,8 +162,10 @@ un chat para mostrarlos en la bandeja), `media.js`.
 `respuestas-rapidas.js`.
 
 **Agente de IA (Claude):** `agente.js` (cabina de control), `agente-responder.js`
-(el motor que conversa y ejecuta acciones), `agente-costo.js` (cuánto cuesta en
-dólares), `disparadores.js` (palabras que prenden el agente),
+(el motor que conversa y ejecuta acciones; **2026-06-08**: usa **caché de prompt** para abaratar el
+gasto de entrada, una **llave propia** `ANTHROPIC_API_KEY_LILIANA` para medir su gasto aparte, y se le
+**quitó el supervisor Opus** de movimientos de dinero —ya estaba inactivo—; ver bitácora),
+`agente-costo.js` (cuánto cuesta en dólares), `disparadores.js` (palabras que prenden el agente),
 *(el supervisor `qa-agente-cron.js` se **ELIMINÓ** el 2026-06-08, ver bitácora),*
 `recordatorios-cron.js` (recordatorios del agente cada minuto; **2026-06-06**: también a
 DÍAS — al vencer, si la ventana de 24h ya se cerró, manda la plantilla `seguimiento_los_plata`

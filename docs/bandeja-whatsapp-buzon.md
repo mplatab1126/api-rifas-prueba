@@ -305,6 +305,17 @@ Mide cuánto cuesta la IA que responde (los tokens que devuelve Claude en cada r
   `rifas.nombre` y en el manual `agente_config.prompt`).
 - **🔒 Seguridad (RLS):** se prendió RLS en todas las tablas y el backend pasó a usar la LLAVE MAESTRA;
   la llave anónima quedó bloqueada. Ver `docs/seguridad-rls.md`. NO borrar `SUPABASE_SERVICE_ROLE_KEY`.
+- **💰 Caché de prompt activado** en `agente-responder.js`: el `system` es ahora un array
+  `[{manual, cache_control:ephemeral}, {contexto volátil}]`. El manual + herramientas se cachean (lectura
+  0.1×) → baja ~la mitad el gasto de ENTRADA. El manual debe ir SIEMPRE primero (lo volátil en el 2º
+  bloque) o se rompe el caché. FALTA confirmar al aire (`cache_read_tokens` > 0). Ver bitácora.
+- **🔑 Liliana con llave propia de Claude:** usa `ANTHROPIC_API_KEY_LILIANA` (Vercel) y cae a
+  `ANTHROPIC_API_KEY` si falta. Sirve para medir su gasto aparte. NO borrar la general. Se reinició el
+  contador (`truncate agente_uso`) para empezar de cero. Ver bitácora.
+- **🗑️ Supervisores Opus ELIMINADOS:** (1) el de movimientos de dinero (`verificarConOpus`, ya inactivo) y
+  (2) el supervisor QA de reportes (`qa-agente-cron.js`, ya pausado) con su ciclo de sugerencias (cron,
+  `vercel.json`, backend y cabina). Tablas `agente_sugerencias`/`agente_qa_estado` borradas. La seguridad
+  del dinero NO bajó (vive en los candados de cada acción). Ver bitácora.
 
 ## 9. Pendientes
 **Agente:**

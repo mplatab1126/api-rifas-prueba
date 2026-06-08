@@ -15,9 +15,11 @@
 
 ## Tareas pendientes
 
-- [ ] (2026-06-08) **Confirmar al aire el caché de prompt de Liliana**: cuando haya tráfico normal, revisar en
-  `agente_uso` (o el panel de Claude) que `cache_read_tokens` > 0 y que el costo de entrada bajó ~la mitad.
-  Se activó el 8-jun pero a esa hora (madrugada) no había mensajes nuevos para verificar. Ver bitácora.
+- [ ] (2026-06-08) **Confirmar al aire 3 cosas de Liliana cuando haya tráfico** (se verifican juntas con la
+  próxima respuesta a un cliente): (1) que **responda** = la llave nueva `ANTHROPIC_API_KEY_LILIANA` quedó bien
+  pegada en Vercel; (2) que el **gasto aparezca en el panel de Anthropic de esa llave nueva** (gasto de Liliana
+  aislado); (3) que `cache_read_tokens` > 0 en `agente_uso` = el caché de prompt está ahorrando (~mitad del
+  gasto de entrada). Todo se activó el 8-jun de madrugada, sin tráfico para verificar. Ver bitácora.
 - [ ] (2026-06-07) **Liliana debe PEDIR cédula y correo (aunque sean opcionales).** Hoy al pedir datos
   solo pide "nombre completo, apellido y ciudad" y NO menciona cédula ni correo (caso real chat
   +573115630300). El cambio del 7-jun (hacerlos opcionales) se pasó: la idea es que **siempre los pida**
