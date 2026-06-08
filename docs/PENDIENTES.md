@@ -15,6 +15,14 @@
 
 ## Tareas pendientes
 
+- [ ] (2026-06-07) **Liliana debe PEDIR cédula y correo (aunque sean opcionales).** Hoy al pedir datos
+  solo pide "nombre completo, apellido y ciudad" y NO menciona cédula ni correo (caso real chat
+  +573115630300). El cambio del 7-jun (hacerlos opcionales) se pasó: la idea es que **siempre los pida**
+  al inicio (nombre, apellido, ciudad, cédula y correo, para la factura) y SOLO los omita si el cliente
+  dice que no los tiene o no quiere darlos → ahí aparta igual. Arreglo: ajustar el MANUAL
+  (`agente_config.prompt` línea `1128258647034751`, bloques "3) DATOS" y "Para apartar la boleta…") por
+  SQL con `replace()` puntual, dejando claro: pedir TODOS los datos primero; si el cliente se niega o no
+  los tiene, apartar sin cédula/correo (no insistir). Ver bitácora 7-jun "cédula y correo OPCIONALES".
 - [ ] (2026-06-07) **BUG recordatorios: un "gracias" cancela el recordatorio a días.** Liliana dice
   "programé un recordatorio" y SÍ lo crea, pero queda en estado `cancelado`, así que el relojito (solo
   muestra `pendiente`) aparece vacío. Causa: `recibir.js` cancela TODO recordatorio pendiente cuando el
