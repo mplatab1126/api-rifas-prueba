@@ -99,6 +99,27 @@ confiable → la de marketing va sin nombre. Quedó pendiente que **Meta las apr
 botón de WhatsApp (mensaje entrante tipo `button`) hay que verificar que el webhook lo capte para que Liliana
 no pierda la respuesta. Por ahora la plantilla invita a responder por texto (Liliana atiende igual).
 
+## 2026-06-08 — [WhatsApp] / [Rifas/Finanzas] — Ventas de la línea "Compra con Lili" reatribuidas a Liliana
+
+**Qué hicimos:** reasignamos **32 boletas** de `asesor='Pagina Web'` → **`asesor='Liliana'`**. Son las que la
+IA (agente de la línea "Compra con Lili", `linea_id=1128258647034751`) apartó, identificadas por su propio
+rastro en `agente_actividad` (nota "🤖 Aparté el número NNNN…") cruzando **número + teléfono del cliente** y
+filtrando solo las que seguían en "Pagina Web". 14 de ellas tenían abonos ($540.000). Comando: `update boletas
+set asesor='Liliana' from (notas de apartado) where numero+tel coinciden and asesor='Pagina Web'` (devolvió 32).
+
+**Por qué:** Mateo quiere que TODA venta hecha por la línea de Lili quede a nombre de la asesora **Liliana**
+(independiente), sea de la IA o manual. Efecto contable: esas ventas pasan del bucket equipo ("Pagina Web") al
+de **independientes** (caja/rendimiento/liquidación), coherente con que sean de Liliana.
+
+**Qué NO se tocó (importante):** otras **22 boletas** cuyo dueño tiene chat con Lili pero **sin prueba de venta
+por Lili** (18 sin nota ni comprobante + 4 con comprobante pero ya a nombre de OTRO vendedor real —Arias, Aleja
+Valencia, Saldarriaga—; una incluso del 16-may, antes de existir la IA). Esas se quedan con su vendedor real y
+**Liliana las remite** a ese vendedor (la remisión ya funciona: todos esos vendedores tienen `numero_remision`).
+Regla: un comprobante en el chat NO prueba que la venta se hizo por Lili; solo se reatribuye con prueba (nota de
+apartado de la IA). Las 4 quedaron PENDIENTES de la decisión final de Mateo.
+
+---
+
 ## 2026-06-08 — [WhatsApp] — Liliana usa su PROPIA llave de Claude + se reinició su contador de gasto
 
 **Qué hicimos:** Liliana ahora se autentica con Claude usando una llave dedicada,
