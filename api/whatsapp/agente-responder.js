@@ -399,27 +399,26 @@ async function enviarContactoInicial(conv, { saludo, cierre } = {}) {
   if (e3 && e3.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: cie, wa_message_id: e3.wa_message_id });
 }
 
-// ¿El primer contacto es un saludo genérico SIN pregunta? (el ~88% es el texto del anuncio de
-// Meta: "¡Hola! quiero más información."). Lista BLANCA conservadora: SOLO estos textos exactos
-// disparan el saludo sin IA. Cualquier otra cosa (una pregunta, un número, un audio, etc.) la
-// atiende la IA con normalidad. Así ahorramos sin robotizar ni ignorar preguntas reales.
-function esContactoGenerico(reales) {
+// ¿El primer contacto lo RESUELVE el saludo predefinido? El saludo responde: precio, separar/abono,
+// legalidad y el PRÓXIMO sorteo. El ~88% llega con el texto del anuncio ("¡Hola! quiero más
+// información.") y muchos solo agregan "¿cuánto vale?" / "¿es legal?" / "¿cuándo juega?", que el
+// saludo YA contesta → se los manda SIN IA. Solo va a la IA si piden algo que el saludo NO cubre:
+// un número puntual de boleta, cómo/dónde pagar, números disponibles, ubicación o la lista de
+// premios; también si es multimedia (audio/imagen) o un mensaje largo (tiene sustancia). Conservador:
+// ante cualquiera de esos marcadores → IA, para no responder en falso ni sonar robot.
+function primerContactoLoResuelveSaludo(reales) {
   const entrantes = (reales || []).filter(m => m.direccion === 'entrante');
-  if (!entrantes.length || entrantes.length > 2) return false;
+  if (!entrantes.length || entrantes.length > 3) return false;
   const t = entrantes.map(m => String(m.texto || '')).join(' ').toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')          // quita tildes
-    .replace(/[¡!¿?.,:;*\-_/()]/g, ' ').replace(/\s+/g, ' ').trim();
-  if (!t) return false;
-  const GENERICOS = new Set([
-    'hola', 'hola hola', 'buenas', 'buenos dias', 'buenas tardes', 'buenas noches',
-    'hola buenas', 'hola buenos dias', 'hola buenas tardes', 'hola buenas noches',
-    'info', 'informacion', 'mas informacion', 'mas info', 'quiero info', 'quiero informacion',
-    'quiero mas informacion', 'quiero mas info', 'hola quiero mas informacion',
-    'hola quiero informacion', 'me interesa', 'hola me interesa', 'interesado', 'interesada',
-    'buenas quiero mas informacion', 'buenos dias quiero mas informacion',
-    'buenas tardes quiero mas informacion', 'buenas noches quiero mas informacion',
-  ]);
-  return GENERICOS.has(t);
+    .normalize('NFD').replace(/[̀-ͯ]/g, '');          // quita tildes
+  if (!t.trim() || t.length > 180) return false;       // vacío o largo (con sustancia) → IA
+  if (/\[(audio|imagen|foto|video|sticker|ubicacion|documento|gif)/.test(t)) return false;   // multimedia → IA
+  if (/\d{3,4}/.test(t)) return false;                                                        // pide un número puntual
+  if (/(numero|numeros|disponible|disponibil)/.test(t)) return false;                         // números disponibles
+  if (/(consign|cuenta|nequi|daviplata|bancolombia|transferen|deposit|\bllave\b|bre[ -]?b|pagar|como pago|donde pago|metodo de pago|a nombre de quien|a que numero)/.test(t)) return false;  // pago
+  if (/(donde queda|donde esta|donde es|direccion|ubicacion|que ciudad|en que ciudad)/.test(t)) return false;  // ubicación
+  if (/(que premios|cuales premios|cuales son los premios|que me gano|cuanto me gano)/.test(t)) return false;  // lista de premios
+  return true;   // saludo genérico o pregunta básica (precio/abono/legal/cuándo) → saludo predefinido
 }
 
 // Herramientas que ENVÍAN mensajes o mueven plata/inventario. En MODO SOMBRA estas NO se
@@ -988,23 +987,6 @@ export default async function handler(req, res) {
     // presentó). Si es así, al activarlo NO debe reenviar el contacto inicial: continúa.
     const yaHuboSalientes = reales.some(m => m.direccion === 'saliente');
 
-    // ── ATAJO SIN IA: saludo predefinido al PRIMER contacto genérico (ahorro de tokens) ──
-    // El ~88% de los primeros mensajes es el texto del anuncio de Meta ("¡Hola! quiero más
-    // información.") SIN pregunta. A esos les mandamos el contacto inicial FIJO (saludo + fotos +
-    // cierre) SIN gastar una llamada a la IA. La IA entra desde el 2º mensaje, o si el 1º trae una
-    // pregunta. Ya pasamos el candado atómico (arriba), así que NO hay riesgo de saludo doble.
-    // Mismos frenos que la herramienta: no aplica a clientes con boleta, ni remisión, ni en sombra,
-    // ni si el chat ya tiene mensajes, ni si la cabina apagó 'enviar_contacto_inicial'.
-    if (!recordatorio && !conv.sombra && !yaHuboSalientes && !remision
-        && !(estadoCliente.boletas && estadoCliente.boletas.length)
-        && activas.has('enviar_contacto_inicial')
-        && esContactoGenerico(reales)) {
-      await enviarContactoInicial(conv, { saludo: '¡Hola! 😊 Soy Liliana, te muestro la casa:' });
-      await nota(conv, 'Envié el contacto inicial (saludo predefinido, SIN IA — ahorro de tokens).');
-      await soltarLock(conv);
-      return res.status(200).json({ status: 'ok', atajo: 'contacto_inicial_predefinido' });
-    }
-
     // Resultados de los sorteos. Las casillas (qué sorteos y sus fechas) salen del CALENDARIO
     // de la rifa activa; el ganador lo escribe Mateo en la cabina (se guarda por fecha). El
     // agente los lee SOLO para responder "¿qué número ganó?". Vacío = aún no se ha jugado.
@@ -1086,6 +1068,29 @@ export default async function handler(req, res) {
         '- Próximos sorteos de esta rifa (solo los que faltan):\n' +
         sorteosFuturos.map(s => '   · ' + String(s.titulo || 'Sorteo').trim() + ' — ' + etiquetaFecha(s.fecha)).join('\n')
       : '';
+
+    // ── ATAJO SIN IA: saludo predefinido cuando el saludo YA resuelve el primer contacto ──
+    // El ~88% llega con el texto del anuncio ("¡Hola! quiero más información.") y muchos preguntan
+    // cosas que el saludo YA responde (precio, abono, legalidad, cuándo juega). A esos les mandamos
+    // el contacto inicial FIJO (saludo + fotos + cierre con el PRÓXIMO sorteo) SIN gastar IA. La IA
+    // entra desde el 2º mensaje, o si el 1º pide algo que el saludo NO cubre (número, pago,
+    // disponibles, ubicación, premios). Ya pasamos el candado atómico → no hay riesgo de saludo doble.
+    if (!recordatorio && !conv.sombra && !yaHuboSalientes && !remision
+        && !(estadoCliente.boletas && estadoCliente.boletas.length)
+        && activas.has('enviar_contacto_inicial')
+        && primerContactoLoResuelveSaludo(reales)) {
+      const lineaProx = proximo
+        ? `\n\nAdemás, *${etiquetaFecha(proximo.fecha)}* ya juega: *${String(proximo.titulo).trim()}*` +
+          (montoAcumProximo ? ` (premio acumulado en *${montoAcumProximo}*)` : '') +
+          ` — con *$20.000* de abono ya entras. 🎉`
+        : '';
+      const cierre = '• Cada boleta *cuesta 150 mil*\n\n• La puedes *separar con 20 mil* e ir abonando a tu ritmo\n\n• Estamos *autorizados por EDSA* (rifa legal)' +
+        lineaProx + '\n\n*¿Te explico los premios?* 🤔';
+      await enviarContactoInicial(conv, { saludo: '¡Hola! 😊 Soy Liliana, te muestro la casa:', cierre });
+      await nota(conv, 'Envié el contacto inicial (saludo predefinido, SIN IA — ahorro de tokens).');
+      await soltarLock(conv);
+      return res.status(200).json({ status: 'ok', atajo: 'contacto_inicial_predefinido' });
+    }
 
     const systemVolatil =
       `\n\n---\nCONTEXTO (no lo menciones literalmente): hoy es ${contextoFechaHora()} (Colombia). ` +
