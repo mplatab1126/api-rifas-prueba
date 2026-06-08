@@ -135,10 +135,13 @@ export default async function handler(req, res) {
   const { contrasena, accion, linea_id } = req.body || {};
   const nombre = validarAsesor(contrasena);
   if (!nombre) return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido.' });
-  // El agente es por ahora EXCLUSIVO de Mateo (para evitar errores en pruebas).
-  if (!esMateo(nombre)) return res.status(403).json({ status: 'error', mensaje: 'Solo Mateo puede configurar el agente.' });
   if (!linea_id) return res.status(200).json({ status: 'error', mensaje: 'Falta la línea.' });
   if (!(await puedeVerLinea(nombre, linea_id))) return res.status(403).json({ status: 'error', mensaje: 'No tienes acceso a esta línea.' });
+  // Prender/apagar el agente en UN chat lo puede hacer el dueño de la línea (ej. Liliana en la suya).
+  // El resto de la cabina (manual, interruptor de la línea, herramientas, costos) es SOLO de gerencia/Mateo.
+  if (accion !== 'activar_conversacion' && !esMateo(nombre)) {
+    return res.status(403).json({ status: 'error', mensaje: 'Solo Mateo puede configurar el agente.' });
+  }
 
   try {
     if (accion === 'config') {

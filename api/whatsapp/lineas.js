@@ -42,5 +42,18 @@ export default async function handler(req, res) {
     return res.status(200).json({ status: 'error', mensaje: error.message });
   }
 
-  return res.status(200).json({ status: 'ok', lineas: data || [], esGerencia: esGerencia(nombre), soyMateo: esMateo(nombre) });
+  // Marcar qué líneas tienen un agente activo (encendido/sombra) → su dueño verá el botón 🤖.
+  const lineasOut = data || [];
+  let conAgente = new Set();
+  if (lineasOut.length) {
+    const { data: cfgs } = await supabase
+      .from('agente_config')
+      .select('linea_id, estado')
+      .in('linea_id', lineasOut.map(l => l.phone_number_id))
+      .neq('estado', 'apagado');
+    conAgente = new Set((cfgs || []).map(c => c.linea_id));
+  }
+  const lineas = lineasOut.map(l => ({ ...l, tiene_agente: conAgente.has(l.phone_number_id) }));
+
+  return res.status(200).json({ status: 'ok', lineas, esGerencia: esGerencia(nombre), soyMateo: esMateo(nombre) });
 }

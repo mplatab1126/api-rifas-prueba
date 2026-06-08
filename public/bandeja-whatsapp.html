@@ -1325,7 +1325,10 @@ window.toggleFicha = function(abrir){
 /* ── Agente por conversación (botón 🤖 del chat · solo gerencia) ──────────── */
 function actualizarBtnAgente(){
   const b = $('btnAgente'); if(!b) return;
-  b.style.display = (soyMateo && actual) ? 'inline-flex' : 'none';
+  // El botón 🤖 lo ve gerencia (Mateo) en cualquier línea, y el DUEÑO de una línea que tenga agente (ej. Liliana).
+  const lnAg = lineas.find(l => l.phone_number_id === lineaActual);
+  const puedeAgente = soyMateo || !!(lnAg && lnAg.tiene_agente);
+  b.style.display = (puedeAgente && actual) ? 'inline-flex' : 'none';
   b.classList.toggle('on', !!agenteActivoActual);
   b.classList.toggle('off', !agenteActivoActual);
   const t = $('btnAgenteTxt'); if(t) t.textContent = agenteActivoActual ? 'Agente ON' : 'Agente OFF';
@@ -1333,7 +1336,7 @@ function actualizarBtnAgente(){
 window.toggleAgente = async function(){
   if(!actual) return;
   const nuevo = !agenteActivoActual;
-  if(nuevo && !confirm('¿Activar el agente en ESTE chat?\n\nResponderá solo a este cliente y puede ejecutar acciones reales. Úsalo solo en tu chat de prueba.')) return;
+  if(nuevo && !confirm('¿Activar el agente (Liliana) en ESTE chat?\n\nLe responderá solo a este cliente y puede ejecutar acciones reales (apartar, abonar). Para recuperar el chat, vuelve a tocar el botón.')) return;
   agenteActivoActual = nuevo;
   actualizarBtnAgente();
   const r = await api('agente', { accion:'activar_conversacion', linea_id: actualLinea, telefono: actual, activa: nuevo });

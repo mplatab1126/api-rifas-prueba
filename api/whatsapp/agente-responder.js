@@ -728,14 +728,15 @@ export default async function handler(req, res) {
 
   const { contrasena, linea_id, telefono, interno, recordatorio } = req.body || {};
   if (!linea_id || !telefono) return res.status(200).json({ status: 'error', mensaje: 'Falta línea o teléfono.' });
-  // Autorización: o el secreto interno (lo dispara el webhook al instante) o Mateo desde la bandeja.
+  // Autorización: o el secreto interno (lo dispara el webhook al instante) o, desde la bandeja,
+  // gerencia o el DUEÑO de la línea (ej. Liliana en la suya), igual que el botón 🤖.
   let autorizado = false;
   const tokenInterno = process.env.WHATSAPP_VERIFY_TOKEN;
   if (interno && tokenInterno && interno === tokenInterno) {
     autorizado = true;
   } else {
     const nombre = validarAsesor(contrasena);
-    if (nombre && esMateo(nombre) && (await puedeVerLinea(nombre, linea_id))) autorizado = true;
+    if (nombre && (await puedeVerLinea(nombre, linea_id))) autorizado = true;
   }
   if (!autorizado) return res.status(403).json({ status: 'error', mensaje: 'No autorizado.' });
 
