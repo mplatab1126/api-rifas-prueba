@@ -15,6 +15,17 @@
 
 ## Tareas pendientes
 
+- [ ] (2026-06-07) **🔴 CRÍTICO — El acumulado NO se reinicia tras un ganador (Liliana dice monto
+  equivocado del próximo).** Liliana le dice a los clientes que el próximo sábado (13-jun) juega por
+  **$20.000.000**, cuando debe ser **$5.000.000** (la base): el acumulado YA se ganó el sábado 6-jun
+  (5588 · Margarita Rosa). Como hubo ganador, el acumulado se reinicia y el próximo vuelve a $5M.
+  **Causa:** en `agente-responder.js`, `montoAcumProximo` se calcula tomando el ÚLTIMO sorteo PASADO
+  marcado `acumulado` con `acumulado_monto` (≈ líneas 947-951), SIN revisar si DESPUÉS hubo un sorteo
+  con GANADOR que reinicie el acumulado → sigue arrastrando el monto viejo. Afecta `bloqueResultados`
+  (≈947-960) y `bloqueFechas` (≈970-977). **Arreglo:** solo arrastrar el monto si el sorteo PASADO más
+  reciente (el inmediatamente anterior al próximo) fue `acumulado`; si tuvo ganador (numero/nombre),
+  reiniciar a base (sin monto extra → el próximo va por su valor de título, $5M). OJO con el Sueldazo
+  (sorteo especial entre semana): la cadena de acumulado es la de los SÁBADOS; no mezclar.
 - [ ] (2026-06-07) **Liliana debe PEDIR cédula y correo (aunque sean opcionales).** Hoy al pedir datos
   solo pide "nombre completo, apellido y ciudad" y NO menciona cédula ni correo (caso real chat
   +573115630300). El cambio del 7-jun (hacerlos opcionales) se pasó: la idea es que **siempre los pida**
