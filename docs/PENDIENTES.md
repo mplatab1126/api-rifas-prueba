@@ -61,10 +61,11 @@
   ¿cuántas fotos al saludar? (hoy 12+); confirmar el mínimo de $50.000/$60.000; revisar
   el framing de los **$300.000.000**. (Ya HECHO el 6-jun: tutear siempre / no contar
   sábados / no mencionar el Sueldazo — ver "Hecho recientemente" y bitácora.)
-- [ ] (2026-06-07) **Endurecer seguridad (mejora futura, NO urgente):** ahora que existe la llave
-  maestra, volver a ACTIVAR RLS con políticas en tablas sensibles (ej. `conversaciones_whatsapp`) que
-  hoy dependen de tener RLS apagado. Hacerlo con calma, tabla por tabla, confirmando que agente y
-  bandeja sigan funcionando. (La parte de `SUPABASE_SERVICE_ROLE_KEY` ya quedó hecha — ver abajo.)
+- [ ] (2026-06-08) **🔒 PASADA DE SEGURIDAD (RLS) — pendiente, Mateo la pidió como sesión dedicada.**
+  Diagnóstico hecho (84 avisos: tokens de WhatsApp/sesión expuestos, 56 tablas sin RLS, etc.). Plan
+  completo, lista de tablas y los riesgos al prender RLS (lecturas con la llave anónima que se romperían)
+  están en **`docs/seguridad-rls.md`**. Ejecutar tabla por tabla, probando agente + bandeja + páginas
+  después de cada una. La llave maestra ya está puesta (el backend con `supabaseAdmin` aguanta RLS).
 - [ ] (2026-06-07) **Preparar la copia de trabajo en WINDOWS** (Mateo trabaja la mayoría
   de veces en Windows). La primera vez que abra Claude Code allá, clonar fresco de GitHub a
   una carpeta FUERA de Google Drive (ej. `C:\los-platas-rifas`) y trabajar siempre desde ahí.
