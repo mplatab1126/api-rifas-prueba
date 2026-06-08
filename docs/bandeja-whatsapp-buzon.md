@@ -292,6 +292,19 @@ Mide cuánto cuesta la IA que responde (los tokens que devuelve Claude en cada r
   (editable por SQL). `analizarRemision`/`bloqueRemision` en `agente-responder.js`. Varios vendedores
   → el más reciente; sin número cargado → pasa a un asesor. Ver bitácora 7-jun.
 
+### 8.14 Novedades del 8-jun-2026 (ver bitácora)
+- **Ventas WEB = equipo:** "Pagina Web" (2.626 boletas) cuenta como el equipo → remite al número del
+  equipo (`asesores_config.numero_remision`). Cualquier `asesor` que no esté en `asesores_config` con
+  número cae a "pasar a un asesor".
+- **No se presenta a clientes con boleta** (determinístico): si el cliente ya tiene boleta(s) o hay que
+  remitirlo, el código le QUITA `enviar_contacto_inicial` (antes dependía de que el modelo obedeciera).
+- **Acumulado se reinicia tras un ganador:** el motor agrupa los sorteos por tipo (título) y solo arrastra
+  el monto acumulado al próximo si el último del mismo tipo quedó acumulado; si tuvo ganador, va por su base.
+- **Nombre de la rifa:** corregido de "Rica casa santa teresita" a **"Casa Santa Teresita"** (en
+  `rifas.nombre` y en el manual `agente_config.prompt`).
+- **🔒 Seguridad (RLS):** se prendió RLS en todas las tablas y el backend pasó a usar la LLAVE MAESTRA;
+  la llave anónima quedó bloqueada. Ver `docs/seguridad-rls.md`. NO borrar `SUPABASE_SERVICE_ROLE_KEY`.
+
 ## 9. Pendientes
 **Agente:**
 - ⬜ **Pago en línea (Wompi)** como herramienta (enviar link de `/abonar`). Subiría conversión. Toca plata; Mateo lo dejó para después.

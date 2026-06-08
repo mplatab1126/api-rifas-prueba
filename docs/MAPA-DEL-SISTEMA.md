@@ -103,7 +103,7 @@ Compartidos por varias páginas:
 
 | Pieza | Qué hace | Qué tan usada |
 |---|---|---|
-| `supabase.js` | Conexión a la base de datos. | **Crítica** — la usa todo. |
+| `supabase.js` | Conexión a la base de datos. **Desde 8-jun-2026 el backend usa la LLAVE MAESTRA** (`SUPABASE_SERVICE_ROLE_KEY`) en ambos clientes; pasa por encima de RLS, que está PRENDIDO en todas las tablas. **No borrar esa variable en Vercel.** | **Crítica** — la usa todo. |
 | `auth.js` | Valida la contraseña del asesor (`ASESORES_SECRETO`). | **Crítica** — 40+ funciones. |
 | `cors.js` | Seguridad del navegador: solo deja entrar dominios autorizados. | **Crítica** — 40+ funciones. |
 | `whatsapp.js` | Cliente de WhatsApp (Meta): enviar texto/imagen/plantilla/documento, subir y bajar archivos. | **Crítica** — 26+ funciones. |
@@ -173,6 +173,17 @@ para reabrir la conversación; si sigue abierta, texto normal. Ver bitácora),
 ~1h reintenta buscar el pago; abona solo si aparece de forma sólida, si no pasa a asesor;
 pg_cron `verificar-pagos-cada-5min`. Ver bitácora),
 `abono-reparto.js`, `buscar-pago.js`.
+
+**Novedades del motor (`agente-responder.js`, 2026-06-08; ver bitácora):**
+- **Remisión al punto de venta:** funciones `analizarRemision` / `bloqueRemision`. Si el cliente que
+  escribe a la línea de Lili tiene boleta vendida por OTRO (asesor que no es dueño de la línea, según
+  `lineas_asesores`), no lo atiende: le da el número del punto donde compró (`asesores_config.numero_remision`).
+  Las ventas por la WEB ("Pagina Web") cuentan como equipo → remiten al número del equipo.
+- **No se presenta a clientes con boleta:** si el cliente ya tiene boleta(s) o hay que remitirlo, el código
+  le QUITA la herramienta `enviar_contacto_inicial` (determinístico, no depende de que el modelo obedezca).
+- **Acumulado se reinicia tras ganador:** `montoAcumProximo` agrupa por tipo de sorteo y solo arrastra el
+  acumulado si el último del mismo tipo quedó acumulado; si tuvo ganador, el próximo va por su monto base.
+- **Contador "sin leer":** `guardarEnChat` (saliente) pone `no_leidos=0` cuando el agente responde.
 
 **Funciones y tablas EN LA BASE (agente/bandeja, 2026-06-07):**
 - Función `bandeja_filtrar(...)` — todo el filtrado avanzado de la bandeja (etiquetas con operador
