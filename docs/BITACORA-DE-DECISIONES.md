@@ -100,9 +100,18 @@ ajenos. Lo pidió Mateo (ejemplo real: cel 573216904915, boleta 3171 vendida por
 - Si la boleta es de un independiente **sin número cargado**, Liliana se disculpa y **pasa a un asesor**
   (caso raro hasta que Mateo dé esos números).
 
+**Añadido (mismo día):** (1) **Ventas por la WEB** ("Pagina Web", 2.626 boletas; y residuo
+"web-perla-roja") cuentan como **equipo Los Plata** → se les cargó `numero_remision = 3107334957`
+(decisión de Mateo: la web es como un asesor de su equipo). Quedaron como filas en `asesores_config`
+(`es_independiente=false`). (2) **Arreglo determinístico**: si el cliente YA tiene boleta(s) o hay que
+remitirlo, el código le **quita** a Liliana la herramienta `enviar_contacto_inicial` (antes dependía de
+que el modelo obedeciera la instrucción y a veces se presentaba igual a un cliente que ya tenía boleta).
+
 **Cuidado / qué NO hacer:** el dueño de cada línea sale de `lineas_asesores` (la de Lili =
 `1128258647034751` → "Liliana"); esto generaliza solo cuando se conecten las líneas grandes (el
-equipo regular como dueño). No toca dinero (solo a quién atiende y qué mensaje da). Tras agregar la
+equipo regular como dueño). No toca dinero (solo a quién atiende y qué mensaje da). Cualquier valor de
+`boletas.asesor` que NO esté en `asesores_config` con número (o que no sea dueño de la línea) cae a
+"pasar a un asesor": al aparecer un canal/asesor nuevo, agregarlo a `asesores_config` con su número. Tras agregar la
 columna se recargó el esquema con `apply_migration` (lección de la caché de PostgREST).
 
 ---

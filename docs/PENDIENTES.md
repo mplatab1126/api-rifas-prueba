@@ -81,6 +81,10 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-07) **Agente: no se presenta a un cliente que YA tiene boleta.** Antes Liliana mandaba
+  el contacto inicial aunque el cliente ya tuviera boleta (no obedecía la instrucción). Ahora es
+  determinístico: si tiene boleta(s) o hay que remitirlo, el código le quita la herramienta de contacto
+  inicial. Además, las ventas por la WEB ("Pagina Web") cuentan como equipo → remiten al 3107334957.
 - [x] (2026-06-07) **Bandeja: el contador verde de "sin leer" se apaga cuando Liliana responde.**
   Antes solo se ponía en 0 si un humano abría el chat; ahora `guardarEnChat` (saliente) pone `no_leidos=0`.
   Se limpiaron de una vez 248 chats viejos de la línea de Lili (último mensaje ya era nuestra respuesta).
