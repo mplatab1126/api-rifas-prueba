@@ -1,15 +1,17 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
-import { grupoDeAsesor } from '../lib/asesores.js';
+import { grupoDeAsesor, esGerencia } from '../lib/asesores.js';
 import { PRECIOS } from '../config/precios.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
 
-  const { numeroBoleta, contrasena } = req.body;
+  const { numeroBoleta, contrasena, asesorRegistro } = req.body;
   const nombreAsesor = validarAsesor(contrasena);
   if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
+  // Quién queda registrado (ej. el agente Liliana). No cambia permisos: solo gerencia puede usarlo.
+  const asesorReg = (asesorRegistro && esGerencia(nombreAsesor)) ? String(asesorRegistro).trim() : nombreAsesor;
   if (!numeroBoleta) return res.status(400).json({ status: 'error', mensaje: 'Falta el número de la boleta' });
 
   try {
@@ -95,7 +97,7 @@ export default async function handler(req, res) {
 
     // GUARDAR EN LA BITÁCORA
     await supabase.from('registro_movimientos').insert({
-        asesor: nombreAsesor,
+        asesor: asesorReg,
         accion: 'Liberar Boleta',
         boleta: numeroBoleta,
         detalle: 'Se liberó la boleta, borrando historial y pagos'

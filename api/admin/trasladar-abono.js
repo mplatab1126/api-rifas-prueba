@@ -21,6 +21,7 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
+import { esGerencia } from '../lib/asesores.js';
 import { PRECIOS } from '../config/precios.js';
 
 const fmt = (n) => '$' + Number(n || 0).toLocaleString('es-CO');
@@ -29,9 +30,11 @@ export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  const { numeroOrigen, numeroDestino, telefono, contrasena, monto } = req.body || {};
+  const { numeroOrigen, numeroDestino, telefono, contrasena, monto, asesorRegistro } = req.body || {};
   const nombreAsesor = validarAsesor(contrasena);
   if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña de asesor incorrecta' });
+  // Quién queda registrado en la bitácora (ej. el agente Liliana). Solo gerencia puede usar el override.
+  const asesorReg = (asesorRegistro && esGerencia(nombreAsesor)) ? String(asesorRegistro).trim() : nombreAsesor;
 
   const origen = String(numeroOrigen || '').replace(/\D/g, '').padStart(4, '0').slice(-4);
   const destino = String(numeroDestino || '').replace(/\D/g, '').padStart(4, '0').slice(-4);
@@ -135,7 +138,7 @@ export default async function handler(req, res) {
 
     // 8) Bitácora
     await supabase.from('registro_movimientos').insert({
-      asesor: nombreAsesor, accion: 'Traslado de abono', boleta: destino,
+      asesor: asesorReg, accion: 'Traslado de abono', boleta: destino,
       detalle: `Trasladó ${fmt(montoMover)} de la boleta ${origen} a la ${destino} (mismo cliente, tel ...${last10})`,
     });
 

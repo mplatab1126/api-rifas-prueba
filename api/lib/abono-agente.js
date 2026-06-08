@@ -20,7 +20,18 @@
  *   'error'         → { mensaje }
  */
 
+import { supabaseAdmin } from './supabase.js';
+
 const BASE_URL = 'https://www.losplata.com.co';
+
+// Nombre del asesor DUEÑO de una línea (ej. "Liliana"). Los movimientos del agente y del
+// relojito de reintentos se registran a SU nombre, no a nombre de gerencia.
+export async function asesorDeLinea(lineaId) {
+  try {
+    const { data } = await supabaseAdmin.from('lineas_asesores').select('asesor').eq('phone_number_id', lineaId).limit(1).maybeSingle();
+    return (data && data.asesor) ? data.asesor : 'Liliana';
+  } catch (_) { return 'Liliana'; }
+}
 
 // Contraseña de gerencia (de ASESORES_SECRETO) para llamar la lógica de abono como un humano.
 export function contrasenaGerencia() {
@@ -45,7 +56,7 @@ async function post(ruta, cuerpo) {
   }
 }
 
-export async function verificarYAbonar({ telefono, linea_id, conversacion_id, mediaId, numeroPedido, pwd }) {
+export async function verificarYAbonar({ telefono, linea_id, conversacion_id, mediaId, numeroPedido, pwd, asesorRegistro }) {
   const v = await post('/api/whatsapp/buscar-pago', { media_id: mediaId, telefono, linea_id, contrasena: pwd });
   if (v.status !== 'ok') return { tipo: 'error', mensaje: v.mensaje || 'no se pudo verificar el comprobante' };
   if (!v.sugerida_id) return { tipo: 'no_encontrado', diagnostico: v.diagnostico || '' };
@@ -63,10 +74,13 @@ export async function verificarYAbonar({ telefono, linea_id, conversacion_id, me
   if (pedido) destino = conSaldo.find(b => String(b.numero) === pedido.padStart(4, '0') || String(b.numero) === pedido);
   if (!destino) destino = conSaldo[0];
 
+  // El abono se graba a nombre del agente (Liliana): si no lo mandan, se deduce de la línea.
+  const asesorReg = asesorRegistro || await asesorDeLinea(linea_id);
   const d = await post('/api/admin/abono', {
     numeroBoleta: String(destino.numero), valorAbono: trans.monto,
     metodoPago: trans.plataforma || 'Transferencia', referencia: trans.referencia || 'Sin Ref',
     idTransferencia: v.sugerida_id, contrasena: pwd,
+    ...(asesorReg ? { asesorRegistro: asesorReg } : {}),
   });
   if (d.status !== 'ok') return { tipo: 'error', mensaje: d.mensaje || 'no se pudo registrar el abono' };
   return { tipo: 'abonado', monto: trans.monto, numero: destino.numero };

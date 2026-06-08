@@ -153,6 +153,10 @@ export default async function handler(req, res) {
       String(fechaCol.getMinutes()).padStart(2, '0') + ':' +
       String(fechaCol.getSeconds()).padStart(2, '0');
 
+    // Quién queda como vendedor de la boleta. Por defecto "Pagina Web" (compra desde la web);
+    // el agente Liliana manda su nombre para que la venta quede a su nombre.
+    const asesorVenta = (req.body.asesor && String(req.body.asesor).trim()) || 'Pagina Web';
+
     for (const b of checkData) {
       const precio = Number(b.precio_total) || PRECIOS.RIFA_4_CIFRAS;
       const boletaPayload = {
@@ -160,7 +164,7 @@ export default async function handler(req, res) {
         estado: 'Ocupada',
         total_abonado: 0,
         saldo_restante: precio,
-        asesor: 'Pagina Web',
+        asesor: asesorVenta,
         fecha_venta: fechaVenta,
       };
       if (docTipoLimpio) boletaPayload.documento_tipo = docTipoLimpio;
@@ -177,7 +181,7 @@ export default async function handler(req, res) {
 
     // 5. Registramos en la bitácora (una línea por boleta reservada)
     const bitacora = checkData.map(b => ({
-      asesor: 'Pagina Web',
+      asesor: asesorVenta,
       accion: 'Nueva Venta',
       boleta: b.numero,
       detalle: `Reserva desde web por ${telefonoLimpio} (${nombreCompleto})`,

@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
-import { grupoDeAsesor } from '../lib/asesores.js';
+import { grupoDeAsesor, esGerencia } from '../lib/asesores.js';
 import { PRECIOS } from '../config/precios.js';
 import { pendienteHabilitado } from '../lib/configuracion.js';
 
@@ -9,10 +9,14 @@ export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  const { numeroBoleta, valorAbono, metodoPago, referencia, contrasena, esPendiente, idTransferencia, esPagoInteligente, permitirExceso, boletasRepartidas } = req.body;
+  const { numeroBoleta, valorAbono, metodoPago, referencia, contrasena, esPendiente, idTransferencia, esPagoInteligente, permitirExceso, boletasRepartidas, asesorRegistro } = req.body;
 
   const nombreAsesor = validarAsesor(contrasena);
   if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña de asesor incorrecta' });
+  // El movimiento se GRABA a nombre de `asesorRegistro` (ej. el agente Liliana) sin cambiar los
+  // permisos: la autenticación y la validación de grupo siguen usando `nombreAsesor`. Solo gerencia
+  // puede usar este override (el backend del agente entra como gerencia); un asesor normal lo ignora.
+  const asesorReg = (asesorRegistro && esGerencia(nombreAsesor)) ? String(asesorRegistro).trim() : nombreAsesor;
   if (!numeroBoleta || !valorAbono) return res.status(400).json({ status: 'error', mensaje: 'Falta la boleta o el valor del abono' });
 
   const numeroLimpio = String(numeroBoleta).trim();
@@ -108,7 +112,7 @@ export default async function handler(req, res) {
         fecha_pago: fechaPagoColombia,
         referencia_transferencia: referencia || 'Sin Ref',
         metodo_pago: metodoPago || 'Efectivo',
-        asesor: nombreAsesor,
+        asesor: asesorReg,
         tipo: '4cifras',
         origen: esPendiente ? 'pendiente' : (esPagoInteligente || idTransLimpio) ? 'transferencia_real' : 'manual',
         id_transferencia: idTransLimpio
@@ -180,14 +184,14 @@ export default async function handler(req, res) {
         fecha: fechaHoyCaja,
         tipo: 'ingreso',
         monto: monto,
-        descripcion: `Efectivo en oficina - Boleta ${numeroLimpio} (${nombreAsesor})`,
-        creado_por: nombreAsesor
+        descripcion: `Efectivo en oficina - Boleta ${numeroLimpio} (${asesorReg})`,
+        creado_por: asesorReg
       });
     }
 
     // GUARDAR EN LA BITÁCORA
     const { error: errorBitacora } = await supabase.from('registro_movimientos').insert({
-        asesor: nombreAsesor,
+        asesor: asesorReg,
         accion: 'Nuevo Abono',
         boleta: numeroLimpio,
         detalle: `Abonó $${monto} usando ${metodoPago}`

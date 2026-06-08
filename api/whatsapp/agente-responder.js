@@ -23,7 +23,7 @@ import { esMateo, puedeVerLinea } from '../lib/asesores.js';
 import { enviarTexto, enviarImagenPorId, enviarImagen, enviarDocumento, descargarMediaBase64 } from '../lib/whatsapp.js';
 import { numerosDisponibles } from '../lib/numeros-disponibles.js';
 import { ponerEtiqueta } from '../lib/etiquetas.js';
-import { verificarYAbonar } from '../lib/abono-agente.js';
+import { verificarYAbonar, asesorDeLinea } from '../lib/abono-agente.js';
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const MODELOS_OK = ['claude-opus-4-8', 'claude-sonnet-4-6', 'claude-haiku-4-5'];
@@ -470,6 +470,7 @@ async function ejecutarHerramienta(nombre, input, conv) {
     const cuerpo = { numeros: [num], nombre: nom, apellido: ape, ciudad: ciu, telefono: conv.telefono, esColombia: false };
     if (doc) { cuerpo.documento_tipo = 'CC'; cuerpo.documento_numero = doc; }
     if (cor) cuerpo.correo = cor;
+    cuerpo.asesor = await asesorDeLinea(conv.linea_id);   // la venta queda a nombre del agente (Liliana)
     const d = await llamarApi('/api/rifa/reservar', cuerpo);
     if (!d.exito) { await nota(conv, 'Intenté apartar el ' + num + ' pero no se pudo: ' + (d.error || 'error')); return 'No se pudo apartar: ' + (d.error || 'error') + '. Cuéntaselo al cliente y ofrécele otra opción.'; }
     await nota(conv, `Aparté el número ${num} a nombre de ${nom} ${ape} (${ciu}).`);
@@ -556,7 +557,7 @@ async function ejecutarHerramienta(nombre, input, conv) {
     }
     const pwd = contrasenaGerencia();
     if (!pwd) return 'No puedo cancelar boletas ahora (falta configuración). Pásalo a un asesor.';
-    const d = await llamarApi('/api/admin/liberar-boleta', { numeroBoleta: num, contrasena: pwd });
+    const d = await llamarApi('/api/admin/liberar-boleta', { numeroBoleta: num, contrasena: pwd, asesorRegistro: await asesorDeLinea(conv.linea_id) });
     if (d.status !== 'ok') return 'No se pudo liberar la boleta: ' + (d.mensaje || 'error') + '. Pásalo a un asesor.';
     await nota(conv, `Liberé la boleta ${num} (el cliente ya no quiere participar).`);
     return `Listo, liberé el número ${num}. Confírmaselo con amabilidad, sin presionar, y déjale la puerta abierta para cuando quiera volver.`;
@@ -571,6 +572,7 @@ async function ejecutarHerramienta(nombre, input, conv) {
     if (!pwd) return 'No puedo trasladar abonos ahora (falta configuración). Pásalo a un asesor.';
     const cuerpo = { numeroOrigen: origen, numeroDestino: destino, telefono: conv.telefono, contrasena: pwd };
     if (input?.monto != null && input.monto !== '') cuerpo.monto = input.monto;
+    cuerpo.asesorRegistro = await asesorDeLinea(conv.linea_id);   // el traslado queda a nombre del agente (Liliana)
     const d = await llamarApi('/api/admin/trasladar-abono', cuerpo);
     if (d.status !== 'ok') { await nota(conv, `Intenté trasladar el abono de ${origen} a ${destino} pero no se pudo: ${d.mensaje || 'error'}`); return 'No se pudo trasladar: ' + (d.mensaje || 'error') + '. Si el cliente insiste o algo no cuadra, pásalo a un asesor.'; }
     const movido = Number(d.monto).toLocaleString('es-CO');
