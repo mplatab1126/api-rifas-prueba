@@ -378,6 +378,50 @@ async function decir(conv, texto) {
   await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: t, wa_message_id: env.wa_message_id || null });
 }
 
+// Envía el "contacto inicial": saludo + fotos de la casa + cierre (precio/legalidad/"¿te explico
+// los premios?"). Lo usan la herramienta enviar_contacto_inicial Y el atajo SIN IA del primer
+// contacto genérico (ahorro de tokens). Todo se guarda en el chat (guardarEnChat marca el chat
+// como respondido: ultimo_entrante=false, no_leidos=0).
+async function enviarContactoInicial(conv, { saludo, cierre } = {}) {
+  const sal = String(saludo || '').trim() || 'Hola, ¿cómo estás? 😊 Mi nombre es Liliana, te muestro las fotos de la casa:';
+  const cie = String(cierre || '').trim() || '• Cada boleta *cuesta 150 mil*\n\n• La puedes *separar con 20 mil* e ir abonando a tu ritmo\n\n• Estamos *autorizados por EDSA* (rifa legal)\n\n*¿Te explico los premios?* 🤔';
+  const e1 = await enviarTexto(conv.telefono, sal, conv.linea_id);
+  if (e1 && e1.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: sal, wa_message_id: e1.wa_message_id });
+  const { data: rr } = await supabase.from('respuestas_rapidas').select('pasos').eq('linea_id', conv.linea_id).ilike('titulo', '%contacto inicial%').maybeSingle();
+  const fotos = (rr && Array.isArray(rr.pasos) ? rr.pasos : []).filter(p => p.tipo === 'imagen' && (p.media_id || p.url));
+  for (const p of fotos) {
+    await dormir(600);
+    const env = p.media_id ? await enviarImagenPorId(conv.telefono, p.media_id, '', conv.linea_id) : await enviarImagen(conv.telefono, p.url, '', conv.linea_id);
+    if (env && env.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'image', texto: null, media_url: p.url || null, wa_message_id: env.wa_message_id });
+  }
+  await dormir(PAUSA_MS);
+  const e3 = await enviarTexto(conv.telefono, cie, conv.linea_id);
+  if (e3 && e3.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: cie, wa_message_id: e3.wa_message_id });
+}
+
+// ¿El primer contacto es un saludo genérico SIN pregunta? (el ~88% es el texto del anuncio de
+// Meta: "¡Hola! quiero más información."). Lista BLANCA conservadora: SOLO estos textos exactos
+// disparan el saludo sin IA. Cualquier otra cosa (una pregunta, un número, un audio, etc.) la
+// atiende la IA con normalidad. Así ahorramos sin robotizar ni ignorar preguntas reales.
+function esContactoGenerico(reales) {
+  const entrantes = (reales || []).filter(m => m.direccion === 'entrante');
+  if (!entrantes.length || entrantes.length > 2) return false;
+  const t = entrantes.map(m => String(m.texto || '')).join(' ').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')          // quita tildes
+    .replace(/[¡!¿?.,:;*\-_/()]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!t) return false;
+  const GENERICOS = new Set([
+    'hola', 'hola hola', 'buenas', 'buenos dias', 'buenas tardes', 'buenas noches',
+    'hola buenas', 'hola buenos dias', 'hola buenas tardes', 'hola buenas noches',
+    'info', 'informacion', 'mas informacion', 'mas info', 'quiero info', 'quiero informacion',
+    'quiero mas informacion', 'quiero mas info', 'hola quiero mas informacion',
+    'hola quiero informacion', 'me interesa', 'hola me interesa', 'interesado', 'interesada',
+    'buenas quiero mas informacion', 'buenos dias quiero mas informacion',
+    'buenas tardes quiero mas informacion', 'buenas noches quiero mas informacion',
+  ]);
+  return GENERICOS.has(t);
+}
+
 // Herramientas que ENVÍAN mensajes o mueven plata/inventario. En MODO SOMBRA estas NO se
 // ejecutan (se deja una nota de "qué haría"); las de solo lectura sí corren para que la prueba
 // sea realista.
@@ -426,20 +470,7 @@ async function ejecutarHerramienta(nombre, input, conv) {
   }
 
   if (nombre === 'enviar_contacto_inicial') {
-    const saludo = String(input?.saludo || '').trim() || 'Hola, ¿cómo estás? 😊 Mi nombre es Liliana, te muestro las fotos de la casa:';
-    const cierre = String(input?.cierre || '').trim() || '• Cada boleta *cuesta 150 mil*\n\n• La puedes *separar con 20 mil* e ir abonando a tu ritmo\n\n• Estamos *autorizados por EDSA* (rifa legal)\n\n*¿Te explico los premios?* 🤔';
-    const e1 = await enviarTexto(conv.telefono, saludo, conv.linea_id);
-    if (e1 && e1.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: saludo, wa_message_id: e1.wa_message_id });
-    const { data: rr } = await supabase.from('respuestas_rapidas').select('pasos').eq('linea_id', conv.linea_id).ilike('titulo', '%contacto inicial%').maybeSingle();
-    const fotos = (rr && Array.isArray(rr.pasos) ? rr.pasos : []).filter(p => p.tipo === 'imagen' && (p.media_id || p.url));
-    for (const p of fotos) {
-      await dormir(600);
-      const env = p.media_id ? await enviarImagenPorId(conv.telefono, p.media_id, '', conv.linea_id) : await enviarImagen(conv.telefono, p.url, '', conv.linea_id);
-      if (env && env.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'image', texto: null, media_url: p.url || null, wa_message_id: env.wa_message_id });
-    }
-    await dormir(PAUSA_MS);
-    const e3 = await enviarTexto(conv.telefono, cierre, conv.linea_id);
-    if (e3 && e3.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: cierre, wa_message_id: e3.wa_message_id });
+    await enviarContactoInicial(conv, { saludo: input?.saludo, cierre: input?.cierre });
     await nota(conv, 'Envié el contacto inicial (saludo + fotos de la casa + cierre).');
     return 'Listo: envié el saludo, las fotos y el cierre (que ya incluye el precio, la legalidad, la respuesta a su pregunta y "¿Te explico los premios?"). NO escribas NADA más; espera su respuesta.';
   }
@@ -956,6 +987,23 @@ export default async function handler(req, res) {
     // ¿Ya hubo respuestas en este chat? (un asesor lo atendió a mano o el agente ya se
     // presentó). Si es así, al activarlo NO debe reenviar el contacto inicial: continúa.
     const yaHuboSalientes = reales.some(m => m.direccion === 'saliente');
+
+    // ── ATAJO SIN IA: saludo predefinido al PRIMER contacto genérico (ahorro de tokens) ──
+    // El ~88% de los primeros mensajes es el texto del anuncio de Meta ("¡Hola! quiero más
+    // información.") SIN pregunta. A esos les mandamos el contacto inicial FIJO (saludo + fotos +
+    // cierre) SIN gastar una llamada a la IA. La IA entra desde el 2º mensaje, o si el 1º trae una
+    // pregunta. Ya pasamos el candado atómico (arriba), así que NO hay riesgo de saludo doble.
+    // Mismos frenos que la herramienta: no aplica a clientes con boleta, ni remisión, ni en sombra,
+    // ni si el chat ya tiene mensajes, ni si la cabina apagó 'enviar_contacto_inicial'.
+    if (!recordatorio && !conv.sombra && !yaHuboSalientes && !remision
+        && !(estadoCliente.boletas && estadoCliente.boletas.length)
+        && activas.has('enviar_contacto_inicial')
+        && esContactoGenerico(reales)) {
+      await enviarContactoInicial(conv, { saludo: '¡Hola! 😊 Soy Liliana, te muestro la casa:' });
+      await nota(conv, 'Envié el contacto inicial (saludo predefinido, SIN IA — ahorro de tokens).');
+      await soltarLock(conv);
+      return res.status(200).json({ status: 'ok', atajo: 'contacto_inicial_predefinido' });
+    }
 
     // Resultados de los sorteos. Las casillas (qué sorteos y sus fechas) salen del CALENDARIO
     // de la rifa activa; el ganador lo escribe Mateo en la cabina (se guarda por fecha). El
