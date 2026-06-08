@@ -86,6 +86,44 @@ function contextoFechaHora() {
   });
 }
 
+// ── Festivos de Colombia ──────────────────────────────────────────────────
+// El modelo NO sabe qué días son festivos en Colombia; se los calculamos y se los inyectamos
+// (para que sepa, p. ej., que la casa no se puede visitar hoy si es festivo). Incluye los fijos,
+// los de la Ley Emiliani (se trasladan al lunes siguiente) y los basados en la Pascua.
+function _pascua(anio) {   // algoritmo de Meeus/Butcher (domingo de Pascua)
+  const a = anio % 19, b = Math.floor(anio / 100), c = anio % 100, d = Math.floor(b / 4),
+    e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3),
+    h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4,
+    l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451),
+    mes = Math.floor((h + l - 7 * m + 114) / 31), dia = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(Date.UTC(anio, mes - 1, dia));
+}
+function _ymd(date) { return date.toISOString().slice(0, 10); }
+function _masDias(date, n) { const d = new Date(date); d.setUTCDate(d.getUTCDate() + n); return d; }
+function _aLunes(date) { const d = new Date(date); return _masDias(d, (1 - d.getUTCDay() + 7) % 7); } // traslado Emiliani al lunes
+function festivosDeAnio(anio) {
+  const f = {};
+  const fijo = (m, d, n) => { f[_ymd(new Date(Date.UTC(anio, m - 1, d)))] = n; };
+  const lunes = (m, d, n) => { f[_ymd(_aLunes(new Date(Date.UTC(anio, m - 1, d))))] = n; };
+  fijo(1, 1, 'Año Nuevo'); fijo(5, 1, 'Día del Trabajo'); fijo(7, 20, 'Día de la Independencia');
+  fijo(8, 7, 'Batalla de Boyacá'); fijo(12, 8, 'Inmaculada Concepción'); fijo(12, 25, 'Navidad');
+  lunes(1, 6, 'Reyes Magos'); lunes(3, 19, 'San José'); lunes(6, 29, 'San Pedro y San Pablo');
+  lunes(8, 15, 'Asunción'); lunes(10, 12, 'Día de la Raza'); lunes(11, 1, 'Todos los Santos');
+  lunes(11, 11, 'Independencia de Cartagena');
+  const p = _pascua(anio);
+  f[_ymd(_masDias(p, -3))] = 'Jueves Santo';
+  f[_ymd(_masDias(p, -2))] = 'Viernes Santo';
+  f[_ymd(_aLunes(_masDias(p, 39)))] = 'Ascensión del Señor';
+  f[_ymd(_aLunes(_masDias(p, 60)))] = 'Corpus Christi';
+  f[_ymd(_aLunes(_masDias(p, 68)))] = 'Sagrado Corazón';
+  return f;
+}
+// Devuelve el NOMBRE del festivo si la fecha 'YYYY-MM-DD' es festivo en Colombia, o null.
+function festivoColombia(yyyymmdd) {
+  const y = Number(String(yyyymmdd).slice(0, 4));
+  return y ? (festivosDeAnio(y)[yyyymmdd] || null) : null;
+}
+
 // "2026-07-04" → "sábado 4 de julio" (se parte la fecha a mano para no descuadrar por zona horaria).
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
@@ -1092,8 +1130,10 @@ export default async function handler(req, res) {
       return res.status(200).json({ status: 'ok', atajo: 'contacto_inicial_predefinido' });
     }
 
+    const festivoHoy = festivoColombia(hoyCol);
     const systemVolatil =
       `\n\n---\nCONTEXTO (no lo menciones literalmente): hoy es ${contextoFechaHora()} (Colombia). ` +
+      (festivoHoy ? `OJO: HOY es DÍA FESTIVO en Colombia (${festivoHoy}), así que la casa NO se puede visitar hoy (domingos y festivos no abre). Si preguntan por visitar HOY, díselo con cariño y ofréceles los horarios de los otros días. ` : '') +
       `Hablas por WhatsApp con el cliente cuyo número es ${conv.telefono}. ` +
       `Tienes herramientas para actuar; úsalas cuando corresponda en vez de inventar. ` +
       (remision ? '' : `Si el cliente acaba de llegar y aún no se ha enviado la presentación, usa primero enviar_contacto_inicial. `) +
