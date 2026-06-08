@@ -737,8 +737,11 @@ export default async function handler(req, res) {
   }
   if (!autorizado) return res.status(403).json({ status: 'error', mensaje: 'No autorizado.' });
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return res.status(200).json({ status: 'error', mensaje: 'Falta ANTHROPIC_API_KEY.' });
+  // Liliana usa su PROPIA llave de Claude (ANTHROPIC_API_KEY_LILIANA) para poder medir su
+  // gasto por separado en el panel de Anthropic. Si esa no está configurada, cae a la llave
+  // general (ANTHROPIC_API_KEY) para no dejar de responder nunca.
+  const apiKey = process.env.ANTHROPIC_API_KEY_LILIANA || process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return res.status(200).json({ status: 'error', mensaje: 'Falta ANTHROPIC_API_KEY_LILIANA / ANTHROPIC_API_KEY.' });
 
   try {
     // 1) La conversación y su estado.
