@@ -26,6 +26,39 @@
 
 ---
 
+## 2026-06-07 — [WhatsApp] — Liliana: remite al punto de venta si la boleta la vendió OTRO
+
+**Qué decidimos:** si un cliente le escribe a la línea de Liliana pero su boleta la **vendió otro
+punto de venta** (el equipo Los Plata u otro independiente, no Liliana), Liliana **NO lo atiende**:
+no vende, no aparta, no abona. Lo saluda por su nombre y le da el **número directo** del punto donde
+compró, para que continúe ahí (pagar lo que falta, dudas o comprar otra). Aplica **siempre**: aunque
+la boleta esté pagada al 100% y aunque quiera una boleta nueva. Si el cliente tiene boletas de varios
+vendedores, remite al de la **más reciente**. Si el cliente es **nuevo** (sin boletas de nadie) o la
+boleta es **de Liliana**, ella atiende normal (sin cambios).
+
+**Por qué:** clientes que ya compraron por otro asesor (anuncios) a veces escriben a la línea de Lili
+para terminar de pagar. Esa venta/cobro es del asesor original; Liliana no debe quedarse con clientes
+ajenos. Lo pidió Mateo (ejemplo real: cel 573216904915, boleta 3171 vendida por "Aleja Valencia").
+
+**Piezas:**
+- Columna nueva **`asesores_config.numero_remision`** (text): el WhatsApp a donde remitir según el asesor
+  que vendió. Cargado: todo el equipo regular (11) → **3107334957**; **Claudia** 3232880292;
+  **Joaquin** 3215343788; **Luisa** 3207168489. Pendientes (sin número aún): Alejandra Plata, Luisa
+  Papá, Mocho, Nena, Yiny. **Editable por SQL sin desplegar código.**
+- `agente-responder.js`: `resumenCliente` ahora trae también `asesor` y `fecha_venta` de cada boleta.
+  Nueva función `analizarRemision(boletas, lineaId)` (dueño de la línea = `lineas_asesores`; boleta
+  "ajena" = asesor que no es dueño; busca `numero_remision`). Nueva `bloqueRemision(...)` que
+  REEMPLAZA al bloque normal de estado del cliente e instruye remitir (y no presentarse/vender).
+- Si la boleta es de un independiente **sin número cargado**, Liliana se disculpa y **pasa a un asesor**
+  (caso raro hasta que Mateo dé esos números).
+
+**Cuidado / qué NO hacer:** el dueño de cada línea sale de `lineas_asesores` (la de Lili =
+`1128258647034751` → "Liliana"); esto generaliza solo cuando se conecten las líneas grandes (el
+equipo regular como dueño). No toca dinero (solo a quién atiende y qué mensaje da). Tras agregar la
+columna se recargó el esquema con `apply_migration` (lección de la caché de PostgREST).
+
+---
+
 ## 2026-06-07 — [WhatsApp] — Liliana: no repetir lo ya dicho + respuestas un poco más cortas
 
 **Qué decidimos:** Liliana no debe **repetir** información que ya dio en la misma conversación (ej.

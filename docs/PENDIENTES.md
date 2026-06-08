@@ -15,6 +15,10 @@
 
 ## Tareas pendientes
 
+- [ ] (2026-06-07) **Números de remisión que faltan** para los independientes sin número en
+  `asesores_config.numero_remision`: **Alejandra Plata, Luisa Papá, Mocho, Nena, Yiny**. Mientras no
+  los den, si un cliente con boleta de uno de ellos escribe a Lili, Liliana lo pasa a un asesor.
+  Cargar con: `update asesores_config set numero_remision='3XXXXXXXXX' where lower(asesor_nombre)='nena';`
 - [ ] (2026-06-07) **Esperar que Meta apruebe `boleta_cliente_v2`** (la plantilla de boleta con la 1ª
   línea VARIABLE según estado: separada / participando / pagada). Ya creada el 7-jun; mientras Meta la
   aprueba, el botón de la bandeja sigue enviando la vieja `boleta_cliente` (sin caídas). Cuando pase a
@@ -56,6 +60,9 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-07) **Liliana remite al punto de venta si la boleta la vendió OTRO** (no la atiende:
+  le da el número del asesor que vendió). Aplica aunque esté pagada o quiera otra boleta; varios
+  vendedores → el más reciente. Columna `asesores_config.numero_remision`. Ver bitácora.
 - [x] (2026-06-07) **Etiquetas: nuevo menú de gestión** (izquierda) para crear / ordenar (arrastrar) /
   eliminar. El ícono de etiqueta del chat ahora SOLO marca/desmarca. Acceso directo **"Sin respuesta"**
   junto a "Filtros" (prende/apaga con un clic, sincronizado con el filtro avanzado).
