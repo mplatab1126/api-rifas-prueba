@@ -948,7 +948,7 @@ export default async function handler(req, res) {
     const { data: hsAct } = await supabase.from('agente_herramientas')
       .select('clave').eq('linea_id', linea_id).eq('activa', true);
     const activas = new Set((hsAct || []).map(h => h.clave));
-    const toolsActivas = TOOLS.filter(t => activas.has(t.name));
+    let toolsActivas = TOOLS.filter(t => activas.has(t.name));
 
     // Estado del cliente: SIEMPRE se consulta antes de responder, para que el agente
     // sepa desde el primer mensaje si ya tiene boleta (y no lo trate como nuevo).
@@ -957,6 +957,14 @@ export default async function handler(req, res) {
     // ¿La boleta de este cliente la vendió OTRO punto de venta? Entonces NO lo
     // atiende esta línea: se le da el número del punto donde compró (remisión).
     const remision = await analizarRemision(estadoCliente.boletas, linea_id);
+
+    // DETERMINÍSTICO: si el cliente YA tiene boleta(s) o hay que remitirlo, NUNCA le
+    // mandes el "contacto inicial" como si fuera nuevo. Antes esto dependía de que el
+    // modelo obedeciera la instrucción del prompt y a veces se presentaba igual. Quitando
+    // la herramienta, el modelo NO PUEDE presentarse: saluda por su nombre / remite.
+    if (remision || (estadoCliente.boletas && estadoCliente.boletas.length)) {
+      toolsActivas = toolsActivas.filter(t => t.name !== 'enviar_contacto_inicial');
+    }
 
     // Memoria: las acciones que el agente YA ejecutó en este chat (de las notas 🤖).
     // ANTES no le llegaban (a construirMensajes se le pasa `reales`, sin notas), por eso
