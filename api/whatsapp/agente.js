@@ -225,10 +225,26 @@ export default async function handler(req, res) {
         .from('conversaciones_whatsapp')
         .update(patch)
         .eq('telefono', tel).eq('linea_id', linea_id)
-        .select('id').maybeSingle();
+        .select('id, ultimo_entrante').maybeSingle();
       if (error) return res.status(200).json({ status: 'error', mensaje: error.message });
-      // Al PRENDER el agente, etiquetar el chat como AGENTE (para filtrar en la bandeja).
-      if (activa && convAct) await ponerEtiqueta(convAct.id, linea_id, 'AGENTE', { icono: '🤖', color: '#dff7e4' });
+      if (activa && convAct) {
+        // Al PRENDER el agente, etiquetar el chat como AGENTE (para filtrar en la bandeja).
+        await ponerEtiqueta(convAct.id, linea_id, 'AGENTE', { icono: '🤖', color: '#dff7e4' });
+        // Y DISPARAR la respuesta DESDE EL SERVIDOR si el último mensaje es del cliente (igual que el
+        // webhook cuando llega un mensaje). Antes esto dependía del navegador y por eso a veces, al
+        // prender el agente, tardaba mucho o no respondía hasta que el cliente volvía a escribir.
+        // Fire-and-forget con corte a 1.5s: agente-responder sigue corriendo en su propia invocación.
+        if (convAct.ultimo_entrante) {
+          try {
+            await fetch('https://www.losplata.com.co/api/whatsapp/agente-responder', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ telefono: tel, linea_id, interno: process.env.WHATSAPP_VERIFY_TOKEN }),
+              signal: AbortSignal.timeout(1500),
+            });
+          } catch (_) { /* el corte a 1.5s es normal: la respuesta se genera aparte */ }
+        }
+      }
       return res.status(200).json({ status: 'ok', activa });
     }
 
