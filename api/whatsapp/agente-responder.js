@@ -1000,10 +1000,27 @@ export default async function handler(req, res) {
       const g = datosPorFecha[s.fecha];
       return g && !g.acumulado && (g.numero || g.nombre);
     });
+    // Próximo sorteo (y los que faltan). Se calcula aquí porque saber si el premio del
+    // próximo está acumulado depende de QUÉ TIPO de sorteo es.
+    const proximo = sorteosOrden.find(s => String(s.fecha) >= hoyCol);
+    const sorteosFuturos = sorteosOrden.filter(s => String(s.fecha) >= hoyCol);
+
+    // ¿El premio del PRÓXIMO está acumulado? SOLO si el ÚLTIMO sorteo PASADO del MISMO tipo
+    // (mismo título; ej. los sábados de "Lotería de Boyacá") quedó acumulado. Si ese último ya
+    // tuvo GANADOR, el acumulado se REINICIÓ → el próximo vuelve a su monto base (el del título).
+    // Antes se tomaba el último acumulado de toda la historia sin mirar si después hubo ganador,
+    // por eso seguía diciendo "$20.000.000" aunque el acumulado ya se hubiera ganado.
+    // Agrupar por título evita mezclar el Sueldazo (sorteo aparte) con la cadena de los sábados.
     let montoAcumProximo = '';
-    for (const s of sorteosOrden) {
-      const g = datosPorFecha[s.fecha];
-      if (g && g.acumulado && g.acumulado_monto && String(s.fecha) < hoyCol) montoAcumProximo = String(g.acumulado_monto).trim();
+    let acumuladoReiniciado = false;
+    if (proximo) {
+      const tipoProximo = String(proximo.titulo || '').trim();
+      const pasadosMismoTipo = sorteosOrden.filter(s =>
+        String(s.fecha) < hoyCol && String(s.titulo || '').trim() === tipoProximo);
+      const ultimo = pasadosMismoTipo[pasadosMismoTipo.length - 1];   // el más reciente
+      const g = ultimo ? datosPorFecha[ultimo.fecha] : null;
+      if (g && g.acumulado && g.acumulado_monto) montoAcumProximo = String(g.acumulado_monto).trim();
+      else if (g && !g.acumulado && (g.numero || g.nombre)) acumuladoReiniciado = true;
     }
     const lineasResultados = conGanador.map(s =>
       `- ${String(s.titulo || 'Sorteo').trim()} — ${etiquetaFecha(s.fecha)}: ${describirResultado(datosPorFecha[s.fecha])}`);
@@ -1021,13 +1038,13 @@ export default async function handler(req, res) {
     // Liliana CONTARA el acumulado ("lleva 3 sábados sin ganador", prohibido). Los sorteos
     // pasados, si el cliente pregunta qué número ganó, ya están cubiertos por bloqueResultados.
     // Al PRÓXIMO sorteo le pegamos el monto acumulado para que no se confunda con el título $5M.
-    const proximo = sorteosOrden.find(s => String(s.fecha) >= hoyCol);
-    const sorteosFuturos = sorteosOrden.filter(s => String(s.fecha) >= hoyCol);
     const bloqueFechas = sorteosFuturos.length
       ? '\n\n---\nFECHAS EXACTAS (ya calculadas; ÚSALAS TAL CUAL. NUNCA calcules tú el día de la semana de una fecha, ni digas "este sábado" con una fecha que no esté aquí):\n' +
         '- Hoy es ' + etiquetaFecha(hoyCol) + '.\n' +
         (proximo ? '- El PRÓXIMO sorteo es: ' + String(proximo.titulo).trim() + ' — ' + etiquetaFecha(proximo.fecha) +
-          (montoAcumProximo ? ' (este premio está ACUMULADO en ' + montoAcumProximo + ': di SOLO ese monto)' : '') + '.\n' : '') +
+          (montoAcumProximo
+            ? ' (este premio está ACUMULADO en ' + montoAcumProximo + ': di SOLO ese monto)'
+            : (acumuladoReiniciado ? ' (OJO: el acumulado ANTERIOR ya tuvo ganador, así que este premio YA NO está acumulado; va por el monto de su TÍTULO. NUNCA menciones montos acumulados viejos como si siguieran vigentes)' : '')) + '.\n' : '') +
         '- Próximos sorteos de esta rifa (solo los que faltan):\n' +
         sorteosFuturos.map(s => '   · ' + String(s.titulo || 'Sorteo').trim() + ' — ' + etiquetaFecha(s.fecha)).join('\n')
       : '';
