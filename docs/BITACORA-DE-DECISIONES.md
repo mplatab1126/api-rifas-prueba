@@ -99,6 +99,21 @@ confiable → la de marketing va sin nombre. Quedó pendiente que **Meta las apr
 botón de WhatsApp (mensaje entrante tipo `button`) hay que verificar que el webhook lo capte para que Liliana
 no pierda la respuesta. Por ahora la plantilla invita a responder por texto (Liliana atiende igual).
 
+## 2026-06-08 — [WhatsApp] — Al prender el agente a mano, ahora responde de inmediato (lo dispara el servidor)
+
+**Síntoma:** al activar el 🤖 en un chat (con un mensaje del cliente sin responder), tardaba mucho o no respondía
+hasta que el cliente volvía a escribir. Pasaba seguido.
+
+**Causa:** `activar_conversacion` (en `agente.js`) solo prendía `agente_activo`; el "responder ya" lo disparaba el
+NAVEGADOR (`dispararAgenteSiCorresponde` en la bandeja), que es frágil (a veces no dispara, o el candado/anti-duplicado
+lo frena). Sin un disparo confiable, el agente solo arrancaba con el SIGUIENTE mensaje del cliente (webhook).
+
+**Arreglo:** `activar_conversacion`, al prender, ahora **dispara el motor desde el SERVIDOR** (fetch fire-and-forget a
+`agente-responder` con el secreto interno, corte 1.5s) si `ultimo_entrante=true` — igual que el webhook. Ya no depende
+del navegador. El candado anti-duplicado evita doble respuesta si el navegador también dispara.
+
+---
+
 ## 2026-06-08 — [WhatsApp] / [General] — Ahorro de tokens de Liliana (saludo predefinido + caché de 1h)
 
 **Contexto:** con poco tráfico el gasto era alto (~$4.89/día, 231 llamadas/77 clientes). Análisis: el caché SÍ
