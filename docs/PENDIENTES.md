@@ -15,6 +15,18 @@
 
 ## Tareas pendientes
 
+- [ ] (2026-06-08) **Enviar la difusión de la GANADORA cuando Meta apruebe las 2 plantillas**
+  (`resultado_sorteo` y `ganadora_casa_santa_teresita`; revisar estado en Difusiones → Plantillas →
+  "Actualizar estados"). Plan: **Clientes (81)** → `resultado_sorteo` (informativa, utilidad);
+  **Potenciales (~845)** → `ganadora_casa_santa_teresita` (marketing, breve). Probar antes con un número
+  propio y enviar **por tandas** (no todos de golpe; Meta vigila la calidad de la línea). La casilla
+  "Liliana atiende las respuestas" va prendida. Se puede **programar a una hora**. Ver bitácora 8-jun.
+- [ ] (2026-06-08) **Confirmar que Liliana arranca cuando un potencial responda** a la difusión
+  (al enviar quedó `agente_activo=true` en esos chats; el webhook dispara el motor). Verlo en la **prueba
+  full de Liliana de mañana**.
+- [ ] (2026-06-08) **Opcional: botón "Quiero participar"** en la plantilla de marketing. Primero verificar
+  que `recibir.js` capta los mensajes entrantes tipo `button` (para que Liliana no pierda la respuesta);
+  por ahora la plantilla pide responder por texto.
 - [ ] (2026-06-08) **Confirmar al aire 3 cosas de Liliana cuando haya tráfico** (se verifican juntas con la
   próxima respuesta a un cliente): (1) que **responda** = la llave nueva `ANTHROPIC_API_KEY_LILIANA` quedó bien
   pegada en Vercel; (2) que el **gasto aparezca en el panel de Anthropic de esa llave nueva** (gasto de Liliana
@@ -85,6 +97,11 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-08) **Difusiones con filtros + programar + "Liliana atiende"**: el módulo de Difusiones ahora
+  segmenta por **Clientes** (con saldo / pagados / ciudad) y **Potenciales** (nunca compraron), permite
+  **programar** el envío a una hora (lo manda un cron por tandas) y, con una casilla, **Liliana atiende sola**
+  a quien responda. Verificado en producción (audiencia: 845 potenciales / 81 clientes). Creadas las plantillas
+  `resultado_sorteo` (utilidad) y `ganadora_casa_santa_teresita` (marketing), **en revisión de Meta**. Ver bitácora.
 - [x] (2026-06-08) **Caché de prompt activado en Liliana** (`agente-responder.js`): el manual + herramientas se
   cachean (10× más barato en lectura). Baja ~la mitad el gasto de entrada. No cambia la conducta. Falta confirmar
   al aire (arriba). Ver bitácora.

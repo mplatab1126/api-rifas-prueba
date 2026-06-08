@@ -51,6 +51,11 @@ contraseña de asesor (`ASESORES_SECRETO`, las mismas del Admin).
 - **Difusiones** (menú Difusiones): **Plantillas** (se crean contra Meta, estado en colores, "Actualizar estados")
   y **Campañas** (asistente: plantilla → audiencia → envío **por lotes** con cola `difusion_destinatarios`,
   prueba y barra de progreso). También "Enviar plantilla" a un chat puntual para reabrir +24h.
+  **Filtros de audiencia** (8-jun): todos · **clientes** (con boleta; subfiltro estado de pago todos/saldo/pagados
+  + ciudad) · **potenciales** (sin boleta) · etiqueta — calculados en la base con `difusion_audiencia`.
+  **Programar** el envío a una hora (queda 'programada'; el cron `difusiones-cron.js` lo manda por tandas).
+  Casilla **"Liliana atiende las respuestas"** (`activar_agente`, default sí): al enviar pone `agente_activo=true`
+  en cada chat, así Liliana sigue el hilo cuando el cliente responde (ve el texto enviado en el historial).
 - **Respuestas rápidas (flujos)**: cada una son varios pasos (texto/imágenes). Se usan con ⚡ o `/`.
 - **Enviar fotos/PDF** desde el chat (clip 📎; `enviar-archivo.js`, máx 5 MB).
 - **Ventana de 24h**: bloquea la caja de texto cuando está cerrada. **Cita de mensajes** (`responde_a`).
@@ -76,7 +81,10 @@ Tablas del buzón:
   `timestamp_wa`, `responde_a` (cita), `raw` (incluye `agente:true` en lo que envía Liliana).
 - **`etiquetas`** `(id, linea_id, nombre, icono, color, orden)` y **`conversacion_etiquetas`** `(conversacion_id, etiqueta_id)`.
   `orden` = el orden que eligió Mateo (arrastrando en la ventana de Etiquetas); se respeta en la ventana, el filtro y las píldoras.
-- **`plantillas_whatsapp`** y **`difusiones`** + **`difusion_destinatarios`** (cola de envío, escala).
+- **`plantillas_whatsapp`** y **`difusiones`** (+ columnas `programada_at`, `activar_agente`) + **`difusion_destinatarios`**
+  (cola de envío, escala; estado pendiente→enviando→enviado/fallido). Funciones: `difusion_audiencia(linea, filtros)`
+  (audiencia con filtros) y `difusion_reclamar_lote(difusion, limite)` (reclamo atómico del lote). Cron jobid 6
+  `difusiones-programadas-cada-minuto`.
 - Columna **`correo`** en `clientes` y `boletas`.
 
 Tablas del agente:
@@ -107,7 +115,9 @@ Tablas del agente:
 - **`cliente.js`** — ficha (boletas/deuda/pagos por boleta; empareja por últimos 10 dígitos; calcula `puede_modificar`).
 - **`buscar-pago.js`** — verifica el comprobante vs transferencias reales (lo usa "verificar pago" y el abono del agente).
 - **`contactos*.js`**, **`lineas.js`**, **`conectar-linea.js`** (suscribe la WABA), **`etiquetas.js`**,
-  **`plantillas.js`**, **`difusiones.js`**, **`respuestas-rapidas.js`**.
+  **`plantillas.js`**, **`difusiones.js`** (acciones: listar/crear/editar/eliminar/preparar/**programar**/estado/
+  enviar-lote/cancelar/prueba), **`difusiones-cron.js`** (envío programado), **`respuestas-rapidas.js`**.
+  El núcleo del envío vive en **`lib/difusion-envio.js`** (`procesarLoteDifusion`), compartido por la bandeja y el cron.
 - **Agente**: `agente.js` (cabina, SOLO Mateo), `agente-responder.js` (motor), `recordatorios-cron.js`,
   `verificar-pagos-cron.js` (**7-jun**: verificación de pagos con reintentos; usa `lib/abono-agente.js`),
   `disparadores.js` (SOLO Mateo). *(El supervisor `qa-agente-cron.js` se eliminó el 8-jun.)* Detalle en §8.

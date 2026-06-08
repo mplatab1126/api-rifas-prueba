@@ -158,8 +158,10 @@ un chat para mostrarlos en la bandeja), `media.js`.
 **Contactos y etiquetas:** `contactos.js`, `contacto-crear.js`,
 `contacto-eliminar.js`, `contactos-importar.js`, `etiquetas.js`, `cliente.js`.
 
-**Difusiones y plantillas:** `difusiones.js`, `plantillas.js`,
-`respuestas-rapidas.js`.
+**Difusiones y plantillas:** `difusiones.js` (**2026-06-08**: filtros de público clientes/potenciales/saldo/
+ciudad, acción **programar** a una hora, y casilla **"Liliana atiende"**), `difusiones-cron.js` (**2026-06-08**:
+envía las difusiones programadas por tandas), `lib/difusion-envio.js` (núcleo de envío compartido),
+`plantillas.js`, `respuestas-rapidas.js`.
 
 **Agente de IA (Claude):** `agente.js` (cabina de control), `agente-responder.js`
 (el motor que conversa y ejecuta acciones; **2026-06-08**: usa **caché de prompt** para abaratar el
@@ -191,6 +193,9 @@ pg_cron `verificar-pagos-cada-5min`. Ver bitácora),
   tiene/todas/no tiene, sin respuesta, recordatorio por estado, fecha de creación; combina Y/O).
 - Tabla `verificaciones_pago` — cola de la verificación de pagos con reintentos.
 - Columna `etiquetas.orden` — orden de las etiquetas elegido por Mateo (se respeta en todos lados).
+- Funciones `difusion_audiencia(linea, filtros)` (audiencia de una campaña con filtros) y
+  `difusion_reclamar_lote(difusion, limite)` (reclamo atómico del lote, sin doble envío) — **2026-06-08**.
+- Cron `difusiones-programadas-cada-minuto` (jobid 6) — dispara `difusiones-cron.js`.
 
 **Candados anti-duplicado del agente (funciones EN LA BASE DE DATOS):**
 `agente_tomar_lock`, `agente_refrescar_lock`, `agente_claim_respuesta`,

@@ -26,6 +26,52 @@
 
 ---
 
+## 2026-06-08 — [WhatsApp] — Difusiones con filtros de público, programación por hora y "Liliana atiende las respuestas"
+
+**Qué construimos:** ampliamos el módulo de Difusiones de la bandeja (línea "Compra con Lili") para poder
+segmentar y enviar campañas sin ayuda técnica:
+1. **Filtros de público** (antes solo "todos" o "por etiqueta"): ahora también **Clientes** (los que tienen
+   boleta) con subfiltro de **estado de pago** (todos / con saldo pendiente / pagados) y **ciudad** opcional;
+   y **Potenciales** (los que escribieron pero NUNCA compraron). El cálculo vive en la base
+   (función `difusion_audiencia(linea, filtros jsonb)`), para que aguante líneas enormes.
+2. **Programar el envío a una hora**: la difusión queda "programada" y un cron la envía sola, **por tandas**
+   (~30 mensajes/min) — ritmo suave para que Meta no marque la línea, y sin dejar la página abierta.
+3. **"Liliana atiende las respuestas"** (casilla, prendida por defecto): al enviar, enciende el agente
+   (`agente_activo=true`) en cada chat. No manda nada solo; queda en silencio hasta que el cliente responde,
+   y ahí Liliana sigue el hilo. Como el texto de la plantilla se guarda en el historial, **Liliana ve qué se
+   le envió** y continúa coherente (no se re-presenta).
+
+**Por qué:** Mateo quería lanzar su primera difusión (anunciar la ganadora del acumulado de $20.000.000 del
+sábado 6-jun: **Margarita Rosa, Manizales, número 5588**) con un mensaje distinto por público, y de ahí en
+adelante manejar difusiones él solo.
+
+**Piezas nuevas:** funciones `difusion_audiencia` y `difusion_reclamar_lote` (reclamo ATÓMICO del lote, así el
+navegador y el cron nunca envían dos veces al mismo); `api/lib/difusion-envio.js` (núcleo de envío compartido);
+`api/whatsapp/difusiones-cron.js` (envío programado, `maxDuration` 60 en `vercel.json`); columnas
+`difusiones.programada_at` y `difusiones.activar_agente`; **pg_cron jobid 6** `difusiones-programadas-cada-minuto`.
+
+**Cuidado / qué NO hacer:** el envío masivo en frío a los ~845 potenciales puede bajar la calidad de la línea
+principal en Meta → enviar por tandas y vigilando, NO todos de un golpe. `activar_agente=true` es el
+comportamiento por defecto de TODA difusión nueva (Mateo lo pidió: "Liliana contesta absolutamente todo");
+se puede apagar por campaña con la casilla. Al programar, la lista de destinatarios se congela en ESE momento.
+
+## 2026-06-08 — [WhatsApp] — Plantillas para anunciar a la ganadora (creadas, en revisión de Meta)
+
+**Qué creamos:** dos plantillas en la línea de Lili, distintas por público:
+- **`resultado_sorteo`** (categoría **UTILITY**, con `{{1}}` = nombre real del cliente): informativa para
+  CLIENTES, tono serio, sin emojis, amarrada a "la rifa en la que participas". (Meta puede reclasificarla a
+  Marketing sola si le ve intención comercial; igual funciona, solo cambia el cobro.)
+- **`ganadora_casa_santa_teresita`** (categoría **MARKETING**, sin variables): para POTENCIALES, breve,
+  anuncia a la ganadora + invita a participar respondiendo por el chat.
+
+**Por qué así:** de los clientes SÍ tenemos el nombre real (lo dieron al apartar) → en la de utilidad se usa
+el **nombre registrado** (no el del perfil de WhatsApp, que son apodos). De los potenciales NO hay nombre
+confiable → la de marketing va sin nombre. Quedó pendiente que **Meta las apruebe** antes de poder enviar.
+
+**Cuidado:** el **botón** "Quiero participar" que se había hablado se **dejó para después**: el responder a un
+botón de WhatsApp (mensaje entrante tipo `button`) hay que verificar que el webhook lo capte para que Liliana
+no pierda la respuesta. Por ahora la plantilla invita a responder por texto (Liliana atiende igual).
+
 ## 2026-06-08 — [WhatsApp] — Liliana usa su PROPIA llave de Claude + se reinició su contador de gasto
 
 **Qué hicimos:** Liliana ahora se autentica con Claude usando una llave dedicada,
