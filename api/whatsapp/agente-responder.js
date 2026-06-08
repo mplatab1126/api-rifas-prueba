@@ -7,9 +7,10 @@
  *
  * Conversa con la API de Anthropic usando HERRAMIENTAS (tool use). Cada acción
  * deja una NOTA en el chat. Las acciones que mueven DINERO o INVENTARIO
- * (apartar, registrar abono, liberar boleta) las revisa un SUPERVISOR Opus
- * ANTES de ejecutarlas. La conversación normal va en el modelo configurado
- * (Sonnet). El abono y el liberar reutilizan la lógica probada del sistema.
+ * (apartar, registrar abono, liberar boleta) tienen cada una su propio candado
+ * (el abono se verifica contra el banco; liberar valida dueño + saldo $0; apartar
+ * es reversible). La conversación va en el modelo configurado (Sonnet). El abono
+ * y el liberar reutilizan la lógica probada del sistema.
  *
  * Recibe (POST, JSON): { contrasena, linea_id, telefono }  (Mateo) o
  *                      { interno, linea_id, telefono }      (webhook).
@@ -26,13 +27,7 @@ import { verificarYAbonar } from '../lib/abono-agente.js';
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const MODELOS_OK = ['claude-opus-4-8', 'claude-sonnet-4-6', 'claude-haiku-4-5'];
-const OPUS = 'claude-opus-4-8';   // supervisor de acciones que mueven dinero/inventario
 const BASE_URL = 'https://www.losplata.com.co';
-// Acciones que un supervisor Opus revisaría antes de ejecutarlas. Hoy está VACÍO:
-// cada acción ya tiene su propio candado (el abono verifica contra el banco; liberar
-// valida dueño + $0; apartar es reversible —se puede liberar—). El supervisor, que no
-// ve fotos ni ejecuta esos chequeos, solo frenaba acciones legítimas en falso.
-const ACCIONES_SENSIBLES = new Set();
 const MAX_ITER = 6;          // tope de idas/vueltas con la IA por cada mensaje del cliente
 const MAX_HISTORIAL = 300;   // TOPE de seguridad de mensajes; el corte normal es por RIFA (ver abajo)
 const PAUSA_MS = 800;        // entre los pasos del contacto inicial (para que lleguen en orden)
@@ -264,27 +259,6 @@ async function llamarApi(ruta, cuerpo) {
     });
     return await r.json();
   } catch (e) { return { status: 'error', error: e.message, mensaje: e.message }; }
-}
-
-// SUPERVISOR: para acciones que mueven dinero o inventario, Opus revisa la
-// decisión con el contexto ANTES de ejecutarla. Si Opus no está disponible,
-// dejamos pasar (los demás candados —verificación del pago real, dueño de la
-// boleta, etc.— siguen protegiendo).
-async function verificarConOpus(accion, input, contexto, apiKey) {
-  const system = 'Eres un SUPERVISOR de seguridad de una rifa colombiana. Un agente de ventas automático quiere ejecutar una acción que mueve DINERO o INVENTARIO (apartar una boleta, registrar un abono, o liberar/cancelar una boleta). Revisa si la acción es correcta y si el cliente realmente la pidió o corresponde, según la conversación. Sé estricto: si el cliente NO lo pidió claramente o algo no cuadra (número, monto, datos), recházala. Responde en UNA sola línea: "APRUEBO" o "RECHAZO: <motivo corto>".';
-  const user = `Conversación reciente con el cliente:\n${contexto}\n\nEl agente quiere ejecutar la acción: ${accion}\nDatos: ${JSON.stringify(input || {})}\n\n¿La apruebas?`;
-  try {
-    const r = await fetch(ANTHROPIC_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: OPUS, max_tokens: 200, system, messages: [{ role: 'user', content: user }] }),
-    });
-    const data = await r.json();
-    if (data.error) return { aprobado: true };   // Opus caído: no bloquear (hay otros candados)
-    const txt = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join(' ').trim();
-    if (/^\s*APRUEBO/i.test(txt)) return { aprobado: true };
-    return { aprobado: false, motivo: txt.replace(/^\s*RECHAZO:?\s*/i, '') || 'el supervisor no lo aprobó' };
-  } catch (_) { return { aprobado: true }; }
 }
 
 // ── Definición de las herramientas para la IA ───────────────────────────────
@@ -1105,17 +1079,6 @@ export default async function handler(req, res) {
     }
     if (!messages.length) { await soltarLock(conv); return res.status(200).json({ status: 'ok', skip: 'Sin mensajes para procesar.' }); }
 
-    // Contexto en texto para el supervisor Opus (revisa las acciones sensibles).
-    const contextoOpus = messages.slice(-12).map(m => {
-      let c;
-      if (typeof m.content === 'string') c = m.content;
-      else if (Array.isArray(m.content)) {
-        const txt = m.content.filter(b => b.type === 'text').map(b => b.text).join(' ');
-        c = (m.content.some(b => b.type === 'image') ? '[el cliente adjuntó una imagen] ' : '') + txt;
-      } else c = '[el agente usó una herramienta]';
-      return (m.role === 'user' ? 'Cliente' : 'Liliana') + ': ' + c;
-    }).join('\n');
-
     // 5) Bucle de razonamiento + herramientas.
     let apagado = false;
     let apartoNumero = false;   // ¿se apartó algún número en este turno?
@@ -1149,15 +1112,6 @@ export default async function handler(req, res) {
       let cerrarSinTexto = false;
       for (const tu of toolUses) {
         let out;
-        // Supervisor Opus para las acciones que mueven dinero/inventario.
-        if (ACCIONES_SENSIBLES.has(tu.name)) {
-          const v = await verificarConOpus(tu.name, tu.input || {}, contextoOpus, apiKey);
-          if (!v.aprobado) {
-            await nota(conv, `El supervisor (Opus) frenó "${tu.name}": ${v.motivo}`);
-            results.push({ type: 'tool_result', tool_use_id: tu.id, content: `El SUPERVISOR de seguridad NO aprobó esta acción: ${v.motivo}. NO la ejecutes. Aclárale al cliente lo que falte o pásalo a un asesor.` });
-            continue;
-          }
-        }
         try { out = await ejecutarHerramienta(tu.name, tu.input || {}, conv); }
         catch (e) { out = 'Error ejecutando la herramienta: ' + e.message; }
         if (typeof out === 'string' && out.startsWith('AGENTE_APAGADO')) apagado = true;
