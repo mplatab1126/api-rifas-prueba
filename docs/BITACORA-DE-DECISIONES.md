@@ -41,13 +41,17 @@ y `reservar.js` acepta `asesor`. El agente manda el nombre con `asesorDeLinea(li
 `verificarYAbonar` lo **deduce solo** de la línea cuando no se lo pasan → cubre también el cron de reintentos
 (`verificar-pagos-cron.js`).
 
-**Por qué no rompe permisos:** **"Liliana" es grupo 'regular'**, igual que "Pagina Web" (no está en
-`asesores_config` como independiente), así que un humano puede abonar/liberar esas boletas igual que antes. Ya
-existían 172 boletas a nombre de "Liliana" funcionando.
+**Validación de grupo (OJO, Liliana ES independiente):** "Liliana" está marcada como **independiente** en
+`asesores_config` (grupo 'independiente'), distinto del equipo ('regular'). Como el agente autentica como
+gerencia (Mateo = 'regular'), al abonar/liberar una boleta de "Liliana" la validación de grupo (regular ≠
+independiente) la **bloqueaba**. Arreglo: en `abono.js` y `liberar-boleta.js` la validación de grupo ahora
+sigue al **actor real** (`asesorReg`): con el override de gerencia valida como "Liliana" (independiente) →
+coincide con sus boletas. Para un humano normal NO cambia nada (sin override, `asesorReg = nombreAsesor`).
 
-**Cuidado / qué NO hacer:** si algún día se marca a "Liliana" como **independiente** en `asesores_config`,
-cambiaría el grupo de TODAS sus boletas (afecta quién puede abonarlas) — no hacerlo sin pensarlo. El override
-`asesorRegistro` debe seguir aceptándose SOLO para gerencia (candado `esGerencia`).
+**Implicación contable (a tener presente):** antes las ventas del agente quedaban como "Pagina Web" (equipo);
+ahora quedan como **"Liliana" (independiente)**, así que cuentan en el bucket de **independientes** en caja /
+rendimiento / liquidación, no en el equipo. Es lo coherente con atribuirlas a Liliana, pero cambia en qué grupo
+se contabilizan. El override `asesorRegistro` solo lo acepta gerencia (candado `esGerencia`).
 
 ## 2026-06-08 — [WhatsApp] — Difusiones con filtros de público, programación por hora y "Liliana atiende las respuestas"
 

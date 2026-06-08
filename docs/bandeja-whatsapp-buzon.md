@@ -203,7 +203,9 @@ todo cliente nuevo). La **cabina y el botón 🤖 son SOLO de Mateo** (candado `
 - **Atribución (8-jun):** aunque autentica como gerencia, los movimientos (apartar/abono/liberar/trasladar) se
   GRABAN a nombre del **asesor de la línea** (`asesorDeLinea(linea_id)` → "Liliana"), vía el override
   `asesorRegistro` (lo honra solo gerencia) en abono/liberar/trasladar y el campo `asesor` en `reservar.js`.
-  NO cambia permisos ("Liliana" es grupo 'regular', igual que "Pagina Web"). Ver bitácora 8-jun.
+  **OJO: "Liliana" es INDEPENDIENTE.** Por eso la validación de grupo de `abono.js`/`liberar-boleta.js` sigue al
+  ACTOR REAL (`asesorReg`): con el override valida como Liliana (independiente) y no bloquea sus abonos. Efecto
+  contable: las ventas del agente ahora cuentan como **independiente** (antes "Pagina Web"/equipo). Ver bitácora 8-jun.
 - **Supervisor Opus de movimientos ELIMINADO (2026-06-08)**: ya estaba inactivo (`ACCIONES_SENSIBLES` vacío); no veía
   las fotos ni los chequeos reales y solo frenaba acciones legítimas en falso. La seguridad del dinero vive en los
   candados de cada acción (abono verificado contra el banco, liberar valida dueño + saldo $0). Se borró del código.
