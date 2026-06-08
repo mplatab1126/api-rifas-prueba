@@ -33,7 +33,8 @@ export default async function handler(req, res) {
     // Validar grupo de asesores: no puedes liberar boletas de otro grupo
     const asesorBoleta = boletaActual?.asesor || '';
     if (asesorBoleta) {
-      const grupoAsesor = await grupoDeAsesor(nombreAsesor);
+      // La validación de grupo sigue al ACTOR REAL (con override de gerencia, valida como "Liliana").
+      const grupoAsesor = await grupoDeAsesor(asesorReg);
       const grupoBoleta = await grupoDeAsesor(asesorBoleta);
       if (grupoAsesor !== grupoBoleta) {
         return res.status(400).json({ status: 'error', mensaje: `🚫 Esta boleta pertenece al equipo "${grupoBoleta}". Tu equipo (${grupoAsesor}) no puede liberarla.` });

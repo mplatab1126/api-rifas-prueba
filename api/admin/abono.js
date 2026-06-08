@@ -82,7 +82,9 @@ export default async function handler(req, res) {
     // 3. Validar grupo de asesores ANTES de tocar la base de datos
     const asesorBoleta = boletaData.asesor || '';
     if (asesorBoleta) {
-        const grupoQuieneAbona = await grupoDeAsesor(nombreAsesor);
+        // La validación de grupo sigue al ACTOR REAL: con override de gerencia (ej. el agente
+        // actuando como "Liliana"), valida como Liliana; para un humano normal es su propio grupo.
+        const grupoQuieneAbona = await grupoDeAsesor(asesorReg);
         const grupoBoleta = await grupoDeAsesor(asesorBoleta);
         if (grupoQuieneAbona !== grupoBoleta) {
             return res.status(400).json({
