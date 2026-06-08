@@ -517,16 +517,6 @@
     .ag-log-when { color: var(--gray-400); white-space: nowrap; min-width: 96px; }
     .ag-log-txt { color: var(--ink-soft); line-height: 1.4; }
     .ag-empty { color: var(--gray-400); font-size: 0.82rem; line-height: 1.5; padding: 6px 0; }
-    /* Sugerencias de mejora del agente */
-    .ag-sug { border: 1px solid #ecd98a; background: #fdf9ec; border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
-    .ag-sug-error { font-size: 0.88rem; color: var(--ink); font-weight: 600; }
-    .ag-sug-cli { font-weight: 400; color: var(--ink-mute); }
-    .ag-sug-regla { font-size: 0.85rem; color: var(--ink-soft); line-height: 1.45; margin-top: 6px; }
-    .ag-sug-acc { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-    .ag-sug-aplicar { padding: 8px 14px; border: 1px solid var(--mint); background: var(--mint); border-radius: 9px; font-family: inherit; font-size: 0.82rem; font-weight: 600; color: var(--ink); cursor: pointer; }
-    .ag-sug-aplicar:hover { background: var(--mint-light); }
-    .ag-sug-descartar { padding: 8px 14px; border: 1px solid var(--gray-200); background: #fff; border-radius: 9px; font-family: inherit; font-size: 0.82rem; color: var(--ink-mute); cursor: pointer; }
-    .ag-sug-descartar:hover { border-color: var(--gray-300); color: var(--ink); }
 
     /* Probador del agente (simulador · no envía nada por WhatsApp) */
     .ag-pb-tag { font-weight: 400; font-size: 0.7rem; color: #1c7a37; background: #dff7e4; border-radius: 100px; padding: 2px 9px; margin-left: 6px; vertical-align: middle; }
@@ -2239,19 +2229,6 @@ function pintarAgente(){
     ? act.map(a => `<div class="ag-log-row"><div class="ag-log-when">${esc(agFechaHora(a.created_at))}</div><div class="ag-log-txt">${esc(a.resumen || a.tipo || '')}</div></div>`).join('')
     : '<div class="ag-empty">Aún no hay actividad. Cuando el agente empiece a trabajar, aquí verás cada acción y a qué hora la hizo.</div>';
 
-  const sugs = agData.sugerencias || [];
-  const sugRows = sugs.length
-    ? sugs.map(s => `
-      <div class="ag-sug">
-        <div class="ag-sug-error">⚠️ ${esc(s.error || '')}${s.cliente ? ' <span class="ag-sug-cli">('+esc(s.cliente)+')</span>' : ''}</div>
-        <div class="ag-sug-regla"><b>Regla sugerida:</b> ${esc(s.regla || '')}</div>
-        <div class="ag-sug-acc">
-          <button class="ag-sug-aplicar" onclick="agAplicarSugerencia('${esc(s.id)}')">✓ Aplicar al manual</button>
-          <button class="ag-sug-descartar" onclick="agDescartarSugerencia('${esc(s.id)}')">Descartar</button>
-        </div>
-      </div>`).join('')
-    : '<div class="ag-empty">No hay sugerencias pendientes. Cuando el supervisor detecte un error del agente, aquí aparecerá con una corrección lista para aplicar.</div>';
-
   const resultados = Array.isArray(c.resultados) ? c.resultados : [];
   const resRows = resultados.map(r => {
     const lleno = r.acumulado || r.numero || r.nombre || r.ciudad;
@@ -2317,11 +2294,6 @@ function pintarAgente(){
       <div class="ag-tools">${toolRows}</div>
     </div>
     <div class="ag-card">
-      <h3>Mejorar el agente</h3>
-      <div class="ag-sub">El supervisor revisa al agente y, cuando detecta un error, propone aquí una <b>regla para corregirlo</b>. Dale <b>Aplicar al manual</b> y el agente deja de cometerlo. (Antes de aplicar, guarda los cambios del manual que tengas sin guardar.)</div>
-      <div class="ag-sugs">${sugRows}</div>
-    </div>
-    <div class="ag-card">
       <h3>Gasto de IA</h3>
       <div class="ag-sub">Cuánto cuesta la IA que responde por esta línea (los tokens de Claude). Anthropic factura en <b>dólares</b>; el valor en pesos es solo una referencia aproximada.</div>
       <div id="agCostoBox"><div class="ag-empty">Calculando…</div></div>
@@ -2376,18 +2348,6 @@ window.agTogglePrivacidad = async function(activar){
   const r = await api('agente', { accion:'privacidad_liliana', linea_id: lineaActual, activar });
   if(r.status !== 'ok'){ alert(r.mensaje || 'No se pudo guardar.'); cargarAgente(); }
   else if(agData) agData.ocultarLiliana = activar;
-};
-
-// Aplicar una sugerencia del supervisor (agrega la regla al manual) o descartarla.
-window.agAplicarSugerencia = async function(id){
-  const r = await api('agente', { accion:'aplicar_sugerencia', linea_id: lineaActual, id });
-  if(r.status === 'ok') cargarAgente();   // recarga: la sugerencia desaparece y el manual queda actualizado
-  else alert(r.mensaje || 'No se pudo aplicar.');
-};
-window.agDescartarSugerencia = async function(id){
-  const r = await api('agente', { accion:'descartar_sugerencia', linea_id: lineaActual, id });
-  if(r.status === 'ok') cargarAgente();
-  else alert(r.mensaje || 'No se pudo descartar.');
 };
 
 async function agGuardar(silencioso){
