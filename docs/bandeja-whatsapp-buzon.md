@@ -283,6 +283,9 @@ Mide cuánto cuesta la IA que responde (los tokens que devuelve Claude en cada r
 - **Manual**: cédula y correo OPCIONALES al apartar (solo nombre/apellido/ciudad obligatorios); la
   boleta va por WhatsApp (no por correo/web); NO repetir lo ya dicho + mensajes un poco más cortos en
   promedio (pero puede alargarse si hace falta explicar).
+- **Contador "sin leer" (`no_leidos`)**: se apaga cuando el agente responde, no solo cuando un humano
+  abre el chat. Se resetea en `guardarEnChat` (mensaje saliente del agente). Antes quedaban numeritos
+  verdes en chats que Liliana ya había contestado.
 - **Remisión al punto de venta** (no toca dinero): si el cliente que escribe a la línea de Lili tiene
   boleta vendida por OTRO (no Liliana), ella NO lo atiende: le da el número del punto donde compró.
   Dueño de la línea = `lineas_asesores`; número por asesor = `asesores_config.numero_remision`

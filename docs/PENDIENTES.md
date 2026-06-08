@@ -81,6 +81,9 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-07) **Bandeja: el contador verde de "sin leer" se apaga cuando Liliana responde.**
+  Antes solo se ponía en 0 si un humano abría el chat; ahora `guardarEnChat` (saliente) pone `no_leidos=0`.
+  Se limpiaron de una vez 248 chats viejos de la línea de Lili (último mensaje ya era nuestra respuesta).
 - [x] (2026-06-07) **🔴 CRÍTICO arreglado — el acumulado se reinicia tras un ganador.** Liliana decía
   que el próximo sábado iba por $20M cuando ya se había ganado el acumulado (6-jun); ahora vuelve a su
   base ($5M en bonos). Motor: `montoAcumProximo` agrupa por tipo de sorteo y solo arrastra si el último
