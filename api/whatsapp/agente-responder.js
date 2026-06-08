@@ -122,7 +122,7 @@ async function resumenCliente(telefono) {
   if (!last10) return { cli: null, boletas: [] };
   const [rc, rb] = await Promise.all([
     supabase.from('clientes').select('nombre, apellido, ciudad, documento_numero, correo').like('telefono', '%' + last10).limit(1),
-    supabase.from('boletas').select('numero, saldo_restante, total_abonado').like('telefono_cliente', '%' + last10),
+    supabase.from('boletas').select('numero, saldo_restante, total_abonado, asesor, fecha_venta').like('telefono_cliente', '%' + last10),
   ]);
   return { cli: (rc.data && rc.data[0]) || null, boletas: rb.data || [] };
 }
@@ -165,6 +165,58 @@ function bloqueEstadoCliente({ cli, boletas }) {
     return 'ESTADO DE ESTE CLIENTE: ya lo conocemos pero NO tiene boletas en la rifa actual. ' + datosTxt + ' Salúdalo por su nombre. Si va a comprar, usa esos datos y NO se los vuelvas a pedir (ni la ciudad).';
   }
   return 'ESTADO DE ESTE CLIENTE: es NUEVO (sin boletas ni registro). Sigue el camino de venta normal: si acaba de llegar, empieza por enviar_contacto_inicial.';
+}
+
+// ── Remisión: ¿este cliente le compró a OTRO punto de venta? ─────────────────
+// Si el cliente que escribe a esta línea ya tiene boleta(s) vendida(s) por un
+// asesor que NO es dueño de esta línea (ej. escribe a la línea de Liliana pero
+// su boleta la vendió el equipo Los Plata u otro independiente), Liliana NO lo
+// atiende: lo remite al número del punto donde compró. El número de cada asesor
+// vive en `asesores_config.numero_remision` (editable sin desplegar código).
+// Devuelve null si no hay que remitir (boleta propia de la línea, o sin boletas).
+const normNombre = (s) => String(s || '').toLowerCase().trim();
+
+async function analizarRemision(boletas, lineaId) {
+  if (!boletas || !boletas.length || !lineaId) return null;
+  // Asesor(es) DUEÑOS de esta línea (para Lili: 'Liliana'). Una boleta es "ajena"
+  // si su asesor no está en este conjunto.
+  const { data: owners } = await supabase
+    .from('lineas_asesores').select('asesor').eq('phone_number_id', lineaId);
+  const setOwners = new Set((owners || []).map(o => normNombre(o.asesor)));
+  const ajenas = boletas.filter(b => b.asesor && !setOwners.has(normNombre(b.asesor)));
+  if (!ajenas.length) return null;
+  // Si hay boletas de varios vendedores distintos, remitir al de la MÁS RECIENTE.
+  ajenas.sort((a, b) => String(b.fecha_venta || '').localeCompare(String(a.fecha_venta || '')));
+  const asesorAjeno = ajenas[0].asesor;
+  // Número del punto donde compró (puede no estar cargado todavía).
+  const { data: ac } = await supabase
+    .from('asesores_config').select('numero_remision')
+    .ilike('asesor_nombre', asesorAjeno).maybeSingle();
+  const numero = ac && ac.numero_remision ? String(ac.numero_remision).trim() : null;
+  return { asesor: asesorAjeno, numero, numeros: ajenas.map(b => b.numero) };
+}
+
+// Bloque que se le inyecta al agente cuando el cliente debe REMITIRSE a su punto
+// de venta. Reemplaza al bloqueEstadoCliente normal (no debe vender NI remitir a
+// la vez). Si no hay número cargado, cae a pasar_a_humano.
+function bloqueRemision(remision, { cli }) {
+  const nombre = cli && cli.nombre ? String(cli.nombre).trim() : '';
+  const saludo = nombre ? ('Salúdalo por su nombre (' + nombre + ') con cariño. ') : 'Salúdalo con cariño. ';
+  const boletasTxt = remision.numeros && remision.numeros.length
+    ? ('su(s) boleta(s) ' + remision.numeros.join(', '))
+    : 'su boleta';
+  if (!remision.numero) {
+    return 'ATENCIÓN — ESTE CLIENTE NO ES DE ESTA LÍNEA (REMISIÓN OBLIGATORIA):\n' +
+      '- ' + boletasTxt + ' la vendió OTRO punto de venta (no esta línea), y todavía no tengo a mano su número.\n' +
+      '- NO lo atiendas tú: NO le vendas, NO le apartes números y NO le registres abonos.\n' +
+      '- ' + saludo + 'Dile con tacto que su boleta la maneja otro punto de venta y que un asesor lo contacta para darle el contacto correcto. Luego usa pasar_a_humano. No hagas nada más.';
+  }
+  return 'ATENCIÓN — ESTE CLIENTE NO ES DE ESTA LÍNEA (REMISIÓN OBLIGATORIA):\n' +
+    '- ' + boletasTxt + ' la vendió OTRO punto de venta (no esta línea): ' + remision.asesor + '.\n' +
+    '- NO lo atiendas tú para vender, abonar ni apartar: NO uses enviar_contacto_inicial, NO te presentes como venta, NO le apartes números, NO le registres abonos ni uses esas herramientas con él.\n' +
+    '- ' + saludo + 'Explícale con amabilidad y en pocas palabras que para CUALQUIER cosa de su boleta (pagar lo que falta, dudas, o incluso comprar otra) debe continuar por WhatsApp con el punto donde la compró, en este número: ' + remision.numero + '.\n' +
+    '- Dale el número CLARO y solo, en una línea, para que lo pueda copiar/tocar (ej.: "Escríbeles a este número: ' + remision.numero + '"). Sé breve y cálida.\n' +
+    '- Después de darle el número, NO sigas vendiéndole ni insistas: tu trabajo con este cliente terminó.';
 }
 
 // Transcribe un audio de WhatsApp a texto con OpenAI Whisper (Claude no "oye").
@@ -900,6 +952,10 @@ export default async function handler(req, res) {
     // sepa desde el primer mensaje si ya tiene boleta (y no lo trate como nuevo).
     const estadoCliente = await resumenCliente(conv.telefono);
 
+    // ¿La boleta de este cliente la vendió OTRO punto de venta? Entonces NO lo
+    // atiende esta línea: se le da el número del punto donde compró (remisión).
+    const remision = await analizarRemision(estadoCliente.boletas, linea_id);
+
     // Memoria: las acciones que el agente YA ejecutó en este chat (de las notas 🤖).
     // ANTES no le llegaban (a construirMensajes se le pasa `reales`, sin notas), por eso
     // repetía acciones y se contradecía. Aquí se las damos como HECHOS firmes.
@@ -980,12 +1036,12 @@ export default async function handler(req, res) {
       `\n\n---\nCONTEXTO (no lo menciones literalmente): hoy es ${contextoFechaHora()} (Colombia). ` +
       `Hablas por WhatsApp con el cliente cuyo número es ${conv.telefono}. ` +
       `Tienes herramientas para actuar; úsalas cuando corresponda en vez de inventar. ` +
-      `Si el cliente acaba de llegar y aún no se ha enviado la presentación, usa primero enviar_contacto_inicial. ` +
+      (remision ? '' : `Si el cliente acaba de llegar y aún no se ha enviado la presentación, usa primero enviar_contacto_inicial. `) +
       `Si ves "[audio del cliente] ...", es lo que dijo en un audio (ya transcrito): respóndelo como si lo hubiera escrito, sin decir que no puedes oír audios. ` +
       `Después de usar una herramienta, sigue la conversación con naturalidad y mensajes cortos. No repitas información que ya esté en el chat. ` +
       `NUNCA narres lo que vas a hacer ("voy a verificar", "un momento", "ahora libero"): haz la acción en silencio y da SOLO el resultado, en pocos mensajes, como una persona. ` +
       `NUNCA le preguntes al cliente algo que YA sabes (está en el ESTADO DE ESTE CLIENTE de abajo, o lo dijiste tú mismo hace poco en el chat). Ejemplo: si una boleta ya tiene abono, NO preguntes "¿ya abonaste?"; ya sabes que sí, úsalo y actúa.` +
-      `\n\n---\n${bloqueEstadoCliente(estadoCliente)}` +
+      `\n\n---\n${remision ? bloqueRemision(remision, estadoCliente) : bloqueEstadoCliente(estadoCliente)}` +
       (accionesHechas.length
         ? `\n\n---\nACCIONES QUE TÚ YA EJECUTASTE EN ESTE CHAT (son HECHOS ya aplicados en el sistema; NO las repitas y NO digas nada que las contradiga —ej.: si ya liberaste una boleta, no digas luego que "no está a su nombre"):\n- ${accionesHechas.join('\n- ')}`
         : '') +
