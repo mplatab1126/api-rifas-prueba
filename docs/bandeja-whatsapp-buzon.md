@@ -86,7 +86,7 @@ Tablas del agente:
 - **`agente_herramientas`** `(linea_id, clave, …, activa)`: qué acciones tiene prendidas cada línea.
 - **`agente_actividad`** `(linea_id, telefono, tipo, resumen, created_at)`: bitácora de lo que hace + errores.
 - **`recordatorios`**: seguimiento automático <24h (§8.6). Índices parciales por `estado='pendiente'`.
-- **`agente_qa_estado`** y **`agente_sugerencias`**: supervisor + ciclo de mejora (§8.7).
+- **`agente_qa_estado`** y **`agente_sugerencias`**: eran del supervisor QA, **ELIMINADO el 2026-06-08**. Tablas huérfanas (sin uso; se dejaron en la base, candidatas a borrar).
 - **`disparadores`** `(linea_id, palabra, tipo ['palabra'|'nuevo_contacto'], activo)` (§8.8).
 
 Índices pensados para escala: por `linea_id`, `ultimo_at`, parcial de "sin respuesta", etc.
@@ -110,7 +110,7 @@ Tablas del agente:
   **`plantillas.js`**, **`difusiones.js`**, **`respuestas-rapidas.js`**.
 - **Agente**: `agente.js` (cabina, SOLO Mateo), `agente-responder.js` (motor), `recordatorios-cron.js`,
   `verificar-pagos-cron.js` (**7-jun**: verificación de pagos con reintentos; usa `lib/abono-agente.js`),
-  `disparadores.js` (SOLO Mateo), `qa-agente-cron.js` (supervisor). Detalle en §8.
+  `disparadores.js` (SOLO Mateo). *(El supervisor `qa-agente-cron.js` se eliminó el 8-jun.)* Detalle en §8.
 - **libs**: `lib/whatsapp.js` (resolverLinea, enviarTexto/Imagen/Documento, subir/descargar media…),
   `lib/comprobante.js` (lee comprobante con Claude), `lib/asesores.js` (`esGerencia`, `esMateo`,
   `lineasDeAsesor`, `puedeVerLinea`; **GERENCIA = ['mateo','alejo plata']**), `lib/etiquetas.js` (`ponerEtiqueta`),
@@ -190,8 +190,9 @@ todo cliente nuevo). La **cabina y el botón 🤖 son SOLO de Mateo** (candado `
 - **liberar_boleta**: solo dueño + $0 abonado. **trasladar_abono**: ambas boletas del mismo teléfono.
 - El motor llama estos endpoints con la **contraseña de gerencia** (`ASESORES_SECRETO` → `contrasenaGerencia()`),
   usando la misma lógica probada que un humano.
-- **Supervisor Opus DESACTIVADO** (`ACCIONES_SENSIBLES` vacío): no veía las fotos ni los chequeos reales y frenaba
-  acciones legítimas en falso. El código sigue por si se reactiva, pero hoy no se usa.
+- **Supervisor Opus de movimientos ELIMINADO (2026-06-08)**: ya estaba inactivo (`ACCIONES_SENSIBLES` vacío); no veía
+  las fotos ni los chequeos reales y solo frenaba acciones legítimas en falso. La seguridad del dinero vive en los
+  candados de cada acción (abono verificado contra el banco, liberar valida dueño + saldo $0). Se borró del código.
 
 ### 8.4 Cómo conversa (afinado con pruebas reales)
 - **VE las fotos** (le pasa la imagen real a Claude, no "[imagen]"). **Transcribe audios** con Whisper (`OPENAI_API_KEY`).
@@ -219,13 +220,13 @@ La gente escribe en ráfaga → se disparan 2-4 corridas del motor. Tres capas e
 no agenda). Un recordatorio activo por chat. El **relojito** `recordatorios-cron.js` lo llama `pg_cron` cada minuto, reclama los
 vencidos de forma atómica (sin doble disparo) y despierta el motor. `recibir.js` los **cancela** cuando el cliente vuelve a escribir.
 
-### 8.7 Supervisor + ciclo de mejora — HECHO, **PAUSADO (5-jun-2026)**
-- **Qué hace** (`qa-agente-cron.js`, era `pg_cron` cada 30 min): revisa los chats con etiqueta **AGENTE**, le pasa lo NUEVO a
-  **Claude Opus** (más alto que Sonnet) con el manual, detecta errores y manda a Mateo un resumen por WhatsApp (a 573123354789,
-  desde la línea de Lili; solo llega si la ventana de 24h está abierta). Marca de agua `agente_qa_estado` para no repetir.
-- **Ciclo de mejora**: guarda cada error+regla en `agente_sugerencias`; en la cabina, tarjeta "Mejorar el agente" con
-  "Aplicar al manual" (agrega la regla al `prompt`) / "Descartar". Nada cambia sin el visto bueno de Mateo.
-- **PAUSADO**: el cron (jobid 2 en `cron.job`) está en `active=false`. Reactivar: `select cron.alter_job(job_id := 2, active := true);`.
+### 8.7 Supervisor + ciclo de mejora — **ELIMINADO (8-jun-2026)**
+- Existió un supervisor QA (`qa-agente-cron.js`, `pg_cron` cada 30 min) que revisaba los chats con etiqueta **AGENTE** con
+  **Claude Opus**, mandaba a Mateo un resumen por WhatsApp y guardaba errores+regla en `agente_sugerencias` (tarjeta "Mejorar
+  el agente" en la cabina, con "Aplicar al manual" / "Descartar"). Estuvo PAUSADO desde el 5-jun y se **eliminó del todo** el
+  8-jun (lo pidió Mateo): se borró el archivo, su entrada en `vercel.json`, el cron de la base (jobid 2,
+  `cron.unschedule('supervisor-agente-cada-5min')`), las acciones del backend (`agente.js`) y la tarjeta + funciones en
+  `bandeja-whatsapp.html`. Las tablas `agente_qa_estado` y `agente_sugerencias` quedaron huérfanas (sin uso). Ver bitácora.
 
 ### 8.8 Disparadores — HECHO
 Menú **Disparadores** (SOLO Mateo). Por **palabra clave** (el mensaje la contiene) o **cliente nuevo** (primer mensaje, uno por línea).
@@ -310,10 +311,10 @@ Mide cuánto cuesta la IA que responde (los tokens que devuelve Claude en cada r
 - ⬜ **Pago en línea (Wompi)** como herramienta (enviar link de `/abonar`). Subiría conversión. Toca plata; Mateo lo dejó para después.
 - ⬜ **Conectar las líneas grandes** (Línea 1 y Línea 2) — el "corte" final desde ChateaPro (cargarles prompt, herramientas, `{{pagos}}`,
   disparadores y calendario de sorteos).
-- ⬜ **Reporte del supervisor por PLANTILLA** (hoy depende de que la ventana de 24h esté abierta). **Reactivar el supervisor** cuando Mateo quiera (§8.7).
 - ✅ **Costo de IA por chat y del día** → HECHO (§8.12). Pendiente menor: registrar también el costo de Whisper (audios).
 - ⬜ **Pantalla para el calendario de sorteos** (hoy se carga por SQL en `rifas.sorteos`).
-- ⬜ Limpiar el simulador `probar` de la cabina (ya no se usa). Revisar/descartar sugerencias viejas del supervisor en la cabina.
+- ⬜ Limpiar el simulador `probar` de la cabina (ya no se usa).
+- ⬜ (Opcional) Borrar las tablas huérfanas `agente_qa_estado` y `agente_sugerencias` (quedaron sin uso al eliminar el supervisor el 8-jun).
 
 **Para cuando ESCALE (no urgente):**
 - Identificación por **últimos 10 dígitos** puede mezclar 2 clientes; a futuro comparar por teléfono COMPLETO.

@@ -26,6 +26,54 @@
 
 ---
 
+## 2026-06-08 — [WhatsApp] / [General] — Caché de prompt en Liliana (baja ~la mitad el gasto de entrada)
+
+**Qué hicimos:** activamos el *prompt caching* de Anthropic en el motor de Liliana
+(`api/whatsapp/agente-responder.js`). El `system` pasó de ser un texto único a un array de dos
+bloques: `[{ manual (prompt), cache_control: ephemeral }, { contexto volátil }]`. El breakpoint en el
+manual cachea **herramientas + manual** juntos (orden de render: tools → system → messages).
+
+**Por qué:** el gasto de IA era altísimo en ENTRADA (junio: ~22.8M tokens entrada vs 449k salida;
+~14.100 tokens de entrada por respuesta). Causa: el manual (~24.351 chars ≈ ~7.000 tokens) + las 13
+herramientas (~2.000 tokens) se reenviaban a precio lleno en CADA llamada y CADA vuelta del bucle
+(MAX_ITER=6). Ese bloque fijo es >50% de cada llamada. El caché lo cobra 10× más barato (lectura 0.1×).
+
+**Cuidado / qué NO hacer:** NO cambia la conducta de Liliana (ve el mismo prompt, solo más barato) y es
+reversible. La infraestructura de medición ya existía (`registrarUso` guarda `cache_write_tokens`/
+`cache_read_tokens`; `PRECIOS`/`costoUSD` los cobran). El manual debe seguir siendo lo PRIMERO del
+system (todo lo volátil va en el 2º bloque) o se rompe el caché. `toolsActivas` varía (se quita
+`enviar_contacto_inicial` a clientes con boleta) → habrá 2 variantes de caché; ambas funcionan. FALTA
+confirmar al aire que `cache_read_tokens` > 0 en `agente_uso` cuando haya tráfico.
+
+---
+
+## 2026-06-08 — [WhatsApp] / [Seguridad] — Eliminados los DOS supervisores Opus de Liliana
+
+**Qué decidimos:** quitar por completo los dos usos de Opus como "supervisor" del agente:
+1. **Supervisor de movimientos de dinero** (`verificarConOpus` en `agente-responder.js`): revisaba cada
+   acción sensible antes de ejecutarla. **Ya estaba INACTIVO** (`ACCIONES_SENSIBLES` vacío) — era código
+   muerto. Se borró la función, las constantes `OPUS`/`ACCIONES_SENSIBLES`, el `contextoOpus` y el bloque
+   del bucle.
+2. **Supervisor QA / reportes** (`qa-agente-cron.js`): cada 30 min revisaba los chats con Opus, mandaba un
+   reporte a Mateo por WhatsApp (573123354789) y guardaba errores como "sugerencias de mejora" en la
+   cabina. Estaba PAUSADO desde el 6-jun. Se borró: el archivo, su entrada en `vercel.json`, el cron de
+   la base (`cron.unschedule('supervisor-agente-cada-5min')`, era el jobid 2), y el ciclo de sugerencias
+   de la cabina (acciones `sugerencias`/`aplicar_sugerencia`/`descartar_sugerencia` en `agente.js` y la
+   tarjeta "Mejorar el agente" + sus funciones/CSS en `bandeja-whatsapp.html`).
+
+**Por qué:** lo pidió Mateo. El de dinero solo frenaba ventas legítimas en falso (no veía las fotos de
+los comprobantes ni hacía los chequeos reales) y NO aportaba seguridad: cada acción ya tiene su propio
+candado fuerte —el abono se verifica contra el banco y una transferencia se consume una sola vez; liberar
+valida dueño + saldo $0; apartar es reversible—. El de reportes generaba ruido y ya estaba apagado.
+
+**Cuidado / qué NO hacer:** la seguridad del dinero NO bajó (vive en los candados de cada acción, intactos).
+Las tablas **`agente_sugerencias`** y **`agente_qa_estado`** quedaron sin uso (huérfanas) — se dejaron en
+la base (no estorban); borrarlas es opcional, confirmar con Mateo. El etiquetado **AGENTE** se conservó
+(sirve para filtrar la bandeja, no solo para el supervisor). Si algún día se quiere un supervisor, habrá
+que reconstruirlo (ya no está en el código).
+
+---
+
 ## 2026-06-07 — [WhatsApp] — Acumulado: se REINICIA tras un ganador (Liliana decía monto viejo)
 
 **Qué arreglamos (CRÍTICO):** Liliana le decía a los clientes que el próximo sábado jugaba por

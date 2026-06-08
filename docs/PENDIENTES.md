@@ -15,6 +15,11 @@
 
 ## Tareas pendientes
 
+- [ ] (2026-06-08) **Confirmar al aire el caché de prompt de Liliana**: cuando haya tráfico normal, revisar en
+  `agente_uso` (o el panel de Claude) que `cache_read_tokens` > 0 y que el costo de entrada bajó ~la mitad.
+  Se activó el 8-jun pero a esa hora (madrugada) no había mensajes nuevos para verificar. Ver bitácora.
+- [ ] (2026-06-08) **(Opcional) Borrar tablas huérfanas** `agente_qa_estado` y `agente_sugerencias` (quedaron
+  sin uso al eliminar el supervisor QA el 8-jun). Confirmar con Mateo; no estorban si se dejan.
 - [ ] (2026-06-07) **Liliana debe PEDIR cédula y correo (aunque sean opcionales).** Hoy al pedir datos
   solo pide "nombre completo, apellido y ciudad" y NO menciona cédula ni correo (caso real chat
   +573115630300). El cambio del 7-jun (hacerlos opcionales) se pasó: la idea es que **siempre los pida**
@@ -80,6 +85,13 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-08) **Caché de prompt activado en Liliana** (`agente-responder.js`): el manual + herramientas se
+  cachean (10× más barato en lectura). Baja ~la mitad el gasto de entrada. No cambia la conducta. Falta confirmar
+  al aire (arriba). Ver bitácora.
+- [x] (2026-06-08) **Eliminados los DOS supervisores Opus de Liliana**: (1) el de movimientos de dinero
+  (`verificarConOpus`, ya estaba inactivo) y (2) el supervisor QA de reportes (`qa-agente-cron.js`, ya pausado) con
+  todo su ciclo de sugerencias (cron jobid 2, `vercel.json`, `agente.js` y la cabina). La seguridad del dinero NO
+  bajó (vive en los candados de cada acción). Tablas `agente_sugerencias`/`agente_qa_estado` quedaron huérfanas. Ver bitácora.
 - [x] (2026-06-08) **🔒 SEGURIDAD: RLS prendido en las 56 tablas** y bloqueada la llave anónima.
   De 84 problemas (tokens de WhatsApp/sesión expuestos) → 0 errores. El backend usa la llave maestra
   (cambio en `api/lib/supabase.js`) y pasa por encima de RLS; el frontend/app no tocan Supabase directo.

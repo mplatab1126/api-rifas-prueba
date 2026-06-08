@@ -164,8 +164,7 @@ un chat para mostrarlos en la bandeja), `media.js`.
 **Agente de IA (Claude):** `agente.js` (cabina de control), `agente-responder.js`
 (el motor que conversa y ejecuta acciones), `agente-costo.js` (cuánto cuesta en
 dólares), `disparadores.js` (palabras que prenden el agente),
-`qa-agente-cron.js` (supervisor automático — **PAUSADO** desde 2026-06-06, ver
-bitácora; código intacto pero no corre),
+*(el supervisor `qa-agente-cron.js` se **ELIMINÓ** el 2026-06-08, ver bitácora),*
 `recordatorios-cron.js` (recordatorios del agente cada minuto; **2026-06-06**: también a
 DÍAS — al vencer, si la ventana de 24h ya se cerró, manda la plantilla `seguimiento_los_plata`
 para reabrir la conversación; si sigue abierta, texto normal. Ver bitácora),
