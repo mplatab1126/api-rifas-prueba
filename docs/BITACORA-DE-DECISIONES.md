@@ -99,6 +99,24 @@ confiable → la de marketing va sin nombre. Quedó pendiente que **Meta las apr
 botón de WhatsApp (mensaje entrante tipo `button`) hay que verificar que el webhook lo capte para que Liliana
 no pierda la respuesta. Por ahora la plantilla invita a responder por texto (Liliana atiende igual).
 
+## 2026-06-08 — [WhatsApp] — Liliana (dueña de su línea) ya puede prender/apagar el agente por chat
+
+**Qué hicimos:** habilitamos que el **dueño de una línea** use el botón **🤖 por chat** (prender/apagar el agente
+en una conversación: pasarle el cliente al agente o recuperarlo). Antes era SOLO de Mateo. Cambios: `agente.js`
+permite la acción `activar_conversacion` a quien `puedeVerLinea` (gerencia o el asesor de la línea); el resto de
+la cabina sigue exigiendo `esMateo`. `agente-responder.js` permite el disparo desde la bandeja al dueño de la
+línea (antes solo Mateo). `lineas.js` devuelve `tiene_agente` por línea y el botón se muestra solo en líneas con
+agente (la de Lili). 
+
+**Por qué:** Mateo va a operar desde el perfil de Liliana y necesitaba poder activar el agente en los chats.
+Eligió **"operar sin la config delicada"**: NO se le habilitó editar el manual, el interruptor que apaga toda la
+línea, el **Gasto de IA** (costos) ni los **disparadores** — todo eso sigue oculto y bloqueado solo para gerencia.
+
+**Aparte (lo maneja Mateo):** el interruptor `ocultar_agente_liliana` (mostrar/ocultar a Liliana los chats con
+etiqueta AGENTE) lo activa/desactiva él desde gerencia; lo va a apagar para que ella vea esos chats.
+
+---
+
 ## 2026-06-08 — [WhatsApp] / [Rifas/Finanzas] — Ventas de la línea "Compra con Lili" reatribuidas a Liliana
 
 **Qué hicimos:** reasignamos **32 boletas** de `asesor='Pagina Web'` → **`asesor='Liliana'`**. Son las que la

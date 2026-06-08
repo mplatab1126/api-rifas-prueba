@@ -166,7 +166,11 @@ darle "Conectar línea". (Opcional: apagar su bot en ChateaPro.)
 ## 8. Agente de IA "Liliana"
 Vendedor automático que atiende WhatsApp solo con la API de Claude, dentro de la misma bandeja. **EN VIVO**
 con clientes reales en la línea "Compra con Lili", con un disparador `nuevo_contacto` activo (atiende sola a
-todo cliente nuevo). La **cabina y el botón 🤖 son SOLO de Mateo** (candado `esMateo` en servidor y oculto en pantalla).
+todo cliente nuevo). **(8-jun) El botón 🤖 por chat lo puede usar el DUEÑO de la línea** (ej. Liliana en la suya):
+en `agente.js` la acción `activar_conversacion` y el disparo desde la bandeja (`agente-responder.js`) ahora se
+permiten a quien `puedeVerLinea` (gerencia o el asesor de la línea); el botón se muestra si la línea tiene agente
+(`lineas.js` devuelve `tiene_agente`). **La cabina (manual, interruptor de la línea, herramientas), el Gasto de IA
+y los disparadores siguen SOLO de gerencia/Mateo** (candado `esMateo` + ocultos en pantalla por `soyMateo`).
 
 ### 8.1 Cabina + motor, y cómo se prende
 - **Cabina** = `agente.js` + pestaña "Agente". Mateo configura: `prompt` (manual), `modelo`, `estado`, prende/apaga
