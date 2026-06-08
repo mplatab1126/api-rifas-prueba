@@ -374,7 +374,9 @@ async function guardarEnChat(conv, { direccion, tipo = 'text', texto = null, med
   });
   if (direccion !== 'nota') {
     await supabaseAdmin.from('conversaciones_whatsapp')
-      .update({ ultimo_mensaje: String(texto || '📷').slice(0, 200), ultimo_at: ts, ultimo_entrante: false })
+      // no_leidos: 0 → cuando el agente responde, el chat queda "atendido" y se apaga
+      // el contador verde de mensajes sin leer (antes solo se apagaba si un humano abría el chat).
+      .update({ ultimo_mensaje: String(texto || '📷').slice(0, 200), ultimo_at: ts, ultimo_entrante: false, no_leidos: 0 })
       .eq('id', conv.id);
   } else {
     // Las notas (acciones del agente, reales o de modo sombra) también van al registro central
