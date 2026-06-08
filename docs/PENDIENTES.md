@@ -81,6 +81,9 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-08) **Nombre de la rifa corregido a "Casa Santa Teresita"** (antes "Rica casa santa
+  teresita"). Cambiado en `rifas.nombre` (rifa activa) y en el manual de Liliana (`agente_config.prompt`).
+  Efecto inmediato. Las categorías contables "Rifa Casa Santa Teresita" (caja/finanzas) NO se tocaron.
 - [x] (2026-06-07) **Agente: no se presenta a un cliente que YA tiene boleta.** Antes Liliana mandaba
   el contacto inicial aunque el cliente ya tuviera boleta (no obedecía la instrucción). Ahora es
   determinístico: si tiene boleta(s) o hay que remitirlo, el código le quita la herramienta de contacto
