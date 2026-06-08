@@ -1059,7 +1059,7 @@ export default async function handler(req, res) {
         sorteosFuturos.map(s => '   · ' + String(s.titulo || 'Sorteo').trim() + ' — ' + etiquetaFecha(s.fecha)).join('\n')
       : '';
 
-    const system = prompt +
+    const systemVolatil =
       `\n\n---\nCONTEXTO (no lo menciones literalmente): hoy es ${contextoFechaHora()} (Colombia). ` +
       `Hablas por WhatsApp con el cliente cuyo número es ${conv.telefono}. ` +
       `Tienes herramientas para actuar; úsalas cuando corresponda en vez de inventar. ` +
@@ -1077,6 +1077,18 @@ export default async function handler(req, res) {
         : '') +
       bloqueResultados +
       bloqueFechas;
+
+    // Caché de prompt: el manual de Liliana y la lista de herramientas son idénticos en
+    // CADA llamada y CADA vuelta del bucle. Marcamos el manual (lo más grande y fijo) con
+    // cache_control para que Claude lo cobre 10× más barato (lectura 0.1× en vez de precio
+    // lleno) durante los 5 min siguientes. El breakpoint en el PRIMER bloque cachea
+    // herramientas + manual juntos (orden de render: tools → system → messages); el
+    // contexto volátil (fecha, teléfono, estado del cliente, fechas) va en un 2º bloque
+    // SIN caché. No cambia nada de lo que responde Liliana: ve el mismo prompt, más barato.
+    const system = [
+      { type: 'text', text: prompt, cache_control: { type: 'ephemeral' } },
+      { type: 'text', text: systemVolatil },
+    ];
 
     const messages = construirMensajes(reales, imagenesVistas);
     // Disparo por RECORDATORIO: no hay mensaje nuevo del cliente; le inyectamos una nota
