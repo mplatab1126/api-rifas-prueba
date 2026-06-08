@@ -26,6 +26,32 @@
 
 ---
 
+## 2026-06-07 — [WhatsApp] — Acumulado: se REINICIA tras un ganador (Liliana decía monto viejo)
+
+**Qué arreglamos (CRÍTICO):** Liliana le decía a los clientes que el próximo sábado jugaba por
+**$20.000.000** cuando en realidad volvía a su base de **$5.000.000 en bonos**. El acumulado de los
+sábados (Lotería de Boyacá) ya se había GANADO el 6-jun (5588 · Margarita Rosa), así que se reinició;
+pero el motor seguía arrastrando el monto acumulado viejo.
+
+**Por qué pasaba:** en `agente-responder.js`, `montoAcumProximo` se calculaba tomando el ÚLTIMO sorteo
+PASADO marcado `acumulado` con monto, SIN mirar si DESPUÉS hubo un ganador que reiniciara la cadena.
+
+**Cómo quedó:** el acumulado solo se arrastra al próximo si el ÚLTIMO sorteo pasado **del mismo tipo**
+(mismo título; se agrupa por título para no mezclar el Sueldazo con los sábados) quedó acumulado. Si ese
+último ya tuvo ganador → `acumuladoReiniciado=true`, `montoAcumProximo=''` y el próximo va por el monto
+de su TÍTULO ($5M). Se le inyecta además una nota explícita para que NO mencione montos acumulados
+viejos. Verificado con los datos reales: hoy (acumulado ganado 6-jun) el próximo 13-jun sale SIN
+acumulado; antes del 6-jun sí arrastraba $20M (no se rompió el caso normal); con la casa de próximo, sin
+monto pegado.
+
+**Cuidado / qué NO hacer:** el texto del premio ("$5.000.000 en bonos, Lotería de Boyacá") ya estaba
+bien en el manual y en los títulos del calendario (`rifas.sorteos`); NO se tocaron. La cadena de
+acumulado son los SÁBADOS; el Sueldazo es un sorteo aparte (no la reinicia ni cuenta en ella) gracias al
+agrupado por título. Si algún día cambian los títulos de los sábados, mantenerlos IGUALES entre sí para
+que el agrupado siga funcionando.
+
+---
+
 ## 2026-06-07 — [Seguridad] — Configurada la llave maestra (SERVICE_ROLE_KEY): el Gasto de IA ya funciona
 
 **Qué hicimos:** Mateo configuró `SUPABASE_SERVICE_ROLE_KEY` en Vercel (usó la **nueva "Secret key"**
