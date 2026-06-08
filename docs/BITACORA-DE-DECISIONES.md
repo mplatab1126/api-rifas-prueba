@@ -26,6 +26,28 @@
 
 ---
 
+## 2026-06-07 — [Seguridad] — Configurada la llave maestra (SERVICE_ROLE_KEY): el Gasto de IA ya funciona
+
+**Qué hicimos:** Mateo configuró `SUPABASE_SERVICE_ROLE_KEY` en Vercel (usó la **nueva "Secret key"**
+de Supabase, `sb_secret_...`, equivalente moderno al service_role; bypassa RLS) e hizo redeploy. Con
+eso, `supabaseAdmin` ya NO cae a la llave anónima: ahora escribe en tablas con RLS. **Resultado: la
+tarjeta "Gasto de IA" ya guarda y muestra el costo** (verificado: `agente_uso` pasó de 0 a registros
+reales, ej. 2 filas / $0.072 USD a los pocos minutos). El agente siguió respondiendo normal (no rompió
+nada).
+
+**Por qué:** la tabla `agente_uso` tiene RLS activado sin políticas → solo el rol de servicio puede
+escribir. Como faltaba la llave, el agente corría como `anon` y el insert se bloqueaba en silencio
+(panel en $0). Era el pendiente "Gasto de IA = $0 / el agente corre como anon".
+
+**Cuidado / qué NO hacer:** el costo cuenta **de ahora en adelante** (lo viejo quedó en $0, no se
+recupera). La llave es secreta (solo en Vercel; nunca en el repo ni en chats). El nombre EXACTO de la
+variable es `SUPABASE_SERVICE_ROLE_KEY`. **Sigue pendiente** (mejora futura, NO automática) endurecer la
+seguridad: volver a ACTIVAR RLS con políticas en tablas sensibles (ej. `conversaciones_whatsapp`), que
+hoy dependen de tener RLS apagado. Hacerlo con calma, tabla por tabla, confirmando que el agente y la
+bandeja sigan funcionando.
+
+---
+
 ## 2026-06-07 — [WhatsApp] — Liliana: remite al punto de venta si la boleta la vendió OTRO
 
 **Qué decidimos:** si un cliente le escribe a la línea de Liliana pero su boleta la **vendió otro

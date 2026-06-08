@@ -72,8 +72,10 @@
   ¿cuántas fotos al saludar? (hoy 12+); confirmar el mínimo de $50.000/$60.000; revisar
   el framing de los **$300.000.000**. (Ya HECHO el 6-jun: tutear siempre / no contar
   sábados / no mencionar el Sueldazo — ver "Hecho recientemente" y bitácora.)
-- [ ] (2026-06-06) Arreglar **"Gasto de IA = $0"**: configurar `SUPABASE_SERVICE_ROLE_KEY`
-  en Vercel (y revisar RLS de las tablas). Ver bitácora.
+- [ ] (2026-06-07) **Endurecer seguridad (mejora futura, NO urgente):** ahora que existe la llave
+  maestra, volver a ACTIVAR RLS con políticas en tablas sensibles (ej. `conversaciones_whatsapp`) que
+  hoy dependen de tener RLS apagado. Hacerlo con calma, tabla por tabla, confirmando que agente y
+  bandeja sigan funcionando. (La parte de `SUPABASE_SERVICE_ROLE_KEY` ya quedó hecha — ver abajo.)
 - [ ] (2026-06-07) **Preparar la copia de trabajo en WINDOWS** (Mateo trabaja la mayoría
   de veces en Windows). La primera vez que abra Claude Code allá, clonar fresco de GitHub a
   una carpeta FUERA de Google Drive (ej. `C:\los-platas-rifas`) y trabajar siempre desde ahí.
@@ -90,6 +92,9 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-07) **Gasto de IA arreglado**: se configuró `SUPABASE_SERVICE_ROLE_KEY` en Vercel
+  (nueva "Secret key" de Supabase). `agente_uso` ya guarda el costo y el panel lo muestra (verificado).
+  El agente siguió normal. Cuenta de ahora en adelante. Ver bitácora. (Queda aparte: endurecer RLS.)
 - [x] (2026-06-07) **Liliana remite al punto de venta si la boleta la vendió OTRO** (no la atiende:
   le da el número del asesor que vendió). Aplica aunque esté pagada o quiera otra boleta; varios
   vendedores → el más reciente. Columna `asesores_config.numero_remision`. Ver bitácora.
