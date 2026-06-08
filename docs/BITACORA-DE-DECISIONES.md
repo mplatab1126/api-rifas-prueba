@@ -26,6 +26,26 @@
 
 ---
 
+## 2026-06-08 — [WhatsApp] — Liliana usa su PROPIA llave de Claude + se reinició su contador de gasto
+
+**Qué hicimos:** Liliana ahora se autentica con Claude usando una llave dedicada,
+`ANTHROPIC_API_KEY_LILIANA` (variable de entorno en Vercel, creada por Mateo), para poder medir su gasto
+por separado en el panel de Anthropic de esa llave. El cambio está en `api/whatsapp/agente-responder.js`:
+`const apiKey = process.env.ANTHROPIC_API_KEY_LILIANA || process.env.ANTHROPIC_API_KEY;` — usa la suya y,
+si falta, cae a la general para no dejar de responder. Además se **reinició el contador interno** de la
+tarjeta "Gasto de IA" (`truncate table agente_uso`) para empezar de cero.
+
+**Por qué:** Mateo quería saber exactamente cuánto gasta Liliana, sin mezclarla con las otras 7 funciones
+que comparten `ANTHROPIC_API_KEY` (comprobantes, análisis, copy, chat de Alejo, etc.).
+
+**Cuidado / qué NO hacer:** **NO borrar `ANTHROPIC_API_KEY`** (la usan las otras 7 funciones y es el
+respaldo de Liliana). Si se pega mal la llave nueva, Liliana fallaría (el respaldo solo cubre si la
+variable está VACÍA, no si la llave es inválida); para revertir, borrar `ANTHROPIC_API_KEY_LILIANA` y
+redeploy. La tabla `agente_uso` solo la escribe Liliana y solo la lee la tarjeta "Gasto de IA"
+(`agente-costo.js`); NO alimenta el estado de resultados, por eso truncarla no afecta la contabilidad.
+
+---
+
 ## 2026-06-08 — [WhatsApp] / [General] — Caché de prompt en Liliana (baja ~la mitad el gasto de entrada)
 
 **Qué hicimos:** activamos el *prompt caching* de Anthropic en el motor de Liliana
