@@ -46,6 +46,9 @@
     "api/whatsapp/verificar-pagos-cron.js": {
       "maxDuration": 300
     },
+    "api/whatsapp/difusiones-cron.js": {
+      "maxDuration": 60
+    },
     "api/admin/llamadas-automaticas.js": {
       "maxDuration": 60
     },

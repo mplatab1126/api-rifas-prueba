@@ -27,6 +27,7 @@ import { validarAsesor } from '../lib/auth.js';
 import { supabase, supabaseAdmin } from '../lib/supabase.js';
 import { puedeVerLinea } from '../lib/asesores.js';
 import { enviarPlantilla } from '../lib/whatsapp.js';
+import { procesarLoteDifusion } from '../lib/difusion-envio.js';
 
 const LOTE_DEFECTO = 25;     // cuántos mensajes por llamada de "enviar-lote"
 const LOTE_MAX = 80;
@@ -44,68 +45,38 @@ function resolverParametros(variables, dest) {
   });
 }
 
-// Texto que se guarda en el historial del chat (el cuerpo con las variables ya puestas).
-function textoFinal(cuerpo, params) {
-  let t = String(cuerpo || '');
-  (params || []).forEach((val, i) => { t = t.replaceAll(`{{${i + 1}}}`, String(val ?? '')); });
-  return t;
-}
-
-// Busca (o crea) la conversación de un teléfono en una línea y devuelve su id.
-async function asegurarConv(telefono, lineaId, asesor) {
-  let b = supabaseAdmin.from('conversaciones_whatsapp').select('id').eq('telefono', telefono);
-  b = lineaId ? b.eq('linea_id', lineaId) : b.is('linea_id', null);
-  const { data } = await b.maybeSingle();
-  if (data) return data.id;
-  const { data: nueva } = await supabaseAdmin
-    .from('conversaciones_whatsapp')
-    .insert({ telefono, linea_id: lineaId || null, ultimo_entrante: false, estado: 'humano', asesor_asignado: asesor })
-    .select('id').single();
-  return nueva ? nueva.id : null;
-}
-
-// Calcula la lista de teléfonos según los filtros de audiencia (server-side).
-// Devuelve [{ telefono, nombre }]. Pagina para no traer todo de golpe.
+// Calcula la lista de teléfonos según los filtros de audiencia (server-side, en la base).
+// filtros = { tipo:'todos'|'etiqueta'|'clientes'|'potenciales', estado_pago?, ciudad?, etiqueta_id? }
+// Devuelve [{ telefono, nombre }]. Pagina la función para aguantar líneas enormes.
 async function calcularAudiencia(lineaId, filtros) {
-  const tipo = (filtros && filtros.tipo) || 'todos';
+  const f = (filtros && typeof filtros === 'object') ? filtros : { tipo: 'todos' };
   const vistos = new Set();
   const out = [];
-
-  if (tipo === 'etiqueta' && filtros.etiqueta_id) {
-    // Conversaciones de la línea que tengan esa etiqueta.
-    const { data: ce } = await supabaseAdmin
-      .from('conversacion_etiquetas').select('conversacion_id').eq('etiqueta_id', filtros.etiqueta_id);
-    const ids = (ce || []).map(r => r.conversacion_id);
-    for (let i = 0; i < ids.length; i += 300) {
-      const trozo = ids.slice(i, i + 300);
-      const { data } = await supabaseAdmin
-        .from('conversaciones_whatsapp')
-        .select('telefono, nombre_perfil')
-        .eq('linea_id', lineaId)
-        .in('id', trozo);
-      for (const c of (data || [])) {
-        if (c.telefono && !vistos.has(c.telefono)) { vistos.add(c.telefono); out.push({ telefono: c.telefono, nombre: c.nombre_perfil || '' }); }
-      }
-    }
-    return out;
-  }
-
-  // tipo "todos": todos los contactos de la línea, paginado.
   const PAGE = 1000;
   for (let page = 0; page < 1000; page++) {
-    const { data } = await supabaseAdmin
-      .from('conversaciones_whatsapp')
-      .select('telefono, nombre_perfil')
-      .eq('linea_id', lineaId)
-      .order('telefono', { ascending: true })
+    const { data, error } = await supabaseAdmin
+      .rpc('difusion_audiencia', { p_linea: lineaId, p_filtros: f })
       .range(page * PAGE, page * PAGE + PAGE - 1);
-    if (!data || !data.length) break;
-    for (const c of data) {
-      if (c.telefono && !vistos.has(c.telefono)) { vistos.add(c.telefono); out.push({ telefono: c.telefono, nombre: c.nombre_perfil || '' }); }
+    if (error || !data || !data.length) break;
+    for (const r of data) {
+      if (r.telefono && !vistos.has(r.telefono)) { vistos.add(r.telefono); out.push({ telefono: r.telefono, nombre: r.nombre || '' }); }
     }
     if (data.length < PAGE) break;
   }
   return out;
+}
+
+// Construye (desde cero) la cola de destinatarios de una difusión. Devuelve el total.
+async function construirCola(dif, lineaId) {
+  const audiencia = await calcularAudiencia(lineaId, dif.filtros);
+  await supabaseAdmin.from('difusion_destinatarios').delete().eq('difusion_id', dif.id);
+  for (let i = 0; i < audiencia.length; i += INSERT_CHUNK) {
+    const filas = audiencia.slice(i, i + INSERT_CHUNK).map(a => ({
+      difusion_id: dif.id, telefono: a.telefono, nombre: a.nombre || null, estado: 'pendiente',
+    }));
+    if (filas.length) await supabaseAdmin.from('difusion_destinatarios').insert(filas);
+  }
+  return audiencia.length;
 }
 
 export default async function handler(req, res) {
@@ -124,7 +95,7 @@ export default async function handler(req, res) {
     if (accion === 'listar') {
       const { data } = await supabase
         .from('difusiones')
-        .select('id, nombre, plantilla_id, variables, filtros, estado, total, enviados, fallidos, creada_por, created_at, completada_at, plantillas_whatsapp(nombre, estado)')
+        .select('id, nombre, plantilla_id, variables, filtros, estado, total, enviados, fallidos, creada_por, created_at, completada_at, programada_at, activar_agente, plantillas_whatsapp(nombre, estado)')
         .eq('linea_id', linea_id)
         .order('created_at', { ascending: false });
       const difusiones = (data || []).map(d => ({
@@ -141,12 +112,13 @@ export default async function handler(req, res) {
       const plantilla_id = req.body.plantilla_id || null;
       const variables = Array.isArray(req.body.variables) ? req.body.variables : [];
       const filtros = (req.body.filtros && typeof req.body.filtros === 'object') ? req.body.filtros : { tipo: 'todos' };
+      const activar_agente = req.body.activar_agente !== false;   // por defecto SÍ (Liliana atiende las respuestas)
       if (!nombre) return res.status(200).json({ status: 'error', mensaje: 'Ponle un nombre a la difusión.' });
 
       if (accion === 'crear') {
         const { data, error } = await supabaseAdmin
           .from('difusiones')
-          .insert({ linea_id, nombre, plantilla_id, variables, filtros, estado: 'borrador', creada_por: nombreAsesor })
+          .insert({ linea_id, nombre, plantilla_id, variables, filtros, activar_agente, estado: 'borrador', creada_por: nombreAsesor })
           .select('id, nombre, plantilla_id, variables, filtros, estado, total, enviados, fallidos, created_at')
           .single();
         if (error) return res.status(200).json({ status: 'error', mensaje: error.message });
@@ -158,12 +130,12 @@ export default async function handler(req, res) {
       // Solo se puede editar mientras es borrador o está preparada (no en pleno envío).
       const { data: actual } = await supabaseAdmin.from('difusiones').select('estado').eq('id', id).eq('linea_id', linea_id).maybeSingle();
       if (!actual) return res.status(200).json({ status: 'error', mensaje: 'No se encontró la difusión.' });
-      if (!['borrador', 'preparada'].includes(actual.estado)) {
+      if (!['borrador', 'preparada', 'programada'].includes(actual.estado)) {
         return res.status(200).json({ status: 'error', mensaje: 'No se puede editar una difusión que ya empezó a enviarse.' });
       }
       const { data, error } = await supabaseAdmin
         .from('difusiones')
-        .update({ nombre, plantilla_id, variables, filtros, estado: 'borrador' })
+        .update({ nombre, plantilla_id, variables, filtros, activar_agente, estado: 'borrador', programada_at: null })
         .eq('id', id).eq('linea_id', linea_id)
         .select('id, nombre, plantilla_id, variables, filtros, estado, total, enviados, fallidos, created_at')
         .single();
@@ -190,19 +162,35 @@ export default async function handler(req, res) {
         return res.status(200).json({ status: 'error', mensaje: 'Esta difusión ya empezó a enviarse.' });
       }
 
-      const audiencia = await calcularAudiencia(linea_id, dif.filtros);
-      // Rehacemos la cola desde cero.
-      await supabaseAdmin.from('difusion_destinatarios').delete().eq('difusion_id', id);
-      for (let i = 0; i < audiencia.length; i += INSERT_CHUNK) {
-        const filas = audiencia.slice(i, i + INSERT_CHUNK).map(a => ({
-          difusion_id: id, telefono: a.telefono, nombre: a.nombre || null, estado: 'pendiente',
-        }));
-        if (filas.length) await supabaseAdmin.from('difusion_destinatarios').insert(filas);
-      }
+      const total = await construirCola(dif, linea_id);
       await supabaseAdmin.from('difusiones')
-        .update({ total: audiencia.length, enviados: 0, fallidos: 0, estado: 'preparada' })
+        .update({ total, enviados: 0, fallidos: 0, estado: 'preparada', programada_at: null })
         .eq('id', id);
-      return res.status(200).json({ status: 'ok', total: audiencia.length });
+      return res.status(200).json({ status: 'ok', total });
+    }
+
+    // Programar el envío para una fecha/hora: arma la cola ya y queda en espera; el cron la envía sola.
+    if (accion === 'programar') {
+      const { id } = req.body;
+      const cuando = req.body.programada_at ? new Date(req.body.programada_at) : null;
+      if (!id) return res.status(200).json({ status: 'error', mensaje: 'Falta la difusión.' });
+      if (!cuando || isNaN(cuando.getTime())) return res.status(200).json({ status: 'error', mensaje: 'Elige una fecha y hora válida.' });
+      if (cuando.getTime() < Date.now() - 60000) return res.status(200).json({ status: 'error', mensaje: 'Esa hora ya pasó. Elige una más adelante.' });
+      const { data: dif } = await supabaseAdmin.from('difusiones').select('*').eq('id', id).eq('linea_id', linea_id).maybeSingle();
+      if (!dif) return res.status(200).json({ status: 'error', mensaje: 'No se encontró la difusión.' });
+      if (!dif.plantilla_id) return res.status(200).json({ status: 'error', mensaje: 'Primero elige una plantilla aprobada.' });
+      if (!['borrador', 'preparada', 'programada'].includes(dif.estado)) {
+        return res.status(200).json({ status: 'error', mensaje: 'Esta difusión ya empezó a enviarse.' });
+      }
+      const { data: pl } = await supabaseAdmin.from('plantillas_whatsapp').select('estado').eq('id', dif.plantilla_id).eq('linea_id', linea_id).maybeSingle();
+      if (!pl || pl.estado !== 'aprobada') return res.status(200).json({ status: 'error', mensaje: 'La plantilla aún no está aprobada por Meta.' });
+
+      const total = await construirCola(dif, linea_id);
+      if (!total) return res.status(200).json({ status: 'error', mensaje: 'No hay destinatarios para esos filtros.' });
+      await supabaseAdmin.from('difusiones')
+        .update({ total, enviados: 0, fallidos: 0, estado: 'programada', programada_at: cuando.toISOString() })
+        .eq('id', id);
+      return res.status(200).json({ status: 'ok', total, programada_at: cuando.toISOString() });
     }
 
     if (accion === 'estado') {
@@ -240,76 +228,12 @@ export default async function handler(req, res) {
     if (accion === 'enviar-lote') {
       const { id } = req.body;
       const limite = Math.min(LOTE_MAX, Math.max(1, parseInt(req.body.limite, 10) || LOTE_DEFECTO));
-      const { data: dif } = await supabaseAdmin.from('difusiones').select('*').eq('id', id).eq('linea_id', linea_id).maybeSingle();
-      if (!dif) return res.status(200).json({ status: 'error', mensaje: 'No se encontró la difusión.' });
-      if (dif.estado === 'cancelada') return res.status(200).json({ status: 'error', mensaje: 'La difusión está cancelada.' });
-      if (!dif.plantilla_id) return res.status(200).json({ status: 'error', mensaje: 'La difusión no tiene plantilla.' });
-
-      const { data: pl } = await supabaseAdmin
-        .from('plantillas_whatsapp').select('nombre, idioma, cuerpo, estado').eq('id', dif.plantilla_id).eq('linea_id', linea_id).maybeSingle();
-      if (!pl) return res.status(200).json({ status: 'error', mensaje: 'No se encontró la plantilla de la difusión.' });
-      if (pl.estado !== 'aprobada') return res.status(200).json({ status: 'error', mensaje: 'La plantilla aún no está aprobada por Meta. No se puede enviar.' });
-
-      // Tomar el siguiente lote de pendientes.
-      const { data: lote } = await supabaseAdmin
-        .from('difusion_destinatarios')
-        .select('id, telefono, nombre')
-        .eq('difusion_id', id).eq('estado', 'pendiente')
-        .order('id', { ascending: true })
-        .limit(limite);
-
-      if (!lote || !lote.length) {
-        await supabaseAdmin.from('difusiones').update({ estado: 'completada', completada_at: new Date().toISOString() }).eq('id', id);
-        return res.status(200).json({ status: 'ok', restantes: 0, completada: true, enviados: dif.enviados, fallidos: dif.fallidos });
-      }
-
-      // Marcar que arrancó.
-      if (dif.estado !== 'enviando') {
-        await supabaseAdmin.from('difusiones').update({ estado: 'enviando', iniciada_at: dif.iniciada_at || new Date().toISOString() }).eq('id', id);
-      }
-
-      let nuevosEnviados = 0, nuevosFallidos = 0;
-      for (const dest of lote) {
-        const params = resolverParametros(dif.variables, dest);
-        const env = await enviarPlantilla(dest.telefono, { nombre: pl.nombre, idioma: pl.idioma, parametros: params }, linea_id);
-        const ts = new Date().toISOString();
-        if (env.ok) {
-          await supabaseAdmin.from('difusion_destinatarios')
-            .update({ estado: 'enviado', wa_message_id: env.wa_message_id || null, enviado_at: ts, error: null })
-            .eq('id', dest.id);
-          nuevosEnviados++;
-          // Dejar rastro en el chat del cliente (igual que un mensaje saliente normal).
-          const conversacion_id = await asegurarConv(dest.telefono, linea_id, nombreAsesor);
-          const cuerpo = textoFinal(pl.cuerpo, params);
-          await supabaseAdmin.from('mensajes_whatsapp').insert({
-            conversacion_id, telefono: dest.telefono, linea_id,
-            direccion: 'saliente', tipo: 'text', texto: cuerpo,
-            wa_message_id: env.wa_message_id, estado_envio: 'enviado', timestamp_wa: ts,
-          });
-          let upd = supabaseAdmin.from('conversaciones_whatsapp')
-            .update({ ultimo_mensaje: String(cuerpo).slice(0, 200), ultimo_at: ts, ultimo_entrante: false })
-            .eq('telefono', dest.telefono);
-          upd = linea_id ? upd.eq('linea_id', linea_id) : upd.is('linea_id', null);
-          await upd;
-        } else {
-          await supabaseAdmin.from('difusion_destinatarios')
-            .update({ estado: 'fallido', error: String(env.error || 'error').slice(0, 300), enviado_at: ts })
-            .eq('id', dest.id);
-          nuevosFallidos++;
-        }
-      }
-
-      // Actualizar contadores de la difusión.
-      const enviados = (dif.enviados || 0) + nuevosEnviados;
-      const fallidos = (dif.fallidos || 0) + nuevosFallidos;
-      const { count: restantes } = await supabaseAdmin
-        .from('difusion_destinatarios').select('id', { count: 'exact', head: true }).eq('difusion_id', id).eq('estado', 'pendiente');
-      const completada = (restantes || 0) === 0;
-      await supabaseAdmin.from('difusiones')
-        .update({ enviados, fallidos, estado: completada ? 'completada' : 'enviando', ...(completada ? { completada_at: new Date().toISOString() } : {}) })
-        .eq('id', id);
-
-      return res.status(200).json({ status: 'ok', restantes: restantes || 0, completada, enviados, fallidos });
+      // Verificar que la difusión es de esta línea (el resto de la lógica vive en el módulo compartido).
+      const { data: own } = await supabaseAdmin.from('difusiones').select('id').eq('id', id).eq('linea_id', linea_id).maybeSingle();
+      if (!own) return res.status(200).json({ status: 'error', mensaje: 'No se encontró la difusión.' });
+      const r = await procesarLoteDifusion(id, { limite, asesor: nombreAsesor });
+      if (!r.ok) return res.status(200).json({ status: 'error', mensaje: r.error });
+      return res.status(200).json({ status: 'ok', restantes: r.restantes, completada: r.completada, enviados: r.enviados, fallidos: r.fallidos });
     }
 
     return res.status(200).json({ status: 'error', mensaje: 'Acción no válida.' });

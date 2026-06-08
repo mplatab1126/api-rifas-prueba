@@ -3074,11 +3074,25 @@ window.borrarPlantilla = async function(id){
 
 /* ── Campañas (difusiones) ── */
 function descAudiencia(filtros){
-  if(filtros && filtros.tipo === 'etiqueta'){
-    const e = etiquetasCache.find(x => x.id === filtros.etiqueta_id);
+  const t = (filtros && filtros.tipo) || 'todos';
+  if(t === 'etiqueta'){
+    const e = etiquetasCache.find(x => x.id === (filtros && filtros.etiqueta_id));
     return 'Etiqueta: ' + (e ? ((e.icono ? e.icono + ' ' : '') + e.nombre) : '—');
   }
+  if(t === 'potenciales') return 'Potenciales (nunca han comprado)';
+  if(t === 'clientes'){
+    const ep = (filtros && filtros.estado_pago) || 'todos';
+    const epTxt = ep === 'saldo' ? ', con saldo pendiente' : ep === 'pagados' ? ', pagados' : '';
+    const ci = (filtros && filtros.ciudad) ? ` · ${filtros.ciudad}` : '';
+    return 'Clientes (con boleta)' + epTxt + ci;
+  }
   return 'Todos los contactos';
+}
+// Fecha+hora local legible (para difusiones programadas).
+function fmtFechaHora(iso){
+  if(!iso) return '';
+  try { return new Date(iso).toLocaleString('es-CO', { dateStyle:'medium', timeStyle:'short' }); }
+  catch(e){ return iso; }
 }
 async function cargarDifusiones(){
   $('listaDifusiones').innerHTML = '<div class="vacio-lista">Cargando…</div>';
@@ -3106,9 +3120,14 @@ function pintarDifusiones(){
     } else if(d.estado === 'enviando'){
       acc = `<button class="df-go" onclick="abrirEnvio('${d.id}')">Continuar envío</button>
              <button class="df-danger" onclick="cancelarDifusion('${d.id}')">Cancelar</button>`;
+    } else if(d.estado === 'programada'){
+      acc = `<button onclick="editarDifusion('${d.id}')">Editar / reprogramar</button>
+             <button class="df-danger" onclick="cancelarDifusion('${d.id}')">Cancelar</button>`;
     } else {
       acc = `<button class="df-danger" onclick="borrarDifusion('${d.id}')">Eliminar</button>`;
     }
+    const progLinea = (d.estado === 'programada' && d.programada_at)
+      ? `<div class="df-card-sub" style="color:var(--accent-700,#1a7f4b);margin-top:4px">⏰ Programada para ${esc(fmtFechaHora(d.programada_at))}</div>` : '';
     const plTxt = d.plantilla_nombre
       ? esc(d.plantilla_nombre) + (d.plantilla_estado !== 'aprobada' ? ' (no aprobada)' : '')
       : '— sin plantilla';
@@ -3117,6 +3136,7 @@ function pintarDifusiones(){
         <div>
           <div class="df-card-tit">${esc(d.nombre)} ${estadoPill(d.estado)}</div>
           <div class="df-card-sub">Plantilla: ${plTxt} · ${esc(descAudiencia(d.filtros))}</div>
+          ${progLinea}
         </div>
         <div class="df-acc">${acc}</div>
       </div>
@@ -3142,14 +3162,25 @@ window.formDifusion = async function(d){
     id: d.id, nombre: d.nombre || '', plantilla_id: d.plantilla_id || '',
     variables: Array.isArray(d.variables) ? d.variables.slice() : [],
     filtros: d.filtros || { tipo:'todos' },
-  } : { id:null, nombre:'', plantilla_id:'', variables:[], filtros:{ tipo:'todos' } };
+    activar_agente: d.activar_agente !== false,
+  } : { id:null, nombre:'', plantilla_id:'', variables:[], filtros:{ tipo:'todos' }, activar_agente: true };
   pintarFormDifusion();
 };
 function capturarFormDifusion(){
   if($('dfNombre')) dfForm.nombre = $('dfNombre').value;
   if($('dfPlantilla')) dfForm.plantilla_id = $('dfPlantilla').value;
   const sel = document.querySelector('input[name="dfAud"]:checked');
-  if(sel){ dfForm.filtros = { tipo: sel.value }; if(sel.value === 'etiqueta' && $('dfEtiqueta')) dfForm.filtros.etiqueta_id = $('dfEtiqueta').value; }
+  if(sel){
+    const t = sel.value;
+    const f = { tipo: t };
+    if(t === 'etiqueta' && $('dfEtiqueta')) f.etiqueta_id = $('dfEtiqueta').value;
+    if(t === 'clientes'){
+      if($('dfEstadoPago')) f.estado_pago = $('dfEstadoPago').value;
+      if($('dfCiudad') && $('dfCiudad').value.trim()) f.ciudad = $('dfCiudad').value.trim();
+    }
+    dfForm.filtros = f;
+  }
+  if($('dfAgente')) dfForm.activar_agente = $('dfAgente').checked;
   document.querySelectorAll('.df-var').forEach(el => { dfForm.variables[+el.getAttribute('data-i')] = el.value; });
 }
 function pintarFormDifusion(){
@@ -3165,7 +3196,10 @@ function pintarFormDifusion(){
         <span class="df-chip" onclick="setVar(${i},'{telefono}')">Teléfono</span>
       </div>
     </div>`).join('') : '';
-  const esEtq = dfForm.filtros.tipo === 'etiqueta';
+  const tipoAud = dfForm.filtros.tipo || 'todos';
+  const esEtq = tipoAud === 'etiqueta';
+  const esCli = tipoAud === 'clientes';
+  const ep = dfForm.filtros.estado_pago || 'todos';
   const etOpts = etiquetasCache.map(e =>
     `<option value="${e.id}" ${dfForm.filtros.etiqueta_id === e.id ? 'selected' : ''}>${e.icono ? e.icono + ' ' : ''}${esc(e.nombre)}</option>`).join('');
   const plAviso = (pl && pl.estado !== 'aprobada')
@@ -3183,10 +3217,21 @@ function pintarFormDifusion(){
     ${plAviso}
     ${varsHtml}
     <div class="df-field"><label>¿A quién?</label>
-      <label class="df-radio"><input type="radio" name="dfAud" value="todos" ${!esEtq ? 'checked' : ''} onchange="onCambioAud()"> Todos los contactos de la línea</label>
+      <label class="df-radio"><input type="radio" name="dfAud" value="todos" ${tipoAud==='todos' ? 'checked' : ''} onchange="onCambioAud()"> Todos los contactos de la línea</label>
+      <label class="df-radio"><input type="radio" name="dfAud" value="clientes" ${esCli ? 'checked' : ''} onchange="onCambioAud()"> Clientes (ya tienen boleta)</label>
+      <div style="${esCli ? '' : 'display:none'};margin:2px 0 8px 26px">
+        <select id="dfEstadoPago">
+          <option value="todos" ${ep==='todos' ? 'selected' : ''}>Todos los clientes</option>
+          <option value="saldo" ${ep==='saldo' ? 'selected' : ''}>Solo con saldo pendiente</option>
+          <option value="pagados" ${ep==='pagados' ? 'selected' : ''}>Solo los que ya pagaron</option>
+        </select>
+        <input id="dfCiudad" placeholder="Ciudad (opcional)" value="${esc(dfForm.filtros.ciudad || '')}" style="margin-top:6px">
+      </div>
+      <label class="df-radio"><input type="radio" name="dfAud" value="potenciales" ${tipoAud==='potenciales' ? 'checked' : ''} onchange="onCambioAud()"> Potenciales (nunca han comprado)</label>
       <label class="df-radio"><input type="radio" name="dfAud" value="etiqueta" ${esEtq ? 'checked' : ''} onchange="onCambioAud()"> Solo los de una etiqueta</label>
       <select id="dfEtiqueta" style="${esEtq ? '' : 'display:none'}">${etOpts || '<option value="">(sin etiquetas)</option>'}</select>
     </div>
+    <label class="df-radio" style="margin-top:4px"><input type="checkbox" id="dfAgente" ${dfForm.activar_agente ? 'checked' : ''}> Que Liliana atienda automáticamente a quien responda</label>
     <button class="ab-confirm" style="margin-top:14px" onclick="guardarDifusion()">${dfForm.id ? 'Guardar' : 'Crear difusión'}</button>
     <button class="mcerrar" onclick="cerrarModal()">Cancelar</button>
   `);
@@ -3202,7 +3247,7 @@ window.guardarDifusion = async function(){
   const r = await api('difusiones', {
     accion: dfForm.id ? 'editar' : 'crear', linea_id: lineaActual, id: dfForm.id,
     nombre: dfForm.nombre.trim(), plantilla_id: dfForm.plantilla_id || null,
-    variables: dfForm.variables, filtros: dfForm.filtros,
+    variables: dfForm.variables, filtros: dfForm.filtros, activar_agente: dfForm.activar_agente,
   });
   if(r.status === 'ok'){ cerrarModal(); cargarDifusiones(); }
   else abrirModal(`<h3>No se pudo</h3><div class="mnone">${esc(r.mensaje||'Error')}</div><button class="mcerrar" onclick="cerrarModal()">Cerrar</button>`);
@@ -3241,6 +3286,11 @@ function pintarEnvio(d, total){
       <button class="df-ghost" style="margin-top:8px" onclick="enviarPrueba('${d.id}')">Enviar prueba</button>
       <div class="df-hint" id="dfPruebaMsg"></div>
     </div>
+    <div class="df-field"><label>O prográmala para una hora</label>
+      <input type="datetime-local" id="dfProgFecha">
+      <button class="df-ghost" style="margin-top:8px" onclick="programarDifusion('${d.id}', ${total})">Programar envío</button>
+      <div class="df-hint">A esa hora empieza a enviarse sola, por tandas. No hace falta dejar la página abierta.</div>
+    </div>
     <div id="dfProgreso" style="display:none;margin-top:12px">
       <div class="df-prog"><div class="df-prog-fill" id="dfFill" style="width:0%"></div></div>
       <div class="df-prog-txt" id="dfProgTxt"></div>
@@ -3277,6 +3327,17 @@ window.confirmarEnvio = async function(id, total){
   dfEnviando = false;
   if($('dfProgTxt')) $('dfProgTxt').textContent += ' · ✅ Listo';
   cargarDifusiones();
+};
+window.programarDifusion = async function(id, total){
+  const v = $('dfProgFecha') ? $('dfProgFecha').value : '';
+  if(!v){ alert('Elige la fecha y la hora del envío.'); return; }
+  const cuando = new Date(v);
+  if(isNaN(cuando.getTime())){ alert('Fecha u hora no válida.'); return; }
+  if(cuando.getTime() < Date.now()){ alert('Esa hora ya pasó. Elige una más adelante.'); return; }
+  if(!confirm(`Se programará el envío a ${total} contacto(s) para el ${cuando.toLocaleString('es-CO',{dateStyle:'medium',timeStyle:'short'})}. ¿Confirmas?`)) return;
+  const r = await api('difusiones', { accion:'programar', linea_id: lineaActual, id, programada_at: cuando.toISOString() });
+  if(r.status === 'ok'){ cerrarModal(); cargarDifusiones(); }
+  else alert(r.mensaje || 'No se pudo programar.');
 };
 
 /* ── Inicio ── */
