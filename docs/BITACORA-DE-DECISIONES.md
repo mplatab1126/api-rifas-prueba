@@ -99,6 +99,17 @@ confiable → la de marketing va sin nombre. Quedó pendiente que **Meta las apr
 botón de WhatsApp (mensaje entrante tipo `button`) hay que verificar que el webhook lo capte para que Liliana
 no pierda la respuesta. Por ahora la plantilla invita a responder por texto (Liliana atiende igual).
 
+## 2026-06-08 — [WhatsApp] — Liliana ya sabe los festivos de Colombia (para las visitas a la casa)
+
+**Qué:** el modelo NO conoce los festivos de Colombia, así que daba el horario de visita aunque el día fuera
+festivo (caso real: hoy 8-jun = Corpus Christi, dijo que se podía visitar). Agregamos en `agente-responder.js` el
+cálculo de los festivos colombianos (`festivoColombia`/`festivosDeAnio`: fijos + Ley Emiliani al lunes + los de
+Pascua —Meeus—) y, si HOY es festivo, se inyecta en el contexto: "HOY es festivo (nombre), la casa no se puede
+visitar hoy". Verificado: 2026 da los 18 festivos correctos. El horario de visita vive en el manual (sección
+"VISITAR LA CASA"). También se reforzó el manual para que NO repita los premios de los sábados si ya los mencionó.
+
+---
+
 ## 2026-06-08 — [WhatsApp] — Al prender el agente a mano, ahora responde de inmediato (lo dispara el servidor)
 
 **Síntoma:** al activar el 🤖 en un chat (con un mensaje del cliente sin responder), tardaba mucho o no respondía
