@@ -111,6 +111,10 @@ Tablas del agente:
   Liliana** los chats con `agente_activo=true` si el switch `ocultar_agente_liliana` está activo.
 - **`recordatorios.js`** — solo lectura: recordatorios PENDIENTES de un chat con su motivo (lo usa el
   botón de relojito de la barra del chat). No confundir con `recordatorios-cron.js` (el reloj que los envía).
+- **`marcar-respondido.js`** — pone `ultimo_entrante=false` + `no_leidos=0` en un chat para sacarlo de "sin
+  respuesta" sin escribirle (botón "Marcar como respondido" del menú ⋮ del chat). Si el cliente vuelve a
+  escribir, reaparece como sin respuesta. La barra del chat tiene a primer toque ficha/recordatorios/etiqueta y
+  un menú **⋮** (tres puntitos) con "Marcar como respondido" y "Eliminar contacto".
 - **`mensajes.js`** — mensajes de un chat (expone `por_agente` desde `raw.agente`).
 - **`cliente.js`** — ficha (boletas/deuda/pagos por boleta; empareja por últimos 10 dígitos; calcula `puede_modificar`).
 - **`buscar-pago.js`** — verifica el comprobante vs transferencias reales (lo usa "verificar pago" y el abono del agente).
