@@ -15,6 +15,12 @@
 
 ## Tareas pendientes
 
+- [ ] (2026-06-09) **Remarketing para los que NO contestan** — armar un seguimiento automático a las personas
+  que escribieron pero dejaron de responder (no contestan), enviándoles el **video de la casa hecho con IA**
+  para reengancharlas. Definir con Mateo: a partir de cuántas horas/días sin respuesta se dispara, cuántos
+  intentos, y si lo maneja Liliana (recordatorios/plantilla) o una difusión segmentada. Ojo ventana de 24h de
+  Meta (fuera de 24h se necesita plantilla aprobada con el video).
+
 - [ ] (2026-06-08) **Enviar la difusión de la GANADORA** — Meta YA APROBÓ las 2 plantillas
   (`resultado_sorteo` y `ganadora_casa_santa_teresita`); falta armar las 2 difusiones y enviarlas.
   Plan: **Clientes (81)** → `resultado_sorteo` (informativa, utilidad);
