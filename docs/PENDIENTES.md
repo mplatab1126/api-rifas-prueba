@@ -15,9 +15,9 @@
 
 ## Tareas pendientes
 
-- [ ] (2026-06-08) **Enviar la difusión de la GANADORA cuando Meta apruebe las 2 plantillas**
-  (`resultado_sorteo` y `ganadora_casa_santa_teresita`; revisar estado en Difusiones → Plantillas →
-  "Actualizar estados"). Plan: **Clientes (81)** → `resultado_sorteo` (informativa, utilidad);
+- [ ] (2026-06-08) **Enviar la difusión de la GANADORA** — Meta YA APROBÓ las 2 plantillas
+  (`resultado_sorteo` y `ganadora_casa_santa_teresita`); falta armar las 2 difusiones y enviarlas.
+  Plan: **Clientes (81)** → `resultado_sorteo` (informativa, utilidad);
   **Potenciales (~845)** → `ganadora_casa_santa_teresita` (marketing, breve). Probar antes con un número
   propio y enviar **por tandas** (no todos de golpe; Meta vigila la calidad de la línea). La casilla
   "Liliana atiende las respuestas" va prendida. Se puede **programar a una hora**. Ver bitácora 8-jun.
@@ -27,11 +27,18 @@
 - [ ] (2026-06-08) **Opcional: botón "Quiero participar"** en la plantilla de marketing. Primero verificar
   que `recibir.js` capta los mensajes entrantes tipo `button` (para que Liliana no pierda la respuesta);
   por ahora la plantilla pide responder por texto.
-- [ ] (2026-06-08) **Confirmar al aire 3 cosas de Liliana cuando haya tráfico** (se verifican juntas con la
-  próxima respuesta a un cliente): (1) que **responda** = la llave nueva `ANTHROPIC_API_KEY_LILIANA` quedó bien
-  pegada en Vercel; (2) que el **gasto aparezca en el panel de Anthropic de esa llave nueva** (gasto de Liliana
-  aislado); (3) que `cache_read_tokens` > 0 en `agente_uso` = el caché de prompt está ahorrando (~mitad del
-  gasto de entrada). Todo se activó el 8-jun de madrugada, sin tráfico para verificar. Ver bitácora.
+- [ ] (2026-06-08) **Confirmar en el panel de Anthropic que el gasto de Liliana sale AISLADO** en la llave nueva
+  `ANTHROPIC_API_KEY_LILIANA`. (Ya CONFIRMADO al aire: Liliana responde con esa llave, y `cache_read_tokens` > 0
+  en `agente_uso` —caché funcionando, ~11.434 leídos por llamada, ahorra ~la mitad—.) Falta solo mirar el panel.
+- [ ] (2026-06-08) **Medir el ahorro de tokens de un día completo** y comparar contra los **$4.89** de hoy
+  (con el saludo predefinido sin IA + caché de 1h ya activos). Ver bitácora "Ahorro de tokens".
+- [ ] (2026-06-08) **Fases 3-5 del ahorro de tokens** (pendientes de hablar con Mateo): (3) cortar el bucle
+  cuando una herramienta ya le respondió al cliente; (4) más mensajes fijos (pedir datos, "número ya tomado",
+  números disponibles); (5) adelgazar el manual (~7.000 tokens). Ver bitácora.
+- [ ] (2026-06-08) **Afinar los marcadores del saludo predefinido** (`primerContactoLoResuelveSaludo` en
+  `agente-responder.js`) si algún caso se siente robótico, o si manda a la IA algo que el saludo ya resuelve.
+- [ ] (2026-06-08) **Opcional: detección de festivos = HECHA**, pero el HORARIO de visita vive en el manual;
+  si cambian los horarios de visita, ajustarlos en `agente_config.prompt` (sección "VISITAR LA CASA").
 - [ ] (2026-06-07) **Liliana debe PEDIR cédula y correo (aunque sean opcionales).** Hoy al pedir datos
   solo pide "nombre completo, apellido y ciudad" y NO menciona cédula ni correo (caso real chat
   +573115630300). El cambio del 7-jun (hacerlos opcionales) se pasó: la idea es que **siempre los pida**
@@ -97,15 +104,29 @@
 
 ## Hecho recientemente
 
-- [x] (2026-06-08) **Los movimientos del agente quedan a nombre de "Liliana"**: apartar, abono, liberar y
-  trasladar que hace Liliana se registran con asesor = el dueño de la línea ("Liliana"), no gerencia/"Pagina Web".
-  No cambia permisos ("Liliana" es grupo regular). Vía override `asesorRegistro` (solo gerencia) en los endpoints
-  admin + `asesor` en reservar. Deploy sano verificado. Ver bitácora.
+- [x] (2026-06-08) **Los movimientos del agente quedan a nombre de "Liliana"** (apartar/abono/liberar/trasladar),
+  vía override `asesorRegistro` (solo gerencia) + `asesor` en reservar. **OJO: Liliana es INDEPENDIENTE** → la
+  validación de grupo (`abono.js`/`liberar-boleta.js`) sigue al ACTOR REAL (`asesorReg`) para no bloquear sus
+  abonos; sus ventas cuentan como independiente en caja/liquidación. **Reatribuidas 33 boletas + 18 abonos
+  ($710k) viejos** de la línea de Lili a Liliana (las que la IA registró). Verificado. Ver bitácora.
+- [x] (2026-06-08) **Liliana puede prender/apagar el agente 🤖 por chat** (en su línea), no solo Mateo. La cabina
+  (manual/interruptor), los costos y los disparadores siguen SOLO gerencia. Y al prender el agente a mano, **ahora
+  responde de inmediato** (lo dispara el servidor, ya no depende del navegador). Verificado. Ver bitácora.
+- [x] (2026-06-08) **Bandeja: menú ⋮ en el chat** con "Marcar como respondido" (saca el chat de "sin respuesta"
+  sin escribirle, endpoint `marcar-respondido.js`) y "Eliminar contacto". Etiqueta/recordatorios/ficha quedan a
+  primer toque. Verificado al aire.
+- [x] (2026-06-08) **Ahorro de tokens de Liliana**: (1) **saludo predefinido SIN IA** en el primer contacto
+  genérico/básico (precio/legal/cuándo) — el ~88% es el texto del anuncio; quita ~la mitad de las llamadas;
+  (2) **caché de prompt a 1 hora**. No cambian lo que responde. Verificado al aire (se envía sin IA, 0 errores).
+  Falta medir el ahorro de un día. Ver bitácora.
+- [x] (2026-06-08) **Liliana responde lo de VISITAR la casa** (horario L-V 2-8pm, sáb 10am-2pm, domingos/festivos
+  no; dirección Mz 5 casa 66, urb. Santa Teresita, al lado de Verdum) — agregado al manual, ya no escala. Y sabe
+  los **festivos de Colombia** (calculados) para no decir que abre un festivo. Ver bitácora.
 - [x] (2026-06-08) **Difusiones con filtros + programar + "Liliana atiende"**: el módulo de Difusiones ahora
   segmenta por **Clientes** (con saldo / pagados / ciudad) y **Potenciales** (nunca compraron), permite
   **programar** el envío a una hora (lo manda un cron por tandas) y, con una casilla, **Liliana atiende sola**
   a quien responda. Verificado en producción (audiencia: 845 potenciales / 81 clientes). Creadas las plantillas
-  `resultado_sorteo` (utilidad) y `ganadora_casa_santa_teresita` (marketing), **en revisión de Meta**. Ver bitácora.
+  `resultado_sorteo` (utilidad) y `ganadora_casa_santa_teresita` (marketing), **YA aprobadas por Meta**. Ver bitácora.
 - [x] (2026-06-08) **Caché de prompt activado en Liliana** (`agente-responder.js`): el manual + herramientas se
   cachean (10× más barato en lectura). Baja ~la mitad el gasto de entrada. No cambia la conducta. Falta confirmar
   al aire (arriba). Ver bitácora.
