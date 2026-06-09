@@ -50,8 +50,11 @@ export default async function handler(req, res) {
     // predefinido = el agente lo mandó por un atajo SIN IA (saludo/premios/números/datos);
     // la bandeja lo rotula "Mensaje predefinido" en vez de "🤖 Liliana".
     const predefinido = !!(m.raw && m.raw.predefinido === true);
+    // pago_asignado = esta foto de comprobante ya se usó para un abono (boleta + monto).
+    // La bandeja muestra un chip verde "✅ Pago asignado a la boleta NNNN" encima de la foto.
+    const pago_asignado = (m.raw && m.raw.pago_asignado) || null;
     const { raw, ...resto } = m;
-    return { ...resto, por_agente, predefinido };
+    return { ...resto, por_agente, predefinido, pago_asignado };
   });
 
   // Marcar la conversación como leída (no rompemos si falla)

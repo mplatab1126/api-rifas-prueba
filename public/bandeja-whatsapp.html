@@ -90,6 +90,21 @@
     /* Módulos */
     #modChats { flex: 1; display: flex; min-width: 0; }
     #modContactos { flex: 1; display: none; flex-direction: column; min-width: 0; background: var(--cream-50); overflow: hidden; }
+    #modComprobantes { flex: 1; display: none; flex-direction: column; min-width: 0; background: var(--cream-50); overflow: hidden; }
+    #listaComprobantes { flex: 1; overflow-y: auto; padding: 4px 18px 22px; }
+    .comp-filtro { background: #fff; border: 1px solid var(--gray-200); border-radius: 100px; padding: 7px 16px; font-family: inherit; font-size: 0.84rem; cursor: pointer; }
+    .comp-filtro.on { background: var(--mint); border-color: var(--mint); color: var(--ink); font-weight: 600; }
+    .comp-row { display: flex; align-items: center; gap: 12px; padding: 12px 6px; border-bottom: 1px solid var(--gray-200); cursor: pointer; }
+    .comp-row:hover { background: var(--cream-100); }
+    .comp-thumb { width: 46px; height: 46px; border-radius: 8px; object-fit: cover; background: var(--cream-100); flex: none; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+    .comp-main { flex: 1; min-width: 0; }
+    .comp-nom { font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .comp-meta { font-size: 0.76rem; color: var(--gray-400); margin-top: 2px; }
+    .comp-estado { flex: none; font-size: 0.72rem; font-weight: 700; border-radius: 100px; padding: 3px 10px; }
+    .comp-estado.asig { background: var(--mint); color: var(--ink); }
+    .comp-estado.pend { background: #fff3d6; color: #8a6a12; }
+    .comp-mas { display: block; margin: 16px auto; background: #fff; border: 1px solid var(--gray-200); border-radius: 100px; padding: 8px 22px; font-family: inherit; font-size: 0.84rem; cursor: pointer; }
+    .comp-mas:hover { background: var(--cream-100); }
     .cont-head { background: #fff; border-bottom: 1px solid var(--gray-200); padding: 16px 24px; }
     .cont-head h2 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
     .cont-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
@@ -180,6 +195,7 @@
     .b.sal { align-self: flex-end; background: var(--ink); color: var(--cream-50); border-bottom-right-radius: 4px; }
     .b .h { font-size: 0.62rem; text-align: right; margin-top: 4px; }
     .b .autor { font-size: 0.62rem; font-weight: 700; opacity: 0.7; margin-bottom: 3px; letter-spacing: 0.01em; }
+    .pago-asig { display: inline-block; background: var(--mint); color: var(--ink); font-size: 0.66rem; font-weight: 700; border-radius: 100px; padding: 2px 9px; margin-bottom: 5px; letter-spacing: 0.01em; }
     .b.ent .h { color: var(--gray-400); }
     .b.sal .h { color: rgba(250,250,247,0.5); }
     .b.medio { color: var(--ink-mute); }
@@ -676,6 +692,10 @@
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
           <span>Etiquetas</span>
         </button>
+        <button class="nav-item" data-mod="comprobantes">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1.5L8 22l2-1.5L12 22l2-1.5L16 22l2-1.5L20 22V2l-2 1.5L16 2l-2 1.5L12 2l-2 1.5L8 2 6 3.5 4 2z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="14" y2="12"/></svg>
+          <span>Comprobantes</span>
+        </button>
         <div class="nav-sec" id="navSecAgente" style="display:none">Inteligencia</div>
         <button class="nav-item" id="navAgente" data-mod="agente" style="display:none">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M12 8V5"/><circle cx="12" cy="3.5" r="1.2"/><circle cx="9" cy="13.5" r="1"/><circle cx="15" cy="13.5" r="1"/></svg>
@@ -828,6 +848,19 @@
       </div>
       <div id="listaEtiquetasAdmin"></div>
     </div><!-- /modEtiquetas -->
+
+    <!-- MÓDULO: COMPROBANTES (pagos que mandan los clientes) -->
+    <div id="modComprobantes">
+      <div class="cont-head">
+        <h2>Comprobantes</h2>
+        <div class="ag-sub" style="margin-bottom:12px">Las fotos de pago que mandan los clientes, de la más reciente a la más antigua. <b>✅ Asignado</b> = ya se usó para un abono; <b>⏳ Sin asignar</b> = todavía no. Toca uno para ir a su conversación. <i>La marca funciona de aquí en adelante.</i></div>
+        <div class="cont-actions">
+          <button id="btnCompTodos" class="comp-filtro on" onclick="filtrarComprobantes(false)">Todos</button>
+          <button id="btnCompPend" class="comp-filtro" onclick="filtrarComprobantes(true)">Solo sin asignar</button>
+        </div>
+      </div>
+      <div id="listaComprobantes"></div>
+    </div><!-- /modComprobantes -->
 
     <!-- MÓDULO: DIFUSIONES -->
     <div id="modDifusiones">
@@ -1489,6 +1522,13 @@ function tarjetaBoleta(b){
   </div>`;
 }
 
+/* Chip "✅ Pago asignado" sobre la foto de un comprobante que ya se usó para un abono. */
+function chipPago(m){
+  if(!m || !m.pago_asignado) return '';
+  const bol = m.pago_asignado.boleta ? ' a la boleta ' + esc(String(m.pago_asignado.boleta)) : '';
+  return `<div class="pago-asig">✅ Pago asignado${bol}</div>`;
+}
+
 /* ── Mensajes ── */
 function cuerpoMensaje(m){
   if(m.tipo === 'text' || !m.tipo) return esc(m.texto || '');
@@ -1545,7 +1585,9 @@ function burbujaGaleria(dir, ms){
   }).join('');
   const u = ms[ms.length-1];
   const estado = dir === 'saliente' ? estadoIcono(u.estado_envio) : '';
-  return `<div class="b ${dir==='entrante'?'ent':'sal'}"><div class="galeria">${tiles}</div><div class="h">${hora(u.timestamp_wa || u.created_at)}${estado ? ' · ' + estado : ''}</div></div>`;
+  // Si alguna foto del grupo ya se usó para un abono, mostramos el chip de "pago asignado".
+  const asignada = ms.find(m => m.pago_asignado);
+  return `<div class="b ${dir==='entrante'?'ent':'sal'}">${asignada ? chipPago(asignada) : ''}<div class="galeria">${tiles}</div><div class="h">${hora(u.timestamp_wa || u.created_at)}${estado ? ' · ' + estado : ''}</div></div>`;
 }
 
 const mediaCache = {};
@@ -1631,7 +1673,7 @@ async function cargarMensajes(scroll){
     const autor = (m.direccion === 'saliente' && m.por_agente)
       ? (m.predefinido ? '<div class="autor">📋 Mensaje predefinido</div>' : '<div class="autor">🤖 Liliana</div>')
       : '';
-    return `<div class="b ${m.direccion==='entrante'?'ent':'sal'}${claseMedio}">${cita}${autor}${cuerpoMensaje(m)}<div class="h">${hora(m.timestamp_wa || m.created_at)}${estado ? ' · ' + estado : ''}</div></div>`;
+    return `<div class="b ${m.direccion==='entrante'?'ent':'sal'}${claseMedio}">${cita}${autor}${chipPago(m)}${cuerpoMensaje(m)}<div class="h">${hora(m.timestamp_wa || m.created_at)}${estado ? ' · ' + estado : ''}</div></div>`;
   }).join('') + propios.map(burbujaPendiente).join('');
   hidratarMedia();
   if(scroll || abajo) cont.scrollTop = cont.scrollHeight;
@@ -2009,13 +2051,25 @@ window.confirmarReparto = async function(){
     if(res.status === 'ok') okCount++; else errores.push(`Boleta ${num}: ${res.mensaje || 'error'}`);
   }
   if(errores.length === 0){
+    await marcarComprobantePago(nums.join(', '), abonoCtx.monto);
     abrirModal(`<h3>Pago repartido</h3><div class="mnone">Se repartió ${pesos(abonoCtx.monto)} entre ${nums.length} boletas.</div><button class="mcerrar" onclick="cerrarModal()">Listo</button>`);
   } else {
     abrirModal(`<h3>Repartido con avisos</h3><div class="mnone">Se registraron ${okCount} de ${nums.length}.<br>${errores.map(esc).join('<br>')}</div><button class="mcerrar" onclick="cerrarModal()">Cerrar</button>`);
   }
   cargarFicha(actual);
   cargarLista();
+  if(actual) cargarMensajes(false);   // refresca el chip "pago asignado" en la foto
 };
+
+// Marca la foto del comprobante (el que se abrió con "Buscar el pago") como "✅ pago asignado".
+// Solo informativo; no toca el abono. Best-effort.
+async function marcarComprobantePago(boleta, monto){
+  if(!comprobanteMid) return;
+  try{
+    await fetch('/api/whatsapp/marcar-comprobante', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ contrasena: localStorage.getItem(PWD_KEY), media_id: comprobanteMid, linea_id: actualLinea, boleta: String(boleta||''), monto: Number(monto||0) }) });
+  }catch(_){}
+}
 
 // Paso 2: registrar el abono (reusa /api/admin/abono, que valida todo)
 async function confirmarAbono(num, permitirExceso){
@@ -2035,9 +2089,11 @@ async function confirmarAbono(num, permitirExceso){
   }catch(err){ r = { status:'error', mensaje: err.message }; }
 
   if(r.status === 'ok'){
+    await marcarComprobantePago(num, abonoCtx.monto);
     abrirModal(`<h3>Abono registrado</h3><div class="mnone">Se abonó ${pesos(abonoCtx.monto)} a la boleta ${esc(num)}.</div><button class="mcerrar" onclick="cerrarModal()">Listo</button>`);
     cargarFicha(actual);
     cargarLista();
+    if(actual) cargarMensajes(false);   // refresca el chip "pago asignado" en la foto
   } else if(r.codigo === 'EXCESO_SALDO'){
     abrirModal(`
       <h3>El pago supera el saldo</h3>
@@ -2114,17 +2170,79 @@ function irA(mod){
   $('modContactos').style.display = (mod === 'contactos') ? 'flex' : 'none';
   $('modRespuestas').style.display = (mod === 'respuestas') ? 'flex' : 'none';
   $('modEtiquetas').style.display = (mod === 'etiquetas') ? 'flex' : 'none';
+  $('modComprobantes').style.display = (mod === 'comprobantes') ? 'flex' : 'none';
   $('modDifusiones').style.display = (mod === 'difusiones') ? 'flex' : 'none';
   $('modAgente').style.display = (mod === 'agente') ? 'flex' : 'none';
   $('modDisparadores').style.display = (mod === 'disparadores') ? 'flex' : 'none';
   if(mod === 'contactos'){ contactosPage = 0; cargarContactos(true); }
   else if(mod === 'respuestas'){ cargarRespuestas(); }
   else if(mod === 'etiquetas'){ cargarEtiquetasAdmin(); }
+  else if(mod === 'comprobantes'){ comprobantesPage = 0; cargarComprobantes(true); }
   else if(mod === 'difusiones'){ cargarModuloDifusiones(); }
   else if(mod === 'agente'){ cargarAgente(); }
   else if(mod === 'disparadores'){ cargarDisparadores(); }
   else { pintarLista(); }
 }
+
+/* ── Comprobantes (pagos que mandan los clientes) ── */
+let comprobantesPage = 0;
+let comprobantesSoloPend = false;
+let comprobantesItems = [];
+let comprobantesHayMas = false;
+const COMP_LIM = 30;
+
+window.filtrarComprobantes = function(soloPend){
+  comprobantesSoloPend = !!soloPend;
+  $('btnCompTodos').classList.toggle('on', !soloPend);
+  $('btnCompPend').classList.toggle('on', soloPend);
+  comprobantesPage = 0;
+  cargarComprobantes(true);
+};
+
+async function cargarComprobantes(reset){
+  if(!lineaActual){ $('listaComprobantes').innerHTML = '<div class="vacio-lista">No hay una línea seleccionada.</div>'; return; }
+  if(reset){ comprobantesItems = []; $('listaComprobantes').innerHTML = '<div class="vacio-lista">Cargando…</div>'; }
+  const r = await api('comprobantes', { linea_id: lineaActual, offset: comprobantesPage * COMP_LIM, limit: COMP_LIM, solo_sin_asignar: comprobantesSoloPend });
+  if(vista !== 'comprobantes') return;
+  if(r.status !== 'ok'){ $('listaComprobantes').innerHTML = `<div class="vacio-lista">${esc(r.mensaje||'No se pudo cargar.')}</div>`; return; }
+  comprobantesItems = comprobantesItems.concat(r.items || []);
+  comprobantesHayMas = !!r.hay_mas;
+  pintarComprobantes();
+}
+
+window.masComprobantes = function(){ comprobantesPage++; cargarComprobantes(false); };
+
+function compFechaHora(iso){
+  if(!iso) return '';
+  try{ return new Date(iso).toLocaleString('es-CO', { timeZone:'America/Bogota', day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit', hour12:true }); }catch(_){ return ''; }
+}
+
+function pintarComprobantes(){
+  if(!comprobantesItems.length){
+    $('listaComprobantes').innerHTML = '<div class="vacio-lista">' + (comprobantesSoloPend ? 'No hay comprobantes sin asignar. 🎉' : 'Aún no hay comprobantes en esta línea.') + '</div>';
+    return;
+  }
+  const filas = comprobantesItems.map(it => {
+    const nom = it.nombre || ('+' + (it.telefono||''));
+    const estado = it.asignado
+      ? `<span class="comp-estado asig">✅ Asignado${it.pago_asignado && it.pago_asignado.boleta ? ' · '+esc(String(it.pago_asignado.boleta)) : ''}</span>`
+      : '<span class="comp-estado pend">⏳ Sin asignar</span>';
+    return `<div class="comp-row" onclick="irAComprobante('${esc(it.telefono)}')">
+      <div class="comp-thumb">🧾</div>
+      <div class="comp-main">
+        <div class="comp-nom">${esc(nom)}</div>
+        <div class="comp-meta">+${esc(it.telefono||'')} · ${esc(compFechaHora(it.timestamp_wa))}</div>
+      </div>
+      ${estado}
+    </div>`;
+  }).join('');
+  $('listaComprobantes').innerHTML = filas + (comprobantesHayMas ? '<button class="comp-mas" onclick="masComprobantes()">Ver más</button>' : '');
+}
+
+window.irAComprobante = function(telefono){
+  irA('chats');
+  abrir(telefono);
+};
 
 /* ── Disparadores (palabras clave que prenden el agente) ── */
 let disparadoresCache = [];

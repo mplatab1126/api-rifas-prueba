@@ -409,6 +409,60 @@ async function nota(conv, texto) {
   await guardarEnChat(conv, { direccion: 'nota', tipo: 'nota', texto: '🤖 ' + texto });
 }
 
+// ── CANDADO ANTI "PAGO FALSO" ────────────────────────────────────────────────
+// La IA NUNCA debe decirle al cliente que su boleta quedó "pagada" o que se
+// "registró el abono" si el abono NO se ejecutó de verdad (caso real 9-jun: dijo
+// "pagada al 100%" sin registrar nada y dejó un pago de $100.000 sin asignar).
+// Esta función detecta SOLO afirmaciones de un pago YA HECHO/registrado. No frena
+// frases normales ("para pagar...", "cuando pagues...", "te falta abonar $X").
+function afirmaPagoHecho(texto) {
+  // Quitamos tildes para que las reglas no dependan de acentos (qued ó/quedo, registr é/registre).
+  const t = String(texto || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  // (a) Afirma que la boleta está PAGADA al 100% / completamente.
+  const paga = /(pagada|paga|pago)\s*(al\s*)?100/.test(t)
+    || (/100\s*%/.test(t) && /(pag|bolet|abon|particip)/.test(t))
+    || /qued[oa]\s+(totalmente\s+|completamente\s+)?pagad/.test(t)
+    || /est[a]s?\s+pag(a|ada)\b/.test(t)
+    || /(boleta|numero)[^.]{0,40}\bpagad[ao]\b/.test(t);
+  // (b) Afirma que ACABA de registrar / aplicar / confirmar el pago o abono.
+  // OJO: solo el PASADO "registré" (hecho), no "te registro / registro" (promesa a futuro).
+  const registro = /\bregistre\s+(tu|su|el)?\s*(abono|pago)/.test(t)
+    || /(abono|pago)\s+(qued[oa]|registrad|aplicad|confirmad|recibid)/.test(t)
+    || /qued[oa]\s+abonad/.test(t)
+    || /tu\s+pago\s+(ya\s+)?(qued|fue|esta|quedo|se\s+registr|se\s+aplic|se\s+confirm)/.test(t)
+    || /pago\s+confirmad/.test(t);
+  return paga || registro;
+}
+
+// Cuando el candado bloquea una confirmación de pago no verificada: en vez del texto
+// de la IA, manda el mensaje SEGURO (nunca afirma el pago), avisa con una nota, marca
+// el chat para revisión y deja el último comprobante en verificación automática.
+async function manejarPagoNoVerificado(conv, reales) {
+  await decir(conv, '¡Gracias! 😊 Ya recibí tu comprobante y estoy *verificando tu pago*. Apenas me lo confirmen te aviso por aquí mismo. 🙏');
+  await nota(conv, '⚠️ BLOQUEÉ una confirmación de pago NO verificada: la IA iba a decir que la boleta estaba pagada/abonada SIN haberse registrado el abono. Le respondí que estoy verificando y marqué el chat para revisión.');
+  try { await ponerEtiqueta(conv.id, conv.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' }); } catch (_) {}
+  // Si el cliente mandó un comprobante (imagen) reciente, dejarlo en verificación
+  // automática (el relojito reintenta y abona solo si el pago aparece de verdad).
+  const ult = [...(reales || [])].reverse().find(m => m.direccion === 'entrante' && m.tipo === 'image' && m.media_id);
+  if (ult) { try { await agendarVerificacion(conv, ult.media_id, ''); } catch (_) {} }
+}
+
+// Marca la FOTO del comprobante del cliente como "pago asignado a la boleta NNNN"
+// (escribe raw.pago_asignado en ese mensaje). La bandeja muestra un chip verde encima
+// de la foto y la lista de comprobantes la cuenta como asignada. Best-effort.
+async function marcarComprobanteAsignado(convId, mediaId, boleta, monto) {
+  if (!convId || !mediaId) return;
+  try {
+    const { data: msg } = await supabaseAdmin.from('mensajes_whatsapp')
+      .select('id, raw').eq('conversacion_id', convId).eq('media_id', mediaId)
+      .order('timestamp_wa', { ascending: false }).limit(1).maybeSingle();
+    if (!msg) return;
+    const raw = (msg.raw && typeof msg.raw === 'object') ? msg.raw : {};
+    raw.pago_asignado = { boleta: String(boleta || ''), monto: Number(monto || 0), at: new Date().toISOString() };
+    await supabaseAdmin.from('mensajes_whatsapp').update({ raw }).eq('id', msg.id);
+  } catch (_) { /* no es crítico */ }
+}
+
 // Envía un texto al cliente por WhatsApp y lo guarda en el chat. `predefinido`=true cuando
 // el texto viene de un atajo SIN IA (para que la bandeja lo marque como "Mensaje predefinido").
 async function decir(conv, texto, { predefinido = false } = {}) {
@@ -650,6 +704,7 @@ async function ejecutarHerramienta(nombre, input, conv) {
 
     if (r.tipo === 'abonado') {
       await cancelarVerificaciones(conv.id);
+      await marcarComprobanteAsignado(conv.id, mediaId, r.numero, r.monto);   // marca la foto: "✅ pago asignado"
       await nota(conv, `Registré un abono de $${Number(r.monto).toLocaleString('es-CO')} a la boleta ${r.numero} (pago verificado contra el banco).`);
       return `Listo: registré el abono de $${Number(r.monto).toLocaleString('es-CO')} a la boleta ${r.numero}. Confírmaselo con alegría, agradécele y, si quieres que termine de pagar, recuérdale con cariño el saldo que le queda.`;
     }
@@ -1305,6 +1360,14 @@ export default async function handler(req, res) {
     let apagado = false;
     let apartoNumero = false;   // ¿se apartó algún número en este turno?
     let envioBoleta = false;    // ¿se envió la boleta en este turno?
+    let huboAbono = false;      // ¿se registró un abono REAL en este turno? (candado anti pago falso)
+    // Verdad del sistema al empezar el turno (para el candado): ¿tiene boletas?, ¿todas pagadas?
+    const bolsCliente = (estadoCliente.boletas || []);
+    const tieneBoletas = bolsCliente.length > 0;
+    const todasPagadas = tieneBoletas && bolsCliente.every(b => Number(b.saldo_restante || 0) <= 0);
+    // ¿Debo BLOQUEAR este texto? Solo si afirma un pago hecho, no hubo abono real este turno,
+    // y la verdad del sistema NO respalda la afirmación (sigue debiendo, o no tiene boletas).
+    const debeBloquear = (txt) => !huboAbono && afirmaPagoHecho(txt) && ((tieneBoletas && !todasPagadas) || !tieneBoletas);
     for (let iter = 0; iter < MAX_ITER; iter++) {
       // Botón de pánico a mitad de la respuesta: si apagaron el agente en este chat, parar ya
       // (no mandar más mensajes ni ejecutar más acciones).
@@ -1321,11 +1384,17 @@ export default async function handler(req, res) {
       const bloques = data.content || [];
       const toolUses = bloques.filter(b => b.type === 'tool_use');
       const vaAUsarHerramientas = data.stop_reason === 'tool_use' && toolUses.length > 0;
+      let bloqueoPagoHecho = false;   // para no duplicar el mensaje seguro si hay varios bloques
       for (const b of bloques) {
         // No narrar el proceso: si en este turno va a usar herramientas, NO mandes el
         // texto de relleno ("voy a...", "un momento..."); solo el mensaje FINAL (cuando
         // ya no quedan herramientas por usar) se le envía al cliente.
-        if (b.type === 'text' && b.text && b.text.trim() && !vaAUsarHerramientas) await decir(conv, b.text.trim());
+        if (b.type === 'text' && b.text && b.text.trim() && !vaAUsarHerramientas) {
+          const t = b.text.trim();
+          // CANDADO: no dejar que afirme un pago que no se registró de verdad.
+          if (debeBloquear(t)) { if (!bloqueoPagoHecho) { await manejarPagoNoVerificado(conv, reales); bloqueoPagoHecho = true; } }
+          else if (!bloqueoPagoHecho) await decir(conv, t);
+        }
       }
       if (!vaAUsarHerramientas) break;
 
@@ -1338,6 +1407,7 @@ export default async function handler(req, res) {
         catch (e) { out = 'Error ejecutando la herramienta: ' + e.message; }
         if (typeof out === 'string' && out.startsWith('AGENTE_APAGADO')) apagado = true;
         if (tu.name === 'apartar_numero' && typeof out === 'string' && out.startsWith('Listo: el número')) apartoNumero = true;
+        if (tu.name === 'registrar_abono' && typeof out === 'string' && out.startsWith('Listo: registré el abono')) huboAbono = true;
         if (tu.name === 'enviar_boleta') envioBoleta = true;
         if (tu.name === 'enviar_contacto_inicial') cerrarSinTexto = true;
         results.push({ type: 'tool_result', tool_use_id: tu.id, content: out });
@@ -1351,7 +1421,7 @@ export default async function handler(req, res) {
           body: JSON.stringify({ model: modelo, max_tokens: 400, system, messages }),
         });
         const d2 = await resp2.json();
-        if (!d2.error) { await registrarUso(conv, modelo, d2.usage); for (const b of (d2.content || [])) if (b.type === 'text' && b.text?.trim()) await decir(conv, b.text.trim()); }
+        if (!d2.error) { await registrarUso(conv, modelo, d2.usage); for (const b of (d2.content || [])) if (b.type === 'text' && b.text?.trim()) { const t = b.text.trim(); if (debeBloquear(t)) await manejarPagoNoVerificado(conv, reales); else await decir(conv, t); } }
         break;
       }
     }
