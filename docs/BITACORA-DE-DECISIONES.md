@@ -47,12 +47,25 @@ arreglaría reglas que faltan; ver más abajo). Arreglos aplicados:
 4. **Dudas de saldo/abono.** Varios clientes preguntaron su saldo y quedaron sin respuesta clara. Se reforzó:
    SIEMPRE consultar y responder cuánto lleva abonado y cuánto falta; no dejar la pregunta sin respuesta.
 
-**Pendiente de decisión de Mateo:** regla del **permiso venezolano / extranjeros sin cédula colombiana**.
-Investigado en Coljuegos: la página oficial menciona "cédula de ciudadanía de los ganadores" pero NO detalla el
-caso extranjero; por práctica general un extranjero reclama con cédula de extranjería o pasaporte (venezolanos:
-PPT/PEP o pasaporte). Como toca dinero/legal y la norma no es explícita, se recomendó la opción prudente:
-**dejarlos participar/apartar normal, pero el RECLAMO del premio lo valida un asesor**. Falta confirmar y escribir
-la regla.
+5. **Permiso venezolano / extranjeros (DECIDIDO 9-jun — opción 1):** Mateo decidió que los extranjeros SÍ pueden
+   participar Y reclamar el premio con su documento (cédula de extranjería, PPT/PEP o pasaporte); se registra
+   igual que una cédula. (Se investigó Coljuegos: su página menciona "cédula de ciudadanía de los ganadores" pero
+   NO detalla el caso extranjero; la práctica general acepta documento extranjero. Mateo eligió la opción abierta.)
+   Regla agregada en "OTRAS CONDICIONES" del manual.
+
+**Otra incoherencia corregida (9-jun):** el paso "6) PAGO" decía "el sistema verifica… y *un supervisor lo
+revisa*"; el supervisor Opus se eliminó el 8-jun, así que era FALSO. Se quitó esa frase (ahora: "el sistema
+verifica el pago contra el banco; si todo cuadra, queda abonado").
+
+**Hallazgos del análisis de coherencia (manual + 13 herramientas + motor), pendientes de OK de Mateo:**
+- **Sueldazo residual:** el manual dice "NUNCA lo menciones" pero conserva su detalle en 3 sitios (bullet en DATOS,
+  mínimo $50.000 en CONDICIONES, horario Manizales 11pm). Info muerta y contradictoria → recomendado borrar esos
+  3 residuos (la regla "nunca lo menciones" se queda).
+- **Herramienta `apartar_numero` (código):** su descripción aún dice cédula/correo "OPCIONALES", justo la palabra
+  que le prohibimos decir al cliente. Es guía interna, pero por coherencia conviene reescribirla (cambio de
+  código → desplegar).
+- Resto coherente: las 13 herramientas tienen respaldo en el manual; pagos/abonos/remisión/recordatorios/boleta
+  coinciden; "7 sábados" es correcto.
 
 **Por qué NO subir a Opus 4.8 (por ahora):** Sonnet 4.6 = $3/$15 por millón (entrada/salida); Opus 4.8 = $5/$25
 (~1,67× más; de ~$5/día a ~$8/día). Los errores hallados son de reglas que faltan o de adherencia, no de
