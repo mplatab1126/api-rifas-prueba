@@ -180,8 +180,9 @@ para saber cuándo no se puede visitar la casa, **llave propia** `ANTHROPIC_API_
 DÍAS — al vencer, si la ventana de 24h ya se cerró, manda la plantilla `seguimiento_los_plata`
 para reabrir la conversación; si sigue abierta, texto normal. Ver bitácora),
 `verificar-pagos-cron.js` (**2026-06-07**: verificación de pagos con reintentos — cada ~15 min hasta
-~1h reintenta buscar el pago; abona solo si aparece de forma sólida, si no pasa a asesor;
-pg_cron `verificar-pagos-cada-5min`. Ver bitácora),
+~1h reintenta buscar el pago; abona solo si aparece de forma sólida; pg_cron `verificar-pagos-cada-5min`.
+**2026-06-09: al AGOTAR los intentos, Liliana se apaga y pasa a humano EN SILENCIO —etiqueta ASESOR—, ya
+NO manda un 2º aviso al cliente.** Ver bitácora),
 `abono-reparto.js`, `buscar-pago.js`.
 
 **Novedades del motor (`agente-responder.js`, 2026-06-08; ver bitácora):**
@@ -205,6 +206,24 @@ pg_cron `verificar-pagos-cada-5min`. Ver bitácora),
 - **Respuesta inmediata al prender el agente a mano:** `activar_conversacion` (en `agente.js`) dispara el
   motor desde el servidor si el último mensaje es del cliente (antes dependía del navegador y tardaba/no
   respondía). `lineas.js` devuelve `tiene_agente` por línea para mostrar el botón 🤖 solo donde aplica.
+
+**Novedades del motor y la bandeja (2026-06-09; ver bitácora):**
+- **Más mensajes predefinidos SIN IA (Fase 4):** además del contacto inicial, ahora también **premios**,
+  **números disponibles** y **pedir datos** van sin Claude cuando el cliente SOLO asiente (o dice "quiero el
+  NNNN"). Funciones `esAsentir(texto, paso)` / `intentoSeparar(texto)` en `agente-responder.js`. En la bandeja
+  esos mensajes se rotulan **"📋 Mensaje predefinido"** (vs "🤖 Liliana"): `raw.predefinido` → `mensajes.js`
+  → `bandeja-whatsapp.html`.
+- **Eliminada la etiqueta AGENTE** y el etiquetado automático al prender el agente (`recibir.js`, `agente.js`),
+  y el interruptor "ocultarle a Liliana los chats del agente" (`agente.js` acción `privacidad_liliana`,
+  `conversaciones.js`, y la tarjeta "Privacidad de Liliana" en `bandeja-whatsapp.html`). Borrados de la base:
+  la etiqueta AGENTE + sus 523 enlaces + la config `ocultar_agente_liliana`. (El parámetro `p_ocultar_agente`
+  de `bandeja_filtrar` quedó sin uso, default `false`.) Se conserva la etiqueta **ASESOR**.
+- **Manual de Liliana afinado** (`agente_config.prompt`, vive en la base): premios sin redundancia (4 cifras +
+  opción $300M debajo del premio mayor, sin emojis); $300M/amoblado = una cosa O la otra; cédula/correo nunca
+  "obligatorios" ni mandar a crear correo; clientes del exterior se registran con el número del chat; remisión
+  más firme; dudas de saldo siempre respondidas; **extranjeros (PPT/pasaporte) participan Y reclaman**;
+  limpiados los residuos del Sueldazo (se conserva que ya jugó y tiene ganadora). Se quitó el "un supervisor
+  lo revisa" del paso de pago (el supervisor ya no existe). Ver bitácora.
 
 **Funciones y tablas EN LA BASE (agente/bandeja, 2026-06-07):**
 - Función `bandeja_filtrar(...)` — todo el filtrado avanzado de la bandeja (etiquetas con operador

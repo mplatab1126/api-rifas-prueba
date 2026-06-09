@@ -191,6 +191,14 @@ y los disparadores siguen SOLO de gerencia/Mateo** (candado `esMateo` + ocultos 
   último mensaje que mandó Liliana. NO toca plata (apartar/abono siguen por sus herramientas). Cada atajo deja
   nota "(predefinido, SIN IA — ahorro de tokens)". La verificación de un número puntual la sigue haciendo la IA.
   Ver bitácora 8-jun "Más mensajes predefinidos".
+- **Afinaciones del manual (9-jun, tras auditar ~115 respuestas reales):** premios sin redundancia (4 cifras +
+  opción $300M debajo del premio mayor, sin emojis); $300M/amoblado = una cosa O la otra; cédula/correo nunca
+  "obligatorios" ni mandar a crear correo; clientes del exterior se registran con el número del chat (nunca pedir
+  celular colombiano); remisión más firme (si el sistema indica remitir, no vende ni saluda, solo da el número);
+  dudas de saldo siempre respondidas; **extranjeros (PPT/pasaporte) SÍ participan y reclaman**; limpiados los
+  residuos del Sueldazo (se conserva que ya jugó y tiene ganadora); y se quitó el "un supervisor lo revisa" del
+  paso de pago (ya no existe el supervisor). El `prompt` vive en `agente_config` (base). Se decidió NO subir a
+  Opus 4.8 (los errores eran de manual/lógica, no de capacidad). Ver bitácora 9-jun.
 
 ### 8.1 Cabina + motor, y cómo se prende
 - **Cabina** = `agente.js` + pestaña "Agente". Mateo configura: `prompt` (manual), `modelo`, `estado`, prende/apaga
