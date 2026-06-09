@@ -97,6 +97,13 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-09) **Tras agotar los 4 intentos de verificar el pago, Liliana se apaga y pasa a humano EN
+  SILENCIO** (ya no manda el segundo "estoy verificando / pasa a asesor", que sonaba repetido). Marca ASESOR,
+  apaga el agente (`agente_activo=false, estado='humano'`) y cancela recordatorios. Cuando el pago SÍ aparece,
+  igual avisa al cliente. `verificar-pagos-cron.js`. Ver bitácora 9-jun.
+- [x] (2026-06-09) **La bandeja marca "📋 Mensaje predefinido"** en los mensajes que salieron de un atajo SIN
+  IA (saludo/premios/números/datos), para distinguirlos de los de IA ("🤖 Liliana"). `raw.predefinido` →
+  `mensajes.js` → `bandeja-whatsapp.html`. No cambia lo que ve el cliente. Ver bitácora 9-jun.
 - [x] (2026-06-08) **Más mensajes predefinidos SIN IA (Fase 4 del ahorro): premios, números y pedir datos.**
   Igual que el contacto inicial: si el cliente SOLO asiente a lo último que se le preguntó (o dice "quiero el
   NNNN" para separar), se manda el mensaje fijo del paso sin llamar a Claude. Ante cualquier pregunta/algo

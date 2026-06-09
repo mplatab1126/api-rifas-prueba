@@ -26,6 +26,34 @@
 
 ---
 
+## 2026-06-09 — [WhatsApp] / [Pagos] — Tras agotar los 4 intentos, Liliana se apaga y pasa a humano EN SILENCIO
+
+**Qué cambió:** en `api/whatsapp/verificar-pagos-cron.js`, cuando se agotan los intentos (~1h) sin confirmar el
+pago, Liliana YA NO le vuelve a escribir al cliente. Antes mandaba "Estuve verificando tu pago pero todavía no
+me aparece confirmado, un asesor lo revisa…" — justo después de haberle dicho un rato antes que estaba
+verificando → sonaba repetido. Ahora: marca la verificación 'rendido', **APAGA el agente** en ese chat
+(`agente_activo=false, estado='humano'`), cancela recordatorios pendientes, pone la etiqueta **ASESOR** y deja
+una nota interna, **sin enviar ningún mensaje al cliente**. Un asesor lo retoma por la etiqueta (mismo apagado
+que la herramienta `pasar_a_humano`).
+
+**Por qué:** lo pidió Mateo (chat Jorge Díaz +573137078496): el segundo aviso no aportaba y se sentía robótico.
+
+**Qué NO cambió (importante):** cuando el pago SÍ aparece en un reintento, Liliana SÍ le avisa al cliente
+("¡Listo! Confirmé tu pago…"). El primer mensaje "ya recibí tu comprobante, estoy verificando" (al llegar el
+comprobante) también se mantiene. Solo se quitó el SEGUNDO aviso del caso fallido. No se tocó la lógica de
+plata (una transferencia se sigue consumiendo una sola vez; los reintentos no duplican).
+
+## 2026-06-09 — [WhatsApp] — La bandeja marca "📋 Mensaje predefinido" en los mensajes sin IA
+
+**Qué:** los mensajes que Liliana manda por un atajo SIN IA (saludo, premios, números, pedir datos) ahora se
+rotulan **"📋 Mensaje predefinido"** en la bandeja (antes decían "🤖 Liliana", igual que los de IA). Así, de un
+vistazo, Mateo distingue qué respondió la IA y qué salió fijo (sin gastar tokens).
+
+**Cómo:** los atajos guardan el mensaje con `raw.predefinido=true` (`guardarEnChat` / `decir` /
+`enviarContactoInicial` en `agente-responder.js`); `mensajes.js` expone el flag `predefinido`; la bandeja
+(`bandeja-whatsapp.html`) muestra el rótulo según el flag. No cambia NADA de lo que ve el cliente (es solo la
+etiqueta interna en la bandeja).
+
 ## 2026-06-08 — [WhatsApp] / [General] — Más mensajes predefinidos SIN IA (premios, números, pedir datos) — Fase 4 del ahorro
 
 **Qué hicimos:** extendimos el atajo SIN IA —que ya existía para el contacto inicial— a tres pasos más del

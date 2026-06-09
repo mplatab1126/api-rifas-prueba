@@ -114,9 +114,19 @@ export default async function handler(req, res) {
       await supabaseAdmin.from('verificaciones_pago')
         .update({ estado: 'rendido', resultado: r.tipo + ' tras ' + (v.intentos + 1) + ' intentos', actualizado_at: new Date().toISOString() })
         .eq('id', v.id);
+      // Se agotaron los intentos: Liliana se APAGA y pasa el chat a un humano EN SILENCIO.
+      // NO le vuelve a escribir al cliente (ya le había dicho que estaba verificando; un
+      // segundo mensaje diciendo casi lo mismo se sentía repetido). Un asesor lo retoma por
+      // la etiqueta ASESOR. Mismo apagado que la herramienta pasar_a_humano.
+      await supabaseAdmin.from('conversaciones_whatsapp')
+        .update({ agente_activo: false, estado: 'humano' })
+        .eq('id', v.conversacion_id);
+      try {
+        await supabaseAdmin.from('recordatorios').update({ estado: 'cancelado' })
+          .eq('linea_id', v.linea_id).eq('telefono', v.telefono).eq('estado', 'pendiente');
+      } catch (_) {}
       await ponerEtiqueta(v.conversacion_id, v.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' });
-      await avisarCliente(v, 'Estuve verificando tu pago pero todavía no me aparece confirmado. Un asesor lo revisa enseguida para no hacerte esperar 🙌');
-      await nota(v, 'Verificación con reintentos: no se confirmó el pago tras los intentos; pasé a un asesor.', 'error');
+      await nota(v, 'Verificación con reintentos: no se confirmó el pago tras los intentos; me apagué y pasé el chat a un asesor EN SILENCIO (sin escribirle otra vez al cliente).', 'error');
       rendidos++;
     } else {
       reintentos++;   // sigue pendiente (ya quedó reprogramado en el claim)

@@ -316,8 +316,10 @@ Mide cuánto cuesta la IA que responde (los tokens que devuelve Claude en cada r
 ### 8.13 Novedades del 7-jun-2026 (Liliana y boleta). Detalle en la bitácora.
 - **Verificación de pagos con reintentos** (TOCA DINERO, aprobado): si el pago no aparece, NO pasa a
   asesor de una; dice "estoy verificando" y `verificar-pagos-cron.js` reintenta cada ~15 min hasta ~1h.
-  Si aparece (match sólido), abona solo; si no, pasa a asesor. Nunca abona por "misma hora" sola; una
+  Si aparece (match sólido), abona solo y avisa al cliente. Nunca abona por "misma hora" sola; una
   transferencia se consume una vez (no duplica). Cola `verificaciones_pago`, lógica en `lib/abono-agente.js`.
+  **(9-jun) Al AGOTAR los intentos** sin confirmar, Liliana se APAGA y pasa a humano EN SILENCIO (etiqueta
+  ASESOR + `agente_activo=false, estado='humano'`); ya NO manda un segundo aviso al cliente (sonaba repetido).
 - **Boleta**: dentro de 24h se manda como TEXTO normal (gratis, sin saludo, encabezado según estado de
   pago: separada / participando / pagada); plantilla solo fuera de 24h (`boleta_cliente_v2`, 1ª línea
   variable). **Red de seguridad**: si se aparta pero no se envía la boleta, el motor la envía solo.

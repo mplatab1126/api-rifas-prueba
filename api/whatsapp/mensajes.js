@@ -47,8 +47,11 @@ export default async function handler(req, res) {
   // en el chat. No mandamos el `raw` completo al navegador (puede ser grande): solo el flag.
   const mensajes = (data || []).map(m => {
     const por_agente = !!(m.raw && m.raw.agente === true);
+    // predefinido = el agente lo mandó por un atajo SIN IA (saludo/premios/números/datos);
+    // la bandeja lo rotula "Mensaje predefinido" en vez de "🤖 Liliana".
+    const predefinido = !!(m.raw && m.raw.predefinido === true);
     const { raw, ...resto } = m;
-    return { ...resto, por_agente };
+    return { ...resto, por_agente, predefinido };
   });
 
   // Marcar la conversación como leída (no rompemos si falla)

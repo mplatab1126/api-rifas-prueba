@@ -377,12 +377,15 @@ const TOOLS = [
 ];
 
 // ── Guarda un mensaje en el historial del chat (saliente del agente, o nota) ──
-async function guardarEnChat(conv, { direccion, tipo = 'text', texto = null, media_url = null, wa_message_id = null }) {
+async function guardarEnChat(conv, { direccion, tipo = 'text', texto = null, media_url = null, wa_message_id = null, predefinido = false }) {
   const ts = new Date().toISOString();
   await supabaseAdmin.from('mensajes_whatsapp').insert({
     conversacion_id: conv.id, telefono: conv.telefono, linea_id: conv.linea_id,
     direccion, tipo, texto, media_url, wa_message_id,
-    estado_envio: direccion === 'nota' ? 'nota' : 'enviado', timestamp_wa: ts, raw: { agente: true },
+    // raw.predefinido = el mensaje salió de un atajo SIN IA (saludo/premios/números/datos);
+    // la bandeja lo muestra como "Mensaje predefinido" en vez de "🤖 Liliana".
+    estado_envio: direccion === 'nota' ? 'nota' : 'enviado', timestamp_wa: ts,
+    raw: predefinido ? { agente: true, predefinido: true } : { agente: true },
   });
   if (direccion !== 'nota') {
     await supabaseAdmin.from('conversaciones_whatsapp')
@@ -406,35 +409,36 @@ async function nota(conv, texto) {
   await guardarEnChat(conv, { direccion: 'nota', tipo: 'nota', texto: '🤖 ' + texto });
 }
 
-// Envía un texto al cliente por WhatsApp y lo guarda en el chat.
-async function decir(conv, texto) {
+// Envía un texto al cliente por WhatsApp y lo guarda en el chat. `predefinido`=true cuando
+// el texto viene de un atajo SIN IA (para que la bandeja lo marque como "Mensaje predefinido").
+async function decir(conv, texto, { predefinido = false } = {}) {
   const t = String(texto || '').trim();
   if (!t) return;
   // MODO SOMBRA: no le escribe al cliente; deja una nota con lo que diría.
   if (conv.sombra) { await guardarEnChat(conv, { direccion: 'nota', tipo: 'nota', texto: '🌓 (modo sombra) le diría: «' + t + '»' }); return; }
   const env = await enviarTexto(conv.telefono, t, conv.linea_id);
-  await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: t, wa_message_id: env.wa_message_id || null });
+  await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: t, wa_message_id: env.wa_message_id || null, predefinido });
 }
 
 // Envía el "contacto inicial": saludo + fotos de la casa + cierre (precio/legalidad/"¿te explico
 // los premios?"). Lo usan la herramienta enviar_contacto_inicial Y el atajo SIN IA del primer
 // contacto genérico (ahorro de tokens). Todo se guarda en el chat (guardarEnChat marca el chat
 // como respondido: ultimo_entrante=false, no_leidos=0).
-async function enviarContactoInicial(conv, { saludo, cierre } = {}) {
+async function enviarContactoInicial(conv, { saludo, cierre, predefinido = false } = {}) {
   const sal = String(saludo || '').trim() || 'Hola, ¿cómo estás? 😊 Mi nombre es Liliana, te muestro las fotos de la casa:';
   const cie = String(cierre || '').trim() || '• Cada boleta *cuesta 150 mil*\n\n• La puedes *separar con 20 mil* e ir abonando a tu ritmo\n\n• Estamos *autorizados por EDSA* (rifa legal)\n\n*¿Te explico los premios?* 🤔';
   const e1 = await enviarTexto(conv.telefono, sal, conv.linea_id);
-  if (e1 && e1.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: sal, wa_message_id: e1.wa_message_id });
+  if (e1 && e1.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: sal, wa_message_id: e1.wa_message_id, predefinido });
   const { data: rr } = await supabase.from('respuestas_rapidas').select('pasos').eq('linea_id', conv.linea_id).ilike('titulo', '%contacto inicial%').maybeSingle();
   const fotos = (rr && Array.isArray(rr.pasos) ? rr.pasos : []).filter(p => p.tipo === 'imagen' && (p.media_id || p.url));
   for (const p of fotos) {
     await dormir(600);
     const env = p.media_id ? await enviarImagenPorId(conv.telefono, p.media_id, '', conv.linea_id) : await enviarImagen(conv.telefono, p.url, '', conv.linea_id);
-    if (env && env.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'image', texto: null, media_url: p.url || null, wa_message_id: env.wa_message_id });
+    if (env && env.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'image', texto: null, media_url: p.url || null, wa_message_id: env.wa_message_id, predefinido });
   }
   await dormir(PAUSA_MS);
   const e3 = await enviarTexto(conv.telefono, cie, conv.linea_id);
-  if (e3 && e3.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: cie, wa_message_id: e3.wa_message_id });
+  if (e3 && e3.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: cie, wa_message_id: e3.wa_message_id, predefinido });
 }
 
 // ¿El primer contacto lo RESUELVE el saludo predefinido? El saludo responde: precio, separar/abono,
@@ -1179,7 +1183,7 @@ export default async function handler(req, res) {
         : '';
       const cierre = '• Cada boleta *cuesta 150 mil*\n\n• La puedes *separar con 20 mil* e ir abonando a tu ritmo\n\n• Estamos *autorizados por EDSA* (rifa legal)' +
         lineaProx + '\n\n*¿Te explico los premios?* 🤔';
-      await enviarContactoInicial(conv, { saludo: '¡Hola! 😊 Soy Liliana, te muestro la casa:', cierre });
+      await enviarContactoInicial(conv, { saludo: '¡Hola! 😊 Soy Liliana, te muestro la casa:', cierre, predefinido: true });
       await nota(conv, 'Envié el contacto inicial (saludo predefinido, SIN IA — ahorro de tokens).');
       await soltarLock(conv);
       return res.status(200).json({ status: 'ok', atajo: 'contacto_inicial_predefinido' });
@@ -1212,7 +1216,7 @@ export default async function handler(req, res) {
           '💵 *Cada sábado:* *$5.000.000* en bonos, también con la Lotería de Boyacá.\n\n' +
           'Y todo con una boleta de *$150.000*, que puedes *separar con solo $20.000* e ir abonando a tu ritmo.\n\n' +
           '*¿Te muestro los números disponibles?* 😊';
-        await decir(conv, premiosTxt);
+        await decir(conv, premiosTxt, { predefinido: true });
         await nota(conv, 'Expliqué los premios (predefinido, SIN IA — ahorro de tokens).');
         await soltarLock(conv);
         return res.status(200).json({ status: 'ok', atajo: 'premios_predefinido' });
@@ -1226,7 +1230,7 @@ export default async function handler(req, res) {
         const msg = 'Aquí tienes una muestra de números libres (son *algunos* de los disponibles, no la lista completa):\n\n' +
           texto +
           '\n\n¿Cuál te gusta? Si quieres uno con alguna *terminación* o un número en especial, dime y lo verifico. 😊';
-        await decir(conv, msg);
+        await decir(conv, msg, { predefinido: true });
         await nota(conv, 'Mostré los números disponibles (predefinido, SIN IA — ahorro de tokens).');
         await soltarLock(conv);
         return res.status(200).json({ status: 'ok', atajo: 'numeros_predefinido' });
@@ -1240,7 +1244,7 @@ export default async function handler(req, res) {
           && !/necesito tus datos|para apartar|nombre completo/.test(salTxt)) {
         const pedir = '¡Perfecto! 😊 Para apartarte el *' + numSep + '* necesito tus datos para la factura:\n\n' +
           '*Nombre completo, apellido, ciudad, cédula y correo.*';
-        await decir(conv, pedir);
+        await decir(conv, pedir, { predefinido: true });
         await nota(conv, 'Pedí los datos para apartar el ' + numSep + ' (predefinido, SIN IA — ahorro de tokens).');
         await soltarLock(conv);
         return res.status(200).json({ status: 'ok', atajo: 'datos_predefinido' });

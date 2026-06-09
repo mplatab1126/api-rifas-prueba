@@ -1628,7 +1628,9 @@ async function cargarMensajes(scroll){
     const estado = m.direccion === 'saliente' ? estadoIcono(m.estado_envio) : '';
     const cit = m.responde_a ? porWaId[m.responde_a] : null;
     const cita = cit ? `<div class="cita">${esc((cit.texto || ('['+(cit.tipo||'mensaje')+']')).replace(/\s+/g,' ').trim().slice(0,200))}</div>` : '';
-    const autor = (m.direccion === 'saliente' && m.por_agente) ? '<div class="autor">🤖 Liliana</div>' : '';
+    const autor = (m.direccion === 'saliente' && m.por_agente)
+      ? (m.predefinido ? '<div class="autor">📋 Mensaje predefinido</div>' : '<div class="autor">🤖 Liliana</div>')
+      : '';
     return `<div class="b ${m.direccion==='entrante'?'ent':'sal'}${claseMedio}">${cita}${autor}${cuerpoMensaje(m)}<div class="h">${hora(m.timestamp_wa || m.created_at)}${estado ? ' · ' + estado : ''}</div></div>`;
   }).join('') + propios.map(burbujaPendiente).join('');
   hidratarMedia();
