@@ -29,10 +29,10 @@
 ## 2026-06-09 — [WhatsApp] — Mensaje predefinido de PREMIOS: sin redundancia + 4 cifras + opción $300M
 
 **Qué:** ajustamos el texto fijo de premios (atajo SIN IA, en `agente-responder.js`). Antes repetía el precio
-($150.000) y el "separar con $20.000", que YA están en el contacto inicial. Ahora ese mensaje: deja los premios
-(casa el 4-jul + $5.000.000 cada sábado), QUITA el precio/abono repetidos, y agrega dos cosas: que la boleta es
-un *número de 4 cifras* (0000-9999) que el cliente elige, y que si gana la casa pero prefiere el dinero le
-conseguimos comprador por *$300.000.000* (en ese orden, sin confundir). Cierra con "¿Te muestro los números?".
+($150.000) y el "separar con $20.000", que YA están en el contacto inicial. Ahora ese mensaje: empieza con "Con
+una sola boleta de *4 cifras* (de 0000 a 9999) participas por todo esto:", QUITA el precio/abono repetidos, y
+pone la opción de los *$300.000.000* (si gana la casa pero prefiere el dinero) JUSTO debajo del Premio Mayor.
+Cierra con "¿Te muestro los números?". Tono serio/elegante, casi SIN emojis (decisión de Mateo).
 
 **Por qué:** Mateo notó la redundancia entre el contacto inicial y la explicación de premios (chat
 +573123354789).
