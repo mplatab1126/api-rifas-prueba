@@ -26,6 +26,55 @@
 
 ---
 
+## 2026-06-09 — [WhatsApp] / [Pagos] — Candado anti "pago falso" + visibilidad de comprobantes del cliente
+
+**Qué pasó (caso real):** la clienta Madenys (+573213110313) pagó de verdad $100.000 (Nequi, ref
+M02384005, estado LIBRE en `transferencias`) para completar la boleta 9290. Liliana le dijo *"tu boleta
+quedó pagada al 100%"* PERO **nunca ejecutó la herramienta de abono** (cero notas en `agente_actividad`):
+inventó la confirmación creyéndole al cliente. La boleta quedó debiendo $100.000 y el pago real, sin asignar.
+Diagnóstico: el texto que sale al cliente NO estaba atado a una acción verificada; el modelo podía "declarar"
+un pago sin que el sistema lo registrara.
+
+**Qué hicimos (3 piezas, publicadas):**
+1. **Candado anti pago falso** (`agente-responder.js`): antes de mandar el texto final, si afirma un pago
+   hecho ("pagada al 100%", "quedó pagada", "registré tu abono", "pago confirmado", "quedó abonado") y NO
+   hubo un abono REAL en ese turno **y** la boleta sigue debiendo según la base → NO lo manda. Envía el
+   mensaje seguro ("ya recibí tu comprobante, estoy verificando tu pago"), marca ASESOR y deja el comprobante
+   en verificación automática. Usa la VERDAD del sistema (saldo en `boletas`, no se puede engañar). Es
+   conservador (puede mandar "verificando" de más si el cliente tiene 2 boletas, una paga y una no) — lado
+   seguro. Función `afirmaPagoHecho()` probada: caza 5 frases peligrosas, deja pasar 5 normales (incl. la
+   promesa "te registro el abono"). El candado permite la felicitación si el abono SÍ se hizo en el turno o
+   si la boleta ya estaba paga de antes.
+2. **Etiqueta "✅ Pago asignado" sobre la foto del comprobante** (`mensajes.js` expone `raw.pago_asignado`;
+   se escribe al abonar desde un comprobante, tanto por Liliana —`registrar_abono`— como por el abono manual
+   de la bandeja —endpoint nuevo `marcar-comprobante.js`—). Solo informativo; no toca la lógica del abono.
+3. **Menú "Comprobantes"** en la bandeja (endpoint nuevo `comprobantes.js`, paginado en servidor): lista las
+   fotos que mandan los clientes (✅ asignado / ⏳ sin asignar), con clic para ir a la conversación. Filtro
+   "solo sin asignar".
+
+**Cuidado / qué NO hacer:** la marca "asignado" y el candado funcionan **de aquí en adelante** (los
+comprobantes viejos salen "sin asignar"). NO confundir la idea de Mateo (lista de comprobantes del cliente)
+con la tabla `transferencias` (pagos del banco): son cosas distintas; la lista nueva es de las FOTOS del chat.
+
+**Pendiente del caso:** Mateo iba a registrar el abono real de la boleta 9290 a mano (el pago LIBRE M02384005).
+
+## 2026-06-09 — [General] — El deploy automático GitHub→Vercel dejó de dispararse (se publicó por CLI)
+
+**Qué pasó:** al publicar el candado, el push a GitHub (`5efc368`) entró bien, pero **Vercel no creó ningún
+deploy nuevo**: el último deploy automático era de hace ~15h (`vercel ls` lo confirmó). Síntoma clásico de
+"publiqué pero no se ve": producción seguía sirviendo el build viejo (bandeja con `age` de horas, endpoints
+nuevos en 404). **NO era un rollback** (no había deploy nuevo que promover); la conexión GitHub→Vercel no se
+disparó (rota desde anoche; hoy solo hubo commits de docs, que no necesitan deploy y por eso no se notó).
+
+**Cómo se resolvió:** se publicó directo con la **CLI de Vercel** desde el clon limpio: `vercel link --yes
+--project api-rifas-prueba` y `vercel --prod --yes`. Compiló y quedó aliased a `www.losplata.com.co`.
+Verificado al aire (endpoints en 405, menú Comprobantes presente).
+
+**Qué hay que hacer:** revisar en Vercel → proyecto `api-rifas-prueba` → **Settings → Git** que el repo siga
+conectado (reconectarlo si aparece desconectado). Solo Mateo puede darlo en el panel. **Mientras tanto, los
+push a `main` NO salen solos**: hay que publicar con `vercel --prod --yes` desde `~/los-platas-rifas` (ya
+quedó enlazado con la CLI; el `.vercel` está en `.gitignore`).
+
 ## 2026-06-09 — [WhatsApp] — Afinaciones del manual tras auditar 48-120h de respuestas de Liliana
 
 **Contexto:** auditamos ~115 respuestas reales de Liliana (preguntas no obvias / capciosas). Salieron patrones de

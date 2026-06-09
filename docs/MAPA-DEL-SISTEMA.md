@@ -156,7 +156,9 @@ función `bandeja_filtrar`), `recordatorios.js` (**2026-06-07**: lee los recorda
 un chat para mostrarlos en la bandeja), `marcar-respondido.js` (**2026-06-08**: marca un chat como
 respondido sin escribirle —pone `ultimo_entrante=false`, lo saca de "sin respuesta"—; lo usa el menú
 **⋮** del chat, que reúne "Marcar como respondido" y "Eliminar contacto" dejando etiqueta/recordatorios/
-ficha a primer toque), `media.js`.
+ficha a primer toque), `media.js`, `comprobantes.js` (**2026-06-09**: lista las fotos de pago que mandan
+los clientes con su estado ✅ asignado / ⏳ sin asignar — la usa el menú **Comprobantes**, paginada en
+servidor), `marcar-comprobante.js` (**2026-06-09**: marca una foto como "pago asignado" tras un abono manual).
 
 **Contactos y etiquetas:** `contactos.js`, `contacto-crear.js`,
 `contacto-eliminar.js`, `contactos-importar.js`, `etiquetas.js`, `cliente.js`.

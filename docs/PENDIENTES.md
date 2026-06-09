@@ -15,6 +15,14 @@
 
 ## Tareas pendientes
 
+- [ ] (2026-06-09) **🔴 RECONECTAR el deploy automático GitHub→Vercel.** Dejó de dispararse (último deploy
+  auto ~15h antes del 9-jun mediodía). Mientras siga roto, los push a `main` NO salen al aire solos. Mateo
+  debe entrar a Vercel → proyecto `api-rifas-prueba` → Settings → Git y reconectar el repo. **Mientras tanto,
+  publicar con `vercel --prod --yes` desde `~/los-platas-rifas`** (ya quedó enlazado con la CLI). Ver bitácora 9-jun.
+- [ ] (2026-06-09) **Registrar a mano el abono REAL de la boleta 9290** (clienta Madenys +573213110313): pagó
+  $100.000 (Nequi, ref M02384005, quedó LIBRE) pero el abono no se registró (Liliana dijo "pagada" sin abonar
+  — ya quedó el candado para que no vuelva a pasar). Abonarlo desde la bandeja (comprobante → Buscar el pago →
+  Abonar). Mateo dijo que lo hacía él.
 - [ ] (2026-06-09) **Reescribir la descripción de la herramienta `apartar_numero`** (en `agente-responder.js`):
   aún dice cédula/correo "OPCIONALES", la palabra que le prohibimos decir al cliente. Reescribir sin esa palabra
   (cambio de código → desplegar). Pendiente OK de Mateo.
@@ -110,6 +118,13 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-09) **🔒 Candado anti "pago falso" + visibilidad de comprobantes.** (1) Liliana ya NO puede
+  decirle al cliente que la boleta quedó "pagada/abonada" si no se registró el abono de verdad (usa el saldo
+  real de la base; manda "estoy verificando" + ASESOR + verificación automática). (2) Chip "✅ Pago asignado"
+  sobre la foto del comprobante al abonar (Liliana o abono manual). (3) Menú "Comprobantes" en la bandeja
+  (lista de las fotos del cliente con ✅ asignado / ⏳ sin asignar, clic → conversación). Archivos:
+  `agente-responder.js`, `mensajes.js`, nuevos `comprobantes.js` y `marcar-comprobante.js`, `bandeja-whatsapp.html`.
+  Publicado por CLI (deploy auto roto). Ver bitácora 9-jun.
 - [x] (2026-06-09) **Afinado el manual de Liliana (4 de 5 patrones de la auditoría):** (1) cédula/correo: nunca
   decir "obligatorios" ni mandar a crear/conseguir un correo; (2) clientes del exterior: participan con el número
   del chat, nunca pedir celular colombiano; (3) remisión más firme (si el sistema indica remitir, no vende ni

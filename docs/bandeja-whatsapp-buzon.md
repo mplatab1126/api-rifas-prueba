@@ -111,6 +111,12 @@ Tablas del agente:
   el "ocultar a Liliana"; el parámetro `p_ocultar_agente` de la función quedó sin uso, default `false`.)*
 - **`recordatorios.js`** — solo lectura: recordatorios PENDIENTES de un chat con su motivo (lo usa el
   botón de relojito de la barra del chat). No confundir con `recordatorios-cron.js` (el reloj que los envía).
+- **`comprobantes.js`** — lista las FOTOS de pago que mandan los clientes (imágenes entrantes) de una línea,
+  paginado en servidor, con su estado: ✅ asignado (raw.pago_asignado) / ⏳ sin asignar. Lo usa el menú
+  **Comprobantes** de la bandeja (clic en uno → abre su conversación). Filtro "solo sin asignar".
+- **`marcar-comprobante.js`** — marca una foto de comprobante como "pago asignado a la boleta NNNN"
+  (`raw.pago_asignado`). Lo llama la bandeja tras un abono manual desde un comprobante; Liliana hace lo mismo
+  en `registrar_abono`. Solo informativo (chip verde encima de la foto); no toca el abono.
 - **`marcar-respondido.js`** — pone `ultimo_entrante=false` + `no_leidos=0` en un chat para sacarlo de "sin
   respuesta" sin escribirle (botón "Marcar como respondido" del menú ⋮ del chat). Si el cliente vuelve a
   escribir, reaparece como sin respuesta. La barra del chat tiene a primer toque ficha/recordatorios/etiqueta y
@@ -238,6 +244,15 @@ y los disparadores siguen SOLO de gerencia/Mateo** (candado `esMateo` + ocultos 
   **OJO: "Liliana" es INDEPENDIENTE.** Por eso la validación de grupo de `abono.js`/`liberar-boleta.js` sigue al
   ACTOR REAL (`asesorReg`): con el override valida como Liliana (independiente) y no bloquea sus abonos. Efecto
   contable: las ventas del agente ahora cuentan como **independiente** (antes "Pagina Web"/equipo). Ver bitácora 8-jun.
+- **🔒 CANDADO ANTI "PAGO FALSO" (2026-06-09)**: antes de mandar el texto final al cliente, el motor revisa si
+  AFIRMA un pago hecho (`afirmaPagoHecho()`: "pagada al 100%", "quedó pagada", "registré tu abono", "pago
+  confirmado", "quedó abonado"). Si lo afirma y NO hubo un abono REAL en ese turno (`huboAbono`) **y** la
+  boleta sigue debiendo según `boletas` (verdad del sistema, no se puede engañar) → NO lo manda:
+  `manejarPagoNoVerificado()` envía el mensaje seguro ("ya recibí tu comprobante, estoy verificando tu pago"),
+  marca ASESOR y agenda verificación automática. Permite la felicitación si el abono SÍ se hizo o si la boleta
+  ya estaba paga. Conservador (puede mandar "verificando" de más con 2 boletas una paga y una no) — lado
+  seguro. Nació de un caso real: Liliana dijo "pagada al 100%" sin registrar el abono y dejó $100.000 sin
+  asignar (ver bitácora 9-jun).
 - **Supervisor Opus de movimientos ELIMINADO (2026-06-08)**: ya estaba inactivo (`ACCIONES_SENSIBLES` vacío); no veía
   las fotos ni los chequeos reales y solo frenaba acciones legítimas en falso. La seguridad del dinero vive en los
   candados de cada acción (abono verificado contra el banco, liberar valida dueño + saldo $0). Se borró del código.
