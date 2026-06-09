@@ -58,10 +58,11 @@ revisa*"; el supervisor Opus se eliminó el 8-jun, así que era FALSO. Se quitó
 verifica el pago contra el banco; si todo cuadra, queda abonado").
 
 **Hallazgos del análisis de coherencia (manual + 13 herramientas + motor), pendientes de OK de Mateo:**
-- **Sueldazo residual:** el manual dice "NUNCA lo menciones" pero conserva su detalle en 3 sitios (bullet en DATOS,
-  mínimo $50.000 en CONDICIONES, horario Manizales 11pm). Info muerta y contradictoria → recomendado borrar esos
-  3 residuos (la regla "nunca lo menciones" se queda).
-- **Herramienta `apartar_numero` (código):** su descripción aún dice cédula/correo "OPCIONALES", justo la palabra
+- **Sueldazo residual → LIMPIADO (9-jun):** se quitaron los detalles operativos muertos (párrafo de $1.5M×6 en
+  DATOS, mínimo $50.000 en CONDICIONES, horario Manizales 11pm en HORARIOS, y el ejemplo "hoy juega el Sueldazo"
+  en URGENCIA). Se CONSERVA que Liliana sepa que YA SE JUGÓ (3-jun) y tiene ganadora, y que puede responder si un
+  cliente pregunta por él o por su ganador (lo pidió Mateo). "Manizales" solo queda como ciudad de ejemplo.
+- **Herramienta `apartar_numero` (código) — PENDIENTE:** su descripción aún dice cédula/correo "OPCIONALES", justo la palabra
   que le prohibimos decir al cliente. Es guía interna, pero por coherencia conviene reescribirla (cambio de
   código → desplegar).
 - Resto coherente: las 13 herramientas tienen respaldo en el manual; pagos/abonos/remisión/recordatorios/boleta

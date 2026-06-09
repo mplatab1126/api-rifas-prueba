@@ -15,9 +15,6 @@
 
 ## Tareas pendientes
 
-- [ ] (2026-06-09) **Limpiar residuos del SUELDAZO en el manual** (el sorteo ya jugó y se prohíbe mencionarlo,
-  pero el manual conserva su detalle en 3 sitios: bullet en DATOS, mínimo $50.000 en CONDICIONES, horario
-  Manizales en HORARIOS). Borrar esos 3 (la regla "nunca lo menciones" se queda). Pendiente OK de Mateo.
 - [ ] (2026-06-09) **Reescribir la descripción de la herramienta `apartar_numero`** (en `agente-responder.js`):
   aún dice cédula/correo "OPCIONALES", la palabra que le prohibimos decir al cliente. Reescribir sin esa palabra
   (cambio de código → desplegar). Pendiente OK de Mateo.
@@ -118,6 +115,9 @@
   del chat, nunca pedir celular colombiano; (3) remisión más firme (si el sistema indica remitir, no vende ni
   saluda, solo da el número y termina); (4) dudas de saldo: siempre consultar y responder, no dejar sin respuesta.
   Ver bitácora 9-jun.
+- [x] (2026-06-09) **Limpiados los residuos del Sueldazo** en el manual (detalles operativos muertos: $1.5M×6,
+  mínimo $50.000, horario Manizales, ejemplo "hoy juega el Sueldazo"). Se CONSERVA que ya se jugó y tiene ganadora
+  (puede responder si preguntan por el ganador). Ver bitácora 9-jun.
 - [x] (2026-06-09) **Permiso venezolano / extranjeros (5º patrón):** Mateo eligió la opción 1 — SÍ participan Y
   reclaman con su documento (cédula de extranjería, PPT/PEP o pasaporte). Regla agregada al manual. Y se corrigió
   una incoherencia: el paso PAGO decía "un supervisor lo revisa" (falso desde que se quitó el supervisor) → quitado.
