@@ -15,6 +15,14 @@
 
 ## Tareas pendientes
 
+- [ ] (2026-06-09) **Regla del PERMISO venezolano / extranjeros sin cédula colombiana** (falta confirmar Mateo).
+  Coljuegos no es explícito; recomendación: dejarlos participar/apartar normal y que el RECLAMO del premio lo
+  valide un asesor. Cuando Mateo confirme la opción, escribir la regla en el manual (`agente_config.prompt`).
+  Ver bitácora 9-jun "Afinaciones del manual tras auditar".
+- [ ] (2026-06-09) **Auditoría continua de Liliana:** seguir revisando respuestas por tandas para cazar errores
+  nuevos. Hueco aún por mirar: respuestas que quedaron en `null` (sin respuesta) en dudas de saldo/comprobante —
+  confirmar si es el agente que no dispara o que la conversación se cerró. Ver bitácora 9-jun.
+
 - [ ] (2026-06-09) **Remarketing para los que NO contestan** — armar un seguimiento automático a las personas
   que escribieron pero dejaron de responder (no contestan), enviándoles el **video de la casa hecho con IA**
   para reengancharlas. Definir con Mateo: a partir de cuántas horas/días sin respuesta se dispara, cuántos
@@ -103,6 +111,11 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-09) **Afinado el manual de Liliana (4 de 5 patrones de la auditoría):** (1) cédula/correo: nunca
+  decir "obligatorios" ni mandar a crear/conseguir un correo; (2) clientes del exterior: participan con el número
+  del chat, nunca pedir celular colombiano; (3) remisión más firme (si el sistema indica remitir, no vende ni
+  saluda, solo da el número y termina); (4) dudas de saldo: siempre consultar y responder, no dejar sin respuesta.
+  Falta el 5º (permiso venezolano, pendiente de decisión arriba). Ver bitácora 9-jun.
 - [x] (2026-06-09) **Eliminada la etiqueta AGENTE** (y el etiquetado automático al prender el agente, en
   `recibir.js` y `agente.js`) **y el interruptor "ocultarle a Liliana los chats del agente"** (`agente.js`,
   `conversaciones.js`, tarjeta de la bandeja). Borrados de la base: etiqueta AGENTE + sus 523 enlaces +

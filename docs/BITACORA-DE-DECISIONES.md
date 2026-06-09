@@ -26,6 +26,39 @@
 
 ---
 
+## 2026-06-09 — [WhatsApp] — Afinaciones del manual tras auditar 48-120h de respuestas de Liliana
+
+**Contexto:** auditamos ~115 respuestas reales de Liliana (preguntas no obvias / capciosas). Salieron patrones de
+error que se REPETÍAN. La mayoría son de manual/lógica (no de inteligencia del modelo) → se arreglan en el
+manual (`agente_config.prompt`, efecto inmediato). Decidimos NO subir a Opus 4.8 (costaría ~1,67× más y no
+arreglaría reglas que faltan; ver más abajo). Arreglos aplicados:
+
+1. **Cédula/correo: nunca "obligatorios" ni mandar a crear un correo.** Caso real: a "no tengo correo" Liliana
+   respondió "el correo es OBLIGATORIO, crea un Gmail o pide uno prestado" (contradice la política: son para la
+   factura, se aparta igual sin ellos). Ahora el manual prohíbe decir "opcionales" **y** "obligatorios", y
+   prohíbe mandar a crear/conseguir un correo. (Bloques "DATOS DE LA RIFA ACTUAL" y paso "3) DATOS".)
+2. **Clientes del exterior.** Caso real (Panamá): Liliana le dijo que "necesita un celular colombiano" y le pidió
+   el número de un familiar — al revés de la regla (la boleta se registra con el número del chat, cualquier país).
+   Se reforzó la regla "REGISTRO DE LA BOLETA": clientes de otros países SÍ participan con el número de este chat;
+   nunca pedir celular colombiano ni de un familiar.
+3. **Remisión más firme.** Caso real (luis fernando, boleta de Claudia): debía remitir y en vez de eso hizo el
+   guion de venta. Se agregó una regla dura en "LO QUE MÁS SE ROMPE": si el sistema indica remisión, NO se
+   presenta, NO explica premios, NO muestra números, NO aparta/abona; solo da el número del punto y termina.
+4. **Dudas de saldo/abono.** Varios clientes preguntaron su saldo y quedaron sin respuesta clara. Se reforzó:
+   SIEMPRE consultar y responder cuánto lleva abonado y cuánto falta; no dejar la pregunta sin respuesta.
+
+**Pendiente de decisión de Mateo:** regla del **permiso venezolano / extranjeros sin cédula colombiana**.
+Investigado en Coljuegos: la página oficial menciona "cédula de ciudadanía de los ganadores" pero NO detalla el
+caso extranjero; por práctica general un extranjero reclama con cédula de extranjería o pasaporte (venezolanos:
+PPT/PEP o pasaporte). Como toca dinero/legal y la norma no es explícita, se recomendó la opción prudente:
+**dejarlos participar/apartar normal, pero el RECLAMO del premio lo valida un asesor**. Falta confirmar y escribir
+la regla.
+
+**Por qué NO subir a Opus 4.8 (por ahora):** Sonnet 4.6 = $3/$15 por millón (entrada/salida); Opus 4.8 = $5/$25
+(~1,67× más; de ~$5/día a ~$8/día). Los errores hallados son de reglas que faltan o de adherencia, no de
+capacidad → se arreglan gratis en el manual. Opus además, para un bot de ventas, es más lento, pregunta más y
+usa menos las herramientas por defecto. Reevaluar Opus SOLO si tras estos arreglos quedan fallos de razonamiento.
+
 ## 2026-06-09 — [WhatsApp] — Eliminada la etiqueta AGENTE y el interruptor de "ocultar a Liliana"
 
 **Qué hicimos:** quitamos por completo la etiqueta **AGENTE** y todo lo asociado, porque ahora Mateo atiende
