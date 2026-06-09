@@ -32,9 +32,10 @@
   en `agente_uso` —caché funcionando, ~11.434 leídos por llamada, ahorra ~la mitad—.) Falta solo mirar el panel.
 - [ ] (2026-06-08) **Medir el ahorro de tokens de un día completo** y comparar contra los **$4.89** de hoy
   (con el saludo predefinido sin IA + caché de 1h ya activos). Ver bitácora "Ahorro de tokens".
-- [ ] (2026-06-08) **Fases 3-5 del ahorro de tokens** (pendientes de hablar con Mateo): (3) cortar el bucle
-  cuando una herramienta ya le respondió al cliente; (4) más mensajes fijos (pedir datos, "número ya tomado",
-  números disponibles); (5) adelgazar el manual (~7.000 tokens). Ver bitácora.
+- [ ] (2026-06-08) **Fases 3 y 5 del ahorro de tokens** (pendientes de hablar con Mateo): (3) cortar el bucle
+  cuando una herramienta ya le respondió al cliente; (5) adelgazar el manual (~7.000 tokens). La **Fase 4**
+  (más mensajes fijos) ya se hizo: premios, números disponibles y pedir datos (ver "Hecho"). Queda opcional el
+  mensaje fijo de "número ya tomado" (hoy lo maneja la IA, por decisión de Mateo). Ver bitácora.
 - [ ] (2026-06-08) **Afinar los marcadores del saludo predefinido** (`primerContactoLoResuelveSaludo` en
   `agente-responder.js`) si algún caso se siente robótico, o si manda a la IA algo que el saludo ya resuelve.
 - [ ] (2026-06-08) **Opcional: detección de festivos = HECHA**, pero el HORARIO de visita vive en el manual;
@@ -96,6 +97,13 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-08) **Más mensajes predefinidos SIN IA (Fase 4 del ahorro): premios, números y pedir datos.**
+  Igual que el contacto inicial: si el cliente SOLO asiente a lo último que se le preguntó (o dice "quiero el
+  NNNN" para separar), se manda el mensaje fijo del paso sin llamar a Claude. Ante cualquier pregunta/algo
+  distinto → IA (conservador). NO toca plata (apartar/abonos siguen por sus herramientas; solo se ahorra la
+  redacción). Cada atajo deja nota "(predefinido, SIN IA — ahorro de tokens)" en la bandeja. Funciones nuevas
+  en `agente-responder.js`: `esAsentir`, `intentoSeparar`. Probado a nivel de detección con el chat real
+  573203726935. La verificación de un número puntual ("¿tienes el 1121?") la sigue haciendo la IA. Ver bitácora.
 - [x] (2026-06-08) **Liliana ya PIDE cédula y correo al tomar los datos** (no solo nombre/apellido/ciudad).
   Manual ajustado (`agente_config.prompt` línea de Lili, bloques "DATOS DE LA RIFA ACTUAL" y paso "3) DATOS"):
   pide los 5 datos juntos al inicio para la factura, y SIN decirle al cliente que la cédula/correo son

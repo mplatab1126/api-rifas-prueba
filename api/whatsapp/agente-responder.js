@@ -459,6 +459,61 @@ function primerContactoLoResuelveSaludo(reales) {
   return true;   // saludo genérico o pregunta básica (precio/abono/legal/cuándo) → saludo predefinido
 }
 
+// ── ATAJOS SIN IA para los pasos del embudo (premios, números, datos) ─────────
+// La misma idea del saludo predefinido, extendida a los siguientes pasos. Si el
+// cliente SOLO asiente a lo que se le preguntó (sí / dale / muéstrame…) SIN meter
+// una pregunta nueva ni algo distinto, mandamos el mensaje FIJO del paso siguiente
+// sin llamar a la IA (ahorro de tokens). Ante cualquier señal de que se sale del
+// libreto (una pregunta, un número que no sea de "separar", datos, audio/imagen,
+// texto con sustancia) NO se usa el atajo y responde la IA. Conservador a propósito.
+function normTxt(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+}
+// Palabras que DISPARAN "asentir/seguir" (al menos una debe aparecer) y palabras de
+// RELLENO permitidas, por paso. Si aparece CUALQUIER palabra fuera de estas dos listas
+// → el mensaje tiene sustancia → responde la IA.
+const ASENT = {
+  premios: {
+    disp: new Set(['si','sii','siii','sip','sisas','claro','dale','bueno','ok','oka','okay','okey','vale','listo','porfa','please','obvio','perfecto','correcto','quiero','explicame','explica','explicas','expliques','explicarme','explicar','explicamelos','cuentame','cuenta','cuentame','contame','cuentas','cuentamelos','dime','digame','hagale','hagamos']),
+    fill: new Set(['por','favor','gracias','de','una','los','el','premios','premio','me','gustaria','encantaria','saber','ya','va','vamos','sobre','acuerdo','esta','bien','y','senora','senor','muchas','mil','q','si']),
+  },
+  numeros: {
+    disp: new Set(['si','sii','siii','sip','sisas','claro','dale','bueno','ok','oka','okay','okey','vale','listo','porfa','please','obvio','perfecto','quiero','muestrame','muestreme','muestra','muestramelos','muestrenme','ensename','ver','verlos','mostrar','miremos','veamos','mira']),
+    fill: new Set(['por','favor','gracias','de','una','los','el','numeros','numero','disponibles','libres','me','a','que','hay','ya','y','muchas','mil','q','si','porfis']),
+  },
+};
+function esAsentir(texto, paso) {
+  const t = normTxt(texto);
+  if (!t) return false;
+  if (t.includes('?') || t.includes('¿')) return false;            // pregunta → IA
+  if (/\d{3,}/.test(t)) return false;                              // menciona un número → IA
+  const conf = ASENT[paso];
+  if (!conf) return false;
+  const palabras = t.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
+  if (!palabras.length || palabras.length > 6) return false;       // vacío o con sustancia → IA
+  let disparo = false;
+  for (const w of palabras) {
+    if (conf.disp.has(w)) { disparo = true; continue; }
+    if (conf.fill.has(w)) continue;
+    return false;                                                  // palabra desconocida = sustancia → IA
+  }
+  return disparo;
+}
+// ¿El cliente dice claramente que quiere SEPARAR un número puntual? (ej. "quiero el
+// 7185", "el 7185 separalo"). Devuelve el número de 4 cifras, o null. Si es una
+// PREGUNTA por un número ("¿el 1121?") o ya viene dando datos (correo), devuelve null
+// para que lo maneje la IA.
+function intentoSeparar(texto) {
+  const t = normTxt(texto);
+  if (!t || t.includes('?') || t.includes('¿') || t.includes('@')) return null;
+  const palabras = t.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
+  if (palabras.length > 8) return null;                            // mensaje con sustancia → IA
+  const num = (t.match(/\b(\d{4})\b/) || [])[1];
+  if (!num) return null;
+  if (!/(quiero|separa|separar|separal|separarlo|separamelo|aparta|apartar|apartal|apartarlo|apartamelo|guarda|guardar|guardal|reserv|me lo|lo quiero|lo separo|dame|escojo|elijo|tomo|me quedo)/.test(t)) return null;
+  return num;
+}
+
 // Herramientas que ENVÍAN mensajes o mueven plata/inventario. En MODO SOMBRA estas NO se
 // ejecutan (se deja una nota de "qué haría"); las de solo lectura sí corren para que la prueba
 // sea realista.
@@ -1128,6 +1183,68 @@ export default async function handler(req, res) {
       await nota(conv, 'Envié el contacto inicial (saludo predefinido, SIN IA — ahorro de tokens).');
       await soltarLock(conv);
       return res.status(200).json({ status: 'ok', atajo: 'contacto_inicial_predefinido' });
+    }
+
+    // ── ATAJOS SIN IA para los siguientes pasos del embudo (premios, números, datos) ──
+    // Si el cliente SOLO asiente a lo último que se le preguntó (o pide separar un número
+    // puntual), mandamos el mensaje FIJO del paso sin llamar a la IA. Ante cualquier señal
+    // de que se sale del libreto → NO se usa el atajo y responde la IA (más abajo). Mismos
+    // candados que el saludo predefinido (no en sombra, no remisión, no si ya tiene boleta).
+    if (!recordatorio && !conv.sombra && !remision
+        && !(estadoCliente.boletas && estadoCliente.boletas.length)) {
+      // Último mensaje de texto que mandó Liliana (qué fue lo último que preguntó).
+      const ultSal = [...reales].reverse().find(m => m.direccion === 'saliente' && m.tipo === 'text' && m.texto);
+      const salTxt = ultSal ? normTxt(ultSal.texto) : '';
+      // La tanda de mensajes ENTRANTES más reciente (lo que el cliente acaba de decir).
+      const trailing = [];
+      for (let k = reales.length - 1; k >= 0 && reales[k].direccion === 'entrante'; k--) trailing.unshift(reales[k]);
+      const entranteTxt = (trailing.length && trailing.every(m => m.tipo === 'text'))
+        ? trailing.map(m => m.texto || '').join(' ') : '';
+
+      // PASO PREMIOS: Liliana preguntó "¿te explico los premios?" y el cliente solo asiente.
+      if (entranteTxt && /explic\w* los premios|te explico los premios/.test(salTxt)
+          && esAsentir(entranteTxt, 'premios')) {
+        const sMayor = sorteosOrden.find(s => /mayor|casa/i.test(String(s.titulo || '')));
+        const fMayor = sMayor ? etiquetaFecha(sMayor.fecha) : '';
+        const premiosTxt =
+          'Con *una sola boleta* participas por todo esto:\n\n' +
+          '🏠 *Premio Mayor' + (fMayor ? ' — ' + fMayor : '') + ':* la *casa de dos plantas* totalmente amoblada, en Chinchiná (Caldas), con la Lotería de Boyacá.\n\n' +
+          '💵 *Cada sábado:* *$5.000.000* en bonos, también con la Lotería de Boyacá.\n\n' +
+          'Y todo con una boleta de *$150.000*, que puedes *separar con solo $20.000* e ir abonando a tu ritmo.\n\n' +
+          '*¿Te muestro los números disponibles?* 😊';
+        await decir(conv, premiosTxt);
+        await nota(conv, 'Expliqué los premios (predefinido, SIN IA — ahorro de tokens).');
+        await soltarLock(conv);
+        return res.status(200).json({ status: 'ok', atajo: 'premios_predefinido' });
+      }
+
+      // PASO NÚMEROS: Liliana preguntó "¿te muestro los números?" y el cliente solo asiente.
+      if (entranteTxt && activas.has('consultar_disponibles')
+          && /muestro los numeros|ver los numeros|numeros disponibles/.test(salTxt)
+          && esAsentir(entranteTxt, 'numeros')) {
+        const { texto } = await numerosDisponibles({ canal: 'bandeja' });
+        const msg = 'Aquí tienes una muestra de números libres (son *algunos* de los disponibles, no la lista completa):\n\n' +
+          texto +
+          '\n\n¿Cuál te gusta? Si quieres uno con alguna *terminación* o un número en especial, dime y lo verifico. 😊';
+        await decir(conv, msg);
+        await nota(conv, 'Mostré los números disponibles (predefinido, SIN IA — ahorro de tokens).');
+        await soltarLock(conv);
+        return res.status(200).json({ status: 'ok', atajo: 'numeros_predefinido' });
+      }
+
+      // PASO DATOS: el cliente dice claramente que quiere SEPARAR un número (ej. "quiero el 7185").
+      // Le pedimos los datos con un mensaje fijo; el APARTAR lo hará la IA cuando lleguen los datos
+      // (y ahí se verifica que el número siga libre, como hoy).
+      const numSep = entranteTxt ? intentoSeparar(entranteTxt) : null;
+      if (numSep && activas.has('apartar_numero')
+          && !/necesito tus datos|para apartar|nombre completo/.test(salTxt)) {
+        const pedir = '¡Perfecto! 😊 Para apartarte el *' + numSep + '* necesito tus datos para la factura:\n\n' +
+          '*Nombre completo, apellido, ciudad, cédula y correo.*';
+        await decir(conv, pedir);
+        await nota(conv, 'Pedí los datos para apartar el ' + numSep + ' (predefinido, SIN IA — ahorro de tokens).');
+        await soltarLock(conv);
+        return res.status(200).json({ status: 'ok', atajo: 'datos_predefinido' });
+      }
     }
 
     const festivoHoy = festivoColombia(hoyCol);

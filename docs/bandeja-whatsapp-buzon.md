@@ -184,6 +184,13 @@ y los disparadores siguen SOLO de gerencia/Mateo** (candado `esMateo` + ocultos 
   premios). El ~88% de los primeros mensajes es el texto del anuncio → quita ~la mitad de las llamadas. Ver bitácora.
 - **Caché de prompt a 1 HORA** (`ttl:'1h'` + beta `extended-cache-ttl-2025-04-11`): el manual se reescribe mucho menos
   con tráfico espaciado. NO cambia lo que responde. Ver bitácora 8-jun "Ahorro de tokens".
+- **Fase 4 — más pasos predefinidos SIN IA (8-jun):** además del contacto inicial, ahora también van sin Claude
+  **premios**, **números disponibles** y **pedir datos**, cuando el cliente SOLO asiente a lo último que se le
+  preguntó (o dice "quiero el NNNN" para separar). Ante cualquier pregunta/algo distinto → IA (conservador).
+  Funciones `esAsentir(texto, paso)` / `intentoSeparar(texto)` en `agente-responder.js`; sabe el paso por el
+  último mensaje que mandó Liliana. NO toca plata (apartar/abono siguen por sus herramientas). Cada atajo deja
+  nota "(predefinido, SIN IA — ahorro de tokens)". La verificación de un número puntual la sigue haciendo la IA.
+  Ver bitácora 8-jun "Más mensajes predefinidos".
 
 ### 8.1 Cabina + motor, y cómo se prende
 - **Cabina** = `agente.js` + pestaña "Agente". Mateo configura: `prompt` (manual), `modelo`, `estado`, prende/apaga

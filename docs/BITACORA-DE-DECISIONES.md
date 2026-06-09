@@ -26,6 +26,42 @@
 
 ---
 
+## 2026-06-08 — [WhatsApp] / [General] — Más mensajes predefinidos SIN IA (premios, números, pedir datos) — Fase 4 del ahorro
+
+**Qué hicimos:** extendimos el atajo SIN IA —que ya existía para el contacto inicial— a tres pasos más del
+embudo, en `api/whatsapp/agente-responder.js`:
+- **Premios:** si Liliana preguntó "¿Te explico los premios?" y el cliente SOLO asiente (sí/dale/explícame…),
+  se manda una explicación FIJA (la casa el 4-jul + $5.000.000 cada sábado) sin llamar a Claude.
+- **Números:** si preguntó "¿Te muestro los números?" y el cliente solo asiente, trae la muestra de la base y
+  la manda con texto fijo (sin IA; la lista igual sale de la base como siempre).
+- **Pedir datos:** si el cliente dice claramente que quiere SEPARAR un número puntual ("quiero el 7185"), se
+  le piden los datos con un mensaje fijo (nombre, apellido, ciudad, cédula y correo). El APARTAR lo sigue
+  haciendo la IA cuando llegan los datos (y ahí se verifica que el número siga libre, como hoy).
+
+**La regla (igual que el saludo):** el atajo solo se usa cuando el cliente SOLO asiente / pide separar, SIN
+meter una pregunta nueva ni algo distinto. Ante cualquier señal de que se sale del libreto (una pregunta, un
+número que no es de separar, datos, audio/imagen, texto con sustancia) → responde la IA. Conservador a
+propósito: en la duda, IA (peor caso: no ahorra ahí; nunca responde en falso).
+
+**Cómo sabe en qué paso va:** mira el último mensaje de texto que mandó Liliana (qué fue lo último que
+preguntó) + que el cliente solo haya asentido. Funciones nuevas: `normTxt`, `esAsentir(texto, paso)`,
+`intentoSeparar(texto)` (con listas de palabras "asentir/relleno" por paso, conservadoras).
+
+**Seguridad (no toca plata):** apartar, abonos y verificación de pagos siguen pasando por las MISMAS
+herramientas verificadas; solo se ahorra la REDACCIÓN de los mensajes de relleno. Mismos candados que el
+saludo predefinido: no aplica en modo sombra/apagado, ni a remisión, ni a clientes que ya tienen boleta, y va
+DESPUÉS del candado anti-duplicado. En la bandeja, cada atajo deja una nota "(predefinido, SIN IA — ahorro de
+tokens)" para poder verlo.
+
+**Probado:** `node --check` OK + pruebas unitarias de la detección con los mensajes reales del chat
+573203726935 ("Si por favor"→premios; "Muéstreme los números"→números; "El 7185 quiero separarlo"→datos;
+"El 1121 depronto?"→IA, no dispara). Falta verlo en conversaciones reales (prueba full de Liliana).
+
+**Cuidado / qué NO hacer:** la verificación de un número PUNTUAL ("¿tienes el 1121?") la sigue haciendo la IA
+(decisión de Mateo). Si Liliana cierra un paso con palabras MUY distintas a las esperadas, el atajo no dispara
+y entra la IA (no se rompe nada, solo no ahorra ahí). Los textos fijos de premios/números viven en el CÓDIGO
+(no en el manual de la base); si se quiere cambiar su redacción, se edita `agente-responder.js` y se despliega.
+
 ## 2026-06-08 — [WhatsApp] — Liliana vuelve a pedir cédula y correo al tomar los datos (sin decir que son "opcionales")
 
 **Qué hicimos:** ajustamos el MANUAL de Liliana (`agente_config.prompt`, línea `1128258647034751`) para que,
