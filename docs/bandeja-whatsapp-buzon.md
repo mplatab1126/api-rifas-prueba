@@ -316,7 +316,10 @@ Mide cuánto cuesta la IA que responde (los tokens que devuelve Claude en cada r
   variable). **Red de seguridad**: si se aparta pero no se envía la boleta, el motor la envía solo.
 - **Manual**: cédula y correo OPCIONALES al apartar (solo nombre/apellido/ciudad obligatorios); la
   boleta va por WhatsApp (no por correo/web); NO repetir lo ya dicho + mensajes un poco más cortos en
-  promedio (pero puede alargarse si hace falta explicar).
+  promedio (pero puede alargarse si hace falta explicar). **(8-jun) Afinado:** ahora SIEMPRE pide los 5
+  datos juntos al inicio (nombre, apellido, ciudad, cédula y correo) para la factura, SIN decirle al
+  cliente que la cédula/correo son "opcionales"; solo los omite si el cliente no los tiene o no los
+  quiere dar → aparta igual sin insistir. Lo obligatorio para apartar sigue siendo nombre/apellido/ciudad.
 - **Contador "sin leer" (`no_leidos`)**: se apaga cuando el agente responde, no solo cuando un humano
   abre el chat. Se resetea en `guardarEnChat` (mensaje saliente del agente). Antes quedaban numeritos
   verdes en chats que Liliana ya había contestado.

@@ -26,6 +26,28 @@
 
 ---
 
+## 2026-06-08 — [WhatsApp] — Liliana vuelve a pedir cédula y correo al tomar los datos (sin decir que son "opcionales")
+
+**Qué hicimos:** ajustamos el MANUAL de Liliana (`agente_config.prompt`, línea `1128258647034751`) para que,
+al pedir los datos para apartar, SIEMPRE pida los cinco juntos —*nombre, apellido, ciudad, cédula y correo*—
+como parte normal del registro para la factura. Después del cambio del 7-jun (que los volvió "opcionales"),
+muchas veces solo pedía nombre/apellido/ciudad y ni mencionaba la cédula ni el correo (caso real chat
++573115630300). Se editaron dos bloques ("DATOS DE LA RIFA ACTUAL" y el paso "3) DATOS") con `replace()` puntual.
+
+**Matiz que pidió Mateo:** que NO le diga al cliente en voz alta que la cédula/correo son "opcionales" (eso lo
+invita a saltárselos y se pierden datos de la factura). Se los pide con naturalidad; SOLO si el cliente dice que
+no los tiene o no los quiere dar, NO insiste y aparta IGUAL sin ellos. Lo OBLIGATORIO para apartar sigue siendo
+solo nombre/apellido/ciudad.
+
+**Cómo se probó (sin tocar clientes reales):** se corrió el MOTOR real de Liliana (mismo manual ya editado,
+mismas 13 herramientas, modelo Sonnet) contra conversaciones simuladas: (A) al elegir número pide los 5 datos y
+ya NO dice "opcionales"; (B) si el cliente se niega a cédula/correo, aparta igual sin insistir; (C) si los da,
+aparta con todo.
+
+**Cuidado / qué NO hacer:** el manual vive en la base (efecto inmediato, sin desplegar). La herramienta
+`apartar_numero` (en `agente-responder.js`) sigue aceptando cédula/correo como opcionales en el código (NO se
+tocó): la reserva nunca se condiciona a ellos, así no se traba la venta.
+
 ## 2026-06-08 — [WhatsApp] / [Admin] — Los movimientos del agente quedan a nombre de "Liliana"
 
 **Qué hicimos:** todo movimiento que hace el agente —**apartar, abono, liberar, trasladar**— se registra

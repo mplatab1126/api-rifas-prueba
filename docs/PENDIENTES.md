@@ -39,14 +39,6 @@
   `agente-responder.js`) si algún caso se siente robótico, o si manda a la IA algo que el saludo ya resuelve.
 - [ ] (2026-06-08) **Opcional: detección de festivos = HECHA**, pero el HORARIO de visita vive en el manual;
   si cambian los horarios de visita, ajustarlos en `agente_config.prompt` (sección "VISITAR LA CASA").
-- [ ] (2026-06-07) **Liliana debe PEDIR cédula y correo (aunque sean opcionales).** Hoy al pedir datos
-  solo pide "nombre completo, apellido y ciudad" y NO menciona cédula ni correo (caso real chat
-  +573115630300). El cambio del 7-jun (hacerlos opcionales) se pasó: la idea es que **siempre los pida**
-  al inicio (nombre, apellido, ciudad, cédula y correo, para la factura) y SOLO los omita si el cliente
-  dice que no los tiene o no quiere darlos → ahí aparta igual. Arreglo: ajustar el MANUAL
-  (`agente_config.prompt` línea `1128258647034751`, bloques "3) DATOS" y "Para apartar la boleta…") por
-  SQL con `replace()` puntual, dejando claro: pedir TODOS los datos primero; si el cliente se niega o no
-  los tiene, apartar sin cédula/correo (no insistir). Ver bitácora 7-jun "cédula y correo OPCIONALES".
 - [ ] (2026-06-07) **BUG recordatorios: un "gracias" cancela el recordatorio a días.** Liliana dice
   "programé un recordatorio" y SÍ lo crea, pero queda en estado `cancelado`, así que el relojito (solo
   muestra `pendiente`) aparece vacío. Causa: `recibir.js` cancela TODO recordatorio pendiente cuando el
@@ -104,6 +96,13 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-08) **Liliana ya PIDE cédula y correo al tomar los datos** (no solo nombre/apellido/ciudad).
+  Manual ajustado (`agente_config.prompt` línea de Lili, bloques "DATOS DE LA RIFA ACTUAL" y paso "3) DATOS"):
+  pide los 5 datos juntos al inicio para la factura, y SIN decirle al cliente que la cédula/correo son
+  "opcionales" (eso invitaba a saltárselos). Solo los omite si el cliente no los tiene o no los quiere dar
+  → aparta igual sin insistir. Lo obligatorio para apartar sigue siendo nombre/apellido/ciudad. Probado con
+  el MOTOR real (Sonnet) en 3 conversaciones simuladas: pide los 5, ya no dice "opcionales", y aparta sin
+  cédula/correo si el cliente se niega. Ver bitácora 8-jun.
 - [x] (2026-06-08) **Los movimientos del agente quedan a nombre de "Liliana"** (apartar/abono/liberar/trasladar),
   vía override `asesorRegistro` (solo gerencia) + `asesor` en reservar. **OJO: Liliana es INDEPENDIENTE** → la
   validación de grupo (`abono.js`/`liberar-boleta.js`) sigue al ACTOR REAL (`asesorReg`) para no bloquear sus
