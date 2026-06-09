@@ -26,6 +26,20 @@
 
 ---
 
+## 2026-06-09 — [WhatsApp] — Aclarado en el manual: los $300M y el amoblado son una cosa O la otra
+
+**Qué:** reforzamos el manual (`agente_config.prompt`, sección "SI EL CLIENTE NO QUIERE LA CASA") para dejar
+claro que el ganador NO puede quedarse con los **$300.000.000 Y ADEMÁS** sacar/conservar el amoblado: los $300
+millones son el pago por la casa **COMPLETA, amoblada y con todo incluido**. Es el dinero **O** la casa
+amoblada, nunca las dos. Y que Liliana responda esto ELLA con seguridad (NO pasar a un asesor por esta duda).
+
+**Por qué:** Mateo probó la pregunta capciosa (chat +573123354789: "¿me dan los 300 millones y yo saco el
+amoblado?"). Liliana adivinó bien pero lo dejó como "un asesor te confirma ese detalle". Ahora lo afirma claro.
+
+**Probado:** con el modelo real, dos variantes de la pregunta ("¿300M y saco el amoblado?" y "¿me quedo la
+casa y me dan algo de plata?") → responde "es una cosa O la otra", sin pasar a asesor. El manual vive en la
+base (efecto inmediato, sin desplegar).
+
 ## 2026-06-09 — [WhatsApp] / [Pagos] — Tras agotar los 4 intentos, Liliana se apaga y pasa a humano EN SILENCIO
 
 **Qué cambió:** en `api/whatsapp/verificar-pagos-cron.js`, cuando se agotan los intentos (~1h) sin confirmar el
