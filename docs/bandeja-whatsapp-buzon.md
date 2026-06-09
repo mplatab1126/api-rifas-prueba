@@ -107,8 +107,8 @@ Tablas del agente:
 - **`enviar.js`** / **`enviar-archivo.js`** (foto/PDF del computador) / **`media.js`** (descarga con token de la línea).
 - **`conversaciones.js`** — lista de chats. Acepta `q` (búsqueda) y **`filtros`** (filtro avanzado del
   botón "Filtros": `{ modo:'y'|'o', condiciones:[etiqueta | sin_respuesta | recordatorio | creado] }`).
-  TODO el filtrado lo hace la base con la función **`bandeja_filtrar(...)`** (escala). Le **oculta a
-  Liliana** los chats con `agente_activo=true` si el switch `ocultar_agente_liliana` está activo.
+  TODO el filtrado lo hace la base con la función **`bandeja_filtrar(...)`** (escala). *(9-jun: se eliminó
+  el "ocultar a Liliana"; el parámetro `p_ocultar_agente` de la función quedó sin uso, default `false`.)*
 - **`recordatorios.js`** — solo lectura: recordatorios PENDIENTES de un chat con su motivo (lo usa el
   botón de relojito de la barra del chat). No confundir con `recordatorios-cron.js` (el reloj que los envía).
 - **`marcar-respondido.js`** — pone `ultimo_entrante=false` + `no_leidos=0` en un chat para sacarlo de "sin
@@ -270,18 +270,20 @@ vencidos de forma atómica (sin doble disparo) y despierta el motor. `recibir.js
 
 ### 8.8 Disparadores — HECHO
 Menú **Disparadores** (SOLO Mateo). Por **palabra clave** (el mensaje la contiene) o **cliente nuevo** (primer mensaje, uno por línea).
-`recibir.js` prende el agente (`agente_activo=true`, `estado='bot'`, etiqueta AGENTE). Candados: no se auto-prende si ya estaba activo,
-si un humano tomó el chat, o si la línea está Apagada (Sombra sí se respeta).
+`recibir.js` prende el agente (`agente_activo=true`, `estado='bot'`). Candados: no se auto-prende si ya estaba activo,
+si un humano tomó el chat, o si la línea está Apagada (Sombra sí se respeta). *(9-jun: ya NO pone etiqueta AGENTE.)*
 
 ### 8.9 Resultados de los sorteos — HECHO
 Las casillas salen del **calendario de la rifa** (`rifas.sorteos`, jsonb array de `{titulo, fecha}`); el ganador lo escribe Mateo en
 la cabina (`agente_config.resultados`, por fecha: `{fecha, numero, nombre, ciudad, acumulado, acumulado_monto}`). El motor inyecta
 "RESULTADOS DE LOS SORTEOS" SOLO para responder "¿qué número ganó?" (ver el arreglo anti-conteo en §8.11).
 
-### 8.10 Etiquetado y privacidad de Liliana
-- Al **prender** el agente → etiqueta **AGENTE**; al **pasar a humano** o no encontrar el pago → etiqueta **ASESOR**.
-- **Liliana no ve** los chats que atiende el agente (switch `ocultar_agente_liliana` en tabla `configuracion`, default activo);
-  cuando el agente le ENTREGA el chat (`pasar_a_humano`), sí lo ve. Las burbujas del agente muestran "🤖 Liliana".
+### 8.10 Etiquetado de Liliana
+- Al **pasar a humano** o no encontrar el pago tras los reintentos → etiqueta **ASESOR**. Las burbujas del agente
+  muestran "🤖 Liliana" (o "📋 Mensaje predefinido" si salió de un atajo sin IA).
+- *(9-jun) ELIMINADA la etiqueta **AGENTE*** y el etiquetado automático al prender el agente, **y** el interruptor
+  "ocultarle a Liliana los chats que atiende el agente" (ahora Mateo atiende TODO con la IA, ya no se ocultan).
+  Se borraron de la base la etiqueta AGENTE + sus 523 enlaces y la config `ocultar_agente_liliana`. Ver bitácora 9-jun.
 
 ### 8.11 Arreglos recientes (6-jun-2026)
 - **Caché de esquema de Supabase trabada (LECCIÓN CRÍTICA, ya pasó 3 veces).** PostgREST guarda en memoria la lista de columnas

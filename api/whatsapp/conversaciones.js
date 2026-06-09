@@ -23,7 +23,6 @@ import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 import { supabase } from '../lib/supabase.js';
 import { esGerencia, puedeVerLinea } from '../lib/asesores.js';
-import { obtenerConfig } from '../lib/configuracion.js';
 
 // Normaliza las condiciones del filtro al formato que entiende la función de la base.
 // Cada condición lleva su operador (tiene / no_tiene). Acepta también el formato viejo
@@ -82,17 +81,12 @@ export default async function handler(req, res) {
   if (soloSinRespuesta) condiciones.push({ tipo: 'sin_respuesta', op: 'tiene' });
   if (etiqueta_id) condiciones.push({ tipo: 'etiqueta', op: 'tiene', etiquetas: [etiqueta_id] });
 
-  // Liliana NO ve los chats que el agente está atendiendo (si el interruptor está activo).
-  const esLiliana = String(nombre || '').trim().toLowerCase() === 'liliana';
-  const ocultarAgente = esLiliana && (await obtenerConfig('ocultar_agente_liliana')) === 'true';
-
   // El filtrado completo lo hace la base de datos (por índice, escala a 100k chats).
   const { data, error } = await supabase.rpc('bandeja_filtrar', {
     p_linea_id: linea_id,
     p_modo: modo,
     p_condiciones: condiciones,
     p_q: q || null,
-    p_ocultar_agente: ocultarAgente,
     p_limite: 300,
   });
   if (error) {

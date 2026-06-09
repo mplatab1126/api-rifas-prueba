@@ -18,8 +18,6 @@ import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 import { supabase, supabaseAdmin } from '../lib/supabase.js';
 import { esMateo, puedeVerLinea } from '../lib/asesores.js';
-import { ponerEtiqueta } from '../lib/etiquetas.js';
-import { obtenerConfig, guardarConfig } from '../lib/configuracion.js';
 
 const ESTADOS = ['apagado', 'sombra', 'encendido'];
 const MODELOS = ['claude-opus-4-8', 'claude-sonnet-4-6', 'claude-haiku-4-5'];
@@ -156,8 +154,7 @@ export default async function handler(req, res) {
         .eq('linea_id', linea_id)
         .order('created_at', { ascending: false })
         .limit(50);
-      const ocultarLiliana = (await obtenerConfig('ocultar_agente_liliana')) === 'true';
-      return res.status(200).json({ status: 'ok', config, herramientas, actividad: actividad || [], ocultarLiliana });
+      return res.status(200).json({ status: 'ok', config, herramientas, actividad: actividad || [] });
     }
 
     if (accion === 'guardar') {
@@ -228,9 +225,7 @@ export default async function handler(req, res) {
         .select('id, ultimo_entrante').maybeSingle();
       if (error) return res.status(200).json({ status: 'error', mensaje: error.message });
       if (activa && convAct) {
-        // Al PRENDER el agente, etiquetar el chat como AGENTE (para filtrar en la bandeja).
-        await ponerEtiqueta(convAct.id, linea_id, 'AGENTE', { icono: '🤖', color: '#dff7e4' });
-        // Y DISPARAR la respuesta DESDE EL SERVIDOR si el último mensaje es del cliente (igual que el
+        // Al PRENDER el agente, DISPARAR la respuesta DESDE EL SERVIDOR si el último mensaje es del cliente (igual que el
         // webhook cuando llega un mensaje). Antes esto dependía del navegador y por eso a veces, al
         // prender el agente, tardaba mucho o no respondía hasta que el cliente volvía a escribir.
         // Fire-and-forget con corte a 1.5s: agente-responder sigue corriendo en su propia invocación.
@@ -246,12 +241,6 @@ export default async function handler(req, res) {
         }
       }
       return res.status(200).json({ status: 'ok', activa });
-    }
-
-    // Interruptor: ocultarle a Liliana los chats que el agente está atendiendo.
-    if (accion === 'privacidad_liliana') {
-      await guardarConfig('ocultar_agente_liliana', req.body.activar ? 'true' : 'false');
-      return res.status(200).json({ status: 'ok', activo: !!req.body.activar });
     }
 
     // Simulador: corre el prompt contra una conversación de prueba. NO toca WhatsApp.

@@ -26,6 +26,25 @@
 
 ---
 
+## 2026-06-09 — [WhatsApp] — Eliminada la etiqueta AGENTE y el interruptor de "ocultar a Liliana"
+
+**Qué hicimos:** quitamos por completo la etiqueta **AGENTE** y todo lo asociado, porque ahora Mateo atiende
+TODOS los chats con la IA (ya no tiene sentido marcar ni ocultar los que atiende el agente).
+- **Etiquetado automático eliminado:** al auto-activarse el agente por disparador (`recibir.js`) y al prenderlo
+  con el botón 🤖 (`agente.js`) ya NO se pone la etiqueta AGENTE.
+- **Interruptor "Ocultarle a Liliana los chats que atiende el agente" eliminado** (dependía de esa etiqueta):
+  se quitó de `agente.js` (acción `privacidad_liliana` + lectura `ocultarLiliana`), de `conversaciones.js` (ya
+  no calcula `ocultarAgente` ni pasa `p_ocultar_agente`) y la tarjeta "Privacidad de Liliana" de la bandeja.
+- **Base de datos:** se borró la etiqueta AGENTE (1) + sus **523 enlaces** en `conversacion_etiquetas`, y la
+  config `ocultar_agente_liliana`.
+
+**Qué NO se tocó:** la etiqueta **ASESOR** (sigue marcando los chats que pasan a un humano), el auto-encendido
+del agente con clientes nuevos y los disparadores (solo dejan de etiquetar). El parámetro `p_ocultar_agente` de
+`bandeja_filtrar` quedó con default `false` (param muerto, inofensivo; no se reescribió la función para no
+arriesgar el filtrado compartido).
+
+**Por qué:** lo pidió Mateo: ahora atiende todo con la IA, así que la etiqueta y el ocultar ya no aplican.
+
 ## 2026-06-09 — [WhatsApp] — Mensaje predefinido de PREMIOS: sin redundancia + 4 cifras + opción $300M
 
 **Qué:** ajustamos el texto fijo de premios (atajo SIN IA, en `agente-responder.js`). Antes repetía el precio

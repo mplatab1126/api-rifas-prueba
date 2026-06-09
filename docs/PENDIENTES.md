@@ -97,6 +97,11 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-09) **Eliminada la etiqueta AGENTE** (y el etiquetado automático al prender el agente, en
+  `recibir.js` y `agente.js`) **y el interruptor "ocultarle a Liliana los chats del agente"** (`agente.js`,
+  `conversaciones.js`, tarjeta de la bandeja). Borrados de la base: etiqueta AGENTE + sus 523 enlaces +
+  config `ocultar_agente_liliana`. Se conserva la etiqueta ASESOR y el auto-encendido del agente. El param
+  `p_ocultar_agente` de `bandeja_filtrar` quedó muerto (default false). Ver bitácora 9-jun.
 - [x] (2026-06-09) **Tras agotar los 4 intentos de verificar el pago, Liliana se apaga y pasa a humano EN
   SILENCIO** (ya no manda el segundo "estoy verificando / pasa a asesor", que sonaba repetido). Marca ASESOR,
   apaga el agente (`agente_activo=false, estado='humano'`) y cancela recordatorios. Cuando el pago SÍ aparece,

@@ -2292,11 +2292,6 @@ function pintarAgente(){
       <div class="ag-estado">${estadoBtns}</div>
     </div>
     <div class="ag-card">
-      <h3>Privacidad de Liliana</h3>
-      <div class="ag-sub">Cuando está activo, Liliana NO ve en su bandeja los chats que el agente está atendiendo. En cuanto el agente le entrega un chat (lo pasa a un asesor), sí lo ve.</div>
-      <label class="ag-priv"><input type="checkbox" id="agOcultarLiliana" ${agData.ocultarLiliana ? 'checked' : ''} onchange="agTogglePrivacidad(this.checked)"> <span>Ocultarle a Liliana los chats que atiende el agente</span></label>
-    </div>
-    <div class="ag-card">
       <h3>Instrucciones del agente</h3>
       <div class="ag-sub">El “manual”: cómo se comporta, qué sabe de la rifa, precios, premios, tono. Puedes escribir mucho.</div>
       <div class="ag-field-row">
@@ -2369,12 +2364,6 @@ async function agToggleTool(clave, activa){
   if(r.status !== 'ok'){ alert(r.mensaje || 'No se pudo cambiar la herramienta.'); cargarAgente(); }
 }
 
-// Interruptor: ocultarle a Liliana los chats que el agente atiende.
-window.agTogglePrivacidad = async function(activar){
-  const r = await api('agente', { accion:'privacidad_liliana', linea_id: lineaActual, activar });
-  if(r.status !== 'ok'){ alert(r.mensaje || 'No se pudo guardar.'); cargarAgente(); }
-  else if(agData) agData.ocultarLiliana = activar;
-};
 
 async function agGuardar(silencioso){
   if(!agData) return;
