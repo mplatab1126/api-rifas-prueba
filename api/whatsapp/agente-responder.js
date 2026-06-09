@@ -1214,7 +1214,8 @@ export default async function handler(req, res) {
           'Con *una sola boleta* participas por todo esto:\n\n' +
           '🏠 *Premio Mayor' + (fMayor ? ' — ' + fMayor : '') + ':* la *casa de dos plantas* totalmente amoblada, en Chinchiná (Caldas), con la Lotería de Boyacá.\n\n' +
           '💵 *Cada sábado:* *$5.000.000* en bonos, también con la Lotería de Boyacá.\n\n' +
-          'Y todo con una boleta de *$150.000*, que puedes *separar con solo $20.000* e ir abonando a tu ritmo.\n\n' +
+          '🎟️ Tu boleta es un *número de 4 cifras* (de 0000 a 9999) que tú eliges.\n\n' +
+          '💰 Y si llegas a *ganar la casa* pero prefieres el dinero, te *conseguimos un comprador que te paga $300.000.000 en efectivo* por ella.\n\n' +
           '*¿Te muestro los números disponibles?* 😊';
         await decir(conv, premiosTxt, { predefinido: true });
         await nota(conv, 'Expliqué los premios (predefinido, SIN IA — ahorro de tokens).');
