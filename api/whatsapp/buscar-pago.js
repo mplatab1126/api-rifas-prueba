@@ -16,6 +16,7 @@
  */
 
 import { aplicarCors } from '../lib/cors.js';
+import { esMismoTelefono } from '../lib/telefono.js';
 import { validarAsesor } from '../lib/auth.js';
 import { supabase } from '../lib/supabase.js';
 import { descargarMediaBase64 } from '../lib/whatsapp.js';
@@ -97,10 +98,13 @@ export default async function handler(req, res) {
 
     // 7. Boletas del cliente con saldo pendiente (para elegir a cuál abonar).
     //    Marca cuáles son de OTRO grupo (solo lectura), igual que el Admin.
-    const { data: bols } = await supabase
+    const { data: bolsCand } = await supabase
       .from('boletas')
-      .select('numero, saldo_restante, asesor')
+      .select('numero, saldo_restante, asesor, telefono_cliente')
       .like('telefono_cliente', '%' + last10);
+    // H70: confirmar que cada boleta es DE VERDAD de este teléfono (cola mutua) — el sufijo
+    // de 10 solo no distingue a un extranjero cuyo número termina igual que el de otro cliente.
+    const bols = (bolsCand || []).filter(b => esMismoTelefono(b.telefono_cliente, telefono));
     const grupoAsesor = await grupoDeAsesor(actorReal);
     const cacheGrupo = {};
     const boletas = [];

@@ -25,6 +25,7 @@ import { enviarTexto, enviarImagenPorId, enviarImagen, enviarDocumento, descarga
 import { numerosDisponibles } from '../lib/numeros-disponibles.js';
 import { ponerEtiqueta } from '../lib/etiquetas.js';
 import { verificarYAbonar, asesorDeLinea, contrasenaAgente } from '../lib/abono-agente.js';
+import { esMismoTelefono } from '../lib/telefono.js';
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const MODELOS_OK = ['claude-opus-4-8', 'claude-sonnet-4-6', 'claude-haiku-4-5'];
@@ -183,11 +184,16 @@ const TEXTOS_RIFA = {
 async function resumenCliente(telefono) {
   const last10 = String(telefono || '').replace(/\D/g, '').slice(-10);
   if (!last10) return { cli: null, boletas: [] };
+  // H70: el LIKE por sufijo trae CANDIDATOS; esMismoTelefono confirma que de verdad es el
+  // mismo número (cola mutua) — un extranjero corto o la cruzada de 10 dígitos entre países
+  // ya no ve/opera las boletas de OTRO cliente.
   const [rc, rb] = await Promise.all([
-    supabase.from('clientes').select('nombre, apellido, ciudad, documento_numero, correo').like('telefono', '%' + last10).limit(1),
-    supabase.from('boletas').select('numero, saldo_restante, total_abonado, asesor, fecha_venta').like('telefono_cliente', '%' + last10),
+    supabase.from('clientes').select('telefono, nombre, apellido, ciudad, documento_numero, correo').like('telefono', '%' + last10).limit(5),
+    supabase.from('boletas').select('numero, saldo_restante, total_abonado, asesor, fecha_venta, telefono_cliente').like('telefono_cliente', '%' + last10),
   ]);
-  return { cli: (rc.data && rc.data[0]) || null, boletas: rb.data || [] };
+  const cli = (rc.data || []).find(c => esMismoTelefono(c.telefono, telefono)) || null;
+  const boletas = (rb.data || []).filter(b => esMismoTelefono(b.telefono_cliente, telefono));
+  return { cli, boletas };
 }
 
 // Texto que se le inyecta al agente con el estado del cliente y cómo debe abrir
@@ -768,10 +774,11 @@ async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
     // SIEMPRE el teléfono del chat (privacidad: que el cliente no pueda consultar datos de otro).
     const tel = String(conv.telefono || '').replace(/\D/g, '');
     const last10 = tel.slice(-10);
-    const { data: boletas } = await supabase
+    const { data: bolsCand } = await supabase
       .from('boletas')
-      .select('numero, saldo_restante, total_abonado, clientes (nombre)')
+      .select('numero, saldo_restante, total_abonado, telefono_cliente, clientes (nombre)')
       .like('telefono_cliente', '%' + last10);
+    const boletas = (bolsCand || []).filter(b => esMismoTelefono(b.telefono_cliente, conv.telefono));   // H70
     await nota(conv, 'Consulté las boletas del teléfono ' + (last10 || '—') + '.');
     if (!boletas || boletas.length === 0) return 'El cliente de ESTE chat NO tiene boletas registradas (es cliente nuevo).';
     const nombre = boletas[0].clientes?.nombre || 'Cliente';
@@ -838,7 +845,8 @@ async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
 
   if (nombre === 'enviar_boleta') {
     const last10 = String(conv.telefono).replace(/\D/g, '').slice(-10);
-    const { data: boletas } = await supabase.from('boletas').select('numero, saldo_restante, total_abonado').like('telefono_cliente', '%' + last10);
+    const { data: bolsCand } = await supabase.from('boletas').select('numero, saldo_restante, total_abonado, telefono_cliente').like('telefono_cliente', '%' + last10);
+    const boletas = (bolsCand || []).filter(b => esMismoTelefono(b.telefono_cliente, conv.telefono));   // H70
     if (!boletas || !boletas.length) return 'El cliente todavía no tiene ninguna boleta apartada. Primero aparta su número con apartar_numero.';
     boletas.sort((a, b) => Number(a.numero) - Number(b.numero));
     const una = boletas.length === 1;
@@ -949,9 +957,10 @@ async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
       let estadoTxt = '';
       try {
         const last10 = String(conv.telefono).replace(/\D/g, '').slice(-10);
-        const { data: bolsPost } = await supabase.from('boletas')
-          .select('numero, precio_total, total_abonado, saldo_restante')
+        const { data: bolsPostCand } = await supabase.from('boletas')
+          .select('numero, precio_total, total_abonado, saldo_restante, telefono_cliente')
           .like('telefono_cliente', '%' + last10);
+        const bolsPost = (bolsPostCand || []).filter(b => esMismoTelefono(b.telefono_cliente, conv.telefono));   // H70
         if (bolsPost && bolsPost.length) {
           estadoTxt = ' ESTADO ACTUAL tras este abono (USA EXACTAMENTE ESTOS NÚMEROS — los montos del contexto de arriba y del historial quedaron VIEJOS; NO hagas cuentas tú): ' +
             bolsPost.sort((a, b) => Number(a.numero) - Number(b.numero)).map(b => {
@@ -972,6 +981,15 @@ async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
       await nota(conv, 'No pude verificar/registrar el comprobante: ' + (r.mensaje || 'error'));
       await ponerEtiqueta(conv.id, conv.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' });
       return 'No pude verificar el comprobante (' + (r.mensaje || 'error') + '). Avísale con tacto que un asesor lo revisa enseguida, y pásalo a un asesor.';
+    }
+    if (r.tipo === 'boleta_no_coincide') {
+      // H76: el pago ESTÁ verificado, pero el cliente pidió abonar a una boleta que no está
+      // entre las suyas con saldo y tiene VARIAS candidatas. Antes caía en silencio a la de
+      // número más bajo; ahora la IA CONFIRMA con el cliente antes de mover la plata.
+      await soltarClaimVerif();
+      const lista = (r.candidatas || []).join(', ');
+      await nota(conv, `El pago está verificado pero NO abonado: el cliente pidió la boleta ${r.pedido} y no está entre sus boletas con saldo (${lista}). Le pregunto a cuál abonar.`);
+      return `OJO: el PAGO SÍ está verificado, pero NO lo registré todavía. El cliente pidió abonar a la boleta ${r.pedido}, y esa NO está entre sus boletas con saldo pendiente (tiene: ${lista}). Pregúntale con amabilidad a CUÁL de sus boletas (${lista}) quiere abonar este pago, y cuando te responda vuelve a llamar registrar_abono pasando ese número en "numero". NO digas que el pago falló (está verificado, solo falta el destino).`;
     }
     if (r.tipo === 'retenido') {
       // H32: el pago coincide, pero la referencia de la transferencia trae el celular de
@@ -1006,7 +1024,7 @@ async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
     const last10 = String(conv.telefono).replace(/\D/g, '').slice(-10);
     const { data: bol } = await supabase.from('boletas').select('numero, telefono_cliente, total_abonado').eq('numero', num).maybeSingle();
     if (!bol) return `El número ${num} no existe.`;
-    if (!bol.telefono_cliente || !String(bol.telefono_cliente).endsWith(last10)) {
+    if (!bol.telefono_cliente || !esMismoTelefono(bol.telefono_cliente, conv.telefono)) {   // H70
       return `El número ${num} no está a nombre de este cliente, así que no se puede cancelar desde aquí.`;
     }
     if (Number(bol.total_abonado || 0) > 0) {
@@ -1060,10 +1078,10 @@ async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
     // Buscar al cliente por sus últimos 10 dígitos y MEZCLAR lo nuevo con lo que ya tiene
     // (el endpoint hace upsert y exige nombre+apellido+ciudad; así no se borran ni se duplican).
     const last10 = String(conv.telefono).replace(/\D/g, '').slice(-10);
-    const { data: ex } = await supabase.from('clientes')
+    const { data: exCand } = await supabase.from('clientes')
       .select('telefono, nombre, apellido, ciudad, documento_numero, correo')
-      .like('telefono', '%' + last10).limit(1).maybeSingle();
-    const prev = ex || {};
+      .like('telefono', '%' + last10).limit(5);
+    const prev = (exCand || []).find(c => esMismoTelefono(c.telefono, conv.telefono)) || {};   // H70
     const nom = limpiarDatoCliente(input?.nombre || prev.nombre);    // H78: saneo anti-inyección
     const ape = limpiarDatoCliente(input?.apellido || prev.apellido);
     const ciu = limpiarDatoCliente(input?.ciudad || prev.ciudad);

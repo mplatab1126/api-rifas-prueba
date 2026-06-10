@@ -26,6 +26,26 @@
 
 ---
 
+## 2026-06-10 — [Pagos] / [WhatsApp] — Tanda 12: el abono ya no cae a la boleta equivocada (H76) + teléfonos a prueba de colisiones (H70)
+
+**H76 (toca la ELECCIÓN del destino del abono; los candados de verificación quedan intactos):**
+si un cliente con VARIAS boletas con saldo pedía abonar a una boleta que no estaba entre ellas
+(typo, boleta ya pagada, número de otra rifa), el abono automático caía EN SILENCIO a la boleta
+de número más bajo. Ahora: tipo nuevo `boleta_no_coincide` — en vivo, la IA le pregunta al
+cliente a cuál abonar (el pago queda verificado, solo falta destino) y reintenta con el número
+confirmado; en el cron (sin diálogo) pasa directo a ASESOR. Con UNA sola candidata se abona
+directo aunque el número no coincida (corrige typos, ajuste del verificador); sin número pedido
+y varias candidatas, se prefiere la boleta cuyo saldo es EXACTO al monto del pago.
+
+**H70:** `esMismoTelefono` (api/lib/telefono.js): regla de cola MUTUA con mínimo de 10 dígitos
+(los números <10 solo casan exactos). Aplicada en los 8 puntos donde se amarran boletas/clientes
+por teléfono (motor, buscar-pago, trasladar-abono). Cierra dos huecos del "últimos 10 dígitos":
+extranjeros cortos y la cruzada entre países (+1 305xxxxxxx vs 57 305xxxxxxx). Auditado contra
+producción ANTES de publicar: 0 clientes reales pierden el amarre con sus boletas.
+
+**Cuidado:** si aparece un cliente legítimo de un país con números <10 dígitos, su boleta debe
+guardarse con el número EXACTO de su WhatsApp (wa_id) — con otro formato no le casará.
+
 ## 2026-06-10 — [WhatsApp] / [Seguridad] — Tanda 11 (verdes): candado atómico al liberar, credencial propia del agente y limpieza
 
 **Qué hicimos (5 verdes; H68 y H81 rozan pagos — explicado a Mateo; ningún candado se afloja, solo se endurecen):**
