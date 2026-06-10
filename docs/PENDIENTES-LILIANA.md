@@ -103,14 +103,23 @@
 
 ## 4) 🟠 Seguridad técnica
 
-- [ ] **H19** · El webhook de Meta NO valida la firma `X-Hub-Signature-256`: cualquiera que
-  conozca la URL puede inyectar mensajes falsos (y hacer gastar IA). Validar HMAC con el App
-  Secret sobre el cuerpo crudo. — _esfuerzo medio_
-- [ ] **H20** · Endpoint público devuelve nombre, deuda y boletas de cualquier cliente con solo
-  su teléfono (enumerable). Mínimo: rate-limit; ideal: token firmado en el enlace de la boleta.
-  OJO: la página /boleta usa otro camino (ver corrección del verificador en el anexo). — _esfuerzo medio_
-- [ ] **H40** · Sin límite de tasa en la ruta entrante: un atacante puede inflar el gasto de IA
-  a voluntad (relacionado con H19). — _esfuerzo medio_
+- [~] (2026-06-10) **H19** · CÓDIGO LISTO, falta el secreto: `recibir.js` valida la firma
+  HMAC-SHA256 de Meta sobre el cuerpo crudo (comparación segura; firma mala → 200 sin procesar).
+  Se ACTIVA solo cuando exista `META_APP_SECRET` en Vercel — **FALTA que Mateo copie el App
+  Secret** (developers.facebook.com → su app → Configuración → Básica → "Clave secreta de la
+  app") y lo pegue en Vercel como variable `META_APP_SECRET` + redeploy. Mientras tanto el
+  webhook funciona como siempre (verificado al aire).
+- [x] (2026-06-10) **H20** · ARREGLADO (capa mínima + recorte de datos): rate-limit por IP en
+  `api/abonar/cliente.js` (40/10 min — el endpoint REAL detrás de /boleta, corrección del
+  verificador) y en `api/cliente.js` (300/10 min, generoso porque lo consume ChateaPro); y la
+  **cédula y el correo salen ENMASCARADOS** ("••• 149", "ma•••@gmail.com") — al dueño le sirven,
+  al que enumera ya no. Verificado al aire. Bonus descubierto: el firewall de Vercel además
+  desafía ráfagas agresivas por IP (capa extra). Queda OPCIONAL a futuro: token firmado en el
+  enlace de /boleta en vez del teléfono crudo.
+- [x] (2026-06-10) **H40** · ARREGLADO: tope de 6 arranques del motor por minuto por teléfono
+  (`recibir.js`, función `rate_limit_check` en la base, `sql/rate-limit.sql`). Si un chat se
+  pasa, no pierde nada: el mensaje queda guardado y el barredor lo retoma en ~2 min (como pidió
+  el verificador: degradar, no enmudecer). Probada la lógica del contador (permite 40, bloquea 41).
 
 ## 5) 🟠 Capacidades nuevas que NO estabas considerando (estrategia)
 

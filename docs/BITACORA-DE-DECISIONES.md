@@ -26,6 +26,43 @@
 
 ---
 
+## 2026-06-10 — [Seguridad] — Sección 4 de la auditoría: firma del webhook (H19), datos enumerables (H20) y límite de tasa (H40)
+
+**Qué hicimos:**
+1. **H19 — Firma del webhook de Meta** (`recibir.js`): el POST del webhook ahora puede validar la
+   firma `X-Hub-Signature-256` (HMAC-SHA256 del cuerpo CRUDO, comparación a tiempo constante).
+   Firma mala → 200 SIN procesar (Meta no reintenta, el POST falso no tiene efectos). **Diseño en
+   dos pasos:** la validación SOLO se activa cuando exista la variable `META_APP_SECRET` en Vercel
+   — mientras no esté, el webhook procesa como siempre (deploy seguro). Si el runtime no entrega
+   el cuerpo crudo, procesa y deja rastro en el log (fail-open con telemetría, nunca enmudece el
+   canal). **FALTA (solo Mateo):** copiar el App Secret (developers.facebook.com → la app →
+   Configuración → Básica) a Vercel como `META_APP_SECRET` y redeploy.
+2. **H20 — Datos de clientes enumerables**: el endpoint REAL detrás del enlace /boleta es
+   `api/abonar/cliente.js` (corrección del verificador) y filtraba cédula + correo completos con
+   solo el teléfono. Ahora: **cédula y correo ENMASCARADOS** ("••• 149" / "ma•••@gmail.com" — la
+   página los muestra así y al dueño le sirven igual) + **rate-limit por IP** (40/10 min ahí;
+   300/10 min en `api/cliente.js` porque lo consume ChateaPro desde pocas IPs — generoso a
+   propósito para no frenar ventas). El abonar-app no usa esos campos (verificado).
+3. **H40 — Tope de gasto por abuso**: máximo 6 arranques del motor por minuto por teléfono
+   (`recibir.js`). Si se pasa, NO se pierde nada: el mensaje queda guardado y el barredor del cron
+   lo retoma en ~2 min (degrada, no enmudece — como pidió el verificador).
+**Pieza nueva compartida:** `rate_limit_check` en la base + `api/lib/rate-limit.js` (FAIL-OPEN a
+propósito: si el contador falla, se permite — nunca tumbar el negocio por el freno). SQL versionado
+en `sql/rate-limit.sql`.
+
+**Verificado al aire (commit `dba520f`):** webhook procesa normal con la lectura de cuerpo nuevo;
+cédula sale "••• 149" con boletas intactas; la respuesta de `/api/cliente` (ChateaPro) no cambió;
+la lógica del contador permite 40 y bloquea la 41 (probada en la base). Descubrimiento: el firewall
+de Vercel además DESAFÍA ráfagas agresivas por IP (`x-vercel-mitigated: challenge`) — capa extra
+que ya nos protegía en parte.
+
+**Cuidado / qué NO hacer:** cuando se configure `META_APP_SECRET`, probar enviando un mensaje real
+de WhatsApp ANTES de dar por cerrado H19 (si la firma no casara por algo del cuerpo crudo, el log
+de Vercel lo dice y se puede retirar la variable para volver al estado anterior en segundos). NO
+bajar el límite de `api/cliente.js` sin pensar en ChateaPro (muchos clientes legítimos salen por
+pocas IPs suyas). El rate-limit es fail-open a propósito — no "arreglarlo" para que bloquee cuando
+la base falle.
+
 ## 2026-06-10 — [WhatsApp] — H3+H15: el manual ya no ordena un acumulado vencido, y AHORA TIENE RESPALDO automático
 
 **Qué hicimos (OK de Mateo):**

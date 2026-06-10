@@ -21,11 +21,17 @@
   YA quedó resuelto. Detalle por ítem en `docs/auditoria-liliana-2026-06-09.md`.
   **Avance 10-jun:** las DOS secciones 🔴 quedaron COMPLETAS y al aire — (1) DINERO: H6-H9 +
   H37 (función transaccional `trasladar_abono_atomico`); (2) CLIENTES COLGADOS EN SILENCIO:
-  H4+H11, H5+H21, H10, H12 (barredor + re-claim), H13. También TODA la sección 3 (H2 saludo fijo
-  + H3 manual con OK de Mateo) y H15 (versionado del manual con respaldo automático). Sigue:
-  sección 4 (seguridad: H19 firma del webhook, H20 datos enumerables, H40 rate-limit) y el resto
-  de la sección 5 (H14 pruebas doradas, H16 monitoreo con alertas, H17 textos de rifa fuera del
-  código —¡antes del 4-jul!—, H18 cobro suave).
+  H4+H11, H5+H21, H10, H12 (barredor + re-claim), H13. También TODA la sección 3 (H2 + H3),
+  H15 (versionado del manual) y la sección 4 de SEGURIDAD (H20 datos enmascarados + rate-limit,
+  H40 tope de disparos; H19 con el código listo). Sigue: el resto de la sección 5 (H14 pruebas
+  doradas, H16 monitoreo con alertas, H17 textos de rifa fuera del código —¡antes del 4-jul!—,
+  H18 cobro suave) y los 🟡/🟢.
+- [ ] (2026-06-10) **⚠️ ACTIVAR la firma del webhook (cierra H19) — SOLO MATEO:** entrar a
+  developers.facebook.com → la app de WhatsApp → Configuración → Básica → copiar la "Clave
+  secreta de la app" (App Secret) → en Vercel agregar la variable `META_APP_SECRET` con ese
+  valor → Redeploy. Después, mandar un mensaje de WhatsApp real de prueba: si Liliana responde
+  normal, quedó activa; si no llegara (raro), borrar la variable y redeploy (vuelve al estado
+  de hoy en segundos). El código ya está al aire esperando la variable.
   **Vigilar las primeras conversaciones reales tras el deploy del 10-jun** (el motor cambió por
   dentro; si algo falla ahora deja rastro: etiqueta ASESOR + error en la actividad del agente).
 - [ ] (2026-06-09) **Reescribir la descripción de la herramienta `apartar_numero`** (en `agente-responder.js`):
