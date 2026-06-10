@@ -318,7 +318,9 @@ async function llamarApi(ruta, cuerpo) {
 }
 
 // ── Definición de las herramientas para la IA ───────────────────────────────
-const TOOLS = [
+// (exportadas para que la suite dorada —probar-suite.js— pruebe el manual con las
+//  MISMAS herramientas que ve el agente real, en modo seco, sin ejecutarlas)
+export const TOOLS = [
   {
     name: 'enviar_contacto_inicial',
     // {{condiciones_venta}} se rellena al cargar la config de la línea (H17): al rotar

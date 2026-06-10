@@ -60,6 +60,9 @@
     },
     "api/whatsapp/alertas-cron.js": {
       "maxDuration": 30
+    },
+    "api/whatsapp/probar-suite.js": {
+      "maxDuration": 120
     }
   },
   "crons": [],
