@@ -26,6 +26,29 @@
 
 ---
 
+## 2026-06-10 — [WhatsApp] / [Pagos] — Tanda 2 de los amarillos (H31, H38, H45)
+
+**Qué hicimos (verificado al aire):**
+- **H31 — Candado anti "pago falso" v2:** 5 patrones nuevos que la v1 no cubría ("recibí tu pago",
+  "tu pago ya entró", "se acreditó tu abono", "tu plata ya quedó en…", "todo en orden con tu
+  pago") + un marcador de NEGACIÓN para no bloquear verdades de venta ("aún NO recibimos tu
+  pago"). "Comprobante" sigue FUERA de la lista a propósito (el mensaje seguro dice "recibí tu
+  comprobante"). Probado con la mini-lista del verificador: 24/24 (12 peligrosas bloquean, 12
+  normales pasan), y la suite dorada en verde tras el cambio (sin sobre-bloqueo, la lección del 9-jun).
+- **H45 — Números disponibles 3× más rápidos:** las 10 consultas por serie van en PARALELO
+  (medido al aire: 2.33s → 0.85s). Es la ruta más caliente de la venta (atajo de números,
+  herramienta de Liliana, web y bandeja). Los 2 updates de marcas siguen secuenciales (limpiar
+  antes de marcar, como pidió el verificador).
+- **H38 — La lógica de la base ya es auditable desde el repo:** `sql/esquema-agente-produccion.sql`
+  (instantánea de referencia: las 12 funciones reales —candados, bandeja, difusiones, costos—,
+  los 5 crons con el secreto REDACTADO y la lista de tablas). `whatsapp-buzon.sql` marcado VIEJO
+  (declaraba unicidad global de teléfono; la real es por línea+teléfono). **Regla nueva:** todo
+  cambio en la base nace en su archivo de `sql/` (los del 10-jun ya cumplen).
+
+**Cuidado / qué NO hacer:** la instantánea es REFERENCIA — nunca re-ejecutarla a ciegas contra
+producción. Frases nuevas del candado: probarlas SIEMPRE contra la mini-lista (y la suite dorada)
+antes de publicar.
+
 ## 2026-06-10 — [WhatsApp] / [Pagos] — Tanda 1 de los amarillos (H22, H23+H82, H26, H29, H69; H25/H33 ya cubiertos)
 
 **Qué hicimos (5 arreglos chicos, verificados al aire):**

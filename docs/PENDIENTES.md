@@ -27,8 +27,9 @@
   WhatsApp de Mateo, probadas en vivo) y H14 (suite dorada de 10 casos, 10/10 en verde contra
   producción). **De las secciones 1-5 solo queda H18** (cobro suave de saldos, ~$10.9M
   identificados — Mateo lo dejó PARA DESPUÉS: toca decisiones suyas de cadencia/tono/público).
-  **Avance amarillos (10-jun, tanda 1):** H22, H23+H82, H26, H29, H69 hechos; H25/H33 cubiertos
-  por arreglos del día. Quedan ~17 amarillos y ~41 verdes — seguir por tandas de esfuerzo bajo.
+  **Avance amarillos (10-jun):** tanda 1 = H22, H23+H82, H26, H29, H69 (+H25/H33 cubiertos);
+  tanda 2 = H31 (candado v2, 24/24), H38 (SQL versionado) y H45 (disponibles 2.33s→0.85s).
+  Quedan ~14 amarillos y ~40 verdes — seguir por tandas de esfuerzo bajo.
 - [ ] (2026-06-10) **REGLA NUEVA para cambios del manual de Liliana:** antes de guardar un cambio
   del manual, correr la **suite dorada** (`/api/whatsapp/probar-suite`, ver bitácora 10-jun) y
   publicar solo en verde. Tras cada incidente nuevo del agente, agregar su caso a
