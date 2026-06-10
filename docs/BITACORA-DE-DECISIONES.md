@@ -26,6 +26,33 @@
 
 ---
 
+## 2026-06-10 — [WhatsApp] / [General] — H16: el sistema ahora le AVISA a Mateo por WhatsApp (alertas + resumen diario)
+
+**Qué hicimos:** hasta hoy ningún fallo del agente avisaba a nadie (los errores quedaban en la
+actividad y solo se veían si Mateo abría la cabina). Nuevo cron **`alertas-agente-cada-15min`**
+(pg_cron jobid 7 → `api/whatsapp/alertas-cron.js`, maxDuration 30) que revisa cada 15 min y manda
+UN WhatsApp resumido a Mateo (573123354789, por la línea de Lili) cuando hay:
+1. **Clientes esperando** >15 min con el agente activo (si el barredor de H12 no pudo destrabarlos,
+   algo pasa) — con memoria anti-repetición (no avisa el mismo chat dos veces en 2h).
+2. **Errores nuevos** del agente (`agente_actividad` tipo 'error') — excluye los de la propia
+   alerta fallida para no hacer bucle.
+3. **Verificaciones de pago rendidas** (cliente pagó y no se confirmó en ~1h).
+4. **Gasto de IA anómalo** (hoy >2× el promedio diario de la semana y >$2; máx. 1 aviso/día).
+Y a las **8 p.m.** el **resumen del día**: abonos ($ y cuántos), gasto de IA y errores.
+
+**Ventana de 24h:** el envío normal es texto libre (Mateo opera la línea a diario → ventana
+abierta). Respaldo: plantilla utility **`alerta_sistema_los_plata`** (creada 10-jun, en revisión de
+Meta; cuando esté "aprobada", el respaldo funciona solo). Si nada sale, el aviso queda en la
+actividad. La memoria del cron vive en **`agente_alertas_estado`** (fila única jsonb).
+
+**Probado en vivo:** corrida limpia → `alertas:0`; con un error de PRUEBA sembrado →
+`alertas:1, enviado:true` y el WhatsApp llegó.
+
+**Cuidado / qué NO hacer:** si Mateo cambia de número o de línea, actualizar las constantes
+`TEL_MATEO` / `LINEA_ALERTAS` en `alertas-cron.js` (exige deploy). No convertir las alertas en
+ruido: los umbrales (15 min, 2×, 1/día) están afinados para avisar solo lo accionable — subir
+umbrales antes que silenciar el cron.
+
 ## 2026-06-10 — [WhatsApp] — H17: los textos de la rifa salieron del código (rotar rifa ya no exige programador)
 
 **Qué hicimos:** los atajos SIN IA (saludo, premios, pedir datos) y la descripción de la

@@ -130,10 +130,14 @@
 - [ ] **H14** · **Suite de conversaciones doradas**: 15-30 chats reales que ya causaron
   incidentes (voseo, acumulado, pago falso, remisión…) que se corren ANTES de publicar cada
   cambio del manual. Convierte el simulador "probar" en un corredor de pruebas. — _esfuerzo medio_
-- [ ] **H16** · **Monitoreo con alertas a TU WhatsApp**: cron cada 15 min que avise de clientes
-  sin respuesta >10 min, errores nuevos, gasto anómalo y verificaciones agotadas. (El bug del
-  abono de hoy lo habría cantado el mismo día.) OJO: necesita plantilla utility por la ventana
-  de 24h (ver ajustes). — _esfuerzo medio_
+- [x] (2026-06-10) **H16** · HECHO Y PROBADO: cron `alertas-agente-cada-15min` (jobid 7) →
+  `api/whatsapp/alertas-cron.js`. Avisa al WhatsApp de Mateo (573123354789, por la línea de
+  Lili): clientes >15 min esperando (con memoria anti-repetición), errores nuevos del agente,
+  verificaciones de pago rendidas, gasto de IA >2× el promedio semanal (1 vez/día), y RESUMEN
+  diario a las 8 p.m. (abonos, gasto, errores). Probado en vivo: error de prueba sembrado →
+  alerta detectada y WhatsApp ENVIADO. Respaldo para ventana de 24h cerrada: plantilla utility
+  `alerta_sistema_los_plata` (creada, EN REVISIÓN de Meta — cuando pase a "aprobada" el respaldo
+  queda activo solo). Estado/memoria en `agente_alertas_estado`.
 - [x] (2026-06-10) **H17** · HECHO: los textos de la rifa (saludo, cierre, premios, pedir datos,
   condiciones de la herramienta) ahora viven en `agente_config.variables` (sembradas en la base,
   editables desde la cabina, versionadas por H15) — los atajos SIN IA y la descripción de
