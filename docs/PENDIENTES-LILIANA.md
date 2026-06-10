@@ -103,12 +103,12 @@
 
 ## 4) 🟠 Seguridad técnica
 
-- [~] (2026-06-10) **H19** · CÓDIGO LISTO, falta el secreto: `recibir.js` valida la firma
-  HMAC-SHA256 de Meta sobre el cuerpo crudo (comparación segura; firma mala → 200 sin procesar).
-  Se ACTIVA solo cuando exista `META_APP_SECRET` en Vercel — **FALTA que Mateo copie el App
-  Secret** (developers.facebook.com → su app → Configuración → Básica → "Clave secreta de la
-  app") y lo pegue en Vercel como variable `META_APP_SECRET` + redeploy. Mientras tanto el
-  webhook funciona como siempre (verificado al aire).
+- [x] (2026-06-10) **H19** · CERRADO Y ACTIVO: `recibir.js` valida la firma HMAC-SHA256 de Meta
+  sobre el cuerpo crudo (comparación segura; firma mala → 200 sin procesar). Mateo configuró
+  `META_APP_SECRET` en Vercel + redeploy el mismo 10-jun. Verificado por los DOS lados: mensaje
+  real de WhatsApp → Liliana respondió normal (firmado pasa); POST falso sin firma → rechazado
+  con rastro "FIRMA INVÁLIDA" en el log de Vercel. Si algún día Meta rota el App Secret,
+  actualizar la variable (síntoma: TODO mensaje entrante deja "FIRMA INVÁLIDA" en el log).
 - [x] (2026-06-10) **H20** · ARREGLADO (capa mínima + recorte de datos): rate-limit por IP en
   `api/abonar/cliente.js` (40/10 min — el endpoint REAL detrás de /boleta, corrección del
   verificador) y en `api/cliente.js` (300/10 min, generoso porque lo consume ChateaPro); y la

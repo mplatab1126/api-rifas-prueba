@@ -26,12 +26,10 @@
   H40 tope de disparos; H19 con el código listo). Sigue: el resto de la sección 5 (H14 pruebas
   doradas, H16 monitoreo con alertas, H17 textos de rifa fuera del código —¡antes del 4-jul!—,
   H18 cobro suave) y los 🟡/🟢.
-- [ ] (2026-06-10) **⚠️ ACTIVAR la firma del webhook (cierra H19) — SOLO MATEO:** entrar a
-  developers.facebook.com → la app de WhatsApp → Configuración → Básica → copiar la "Clave
-  secreta de la app" (App Secret) → en Vercel agregar la variable `META_APP_SECRET` con ese
-  valor → Redeploy. Después, mandar un mensaje de WhatsApp real de prueba: si Liliana responde
-  normal, quedó activa; si no llegara (raro), borrar la variable y redeploy (vuelve al estado
-  de hoy en segundos). El código ya está al aire esperando la variable.
+- [x] (2026-06-10) **Firma del webhook ACTIVADA (H19 cerrado):** Mateo configuró
+  `META_APP_SECRET` en Vercel + redeploy. Verificado por los dos lados: mensaje real pasa
+  (Liliana respondió), POST falso sin firma rechazado ("FIRMA INVÁLIDA" en el log de Vercel).
+  ⚠️ NO borrar esa variable: sin ella la validación se apaga (el webhook quedaría abierto).
   **Vigilar las primeras conversaciones reales tras el deploy del 10-jun** (el motor cambió por
   dentro; si algo falla ahora deja rastro: etiqueta ASESOR + error en la actividad del agente).
 - [ ] (2026-06-09) **Reescribir la descripción de la herramienta `apartar_numero`** (en `agente-responder.js`):
