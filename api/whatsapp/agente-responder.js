@@ -952,7 +952,26 @@ async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
       await cancelarVerificaciones(conv.id);
       // (la foto del comprobante la marca "✅ pago asignado" verificarYAbonar, en api/lib)
       await nota(conv, `Registré un abono de $${Number(r.monto).toLocaleString('es-CO')} a la boleta ${r.numero} (pago verificado contra el banco).`);
-      return `Listo: registré el abono de $${Number(r.monto).toLocaleString('es-CO')} a la boleta ${r.numero}. Confírmaselo con alegría, agradécele y, si quieres que termine de pagar, recuérdale con cariño el saldo que le queda.`;
+      // Estado FRESCO post-abono (caso real 10-jun, boleta 4950): el bloque ESTADO DE ESTE
+      // CLIENTE se arma ANTES del abono, y la IA hacía la cuenta del saldo ella misma con
+      // esos números viejos — le dijo "te faltan $30.000" a un cliente que quedó 100% pago.
+      // Ahora el resultado trae los números OFICIALES de la base, releídos tras el abono.
+      let estadoTxt = '';
+      try {
+        const last10 = String(conv.telefono).replace(/\D/g, '').slice(-10);
+        const { data: bolsPost } = await supabase.from('boletas')
+          .select('numero, precio_total, total_abonado, saldo_restante')
+          .like('telefono_cliente', '%' + last10);
+        if (bolsPost && bolsPost.length) {
+          estadoTxt = ' ESTADO ACTUAL tras este abono (USA EXACTAMENTE ESTOS NÚMEROS — los montos del contexto de arriba y del historial quedaron VIEJOS; NO hagas cuentas tú): ' +
+            bolsPost.sort((a, b) => Number(a.numero) - Number(b.numero)).map(b => {
+              const fa = Number(b.saldo_restante || 0);
+              return `boleta ${b.numero}: abonado $${Number(b.total_abonado || 0).toLocaleString('es-CO')} de $${Number(b.precio_total || 0).toLocaleString('es-CO')}` +
+                (fa <= 0 ? ' — PAGADA AL 100%' : `, le falta $${fa.toLocaleString('es-CO')}`);
+            }).join('; ') + '.';
+        }
+      } catch (_) {}
+      return `Listo: registré el abono de $${Number(r.monto).toLocaleString('es-CO')} a la boleta ${r.numero}.${estadoTxt} Confírmaselo con alegría y agradécele. Si le queda saldo, recuérdale con cariño cuánto le falta (el monto exacto de arriba); si quedó PAGADA AL 100%, felicítalo y NO le pidas más pagos.`;
     }
     if (r.tipo === 'sin_saldo') {
       await soltarClaimVerif();
