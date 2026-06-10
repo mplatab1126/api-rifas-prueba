@@ -12,7 +12,7 @@
  *
  * El asesor SIEMPRE confirma; el sistema nunca abona solo.
  *
- * Recibe (POST, JSON): { contrasena, media_id, telefono }
+ * Recibe (POST, JSON): { contrasena, media_id, telefono, linea_id, asesorRegistro }
  */
 
 import { aplicarCors } from '../lib/cors.js';
@@ -20,16 +20,20 @@ import { validarAsesor } from '../lib/auth.js';
 import { supabase } from '../lib/supabase.js';
 import { descargarMediaBase64 } from '../lib/whatsapp.js';
 import { extraerDatos } from '../lib/comprobante.js';
-import { grupoDeAsesor } from '../lib/asesores.js';
+import { grupoDeAsesor, esGerencia } from '../lib/asesores.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  const { contrasena, media_id, telefono, linea_id } = req.body || {};
+  const { contrasena, media_id, telefono, linea_id, asesorRegistro } = req.body || {};
   const nombre = validarAsesor(contrasena);
   if (!nombre) return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido.' });
   if (!media_id) return res.status(400).json({ status: 'error', mensaje: 'Falta el comprobante.' });
+  // `puede_modificar` se evalúa con el grupo del actor REAL del movimiento (ej. el agente
+  // "Liliana", independiente), no con el de quien autentica. Solo gerencia puede usar este
+  // override — mismo patrón de /api/admin/abono. Sin override, todo sigue igual que antes.
+  const actorReal = (asesorRegistro && esGerencia(nombre)) ? String(asesorRegistro).trim() : nombre;
 
   // 1. Descargar la imagen del cliente (con el token de su línea)
   const media = await descargarMediaBase64(media_id, linea_id);
@@ -93,7 +97,7 @@ export default async function handler(req, res) {
       .from('boletas')
       .select('numero, saldo_restante, asesor')
       .like('telefono_cliente', '%' + last10);
-    const grupoAsesor = await grupoDeAsesor(nombre);
+    const grupoAsesor = await grupoDeAsesor(actorReal);
     const cacheGrupo = {};
     const boletas = [];
     for (const b of (bols || [])) {

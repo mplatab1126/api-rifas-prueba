@@ -57,7 +57,12 @@ async function post(ruta, cuerpo) {
 }
 
 export async function verificarYAbonar({ telefono, linea_id, conversacion_id, mediaId, numeroPedido, pwd, asesorRegistro }) {
-  const v = await post('/api/whatsapp/buscar-pago', { media_id: mediaId, telefono, linea_id, contrasena: pwd });
+  // El actor REAL del movimiento (el agente = dueño de la línea, ej. "Liliana") se resuelve
+  // ANTES de buscar el pago, para que `puede_modificar` se evalúe con SU grupo (independiente)
+  // y no con el de gerencia — si no, las boletas del agente salen como "de otro grupo" y un
+  // pago que SÍ coincide termina en 'sin_saldo' (bug del 8-jun).
+  const asesorReg = asesorRegistro || await asesorDeLinea(linea_id);
+  const v = await post('/api/whatsapp/buscar-pago', { media_id: mediaId, telefono, linea_id, contrasena: pwd, ...(asesorReg ? { asesorRegistro: asesorReg } : {}) });
   if (v.status !== 'ok') return { tipo: 'error', mensaje: v.mensaje || 'no se pudo verificar el comprobante' };
   if (!v.sugerida_id) return { tipo: 'no_encontrado', diagnostico: v.diagnostico || '' };
   // Seguridad: "Misma hora" sola NO basta (dos clientes pueden pagar igual el mismo minuto).
@@ -74,8 +79,7 @@ export async function verificarYAbonar({ telefono, linea_id, conversacion_id, me
   if (pedido) destino = conSaldo.find(b => String(b.numero) === pedido.padStart(4, '0') || String(b.numero) === pedido);
   if (!destino) destino = conSaldo[0];
 
-  // El abono se graba a nombre del agente (Liliana): si no lo mandan, se deduce de la línea.
-  const asesorReg = asesorRegistro || await asesorDeLinea(linea_id);
+  // El abono se graba a nombre del agente (Liliana), el mismo actor real de arriba.
   const d = await post('/api/admin/abono', {
     numeroBoleta: String(destino.numero), valorAbono: trans.monto,
     metodoPago: trans.plataforma || 'Transferencia', referencia: trans.referencia || 'Sin Ref',
