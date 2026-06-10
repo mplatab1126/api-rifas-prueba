@@ -112,6 +112,36 @@ const CANALES_CUENTAS = [
     numero: "313 860 2023",
     numeroLimpio: "3138602023",
   },
+  {
+    id: "nequi-maria",
+    titular: "Maria Buitrago",
+    titularTipo: "persona",
+    rol: "Cuenta autorizada · LOS PLATA S.A.S.",
+    banco: "Nequi",
+    tipo: "Cuenta",
+    numero: "312 873 2266",
+    numeroLimpio: "3128732266",
+  },
+  {
+    id: "daviplata-maria",
+    titular: "Maria Buitrago",
+    titularTipo: "persona",
+    rol: "Cuenta autorizada · LOS PLATA S.A.S.",
+    banco: "Daviplata",
+    tipo: "Cuenta",
+    numero: "312 873 2266",
+    numeroLimpio: "3128732266",
+  },
+  {
+    id: "breb-maria",
+    titular: "Maria Buitrago",
+    titularTipo: "persona",
+    rol: "Cuenta autorizada · LOS PLATA S.A.S.",
+    banco: "Bre-B",
+    tipo: "Llave",
+    numero: "312 873 2266",
+    numeroLimpio: "3128732266",
+  },
 ];
 
 window.CANALES_REDES = CANALES_REDES;

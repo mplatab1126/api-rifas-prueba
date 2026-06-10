@@ -100,7 +100,7 @@ function HubAvisoSeguro() {
       </div>
       <div>
         <p className="hub-aviso-t">Cuídese de las estafas</p>
-        <p className="hub-aviso-d">Solo aceptamos pagos a cuentas a nombre de <strong>LOS PLATA S.A.S.</strong> Si tiene dudas, escríbanos al WhatsApp oficial <strong>+57 310 733 4957</strong>.</p>
+        <p className="hub-aviso-d">Solo acepte pagos a las cuentas autorizadas publicadas en nuestra página de <a href="/canales-oficiales" style={{ color: 'inherit', textDecoration: 'underline', fontWeight: 700 }}>Canales oficiales</a>. Si tiene dudas, escríbanos al WhatsApp oficial <strong>+57 310 733 4957</strong>.</p>
       </div>
     </div>
   );

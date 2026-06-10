@@ -22,6 +22,7 @@ function App() {
   const cuentaCorp = CANALES_CUENTAS.find(c => c.id === 'bancolombia');
   const cuentasMateo = CANALES_CUENTAS.filter(c => c.titular === 'Mateo Plata Buitrago');
   const cuentasAlejandro = CANALES_CUENTAS.filter(c => c.titular === 'Alejandro Plata Buitrago');
+  const cuentasMaria = CANALES_CUENTAS.filter(c => c.titular === 'Maria Buitrago');
 
   const ordenes = {
     'redes-wa-pagos': ['redes', 'wa', 'pagos'],
@@ -106,10 +107,25 @@ function App() {
             ))}
           </div>
         </div>
+
+        <div className="cuenta-grupo">
+          <div className="cuenta-grupo-head">
+            <span className="cuenta-grupo-num">4</span>
+            <div className="cuenta-grupo-info">
+              <p className="cuenta-grupo-eyebrow">Cuentas a nombre de</p>
+              <p className="cuenta-grupo-titular">Maria Buitrago</p>
+            </div>
+          </div>
+          <div className="cuenta-grupo-list">
+            {cuentasMaria.map(c => (
+              <CuentaPago key={c.id} cuenta={c} esHero={false} onCopy={showToast} />
+            ))}
+          </div>
+        </div>
       </div>
       <p className="canales-note">
         <IconInfoSm />
-        <span>La cuenta principal de la empresa es <strong>Bancolombia 706-000025-93 a nombre de LOS PLATA S.A.S.</strong> Las cuentas Nequi/Daviplata son de los socios de la empresa para pagos pequeños.</span>
+        <span>La cuenta principal de la empresa es <strong>Bancolombia 706-000025-93 a nombre de LOS PLATA S.A.S.</strong> Las cuentas Nequi/Daviplata y la llave Bre-B son de los socios y personas autorizadas de la empresa para pagos pequeños.</span>
       </p>
     </CanalesSeccion>
   );
