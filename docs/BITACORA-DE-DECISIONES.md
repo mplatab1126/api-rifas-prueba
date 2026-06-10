@@ -26,6 +26,34 @@
 
 ---
 
+## 2026-06-09 — [WhatsApp] / [General] — Auditoría COMPLETA de Liliana (90 hallazgos) + arreglado el modelo retirable de comprobantes
+
+**Qué se hizo:** auditoría multi-agente exhaustiva del agente Liliana (101 agentes: 8 auditores por
+dimensión —velocidad, costos, dinero, seguridad, coherencia, escala, conversación, estrategia—, un
+verificador escéptico por hallazgo y un crítico de completitud). 90 hallazgos confirmados contra el
+código y producción. El plan para ir tachando quedó en **`docs/PENDIENTES-LILIANA.md`** (resumen
+priorizado) y el detalle completo en **`docs/auditoria-liliana-2026-06-09.md`** (anexo, abrir solo
+por ítem).
+
+**CRÍTICO resuelto el mismo día:** la lectura de comprobantes (y la carga de pagos del banco, el
+procesador de gastos y el análisis IA) usaban el modelo `claude-sonnet-4-20250514`, que Anthropic
+retira el **15-jun-2026** — en 6 días todo el abono automático habría muerto con error 404. Se
+cambió en los 4 archivos al reemplazo oficial `claude-sonnet-4-6`, publicado y probado con 2
+comprobantes reales (lectura idéntica: plataforma, monto y referencia).
+
+**Lo más importante del plan (en orden):** (1) huecos de concurrencia en los candados de plata
+(doble abono posible: H6-H9); (2) la familia de "clientes colgados en silencio" — mecanismos
+concretos detrás de las "respuestas en null" (H5/H21, H12, H4/H11, H10, H13); (3) dos bombas de
+tiempo de coherencia con fecha (saludo fijo prometiendo entrar a la casa con $20.000 en la semana
+final H2; manual ordenando afirmar un acumulado de $20M que ya no existe H3); (4) seguridad (webhook
+sin firma H19, datos de clientes enumerables H20); (5) capacidades nuevas: versionado del manual,
+suite de pruebas doradas, monitoreo con alertas al WhatsApp de Mateo, checklist de rifa nueva y
+cobro suave automático (~$10.9M en saldos cobrables ya identificados).
+
+**Cuidado / qué NO hacer:** antes de implementar cualquier ítem, leer su "nota del verificador" en
+el anexo (varias mejoras tienen correcciones importantes ahí). Los ítems de dinero se explican a
+Mateo ANTES de tocar. No leer el anexo entero (300KB): solo la sección del ítem.
+
 ## 2026-06-09 — [Pagos] — BUG del abono automático del agente: buscar-pago no seguía al actor real (ARREGLADO + $110.000 recuperados)
 
 **Qué pasó:** desde el cambio del 8-jun ("los movimientos del agente quedan a nombre de Liliana"), el abono

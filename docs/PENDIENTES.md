@@ -15,6 +15,10 @@
 
 ## Tareas pendientes
 
+- [ ] (2026-06-09) **📋 PLAN DE MEJORAS DE LILIANA — ver `docs/PENDIENTES-LILIANA.md`.** Auditoría
+  multi-agente completa (90 hallazgos verificados: dinero, silencios, coherencia, seguridad,
+  velocidad, costos, estrategia). Ir tachando por prioridad; el crítico (modelo retirable 15-jun)
+  YA quedó resuelto. Detalle por ítem en `docs/auditoria-liliana-2026-06-09.md`.
 - [ ] (2026-06-09) **Reescribir la descripción de la herramienta `apartar_numero`** (en `agente-responder.js`):
   aún dice cédula/correo "OPCIONALES", la palabra que le prohibimos decir al cliente. Reescribir sin esa palabra
   (cambio de código → desplegar). Pendiente OK de Mateo.

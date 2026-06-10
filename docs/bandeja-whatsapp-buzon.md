@@ -388,6 +388,10 @@ Mide cuánto cuesta la IA que responde (los tokens que devuelve Claude en cada r
   del dinero NO bajó (vive en los candados de cada acción). Ver bitácora.
 
 ## 9. Pendientes
+> **(9-jun-2026)** Se hizo una AUDITORÍA COMPLETA del agente (90 hallazgos verificados). El plan
+> de mejoras para ir tachando está en **`docs/PENDIENTES-LILIANA.md`** (detalle por ítem en
+> `docs/auditoria-liliana-2026-06-09.md`). Lo de abajo se mantiene como pendientes generales.
+
 **Agente:**
 - ⬜ **Pago en línea (Wompi)** como herramienta (enviar link de `/abonar`). Subiría conversión. Toca plata; Mateo lo dejó para después.
 - ⬜ **Conectar las líneas grandes** (Línea 1 y Línea 2) — el "corte" final desde ChateaPro (cargarles prompt, herramientas, `{{pagos}}`,
