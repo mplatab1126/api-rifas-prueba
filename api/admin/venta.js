@@ -142,6 +142,8 @@ export default async function handler(req, res) {
 
     // 5. Registrar el abono
     const idTransLimpio = (idTransferencia && idTransferencia.trim() !== '') ? idTransferencia.trim() : null;
+    let abonoId = null;       // para poder deshacer si la boleta se vendió en paralelo
+    let refTransId = null;    // transferencia auto-asignada por referencia (si aplica)
 
     if (abonoNum > 0) {
       // Consumir la transferencia ANTES de insertar el abono (candado anti doble
@@ -160,7 +162,7 @@ export default async function handler(req, res) {
         }
       }
 
-      const { error: abonoError } = await supabase.from('abonos').insert({
+      const { data: abonoIns, error: abonoError } = await supabase.from('abonos').insert({
           numero_boleta: numeroLimpio,
           monto: abonoNum,
           fecha_pago: new Date().toISOString(),
@@ -170,7 +172,8 @@ export default async function handler(req, res) {
           tipo: '4cifras',
           origen: esPendiente ? 'pendiente' : (esPagoInteligente || idTransLimpio) ? 'transferencia_real' : 'manual',
           id_transferencia: idTransLimpio
-      });
+      }).select('id');
+      abonoId = abonoIns && abonoIns[0] && abonoIns[0].id;
       if (abonoError) {
         // Si el abono no se pudo guardar, devolvemos la transferencia a LIBRE
         // (solo si nadie más la tocó) para no dejarla consumida sin abono.
@@ -200,11 +203,13 @@ export default async function handler(req, res) {
         if (libres && libres.length === 1) {
           // Condición estado='LIBRE' también aquí: si otro proceso la asignó en
           // estos segundos, este update no afecta fila y no se pisa nada.
-          await supabase
+          const { data: refAsig } = await supabase
             .from('transferencias')
             .update({ estado: `ASIGNADA a boleta ${numeroLimpio}` })
             .eq('id', libres[0].id)
-            .eq('estado', 'LIBRE');
+            .eq('estado', 'LIBRE')
+            .select('id');
+          refTransId = refAsig && refAsig[0] && refAsig[0].id;
         }
       }
     }
@@ -232,8 +237,43 @@ export default async function handler(req, res) {
     if (docNumeroLimpio) updatePayload.documento_numero = docNumeroLimpio;
     if (correoLimpio) updatePayload.correo = correoLimpio;
 
-    const { error: updateError } = await supabase.from('boletas').update(updatePayload).eq('numero', numeroLimpio);
-    if (updateError) throw updateError;
+    // Solo ocupa si SIGUE libre (telefono_cliente null): si otro asesor o la web
+    // la vendieron entre el check inicial y este punto, no afecta fila y se
+    // deshace lo ya escrito (abono, transferencia y estadísticas del cliente).
+    const { data: bolOcupada, error: updateError } = await supabase
+      .from('boletas')
+      .update(updatePayload)
+      .eq('numero', numeroLimpio)
+      .is('telefono_cliente', null)
+      .select('numero');
+
+    if (updateError || !bolOcupada || bolOcupada.length === 0) {
+      if (abonoId) {
+        await supabase.from('abonos').delete().eq('id', abonoId);
+      }
+      if (idTransLimpio) {
+        await supabase.from('transferencias').update({ estado: 'LIBRE' })
+          .eq('id', idTransLimpio).eq('estado', `ASIGNADA a boleta ${numeroLimpio}`);
+      }
+      if (refTransId) {
+        await supabase.from('transferencias').update({ estado: 'LIBRE' })
+          .eq('id', refTransId).eq('estado', `ASIGNADA a boleta ${numeroLimpio}`);
+      }
+      if (abonoNum > 0) {
+        // Devolver las estadísticas del cliente a como estaban (best-effort)
+        const { data: cliRev } = await supabase.from('clientes')
+          .select('total_comprado, boletas_grandes_compradas')
+          .eq('telefono', telefonoCliente).single();
+        if (cliRev) {
+          await supabase.from('clientes').update({
+            total_comprado: Math.max(0, Number(cliRev.total_comprado || 0) - abonoNum),
+            boletas_grandes_compradas: Math.max(0, Number(cliRev.boletas_grandes_compradas || 0) - (saldoRestante <= 0 ? 1 : 0)),
+          }).eq('telefono', telefonoCliente);
+        }
+      }
+      if (updateError) throw updateError;
+      return res.status(400).json({ status: 'error', mensaje: `🛑 La boleta ${numeroLimpio} se acaba de vender en otro proceso. Verifica antes de volver a intentar.` });
+    }
 
     // Si es efectivo en oficina, registrar ingreso directo a caja
     if (abonoNum > 0 && referenciaAbono === 'efectivo_oficina') {
