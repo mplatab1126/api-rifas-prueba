@@ -19,8 +19,10 @@
 
 import crypto from 'crypto';
 
-// Apagar cuando los pg_cron ya manden el secreto nuevo y esté verificado al aire.
-const ACEPTAR_VIEJO = true;
+// Transición CERRADA el 10-jun-2026: los 4 pg_cron ya mandan el secreto nuevo (verificado
+// al aire, respuestas 200). Si algún día hay que volver a aceptar el verify token viejo
+// (emergencia), poner true y desplegar.
+const ACEPTAR_VIEJO = false;
 
 // El secreto que deben MANDAR los emisores internos (recibir.js, agente.js, crons, motor).
 export function secretoInterno() {
