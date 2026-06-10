@@ -26,6 +26,26 @@
 
 ---
 
+## 2026-06-09 — [General] — Deploy automático GitHub→Vercel REPARADO (reconexión por CLI)
+
+**Qué pasó:** el deploy automático seguía sin dispararse (un push de prueba no generó deploy en 4 min), aunque
+Vercel decía "ya conectado" y el repo era el mismo (repoId coincidía). Era el aviso (webhook) de GitHub a
+Vercel que estaba muerto.
+
+**Cómo se arregló (SIN el panel):** desde `~/los-platas-rifas` con la CLI: `vercel git disconnect --yes` y
+`vercel git connect https://github.com/mplatab1126/api-rifas-prueba --yes`. Eso recreó la conexión. Probado con
+un push real: el deploy automático disparó (source=git), compiló a READY y el sitio respondió 200.
+
+**Qué cambia:** volvió el flujo normal — `git push origin main` publica solo (~1 min). Ya NO hay que usar
+`vercel --prod --yes` (queda como plan B). Si vuelve a pasar: probar PRIMERO la reconexión por CLI antes de
+mandar a Mateo al panel. Diagnóstico útil: `vercel api "/v6/deployments?...&limit=8"` — el campo `source`
+distingue `git` (automático) de `cli`.
+
+**Mismo día — cerrado el pendiente de la boleta 9290:** se registró el abono real de Madenys (+573213110313):
+$100.000 amarrado a la transferencia Nequi M02384005 (consumida → ASIGNADA), a nombre de Liliana, vía
+`/api/admin/abono` con `asesorRegistro` (confirmado por Mateo antes de tocar). Boleta pagada al 100% y la foto
+del comprobante marcada "✅ Pago asignado". Verificado en la base.
+
 ## 2026-06-09 — [WhatsApp] / [Pagos] — Candado anti "pago falso" + visibilidad de comprobantes del cliente
 
 **Qué pasó (caso real):** la clienta Madenys (+573213110313) pagó de verdad $100.000 (Nequi, ref
