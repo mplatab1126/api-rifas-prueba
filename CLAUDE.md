@@ -82,6 +82,10 @@ el hilo de un chat a otro sin perder nada.
    aplique, NO todos, para no llenar la memoria):
    - `docs/MAPA-DEL-SISTEMA.md` — detalle de una página o función.
    - `docs/bandeja-whatsapp-buzon.md` — bandeja de WhatsApp / agente Liliana.
+   - `docs/PENDIENTES-LILIANA.md` — MEJORAS del agente Liliana (plan de la auditoría
+     del 9-jun). El detalle por ítem está en `docs/auditoria-liliana-2026-06-09.md`:
+     abrir SOLO la sección del ítem (Hnn) a trabajar y leer SIEMPRE su "nota del
+     verificador" antes de implementar.
 3. Antes de crear algo nuevo, revisa las "Piezas reutilizables" (`api/lib/`).
 4. Para cambios delicados (pagos, abonos, permisos, base de datos), explícale a
    Mateo qué vas a hacer ANTES de tocar nada.
@@ -95,9 +99,11 @@ el hilo de un chat a otro sin perder nada.
    `docs/BITACORA-DE-DECISIONES.md` (fecha, qué y por qué).
 4. Si trabajaste en la bandeja de WhatsApp o la agente Liliana, actualiza también
    su bitácora: `docs/bandeja-whatsapp-buzon.md`.
-5. Actualiza `docs/PENDIENTES.md`: anota lo que quedó sin terminar y borra/marca
+5. Si completaste ítems del plan de Liliana, márcalos `[x]` con la fecha en
+   `docs/PENDIENTES-LILIANA.md`; un problema NUEVO del agente también va ahí.
+6. Actualiza `docs/PENDIENTES.md`: anota lo que quedó sin terminar y borra/marca
    lo ya completado.
-6. Si detectaste código sin usar, anótalo en "Candidatos a revisar" del mapa
+7. Si detectaste código sin usar, anótalo en "Candidatos a revisar" del mapa
    (NO lo borres sin confirmarlo con Mateo).
 
 > No agregues detalles largos a este `CLAUDE.md`; los detalles van en el mapa y

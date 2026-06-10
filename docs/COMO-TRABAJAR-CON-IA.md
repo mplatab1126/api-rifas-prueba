@@ -21,11 +21,16 @@ Si vamos a tocar un tema específico, abre TAMBIÉN su documento (NO los leas to
 solo el que aplique, para no llenar la memoria):
 - docs/MAPA-DEL-SISTEMA.md — detalle de una página o función puntual.
 - docs/bandeja-whatsapp-buzon.md — si tocamos la bandeja de WhatsApp o la agente Liliana.
+- docs/PENDIENTES-LILIANA.md — si vamos a trabajar MEJORAS del agente Liliana (el plan
+  de la auditoría del 9-jun). El detalle técnico de cada ítem está en
+  docs/auditoria-liliana-2026-06-09.md: abre SOLO la sección del ítem (Hnn) que vayamos
+  a trabajar y lee SIEMPRE su "nota del verificador" antes de implementar.
 
 No crees nada nuevo sin revisar antes las piezas reutilizables en api/lib/. Si el
 cambio toca pagos, abonos, permisos o la base de datos, explícame qué vas a hacer
-ANTES de tocar nada. Para terminar, dime si hay algo pendiente importante antes de
-arrancar.
+ANTES de tocar nada. Después de cualquier cambio, verifícalo TÚ contra producción
+(www.losplata.com.co) antes de darlo por hecho. Para terminar, dime si hay algo
+pendiente importante antes de arrancar.
 ```
 
 ---
@@ -37,16 +42,20 @@ Copia esto y pégalo cuando vayas a cerrar este chat para abrir uno nuevo:
 ```
 Voy a cerrar este chat y abrir uno nuevo, así que deja todo en orden:
 1. Publica directo a la rama main TODO cambio que hayamos hecho y que falte por
-   publicar (NO crees solicitudes/PR). Confírmame que quedó al aire.
+   publicar (NO crees solicitudes/PR) y VERIFICA tú mismo que quedó al aire en
+   producción — no me digas "listo" sin haberlo comprobado.
 2. Si creaste, borraste o cambiaste una página o función, actualiza
    docs/MAPA-DEL-SISTEMA.md con la fecha.
 3. Si tomamos una decisión importante (dinero, seguridad o qué quitar), agrégala
    arriba en docs/BITACORA-DE-DECISIONES.md con la fecha, qué y por qué.
 4. Si trabajamos en la bandeja de WhatsApp o la agente Liliana, actualiza también
    su bitácora: docs/bandeja-whatsapp-buzon.md.
-5. Actualiza docs/PENDIENTES.md: anota las tareas que quedaron sin terminar y
+5. Si completamos ítems del plan de Liliana, márcalos [x] con la fecha en
+   docs/PENDIENTES-LILIANA.md. Y si descubriste un problema NUEVO del agente,
+   agrégalo ahí (no en PENDIENTES.md).
+6. Actualiza docs/PENDIENTES.md: anota las tareas que quedaron sin terminar y
    borra (o marca como hechas) las que ya completamos.
-6. Confírmame que todo quedó publicado en main y la documentación al día.
+7. Confírmame que todo quedó publicado en main y la documentación al día.
 ```
 
 ---
