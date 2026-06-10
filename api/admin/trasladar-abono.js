@@ -47,102 +47,46 @@ export default async function handler(req, res) {
   if (!last10) return res.status(400).json({ status: 'error', mensaje: 'Falta el teléfono del cliente.' });
 
   try {
-    // 1) Ambas boletas
-    const { data: boletas, error: errB } = await supabase
-      .from('boletas')
-      .select('numero, telefono_cliente, precio_total, total_abonado')
-      .in('numero', [origen, destino]);
-    if (errB) throw errB;
-    const bOrigen = (boletas || []).find(b => b.numero === origen);
-    const bDestino = (boletas || []).find(b => b.numero === destino);
-    if (!bOrigen || !bDestino) return res.status(404).json({ status: 'error', mensaje: 'Una de las boletas no existe.' });
-
-    // 2) 🔒 CANDADO: ambas deben ser del MISMO cliente. Nunca de otro.
-    const esDelCliente = (b) => b.telefono_cliente && String(b.telefono_cliente).replace(/\D/g, '').endsWith(last10);
-    if (!esDelCliente(bOrigen) || !esDelCliente(bDestino)) {
-      return res.status(403).json({ status: 'error', mensaje: 'Solo se puede trasladar entre boletas del mismo cliente. Una de las dos no está a su nombre.' });
-    }
-
-    // 3) Abonos de la boleta origen (todos los campos, por si hay que PARTIR uno)
-    const { data: abonosOrigen, error: errA } = await supabase
-      .from('abonos')
-      .select('id, monto, fecha_pago, referencia_transferencia, metodo_pago, asesor, tipo, origen, id_transferencia')
-      .eq('numero_boleta', origen)
-      .order('monto', { ascending: true });
-    if (errA) throw errA;
-    if (!abonosOrigen || !abonosOrigen.length) {
-      return res.status(400).json({ status: 'error', mensaje: `La boleta ${origen} no tiene abonos para trasladar.` });
-    }
-    const montoTotal = abonosOrigen.reduce((s, a) => s + Number(a.monto || 0), 0);
-
-    // 2b) Cuánto mover: el pedido (parcial) o TODO si no viene / es mayor al total.
-    let montoMover = montoTotal;
+    // Monto pedido (parcial): se valida el formato aquí; el resto de validaciones
+    // (mismo cliente, total disponible, tope del destino) vive DENTRO de la función
+    // transaccional, leyendo los datos en la misma transacción.
+    let montoPedido = null;
     if (monto != null && monto !== '') {
-      montoMover = Math.round(Number(String(monto).replace(/[^\d.-]/g, '')));
-      if (!(montoMover > 0)) return res.status(400).json({ status: 'error', mensaje: 'El monto a trasladar debe ser mayor a cero.' });
-      if (montoMover > montoTotal) {
-        return res.status(400).json({ status: 'error', mensaje: `La boleta ${origen} solo tiene ${fmt(montoTotal)} abonados; no puedes trasladar ${fmt(montoMover)}.` });
-      }
+      montoPedido = Math.round(Number(String(monto).replace(/[^\d.-]/g, '')));
+      if (!(montoPedido > 0)) return res.status(400).json({ status: 'error', mensaje: 'El monto a trasladar debe ser mayor a cero.' });
     }
 
-    // 4) No exceder lo que falta en la boleta destino
-    const precioDestino = Number(bDestino.precio_total) || PRECIOS.RIFA_4_CIFRAS;
-    const saldoDestino = precioDestino - Number(bDestino.total_abonado || 0);
-    if (montoMover > saldoDestino) {
-      return res.status(400).json({ status: 'error', mensaje: `Ese abono (${fmt(montoMover)}) supera lo que falta en la boleta ${destino} (${fmt(saldoDestino)}). Ajusta el monto.` });
+    // TODO el traslado (validar + mover/partir abonos + recalcular ambos saldos +
+    // reapuntar transferencias) ocurre en UNA transacción en la base
+    // (`trasladar_abono_atomico`, ver sql/trasladar-abono-atomico.sql): si algo
+    // falla a mitad, no queda NADA a medias. Antes eran 7 pasos sueltos (H37).
+    const { data: r, error: errRpc } = await supabase.rpc('trasladar_abono_atomico', {
+      p_origen: origen,
+      p_destino: destino,
+      p_last10: last10,
+      p_monto: montoPedido,
+      p_precio_default: PRECIOS.RIFA_4_CIFRAS,
+    });
+    if (errRpc) throw errRpc;
+
+    if (!r || r.ok !== true) {
+      const codigo = r && r.codigo;
+      if (codigo === 'NO_EXISTE') return res.status(404).json({ status: 'error', mensaje: 'Una de las boletas no existe.' });
+      if (codigo === 'OTRO_CLIENTE') return res.status(403).json({ status: 'error', mensaje: 'Solo se puede trasladar entre boletas del mismo cliente. Una de las dos no está a su nombre.' });
+      if (codigo === 'SIN_ABONOS') return res.status(400).json({ status: 'error', mensaje: `La boleta ${origen} no tiene abonos para trasladar.` });
+      if (codigo === 'MONTO_INVALIDO') return res.status(400).json({ status: 'error', mensaje: 'El monto a trasladar debe ser mayor a cero.' });
+      if (codigo === 'EXCEDE_TOTAL') return res.status(400).json({ status: 'error', mensaje: `La boleta ${origen} solo tiene ${fmt(r.total)} abonados; no puedes trasladar ${fmt(r.monto)}.` });
+      if (codigo === 'EXCEDE_DESTINO') return res.status(400).json({ status: 'error', mensaje: `Ese abono (${fmt(r.monto)}) supera lo que falta en la boleta ${destino} (${fmt(r.saldo)}). Ajusta el monto.` });
+      return res.status(500).json({ status: 'error', mensaje: 'El traslado no se pudo completar (respuesta inesperada de la base).' });
     }
 
-    // 5) Mover: abonos enteros hasta completar el monto; el último se PARTE si hace falta.
-    let restante = montoMover;
-    for (const ab of abonosOrigen) {
-      if (restante <= 0) break;
-      const m = Number(ab.monto || 0);
-      if (m <= 0) continue;
-      if (m <= restante + 0.001) {
-        await supabase.from('abonos').update({ numero_boleta: destino }).eq('id', ab.id);
-        restante -= m;
-      } else {
-        // Partir: deja (m - restante) en origen, crea (restante) en destino con los mismos datos.
-        await supabase.from('abonos').update({ monto: m - restante }).eq('id', ab.id);
-        await supabase.from('abonos').insert({
-          numero_boleta: destino, monto: restante,
-          fecha_pago: ab.fecha_pago, referencia_transferencia: ab.referencia_transferencia,
-          metodo_pago: ab.metodo_pago, asesor: ab.asesor, tipo: ab.tipo, origen: ab.origen,
-          id_transferencia: ab.id_transferencia,
-        });
-        restante = 0;
-      }
-    }
-
-    // 6) Recalcular saldos de AMBAS boletas desde sus abonos (la verdad)
-    const recalc = async (numero, precioTotal) => {
-      const { data: ab } = await supabase.from('abonos').select('monto').eq('numero_boleta', numero);
-      const abonado = (ab || []).reduce((s, a) => s + Number(a.monto || 0), 0);
-      const precio = Number(precioTotal) || PRECIOS.RIFA_4_CIFRAS;
-      const saldo = Math.max(0, precio - abonado);
-      await supabase.from('boletas').update({
-        total_abonado: abonado, saldo_restante: saldo, estado: saldo <= 0 ? 'Pagada' : 'Ocupada',
-      }).eq('numero', numero);
-    };
-    await recalc(origen, bOrigen.precio_total);
-    await recalc(destino, bDestino.precio_total);
-
-    // 7) Reapuntar cada transferencia tocada según en qué boleta(s) quedó.
-    const idsTrans = [...new Set(abonosOrigen.map(a => a.id_transferencia).filter(Boolean))];
-    for (const idt of idsTrans) {
-      const { data: ab } = await supabase.from('abonos').select('numero_boleta').eq('id_transferencia', idt);
-      const bs = [...new Set((ab || []).map(a => a.numero_boleta))];
-      const estado = bs.length > 1 ? `ASIGNADA REPARTIDA: ${bs.join(', ')}` : (bs[0] ? `ASIGNADA a boleta ${bs[0]}` : 'LIBRE');
-      await supabase.from('transferencias').update({ estado }).eq('id', idt);
-    }
-
-    // 8) Bitácora
+    // Bitácora (fuera de la transacción, igual que antes: es solo el registro del movimiento)
     await supabase.from('registro_movimientos').insert({
       asesor: asesorReg, accion: 'Traslado de abono', boleta: destino,
-      detalle: `Trasladó ${fmt(montoMover)} de la boleta ${origen} a la ${destino} (mismo cliente, tel ...${last10})`,
+      detalle: `Trasladó ${fmt(r.monto)} de la boleta ${origen} a la ${destino} (mismo cliente, tel ...${last10})`,
     });
 
-    return res.status(200).json({ status: 'ok', mensaje: 'Abono trasladado', monto: montoMover, total: montoTotal, origen, destino });
+    return res.status(200).json({ status: 'ok', mensaje: 'Abono trasladado', monto: Number(r.monto), total: Number(r.total), origen, destino });
   } catch (error) {
     return res.status(500).json({ status: 'error', mensaje: 'Error interno: ' + error.message });
   }
