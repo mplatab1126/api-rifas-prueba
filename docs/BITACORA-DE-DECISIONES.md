@@ -26,6 +26,29 @@
 
 ---
 
+## 2026-06-10 — [WhatsApp] / [Seguridad] — Tanda 11 (verdes): candado atómico al liberar, credencial propia del agente y limpieza
+
+**Qué hicimos (5 verdes; H68 y H81 rozan pagos — explicado a Mateo; ningún candado se afloja, solo se endurecen):**
+- **H68 — liberar boleta a prueba de carreras:** el candado "dueño correcto + $0 abonado" vivía
+  SOLO en el agente, y entre su lectura y el borrado el cron de verificación podía abonar (el
+  abono recién verificado se borraba en silencio). Ahora: (1) el agente cancela las
+  verificaciones pendientes ANTES de liberar; (2) `liberar-boleta.js` recibe
+  `soloSiSinAbonos`+`telefonoEsperado` y libera con un UPDATE condicional ATÓMICO — si la boleta
+  ya tiene abonos o cambió de dueño, NO borra nada y pide revisión a mano. El Admin humano
+  (sin esos parámetros) funciona idéntico.
+- **H81 — el agente ya no viaja con la llave maestra:** antes cada operación (abonos, liberar,
+  trasladar, actualizar datos, cron) mandaba la contraseña de GERENCIA (Mateo) en el body.
+  Nueva `contrasenaAgente(linea)`: usa la clave del asesor dueño de la línea (debe llamarse
+  EXACTAMENTE "Liliana" en ASESORES_SECRETO) y cae a la de gerencia mientras no exista.
+  **Falta el clic de Mateo: agregar la clave "Liliana" en ASESORES_SECRETO (Vercel) + redeploy.**
+- **H75 — simulador 'probar' ELIMINADO** (pendiente documentado): probaba un agente distinto al
+  real (sin herramientas/contexto/candados). La validación del manual es la suite dorada.
+- **H74 — sondeo del debounce a pasos de 6s** (mitad de viajes; con la RPC de H87 el tráfico del
+  debounce quedó en ~1/4 del original). **H83 — config leída 1 vez + lecturas en paralelo.**
+
+**Cuidado:** si la clave "Liliana" se agrega con OTRO nombre, las validaciones de grupo de
+abono/liberar BLOQUEARÍAN al agente (el verificador lo advirtió) — debe ser exactamente "Liliana".
+
 ## 2026-06-10 — [WhatsApp] — Bug N3: la API rechazaba corridas que terminaban "hablando Liliana"
 
 **Qué pasó (detectado por Mateo, 4 chats):** notas "No pude responder... assistant message

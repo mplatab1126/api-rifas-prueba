@@ -19,7 +19,7 @@ import { supabaseAdmin } from '../lib/supabase.js';
 import { enviarTexto } from '../lib/whatsapp.js';
 import { esSecretoInternoValido } from '../lib/secreto-interno.js';
 import { ponerEtiqueta } from '../lib/etiquetas.js';
-import { verificarYAbonar, contrasenaGerencia } from '../lib/abono-agente.js';
+import { verificarYAbonar, contrasenaGerencia, contrasenaAgente } from '../lib/abono-agente.js';
 
 const LOTE = 15;                   // cada verificación lee una imagen con IA (es lento)
 const REINTENTO_MS = 15 * 60000;   // 15 min entre intentos
@@ -55,8 +55,10 @@ export default async function handler(req, res) {
     return res.status(403).json({ status: 'error', mensaje: 'No autorizado.' });
   }
 
-  const pwd = contrasenaGerencia();
-  if (!pwd) return res.status(200).json({ status: 'error', mensaje: 'Falta la configuración de contraseña de gerencia.' });
+  // H81: cada verificación usa la contraseña DEDICADA del agente de su línea (contrasenaAgente,
+  // más abajo); si no existe esa clave, cae a la de gerencia — este chequeo solo confirma
+  // que haya AL MENOS una credencial configurada.
+  if (!contrasenaGerencia()) return res.status(200).json({ status: 'error', mensaje: 'Falta la configuración de contraseñas (ASESORES_SECRETO).' });
 
   // Rescate de huérfanas: si una corrida murió a mitad de verificación, su fila queda
   // 'en_proceso' para siempre (y bloquearía nuevas verificaciones de ese chat). Pasados
@@ -98,6 +100,7 @@ export default async function handler(req, res) {
 
     let r;
     try {
+      const pwd = await contrasenaAgente(v.linea_id);   // H81: clave del agente, no la maestra
       r = await verificarYAbonar({
         telefono: v.telefono, linea_id: v.linea_id, conversacion_id: v.conversacion_id,
         mediaId: v.media_id, numeroPedido: v.numero_pedido, pwd,
