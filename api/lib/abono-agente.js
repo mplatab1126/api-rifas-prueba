@@ -35,7 +35,17 @@ const BASE_URL = 'https://www.losplata.com.co';
 export async function asesorDeLinea(lineaId) {
   try {
     const { data } = await supabaseAdmin.from('lineas_asesores').select('asesor').eq('phone_number_id', lineaId).limit(1).maybeSingle();
-    return (data && data.asesor) ? data.asesor : 'Liliana';
+    if (data && data.asesor) return data.asesor;
+    // H72: línea SIN fila en lineas_asesores → sus ventas/abonos caerían a nombre de
+    // Liliana sin que nadie lo note. Rastro de error para que se vea en la cabina
+    // (y las alertas H16 lo lleven al WhatsApp de Mateo) antes de que toque plata.
+    try {
+      await supabaseAdmin.from('agente_actividad').insert({
+        linea_id: lineaId, telefono: '', tipo: 'error',
+        resumen: 'La línea ' + lineaId + ' NO tiene asesor configurado en lineas_asesores: sus ventas/abonos están quedando a nombre de "Liliana" (respaldo). Agregar la fila con su asesor real.',
+      });
+    } catch (_) {}
+    return 'Liliana';
   } catch (_) { return 'Liliana'; }
 }
 

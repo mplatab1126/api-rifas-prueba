@@ -26,6 +26,34 @@
 
 ---
 
+## 2026-06-10 — [WhatsApp] — Tanda 10 (verdes) + visor del relojito de pagos (N2)
+
+**N2 — Visor "💳 Verificación del pago" (pedido de Mateo):** en la ficha del chat de la bandeja
+ahora se ve EN QUÉ VA el relojito de reintentos de un pago: amarillo "🕐 el sistema sigue
+verificando solo — intento X de 4, próximo a las HH:MM" / verde "✅ abonado" / rojo "🆘 se
+rindió: le toca al ASESOR" / gris "cancelada". Visible para TODOS los perfiles (es información
+operativa); solo sale si hay una verificación de las últimas 48h. Endpoint de solo lectura
+`api/whatsapp/verificaciones.js`. De paso: la tarjeta de costo de IA de la ficha ya no depende
+de que el chat esté en la lista cargada (el servidor resuelve por teléfono); el "no se ve el
+gasto" que reportó Mateo resultó ser el perfil (es solo-gerencia a propósito).
+
+**Tanda 10 (5 verdes, con las notas del verificador):**
+- **H54+H73 — recordatorios que no se pierden:** el cron ya NO marca 'enviado' ANTES de enviar
+  (un crash/fallo perdía la promesa de Liliana en silencio). Claim atómico que reprograma
+  +10 min y sube `intentos`; 'enviado' solo tras despachar/enviar; 3 fallos → 'error' con
+  rastro. maxDuration explícito para recibir.js (60s) y recordatorios-cron.js (120s).
+- **H71 — reintentos de Meta sin efectos:** un mensaje duplicado (reintento tardío del webhook)
+  ya no cancela recordatorios, ni infla "sin leer", ni renueva la ventana de 24h, ni dispara el
+  motor: los efectos corren SOLO si el mensaje resultó nuevo (.select del upsert dice la verdad).
+- **H49 —** la herramienta del contacto inicial pide mencionar el PRÓXIMO sorteo (texto
+  estático, fecha copiada del bloque FECHAS — no rompe el caché).
+- **H72 —** ya estaba cubierto por H17/H22/H52; lo que faltaba: si una línea sin asesor
+  configurado cae al respaldo "Liliana", queda ERROR en actividad (→ alerta H16).
+
+**Cuidado:** los recordatorios ahora pueden reintentarse (tope 3): si la función muere DESPUÉS
+de enviar la plantilla pero antes de marcar 'enviado', podría repetirse una plantilla (raro y
+aceptable para un seguimiento — diseño "al menos una vez" del verificador).
+
 ## 2026-06-10 — [WhatsApp] — Bug N1: la confirmación del abono decía un saldo viejo
 
 **Qué pasó (caso real, reportado por Mateo):** Jorge (573154260513) pagó los $120.000 finales de

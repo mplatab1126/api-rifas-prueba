@@ -379,6 +379,16 @@ Mide cuánto cuesta la IA que responde (los tokens que devuelve Claude en cada r
   línea), acción `embudo` en `agente-costo.js` y tarjeta **"Embudo de ventas"** (7/30 días) en la cabina.
   OJO: cuenta los hitos por el TEXTO de las notas del motor — si se cambian esos textos, ajustar los `like`.
 
+### 8.12b Visor "💳 Verificación del pago" en la ficha — HECHO (10-jun-2026, pedido de Mateo)
+Responde "¿el sistema sigue verificando este pago solo, o ya se rindió y le toca al asesor?".
+- **Endpoint** `api/whatsapp/verificaciones.js` (POST, cualquier asesor con acceso a la línea):
+  lee `verificaciones_pago` por teléfono+línea (las 3 más recientes).
+- **Interfaz**: tarjeta en la FICHA del chat (todos los perfiles), solo si hay una verificación
+  de las últimas 48h: 🕐 amarilla "sigue verificando — intento X de 4, próximo a las HH:MM" /
+  ✅ verde "abonado" / 🆘 roja "se rindió, le toca al asesor (chat etiquetado)" / gris "cancelada".
+- La tarjeta de costo de IA (§8.12) además ya no exige que el chat esté en la lista cargada:
+  el endpoint resuelve la conversación por teléfono (chats abiertos desde el buscador).
+
 ### 8.13 Novedades del 7-jun-2026 (Liliana y boleta). Detalle en la bitácora.
 - **Verificación de pagos con reintentos** (TOCA DINERO, aprobado): si el pago no aparece, NO pasa a
   asesor de una; dice "estoy verificando" y `verificar-pagos-cron.js` reintenta cada ~15 min hasta ~1h.

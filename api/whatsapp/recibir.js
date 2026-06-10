@@ -132,10 +132,13 @@ async function guardarEntrante(m, nombrePerfil, lineaId, paraDisparar) {
     : new Date().toISOString();
 
   const preview = texto || `[${tipo}]`;
-  const conversacion = await upsertConversacion(telefono, nombrePerfil, preview, ts, true, lineaId);
+  // H71: primero solo BUSCAR o CREAR el chat (sin tocar contadores ni ventana): hasta no
+  // confirmar que el mensaje es NUEVO, no se aplica ningún efecto.
+  const conversacion = await buscarOCrearConversacion(telefono, nombrePerfil, preview, ts, true, lineaId);
 
   // upsert con ignoreDuplicates: si Meta reenvía el mismo mensaje, no se duplica.
-  const { error: errGuardar } = await supabaseAdmin
+  // .select('id') dice la verdad: lista vacía = era un DUPLICADO (reintento de Meta).
+  const { data: filasMsg, error: errGuardar } = await supabaseAdmin
     .from('mensajes_whatsapp')
     .upsert(
       {
@@ -153,28 +156,49 @@ async function guardarEntrante(m, nombrePerfil, lineaId, paraDisparar) {
         raw: m,
       },
       { onConflict: 'wa_message_id', ignoreDuplicates: true }
-    );
+    )
+    .select('id');
+  const esMsgNuevo = !errGuardar && Array.isArray(filasMsg) && filasMsg.length > 0;
 
-  // Un tipo SIN contenido legible ('unsupported'/'ephemeral') SÍ se guarda y suma
-  // "sin leer" (que lo vea un humano), pero NO cancela recordatorios ni dispara al
-  // agente de inmediato (H26) — si el agente está activo, el barredor lo retoma luego.
-  if (!esSinContenido) {
-    // El cliente volvió a escribir → cancela los recordatorios que el agente tenía pendientes
-    // para este chat (ya retomaron la conversación, no hace falta el seguimiento automático).
-    // EXCEPCIÓN (bug 7-jun): un mensaje de PURA cortesía ("Gracias 🙏", "ok", "muchas gracias")
-    // no retoma nada — antes cancelaba hasta un recordatorio agendado a DÍAS y el seguimiento
-    // moría en silencio (caso real: recordatorio del abono de la boleta 6427 para el jueves,
-    // cancelado por un "Gracias"). En la duda se cancela como siempre (conservador).
-    if (!esCortesiaPura(tipo, texto)) await cancelarRecordatorios(telefono, lineaId);
+  // H71: TODOS los efectos secundarios solo corren para un mensaje NUEVO. Un reintento
+  // tardío de Meta (puede llegar minutos u horas después) ANTES re-ejecutaba todo con un
+  // mensaje VIEJO: cancelaba recordatorios recién programados, inflaba "sin leer" y
+  // renovaba la ventana de 24h con una hora falsa.
+  if (esMsgNuevo) {
+    if (conversacion && conversacion.id && !conversacion.esNuevo) {
+      const cambios = {
+        ultimo_mensaje: preview?.slice(0, 200) ?? null,
+        ultimo_at: ts,
+        ultimo_entrante: true,   // el último mensaje lo mandó el cliente → falta responder
+        // Cada mensaje del cliente renueva la ventana gratis de 24h.
+        ventana_vence_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        no_leidos: (conversacion.no_leidos || 0) + 1,
+      };
+      if (nombrePerfil) cambios.nombre_perfil = nombrePerfil;
+      try { await supabaseAdmin.from('conversaciones_whatsapp').update(cambios).eq('id', conversacion.id); } catch (_) {}
+    }
 
-    // Disparadores: si el mensaje contiene una palabra clave configurada, o si es un cliente NUEVO
-    // (primer mensaje) y hay un disparador de ese tipo, prende el agente en este chat.
-    await activarPorDisparador(telefono, lineaId, texto, !!(conversacion && conversacion.esNuevo));
+    // Un tipo SIN contenido legible ('unsupported'/'ephemeral') SÍ se guarda y suma
+    // "sin leer" (que lo vea un humano), pero NO cancela recordatorios ni dispara al
+    // agente de inmediato (H26) — si el agente está activo, el barredor lo retoma luego.
+    if (!esSinContenido) {
+      // El cliente volvió a escribir → cancela los recordatorios que el agente tenía pendientes
+      // para este chat (ya retomaron la conversación, no hace falta el seguimiento automático).
+      // EXCEPCIÓN (bug 7-jun): un mensaje de PURA cortesía ("Gracias 🙏", "ok", "muchas gracias")
+      // no retoma nada — antes cancelaba hasta un recordatorio agendado a DÍAS y el seguimiento
+      // moría en silencio (caso real: recordatorio del abono de la boleta 6427 para el jueves,
+      // cancelado por un "Gracias"). En la duda se cancela como siempre (conservador).
+      if (!esCortesiaPura(tipo, texto)) await cancelarRecordatorios(telefono, lineaId);
 
-    // Si el agente está activo en este chat, dispararlo de una (sin depender del navegador).
-    // H86: aquí solo se ANOTA; el disparo real lo hace el handler UNA vez por conversación
-    // al final del webhook (una ráfaga de 3 mensajes ya no lanza 3 invocaciones del motor).
-    if (paraDisparar) paraDisparar.set(telefono + '|' + lineaId, { telefono, lineaId });
+      // Disparadores: si el mensaje contiene una palabra clave configurada, o si es un cliente NUEVO
+      // (primer mensaje) y hay un disparador de ese tipo, prende el agente en este chat.
+      await activarPorDisparador(telefono, lineaId, texto, !!(conversacion && conversacion.esNuevo));
+
+      // Si el agente está activo en este chat, dispararlo de una (sin depender del navegador).
+      // H86: aquí solo se ANOTA; el disparo real lo hace el handler UNA vez por conversación
+      // al final del webhook (una ráfaga de 3 mensajes ya no lanza 3 invocaciones del motor).
+      if (paraDisparar) paraDisparar.set(telefono + '|' + lineaId, { telefono, lineaId });
+    }
   }
 
   // ¿El mensaje quedó guardado de verdad? (lo usa el handler para decidir si pedirle
@@ -298,19 +322,11 @@ async function actualizarEstado(s) {
     .eq('wa_message_id', s.id);
 }
 
-// ── Crear o actualizar la conversación (el chat del cliente) ────────────────
-async function upsertConversacion(telefono, nombrePerfil, preview, ts, esEntrante, lineaId) {
-  const cambios = {
-    ultimo_mensaje: preview?.slice(0, 200) ?? null,
-    ultimo_at: ts,
-    ultimo_entrante: esEntrante,   // el último mensaje lo mandó el cliente → falta responder
-  };
-  if (nombrePerfil) cambios.nombre_perfil = nombrePerfil;
-  // Cada mensaje del cliente renueva la ventana gratis de 24h.
-  if (esEntrante) {
-    cambios.ventana_vence_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-  }
-
+// ── Buscar o crear la conversación (el chat del cliente) ────────────────────
+// H71: esta función ya NO actualiza contadores/ventana/último-mensaje de un chat existente:
+// eso lo hace guardarEntrante SOLO si el mensaje resultó ser nuevo (no un reintento de Meta).
+// Si el chat no existe, sí se crea completo (un chat nuevo implica mensaje nuevo).
+async function buscarOCrearConversacion(telefono, nombrePerfil, preview, ts, esEntrante, lineaId) {
   // El chat es único por (línea + teléfono): el mismo cliente puede escribirle a varias líneas.
   let busqueda = supabaseAdmin
     .from('conversaciones_whatsapp')
@@ -318,18 +334,18 @@ async function upsertConversacion(telefono, nombrePerfil, preview, ts, esEntrant
     .eq('telefono', telefono);
   busqueda = lineaId ? busqueda.eq('linea_id', lineaId) : busqueda.is('linea_id', null);
   const { data: existente } = await busqueda.maybeSingle();
+  if (existente) return { id: existente.id, esNuevo: false, no_leidos: existente.no_leidos || 0 };
 
-  if (existente) {
-    if (esEntrante) cambios.no_leidos = (existente.no_leidos || 0) + 1;
-    await supabaseAdmin
-      .from('conversaciones_whatsapp')
-      .update(cambios)
-      .eq('id', existente.id);
-    return { id: existente.id, esNuevo: false };
-  }
-
-  const fila = { telefono, linea_id: lineaId, ...cambios };
+  const fila = {
+    telefono,
+    linea_id: lineaId,
+    ultimo_mensaje: preview?.slice(0, 200) ?? null,
+    ultimo_at: ts,
+    ultimo_entrante: esEntrante,
+  };
+  if (nombrePerfil) fila.nombre_perfil = nombrePerfil;
   if (esEntrante) {
+    fila.ventana_vence_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
     fila.no_leidos = 1;
     fila.estado = 'bot';
   }
@@ -338,7 +354,7 @@ async function upsertConversacion(telefono, nombrePerfil, preview, ts, esEntrant
     .insert(fila)
     .select('id')
     .single();
-  return { id: nueva?.id, esNuevo: true };   // esNuevo = es la primera vez que este cliente escribe
+  return { id: nueva?.id, esNuevo: true, no_leidos: 1 };   // esNuevo = primera vez que escribe
 }
 
 // ── Sacar el texto y el tipo de cualquier mensaje que mande Meta ────────────

@@ -1449,7 +1449,8 @@ async function cargarFicha(telefono){
   }
   if(!registrado){
     p.innerHTML = `<div class="pcard"><div class="pnuevo"><b>Cliente nuevo</b><br><span>No está registrado en la base de datos ni tiene boletas.</span></div></div>`;
-    fichaCostoIA(c);
+    fichaVerificacionPago(c);
+  fichaCostoIA(c);
     return;
   }
 
@@ -1473,20 +1474,63 @@ async function cargarFicha(telefono){
     : `<div class="pcard"><div class="pnuevo"><b>Sin boletas en la rifa actual</b><br><span>Este cliente está registrado pero no tiene boletas de la rifa actual.</span></div></div>`;
 
   p.innerHTML = cardCliente + resto;
+  fichaVerificacionPago(c);
   fichaCostoIA(c);
+}
+
+// Visor del RELOJITO de verificación de pago (todos los perfiles). Responde "¿el sistema
+// SIGUE intentando verificar el pago de este chat, o ya se rindió y me toca a mí?".
+// Muestra la verificación más reciente de las últimas 48h; si no hay, no sale nada.
+function fichaVerificacionPago(conv){
+  if(!conv || !conv.telefono) return;
+  const tel = conv.telefono;
+  api('verificaciones', { linea_id: lineaActual, telefono: tel }).then(r => {
+    if(actual !== tel) return;                      // el usuario cambió de chat mientras cargaba
+    if(r.status !== 'ok' || !r.verificaciones || !r.verificaciones.length) return;
+    const v = r.verificaciones[0];                  // la más reciente
+    const edadMs = Date.now() - new Date(v.created_at).getTime();
+    if(edadMs > 48 * 3600 * 1000) return;           // vieja → ya no es operativa, no estorbar
+    const hora = (x) => x ? new Date(x).toLocaleString('es-CO', { timeZone:'America/Bogota', hour:'numeric', minute:'2-digit', hour12:true }) : '—';
+    const maxI = Number(v.max_intentos || 4), nI = Number(v.intentos || 0);
+    let color = '#fff8e6', borde = '#f0d890', html = '';
+    if(v.estado === 'pendiente' || v.estado === 'en_proceso'){
+      html = `<b>🕐 El sistema SIGUE verificando este pago solo.</b><br>
+        Va en el intento <b>${Math.max(nI,1)} de ${maxI}</b> (cada ~15 min). Próximo intento: <b>${hora(v.proximo_intento_at)}</b>.<br>
+        <span style="color:#8a6d1a">No hace falta hacer nada todavía: si los ${maxI} fallan, el chat queda etiquetado 🆘 ASESOR y ahí sí es tu turno.</span>`;
+    } else if(v.estado === 'abonado'){
+      color = '#ecf8ef'; borde = '#bfe3c8';
+      html = `<b>✅ Pago verificado y ABONADO</b> (${hora(v.actualizado_at)}).<br><span style="color:#4a7a55">${esc(v.resultado || '')}</span>`;
+    } else if(v.estado === 'rendido'){
+      color = '#fdecec'; borde = '#f0b8b8';
+      html = `<b>🆘 El sistema YA SE RINDIÓ con este pago</b> (${hora(v.actualizado_at)}, tras ${nI} intento${nI === 1 ? '' : 's'}).<br>
+        <b>Le toca a un asesor</b> revisarlo a mano (el chat quedó etiquetado).<br>
+        <span style="color:#a05252">Motivo: ${esc(v.resultado || 'no se encontró el pago')}</span>`;
+    } else if(v.estado === 'cancelado'){
+      color = '#f3f3f3'; borde = '#e0e0e0';
+      html = `<b>Verificación cancelada</b> (${hora(v.actualizado_at)}) — normalmente porque el pago se registró por otro camino.<br><span style="color:#777">${esc(v.resultado || '')}</span>`;
+    } else { return; }
+    const box = document.createElement('div');
+    box.className = 'pcard';
+    box.style.cssText = 'background:' + color + ';border:1px solid ' + borde;
+    box.innerHTML = `<div class="psub">💳 Verificación del pago (foto del ${hora(v.created_at)})</div>
+      <div style="text-align:left;font-size:13px;line-height:1.5;padding:6px 0">${html}</div>`;
+    const p = $('panelBody'); if(p) p.appendChild(box);
+  }).catch(() => {});
 }
 
 // Costo de IA acumulado en ESTE chat (solo Mateo). Se agrega al final de la ficha; si el
 // agente no ha gastado nada en este chat, no se muestra la tarjeta.
 function fichaCostoIA(conv){
-  if(!soyMateo || !conv || !conv.id) return;
+  // N2: basta el teléfono — si el chat no está en la lista cargada (abierto desde el
+  // buscador, o fuera de los 300, o filtrado), el servidor resuelve la conversación solo.
+  if(!soyMateo || !conv || !conv.telefono) return;
   const tel = conv.telefono;
   const box = document.createElement('div');
   box.className = 'pcard';
   box.id = 'fichaCostoIA';
   box.innerHTML = '<div class="psub">🤖 Costo de IA en este chat</div><div class="pmuted" style="text-align:left;padding:6px 0">Calculando…</div>';
   $('panelBody').appendChild(box);
-  api('agente-costo', { accion:'chat', linea_id: lineaActual, conversacion_id: conv.id }).then(r => {
+  api('agente-costo', { accion:'chat', linea_id: lineaActual, conversacion_id: conv.id || null, telefono: tel }).then(r => {
     if(actual !== tel) return;            // el usuario cambió de chat mientras cargaba
     const el = $('fichaCostoIA'); if(!el) return;
     if(r.status === 'ok' && r.chat && Number(r.chat.llamadas||0) > 0){
