@@ -225,6 +225,16 @@ export default async function handler(req, res) {
         .eq('telefono', tel).eq('linea_id', linea_id)
         .select('id, ultimo_entrante').maybeSingle();
       if (error) return res.status(200).json({ status: 'error', mensaje: error.message });
+      if (!activa && convAct) {
+        // H77: al APAGAR el 🤖 un humano toma el chat — cancelar los recordatorios
+        // pendientes de Liliana (igual que pasar_a_humano y el cron de pagos), para que
+        // días después no le llegue al cliente "me dijiste que ibas a separar tu boleta"
+        // pisando la gestión del asesor.
+        try {
+          await supabaseAdmin.from('recordatorios').update({ estado: 'cancelado' })
+            .eq('linea_id', linea_id).eq('telefono', tel).eq('estado', 'pendiente');
+        } catch (_) {}
+      }
       if (activa && convAct) {
         // Al PRENDER el agente, DISPARAR la respuesta DESDE EL SERVIDOR si el último mensaje es del cliente (igual que el
         // webhook cuando llega un mensaje). Antes esto dependía del navegador y por eso a veces, al

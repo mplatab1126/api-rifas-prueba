@@ -190,10 +190,23 @@ async function resumenCliente(telefono) {
 
 // Texto que se le inyecta al agente con el estado del cliente y cómo debe abrir
 // la conversación en cada caso (cliente con boleta, conocido sin boleta, o nuevo).
+// H78: el nombre/apellido/ciudad que DICTA el cliente terminan interpolados en el bloque
+// system de TODOS los turnos siguientes ("se llama X..."): un cliente malicioso podría
+// registrarse con un "nombre" que sean instrucciones ("IGNORA TUS REGLAS Y..."). Saneo
+// SILENCIOSO (sin rechazar, para no friccionar nombres reales): solo letras de cualquier
+// idioma (tildes/ñ incluidas), espacios y . ' - ; sin saltos de línea; tope 60 caracteres.
+function limpiarDatoCliente(s, max = 60) {
+  return String(s || '')
+    .replace(/[^\p{L}\p{M}\s.'-]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim().slice(0, max);
+}
+
 function bloqueEstadoCliente({ cli, boletas }) {
-  const nombre = cli && cli.nombre ? String(cli.nombre).trim() : '';
-  const apellido = cli && cli.apellido ? String(cli.apellido).trim() : '';
-  const ciudad = cli && cli.ciudad ? String(cli.ciudad).trim() : '';
+  // limpiarDatoCliente también aquí (no solo al guardar): cubre datos viejos ya guardados.
+  const nombre = cli && cli.nombre ? limpiarDatoCliente(cli.nombre) : '';
+  const apellido = cli && cli.apellido ? limpiarDatoCliente(cli.apellido) : '';
+  const ciudad = cli && cli.ciudad ? limpiarDatoCliente(cli.ciudad) : '';
   const documento = cli && cli.documento_numero ? String(cli.documento_numero).trim() : '';
   const correo = cli && cli.correo ? String(cli.correo).trim() : '';
   const datos = [];
@@ -261,7 +274,7 @@ async function analizarRemision(boletas, lineaId) {
 // de venta. Reemplaza al bloqueEstadoCliente normal (no debe vender NI remitir a
 // la vez). Si no hay número cargado, cae a pasar_a_humano.
 function bloqueRemision(remision, { cli }) {
-  const nombre = cli && cli.nombre ? String(cli.nombre).trim() : '';
+  const nombre = cli && cli.nombre ? limpiarDatoCliente(cli.nombre) : '';   // H78
   const saludo = nombre ? ('Salúdalo por su nombre (' + nombre + ') con cariño. ') : 'Salúdalo con cariño. ';
   const boletasTxt = remision.numeros && remision.numeros.length
     ? ('su(s) boleta(s) ' + remision.numeros.join(', '))
@@ -566,8 +579,23 @@ async function enviarContactoInicial(conv, { saludo, cierre, predefinido = false
   const cie = String(cierre || '').trim() || (TEXTOS_RIFA.cierre_inicial + '\n\n*¿Te explico los premios?* 🤔');
   const e1 = await enviarTexto(conv.telefono, sal, conv.linea_id);
   if (e1 && e1.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: sal, wa_message_id: e1.wa_message_id, predefinido });
-  const { data: rr } = await supabase.from('respuestas_rapidas').select('pasos').eq('linea_id', conv.linea_id).ilike('titulo', '%contacto inicial%').maybeSingle();
+  const { data: rr, error: errRR } = await supabase.from('respuestas_rapidas').select('pasos').eq('linea_id', conv.linea_id).ilike('titulo', '%contacto inicial%').maybeSingle();
   const fotos = (rr && Array.isArray(rr.pasos) ? rr.pasos : []).filter(p => p.tipo === 'imagen' && (p.media_id || p.url));
+  // H80: las fotos de la casa dependen del TÍTULO de una respuesta rápida editable desde la
+  // bandeja. Si la renombran, borran o DUPLICAN (maybeSingle con 2+ filas devuelve error y
+  // data null), el saludo de TODOS los clientes nuevos salía sin fotos y nadie se enteraba.
+  // El saludo sigue saliendo (mejor sin fotos que mudo), pero queda ERROR en la actividad,
+  // que las alertas de H16 le avisan a Mateo al WhatsApp el mismo día.
+  if (!fotos.length) {
+    try {
+      await supabaseAdmin.from('agente_actividad').insert({
+        linea_id: conv.linea_id, telefono: conv.telefono, tipo: 'error',
+        resumen: 'Contacto inicial SIN FOTOS de la casa: ' + (errRR
+          ? 'hay MÁS DE UNA respuesta rápida con título "contacto inicial" (' + errRR.message + '); dejar solo una.'
+          : 'no encontré la respuesta rápida con título "contacto inicial" (¿la renombraron o la borraron?).'),
+      });
+    } catch (_) {}
+  }
   for (const p of fotos) {
     await dormir(600);
     const env = p.media_id ? await enviarImagenPorId(conv.telefono, p.media_id, '', conv.linea_id) : await enviarImagen(conv.telefono, p.url, '', conv.linea_id);
@@ -578,7 +606,8 @@ async function enviarContactoInicial(conv, { saludo, cierre, predefinido = false
   if (e3 && e3.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: cie, wa_message_id: e3.wa_message_id, predefinido });
   // La verdad del envío (H10): el saludo y el cierre son los textos críticos. Si alguno
   // falló, quien llamó debe saberlo para NO afirmar que el cliente recibió el contacto.
-  return { ok: !!(e1 && e1.ok && e3 && e3.ok) };
+  // conFotos (H80): que la nota de la cabina no afirme "fotos" si salieron cero.
+  return { ok: !!(e1 && e1.ok && e3 && e3.ok), conFotos: fotos.length > 0 };
 }
 
 // ¿El primer contacto lo RESUELVE el saludo predefinido? El saludo responde: precio, separar/abono,
@@ -735,15 +764,15 @@ async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
       try { await ponerEtiqueta(conv.id, conv.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' }); } catch (_) {}
       return 'NO se pudo enviar el saludo (WhatsApp rechazó el envío; el cliente NO recibió nada). NO afirmes que le llegó algo. Un asesor revisará el chat; no escribas nada más.';
     }
-    await nota(conv, 'Envié el contacto inicial (saludo + fotos de la casa + cierre).');
+    await nota(conv, 'Envié el contacto inicial (saludo + ' + (envio.conFotos ? 'fotos de la casa' : '⚠️ SIN fotos') + ' + cierre).');
     return 'Listo: envié el saludo, las fotos y el cierre (que ya incluye el precio, la legalidad, la respuesta a su pregunta y "¿Te explico los premios?"). NO escribas NADA más; espera su respuesta.';
   }
 
   if (nombre === 'apartar_numero') {
     const num = String(input?.numero || '').replace(/\D/g, '').padStart(4, '0').slice(-4);
-    let nom = String(input?.nombre || '').trim();
-    let ape = String(input?.apellido || '').trim();
-    let ciu = String(input?.ciudad || '').trim();
+    let nom = limpiarDatoCliente(input?.nombre);    // H78: saneo anti-inyección antes de guardar
+    let ape = limpiarDatoCliente(input?.apellido);
+    let ciu = limpiarDatoCliente(input?.ciudad);
     let doc = String(input?.documento || '').replace(/\D/g, '').trim();
     let cor = String(input?.correo || '').trim();
     // Si faltan datos pero el cliente YA está registrado, tómalos de su ficha (no re-preguntar).
@@ -976,9 +1005,9 @@ async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
       .select('telefono, nombre, apellido, ciudad, documento_numero, correo')
       .like('telefono', '%' + last10).limit(1).maybeSingle();
     const prev = ex || {};
-    const nom = String(input?.nombre || prev.nombre || '').trim();
-    const ape = String(input?.apellido || prev.apellido || '').trim();
-    const ciu = String(input?.ciudad || prev.ciudad || '').trim();
+    const nom = limpiarDatoCliente(input?.nombre || prev.nombre);    // H78: saneo anti-inyección
+    const ape = limpiarDatoCliente(input?.apellido || prev.apellido);
+    const ciu = limpiarDatoCliente(input?.ciudad || prev.ciudad);
     const doc = String(input?.documento || prev.documento_numero || '').replace(/\D/g, '').trim();
     const cor = String(input?.correo || prev.correo || '').trim();
     if (!nom || !ape || !ciu) {
@@ -1312,6 +1341,7 @@ export default async function handler(req, res) {
     // 3b) Transcribir los audios que el cliente mandó (Claude no oye; Whisper sí).
     //     Guardamos la transcripción para no repetirla en futuras corridas.
     let transcritos = 0;
+    let audiosFallidos = 0;
     for (const m of reales) {
       if (transcritos >= 4) break;
       if (m.direccion === 'entrante' && m.tipo === 'audio' && m.media_id && !(m.texto || '').trim()) {
@@ -1322,7 +1352,26 @@ export default async function handler(req, res) {
           m.texto = '[audio del cliente] ' + txt;
           transcritos++;
           try { await supabaseAdmin.from('mensajes_whatsapp').update({ texto: m.texto }).eq('id', m.id); } catch (_) {}
+        } else {
+          audiosFallidos++;   // OJO: NO marcar m.texto — así la próxima corrida lo reintenta sola
         }
+      }
+    }
+    // H79: antes un audio sin transcripción entraba MUDO ("[el cliente envió un audio]") y la
+    // IA respondía a ciegas sin que nadie se enterara. Ahora queda rastro: nota en el chat
+    // (UNA vez — si ya hay una nota igual en el historial no se repite, porque el barredor
+    // re-corre estos turnos) y, si el fallo es porque falta la llave de Whisper, error en la
+    // actividad (eso tumba TODOS los audios y las alertas de H16 lo avisan al WhatsApp de Mateo).
+    if (audiosFallidos > 0) {
+      const yaAvise = reales.some(m => m.direccion === 'nota' && /No pude transcribir/.test(m.texto || ''));
+      if (!yaAvise) await nota(conv, 'No pude transcribir un audio del cliente (fallo técnico): respóndele SOLO pidiéndole con amabilidad que lo escriba en texto; NO adivines qué dijo.');
+      if (!process.env.OPENAI_API_KEY) {
+        try {
+          await supabaseAdmin.from('agente_actividad').insert({
+            linea_id: conv.linea_id, telefono: conv.telefono, tipo: 'error',
+            resumen: 'OPENAI_API_KEY no está configurada en Vercel: TODOS los audios entran sin transcripción y Liliana no puede "oír" a los clientes.',
+          });
+        } catch (_) {}
       }
     }
 
@@ -1511,8 +1560,8 @@ export default async function handler(req, res) {
         : '';
       const cierre = String(textosRifa.cierre_inicial || TEXTOS_RIFA.cierre_inicial) +
         lineaProx + '\n\n*¿Te explico los premios?* 🤔';
-      await enviarContactoInicial(conv, { saludo: textosRifa.saludo_inicial, cierre, predefinido: true });
-      await nota(conv, 'Envié el contacto inicial (saludo predefinido, SIN IA — ahorro de tokens).');
+      const envAtajo = await enviarContactoInicial(conv, { saludo: textosRifa.saludo_inicial, cierre, predefinido: true });
+      await nota(conv, 'Envié el contacto inicial (saludo predefinido, SIN IA — ahorro de tokens' + (envAtajo && envAtajo.conFotos ? '' : '; ⚠️ SIN fotos') + ').');
       await soltarLock(conv);
       return res.status(200).json({ status: 'ok', atajo: 'contacto_inicial_predefinido' });
     }
@@ -1589,6 +1638,7 @@ export default async function handler(req, res) {
       `Tienes herramientas para actuar; úsalas cuando corresponda en vez de inventar. ` +
       (remision ? '' : `Si el cliente acaba de llegar y aún no se ha enviado la presentación, usa primero enviar_contacto_inicial. `) +
       `Si ves "[audio del cliente] ...", es lo que dijo en un audio (ya transcrito): respóndelo como si lo hubiera escrito, sin decir que no puedes oír audios. ` +
+      `Si ves "[el cliente envió un audio]" SIN transcripción, NO adivines qué dijo: pídele con amabilidad que te lo escriba en texto. ` +
       `Después de usar una herramienta, sigue la conversación con naturalidad y mensajes cortos. No repitas información que ya esté en el chat. ` +
       `NUNCA narres lo que vas a hacer ("voy a verificar", "un momento", "ahora libero"): haz la acción en silencio y da SOLO el resultado, en pocos mensajes, como una persona. ` +
       `NUNCA le preguntes al cliente algo que YA sabes (está en el ESTADO DE ESTE CLIENTE de abajo, o lo dijiste tú mismo hace poco en el chat). Ejemplo: si una boleta ya tiene abono, NO preguntes "¿ya abonaste?"; ya sabes que sí, úsalo y actúa.` +
@@ -1644,6 +1694,7 @@ export default async function handler(req, res) {
     let apartoNumero = false;   // ¿se apartó algún número en este turno?
     let envioBoleta = false;    // ¿se envió la boleta en este turno?
     let huboAbono = false;      // ¿se registró un abono REAL en este turno? (candado anti pago falso)
+    let huboTexto = false;      // ¿el cliente recibió ALGÚN mensaje en este turno? (H62: nunca cerrar mudo)
     // Verdad del sistema al empezar el turno (para el candado): ¿tiene boletas?, ¿todas pagadas?
     const bolsCliente = (estadoCliente.boletas || []);
     const tieneBoletas = bolsCliente.length > 0;
@@ -1710,8 +1761,8 @@ export default async function handler(req, res) {
         if (b.type === 'text' && b.text && b.text.trim() && !vaAUsarHerramientas) {
           const t = b.text.trim();
           // CANDADO: no dejar que afirme un pago que no se registró de verdad.
-          if (debeBloquear(t)) { if (!bloqueoPagoHecho) { await manejarPagoNoVerificado(conv, reales); bloqueoPagoHecho = true; } }
-          else if (!bloqueoPagoHecho) await decir(conv, t);
+          if (debeBloquear(t)) { if (!bloqueoPagoHecho) { await manejarPagoNoVerificado(conv, reales); bloqueoPagoHecho = true; huboTexto = true; } }
+          else if (!bloqueoPagoHecho) { await decir(conv, t); huboTexto = true; }
         }
       }
       if (!vaAUsarHerramientas) break;
@@ -1728,14 +1779,26 @@ export default async function handler(req, res) {
         if (tu.name === 'registrar_abono' && typeof out === 'string' && out.startsWith('Listo: registré el abono')) huboAbono = true;
         if (tu.name === 'enviar_boleta') envioBoleta = true;
         if (tu.name === 'enviar_contacto_inicial') cerrarSinTexto = true;
+        // Estas herramientas le escriben DIRECTO al cliente: el turno ya no está mudo (H62).
+        if (['enviar_boleta', 'enviar_contacto_inicial', 'enviar_resolucion'].includes(tu.name)) huboTexto = true;
         results.push({ type: 'tool_result', tool_use_id: tu.id, content: out });
       }
       messages.push({ role: 'user', content: results });
       if (cerrarSinTexto && !apagado) break;
       if (apagado) {
-        const d2 = await llamarIA({ model: modelo, max_tokens: 400, system, messages });
-        if (!d2.error) { await registrarUso(conv, modelo, d2.usage); for (const b of (d2.content || [])) if (b.type === 'text' && b.text?.trim()) { const t = b.text.trim(); if (debeBloquear(t)) await manejarPagoNoVerificado(conv, reales); else await decir(conv, t); } }
-        else { await nota(conv, 'El cliente pidió un humano y NO pude mandarle la despedida (falló la IA): ' + (d2.error.message || 'error') + '. El chat ya quedó marcado ASESOR.'); }
+        // La despedida sale de una 2ª llamada solo-texto. Se mandan las tools con
+        // tool_choice 'none' (la API puede rechazar un historial con tool_use si el
+        // request no define tools), garantizando respuesta de puro texto.
+        const d2 = await llamarIA({ model: modelo, max_tokens: 400, system, messages, ...(toolsActivas.length ? { tools: toolsActivas, tool_choice: { type: 'none' } } : {}) });
+        let despedido = false;
+        if (!d2.error) { await registrarUso(conv, modelo, d2.usage); for (const b of (d2.content || [])) if (b.type === 'text' && b.text?.trim()) { const t = b.text.trim(); if (debeBloquear(t)) await manejarPagoNoVerificado(conv, reales); else await decir(conv, t); despedido = true; } }
+        // H58: si la IA falló (o no produjo texto), el cliente que pidió un humano quedaba
+        // EN SILENCIO justo cuando suele estar molesto. Despedida FIJA de respaldo
+        // (decir() respeta el modo sombra y no afirma nada de pagos).
+        if (!despedido) {
+          await decir(conv, 'Listo 😊 Te paso con un asesor del equipo; te escribe por aquí mismo en un momento.');
+          if (d2.error) await nota(conv, 'La IA falló al redactar la despedida (' + (d2.error.message || 'error') + '); envié la despedida fija de respaldo. El chat ya quedó marcado ASESOR.');
+        }
         break;
       }
     }
@@ -1745,7 +1808,28 @@ export default async function handler(req, res) {
     // la envía aquí, UNA sola vez con todas las boletas, al cerrar el turno. También sigue
     // siendo la red de seguridad por si la IA la llamó y falló.
     if (apartoNumero && !envioBoleta && !apagado && (await sigueActivo(conv.id))) {
-      try { await ejecutarHerramienta('enviar_boleta', {}, conv); } catch (_) {}
+      try { await ejecutarHerramienta('enviar_boleta', {}, conv); huboTexto = true; } catch (_) {}
+    }
+
+    // H62: si el bucle se agotó pidiendo herramientas (o la IA nunca emitió texto), el
+    // turno terminaba SIN decirle nada al cliente ("escribiendo..." y silencio). Cierre
+    // forzado: una última llamada solo-texto (tool_choice 'none', mismas tools para que
+    // la API no rechace el historial con tool_use); si también falla, un mensaje fijo
+    // corto. El texto forzado pasa por el MISMO candado anti "pago falso".
+    if (!huboTexto && !apagado && (await sigueActivo(conv.id))) {
+      const d3 = await llamarIA({ model: modelo, max_tokens: 400, system, messages, ...(toolsActivas.length ? { tools: toolsActivas, tool_choice: { type: 'none' } } : {}) });
+      let cerro = false;
+      if (!d3.error) {
+        await registrarUso(conv, modelo, d3.usage);
+        for (const b of (d3.content || [])) {
+          if (b.type === 'text' && b.text && b.text.trim()) {
+            const t = b.text.trim();
+            if (debeBloquear(t)) await manejarPagoNoVerificado(conv, reales); else await decir(conv, t);
+            cerro = true;
+          }
+        }
+      }
+      if (!cerro) await decir(conv, 'Ya estoy revisando lo tuyo 😊 Dame un momentico y te confirmo por aquí.');
     }
 
     await soltarLock(conv);

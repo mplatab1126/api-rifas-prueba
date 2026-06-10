@@ -26,6 +26,40 @@
 
 ---
 
+## 2026-06-10 — [WhatsApp] — Tanda 7 (verdes): Liliana nunca cierra muda + saneo anti-inyección
+
+**Qué hicimos (6 verdes de la auditoría, ninguno toca dinero):**
+- **H62 — nunca cerrar el turno en silencio:** si el bucle de la IA se agota pidiendo
+  herramientas (o nunca emite texto), antes el cliente veía "escribiendo..." y NADA. Ahora una
+  bandera `huboTexto` vigila el turno; si quedó mudo, se fuerza un cierre solo-texto
+  (`tool_choice:'none'`) y, si también falla, sale un mensaje fijo corto. Pasa por el MISMO
+  candado anti "pago falso".
+- **H58 — despedida garantizada al pedir un humano:** si la 2ª llamada que redacta la
+  despedida falla, sale la fija: "Listo 😊 Te paso con un asesor...". Además esa llamada ya
+  manda las tools con `tool_choice:'none'` (la API puede rechazar historiales con tool_use si
+  el request no define tools — aplicado también al cierre de H62).
+- **H79 — audios que no se pudieron transcribir:** ya no entran mudos a la IA: nota en el chat
+  (una vez), instrucción explícita ("NO adivines qué dijo; pídele que lo escriba") y, si falta
+  la llave de Whisper (OPENAI_API_KEY), ERROR en actividad → alerta H16 al WhatsApp de Mateo.
+  OJO: no se marca el mensaje, para que el reintento automático de transcripción siga vivo.
+- **H78 — anti-inyección:** el nombre/apellido/ciudad que dicta el cliente terminan en el
+  bloque system de TODOS los turnos; un "nombre" malicioso podía colar instrucciones. Saneo
+  silencioso `limpiarDatoCliente` (solo letras Unicode + espacios + . ' - , tope 60 chars) al
+  guardar Y al mostrar (cubre datos viejos). "José D'Alessandro Ñuñez de Bogotá D.C." pasa intacto.
+- **H80 — fotos del saludo vigiladas:** si la respuesta rápida "contacto inicial" se renombra,
+  borra o duplica, el saludo salía SIN las fotos de la casa y la nota decía éxito. Ahora queda
+  ERROR en actividad (→ alerta H16) y la nota dice "⚠️ SIN fotos".
+- **H77 — recordatorios vs humano:** apagar el 🤖 desde la bandeja ya cancela los recordatorios
+  pendientes, y el cron de la plantilla a días verifica `agente_activo` antes de enviar (si está
+  apagado → 'cancelado'). Un asesor que toma un chat a mano ya no es pisado por "me dijiste que
+  ibas a separar tu boleta" días después.
+
+**Cuidado / pendiente:** la suite dorada NO se corrió en esta tanda (requiere la contraseña de
+gerencia; los cambios son redes de seguridad aditivas, no tocan el manual ni los flujos
+normales). Si algo suena raro en las despedidas o cierres, correr la suite desde un chat de
+Mateo. Los mensajes fijos nuevos ("Listo 😊 Te paso con un asesor...", "Ya estoy revisando lo
+tuyo 😊...") viven en `agente-responder.js`.
+
 ## 2026-06-10 — [WhatsApp] — H35: el embudo de ventas de Liliana ya se ve en la cabina
 
 **Qué hicimos:** Mateo solo medía el COSTO de la IA, no su RESULTADO. Nueva tarjeta **"Embudo de
