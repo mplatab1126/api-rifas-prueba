@@ -165,7 +165,9 @@ function esCoincidencia(c, datos, last10) {
   if (referencia && referencia !== '0' && String(referencia).toLowerCase() !== 'sin ref') {
     const refLimpia = String(referencia).replace(/\D/g, '');
     const refBD = String(c.referencia || '');
-    if (refBD.includes(referencia) || (refLimpia.length > 4 && refBD.includes(refLimpia))) return true;
+    // Mínimo 5 caracteres: una referencia cortada (ej. "12") coincidiría con
+    // casi cualquier transferencia del mismo monto y día.
+    if ((String(referencia).length > 4 && refBD.includes(referencia)) || (refLimpia.length > 4 && refBD.includes(refLimpia))) return true;
   }
   if (last10 && last10.length === 10 && String(c.referencia || '').includes(last10)) return true;
   if (hora_pago && c.hora_pago && c.hora_pago.substring(0, 5) === hora_pago.substring(0, 5)) return true;
@@ -183,7 +185,8 @@ function elegirSugerida(candidatas, datos, last10) {
     const refLimpia = String(referencia).replace(/\D/g, '');
     const m = candidatas.find(c => {
       const refBD = String(c.referencia || '');
-      return refBD.includes(referencia) || (refLimpia.length > 4 && refBD.includes(refLimpia));
+      // Mismo mínimo de 5 caracteres que en esCoincidencia
+      return (String(referencia).length > 4 && refBD.includes(referencia)) || (refLimpia.length > 4 && refBD.includes(refLimpia));
     });
     if (m) { m._razon = 'Coincide la referencia'; return m; }
   }

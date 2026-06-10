@@ -144,6 +144,22 @@ export default async function handler(req, res) {
     const idTransLimpio = (idTransferencia && idTransferencia.trim() !== '') ? idTransferencia.trim() : null;
 
     if (abonoNum > 0) {
+      // Consumir la transferencia ANTES de insertar el abono (candado anti doble
+      // abono, mismo patrón de abono.js): el update exige estado='LIBRE'; si otro
+      // proceso la consumió en estos segundos, no afecta fila y abortamos.
+      if (idTransLimpio) {
+        const { data: consumida, error: errConsumo } = await supabase
+          .from('transferencias')
+          .update({ estado: `ASIGNADA a boleta ${numeroLimpio}` })
+          .eq('id', idTransLimpio)
+          .eq('estado', 'LIBRE')
+          .select('id');
+        if (errConsumo) throw errConsumo;
+        if (!consumida || consumida.length === 0) {
+          return res.status(400).json({ status: 'error', mensaje: '🛑 Esta transferencia se acaba de asignar en otro proceso. Refresca y verifica antes de volver a intentar.' });
+        }
+      }
+
       const { error: abonoError } = await supabase.from('abonos').insert({
           numero_boleta: numeroLimpio,
           monto: abonoNum,
@@ -155,11 +171,21 @@ export default async function handler(req, res) {
           origen: esPendiente ? 'pendiente' : (esPagoInteligente || idTransLimpio) ? 'transferencia_real' : 'manual',
           id_transferencia: idTransLimpio
       });
+      if (abonoError) {
+        // Si el abono no se pudo guardar, devolvemos la transferencia a LIBRE
+        // (solo si nadie más la tocó) para no dejarla consumida sin abono.
+        if (idTransLimpio) {
+          await supabase
+            .from('transferencias')
+            .update({ estado: 'LIBRE' })
+            .eq('id', idTransLimpio)
+            .eq('estado', `ASIGNADA a boleta ${numeroLimpio}`);
+        }
+        throw abonoError;
+      }
 
-      // ASIGNACIÓN SEGURA AL ID DE LA BASE DE DATOS
-      if (idTransferencia && idTransferencia.trim() !== '') {
-        await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('id', idTransferencia);
-      } else if (referenciaAbono && referenciaAbono !== 'Sin Ref' && referenciaAbono !== 'efectivo' && referenciaAbono !== 'efectivo_oficina' && referenciaAbono !== '0') {
+      // Auto-asignación por referencia (solo cuando NO vino un id de transferencia)
+      if (!idTransLimpio && referenciaAbono && referenciaAbono !== 'Sin Ref' && referenciaAbono !== 'efectivo' && referenciaAbono !== 'efectivo_oficina' && referenciaAbono !== '0') {
         // ⚠️ Solo asignamos automáticamente si hay UNA SOLA transferencia LIBRE que coincida.
         // Si hay varias (caso típico de los pagos por llave Bre-B, que comparten la misma
         // referencia), NO asignamos ninguna al azar: la dejamos LIBRE para que el asesor
@@ -172,7 +198,13 @@ export default async function handler(req, res) {
           .eq('monto', abonoNum);
 
         if (libres && libres.length === 1) {
-          await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('id', libres[0].id);
+          // Condición estado='LIBRE' también aquí: si otro proceso la asignó en
+          // estos segundos, este update no afecta fila y no se pisa nada.
+          await supabase
+            .from('transferencias')
+            .update({ estado: `ASIGNADA a boleta ${numeroLimpio}` })
+            .eq('id', libres[0].id)
+            .eq('estado', 'LIBRE');
         }
       }
     }

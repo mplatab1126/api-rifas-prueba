@@ -157,6 +157,8 @@ export default async function handler(req, res) {
     // el agente Liliana manda su nombre para que la venta quede a su nombre.
     const asesorVenta = (req.body.asesor && String(req.body.asesor).trim()) || 'Pagina Web';
 
+    const ocupadasPedido = []; // las de ESTE pedido que ya alcanzamos a ocupar
+
     for (const b of checkData) {
       const precio = Number(b.precio_total) || PRECIOS.RIFA_4_CIFRAS;
       const boletaPayload = {
@@ -171,12 +173,35 @@ export default async function handler(req, res) {
       if (docNumeroLimpio) boletaPayload.documento_numero = docNumeroLimpio;
       if (correoLimpio) boletaPayload.correo = correoLimpio;
 
-      const { error: upErr } = await supabase
+      // Solo ocupa si SIGUE libre: si otro cliente la tomó entre el check
+      // inicial y este punto, el update no afecta ninguna fila.
+      const { data: upData, error: upErr } = await supabase
         .from('boletas')
         .update(boletaPayload)
-        .eq('numero', b.numero);
+        .eq('numero', b.numero)
+        .is('telefono_cliente', null)
+        .select('numero');
 
-      if (upErr) throw upErr;
+      if (upErr || !upData || upData.length === 0) {
+        // Revertimos las boletas de ESTE pedido que sí se ocuparon, con
+        // filtros estrictos (teléfono propio + sin abonos) para jamás
+        // soltar una boleta ajena.
+        for (const o of ocupadasPedido) {
+          await supabase
+            .from('boletas')
+            .update({ telefono_cliente: null, estado: 'LIBRE', total_abonado: 0, saldo_restante: o.precio })
+            .eq('numero', o.numero)
+            .eq('telefono_cliente', telefonoCliente)
+            .eq('total_abonado', 0);
+        }
+        if (upErr) throw upErr;
+        return res.status(400).json({
+          exito: false,
+          error: `El número ${b.numero} se acaba de ocupar por otro cliente. Por favor elige otro.`,
+        });
+      }
+
+      ocupadasPedido.push({ numero: b.numero, precio });
     }
 
     // 5. Registramos en la bitácora (una línea por boleta reservada)

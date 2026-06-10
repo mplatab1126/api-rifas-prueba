@@ -58,6 +58,16 @@ export default async function handler(req, res) {
   const pwd = contrasenaGerencia();
   if (!pwd) return res.status(200).json({ status: 'error', mensaje: 'Falta la configuración de contraseña de gerencia.' });
 
+  // Rescate de huérfanas: si una corrida murió a mitad de verificación, su fila queda
+  // 'en_proceso' para siempre (y bloquearía nuevas verificaciones de ese chat). Pasados
+  // 10 min sin movimiento la devolvemos a 'pendiente' para que se reintente.
+  const hace10min = new Date(Date.now() - 10 * 60000).toISOString();
+  await supabaseAdmin
+    .from('verificaciones_pago')
+    .update({ estado: 'pendiente', actualizado_at: new Date().toISOString() })
+    .eq('estado', 'en_proceso')
+    .lt('actualizado_at', hace10min);
+
   const ahora = new Date().toISOString();
   const { data: vencidas, error } = await supabaseAdmin
     .from('verificaciones_pago')
@@ -70,11 +80,14 @@ export default async function handler(req, res) {
 
   let abonados = 0, reintentos = 0, rendidos = 0;
   for (const v of (vencidas || [])) {
-    // Reclamar de forma atómica: subir intentos y reprogramar SOLO si nadie lo tomó ya
-    // (comparando intentos). Si otra corrida ganó, esta lo salta.
+    // Reclamar de forma atómica: marcar 'en_proceso', subir intentos y reprogramar SOLO
+    // si nadie lo tomó ya (comparando estado e intentos). Si otra corrida ganó, esta lo
+    // salta. El estado 'en_proceso' también le avisa al turno en vivo (registrar_abono)
+    // que NO procese este mismo comprobante en paralelo.
     const { data: claim } = await supabaseAdmin
       .from('verificaciones_pago')
       .update({
+        estado: 'en_proceso',
         intentos: v.intentos + 1,
         proximo_intento_at: new Date(Date.now() + REINTENTO_MS).toISOString(),
         actualizado_at: new Date().toISOString(),
@@ -129,7 +142,14 @@ export default async function handler(req, res) {
       await nota(v, 'Verificación con reintentos: no se confirmó el pago tras los intentos; me apagué y pasé el chat a un asesor EN SILENCIO (sin escribirle otra vez al cliente).', 'error');
       rendidos++;
     } else {
-      reintentos++;   // sigue pendiente (ya quedó reprogramado en el claim)
+      // Sigue pendiente: devolver la fila de 'en_proceso' a 'pendiente' para el próximo
+      // intento (la reprogramación ya quedó hecha en el claim). Condicional por si el
+      // turno en vivo la canceló/reemplazó mientras verificábamos.
+      await supabaseAdmin
+        .from('verificaciones_pago')
+        .update({ estado: 'pendiente', actualizado_at: new Date().toISOString() })
+        .eq('id', v.id).eq('estado', 'en_proceso');
+      reintentos++;
     }
   }
 

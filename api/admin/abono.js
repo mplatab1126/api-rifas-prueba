@@ -103,9 +103,29 @@ export default async function handler(req, res) {
              String(fechaCol.getMinutes()).padStart(2, '0') + ":" +
              String(fechaCol.getSeconds()).padStart(2, '0');
 
-    // 4. Insertar el Abono (solo llega aquí si pasó TODAS las validaciones)
+    // 4a. Consumir la transferencia ANTES de insertar el abono (candado anti doble abono).
+    // El update lleva la condición estado='LIBRE': si otro proceso (cron, otro asesor,
+    // Liliana) la consumió en estos segundos, no afecta ninguna fila y abortamos
+    // sin escribir nada. El check del paso 1 solo da un error temprano; ESTE es el candado.
     const idTransLimpio = (idTransferencia && idTransferencia.trim() !== '') ? idTransferencia.trim() : null;
+    const estadoTransferencia = Array.isArray(boletasRepartidas) && boletasRepartidas.length > 1
+      ? `ASIGNADA REPARTIDA: ${boletasRepartidas.map(b => String(b).trim()).filter(Boolean).join(', ')}`
+      : `ASIGNADA a boleta ${numeroLimpio}`;
 
+    if (idTransLimpio) {
+      const { data: consumida, error: errConsumo } = await supabase
+        .from('transferencias')
+        .update({ estado: estadoTransferencia })
+        .eq('id', idTransLimpio)
+        .eq('estado', 'LIBRE')
+        .select('id');
+      if (errConsumo) throw errConsumo;
+      if (!consumida || consumida.length === 0) {
+        return res.status(400).json({ status: 'error', mensaje: '🛑 Esta transferencia se acaba de asignar en otro proceso. Refresca y verifica antes de volver a intentar.' });
+      }
+    }
+
+    // 4b. Insertar el Abono (solo llega aquí si pasó TODAS las validaciones)
     const { error: insertError } = await supabase
       .from('abonos')
       .insert({
@@ -119,7 +139,18 @@ export default async function handler(req, res) {
         origen: esPendiente ? 'pendiente' : (esPagoInteligente || idTransLimpio) ? 'transferencia_real' : 'manual',
         id_transferencia: idTransLimpio
       });
-    if (insertError) throw insertError;
+    if (insertError) {
+      // Si el abono no se pudo guardar, devolvemos la transferencia a LIBRE para
+      // no dejarla consumida sin abono (solo si nadie más la tocó entre tanto).
+      if (idTransLimpio) {
+        await supabase
+          .from('transferencias')
+          .update({ estado: 'LIBRE' })
+          .eq('id', idTransLimpio)
+          .eq('estado', estadoTransferencia);
+      }
+      throw insertError;
+    }
 
     const estadoNuevo = nuevoSaldoRestante <= 0 ? 'Pagada' : 'Ocupada';
 
@@ -154,15 +185,10 @@ export default async function handler(req, res) {
     const { error: updateError } = await supabase.from('boletas').update(updatePayload).eq('numero', numeroLimpio);
     if (updateError) throw updateError;
 
-    // 7. Amarrar la referencia a la boleta (ASIGNACIÓN SEGURA POR ID)
-    // Si viene `boletasRepartidas`, la transferencia se reparte entre boletas de distintos clientes
-    // y el estado deja constancia de todas las boletas involucradas.
-    const estadoTransferencia = Array.isArray(boletasRepartidas) && boletasRepartidas.length > 1
-      ? `ASIGNADA REPARTIDA: ${boletasRepartidas.map(b => String(b).trim()).filter(Boolean).join(', ')}`
-      : `ASIGNADA a boleta ${numeroLimpio}`;
-    if (idTransferencia && idTransferencia.trim() !== '') {
-      await supabase.from('transferencias').update({ estado: estadoTransferencia }).eq('id', idTransferencia);
-    } else if (referencia && referencia !== 'Sin Ref' && referencia !== 'efectivo' && referencia !== 'efectivo_oficina' && referencia !== '0') {
+    // 7. Amarrar la referencia a la boleta. Con idTransferencia la asignación ya se
+    // hizo en el paso 4a (consumo condicional); aquí solo queda la auto-asignación
+    // por referencia cuando NO vino un id.
+    if (!idTransLimpio && referencia && referencia !== 'Sin Ref' && referencia !== 'efectivo' && referencia !== 'efectivo_oficina' && referencia !== '0') {
       // ⚠️ Solo asignamos automáticamente si hay UNA SOLA transferencia LIBRE que coincida.
       // Si hay varias (caso típico de los pagos por llave Bre-B, que comparten la misma
       // referencia), NO asignamos ninguna al azar: la dejamos LIBRE para que el asesor
@@ -175,7 +201,13 @@ export default async function handler(req, res) {
         .eq('monto', monto);
 
       if (libres && libres.length === 1) {
-        await supabase.from('transferencias').update({ estado: `ASIGNADA a boleta ${numeroLimpio}` }).eq('id', libres[0].id);
+        // Condición estado='LIBRE' también aquí: si otro proceso la asignó en estos
+        // segundos, este update no afecta fila y la asignación simplemente no se repite.
+        await supabase
+          .from('transferencias')
+          .update({ estado: `ASIGNADA a boleta ${numeroLimpio}` })
+          .eq('id', libres[0].id)
+          .eq('estado', 'LIBRE');
       }
     }
 

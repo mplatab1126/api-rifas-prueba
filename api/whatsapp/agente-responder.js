@@ -726,7 +726,36 @@ async function ejecutarHerramienta(nombre, input, conv) {
     const mediaId = imgs && imgs[0] && imgs[0].media_id;
     if (!mediaId) return 'El cliente NO ha mandado la foto del comprobante. Pídesela amablemente; sin el comprobante no puedo registrar el pago.';
 
-    // 2) Verificar contra los pagos REALES y abonar si hay coincidencia SÓLIDA (lógica probada).
+    // 2) Candado contra el cron de reintentos: si la verificación de este chat está
+    // 'en_proceso' AHORA MISMO (el relojito la está revisando en este instante), NO
+    // verificamos en paralelo — eso podía producir doble abono y mensajes contradictorios.
+    const hace10min = new Date(Date.now() - 10 * 60000).toISOString();
+    const { data: enProceso } = await supabaseAdmin
+      .from('verificaciones_pago')
+      .select('id').eq('conversacion_id', conv.id).eq('estado', 'en_proceso')
+      .gte('actualizado_at', hace10min).limit(1);
+    if (enProceso && enProceso.length) {
+      return 'Ese pago YA se está verificando en este preciso momento (el sistema lo está revisando contra el banco). NO intentes registrarlo otra vez: dile al cliente con calma que estás confirmando su pago y que le avisas por aquí apenas quede registrado.';
+    }
+    // Y al revés: si hay una verificación 'pendiente' agendada, la reclamamos nosotros
+    // (pasa a 'en_proceso') para que el cron no la procese mientras verificamos aquí.
+    const { data: claimRows } = await supabaseAdmin
+      .from('verificaciones_pago')
+      .update({ estado: 'en_proceso', actualizado_at: new Date().toISOString() })
+      .eq('conversacion_id', conv.id).eq('estado', 'pendiente')
+      .select('id');
+    const claimVerifId = claimRows && claimRows[0] && claimRows[0].id;
+    // Suelta el claim (si lo tomamos) en los caminos que no lo cierran ni lo reemplazan.
+    const soltarClaimVerif = async () => {
+      if (!claimVerifId) return;
+      try {
+        await supabaseAdmin.from('verificaciones_pago')
+          .update({ estado: 'pendiente', actualizado_at: new Date().toISOString() })
+          .eq('id', claimVerifId).eq('estado', 'en_proceso');
+      } catch (_) {}
+    };
+
+    // 3) Verificar contra los pagos REALES y abonar si hay coincidencia SÓLIDA (lógica probada).
     const numeroPedido = String(input?.numero || '').replace(/\D/g, '');
     const r = await verificarYAbonar({ telefono: conv.telefono, linea_id: conv.linea_id, conversacion_id: conv.id, mediaId, numeroPedido, pwd });
 
@@ -737,9 +766,11 @@ async function ejecutarHerramienta(nombre, input, conv) {
       return `Listo: registré el abono de $${Number(r.monto).toLocaleString('es-CO')} a la boleta ${r.numero}. Confírmaselo con alegría, agradécele y, si quieres que termine de pagar, recuérdale con cariño el saldo que le queda.`;
     }
     if (r.tipo === 'sin_saldo') {
+      await soltarClaimVerif();
       return 'El cliente no tiene boletas con saldo pendiente para abonar. Verifícalo o pásalo a un asesor.';
     }
     if (r.tipo === 'error') {
+      await soltarClaimVerif();
       await nota(conv, 'No pude verificar/registrar el comprobante: ' + (r.mensaje || 'error'));
       await ponerEtiqueta(conv.id, conv.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' });
       return 'No pude verificar el comprobante (' + (r.mensaje || 'error') + '). Avísale con tacto que un asesor lo revisa enseguida, y pásalo a un asesor.';
@@ -1474,12 +1505,14 @@ async function soltarLock(conv) {
   try { await supabaseAdmin.rpc('agente_soltar_lock', { p_conv: conv.id }); } catch (_) {}
 }
 
-// Cancela cualquier verificación de pago pendiente de este chat (best-effort).
+// Cancela cualquier verificación de pago activa de este chat (best-effort).
+// Cubre 'pendiente' y también 'en_proceso' (el claim que toma registrar_abono o el cron),
+// para que al reemplazar/cerrar no quede una fila viva que reviva después.
 async function cancelarVerificaciones(convId) {
   try {
     await supabaseAdmin.from('verificaciones_pago')
       .update({ estado: 'cancelado', actualizado_at: new Date().toISOString() })
-      .eq('conversacion_id', convId).eq('estado', 'pendiente');
+      .eq('conversacion_id', convId).in('estado', ['pendiente', 'en_proceso']);
   } catch (_) {}
 }
 
