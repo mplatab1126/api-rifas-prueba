@@ -155,7 +155,11 @@ Se REUSAN endpoints de plata del Admin (no se reescriben): `/api/admin/abono`, `
 - App **"Buzón Los Plata"** (id `2607182326463882`), Business `6736642543036723`.
 - **System User token** permanente en Vercel como `WHATSAPP_TOKEN` (permisos `whatsapp_business_messaging` +
   `whatsapp_business_management`). Otras env: `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN`
-  (=`losplata-buzon-2026`, es también el **secreto interno** del webhook/cron).
+  (=`losplata-buzon-2026`, SOLO para el handshake GET de Meta desde el 10-jun).
+- **Secreto interno** (10-jun, H39): las llamadas internas (webhook→motor, pg_cron→crons,
+  motor→reservar) usan **`AGENTE_INTERNO_SECRET`** (env de Vercel, 32 bytes; pieza
+  `api/lib/secreto-interno.js`, comparación a tiempo constante). Rotarlo = Vercel + los 4
+  pg_cron JUNTOS (`cron.alter_job`); emergencia: `ACEPTAR_VIEJO=true` y desplegar.
 - Webhook: `https://www.losplata.com.co/api/whatsapp/recibir`, suscrito a `messages`.
 
 **Líneas registradas:**
@@ -238,6 +242,10 @@ y los disparadores siguen SOLO de gerencia/Mateo** (candado `esMateo` + ocultos 
 - **registrar_abono** NO cree a la foto: toma el último comprobante del chat → `buscar-pago` lo compara contra las
   transferencias reales → solo si hay coincidencia REAL (`sugerida_id`) abona con `/api/admin/abono`. Si solo coincide
   "misma hora" o no hay match → NO abona, etiqueta ASESOR y pasa a humano.
+  *(10-jun H44: le presta a buscar-pago el base64 que el motor ya descargó —parámetro `media_base64`—
+  para no bajarlo de Meta dos veces; el cron conserva el fallback por media_id. 10-jun H30: al abonar,
+  `verificarYAbonar` marca la foto `pago_asignado` —también desde el cron— y el motor deja de adjuntar
+  a la IA las fotos ya asignadas o de >48h.)*
 - **liberar_boleta**: solo dueño + $0 abonado. **trasladar_abono**: ambas boletas del mismo teléfono.
 - El motor llama estos endpoints con la **contraseña de gerencia** (`ASESORES_SECRETO` → `contrasenaGerencia()`),
   usando la misma lógica probada que un humano.

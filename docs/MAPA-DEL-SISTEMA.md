@@ -47,7 +47,7 @@ mano; el `.js` se genera **solo** con el comando de construcción
 | `abonar.html` | El cliente paga el saldo pendiente de su boleta. |
 | `boleta.html` | El cliente consulta su boleta con el teléfono. |
 | `sorteo-en-vivo.html` | **Sorteo final en vivo.** Al cerrar cada rifa, el cliente se registra con su número de boleta para participar por premios sorpresa ($1.000.000 x3) que se anuncian en el en vivo de Facebook. Conecta con `registro-sorteo.js`. Es una **plantilla reutilizable**: el nombre de la rifa, la fecha del en vivo y el link de Facebook se cambian dentro del archivo. *(Antes `home-sorteo-apartamento.html`; rediseñada al estilo de marca el 2026-06-06.)* |
-| `canales-oficiales.html` | Lista de canales verificados (redes, WhatsApp, cuentas de pago). |
+| `canales-oficiales.html` | Lista de canales verificados (redes, WhatsApp, cuentas de pago). **2026-06-10** (H24): incluye la cuenta autorizada de Maria Buitrago (Nequi/Daviplata/Bre-B 3128732266 — la que cobra Liliana) y el aviso anti-estafas de la portada remite aquí. OJO: las páginas cargan los `.js` compilados — tras editar un `.jsx`, correr `npm run build`. |
 | `terminos-y-condiciones.html` | Términos y condiciones legales. |
 
 > **Responsive — vista de computador (2026-06-06):** las páginas de cliente
@@ -110,7 +110,8 @@ Compartidos por varias páginas:
 | `asesores.js` | Permisos: quién es gerencia, quién ve qué línea, quién es independiente. | **Alta** — 20+ funciones. |
 | `telefono.js` | Limpia y normaliza teléfonos (agrega 57, detecta duplicados). | **Alta**. |
 | `comprobante.js` | Lee comprobantes bancarios con IA (monto, referencia, fecha). **2026-06-09**: modelo actualizado a `claude-sonnet-4-6` (el anterior se retiraba el 15-jun; también en `procesar-ia.js`, `procesar-ia-gasto.js` y `analisis-ia.js`). | **Media**. |
-| `abono-agente.js` | Verifica un comprobante contra los pagos reales y abona si hay match sólido (misma lógica probada). La usan el agente y el cron de reintentos de pago. **2026-06-09**: resuelve el actor real (Liliana) ANTES de buscar el pago y se lo pasa a `buscar-pago` (fix del bug que botaba pagos como "sin saldo"; ver bitácora). | **Media**. |
+| `abono-agente.js` | Verifica un comprobante contra los pagos reales y abona si hay match sólido (misma lógica probada). La usan el agente y el cron de reintentos de pago. **2026-06-09**: resuelve el actor real (Liliana) ANTES de buscar el pago y se lo pasa a `buscar-pago` (fix del bug que botaba pagos como "sin saldo"; ver bitácora). **2026-06-10** (H30/H44): al abonar marca la foto "✅ pago asignado" (`marcarComprobanteAsignado` vive aquí ahora) y acepta `mediaBase64` opcional para no re-descargar el comprobante de Meta. | **Media**. |
+| `secreto-interno.js` | **2026-06-10** (H39): el secreto interno servidor-a-servidor (`AGENTE_INTERNO_SECRET`, comparación a tiempo constante). `secretoInterno()` para los emisores (webhook→motor, crons, motor→reservar) y `esSecretoInternoValido()` para los validadores. Si se rota el secreto: Vercel + los 4 pg_cron JUNTOS (ver bitácora 10-jun). | **Alta** — lo usan 8 archivos. |
 | `etiquetas.js` | Pone etiquetas a conversaciones de WhatsApp (sin duplicar). | **Media**. |
 | `auth-app.js` | Valida la sesión de la app móvil (token). | **Media**. |
 | `configuracion.js` | Interruptores globales del sistema (encender/apagar funciones). | **Baja**. |
