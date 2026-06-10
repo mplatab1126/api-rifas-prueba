@@ -26,6 +26,29 @@
 
 ---
 
+## 2026-06-10 — [WhatsApp] — Un "gracias" ya NO cancela los recordatorios del agente
+
+**Qué decidimos:** cuando el cliente escribe, el sistema cancelaba TODOS los recordatorios
+pendientes del chat (la idea era "ya retomó la conversación") — pero cancelaba incluso con un
+"Gracias 🙏", y un seguimiento agendado a días moría en silencio (caso real 7-jun: recordatorio del
+abono de la boleta 6427 para el jueves, cancelado por un "Gracias"; quedó en `recordatorios` id
+e3fe3b03). Mateo eligió el criterio "cortesía no cancela": un mensaje de PURA cortesía (solo
+palabras tipo gracias/ok/vale/perfecto, o solo emojis 🙏👍❤️) ya no cancela nada; cualquier mensaje
+con sustancia cancela como siempre.
+
+**Cómo:** función `esCortesiaPura(tipo, texto)` en `recibir.js`, delante de
+`cancelarRecordatorios`. Conservadora a propósito: lista corta de palabras; si trae un número
+(boleta/monto), si no es texto (foto/audio), o si hay CUALQUIER palabra fuera de la lista → se
+cancela como hoy. NO están en la lista las palabras que reabren la venta ("sí", "dale", "listo" —
+puede significar "ya pagué") ni los saludos ("buenas" = está iniciando contacto). Probada con 37
+casos (19 cortesías pasan, 18 sustancias cancelan), publicado en `27fd8b4` (deploy auto READY).
+
+**Cuidado / qué NO hacer:** si se agregan palabras a `PALABRAS_CORTESIA`, pensar si esa palabra
+puede significar "ya pagué" o "sigamos con la venta" — en la duda, dejarla FUERA (que cancele es el
+lado seguro). Esto NO toca el disparo del agente ni los disparadores: a un "gracias" Liliana sigue
+respondiendo normal; solo deja de matar el recordatorio. (Secundario aún pendiente: el cliente dijo
+"miércoles" y la IA agendó "jueves"; es el cálculo de `dias` que hace el modelo, no este código.)
+
 ## 2026-06-10 — [WhatsApp] — Tanda 3 de los amarillos (H46+H53, H41, H28) — y la alerta nueva cazó un caso real
 
 **Qué hicimos (verificado al aire, suite dorada 10/10):**

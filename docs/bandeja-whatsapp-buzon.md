@@ -104,6 +104,9 @@ Tablas del agente:
   (todas usan la misma URL). Además: **dispara el motor** del agente si está activo (`dispararAgenteSiActivo`,
   corte a 1.5s), **cancela recordatorios** pendientes cuando el cliente vuelve a escribir, **prende el agente
   por disparador** (`activarPorDisparador`) y captura la cita (`m.context.id → responde_a`).
+  *(10-jun: un mensaje de PURA cortesía —"Gracias 🙏", "ok", solo emojis— ya NO cancela los
+  recordatorios; `esCortesiaPura()`, lista conservadora: en la duda cancela como siempre. Las
+  reacciones y tipos sin contenido tampoco cancelan, H26.)*
 - **`enviar.js`** / **`enviar-archivo.js`** (foto/PDF del computador) / **`media.js`** (descarga con token de la línea).
 - **`conversaciones.js`** — lista de chats. Acepta `q` (búsqueda) y **`filtros`** (filtro avanzado del
   botón "Filtros": `{ modo:'y'|'o', condiciones:[etiqueta | sin_respuesta | recordatorio | creado] }`).

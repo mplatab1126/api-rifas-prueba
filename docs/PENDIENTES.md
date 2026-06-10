@@ -84,17 +84,11 @@
   `agente-responder.js`) si algún caso se siente robótico, o si manda a la IA algo que el saludo ya resuelve.
 - [ ] (2026-06-08) **Opcional: detección de festivos = HECHA**, pero el HORARIO de visita vive en el manual;
   si cambian los horarios de visita, ajustarlos en `agente_config.prompt` (sección "VISITAR LA CASA").
-- [ ] (2026-06-07) **BUG recordatorios: un "gracias" cancela el recordatorio a días.** Liliana dice
-  "programé un recordatorio" y SÍ lo crea, pero queda en estado `cancelado`, así que el relojito (solo
-  muestra `pendiente`) aparece vacío. Causa: `recibir.js` cancela TODO recordatorio pendiente cuando el
-  cliente vuelve a escribir (pensado para no molestar si ya retomó), pero cancela incluso con un mensaje
-  de cortesía ("Gracias 🙏") y aunque el recordatorio sea para DÍAS después. Caso real: chat
-  +573115630300, recordatorio para jue 11-jun 10:00 (motivo "abono boleta 6427"), creado 21:22 y
-  cancelado cuando el cliente escribió "Gracias" 21:10... (rev. `recordatorios` id e3fe3b03). **Arreglo a
-  pensar:** no cancelar si el recordatorio es a días y el mensaje no reabre la venta (¿o no cancelar los
-  de >X horas?, ¿o solo cancelar al volver a interactuar de fondo, no por un "gracias"?). Confirmar con
-  Mateo el criterio. (Secundario: el cliente dijo "miércoles" y se agendó "jueves 11"; revisar el
-  parseo del día.)
+- [ ] (2026-06-10) **Recordatorios — secundario que quedó del bug del "gracias":** en el caso real
+  el cliente dijo "miércoles" y la IA agendó "jueves 11". No es código: es el cálculo de `dias` que
+  hace el modelo en `programar_recordatorio`. Si se repite, reforzar la descripción de la
+  herramienta (ej. que diga el día de la semana resultante y lo confirme contra lo que pidió el
+  cliente). Vigilar si vuelve a pasar antes de tocar nada.
 - [ ] (2026-06-07) **Números de remisión que faltan** para los independientes sin número en
   `asesores_config.numero_remision`: **Alejandra Plata, Luisa Papá, Mocho, Nena, Yiny**. Mientras no
   los den, si un cliente con boleta de uno de ellos escribe a Lili, Liliana lo pasa a un asesor.
@@ -141,6 +135,12 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-10) **⏰ ARREGLADO el bug del "gracias" que cancelaba recordatorios.** Mateo eligió
+  el criterio "cortesía no cancela": un mensaje de pura cortesía ("Gracias 🙏", "ok", "muchas
+  gracias", solo emojis) ya NO cancela los recordatorios pendientes; cualquier mensaje con
+  sustancia cancela como siempre (conservador). Función `esCortesiaPura` en `recibir.js`, probada
+  con 37 casos, publicada (commit `27fd8b4`, deploy auto READY). Queda el secundario del
+  "miércoles→jueves" (arriba). Ver bitácora 10-jun.
 - [x] (2026-06-10) **🤫 CERRADA la familia "clientes colgados en silencio" (sección 2 del plan:
   H4+H11, H5+H21, H10, H12, H13).** Reintento ante errores de la IA + catch global que suelta el
   candado y marca ASESOR; refresco del candado en el bucle (no más doble respuesta) + auto-redisparo
