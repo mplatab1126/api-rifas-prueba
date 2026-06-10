@@ -377,23 +377,27 @@ const TOOLS = [
 ];
 
 // ── Guarda un mensaje en el historial del chat (saliente del agente, o nota) ──
-async function guardarEnChat(conv, { direccion, tipo = 'text', texto = null, media_url = null, wa_message_id = null, predefinido = false }) {
+async function guardarEnChat(conv, { direccion, tipo = 'text', texto = null, media_url = null, wa_message_id = null, predefinido = false, fallido = false }) {
   const ts = new Date().toISOString();
   await supabaseAdmin.from('mensajes_whatsapp').insert({
     conversacion_id: conv.id, telefono: conv.telefono, linea_id: conv.linea_id,
     direccion, tipo, texto, media_url, wa_message_id,
     // raw.predefinido = el mensaje salió de un atajo SIN IA (saludo/premios/números/datos);
     // la bandeja lo muestra como "Mensaje predefinido" en vez de "🤖 Liliana".
-    estado_envio: direccion === 'nota' ? 'nota' : 'enviado', timestamp_wa: ts,
+    // fallido=true → WhatsApp RECHAZÓ el envío: se guarda como 'fallido' para que la IA no
+    // "recuerde" haber dicho algo que el cliente nunca recibió (H10).
+    estado_envio: direccion === 'nota' ? 'nota' : (fallido ? 'fallido' : 'enviado'), timestamp_wa: ts,
     raw: predefinido ? { agente: true, predefinido: true } : { agente: true },
   });
-  if (direccion !== 'nota') {
+  // Un envío FALLIDO no marca el chat como "atendido": debe seguir saliendo en
+  // "sin respuesta" para que un humano lo vea.
+  if (direccion !== 'nota' && !fallido) {
     await supabaseAdmin.from('conversaciones_whatsapp')
       // no_leidos: 0 → cuando el agente responde, el chat queda "atendido" y se apaga
       // el contador verde de mensajes sin leer (antes solo se apagaba si un humano abría el chat).
       .update({ ultimo_mensaje: String(texto || '📷').slice(0, 200), ultimo_at: ts, ultimo_entrante: false, no_leidos: 0 })
       .eq('id', conv.id);
-  } else {
+  } else if (direccion === 'nota') {
     // Las notas (acciones del agente, reales o de modo sombra) también van al registro central
     // de actividad, para que Mateo las vea todas juntas en la cabina, no chat por chat.
     try {
@@ -495,11 +499,19 @@ async function marcarComprobanteAsignado(convId, mediaId, boleta, monto) {
 // el texto viene de un atajo SIN IA (para que la bandeja lo marque como "Mensaje predefinido").
 async function decir(conv, texto, { predefinido = false } = {}) {
   const t = String(texto || '').trim();
-  if (!t) return;
+  if (!t) return true;
   // MODO SOMBRA: no le escribe al cliente; deja una nota con lo que diría.
-  if (conv.sombra) { await guardarEnChat(conv, { direccion: 'nota', tipo: 'nota', texto: '🌓 (modo sombra) le diría: «' + t + '»' }); return; }
+  if (conv.sombra) { await guardarEnChat(conv, { direccion: 'nota', tipo: 'nota', texto: '🌓 (modo sombra) le diría: «' + t + '»' }); return true; }
   const env = await enviarTexto(conv.telefono, t, conv.linea_id);
-  await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: t, wa_message_id: env.wa_message_id || null, predefinido });
+  const ok = !!(env && env.ok);
+  // Si WhatsApp RECHAZÓ el envío (token vencido, límite, número bloqueado), se guarda como
+  // 'fallido' (la IA no lo "recuerda" como dicho), se deja rastro y se marca el chat (H10).
+  await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: t, wa_message_id: ok ? (env.wa_message_id || null) : null, predefinido, fallido: !ok });
+  if (!ok) {
+    await nota(conv, '⚠️ WhatsApp RECHAZÓ un mensaje al cliente (NO le llegó): «' + t.slice(0, 120) + '…». Marqué el chat para un asesor.');
+    try { await ponerEtiqueta(conv.id, conv.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' }); } catch (_) {}
+  }
+  return ok;
 }
 
 // Envía el "contacto inicial": saludo + fotos de la casa + cierre (precio/legalidad/"¿te explico
@@ -521,6 +533,9 @@ async function enviarContactoInicial(conv, { saludo, cierre, predefinido = false
   await dormir(PAUSA_MS);
   const e3 = await enviarTexto(conv.telefono, cie, conv.linea_id);
   if (e3 && e3.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: cie, wa_message_id: e3.wa_message_id, predefinido });
+  // La verdad del envío (H10): el saludo y el cierre son los textos críticos. Si alguno
+  // falló, quien llamó debe saberlo para NO afirmar que el cliente recibió el contacto.
+  return { ok: !!(e1 && e1.ok && e3 && e3.ok) };
 }
 
 // ¿El primer contacto lo RESUELVE el saludo predefinido? El saludo responde: precio, separar/abono,
@@ -648,7 +663,12 @@ async function ejecutarHerramienta(nombre, input, conv) {
   }
 
   if (nombre === 'enviar_contacto_inicial') {
-    await enviarContactoInicial(conv, { saludo: input?.saludo, cierre: input?.cierre });
+    const envio = await enviarContactoInicial(conv, { saludo: input?.saludo, cierre: input?.cierre });
+    if (!envio || !envio.ok) {
+      await nota(conv, '⚠️ NO se pudo enviar el contacto inicial (WhatsApp rechazó el envío). Marqué el chat para un asesor.');
+      try { await ponerEtiqueta(conv.id, conv.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' }); } catch (_) {}
+      return 'NO se pudo enviar el saludo (WhatsApp rechazó el envío; el cliente NO recibió nada). NO afirmes que le llegó algo. Un asesor revisará el chat; no escribas nada más.';
+    }
     await nota(conv, 'Envié el contacto inicial (saludo + fotos de la casa + cierre).');
     return 'Listo: envié el saludo, las fotos y el cierre (que ya incluye el precio, la legalidad, la respuesta a su pregunta y "¿Te explico los premios?"). NO escribas NADA más; espera su respuesta.';
   }
@@ -711,7 +731,15 @@ async function ejecutarHerramienta(nombre, input, conv) {
     }
     const texto = `${encabezado}\n\n${una ? 'Esta es tu boleta' : 'Estas son tus boletas'} para la rifa de *Los Plata*:\n\n${lista}\n\n👉 ${una ? 'Consulta tu boleta aquí' : 'Consulta tus boletas aquí'}:\n${enlace}${cola}`;
     const env = await enviarTexto(conv.telefono, texto, conv.linea_id);
-    if (env && env.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto, wa_message_id: env.wa_message_id });
+    if (!env || !env.ok) {
+      // H10: antes devolvía "Listo, le envié su boleta" aunque WhatsApp rechazara el envío
+      // → la IA "recordaba" haberla mandado y el cliente nunca la recibía.
+      await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto, wa_message_id: null, fallido: true });
+      await nota(conv, '⚠️ NO se pudo enviar la boleta digital (WhatsApp rechazó el envío). Marqué el chat para un asesor.');
+      try { await ponerEtiqueta(conv.id, conv.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' }); } catch (_) {}
+      return 'NO se pudo enviar la boleta (WhatsApp rechazó el envío; el cliente NO la recibió). NO afirmes que la recibió. Un asesor revisará el chat.';
+    }
+    await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto, wa_message_id: env.wa_message_id });
     await nota(conv, 'Envié la boleta digital al cliente.');
     return 'Listo, le envié su boleta digital con el enlace para consultarla. Recuérdale los medios de pago y que cuando pague me mande la foto del comprobante para registrarle el abono.';
   }
@@ -967,7 +995,9 @@ export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  const { contrasena, linea_id, telefono, interno, recordatorio } = req.body || {};
+  // `redisparo`: la corrida anterior detectó que el cliente escribió MIENTRAS ella respondía
+  // y se re-disparó a sí misma para atender ese mensaje (ver el cierre del handler).
+  const { contrasena, linea_id, telefono, interno, recordatorio, redisparo } = req.body || {};
   if (!linea_id || !telefono) return res.status(200).json({ status: 'error', mensaje: 'Falta línea o teléfono.' });
   // Autorización: o el secreto interno (lo dispara el webhook al instante) o, desde la bandeja,
   // gerencia o el DUEÑO de la línea (ej. Liliana en la suya), igual que el botón 🤖.
@@ -987,12 +1017,18 @@ export default async function handler(req, res) {
   const apiKey = process.env.ANTHROPIC_API_KEY_LILIANA || process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(200).json({ status: 'error', mensaje: 'Falta ANTHROPIC_API_KEY_LILIANA / ANTHROPIC_API_KEY.' });
 
+  // `conv` vive FUERA del try para que el catch global pueda soltar el candado y dejar
+  // rastro si algo revienta a mitad de la corrida (antes el cliente quedaba en silencio
+  // sin que nadie se enterara — H4/H11).
+  let conv = null;
+  let claimHastaMs = 0;   // momento (ms) del último mensaje del cliente que tomó esta corrida
   try {
     // 1) La conversación y su estado.
-    const { data: conv } = await supabase
+    const { data: convData } = await supabase
       .from('conversaciones_whatsapp')
       .select('id, telefono, linea_id, agente_activo')
       .eq('telefono', telefono).eq('linea_id', linea_id).maybeSingle();
+    conv = convData;
     if (!conv) return res.status(200).json({ status: 'error', mensaje: 'No existe esa conversación.' });
     if (!conv.agente_activo) return res.status(200).json({ status: 'ok', skip: 'El agente no está activo en este chat.' });
 
@@ -1064,18 +1100,29 @@ export default async function handler(req, res) {
       .from('mensajes_whatsapp')
       .select('id, direccion, tipo, texto, media_id, timestamp_wa, created_at')
       .eq('conversacion_id', conv.id)
+      // Los envíos que WhatsApp RECHAZÓ no cuentan como dichos: si la IA los "recuerda",
+      // no repite la boleta/confirmación que el cliente nunca recibió (H10). Cubre tanto
+      // los rechazos síncronos (decir/enviar_boleta) como los que reporta el webhook de Meta.
+      .or('estado_envio.is.null,estado_envio.neq.fallido')
       .order('timestamp_wa', { ascending: false })
       .limit(MAX_HISTORIAL);
     if (desdeRifa) qHist = qHist.gte('timestamp_wa', desdeRifa);
     const { data: histAsc } = await qHist;
     const historial = (histAsc || []).slice().reverse();
     const reales = historial.filter(m => m.direccion === 'entrante' || m.direccion === 'saliente');
-    // Normalmente solo respondemos si el último mensaje es del cliente. EXCEPCIÓN: un
+    // Normalmente solo respondemos si el último mensaje es del cliente. EXCEPCIONES: un
     // recordatorio (el agente se programó volver a escribir) sí arranca aunque el último
-    // mensaje sea suyo.
-    if (!recordatorio && (!reales.length || reales[reales.length - 1].direccion !== 'entrante')) {
-      await soltarLock(conv);
-      return res.status(200).json({ status: 'ok', skip: 'No hay un mensaje del cliente pendiente de responder.' });
+    // mensaje sea suyo; y un RE-DISPARO (el cliente escribió mientras la corrida anterior
+    // redactaba) también: ahí el último mensaje puede ser nuestro aunque haya un entrante
+    // sin atender — el claim anti-duplicado de abajo decide si de verdad está pendiente.
+    if (!recordatorio) {
+      const pendiente = redisparo
+        ? reales.some(m => m.direccion === 'entrante')
+        : (reales.length && reales[reales.length - 1].direccion === 'entrante');
+      if (!pendiente) {
+        await soltarLock(conv);
+        return res.status(200).json({ status: 'ok', skip: 'No hay un mensaje del cliente pendiente de responder.' });
+      }
     }
 
     // 3a-bis) ANTI-DUPLICADO A PRUEBA DE BALAS: el candado de arriba (agente_procesando_at) a veces
@@ -1090,6 +1137,7 @@ export default async function handler(req, res) {
       const ultEnt = [...reales].reverse().find(m => m.direccion === 'entrante');
       const hastaMs = ultEnt ? new Date(ultEnt.timestamp_wa || ultEnt.created_at).getTime() : 0;
       if (hastaMs && Number.isFinite(hastaMs)) {
+        claimHastaMs = hastaMs;   // lo usa el cierre para detectar mensajes que llegaron mientras respondíamos
         const { data: gano, error: geClaim } = await supabaseAdmin
           .rpc('agente_claim_respuesta', { p_conv: conv.id, p_hasta_ms: hastaMs });
         if (geClaim) {
@@ -1126,6 +1174,8 @@ export default async function handler(req, res) {
     for (const m of reales) {
       if (transcritos >= 4) break;
       if (m.direccion === 'entrante' && m.tipo === 'audio' && m.media_id && !(m.texto || '').trim()) {
+        // Transcribir toma segundos; refrescar el candado para que no se venza (H5).
+        try { await supabaseAdmin.rpc('agente_refrescar_lock', { p_conv: conv.id }); } catch (_) {}
         const txt = await transcribirAudio(m.media_id, conv.linea_id);
         if (txt) {
           m.texto = '[audio del cliente] ' + txt;
@@ -1144,6 +1194,8 @@ export default async function handler(req, res) {
       const m = reales[i];
       if (m.direccion === 'entrante' && m.tipo === 'image' && m.media_id) {
         try {
+          // Descargar imágenes toma segundos; refrescar el candado para que no se venza (H5).
+          try { await supabaseAdmin.rpc('agente_refrescar_lock', { p_conv: conv.id }); } catch (_) {}
           const media = await descargarMediaBase64(m.media_id, conv.linea_id);
           if (media && media.ok && media.base64) {
             imagenesVistas.set(m.id, { mime: mediaTypeImagen(media.mimeType), base64: media.base64 });
@@ -1429,17 +1481,47 @@ export default async function handler(req, res) {
     // verdad del sistema NO respalda la afirmación (sigue debiendo, o no tiene boletas).
     const contextoPago = esContextoPago(reales);
     const debeBloquear = (txt) => contextoPago && !huboAbono && afirmaPagoHecho(txt) && ((tieneBoletas && !todasPagadas) || !tieneBoletas);
+    // Llama a la IA con UN reintento ante errores TRANSITORIOS (429 límite de tasa, 529
+    // sobrecarga, 5xx, respuesta no-JSON, red caída): un blip de Anthropic ya no deja al
+    // cliente en silencio (H4/H11). Antes de la espera refresca el candado para que no
+    // venza (60s) y entre otra corrida a responder doble. Los errores NO transitorios
+    // (petición inválida) no se reintentan.
+    const llamarIA = async (body) => {
+      for (let intento = 0; ; intento++) {
+        let transitorio = false;
+        try {
+          const resp = await fetch(ANTHROPIC_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-beta': 'extended-cache-ttl-2025-04-11' },
+            body: JSON.stringify(body),
+          });
+          const data = await resp.json();   // puede lanzar si la respuesta no es JSON
+          transitorio = !!data.error && (resp.status === 429 || resp.status >= 500);
+          if (!transitorio || intento >= 1) return data;
+        } catch (e) {
+          if (intento >= 1) return { error: { message: 'fallo de red hacia la IA: ' + (e.message || e) } };
+        }
+        try { await supabaseAdmin.rpc('agente_refrescar_lock', { p_conv: conv.id }); } catch (_) {}
+        await dormir(2500);
+      }
+    };
+
     for (let iter = 0; iter < MAX_ITER; iter++) {
       // Botón de pánico a mitad de la respuesta: si apagaron el agente en este chat, parar ya
       // (no mandar más mensajes ni ejecutar más acciones).
       if (iter > 0 && !(await sigueActivo(conv.id))) { await soltarLock(conv); return res.status(200).json({ status: 'ok', skip: 'Apagaron el agente a mitad de la respuesta.' }); }
-      const resp = await fetch(ANTHROPIC_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-beta': 'extended-cache-ttl-2025-04-11' },
-        body: JSON.stringify({ model: modelo, max_tokens: 1024, system, messages, ...(toolsActivas.length ? { tools: toolsActivas } : {}) }),
-      });
-      const data = await resp.json();
-      if (data.error) { await nota(conv, 'No pude responder (problema con la IA): ' + (data.error.message || 'error')); await soltarLock(conv); return res.status(200).json({ status: 'error', mensaje: 'IA: ' + (data.error.message || 'error') }); }
+      // Refrescar el candado en CADA vuelta: con herramientas + imágenes un turno puede pasar
+      // de los 60s en que el candado se vence solo, y otra corrida entraría a responder doble (H5).
+      try { await supabaseAdmin.rpc('agente_refrescar_lock', { p_conv: conv.id }); } catch (_) {}
+      const data = await llamarIA({ model: modelo, max_tokens: 1024, system, messages, ...(toolsActivas.length ? { tools: toolsActivas } : {}) });
+      if (data.error) {
+        // Ya se reintentó y no se pudo: dejar rastro Y marcar el chat para que un humano
+        // lo retome (antes solo quedaba una nota gris que nadie veía — H4/H11).
+        await nota(conv, 'No pude responder (problema con la IA, reintenté y siguió fallando): ' + (data.error.message || 'error') + '. Marqué el chat para un asesor.');
+        try { await ponerEtiqueta(conv.id, conv.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' }); } catch (_) {}
+        await soltarLock(conv);
+        return res.status(200).json({ status: 'error', mensaje: 'IA: ' + (data.error.message || 'error') });
+      }
       await registrarUso(conv, modelo, data.usage);   // anotar lo que costó esta respuesta
 
       const bloques = data.content || [];
@@ -1476,13 +1558,9 @@ export default async function handler(req, res) {
       messages.push({ role: 'user', content: results });
       if (cerrarSinTexto && !apagado) break;
       if (apagado) {
-        const resp2 = await fetch(ANTHROPIC_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-beta': 'extended-cache-ttl-2025-04-11' },
-          body: JSON.stringify({ model: modelo, max_tokens: 400, system, messages }),
-        });
-        const d2 = await resp2.json();
+        const d2 = await llamarIA({ model: modelo, max_tokens: 400, system, messages });
         if (!d2.error) { await registrarUso(conv, modelo, d2.usage); for (const b of (d2.content || [])) if (b.type === 'text' && b.text?.trim()) { const t = b.text.trim(); if (debeBloquear(t)) await manejarPagoNoVerificado(conv, reales); else await decir(conv, t); } }
+        else { await nota(conv, 'El cliente pidió un humano y NO pude mandarle la despedida (falló la IA): ' + (d2.error.message || 'error') + '. El chat ya quedó marcado ASESOR.'); }
         break;
       }
     }
@@ -1494,8 +1572,43 @@ export default async function handler(req, res) {
     }
 
     await soltarLock(conv);
+
+    // ¿El cliente escribió MIENTRAS respondíamos? (H5/H21). Antes ese mensaje quedaba en
+    // visto para siempre: la corrida que disparó chocó con el candado y nada lo reintentaba.
+    // Ahora, ya con el candado suelto, esta corrida se re-dispara a sí misma (una vez) si
+    // existe un entrante posterior al último mensaje que tomó su claim.
+    if (claimHastaMs > 0 && !redisparo && !apagado && tokenInterno) {
+      try {
+        const { data: nuevos } = await supabaseAdmin
+          .from('mensajes_whatsapp').select('id')
+          .eq('conversacion_id', conv.id).eq('direccion', 'entrante')
+          .gt('timestamp_wa', new Date(claimHastaMs).toISOString())
+          .limit(1);
+        if (nuevos && nuevos.length && (await sigueActivo(conv.id))) {
+          await fetch(`${BASE_URL}/api/whatsapp/agente-responder`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ interno: tokenInterno, linea_id, telefono, redisparo: true }),
+            signal: AbortSignal.timeout(1500),
+          }).catch(() => {});
+        }
+      } catch (_) {}
+    }
+
     return res.status(200).json({ status: 'ok', agente_activo: !apagado });
   } catch (e) {
+    // El catch global ANTES devolvía un 500 que nadie leía (el webhook corta a 1.5s), SIN
+    // soltar el candado ni dejar rastro (H4/H11). Ahora: suelta el lock, deja el error en
+    // la actividad del agente y marca el chat ASESOR para que un humano lo retome.
+    if (conv) {
+      await soltarLock(conv);
+      try {
+        await supabaseAdmin.from('agente_actividad').insert({
+          linea_id: conv.linea_id, telefono: conv.telefono, tipo: 'error',
+          resumen: ('Error inesperado del motor (el cliente pudo quedar sin respuesta): ' + (e.message || e)).slice(0, 500),
+        });
+      } catch (_) {}
+      try { await ponerEtiqueta(conv.id, conv.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' }); } catch (_) {}
+    }
     return res.status(500).json({ status: 'error', mensaje: e.message });
   }
 }
@@ -1521,14 +1634,26 @@ async function cancelarVerificaciones(convId) {
 async function agendarVerificacion(conv, mediaId, numeroPedido) {
   try {
     await cancelarVerificaciones(conv.id);
-    await supabaseAdmin.from('verificaciones_pago').insert({
+    // OJO: supabase-js NO lanza excepción ante errores de la base — devuelve { error }.
+    // Hay que revisarlo: si este insert falla, al cliente ya se le prometió "estoy
+    // verificando tu pago" y NADIE iba a verificar nunca (H13, ruta del dinero).
+    const { error } = await supabaseAdmin.from('verificaciones_pago').insert({
       linea_id: conv.linea_id, telefono: conv.telefono, conversacion_id: conv.id,
       media_id: mediaId, numero_pedido: numeroPedido || null,
       intentos: 0, max_intentos: 4,
       proximo_intento_at: new Date(Date.now() + 15 * 60000).toISOString(),
       estado: 'pendiente',
     });
-  } catch (_) {}
+    if (error) throw new Error(error.message || 'insert falló');
+  } catch (e) {
+    try {
+      await supabaseAdmin.from('agente_actividad').insert({
+        linea_id: conv.linea_id, telefono: conv.telefono, tipo: 'error',
+        resumen: ('⚠️ No pude AGENDAR la verificación del pago — el cliente quedó esperando que se verifique: ' + (e.message || e)).slice(0, 500),
+      });
+    } catch (_) {}
+    try { await ponerEtiqueta(conv.id, conv.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' }); } catch (_) {}
+  }
 }
 
 // ¿El agente SIGUE prendido en este chat? (para el "botón de pánico": si lo apagaron a mitad

@@ -108,7 +108,13 @@ export default async function handler(req, res) {
       await supabaseAdmin.from('verificaciones_pago')
         .update({ estado: 'abonado', resultado: `abonado $${r.monto} a ${r.numero}`, actualizado_at: new Date().toISOString() })
         .eq('id', v.id);
-      await avisarCliente(v, `¡Listo! ✅ Confirmé tu pago y te registré el abono de $${Number(r.monto).toLocaleString('es-CO')} a la boleta *${r.numero}*. ¡Gracias! 🙌`);
+      const avisado = await avisarCliente(v, `¡Listo! ✅ Confirmé tu pago y te registré el abono de $${Number(r.monto).toLocaleString('es-CO')} a la boleta *${r.numero}*. ¡Gracias! 🙌`);
+      if (!avisado) {
+        // El abono SÍ quedó registrado, pero el cliente no recibió la confirmación (H10):
+        // dejar rastro y marcar el chat para que un asesor le confirme a mano.
+        await nota(v, '⚠️ Aboné el pago pero NO pude avisarle al cliente (WhatsApp rechazó el envío). Que un asesor le confirme.', 'error');
+        try { await ponerEtiqueta(v.conversacion_id, v.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' }); } catch (_) {}
+      }
       await nota(v, `Verificación con reintentos: aboné $${Number(r.monto).toLocaleString('es-CO')} a la boleta ${r.numero}.`);
       abonados++;
       continue;

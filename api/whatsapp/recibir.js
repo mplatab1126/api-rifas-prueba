@@ -39,6 +39,7 @@ export default async function handler(req, res) {
   }
 
   // ── 2) Mensajes entrantes y acuses (POST) ─────────────────────────────────
+  let mensajesIntentados = 0, mensajesGuardados = 0;
   try {
     const cambios = (req.body?.entry || []).flatMap((e) => e.changes || []);
     for (const cambio of cambios) {
@@ -48,7 +49,8 @@ export default async function handler(req, res) {
 
       // a) Mensajes nuevos que escribe el cliente
       for (const m of (value.messages || [])) {
-        await guardarEntrante(m, nombrePerfil, lineaId);
+        mensajesIntentados++;
+        if (await guardarEntrante(m, nombrePerfil, lineaId)) mensajesGuardados++;
       }
       // b) Acuses de mensajes que NOSOTROS enviamos (enviado/entregado/leído/falló)
       for (const s of (value.statuses || [])) {
@@ -56,10 +58,16 @@ export default async function handler(req, res) {
       }
     }
   } catch (err) {
-    // Aun con error devolvemos 200: si devolvemos error, Meta reintenta sin parar.
     console.error('[whatsapp/recibir] error procesando webhook:', err);
   }
 
+  // Si llegaron mensajes del cliente y NINGUNO se pudo guardar (ej. la base caída), devolvemos
+  // 500 para que Meta REINTENTE con backoff: el dedup por wa_message_id absorbe el reintento
+  // sin duplicar (H13 — antes el 200 incondicional PERDÍA esos mensajes para siempre).
+  // Webhooks de solo-acuses o con guardado parcial siguen respondiendo 200 rápido, como siempre.
+  if (mensajesIntentados > 0 && mensajesGuardados === 0) {
+    return res.status(500).json({ received: false });
+  }
   return res.status(200).json({ received: true });
 }
 
@@ -76,7 +84,7 @@ async function guardarEntrante(m, nombrePerfil, lineaId) {
   const conversacion = await upsertConversacion(telefono, nombrePerfil, preview, ts, true, lineaId);
 
   // upsert con ignoreDuplicates: si Meta reenvía el mismo mensaje, no se duplica.
-  await supabaseAdmin
+  const { error: errGuardar } = await supabaseAdmin
     .from('mensajes_whatsapp')
     .upsert(
       {
@@ -106,6 +114,11 @@ async function guardarEntrante(m, nombrePerfil, lineaId) {
 
   // Si el agente está activo en este chat, dispararlo de una (sin depender del navegador).
   await dispararAgenteSiActivo(telefono, lineaId);
+
+  // ¿El mensaje quedó guardado de verdad? (lo usa el handler para decidir si pedirle
+  // reintento a Meta cuando NINGÚN mensaje se pudo guardar)
+  if (errGuardar) console.error('[whatsapp/recibir] no se pudo guardar el mensaje entrante:', errGuardar.message || errGuardar);
+  return !errGuardar;
 }
 
 // ── Disparadores: prender el agente automáticamente por palabra clave ────────
@@ -136,7 +149,11 @@ async function activarPorDisparador(telefono, lineaId, texto, esConvNueva) {
     await supabaseAdmin.from('conversaciones_whatsapp')
       .update({ agente_activo: true, estado: 'bot' })
       .eq('telefono', telefono).eq('linea_id', lineaId);
-  } catch (_) { /* si falla, simplemente no se auto-prende */ }
+  } catch (e) {
+    // Si esto falla, el cliente que escribió la palabra clave se queda SIN agente y antes
+    // nadie se enteraba (H13). El log al menos deja diagnóstico en Vercel.
+    console.error('[whatsapp/recibir] activarPorDisparador falló:', e.message || e);
+  }
 }
 
 // ── Cancelar recordatorios pendientes de una conversación ───────────────────
@@ -167,7 +184,14 @@ async function dispararAgenteSiActivo(telefono, lineaId) {
       body: JSON.stringify({ telefono, linea_id: lineaId, interno: verifyToken }),
       signal: AbortSignal.timeout(1500),
     });
-  } catch (_) { /* el corte a 1.5s es esperado; el motor sigue procesando aparte */ }
+  } catch (e) {
+    // El corte a 1.5s es la ruta NORMAL (el motor sigue procesando aparte). Pero antes
+    // un fallo REAL del disparo (red, DNS) era indistinguible y el chat quedaba mudo sin
+    // rastro (H13): ahora solo lo esperado se calla; lo demás queda en el log de Vercel.
+    if (e && e.name !== 'TimeoutError' && e.name !== 'AbortError') {
+      console.error('[whatsapp/recibir] el disparo del agente FALLÓ (el chat puede quedar sin respuesta):', e.message || e);
+    }
+  }
 }
 
 // ── Actualizar el estado de un mensaje que enviamos ─────────────────────────

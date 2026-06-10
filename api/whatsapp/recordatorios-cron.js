@@ -165,5 +165,46 @@ export default async function handler(req, res) {
   // Esperamos a que SALGAN las peticiones/envíos (cada fetch se corta a 1.5s).
   await Promise.allSettled(tareas);
 
-  return res.status(200).json({ status: 'ok', porTexto, porPlantilla });
+  // ── BARREDOR DE CHATS TRABADOS (H12 de la auditoría) ──────────────────────
+  // El disparo del motor es "dispara y olvida": si se pierde (red, arranque lento) o si
+  // una corrida muere a mitad, el cliente queda esperando y NADA lo reintentaba. Cada
+  // minuto buscamos chats con el agente activo cuyo ÚLTIMO mensaje es del cliente y
+  // lleva entre 2 y 60 min sin respuesta, y los re-disparamos. Es seguro repetirlo:
+  // el candado y el claim anti-duplicado del motor deciden si de verdad hay que
+  // responder (los turnos muertos se re-reclaman solos a los 5 min, ver
+  // sql/agente-claim-reclaim.sql). Se excluyen los chats en manos de un humano y las
+  // líneas con el agente apagado o en sombra.
+  let barridos = 0;
+  try {
+    const hace2min = new Date(ahoraMs - 2 * 60000).toISOString();
+    const hace60min = new Date(ahoraMs - 60 * 60000).toISOString();
+    const { data: lineasOff } = await supabaseAdmin
+      .from('agente_config').select('linea_id, estado').in('estado', ['apagado', 'sombra']);
+    const offSet = new Set((lineasOff || []).map(l => l.linea_id));
+    const { data: trabados } = await supabaseAdmin
+      .from('conversaciones_whatsapp')
+      .select('telefono, linea_id, estado')
+      .eq('agente_activo', true)
+      .eq('ultimo_entrante', true)
+      .or('estado.is.null,estado.neq.humano')
+      .gte('ultimo_at', hace60min)
+      .lte('ultimo_at', hace2min)
+      .limit(8);
+    const reDisparos = (trabados || [])
+      .filter(c => !offSet.has(c.linea_id))
+      .map(c =>
+        fetch(`${BASE_URL}/api/whatsapp/agente-responder`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ telefono: c.telefono, linea_id: c.linea_id, interno: verifyToken }),
+          signal: AbortSignal.timeout(1500),
+        }).catch(() => {})
+      );
+    barridos = reDisparos.length;
+    await Promise.allSettled(reDisparos);
+  } catch (e) {
+    console.error('[recordatorios-cron] barredor falló:', e.message || e);
+  }
+
+  return res.status(200).json({ status: 'ok', porTexto, porPlantilla, barridos });
 }
