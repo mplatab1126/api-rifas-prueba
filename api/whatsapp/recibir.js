@@ -153,7 +153,11 @@ async function guardarEntrante(m, nombrePerfil, lineaId) {
   if (!esSinContenido) {
     // El cliente volvió a escribir → cancela los recordatorios que el agente tenía pendientes
     // para este chat (ya retomaron la conversación, no hace falta el seguimiento automático).
-    await cancelarRecordatorios(telefono, lineaId);
+    // EXCEPCIÓN (bug 7-jun): un mensaje de PURA cortesía ("Gracias 🙏", "ok", "muchas gracias")
+    // no retoma nada — antes cancelaba hasta un recordatorio agendado a DÍAS y el seguimiento
+    // moría en silencio (caso real: recordatorio del abono de la boleta 6427 para el jueves,
+    // cancelado por un "Gracias"). En la duda se cancela como siempre (conservador).
+    if (!esCortesiaPura(tipo, texto)) await cancelarRecordatorios(telefono, lineaId);
 
     // Disparadores: si el mensaje contiene una palabra clave configurada, o si es un cliente NUEVO
     // (primer mensaje) y hay un disparador de ese tipo, prende el agente en este chat.
@@ -202,6 +206,31 @@ async function activarPorDisparador(telefono, lineaId, texto, esConvNueva) {
     // nadie se enteraba (H13). El log al menos deja diagnóstico en Vercel.
     console.error('[whatsapp/recibir] activarPorDisparador falló:', e.message || e);
   }
+}
+
+// ── ¿El mensaje es PURA cortesía? ("Gracias 🙏", "ok", "muchas gracias") ─────
+// Solo se usa para decidir si se cancelan los recordatorios pendientes (un "gracias"
+// no retoma la conversación). Lista corta y conservadora A PROPÓSITO: en la duda
+// devuelve false y el recordatorio se cancela como siempre. NO incluye palabras de
+// asentir que reabren la venta ("sí", "dale", "listo": pueden significar "ya pagué"
+// o "sigamos") ni saludos ("buenas": el cliente está iniciando contacto de nuevo).
+const PALABRAS_CORTESIA = new Set([
+  'gracias', 'muchas', 'mil', 'ok', 'okey', 'okay', 'oki', 'vale',
+  'perfecto', 'genial', 'esta', 'bien', 'de', 'acuerdo', 'igualmente',
+  'bendiciones', 'amen', 'muy', 'amable', 'feliz', 'dia', 'tarde', 'noche',
+]);
+function esCortesiaPura(tipo, texto) {
+  if (tipo !== 'texto') return false;                 // fotos/audios/etc. cancelan como siempre
+  const crudo = String(texto || '');
+  if (/\d/.test(crudo)) return false;                 // trae un número (boleta, monto) → sustancia
+  const t = crudo.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // sin tildes
+    .replace(/[^a-zñ]+/gu, ' ')                       // fuera emojis, signos y demás
+    .trim();
+  if (!t) return true;                                // solo emojis/signos (🙏, 👍, ❤️)
+  const palabras = t.split(' ');
+  if (palabras.length > 5) return false;
+  return palabras.every(p => PALABRAS_CORTESIA.has(p));
 }
 
 // ── Cancelar recordatorios pendientes de una conversación ───────────────────
