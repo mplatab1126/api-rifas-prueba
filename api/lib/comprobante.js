@@ -34,7 +34,7 @@ export async function extraerDatos(base64SinPrefijo, mimeType = 'image/jpeg') {
   if (!anthropicKey) return { ok: false, error: 'Falta ANTHROPIC_API_KEY en Vercel.' };
 
   const bodyAI = JSON.stringify({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 400,
     messages: [{
       role: 'user',
