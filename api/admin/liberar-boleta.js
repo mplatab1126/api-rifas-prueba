@@ -7,7 +7,7 @@ import { PRECIOS } from '../config/precios.js';
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
 
-  const { numeroBoleta, contrasena, asesorRegistro } = req.body;
+  const { numeroBoleta, contrasena, asesorRegistro, soloSiSinAbonos, telefonoEsperado } = req.body;
   const nombreAsesor = validarAsesor(contrasena);
   if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Contraseña incorrecta' });
   // Quién queda registrado (ej. el agente Liliana). No cambia permisos: solo gerencia puede usarlo.
@@ -68,6 +68,29 @@ export default async function handler(req, res) {
           total_comprado: totalComprado,
           boletas_grandes_compradas: grandesCompradas
         }).eq('telefono', boletaActual.telefono_cliente);
+      }
+    }
+
+    // H68 (solo cuando llama el AGENTE, que manda estos parámetros): liberación ATÓMICA.
+    // El candado "dueño correcto + $0 abonado" vivía solo en el llamador, y entre su lectura
+    // y este borrado pasan segundos en los que el cron de verificación puede abonar. Un solo
+    // UPDATE condicional ocupa la liberación ÚNICAMENTE si la boleta SIGUE sin un peso y
+    // sigue siendo del cliente esperado; si no afecta filas, NO se borra nada.
+    // El Admin humano (sin estos parámetros) funciona exactamente igual que siempre.
+    if (soloSiSinAbonos) {
+      const telDig = String(telefonoEsperado || '').replace(/\D/g, '');
+      if (!telDig) return res.status(400).json({ status: 'error', mensaje: 'Falta el teléfono esperado del cliente.' });
+      const l10 = telDig.slice(-10);
+      const { data: claim, error: errClaim } = await supabase
+        .from('boletas')
+        .update({ telefono_cliente: null, estado: 'LIBRE', total_abonado: 0, saldo_restante: PRECIOS.RIFA_4_CIFRAS })
+        .eq('numero', numeroBoleta)
+        .or('total_abonado.eq.0,total_abonado.is.null')
+        .like('telefono_cliente', l10.length === 10 ? '%' + l10 : telDig)
+        .select('numero');
+      if (errClaim) throw errClaim;
+      if (!claim || !claim.length) {
+        return res.status(200).json({ status: 'error', mensaje: 'No se liberó: la boleta ya tiene abonos registrados o cambió de dueño. Revísala a mano antes de cancelar.' });
       }
     }
 

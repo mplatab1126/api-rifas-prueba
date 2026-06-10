@@ -55,12 +55,16 @@
   tanda 10 (verdes, 10-jun): H49, H54+H73 (recordatorios durables), H71 (reintentos de Meta
   sin efectos), H72; + N1 (saldo viejo en la confirmación del abono) y N2 (visor "💳
   Verificación del pago" en la ficha — pedido de Mateo).
+  tanda 11 (verdes, 10-jun): H68 (liberar atómico), H74, H75 (simulador borrado), H81
+  (credencial del agente — **FALTA el clic de Mateo: clave "Liliana" en ASESORES_SECRETO**),
+  H83; + N3 (prefill) y N4 (caso cerrado en el visor).
   Quedan: **H36 + H47/H48/H64 (manual) — SOLO desde un chat con la contraseña de gerencia**
   (exigen la suite dorada); H18 (cobros, EN PAUSA por decisión de Mateo); 2 que necesitan
   OK de Mateo: H65 (atajo de número exacto tras la lista; roza su decisión "verificación
   puntual = IA") y H76 (verificarYAbonar puede abonar a la boleta de número más bajo aunque
-  el cliente pidiera otra — toca lógica de abonos); y 6 verdes libres: H68, H70, H74, H75,
-  H81, H83. Detalle en `docs/PENDIENTES-LILIANA.md`.
+  el cliente pidiera otra — toca lógica de abonos); y 1 verde libre: H70 (teléfonos
+  extranjeros cortos — dejado para tanda propia: toca 5 archivos con candados de plata).
+  Detalle en `docs/PENDIENTES-LILIANA.md`.
   **Vigilar `agente_uso` unos días tras H42** (espera corta puede partir alguna ráfaga en dos).
 - [ ] (2026-06-10) **REGLA NUEVA para cambios del manual de Liliana:** antes de guardar un cambio
   del manual, correr la **suite dorada** (`/api/whatsapp/probar-suite`, ver bitácora 10-jun) y

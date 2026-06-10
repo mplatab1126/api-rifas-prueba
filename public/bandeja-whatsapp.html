@@ -543,21 +543,6 @@
     .ag-log-txt { color: var(--ink-soft); line-height: 1.4; }
     .ag-empty { color: var(--gray-400); font-size: 0.82rem; line-height: 1.5; padding: 6px 0; }
 
-    /* Probador del agente (simulador · no envía nada por WhatsApp) */
-    .ag-pb-tag { font-weight: 400; font-size: 0.7rem; color: #1c7a37; background: #dff7e4; border-radius: 100px; padding: 2px 9px; margin-left: 6px; vertical-align: middle; }
-    .ag-probar-chat { background: var(--cream-50); border: 1px solid var(--gray-200); border-radius: 12px; padding: 12px; min-height: 120px; max-height: 360px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
-    .ag-pb { max-width: 80%; padding: 9px 12px; border-radius: 14px; font-size: 0.88rem; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
-    .ag-pb-cli { align-self: flex-end; background: var(--mint-light); border: 1px solid var(--mint); border-bottom-right-radius: 4px; }
-    .ag-pb-bot { align-self: flex-start; background: #fff; border: 1px solid var(--gray-200); border-bottom-left-radius: 4px; }
-    .ag-pb-empty { color: var(--gray-400); font-size: 0.82rem; text-align: center; line-height: 1.5; padding: 18px 8px; margin: auto; }
-    .ag-pb-think { align-self: flex-start; color: var(--ink-mute); font-size: 0.82rem; font-style: italic; padding: 2px 4px; }
-    .ag-pb-bar { display: flex; gap: 8px; }
-    .ag-pb-bar input { flex: 1; padding: 11px 12px; border: 1px solid var(--gray-200); border-radius: 10px; font-family: inherit; font-size: 0.9rem; color: var(--ink); background: #fff; outline: none; }
-    .ag-pb-bar input:focus { border-color: var(--ink); }
-    .ag-pb-send { padding: 11px 18px; border: 1px solid var(--mint); background: var(--mint); border-radius: 10px; font-family: inherit; font-size: 0.86rem; font-weight: 600; color: var(--ink); cursor: pointer; }
-    .ag-pb-send:disabled { opacity: 0.5; cursor: default; }
-    .ag-pb-reset { background: none; border: none; color: var(--ink-mute); font-size: 0.8rem; cursor: pointer; padding: 0; }
-    .ag-pb-reset:hover { text-decoration: underline; }
 
     /* Pastilla de estado */
     .estado-pill { display: inline-block; font-size: 0.7rem; font-weight: 600; border-radius: 100px; padding: 3px 10px; white-space: nowrap; }
@@ -2346,8 +2331,6 @@ if($('nuevoDisparador')) $('nuevoDisparador').addEventListener('keydown', e => {
    (apagado/sombra/encendido), las instrucciones, qué herramientas puede usar
    y el registro de lo que hace. Todo se guarda en la base, no en el código. */
 let agData = null;            // { config, herramientas, actividad } de la línea
-let agProbarMsgs = [];       // mini-chat del probador (simulador, no toca WhatsApp)
-let agPbPensando = false;
 const AG_ESTADOS = [
   { v:'apagado',   t:'Apagado',     d:'Solo responden los humanos.' },
   { v:'sombra',    t:'Modo sombra', d:'Practica en silencio, no le escribe al cliente.' },
@@ -2501,7 +2484,6 @@ function pintarAgente(){
       <div class="ag-log">${logRows}</div>
     </div>`;
 
-  agPbRender();
   agCargarCosto();
   agCargarEmbudo(7);
 }
@@ -2608,46 +2590,6 @@ window.agResAcum = function(chk){
   const gan = box.querySelector('.ag-res-ganador'); if(gan) gan.style.display = acum ? 'none' : '';
 };
 
-/* ── Probador del agente (simulador) ───────────────────────────────────────
-   NO envía nada por WhatsApp: corre el prompt actual contra los mensajes de
-   prueba y muestra la respuesta, para afinar el "manual" sin riesgo. */
-function agPbFormato(t){ return esc(t).replace(/\*([^*\n]+)\*/g, '<b>$1</b>'); }
-
-function agPbRender(){
-  const cont = $('agPbChat'); if(!cont) return;
-  const nom = (agData && agData.config && agData.config.nombre_agente) || 'el agente';
-  if(!agProbarMsgs.length && !agPbPensando){
-    cont.innerHTML = '<div class="ag-pb-empty">Escríbele como si fueras el cliente.<br>Ej: «sí, explícame los premios»</div>';
-    return;
-  }
-  let html = agProbarMsgs.map(m =>
-    m.rol === 'assistant'
-      ? `<div class="ag-pb ag-pb-bot">${agPbFormato(m.texto)}</div>`
-      : `<div class="ag-pb ag-pb-cli">${esc(m.texto)}</div>`
-  ).join('');
-  if(agPbPensando) html += `<div class="ag-pb-think">${esc(nom)} está escribiendo…</div>`;
-  cont.innerHTML = html;
-  cont.scrollTop = cont.scrollHeight;
-}
-
-async function agProbarEnviar(){
-  const inp = $('agPbInput'); if(!inp || agPbPensando) return;
-  const texto = inp.value.trim(); if(!texto) return;
-  inp.value = '';
-  agProbarMsgs.push({ rol:'user', texto });
-  agPbPensando = true; agPbRender();
-  agCapturarForm();
-  const c = (agData && agData.config) || {};
-  const r = await api('agente', { accion:'probar', linea_id: lineaActual,
-    prompt: c.prompt||'', modelo: c.modelo||'claude-sonnet-4-6', mensajes: agProbarMsgs });
-  if(vista !== 'agente') return;
-  agPbPensando = false;
-  agProbarMsgs.push({ rol:'assistant',
-    texto: r.status === 'ok' ? (r.respuesta || '(sin respuesta)') : ('⚠️ ' + (r.mensaje || 'No se pudo probar.')) });
-  agPbRender();
-}
-
-function agProbarReset(){ agProbarMsgs = []; agPbPensando = false; agPbRender(); }
 
 async function cargarContactos(reset){
   if(reset){ contactosPage = 0; $('listaContactos').innerHTML = '<div class="vacio-lista">Cargando contactos…</div>'; }

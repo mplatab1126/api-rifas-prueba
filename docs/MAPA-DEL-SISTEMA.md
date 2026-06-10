@@ -202,6 +202,15 @@ o un candidato sin guardarlo; solo gerencia; correrla SIEMPRE antes de publicar 
 `agente-costo.js`. Cuenta teléfonos únicos por hito (notas de `agente_actividad`) y plata real
 (boletas/abonos del asesor de la línea).
 
+**Novedades (2026-06-10 tanda 11; detalle en la bitácora):** H68 — `liberar-boleta.js` con
+liberación ATÓMICA cuando llama el agente (`soloSiSinAbonos`+`telefonoEsperado`) + el motor
+cancela verificaciones antes de liberar; H81 — `contrasenaAgente()` en `api/lib/abono-agente.js`
+(clave dedicada del agente, respaldo a gerencia; falta agregar la clave "Liliana" en Vercel);
+H75 — el simulador 'probar' de la cabina se ELIMINÓ; H74 — debounce a pasos de 6s; H83 —
+agente_config leída una vez + lecturas en paralelo. N3 — el historial siempre cierra con mensaje
+de usuario (la API rechaza "assistant prefill"); N4 — visor: "✅ Caso CERRADO" si hay abono
+posterior a la rendición.
+
 **Novedades (2026-06-10 tanda 10 + N2; detalle en la bitácora):** N2 — endpoint
 `api/whatsapp/verificaciones.js` (lectura del relojito de pagos) + tarjeta "💳 Verificación del
 pago" en la ficha de la bandeja (todos los perfiles); H54+H73 — recordatorios durables (claim

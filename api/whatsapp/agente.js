@@ -7,9 +7,9 @@
  *                 (siembra la config por defecto y las herramientas la 1ª vez)
  *   guardar     → { estado, nombre_agente, prompt, modelo }
  *   herramienta → { clave, activa }   (prende/apaga una acción)
- *   probar      → { mensajes:[{rol,texto}] } → respuesta del agente usando el
- *                 prompt YA guardado. Es un SIMULADOR: NO envía nada por WhatsApp,
- *                 solo devuelve el texto para que gerencia afine el prompt.
+ *
+ * (El simulador 'probar' se eliminó el 10-jun-2026 — H75: probaba un agente distinto
+ *  al real. Para validar el manual está la suite dorada: probar-suite.js.)
  *
  * Recibe (POST, JSON): { contrasena, accion, linea_id, ... }
  */
@@ -254,46 +254,10 @@ export default async function handler(req, res) {
       return res.status(200).json({ status: 'ok', activa });
     }
 
-    // Simulador: corre el prompt contra una conversación de prueba. NO toca WhatsApp.
-    if (accion === 'probar') {
-      const apiKey = process.env.ANTHROPIC_API_KEY;
-      if (!apiKey) return res.status(200).json({ status: 'error', mensaje: 'Falta la API Key de Anthropic en el servidor.' });
-
-      const config = await asegurarConfig(linea_id);
-      // Usa el prompt/modelo que venga del probador (lo que gerencia tiene escrito,
-      // aunque no lo haya guardado todavía); si no viene, cae a lo guardado.
-      const prompt = String(req.body.prompt != null ? req.body.prompt : (config.prompt || '')).trim().slice(0, MAX_PROMPT);
-      if (!prompt) return res.status(200).json({ status: 'error', mensaje: 'Primero escribe las instrucciones del agente (arriba).' });
-      const modelo = MODELOS.includes(req.body.modelo) ? req.body.modelo
-        : (MODELOS.includes(config.modelo) ? config.modelo : 'claude-sonnet-4-6');
-
-      // mensajes = [{ rol:'user'|'assistant', texto }]. Tomamos los últimos 30.
-      const entrada = Array.isArray(req.body.mensajes) ? req.body.mensajes : [];
-      const messages = entrada
-        .filter(m => m && m.texto)
-        .slice(-30)
-        .map(m => ({ role: m.rol === 'assistant' ? 'assistant' : 'user', content: String(m.texto).slice(0, 2000) }));
-      if (!messages.length) return res.status(200).json({ status: 'error', mensaje: 'Escribe un mensaje de prueba.' });
-      if (messages[messages.length - 1].role !== 'user') return res.status(200).json({ status: 'error', mensaje: 'El último mensaje debe ser del cliente.' });
-
-      const system = prompt +
-        '\n\n---\n(Nota interna: ' + contextoFechaHora() +
-        '. Esto es una PRUEBA con un compañero del equipo; responde exactamente igual que con un cliente real.)';
-
-      try {
-        const r = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-          body: JSON.stringify({ model: modelo, max_tokens: 800, system, messages }),
-        });
-        const data = await r.json();
-        if (data.error) return res.status(200).json({ status: 'error', mensaje: 'IA: ' + (data.error.message || 'error') });
-        const texto = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
-        return res.status(200).json({ status: 'ok', respuesta: texto || '(la IA no devolvió texto)' });
-      } catch (e) {
-        return res.status(200).json({ status: 'error', mensaje: 'No se pudo consultar la IA: ' + e.message });
-      }
-    }
+    // (H75, 10-jun-2026) El simulador 'probar' se ELIMINÓ: probaba un agente DISTINTO al de
+    // producción (sin herramientas, sin contexto del cliente, sin candados) y daba falsa
+    // confianza. Para validar cambios del manual está la SUITE DORADA (probar-suite.js),
+    // que sí corre con las mismas herramientas del agente real en modo seco.
 
     return res.status(200).json({ status: 'error', mensaje: 'Acción no válida.' });
   } catch (e) {

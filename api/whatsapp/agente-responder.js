@@ -24,7 +24,7 @@ import { esMateo, puedeVerLinea } from '../lib/asesores.js';
 import { enviarTexto, enviarImagenPorId, enviarImagen, enviarDocumento, descargarMediaBase64 } from '../lib/whatsapp.js';
 import { numerosDisponibles } from '../lib/numeros-disponibles.js';
 import { ponerEtiqueta } from '../lib/etiquetas.js';
-import { verificarYAbonar, asesorDeLinea } from '../lib/abono-agente.js';
+import { verificarYAbonar, asesorDeLinea, contrasenaAgente } from '../lib/abono-agente.js';
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const MODELOS_OK = ['claude-opus-4-8', 'claude-sonnet-4-6', 'claude-haiku-4-5'];
@@ -320,18 +320,8 @@ async function transcribirAudio(mediaId, lineaId) {
   } catch (_) { return null; }
 }
 
-// Contraseña de gerencia (Mateo) para llamar los endpoints internos con la MISMA
-// lógica probada que usan los asesores. Sale de ASESORES_SECRETO.
-function contrasenaGerencia() {
-  try {
-    const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
-    const entradas = Object.entries(asesores);
-    const mateo = entradas.find(([, n]) => String(n).toLowerCase().trim() === 'mateo');
-    if (mateo) return mateo[0];
-    const ger = entradas.find(([, n]) => ['mateo', 'alejo plata'].includes(String(n).toLowerCase().trim()));
-    return ger ? ger[0] : null;
-  } catch (_) { return null; }
-}
+// (H81: la contraseña ya no se saca aquí — los ejecutores usan contrasenaAgente de
+//  api/lib/abono-agente.js: la clave DEDICADA del agente, con respaldo a gerencia.)
 
 // POST a un endpoint del propio sistema (reusar lógica probada de abono/liberar/etc.).
 // H34: tope de 120s — GENEROSO a propósito (buscar-pago lee la imagen con IA y puede tardar
@@ -885,7 +875,7 @@ async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
   }
 
   if (nombre === 'registrar_abono') {
-    const pwd = contrasenaGerencia();
+    const pwd = await contrasenaAgente(conv.linea_id);   // H81: clave del agente, no la maestra
     if (!pwd) return 'No puedo registrar pagos ahora (falta configuración). Pásalo a un asesor.';
     // 1) Fotos CANDIDATAS a comprobante (H27): las últimas 3 imágenes RECIENTES (≤48h) del
     //    cliente que no estén ya marcadas "pago asignado". Antes se tomaba a ciegas la ÚLTIMA
@@ -1022,9 +1012,18 @@ async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
     if (Number(bol.total_abonado || 0) > 0) {
       return `El cliente ya tiene $${Number(bol.total_abonado).toLocaleString('es-CO')} abonados en el ${num}. NO la liberes tú: explícale con tacto que un asesor le gestiona la cancelación y la devolución, y pásalo a un asesor.`;
     }
-    const pwd = contrasenaGerencia();
+    const pwd = await contrasenaAgente(conv.linea_id);   // H81: clave del agente, no la maestra
     if (!pwd) return 'No puedo cancelar boletas ahora (falta configuración). Pásalo a un asesor.';
-    const d = await llamarApi('/api/admin/liberar-boleta', { numeroBoleta: num, contrasena: pwd, asesorRegistro: await asesorDeLinea(conv.linea_id) });
+    // H68: cancelar las verificaciones de pago pendientes ANTES de liberar — si quedara una
+    // viva, el cron podría abonar este pago segundos después de liberar (o a otra boleta del
+    // cliente que ya canceló). Es el escritor concurrente más probable.
+    try { await cancelarVerificaciones(conv.id); } catch (_) {}
+    // H68: el endpoint revalida ATÓMICAMENTE "sin abonos + dueño esperado" justo antes de
+    // borrar (el chequeo de arriba se hizo segundos antes y el cron pudo abonar en medio).
+    const d = await llamarApi('/api/admin/liberar-boleta', {
+      numeroBoleta: num, contrasena: pwd, asesorRegistro: await asesorDeLinea(conv.linea_id),
+      soloSiSinAbonos: true, telefonoEsperado: conv.telefono,
+    });
     if (d.status !== 'ok') return 'No se pudo liberar la boleta: ' + (d.mensaje || 'error') + '. Pásalo a un asesor.';
     await nota(conv, `Liberé la boleta ${num} (el cliente ya no quiere participar).`);
     return `Listo, liberé el número ${num}. Confírmaselo con amabilidad, sin presionar, y déjale la puerta abierta para cuando quiera volver.`;
@@ -1035,7 +1034,7 @@ async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
     const destino = numeroBoleta(input?.destino);
     if (!origen || !destino) return MSG_NUMERO_MALO + ' Necesito las DOS boletas: de cuál sale el abono y a cuál entra.';
     if (origen === destino) return 'La boleta de origen y la de destino no pueden ser la misma.';
-    const pwd = contrasenaGerencia();
+    const pwd = await contrasenaAgente(conv.linea_id);   // H81: clave del agente, no la maestra
     if (!pwd) return 'No puedo trasladar abonos ahora (falta configuración). Pásalo a un asesor.';
     const cuerpo = { numeroOrigen: origen, numeroDestino: destino, telefono: conv.telefono, contrasena: pwd };
     if (input?.monto != null && input.monto !== '') cuerpo.monto = input.monto;
@@ -1056,7 +1055,7 @@ async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
   }
 
   if (nombre === 'actualizar_datos_cliente') {
-    const pwd = contrasenaGerencia();
+    const pwd = await contrasenaAgente(conv.linea_id);   // H81: clave del agente, no la maestra
     if (!pwd) return 'No puedo actualizar datos ahora (falta configuración). Pásalo a un asesor.';
     // Buscar al cliente por sus últimos 10 dígitos y MEZCLAR lo nuevo con lo que ya tiene
     // (el endpoint hace upsert y exige nombre+apellido+ciudad; así no se borran ni se duplican).
@@ -1247,9 +1246,12 @@ export default async function handler(req, res) {
     // 1b) Estado de la LÍNEA (interruptor de la cabina): 'apagado' = no responde (apaga toda la
     //     línea de golpe); 'sombra' = el agente PIENSA y deja notas pero NO le escribe al cliente
     //     ni ejecuta acciones (probar viendo errores SIN riesgo); cualquier otra cosa = en vivo.
-    const { data: cfgEstado } = await supabase
-      .from('agente_config').select('estado').eq('linea_id', linea_id).maybeSingle();
-    const estadoLinea = (cfgEstado && cfgEstado.estado) || 'encendido';
+    // H83: UNA sola lectura de agente_config para todo el turno (antes se leía aquí el estado
+    // y más abajo OTRA vez prompt/modelo/variables — dos viajes por la misma fila).
+    const { data: cfg } = await supabase
+      .from('agente_config').select('estado, prompt, modelo, nombre_agente, variables, resultados')
+      .eq('linea_id', linea_id).maybeSingle();
+    const estadoLinea = (cfg && cfg.estado) || 'encendido';
     if (estadoLinea === 'apagado') return res.status(200).json({ status: 'ok', skip: 'La línea tiene el agente en Apagado.' });
     conv.sombra = (estadoLinea === 'sombra');
 
@@ -1312,7 +1314,11 @@ export default async function handler(req, res) {
           esperaMs = DEBOUNCE_MS;
           continue;
         }
-        await dormir(Math.min(3000, esperaMs - silencioMs + 250));   // espera un poco; si entra otro mensaje, su hora más nueva reinicia el conteo
+        // H74: pasos de hasta 6s (antes 3s) — la mitad de viajes a la base durante la espera;
+        // post-difusión, N chats respondiendo a la vez ya no martillan a Supabase. La PRECISIÓN
+        // no cambia: cuando falta poco para cumplirse la pausa, se duerme JUSTO lo que falta;
+        // y el candado (60s) se refresca de sobra en cada vuelta.
+        await dormir(Math.min(6000, esperaMs - silencioMs + 250));   // si entra otro mensaje, su hora más nueva reinicia el conteo
       }
     }
 
@@ -1477,9 +1483,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 4) Configuración del agente (prompt + modelo).
-    const { data: cfg } = await supabase
-      .from('agente_config').select('prompt, modelo, nombre_agente, variables, resultados').eq('linea_id', linea_id).maybeSingle();
+    // 4) Configuración del agente (prompt + modelo) — leída UNA vez arriba en 1b (H83).
     const promptBase = String(cfg?.prompt || '').trim();
     if (!promptBase) { await soltarLock(conv); return res.status(200).json({ status: 'error', mensaje: 'El agente no tiene instrucciones guardadas.' }); }
     // Rellenar las variables {{nombre}}, {{pagos}}, etc. con lo configurado en esta línea.
@@ -1489,9 +1493,15 @@ export default async function handler(req, res) {
     });
     const modelo = MODELOS_OK.includes(cfg?.modelo) ? cfg.modelo : 'claude-sonnet-4-6';
 
-    // Solo se le ofrecen a la IA las herramientas IMPLEMENTADAS que estén ACTIVAS en la cabina.
-    const { data: hsAct } = await supabase.from('agente_herramientas')
-      .select('clave').eq('linea_id', linea_id).eq('activa', true);
+    // H83: las dos lecturas INDEPENDIENTES van en paralelo (herramientas activas y estado del
+    // cliente); la remisión depende del estado del cliente y va encadenada después.
+    const [{ data: hsAct }, estadoCliente] = await Promise.all([
+      // Solo se le ofrecen a la IA las herramientas IMPLEMENTADAS que estén ACTIVAS en la cabina.
+      supabase.from('agente_herramientas').select('clave').eq('linea_id', linea_id).eq('activa', true),
+      // Estado del cliente: SIEMPRE se consulta antes de responder, para que el agente
+      // sepa desde el primer mensaje si ya tiene boleta (y no lo trate como nuevo).
+      resumenCliente(conv.telefono),
+    ]);
     const activas = new Set((hsAct || []).map(h => h.clave));
     // Textos de la rifa para atajos y herramientas (H17): los de agente_config.variables
     // MANDAN sobre los respaldos del código — rotar de rifa no exige desplegar.
@@ -1499,10 +1509,6 @@ export default async function handler(req, res) {
     let toolsActivas = TOOLS
       .filter(t => activas.has(t.name))
       .map(t => ({ ...t, description: aplicarVariables(t.description, textosRifa) }));
-
-    // Estado del cliente: SIEMPRE se consulta antes de responder, para que el agente
-    // sepa desde el primer mensaje si ya tiene boleta (y no lo trate como nuevo).
-    const estadoCliente = await resumenCliente(conv.telefono);
 
     // ¿La boleta de este cliente la vendió OTRO punto de venta? Entonces NO lo
     // atiende esta línea: se le da el número del punto donde compró (remisión).

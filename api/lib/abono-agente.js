@@ -61,6 +61,21 @@ export function contrasenaGerencia() {
   } catch (_) { return null; }
 }
 
+// H81: contraseña DEDICADA del agente. El agente NO debería viajar con la llave MAESTRA de
+// gerencia en cada operación (si el runtime la filtra, entrega la cuenta de Mateo completa).
+// Busca en ASESORES_SECRETO una clave a nombre del asesor DUEÑO de la línea (ej. "Liliana" —
+// debe llamarse EXACTAMENTE así para que las validaciones de grupo de abono/liberar pasen).
+// Mientras Mateo no agregue esa clave en Vercel, cae a la de gerencia (transición sin cortes).
+export async function contrasenaAgente(lineaId) {
+  try {
+    const asesor = String(await asesorDeLinea(lineaId) || '').toLowerCase().trim();
+    const asesores = JSON.parse(process.env.ASESORES_SECRETO || '{}');
+    const propia = Object.entries(asesores).find(([, n]) => String(n).toLowerCase().trim() === asesor);
+    if (propia) return propia[0];
+  } catch (_) {}
+  return contrasenaGerencia();
+}
+
 // Marca la FOTO del comprobante del cliente como "pago asignado a la boleta NNNN"
 // (escribe raw.pago_asignado en ese mensaje). La bandeja muestra un chip verde encima
 // de la foto, la lista de comprobantes la cuenta como asignada y el motor deja de
