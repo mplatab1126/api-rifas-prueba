@@ -17,8 +17,10 @@
  * bandeja de asesores se conectan después, leyendo de estas mismas tablas.
  */
 
+import crypto from 'crypto';
 import { supabaseAdmin } from '../lib/supabase.js';
 import { configWhatsapp } from '../lib/whatsapp.js';
+import { permitido } from '../lib/rate-limit.js';
 
 export default async function handler(req, res) {
   // ── 1) Verificación del webhook (GET) ─────────────────────────────────────
@@ -38,10 +40,43 @@ export default async function handler(req, res) {
     return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
   }
 
+  // ── 1.5) FIRMA DE META (H19) ───────────────────────────────────────────────
+  // Meta firma cada POST con HMAC-SHA256 del CUERPO CRUDO (cabecera
+  // X-Hub-Signature-256). Sin esta validación, cualquiera que conozca la URL puede
+  // inyectar mensajes falsos (suplantar clientes, gastar IA, prender el agente).
+  // SOLO se aplica si META_APP_SECRET está configurado en Vercel: mientras no
+  // exista la variable, se procesa como siempre (deploy seguro; activar después).
+  let body = req.body;
+  const appSecret = process.env.META_APP_SECRET;
+  try {
+    const chunks = [];
+    for await (const ch of req) chunks.push(ch);
+    if (chunks.length) {
+      const crudo = Buffer.concat(chunks);
+      try { body = JSON.parse(crudo.toString('utf8') || '{}'); } catch (_) { body = {}; }
+      if (appSecret) {
+        const firma = String(req.headers['x-hub-signature-256'] || '');
+        const esperada = 'sha256=' + crypto.createHmac('sha256', appSecret).update(crudo).digest('hex');
+        const a = Buffer.from(firma), b = Buffer.from(esperada);
+        if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+          // 200 SIN procesar: a Meta no le pedimos reintento, y el POST falso no tiene efectos.
+          console.error('[whatsapp/recibir] FIRMA INVÁLIDA — POST rechazado sin procesar.');
+          return res.status(200).json({ received: true });
+        }
+      }
+    } else if (appSecret) {
+      // El runtime ya consumió los bytes crudos: procesamos igual (no dejar mudo el
+      // canal) pero queda rastro de que la firma no se pudo verificar en esta petición.
+      console.error('[whatsapp/recibir] sin cuerpo crudo disponible; firma NO verificada en esta petición.');
+    }
+  } catch (e) {
+    console.error('[whatsapp/recibir] error leyendo el cuerpo crudo:', e.message || e);
+  }
+
   // ── 2) Mensajes entrantes y acuses (POST) ─────────────────────────────────
   let mensajesIntentados = 0, mensajesGuardados = 0;
   try {
-    const cambios = (req.body?.entry || []).flatMap((e) => e.changes || []);
+    const cambios = (body?.entry || []).flatMap((e) => e.changes || []);
     for (const cambio of cambios) {
       const value = cambio.value || {};
       const nombrePerfil = value.contacts?.[0]?.profile?.name || null;
@@ -177,6 +212,11 @@ async function dispararAgenteSiActivo(telefono, lineaId) {
       .select('agente_activo')
       .eq('telefono', telefono).eq('linea_id', lineaId).maybeSingle();
     if (!c || !c.agente_activo) return;
+    // 🔒 Tope de arranques del motor por chat (H40): máx 6 por minuto por teléfono.
+    // Una ráfaga legítima la junta el debounce del motor; esto solo frena el abuso
+    // (inflar el gasto de IA a punta de mensajes). Si se pasa del tope NO se pierde
+    // nada: el mensaje ya quedó guardado y el barredor del cron lo retoma en ~2 min.
+    if (!(await permitido('disparo:' + lineaId + ':' + telefono, 60, 6))) return;
     const { verifyToken } = configWhatsapp();
     await fetch('https://www.losplata.com.co/api/whatsapp/agente-responder', {
       method: 'POST',

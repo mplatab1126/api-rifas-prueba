@@ -1,6 +1,7 @@
 import { supabase } from './lib/supabase.js';
 import { aplicarCors } from './lib/cors.js';
 import { limpiarTelefono } from './lib/telefono.js';
+import { permitido, ipDe } from './lib/rate-limit.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'GET,OPTIONS,PATCH,DELETE,POST,PUT')) return;
@@ -10,6 +11,13 @@ export default async function handler(req, res) {
 
   if (!telefono) {
     return res.status(400).json({ error: 'Falta el número de teléfono' });
+  }
+
+  // 🔒 Límite de tasa por IP (H20): GENEROSO a propósito (300 / 10 min) porque este
+  // endpoint lo consume ChateaPro desde sus servidores (pocas IPs para muchos
+  // clientes legítimos) — el límite solo frena la cosecha masiva de datos.
+  if (!(await permitido('cliente:' + ipDe(req), 600, 300))) {
+    return res.status(429).json({ error: 'Demasiadas consultas desde esta dirección.' });
   }
 
   // 3. Limpiamos el número (con indicativo para registros nuevos, sufijo para buscar viejos)

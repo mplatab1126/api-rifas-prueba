@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
+import { permitido, ipDe } from '../lib/rate-limit.js';
 
 const MESES = [
   'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -27,6 +28,14 @@ export default async function handler(req, res) {
   const last10 = String(telefono).replace(/\D/g, '').slice(-10);
   if (last10.length < 7) {
     return res.status(400).json({ error: 'Número demasiado corto' });
+  }
+
+  // 🔒 Límite de tasa por IP (H20): este endpoint es público y devuelve datos del
+  // cliente con solo el teléfono — sin freno, cualquiera podía enumerar celulares
+  // y cosechar datos. 40 consultas / 10 min por IP sobra para el uso legítimo
+  // (un cliente mirando su boleta) y frena la cosecha masiva.
+  if (!(await permitido('abonar-cliente:' + ipDe(req), 600, 40))) {
+    return res.status(429).json({ error: 'Demasiadas consultas. Espera unos minutos e intenta de nuevo.' });
   }
 
   try {
@@ -99,6 +108,20 @@ export default async function handler(req, res) {
       };
     });
 
+    // 🔒 Cédula y correo ENMASCARADOS (H20): al dueño le sirven igual para confirmar
+    // que son los suyos, pero quien enumere teléfonos ajenos ya no se lleva la
+    // identidad completa. El valor completo solo existe en el admin (con contraseña).
+    const docEnmascarado = documentoNumero
+      ? '••• ' + String(documentoNumero).trim().slice(-3)
+      : null;
+    const correoEnmascarado = (() => {
+      const c = String(correoCliente || '').trim();
+      if (!c) return null;
+      const arroba = c.indexOf('@');
+      if (arroba < 1) return '•••';
+      return c.slice(0, Math.min(2, arroba)) + '•••@' + c.slice(arroba + 1);
+    })();
+
     return res.status(200).json({
       encontrado: true,
       nombre: cliente.nombre || '',
@@ -106,8 +129,8 @@ export default async function handler(req, res) {
       ciudad: cliente.ciudad || '',
       telefono: cliente.telefono || telefono,
       documento_tipo: documentoTipo,
-      documento_numero: documentoNumero,
-      correo: correoCliente,
+      documento_numero: docEnmascarado,
+      correo: correoEnmascarado,
       boletas: boletasFmt
     });
   } catch (error) {
