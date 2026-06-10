@@ -518,22 +518,6 @@ async function manejarPagoNoVerificado(conv, reales) {
   if (ult) { try { await agendarVerificacion(conv, ult.media_id, ''); } catch (_) {} }
 }
 
-// Marca la FOTO del comprobante del cliente como "pago asignado a la boleta NNNN"
-// (escribe raw.pago_asignado en ese mensaje). La bandeja muestra un chip verde encima
-// de la foto y la lista de comprobantes la cuenta como asignada. Best-effort.
-async function marcarComprobanteAsignado(convId, mediaId, boleta, monto) {
-  if (!convId || !mediaId) return;
-  try {
-    const { data: msg } = await supabaseAdmin.from('mensajes_whatsapp')
-      .select('id, raw').eq('conversacion_id', convId).eq('media_id', mediaId)
-      .order('timestamp_wa', { ascending: false }).limit(1).maybeSingle();
-    if (!msg) return;
-    const raw = (msg.raw && typeof msg.raw === 'object') ? msg.raw : {};
-    raw.pago_asignado = { boleta: String(boleta || ''), monto: Number(monto || 0), at: new Date().toISOString() };
-    await supabaseAdmin.from('mensajes_whatsapp').update({ raw }).eq('id', msg.id);
-  } catch (_) { /* no es crítico */ }
-}
-
 // Envía un texto al cliente por WhatsApp y lo guarda en el chat. `predefinido`=true cuando
 // el texto viene de un atajo SIN IA (para que la bandeja lo marque como "Mensaje predefinido").
 async function decir(conv, texto, { predefinido = false } = {}) {
@@ -834,7 +818,7 @@ async function ejecutarHerramienta(nombre, input, conv) {
 
     if (r.tipo === 'abonado') {
       await cancelarVerificaciones(conv.id);
-      await marcarComprobanteAsignado(conv.id, mediaId, r.numero, r.monto);   // marca la foto: "✅ pago asignado"
+      // (la foto del comprobante la marca "✅ pago asignado" verificarYAbonar, en api/lib)
       await nota(conv, `Registré un abono de $${Number(r.monto).toLocaleString('es-CO')} a la boleta ${r.numero} (pago verificado contra el banco).`);
       return `Listo: registré el abono de $${Number(r.monto).toLocaleString('es-CO')} a la boleta ${r.numero}. Confírmaselo con alegría, agradécele y, si quieres que termine de pagar, recuérdale con cariño el saldo que le queda.`;
     }
@@ -1143,7 +1127,9 @@ export default async function handler(req, res) {
     } catch (_) {}
     let qHist = supabase
       .from('mensajes_whatsapp')
-      .select('id, direccion, tipo, texto, media_id, timestamp_wa, created_at')
+      // pago_asignado: la marca "✅ pago asignado" de la foto (raw->pago_asignado), para NO
+      // re-adjuntar un comprobante ya abonado en cada llamada (H30). Solo esa llave, no todo raw.
+      .select('id, direccion, tipo, texto, media_id, timestamp_wa, created_at, pago_asignado:raw->pago_asignado')
       .eq('conversacion_id', conv.id)
       // Los envíos que WhatsApp RECHAZÓ no cuentan como dichos: si la IA los "recuerda",
       // no repite la boleta/confirmación que el cliente nunca recibió (H10). Cubre tanto
@@ -1233,10 +1219,17 @@ export default async function handler(req, res) {
     // 3c) Adjuntar las imágenes entrantes recientes para que la IA las VEA (la clave
     //     para que reconozca un comprobante de pago en vez de ignorarlo). Claude lee
     //     imágenes; descargamos las últimas y se las pasamos como foto, no como "[imagen]".
+    //     NO se adjuntan (H30): las fotos ya marcadas "pago asignado" (el abono quedó
+    //     registrado; re-mostrarlas solo re-cobra ~1.1-1.6k tokens por llamada el resto
+    //     del chat) ni las de más de 48 horas (si hace falta re-verificar una vieja,
+    //     registrar_abono usa el media_id directo de la base, no la visión del modelo).
+    const HACE_48H_MS = Date.now() - 48 * 3600 * 1000;
     const imagenesVistas = new Map();
     let imgsCargadas = 0;
     for (let i = reales.length - 1; i >= 0 && imgsCargadas < MAX_IMAGENES; i--) {
       const m = reales[i];
+      if (m.pago_asignado) continue;
+      if (new Date(m.timestamp_wa || m.created_at).getTime() < HACE_48H_MS) continue;
       if (m.direccion === 'entrante' && m.tipo === 'image' && m.media_id) {
         try {
           // Descargar imágenes toma segundos; refrescar el candado para que no se venza (H5).

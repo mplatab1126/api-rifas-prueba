@@ -45,6 +45,24 @@ export function contrasenaGerencia() {
   } catch (_) { return null; }
 }
 
+// Marca la FOTO del comprobante del cliente como "pago asignado a la boleta NNNN"
+// (escribe raw.pago_asignado en ese mensaje). La bandeja muestra un chip verde encima
+// de la foto, la lista de comprobantes la cuenta como asignada y el motor deja de
+// re-adjuntarla a la IA (H30). Best-effort. Vivía en agente-responder.js; se movió aquí
+// para que TAMBIÉN marque cuando abona el cron de reintentos (antes nunca marcaba).
+export async function marcarComprobanteAsignado(convId, mediaId, boleta, monto) {
+  if (!convId || !mediaId) return;
+  try {
+    const { data: msg } = await supabaseAdmin.from('mensajes_whatsapp')
+      .select('id, raw').eq('conversacion_id', convId).eq('media_id', mediaId)
+      .order('timestamp_wa', { ascending: false }).limit(1).maybeSingle();
+    if (!msg) return;
+    const raw = (msg.raw && typeof msg.raw === 'object') ? msg.raw : {};
+    raw.pago_asignado = { boleta: String(boleta || ''), monto: Number(monto || 0), at: new Date().toISOString() };
+    await supabaseAdmin.from('mensajes_whatsapp').update({ raw }).eq('id', msg.id);
+  } catch (_) { /* no es crítico */ }
+}
+
 async function post(ruta, cuerpo) {
   try {
     const r = await fetch(BASE_URL + ruta, {
@@ -87,5 +105,8 @@ export async function verificarYAbonar({ telefono, linea_id, conversacion_id, me
     ...(asesorReg ? { asesorRegistro: asesorReg } : {}),
   });
   if (d.status !== 'ok') return { tipo: 'error', mensaje: d.mensaje || 'no se pudo registrar el abono' };
+  // Marca la foto del comprobante "✅ pago asignado" (chip en la bandeja + el motor deja de
+  // re-adjuntarla a la IA). Aquí cubre a los DOS llamadores: el turno en vivo y el cron.
+  await marcarComprobanteAsignado(conversacion_id, mediaId, destino.numero, trans.monto);
   return { tipo: 'abonado', monto: trans.monto, numero: destino.numero };
 }
