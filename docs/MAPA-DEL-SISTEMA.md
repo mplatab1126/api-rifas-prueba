@@ -109,8 +109,8 @@ Compartidos por varias páginas:
 | `whatsapp.js` | Cliente de WhatsApp (Meta): enviar texto/imagen/plantilla/documento, subir y bajar archivos. | **Crítica** — 26+ funciones. |
 | `asesores.js` | Permisos: quién es gerencia, quién ve qué línea, quién es independiente. | **Alta** — 20+ funciones. |
 | `telefono.js` | Limpia y normaliza teléfonos (agrega 57, detecta duplicados). | **Alta**. |
-| `comprobante.js` | Lee comprobantes bancarios con IA (monto, referencia, fecha). | **Media**. |
-| `abono-agente.js` | Verifica un comprobante contra los pagos reales y abona si hay match sólido (misma lógica probada). La usan el agente y el cron de reintentos de pago. **2026-06-07.** | **Media**. |
+| `comprobante.js` | Lee comprobantes bancarios con IA (monto, referencia, fecha). **2026-06-09**: modelo actualizado a `claude-sonnet-4-6` (el anterior se retiraba el 15-jun; también en `procesar-ia.js`, `procesar-ia-gasto.js` y `analisis-ia.js`). | **Media**. |
+| `abono-agente.js` | Verifica un comprobante contra los pagos reales y abona si hay match sólido (misma lógica probada). La usan el agente y el cron de reintentos de pago. **2026-06-09**: resuelve el actor real (Liliana) ANTES de buscar el pago y se lo pasa a `buscar-pago` (fix del bug que botaba pagos como "sin saldo"; ver bitácora). | **Media**. |
 | `etiquetas.js` | Pone etiquetas a conversaciones de WhatsApp (sin duplicar). | **Media**. |
 | `auth-app.js` | Valida la sesión de la app móvil (token). | **Media**. |
 | `configuracion.js` | Interruptores globales del sistema (encender/apagar funciones). | **Baja**. |
@@ -185,7 +185,13 @@ para reabrir la conversación; si sigue abierta, texto normal. Ver bitácora),
 ~1h reintenta buscar el pago; abona solo si aparece de forma sólida; pg_cron `verificar-pagos-cada-5min`.
 **2026-06-09: al AGOTAR los intentos, Liliana se apaga y pasa a humano EN SILENCIO —etiqueta ASESOR—, ya
 NO manda un 2º aviso al cliente.** Ver bitácora),
-`abono-reparto.js`, `buscar-pago.js`.
+`abono-reparto.js`, `buscar-pago.js` (**2026-06-09**: acepta `asesorRegistro` —solo gerencia— y evalúa
+`puede_modificar` con el grupo del actor REAL, no del que autentica; fix del abono del agente, ver bitácora).
+
+**Novedades del motor (`agente-responder.js`, 2026-06-09; ver bitácora):**
+- **Candado anti "pago falso" v2:** detector `afirmaPagoHecho` preciso (excluye frases condicionales tipo
+  "cuando esté pagada al 100%" o "es 100% legal") y `esContextoPago` — el candado SOLO se arma si hay
+  comprobante o el cliente dijo que pagó. Arregla los falsos positivos del 9-jun.
 
 **Novedades del motor (`agente-responder.js`, 2026-06-08; ver bitácora):**
 - **Remisión al punto de venta:** funciones `analizarRemision` / `bloqueRemision`. Si el cliente que

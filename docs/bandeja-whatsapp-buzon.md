@@ -387,6 +387,20 @@ Mide cuánto cuesta la IA que responde (los tokens que devuelve Claude en cada r
   `vercel.json`, backend y cabina). Tablas `agente_sugerencias`/`agente_qa_estado` borradas. La seguridad
   del dinero NO bajó (vive en los candados de cada acción). Ver bitácora.
 
+### 8.15 Novedades del 9-jun-2026 (ver bitácora para el detalle)
+- **💰 Bug del abono automático ARREGLADO (+$110.000 recuperados):** desde el 8-jun, `buscar-pago.js`
+  evaluaba `puede_modificar` con el grupo de gerencia y filtraba las boletas de Liliana → pagos que SÍ
+  coincidían con el banco se botaban como 'sin_saldo' EN SILENCIO. Fix: `asesorRegistro` (solo gerencia)
+  en `buscar-pago.js` + `abono-agente.js` lo pasa. Se recuperaron 3 pagos botados (boletas 5653, 3554, 9744).
+- **Candado anti "pago falso" v2:** el del mismo día disparaba en falso (bloqueaba "es 100% legal" y
+  "cuando esté pagada al 100%"). Ahora: detector preciso + solo se arma con comprobante o "ya pagué"
+  (`afirmaPagoHecho` + `esContextoPago` en `agente-responder.js`).
+- **Modelo de lectura de comprobantes actualizado** a `claude-sonnet-4-6` (el viejo se retiraba el
+  15-jun y habría matado el abono automático y la carga de pagos).
+- **AUDITORÍA COMPLETA del agente (90 hallazgos verificados):** plan en `docs/PENDIENTES-LILIANA.md`,
+  detalle en `docs/auditoria-liliana-2026-06-09.md`. Ahí está el mapa de TODO lo que falta mejorar
+  (dinero, silencios, coherencia, seguridad, velocidad, costos, estrategia).
+
 ## 9. Pendientes
 > **(9-jun-2026)** Se hizo una AUDITORÍA COMPLETA del agente (90 hallazgos verificados). El plan
 > de mejoras para ir tachando está en **`docs/PENDIENTES-LILIANA.md`** (detalle por ítem en
