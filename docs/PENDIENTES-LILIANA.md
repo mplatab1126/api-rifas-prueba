@@ -87,9 +87,12 @@
 
 ## 3) 🟠 Coherencia con fecha límite (antes de la semana final de la rifa)
 
-- [ ] **H2** · El saludo fijo dice "con $20.000 ya entras" pegado a CUALQUIER próximo sorteo:
-  del 28-jun al 4-jul prometería entrar al sorteo de LA CASA con $20.000 (falso: exige 100%
-  pagada). If de una línea sobre el título del sorteo. **Hacer antes del 27-jun.** — _esfuerzo bajo_
+- [x] (2026-06-10) **H2** · ARREGLADO (17 días antes del límite): si el próximo sorteo es el
+  Premio Mayor (regex `/mayor|casa/i` sobre el título, validado contra el calendario real: caza
+  SOLO el 4-jul), el saludo fijo dice "con tu boleta *100% pagada* participas por la casa" en vez
+  de "con $20.000 ya entras". Queda pendiente lo OPCIONAL del verificador: una aclaración de una
+  línea en el manual (línea ~102, "con $20.000 ya entra") para la ruta CON IA — hacerla junto con
+  H3 cuando Mateo dé el OK de editar el manual.
 - [ ] **H3** · El manual ordena decir "está acumulado en $20.000.000" SIEMPRE, pero el acumulado
   se ganó el 6-jun (hoy va por $5M): instrucción imperativa cacheada vs nota volátil del motor →
   puede decirle al cliente un premio 4× inflado. Editar el manual: volver el bloque condicional

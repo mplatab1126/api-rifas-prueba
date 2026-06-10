@@ -26,6 +26,17 @@
 
 ---
 
+## 2026-06-10 — [WhatsApp] — H2: el saludo fijo ya no promete entrar al Premio Mayor con $20.000
+
+**Qué:** el atajo SIN IA del contacto inicial pegaba "— con *$20.000* de abono ya entras 🎉" a
+CUALQUIER próximo sorteo. Del 28-jun al 4-jul (semana pico) eso prometería entrar al sorteo de LA
+CASA con $20.000, cuando el Premio Mayor exige boleta 100% pagada. Ahora, si el título del próximo
+sorteo es el Premio Mayor (regex `/mayor|casa/i`, validado contra el calendario real: caza SOLO el
+4-jul y ningún sábado), la coletilla cambia a "— con tu boleta *100% pagada* participas por la
+casa. 🏡". La viñeta "separar con 20 mil" del cierre se conserva (separar ≠ elegibilidad, sigue
+siendo cierta). **Pendiente (con OK de Mateo, junto a H3):** la aclaración opcional en el manual
+para la ruta CON IA.
+
 ## 2026-06-10 — [WhatsApp] — Cerrada la familia "clientes colgados en silencio" (sección 2 de la auditoría: H4, H5, H10, H11, H12, H13, H21)
 
 **Qué hicimos:** cerramos TODOS los mecanismos conocidos por los que un cliente escribía y Liliana
