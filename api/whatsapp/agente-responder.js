@@ -1342,10 +1342,16 @@ export default async function handler(req, res) {
         && !(estadoCliente.boletas && estadoCliente.boletas.length)
         && activas.has('enviar_contacto_inicial')
         && primerContactoLoResuelveSaludo(reales)) {
+      // OJO (H2): la coletilla "con $20.000 ya entras" SOLO aplica a los sorteos de los
+      // sábados. Cuando el próximo es el Premio Mayor (la casa), exige boleta 100% PAGADA:
+      // del 28-jun al 4-jul este mensaje fijo prometía entrar a la casa con $20.000 (falso).
+      const esPremioMayor = proximo && /mayor|casa/i.test(String(proximo.titulo || ''));
       const lineaProx = proximo
         ? `\n\nAdemás, *${etiquetaFecha(proximo.fecha)}* ya juega: *${String(proximo.titulo).trim()}*` +
           (montoAcumProximo ? ` (premio acumulado en *${montoAcumProximo}*)` : '') +
-          ` — con *$20.000* de abono ya entras. 🎉`
+          (esPremioMayor
+            ? ` — con tu boleta *100% pagada* participas por la casa. 🏡`
+            : ` — con *$20.000* de abono ya entras. 🎉`)
         : '';
       const cierre = '• Cada boleta *cuesta 150 mil*\n\n• La puedes *separar con 20 mil* e ir abonando a tu ritmo\n\n• Estamos *autorizados por EDSA* (rifa legal)' +
         lineaProx + '\n\n*¿Te explico los premios?* 🤔';
