@@ -33,7 +33,32 @@ export default async function handler(req, res) {
       .order('created_at', { ascending: false })
       .limit(3);
     if (error) return res.status(200).json({ status: 'error', mensaje: error.message });
-    return res.status(200).json({ status: 'ok', verificaciones: data || [] });
+
+    // N4 (pedido de Mateo): la rendición va ENLAZADA al abono pendiente. Si DESPUÉS de que
+    // el sistema se rindió alguien registró un abono a este cliente (a mano en la bandeja o
+    // el admin, por el cron, etc.), el caso ya NO está pendiente: se adjunta ese abono para
+    // que la tarjeta muestre "✅ caso cerrado" en vez del 🆘 rojo que pedía revisión.
+    const lista = data || [];
+    const masReciente = lista[0];
+    if (masReciente && masReciente.estado === 'rendido') {
+      try {
+        const last10 = tel.slice(-10);
+        const { data: bols } = await supabaseAdmin
+          .from('boletas').select('numero').like('telefono_cliente', '%' + last10);
+        const numeros = (bols || []).map(b => b.numero);
+        if (numeros.length) {
+          const { data: abs } = await supabaseAdmin
+            .from('abonos')
+            .select('monto, fecha_pago, numero_boleta, asesor')
+            .in('numero_boleta', numeros)
+            .gt('fecha_pago', masReciente.created_at)
+            .order('fecha_pago', { ascending: false })
+            .limit(1);
+          if (abs && abs.length) masReciente.abono_posterior = abs[0];
+        }
+      } catch (_) {}
+    }
+    return res.status(200).json({ status: 'ok', verificaciones: lista });
   } catch (e) {
     return res.status(500).json({ status: 'error', mensaje: e.message });
   }

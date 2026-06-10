@@ -389,6 +389,9 @@ Responde "¿el sistema sigue verificando este pago solo, o ya se rindió y le to
 - La tarjeta de costo de IA (§8.12) además ya no exige que el chat esté en la lista cargada:
   el endpoint resuelve la conversación por teléfono (chats abiertos desde el buscador).
 
+- **N4 (10-jun)**: si hay un abono POSTERIOR a una verificación 'rendido', la tarjeta sale
+  "✅ Caso CERRADO" en vez del 🆘 rojo (la rendición queda enlazada al abono pendiente).
+
 ### 8.13 Novedades del 7-jun-2026 (Liliana y boleta). Detalle en la bitácora.
 - **Verificación de pagos con reintentos** (TOCA DINERO, aprobado): si el pago no aparece, NO pasa a
   asesor de una; dice "estoy verificando" y `verificar-pagos-cron.js` reintenta cada ~15 min hasta ~1h.
