@@ -26,6 +26,38 @@
 
 ---
 
+## 2026-06-10 — [WhatsApp] / [Pagos] — Tanda 6 de los amarillos (H27, H32): el flujo de comprobantes ya no es ingenuo
+
+**Qué hicimos (con OK de Mateo — tocan el flujo de comprobantes, sin aflojar ningún candado):**
+- **H27 — Ya no se verifica la foto equivocada:** `registrar_abono` tomaba a ciegas la ÚLTIMA
+  imagen del chat; si el cliente mandaba su cédula DESPUÉS del comprobante, se verificaba la
+  cédula, fallaba, y el que SÍ pagó quedaba colgado "verificando" hasta 1h. Ahora prueba las
+  últimas 3 fotos RECIENTES (≤48h, sin marca "pago asignado") de la más nueva hacia atrás: la
+  primera que se comporta como comprobante es la elegida (la cédula falla la extracción y se
+  salta), y la verificación con reintentos guarda la foto RECONOCIDA. `manejarPagoNoVerificado`
+  (el candado anti pago falso) también respeta 48h y la marca. Probar varias fotos NO puede
+  duplicar plata: la coincidencia sólida y el consumo único de la transferencia siguen iguales.
+- **H32 — Candado anti "comprobante prestado":** un pantallazo del pago de OTRO cliente (se
+  comparten en grupos de WhatsApp al celebrar) coincidía perfecto por referencia y abonaba la
+  plata del dueño real a la boleta de quien lo reenvía. Ahora, si la coincidencia salió SOLO de
+  los datos de la foto (razones "Coincide la referencia" / "Misma hora y plataforma") y la
+  referencia trae el celular de OTRO cliente registrado (≠ el del chat), el abono automático se
+  RETIENE para un asesor (resultado nuevo `'retenido'`): el turno le dice al cliente "en
+  revisión" SIN acusarlo, y el cron lo cierra sin reintentar (mismo cierre del 'rendido').
+  El ajuste del verificador evita falsos positivos de Bancolombia: el celular debe ser un número
+  COMPLETO (lookarounds) y de un cliente REAL con boleta.
+
+**Medido contra producción (solo lectura):** en 14 días, solo ~1,3% de los pagos Nequi asignados
+(40/3.105) tenían el celular de otro cliente en la referencia — y la mayoría los abonan asesores
+humanos, a quienes el candado NO les aplica. Bancolombia: 1 sola referencia de 4.316 con celular
+embebido. El ruido esperado es de un puñado de revisiones por semana, justo los casos ambiguos.
+
+**Cuidado / qué NO hacer:** el candado H32 aplica SOLO al camino automático (agente + cron); la
+bandeja humana sigue igual (el asesor ve y decide). La razón "El celular del cliente está en la
+referencia" NO se retiene (esa prueba identidad). `celularDeOtroCliente` es fail-open a propósito
+(un error de consulta no frena abonos legítimos). Si un cliente legítimo paga desde el Nequi de un
+familiar que TAMBIÉN es cliente, caerá a revisión humana: es el costo aceptado de frenar el fraude.
+
 ## 2026-06-10 — [WhatsApp] — Tanda 5 de los amarillos (H42, H43+H84, H34): más rápido y sin morir a medias
 
 **Qué hicimos (motor `agente-responder.js`, `lib/whatsapp.js`, `lib/abono-agente.js`):**

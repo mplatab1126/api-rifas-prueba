@@ -521,7 +521,12 @@ function esContextoPago(reales) {
 // el chat para revisión y deja el último comprobante en verificación automática.
 async function manejarPagoNoVerificado(conv, reales) {
   // ¿Hay una FOTO (comprobante) reciente del cliente? Define el texto seguro y la verificación.
-  const ult = [...(reales || [])].reverse().find(m => m.direccion === 'entrante' && m.tipo === 'image' && m.media_id);
+  // H27: "reciente" de verdad — se ignoran las fotos de >48h y las ya marcadas "pago asignado"
+  // (antes cualquier última imagen, aunque fuera una cédula vieja, se agendaba como comprobante).
+  const hace48hMs = Date.now() - 48 * 3600 * 1000;
+  const ult = [...(reales || [])].reverse().find(m =>
+    m.direccion === 'entrante' && m.tipo === 'image' && m.media_id && !m.pago_asignado &&
+    new Date(m.timestamp_wa || m.created_at).getTime() >= hace48hMs);
   await decir(conv, ult
     ? '¡Gracias! 😊 Ya recibí tu comprobante y estoy *verificando tu pago*. Apenas me lo confirmen te aviso por aquí mismo. 🙏'
     : '😊 Estoy *verificando tu pago* en el sistema. Apenas me lo confirmen te aviso por aquí mismo. 🙏');
@@ -812,15 +817,18 @@ async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
   if (nombre === 'registrar_abono') {
     const pwd = contrasenaGerencia();
     if (!pwd) return 'No puedo registrar pagos ahora (falta configuración). Pásalo a un asesor.';
-    // 1) Último comprobante (imagen) que mandó el cliente.
+    // 1) Fotos CANDIDATAS a comprobante (H27): las últimas 3 imágenes RECIENTES (≤48h) del
+    //    cliente que no estén ya marcadas "pago asignado". Antes se tomaba a ciegas la ÚLTIMA
+    //    imagen: si el cliente mandaba la foto de su cédula DESPUÉS del comprobante, se
+    //    verificaba la foto equivocada y el que SÍ pagó quedaba colgado "verificando".
+    const desde48h = new Date(Date.now() - 48 * 3600 * 1000).toISOString();
     const { data: imgs } = await supabase.from('mensajes_whatsapp')
-      .select('id, media_id').eq('conversacion_id', conv.id).eq('direccion', 'entrante').eq('tipo', 'image')
-      .order('timestamp_wa', { ascending: false }).limit(1);
-    const mediaId = imgs && imgs[0] && imgs[0].media_id;
-    // Si el motor YA descargó esta foto para mostrársela a la IA, se la prestamos a la
-    // verificación y nos ahorramos la segunda descarga de Meta (H44).
-    const mediaBase64 = (imgs && imgs[0] && ctx.imagenesVistas) ? ctx.imagenesVistas.get(imgs[0].id) : null;
-    if (!mediaId) return 'El cliente NO ha mandado la foto del comprobante. Pídesela amablemente; sin el comprobante no puedo registrar el pago.';
+      .select('id, media_id, pago_asignado:raw->pago_asignado')
+      .eq('conversacion_id', conv.id).eq('direccion', 'entrante').eq('tipo', 'image')
+      .gte('timestamp_wa', desde48h)
+      .order('timestamp_wa', { ascending: false }).limit(5);
+    const candidatas = (imgs || []).filter(m => m.media_id && !m.pago_asignado).slice(0, 3);
+    if (!candidatas.length) return 'El cliente NO ha mandado la foto del comprobante (o la que mandó ya es vieja o ya quedó asignada a un abono anterior). Pídesela amablemente; sin el comprobante no puedo registrar el pago.';
 
     // 2) Candado contra el cron de reintentos: si la verificación de este chat está
     // 'en_proceso' AHORA MISMO (el relojito la está revisando en este instante), NO
@@ -852,8 +860,23 @@ async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
     };
 
     // 3) Verificar contra los pagos REALES y abonar si hay coincidencia SÓLIDA (lógica probada).
+    //    H27: se prueban las candidatas de la más NUEVA hacia atrás. La primera que se comporte
+    //    como comprobante (extrae datos de pago: abona, queda dudosa o "aún no aparece") es LA
+    //    elegida; una foto que no es comprobante (cédula, captura cualquiera) falla la extracción
+    //    ('error') y se pasa a la siguiente. Probar varias NO puede duplicar plata: la exigencia
+    //    de coincidencia sólida y el consumo único de la transferencia son los mismos de siempre.
     const numeroPedido = String(input?.numero || '').replace(/\D/g, '');
-    const r = await verificarYAbonar({ telefono: conv.telefono, linea_id: conv.linea_id, conversacion_id: conv.id, mediaId, numeroPedido, pwd, mediaBase64 });
+    let r = null;
+    let mediaElegida = candidatas[0];
+    for (const img of candidatas) {
+      // Si el motor YA descargó esta foto para mostrársela a la IA, se la prestamos a la
+      // verificación y nos ahorramos la segunda descarga de Meta (H44).
+      const mb64 = (ctx.imagenesVistas && ctx.imagenesVistas.get(img.id)) || null;
+      const ri = await verificarYAbonar({ telefono: conv.telefono, linea_id: conv.linea_id, conversacion_id: conv.id, mediaId: img.media_id, numeroPedido, pwd, mediaBase64: mb64 });
+      if (!r) r = ri;   // si TODAS fallan, se reporta el resultado de la más nueva
+      if (ri.tipo !== 'error') { r = ri; mediaElegida = img; break; }
+    }
+    const mediaId = mediaElegida.media_id;   // la foto reconocida (la guardan las verificaciones)
 
     if (r.tipo === 'abonado') {
       await cancelarVerificaciones(conv.id);
@@ -870,6 +893,15 @@ async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
       await nota(conv, 'No pude verificar/registrar el comprobante: ' + (r.mensaje || 'error'));
       await ponerEtiqueta(conv.id, conv.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' });
       return 'No pude verificar el comprobante (' + (r.mensaje || 'error') + '). Avísale con tacto que un asesor lo revisa enseguida, y pásalo a un asesor.';
+    }
+    if (r.tipo === 'retenido') {
+      // H32: el pago coincide, pero la referencia de la transferencia trae el celular de
+      // OTRO cliente registrado (huele a comprobante prestado/reciclado de un grupo).
+      // NO se abona solo: lo revisa un humano. Sin reintentos (el resultado no va a cambiar).
+      await cancelarVerificaciones(conv.id);
+      await nota(conv, '🚫 RETUVE el abono automático: la referencia del pago trae el celular de OTRO cliente (' + (r.celular || '?') + '), no el de este chat. Posible comprobante de otra persona — lo revisa un asesor.');
+      await ponerEtiqueta(conv.id, conv.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' });
+      return 'OJO: el pago de ese comprobante parece estar amarrado a OTRO cliente (la referencia trae un celular distinto al de este chat). NO registré el abono: un asesor humano lo va a revisar. Dile al cliente, con tacto y SIN acusarlo, que su pago quedó en revisión y que le confirman por aquí mismo. NO confirmes ningún abono.';
     }
     if (r.tipo === 'demorado') {
       // H34: la verificación superó el tope de tiempo. Es AMBIGUO (el abono pudo quedar

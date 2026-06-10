@@ -20,6 +20,9 @@
  *   'demorado'      → {}          (H34: la verificación/abono superó el tope de tiempo.
  *                                  OJO: el servidor pudo haber terminado igual — NUNCA
  *                                  decirle al cliente que falló; reintentar/verificar)
+ *   'retenido'      → { celular } (H32: la referencia del pago trae el celular de OTRO
+ *                                  cliente registrado — posible comprobante prestado.
+ *                                  NO abonar ni reintentar: lo revisa un humano)
  *   'error'         → { mensaje }
  */
 
@@ -66,6 +69,27 @@ export async function marcarComprobanteAsignado(convId, mediaId, boleta, monto) 
   } catch (_) { /* no es crítico */ }
 }
 
+// H32: ¿la referencia trae un celular colombiano (3XXXXXXXXX, como número COMPLETO) que NO
+// es el del chat pero SÍ es de OTRO cliente registrado (tiene boleta)? Devuelve ese celular,
+// o null. Ajuste del verificador: exigir que el número sea de un cliente REAL evita falsos
+// positivos con las referencias de Bancolombia (números de aprobación de 10 dígitos que
+// suelen empezar por 3). Si el celular del PROPIO chat está en la referencia, es su pago.
+// Fail-open: si la consulta falla, no se frena un abono legítimo (precedente del rate-limit).
+async function celularDeOtroCliente(referencia, telefonoChat) {
+  try {
+    const nums = [...new Set(String(referencia || '').match(/(?<!\d)3\d{9}(?!\d)/g) || [])];
+    if (!nums.length) return null;
+    const last10 = String(telefonoChat || '').replace(/\D/g, '').slice(-10);
+    if (nums.includes(last10)) return null;   // el celular de ESTE chat está en la referencia → identidad confirmada
+    for (const num of nums) {
+      const { data } = await supabaseAdmin.from('boletas')
+        .select('numero').like('telefono_cliente', '%' + num).limit(1);
+      if (data && data.length) return num;    // es el celular de OTRO cliente con boleta
+    }
+    return null;
+  } catch (_) { return null; }
+}
+
 async function post(ruta, cuerpo) {
   try {
     const r = await fetch(BASE_URL + ruta, {
@@ -103,6 +127,17 @@ export async function verificarYAbonar({ telefono, linea_id, conversacion_id, me
 
   const trans = (v.candidatas || []).find(c => c.id === v.sugerida_id);
   if (!trans) return { tipo: 'error', mensaje: 'no se pudo identificar el pago con seguridad' };
+
+  // H32 — Candado anti "comprobante prestado": un pantallazo del pago de OTRO cliente
+  // (se comparten en grupos de WhatsApp) coincide perfecto por referencia/hora, y abonaría
+  // la plata del dueño real a la boleta de quien lo reenvía. Si la coincidencia salió SOLO
+  // de los datos de la foto (referencia / misma hora+plataforma) y la referencia trae el
+  // celular de OTRO cliente registrado (≠ el de este chat), NO se abona solo. La razón
+  // "El celular del cliente está en la referencia" no entra aquí: esa SÍ prueba identidad.
+  if (v.razon_sugerida === 'Coincide la referencia' || v.razon_sugerida === 'Misma hora y plataforma') {
+    const celAjeno = await celularDeOtroCliente(trans.referencia, telefono);
+    if (celAjeno) return { tipo: 'retenido', celular: celAjeno };
+  }
 
   const conSaldo = (v.boletas || []).filter(b => b.puede_modificar && Number(b.saldo) > 0);
   if (!conSaldo.length) return { tipo: 'sin_saldo' };

@@ -197,6 +197,12 @@ de Mateo; resumen diario 8 p.m.; pg_cron `alertas-agente-cada-15min` jobid 7; me
 `probar-suite.js` (H14: corre la SUITE DORADA —`agente_casos_dorados`— contra el manual de producción
 o un candidato sin guardarlo; solo gerencia; correrla SIEMPRE antes de publicar cambios del manual).
 
+**Novedades del motor (2026-06-10 tanda 6; detalle en la bitácora):** H27 — `registrar_abono` prueba las
+últimas 3 fotos recientes (≤48h, sin pago_asignado) en vez de la última a ciegas, y la verificación guarda
+la foto RECONOCIDA; H32 — candado anti "comprobante prestado" en `lib/abono-agente.js`
+(`celularDeOtroCliente`): referencia con celular de OTRO cliente registrado → `'retenido'` para asesor
+(turno avisa "en revisión"; el cron lo cierra como rendido sin reintentar).
+
 **Novedades del motor (`agente-responder.js`, 2026-06-10 tanda 5; detalle en la bitácora):** debounce
 adaptativo (H42: ~10s para el primer contacto que resuelve el saludo fijo, re-validado; tope total 4→2 min),
 timeouts en TODAS las llamadas externas (H34: IA 90s con reintento, Whisper 30s, Meta 30-60s en `lib/whatsapp.js`,
