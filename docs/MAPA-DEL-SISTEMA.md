@@ -202,6 +202,13 @@ o un candidato sin guardarlo; solo gerencia; correrla SIEMPRE antes de publicar 
 `agente-costo.js`. Cuenta teléfonos únicos por hito (notas de `agente_actividad`) y plata real
 (boletas/abonos del asesor de la línea).
 
+**Novedades (2026-06-10 tanda 10 + N2; detalle en la bitácora):** N2 — endpoint
+`api/whatsapp/verificaciones.js` (lectura del relojito de pagos) + tarjeta "💳 Verificación del
+pago" en la ficha de la bandeja (todos los perfiles); H54+H73 — recordatorios durables (claim
+sin consumir, 'enviado' solo tras enviar, 3 reintentos, maxDuration explícitos); H71 — los
+reintentos de Meta (duplicados) ya no re-ejecutan efectos; H49 — el cierre del contacto inicial
+pide el próximo sorteo; H72 — rastro cuando una línea sin asesor cae al respaldo "Liliana".
+
 **Novedades del motor (2026-06-10 tanda 9, verdes — costos/velocidad; detalle en la bitácora):**
 H63 — el array de tools ya no se filtra (un solo prefijo de caché; el candado del contacto
 inicial vive en la ejecución); H66 — bloque `INSTRUCCIONES_FIJAS` cacheado (breakpoint movido

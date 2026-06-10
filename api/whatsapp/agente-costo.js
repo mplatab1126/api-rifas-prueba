@@ -37,8 +37,16 @@ export default async function handler(req, res) {
     }
 
     if (accion === 'chat') {
-      if (!conversacion_id) return res.status(200).json({ status: 'error', mensaje: 'Falta la conversación.' });
-      const { data, error } = await supabaseAdmin.rpc('agente_costo_chat', { p_conv: String(conversacion_id) });
+      // N2: la bandeja a veces NO conoce el id de la conversación (chat abierto desde el
+      // buscador o fuera de los 300 de la lista) — se resuelve aquí por teléfono+línea.
+      let conv = conversacion_id;
+      if (!conv && req.body.telefono) {
+        const { data: c } = await supabaseAdmin.from('conversaciones_whatsapp').select('id')
+          .eq('telefono', String(req.body.telefono).replace(/\D/g, '')).eq('linea_id', String(linea_id)).maybeSingle();
+        conv = c && c.id;
+      }
+      if (!conv) return res.status(200).json({ status: 'error', mensaje: 'Falta la conversación.' });
+      const { data, error } = await supabaseAdmin.rpc('agente_costo_chat', { p_conv: String(conv) });
       if (error) return res.status(200).json({ status: 'error', mensaje: error.message });
       return res.status(200).json({ status: 'ok', chat: data || {} });
     }

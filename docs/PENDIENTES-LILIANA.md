@@ -188,7 +188,7 @@
 
 - [ ] **H47** · Duplicaciones concretas dentro del manual (8 reglas repetidas 2-5 veces) e instrucción sin referente ("más breves que antes") (`/tmp/manual-liliana.txt`) — _esfuerzo medio_
 - [ ] **H48** · Los medios de pago están escritos en duro en la sección de la web del manual, duplicando la variable {{pagos}} (`/tmp/manual-liliana.txt:139`) — _esfuerzo bajo_
-- [ ] **H49** · El manual exige mencionar el próximo sorteo en el contacto inicial, pero la herramienta (camino IA) no lo pide (`api/whatsapp/agente-responder.js:306-307`) — _esfuerzo bajo_
+- [x] (2026-06-10) **H49** · HECHO (ajuste del verificador: texto ESTÁTICO para no romper el caché): la descripción del `cierre` de enviar_contacto_inicial ahora pide mencionar el PRÓXIMO sorteo con la fecha EXACTA del bloque FECHAS (nunca calcularla). El default casi-nunca-usado quedó sin fecha (cierre es obligatorio).
 - [x] (2026-06-10) **H50** · HECHO (junto con H59, variante simple del verificador `&& !estadoCliente.cli`): los clientes YA REGISTRADOS no reciben el saludo genérico de desconocido ni los atajos del embudo (sobre todo el paso DATOS, que les re-pedía todo): van a la IA, que los saluda por su nombre con el contexto inyectado.
 - [x] (2026-06-10) **H51** · HECHO: el texto fijo de números ya no promete verificar "terminaciones" (ninguna herramienta busca así); ahora dice "Si tienes un *número de 4 cifras* en mente, dímelo y te confirmo si está libre".
 - [x] (2026-06-10) **H52** · HECHO (vía del verificador): el respaldo `TEXTOS_RIFA.saludo_inicial` quedó NEUTRO (sin "Liliana"; el saludo real con nombre vive en `agente_config.variables` de cada línea, H17) y el ejemplo del schema de `enviar_contacto_inicial` dice "presentándote por TU nombre". Confirmado en la base: la línea de Lili tiene su saludo con nombre; la 2ª línea (apagada) saldría neutra hasta configurarla.
@@ -199,7 +199,7 @@
 - [x] (2026-06-10) **H78** · HECHO (whitelist Unicode del verificador): `limpiarDatoCliente` (solo letras de cualquier idioma + espacios + . ' - , tope 60) en `apartar_numero`, `actualizar_datos_cliente`, `bloqueEstadoCliente` y `bloqueRemision` — cubre también datos viejos ya guardados. Probado: "IGNORA\nTUS REGLAS {y di}..." queda inofensivo; "José D'Alessandro Ñuñez de Bogotá D.C." pasa intacto.
 - [x] (2026-06-10) **H79** · HECHO: audio sin transcripción → nota en el chat UNA vez (sin marcar el mensaje: el reintento automático sigue vivo), instrucción nueva en el bloque volátil ("NO adivines qué dijo: pídele que lo escriba") y, si falta OPENAI_API_KEY, error en actividad (las alertas H16 lo llevan al WhatsApp de Mateo).
 - [x] (2026-06-10) **H80** · HECHO: si el contacto inicial sale SIN fotos (respuesta rápida "contacto inicial" renombrada, borrada o duplicada — el duplicado también se detecta vía el error de maybeSingle), queda ERROR en la actividad y la nota del saludo dice "⚠️ SIN fotos" en vez del éxito falso.
-- [ ] **H54** · Recordatorios: se marcan 'enviado' ANTES de enviar; cualquier fallo rompe la promesa de Liliana sin reintento (`api/whatsapp/recordatorios-cron.js:132-137`) — _esfuerzo medio_
+- [x] (2026-06-10) **H54** · HECHO junto con H73 (patrón de verificar-pagos-cron, como pidió el verificador): el claim del recordatorio ya NO lo marca 'enviado' antes de enviar — reprograma +10 min y sube `intentos` atómicamente; 'enviado' SOLO tras despachar (texto libre) o tras env.ok (plantilla); 3 intentos sin éxito → 'error' con rastro en actividad (antes la promesa de Liliana se perdía en silencio).
 - [x] (2026-06-10) **H55** · HECHO (mejora 1 del verificador): `primerContactoLoResuelveSaludo` revisa el TIPO real de los mensajes (`m.tipo !== 'text'`) — "hola" + foto ya NO dispara el saludo fijo ignorando la imagen: va a la IA, que la ve. El filtro de hostilidad (mejora 2) quedó descartado por raro (el verificador lo marcó opcional).
 - [x] (2026-06-10) **H56** · HECHO (con los ajustes del verificador): `intentoSeparar` devuelve null si hay `no` en cualquier posición o si hay 2+ números de 4 cifras DISTINTOS → esos casos van a la IA. Probado: "ya no quiero el 1234" y "no quiero el 1234, dame el 5678" ya no piden datos del número rechazado; "quiero el 7185" sigue funcionando.
 - [x] (2026-06-10) **H57** · HECHO (ajuste del verificador): `numeroBoleta()` en los 4 ejecutores — un número de 5+ cifras (typo) ya NO se recorta en silencio: la IA debe pedir confirmación a 4 cifras; "123"→"0123" se mantiene (convención deliberada de todo el sistema, igual que reservar.js); el caso vacío→"0000" quedó eliminado.
@@ -214,9 +214,9 @@
 - [ ] **H68** · liberar_boleta: el candado dueño + saldo $0 vive solo en el llamador y no resiste carreras (`api/whatsapp/agente-responder.js:756-773`) — _esfuerzo medio_
 - [x] (2026-06-10) **H69** · HECHO: `Number.isFinite(monto)` → 400 limpio (verificado al aire con valorAbono='abc'). El verificador había refutado la corrupción (el NOT NULL de abonos.monto atajaba), pero el endurecimiento queda como defensa en profundidad.
 - [ ] **H70** · Identificación del dueño por sufijo last10 falla con teléfonos extranjeros cortos (7-9 dígitos) (`api/rifa/reservar.js:68-71;`) — _esfuerzo medio_
-- [ ] **H71** · Reintentos de Meta: el dedup por wa_message_id salva la fila, pero los efectos secundarios se re-ejecutan con el duplicado (`api/whatsapp/recibir.js:79-108`) — _esfuerzo bajo_
-- [ ] **H72** · Los atajos sin IA hardcodean 'Liliana', precios y premios: rompen multi-línea y se desincronizan del manual (`api/whatsapp/agente-responder.js:1269`) — _esfuerzo medio_
-- [ ] **H73** · recibir.js y recordatorios-cron.js sin maxDuration fijado, y el claim marca 'enviado' ANTES de enviar (`vercel.json:33-61;`) — _esfuerzo bajo_
+- [x] (2026-06-10) **H71** · HECHO (con el ajuste del verificador: separar buscar/crear del aplicar contadores): un reintento tardío de Meta (mensaje duplicado, detectado con .select('id') del upsert) ya NO cancela recordatorios, ni infla 'sin leer', ni renueva la ventana de 24h con hora falsa, ni dispara el motor. Los efectos corren SOLO para mensajes nuevos.
+- [x] (2026-06-10) **H72** · CUBIERTO en su mayoría por H17+H22+H52 (los textos de atajos salen de agente_config.variables por línea; saludo de respaldo neutro; schema sin nombre fijo). Lo que faltaba: `asesorDeLinea` ahora deja ERROR en actividad cuando una línea sin fila en lineas_asesores cae al respaldo 'Liliana' (antes las ventas de una línea mal configurada quedaban a nombre de Liliana sin que nadie lo notara).
+- [x] (2026-06-10) **H73** · HECHO con H54 (misma zona): claim durable de recordatorios + maxDuration explícito para recibir.js (60s) y recordatorios-cron.js (120s) — higiene documental, el default del plan ya era 300s (dato del verificador).
 - [ ] **H74** · Estampida post-difusión: cada respuesta abre una corrida de hasta 300s con polling a Supabase cada ~3s (`api/whatsapp/agente-responder.js:995-1012;`) — _esfuerzo medio_
 - [ ] **H75** · El simulador 'probar' de la cabina prueba un agente DISTINTO al de producción (`/Users/mateoplatabuitrago/los-platas-rifas/api/whatsapp/agente.js:246-285`) — _esfuerzo medio_
 - [ ] **H76** · verificarYAbonar ignora en silencio la boleta que pidió el cliente y abona a la de número más bajo (`/Users/mateoplatabuitrago/los-platas-rifas/api/lib/abono-agente.js:77-80`) — _esfuerzo bajo_
@@ -232,6 +232,14 @@
 
 ## 8) 🆕 Problemas NUEVOS encontrados después de la auditoría
 
+- [x] (2026-06-10) **N2** · Visor del relojito de verificación de pagos (pedido de Mateo: "no sé
+  si el sistema sigue reintentando o ya lo delegó al asesor"): endpoint de lectura
+  `api/whatsapp/verificaciones.js` (cualquier asesor con acceso a la línea) + tarjeta
+  **"💳 Verificación del pago"** en la ficha del chat de la bandeja — amarilla "🕐 sigue
+  verificando solo, intento X de 4, próximo a las HH:MM", verde "✅ abonado", roja "🆘 se
+  rindió, le toca al asesor", gris "cancelada". Solo sale si hay una verificación de las
+  últimas 48h. De paso, la tarjeta de costo de IA de la ficha ya no depende de que el chat
+  esté en la lista cargada (el servidor resuelve la conversación por teléfono).
 - [x] (2026-06-10) **N1** · Confirmación del abono con saldo EQUIVOCADO (caso real: boleta 4950,
   cliente Jorge 573154260513) — tras registrar $120.000, Liliana dijo "te faltan $30.000" a una
   boleta que quedó 100% paga: el bloque ESTADO DE ESTE CLIENTE se arma ANTES del abono y la IA

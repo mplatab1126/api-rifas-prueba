@@ -357,7 +357,7 @@ export const TOOLS = [
     // {{condiciones_venta}} se rellena al cargar la config de la línea (H17): al rotar
     // de rifa, el precio/condiciones se cambian en agente_config.variables sin desplegar.
     description: 'Envía la presentación inicial: un saludo + las fotos de la casa + un mensaje de cierre. Úsala UNA sola vez al comienzo, cuando el cliente acaba de llegar. TÚ redactas los textos (saludo y cierre). El CIERRE (lo que va después de las fotos) DEBE incluir: {{condiciones_venta}}, la RESPUESTA a cualquier pregunta que el cliente haya hecho en su saludo (ej. de dónde son), y terminar con "¿Te explico los premios?". Así va todo en un solo mensaje y no se duplica.',
-    input_schema: { type: 'object', properties: { saludo: { type: 'string', description: 'Saludo corto y cálido, presentándote por TU nombre (ej: "¡Hola! 😊 Soy {tu nombre}, te muestro la casa:").' }, cierre: { type: 'string', description: 'Mensaje después de las fotos: precio, cómo separar, que es legal (EDSA), la respuesta a su pregunta, y cierra con "¿Te explico los premios?".' } }, required: ['saludo', 'cierre'] },
+    input_schema: { type: 'object', properties: { saludo: { type: 'string', description: 'Saludo corto y cálido, presentándote por TU nombre (ej: "¡Hola! 😊 Soy {tu nombre}, te muestro la casa:").' }, cierre: { type: 'string', description: 'Mensaje después de las fotos: precio, cómo separar, que es legal (EDSA), la respuesta a su pregunta, el PRÓXIMO sorteo con su fecha EXACTA (cópiala del bloque FECHAS EXACTAS del contexto; NUNCA la calcules tú), y cierra con "¿Te explico los premios?".' } }, required: ['saludo', 'cierre'] },
   },
   {
     name: 'consultar_disponibles',
