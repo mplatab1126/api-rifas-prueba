@@ -26,6 +26,36 @@
 
 ---
 
+## 2026-06-10 — [WhatsApp] — Tanda 8 (verdes): los atajos sin IA ya no responden en falso
+
+**Qué hicimos (9 verdes de conversación/atajos; nada de dinero ni manual):**
+- **H56 — negaciones:** "ya NO quiero el 1234" / "no el 1234, dame el 5678" disparaban el atajo
+  pidiendo datos del número RECHAZADO. Ahora negación o dos números distintos → responde la IA.
+- **H57 — números con cifras de más:** un "12345" (typo) se recortaba EN SILENCIO a "2345" y se
+  podía verificar/apartar un número que el cliente no pidió. Ahora `numeroBoleta()` en los 4
+  ejecutores rechaza 5+ cifras y la IA pide confirmar; "123"→"0123" se mantiene (convención del
+  sistema, igual que reservar.js).
+- **H60 — no pedir 5 datos en vano:** el atajo "quiero el 7185" verifica en silencio que el
+  número siga libre ANTES de pedir nombre/cédula/correo; ocupado o error → la IA ofrece opciones.
+- **H50+H59 — conocidos:** un cliente registrado (incluso de la rifa pasada — el corte del
+  historial por rifa lo volvía "nuevo") recibía el saludo genérico y el embudo le re-pedía todos
+  los datos. Ahora los conocidos van a la IA, que los saluda por su nombre (`!estadoCliente.cli`).
+- **H55 — fotos en el primer mensaje:** "hola" + foto disparaba el saludo fijo IGNORANDO la
+  imagen (el guard miraba el texto, no el tipo). Ahora multimedia real → IA, que sí la ve.
+- **H51 — promesa imposible:** el texto fijo ofrecía verificar "terminaciones" que ninguna
+  herramienta puede buscar; ahora pide un número puntual de 4 cifras.
+- **H52 — multi-línea:** el respaldo del saludo quedó neutro (sin "Liliana" en duro) y el
+  ejemplo del schema dice "preséntate por TU nombre" — el nombre real vive en las variables de
+  cada línea (H17). Confirmado: la línea de Lili tiene su saludo con nombre en la base.
+- **H61 — pie de imagen neutro:** toda foto sin texto se le presentaba a la IA como "puede ser
+  el comprobante de pago" (sesgo a hablar de pagos ante un meme o la captura del anuncio).
+  `esContextoPago` quedó INTACTO a propósito (armar el candado con cualquier foto es fail-safe).
+
+**Cuidado:** probada la lógica de `intentoSeparar`/`numeroBoleta` con casos (6/6 y 4/4 OK) y
+sintaxis validada; la suite dorada sigue pendiente de correr con contraseña de gerencia. Los
+atajos ahora son MÁS conservadores (más casos van a la IA = unos pocos tokens más, filosofía
+"en la duda → IA" de la bitácora del 8-jun).
+
 ## 2026-06-10 — [WhatsApp] — Tanda 7 (verdes): Liliana nunca cierra muda + saneo anti-inyección
 
 **Qué hicimos (6 verdes de la auditoría, ninguno toca dinero):**

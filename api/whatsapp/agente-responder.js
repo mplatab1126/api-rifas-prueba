@@ -162,7 +162,9 @@ function aplicarVariables(texto, vars) {
 // de la base — así, al rotar de rifa, se cambian desde la cabina SIN desplegar
 // código. Checklist completo de rotación: docs/CHECKLIST-RIFA-NUEVA.md.
 const TEXTOS_RIFA = {
-  saludo_inicial: '¡Hola! 😊 Soy Liliana, te muestro la casa:',
+  // H52: el respaldo es NEUTRO (sin nombre): el saludo real con el nombre del agente vive en
+  // agente_config.variables de CADA línea (H17); este texto solo sale si esa variable falta.
+  saludo_inicial: '¡Hola! 😊 Te muestro la casa:',
   cierre_inicial: '• Cada boleta *cuesta 150 mil*\n\n• La puedes *separar con 20 mil* e ir abonando a tu ritmo\n\n• Estamos *autorizados por EDSA* (rifa legal)',
   texto_premios: 'Con una sola boleta de *4 cifras* (de 0000 a 9999) participas por todo esto:\n\n' +
     '*Premio Mayor{{fecha_mayor}}:* la casa de dos plantas totalmente amoblada, en Chinchiná (Caldas), con la Lotería de Boyacá.\n' +
@@ -355,7 +357,7 @@ export const TOOLS = [
     // {{condiciones_venta}} se rellena al cargar la config de la línea (H17): al rotar
     // de rifa, el precio/condiciones se cambian en agente_config.variables sin desplegar.
     description: 'Envía la presentación inicial: un saludo + las fotos de la casa + un mensaje de cierre. Úsala UNA sola vez al comienzo, cuando el cliente acaba de llegar. TÚ redactas los textos (saludo y cierre). El CIERRE (lo que va después de las fotos) DEBE incluir: {{condiciones_venta}}, la RESPUESTA a cualquier pregunta que el cliente haya hecho en su saludo (ej. de dónde son), y terminar con "¿Te explico los premios?". Así va todo en un solo mensaje y no se duplica.',
-    input_schema: { type: 'object', properties: { saludo: { type: 'string', description: 'Saludo corto y cálido, presentándote como Liliana (ej: "¡Hola! 😊 Soy Liliana, te muestro la casa:").' }, cierre: { type: 'string', description: 'Mensaje después de las fotos: precio, cómo separar, que es legal (EDSA), la respuesta a su pregunta, y cierra con "¿Te explico los premios?".' } }, required: ['saludo', 'cierre'] },
+    input_schema: { type: 'object', properties: { saludo: { type: 'string', description: 'Saludo corto y cálido, presentándote por TU nombre (ej: "¡Hola! 😊 Soy {tu nombre}, te muestro la casa:").' }, cierre: { type: 'string', description: 'Mensaje después de las fotos: precio, cómo separar, que es legal (EDSA), la respuesta a su pregunta, y cierra con "¿Te explico los premios?".' } }, required: ['saludo', 'cierre'] },
   },
   {
     name: 'consultar_disponibles',
@@ -620,6 +622,9 @@ async function enviarContactoInicial(conv, { saludo, cierre, predefinido = false
 function primerContactoLoResuelveSaludo(reales) {
   const entrantes = (reales || []).filter(m => m.direccion === 'entrante');
   if (!entrantes.length || entrantes.length > 3) return false;
+  // H55: multimedia por TIPO real (una foto/sticker sin caption llega con texto vacío y el
+  // regex de abajo no la veía: el saludo fijo salía IGNORANDO la imagen). Multimedia → IA.
+  if (entrantes.some(m => m.tipo && m.tipo !== 'text')) return false;
   const t = entrantes.map(m => String(m.texto || '')).join(' ').toLowerCase()
     .normalize('NFD').replace(/[̀-ͯ]/g, '');          // quita tildes
   if (!t.trim() || t.length > 180) return false;       // vacío o largo (con sustancia) → IA
@@ -701,8 +706,12 @@ function intentoSeparar(texto) {
   if (!t || t.includes('?') || t.includes('¿') || t.includes('@')) return null;
   const palabras = t.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
   if (palabras.length > 8) return null;                            // mensaje con sustancia → IA
-  const num = (t.match(/\b(\d{4})\b/) || [])[1];
-  if (!num) return null;
+  // H56: una negación ("ya NO quiero el 1234") o DOS números distintos ("no el 1234,
+  // dame el 5678") disparaban el atajo con el número EQUIVOCADO. Ambigüedad → IA.
+  if (/\bno\b/.test(t)) return null;
+  const nums = [...new Set(t.match(/\b\d{4}\b/g) || [])];
+  if (nums.length !== 1) return null;
+  const num = nums[0];
   if (!/(quiero|separa|separar|separal|separarlo|separamelo|aparta|apartar|apartal|apartarlo|apartamelo|guarda|guardar|guardal|reserv|me lo|lo quiero|lo separo|dame|escojo|elijo|tomo|me quedo)/.test(t)) return null;
   return num;
 }
@@ -715,6 +724,17 @@ const HERRAMIENTAS_CON_EFECTO = new Set([
   'registrar_abono', 'liberar_boleta', 'trasladar_abono', 'programar_recordatorio',
   'actualizar_datos_cliente', 'pasar_a_humano',
 ]);
+
+// H57: normaliza un número de boleta dictado por el cliente. La convención del sistema
+// (igual que reservar.js) completa con ceros a la IZQUIERDA ("123" → "0123"); pero un
+// número con MÁS de 4 cifras (typo: "12345") se recortaba EN SILENCIO a "2345" y se podía
+// verificar/apartar uno que el cliente no pidió. Ahora devuelve null → la IA pide confirmar.
+function numeroBoleta(v) {
+  const limpio = String(v || '').replace(/\D/g, '');
+  if (!limpio || limpio.length > 4) return null;
+  return limpio.padStart(4, '0');
+}
+const MSG_NUMERO_MALO = 'Ese número NO tiene 4 cifras exactas (las boletas van de 0000 a 9999). NO lo recortes ni lo adivines tú: pídele al cliente que confirme su número a 4 cifras.';
 
 // ── Ejecutores de cada herramienta. Devuelven texto-resultado para la IA. ────
 // ctx (opcional): contexto del turno — { imagenesVistas } con las fotos que el motor ya
@@ -733,8 +753,8 @@ async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
   }
 
   if (nombre === 'verificar_disponibilidad') {
-    const num = String(input?.numero || '').replace(/\D/g, '').padStart(4, '0').slice(-4);
-    if (!/^\d{4}$/.test(num)) return 'El número no es válido. Pídele al cliente un número de 4 cifras (0000-9999).';
+    const num = numeroBoleta(input?.numero);   // H57: 5+ cifras ya no se recortan en silencio
+    if (!num) return MSG_NUMERO_MALO;
     const { data: bol } = await supabase.from('boletas').select('telefono_cliente').eq('numero', num).maybeSingle();
     await nota(conv, 'Verifiqué el número ' + num + '.');
     if (!bol) return `El número ${num} no existe en esta rifa.`;
@@ -769,7 +789,8 @@ async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
   }
 
   if (nombre === 'apartar_numero') {
-    const num = String(input?.numero || '').replace(/\D/g, '').padStart(4, '0').slice(-4);
+    const num = numeroBoleta(input?.numero);   // H57: 5+ cifras ya no se recortan en silencio
+    if (!num) return MSG_NUMERO_MALO;
     let nom = limpiarDatoCliente(input?.nombre);    // H78: saneo anti-inyección antes de guardar
     let ape = limpiarDatoCliente(input?.apellido);
     let ciu = limpiarDatoCliente(input?.ciudad);
@@ -951,8 +972,8 @@ async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
   }
 
   if (nombre === 'liberar_boleta') {
-    const num = String(input?.numero || '').replace(/\D/g, '').padStart(4, '0').slice(-4);
-    if (!/^\d{4}$/.test(num)) return 'Necesito el número de 4 cifras que el cliente quiere cancelar.';
+    const num = numeroBoleta(input?.numero);   // H57
+    if (!num) return MSG_NUMERO_MALO;
     const last10 = String(conv.telefono).replace(/\D/g, '').slice(-10);
     const { data: bol } = await supabase.from('boletas').select('numero, telefono_cliente, total_abonado').eq('numero', num).maybeSingle();
     if (!bol) return `El número ${num} no existe.`;
@@ -971,9 +992,9 @@ async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
   }
 
   if (nombre === 'trasladar_abono') {
-    const origen = String(input?.origen || '').replace(/\D/g, '').padStart(4, '0').slice(-4);
-    const destino = String(input?.destino || '').replace(/\D/g, '').padStart(4, '0').slice(-4);
-    if (!/^\d{4}$/.test(origen) || !/^\d{4}$/.test(destino)) return 'Necesito las dos boletas de 4 cifras: de cuál sale el abono y a cuál entra.';
+    const origen = numeroBoleta(input?.origen);    // H57
+    const destino = numeroBoleta(input?.destino);
+    if (!origen || !destino) return MSG_NUMERO_MALO + ' Necesito las DOS boletas: de cuál sale el abono y a cuál entra.';
     if (origen === destino) return 'La boleta de origen y la de destino no pueden ser la misma.';
     const pwd = contrasenaGerencia();
     if (!pwd) return 'No puedo trasladar abonos ahora (falta configuración). Pásalo a un asesor.';
@@ -1100,7 +1121,9 @@ function construirMensajes(historial, imagenes) {
       const img = m.tipo === 'image' ? imgs.get(m.id) : null;
       if (img) {
         // Mensaje propio con la foto + su pie (no se fusiona con el anterior).
-        const pie = (m.texto || '').trim() || 'Imagen que envié (míralas; puede ser el comprobante de pago).';
+        // H61: pie NEUTRO — antes decía "puede ser el comprobante de pago" y sesgaba a la IA
+        // a hablar de pagos ante CUALQUIER foto (la de la casa, una captura del anuncio, un meme).
+        const pie = (m.texto || '').trim() || 'Imagen que envié (mírala y responde según lo que sea: puede ser un comprobante de pago, un documento o cualquier otra cosa).';
         msgs.push({ role, content: [
           { type: 'image', source: { type: 'base64', media_type: img.mime, data: img.base64 } },
           { type: 'text', text: pie },
@@ -1543,8 +1566,12 @@ export default async function handler(req, res) {
     // el contacto inicial FIJO (saludo + fotos + cierre con el PRÓXIMO sorteo) SIN gastar IA. La IA
     // entra desde el 2º mensaje, o si el 1º pide algo que el saludo NO cubre (número, pago,
     // disponibles, ubicación, premios). Ya pasamos el candado atómico → no hay riesgo de saludo doble.
+    // H50/H59: si el cliente YA está registrado (compró en esta rifa o en una pasada — el
+    // historial se corta por rifa y lo volvía "nuevo"), NO usar el saludo genérico de
+    // desconocido: va a la IA, que lo saluda por su nombre con el contexto ya inyectado.
     if (!recordatorio && !conv.sombra && !yaHuboSalientes && !remision
         && !(estadoCliente.boletas && estadoCliente.boletas.length)
+        && !estadoCliente.cli
         && activas.has('enviar_contacto_inicial')
         && primerContactoLoResuelveSaludo(reales)) {
       // OJO (H2): la coletilla "con $20.000 ya entras" SOLO aplica a los sorteos de los
@@ -1571,8 +1598,11 @@ export default async function handler(req, res) {
     // puntual), mandamos el mensaje FIJO del paso sin llamar a la IA. Ante cualquier señal
     // de que se sale del libreto → NO se usa el atajo y responde la IA (más abajo). Mismos
     // candados que el saludo predefinido (no en sombra, no remisión, no si ya tiene boleta).
+    // H50 (ajuste del verificador): también aquí los CONOCIDOS van a la IA — sobre todo por
+    // el paso DATOS, que le pedía nombre/apellido/cédula/correo a alguien que ya está en la base.
     if (!recordatorio && !conv.sombra && !remision
-        && !(estadoCliente.boletas && estadoCliente.boletas.length)) {
+        && !(estadoCliente.boletas && estadoCliente.boletas.length)
+        && !estadoCliente.cli) {
       // Último mensaje de texto que mandó Liliana (qué fue lo último que preguntó).
       const ultSal = [...reales].reverse().find(m => m.direccion === 'saliente' && m.tipo === 'text' && m.texto);
       const salTxt = ultSal ? normTxt(ultSal.texto) : '';
@@ -1608,7 +1638,9 @@ export default async function handler(req, res) {
         const { texto } = await numerosDisponibles({ canal: 'bandeja' });
         const msg = 'Aquí tienes una muestra de números libres (son *algunos* de los disponibles, no la lista completa):\n\n' +
           texto +
-          '\n\n¿Cuál te gusta? Si quieres uno con alguna *terminación* o un número en especial, dime y lo verifico. 😊';
+          // H51: NO ofrecer "terminaciones" (ninguna herramienta busca por terminación y el
+          // manual prohíbe filtrar la muestra): solo número puntual de 4 cifras.
+          '\n\n¿Cuál te gusta? Si tienes un *número de 4 cifras* en mente, dímelo y te confirmo si está libre. 😊';
         await decir(conv, msg, { predefinido: true });
         await nota(conv, 'Mostré los números disponibles (predefinido, SIN IA — ahorro de tokens).');
         await soltarLock(conv);
@@ -1621,12 +1653,24 @@ export default async function handler(req, res) {
       const numSep = entranteTxt ? intentoSeparar(entranteTxt) : null;
       if (numSep && activas.has('apartar_numero')
           && !/necesito tus datos|para apartar|nombre completo/.test(salTxt)) {
-        const pedir = aplicarVariables(String(textosRifa.texto_pedir_datos || TEXTOS_RIFA.texto_pedir_datos),
-          { numero: numSep });
-        await decir(conv, pedir, { predefinido: true });
-        await nota(conv, 'Pedí los datos para apartar el ' + numSep + ' (predefinido, SIN IA — ahorro de tokens).');
-        await soltarLock(conv);
-        return res.status(200).json({ status: 'ok', atajo: 'datos_predefinido' });
+        // H60: antes de pedirle los 5 datos, verificar EN SILENCIO que el número siga libre
+        // (antes el cliente daba nombre/cédula/correo para enterarse DESPUÉS de que estaba
+        // ocupado). Si está ocupado, no existe o la consulta falla → NO usar el atajo: cae
+        // a la IA, que le ofrece alternativas (nunca un "está ocupado" fijo desde aquí).
+        let libreSep = false;
+        try {
+          const { data: bSep, error: eSep } = await supabase
+            .from('boletas').select('telefono_cliente').eq('numero', numSep).maybeSingle();
+          libreSep = !eSep && !!bSep && !bSep.telefono_cliente;
+        } catch (_) { libreSep = false; }
+        if (libreSep) {
+          const pedir = aplicarVariables(String(textosRifa.texto_pedir_datos || TEXTOS_RIFA.texto_pedir_datos),
+            { numero: numSep });
+          await decir(conv, pedir, { predefinido: true });
+          await nota(conv, 'Pedí los datos para apartar el ' + numSep + ' (predefinido, SIN IA — ahorro de tokens).');
+          await soltarLock(conv);
+          return res.status(200).json({ status: 'ok', atajo: 'datos_predefinido' });
+        }
       }
     }
 

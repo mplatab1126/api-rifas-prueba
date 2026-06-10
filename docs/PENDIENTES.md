@@ -47,9 +47,11 @@
   de ruido medido); H35 = tarjeta "Embudo de ventas" en la cabina (función
   `agente_embudo_resumen` + acción 'embudo' de agente-costo.js, ver `sql/embudo-liliana.sql`);
   tanda 7 (verdes, 10-jun): H58+H62 (nunca cerrar el turno mudo), H77 (recordatorios vs humano),
-  H78 (anti-inyección de datos), H79 (audios sin transcribir), H80 (fotos del saludo vigiladas).
+  H78 (anti-inyección de datos), H79 (audios sin transcribir), H80 (fotos del saludo vigiladas);
+  tanda 8 (verdes, 10-jun): H50+H59, H51, H52, H55, H56, H57, H60, H61 (los atajos sin IA ya no
+  responden en falso: negaciones, números truncados, conocidos, fotos ignoradas).
   Queda 1 amarillo: **H36 (reestructurar el manual) — SOLO desde un chat con la contraseña de
-  gerencia** (exige correr la suite dorada antes de publicar); y ~32 verdes.
+  gerencia** (exige correr la suite dorada antes de publicar); y ~23 verdes.
   **Vigilar `agente_uso` unos días tras H42** (espera corta puede partir alguna ráfaga en dos).
 - [ ] (2026-06-10) **REGLA NUEVA para cambios del manual de Liliana:** antes de guardar un cambio
   del manual, correr la **suite dorada** (`/api/whatsapp/probar-suite`, ver bitácora 10-jun) y

@@ -202,6 +202,14 @@ o un candidato sin guardarlo; solo gerencia; correrla SIEMPRE antes de publicar 
 `agente-costo.js`. Cuenta teléfonos únicos por hito (notas de `agente_actividad`) y plata real
 (boletas/abonos del asesor de la línea).
 
+**Novedades del motor (2026-06-10 tanda 8, verdes — atajos sin IA más conservadores; detalle en
+la bitácora):** H56 — `intentoSeparar` rechaza negaciones y dos números; H57 — `numeroBoleta()`
+no recorta 5+ cifras en silencio (4 ejecutores); H60 — el atajo de datos verifica que el número
+siga libre antes de pedirlos; H50+H59 — clientes registrados (`estadoCliente.cli`) van a la IA,
+no al saludo genérico ni a los atajos del embudo; H55 — multimedia por tipo real → IA; H51 — el
+texto de números ya no ofrece "terminaciones"; H52 — saludo de respaldo neutro (sin "Liliana" en
+duro); H61 — pie de imagen neutro (sin sesgo a "comprobante").
+
 **Novedades del motor (2026-06-10 tanda 7, verdes; detalle en la bitácora):** H62 — bandera
 `huboTexto`: un turno nunca cierra sin decirle NADA al cliente (cierre forzado solo-texto +
 mensaje fijo de respaldo); H58 — despedida fija si falla la 2ª llamada de `pasar_a_humano`;
