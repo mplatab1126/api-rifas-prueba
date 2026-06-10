@@ -57,6 +57,9 @@
     },
     "api/admin/conciliar-consolidado.js": {
       "maxDuration": 30
+    },
+    "api/whatsapp/alertas-cron.js": {
+      "maxDuration": 30
     }
   },
   "crons": [],
