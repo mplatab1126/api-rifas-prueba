@@ -374,6 +374,10 @@ Mide cuánto cuesta la IA que responde (los tokens que devuelve Claude en cada r
   de ese cliente (solo lo ve Mateo). Se muestra en USD (lo que de verdad factura Anthropic) + pesos aproximados de
   referencia (tasa fija `USD_COP` editable en `bandeja-whatsapp.html`).
 - **Pendiente menor**: el costo de Whisper (audios) aún no se registra (es mínimo); la tabla ya tiene la columna `origen`.
+- **Embudo de ventas (H35, 10-jun-2026)**: mismo patrón — función `agente_embudo_resumen(linea, dias)`
+  (`sql/embudo-liliana.sql`, agrega sobre las notas de `agente_actividad` + boletas/abonos del asesor de la
+  línea), acción `embudo` en `agente-costo.js` y tarjeta **"Embudo de ventas"** (7/30 días) en la cabina.
+  OJO: cuenta los hitos por el TEXTO de las notas del motor — si se cambian esos textos, ajustar los `like`.
 
 ### 8.13 Novedades del 7-jun-2026 (Liliana y boleta). Detalle en la bitácora.
 - **Verificación de pagos con reintentos** (TOCA DINERO, aprobado): si el pago no aparece, NO pasa a

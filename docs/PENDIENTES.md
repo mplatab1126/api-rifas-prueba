@@ -44,7 +44,10 @@
   tanda 6 (con OK de Mateo) = H27 (registrar_abono prueba las últimas 3 fotos recientes, no la
   última a ciegas; la verificación guarda la foto reconocida) y H32 (candado anti "comprobante
   prestado": referencia con celular de OTRO cliente registrado → 'retenido' para asesor, ~1,3%
-  de ruido medido). Quedan 2 amarillos (H35 embudo, H36 reestructurar el manual) y ~38 verdes.
+  de ruido medido); H35 = tarjeta "Embudo de ventas" en la cabina (función
+  `agente_embudo_resumen` + acción 'embudo' de agente-costo.js, ver `sql/embudo-liliana.sql`).
+  Queda 1 amarillo: **H36 (reestructurar el manual) — SOLO desde un chat con la contraseña de
+  gerencia** (exige correr la suite dorada antes de publicar); y ~38 verdes.
   **Vigilar `agente_uso` unos días tras H42** (espera corta puede partir alguna ráfaga en dos).
 - [ ] (2026-06-10) **REGLA NUEVA para cambios del manual de Liliana:** antes de guardar un cambio
   del manual, correr la **suite dorada** (`/api/whatsapp/probar-suite`, ver bitácora 10-jun) y

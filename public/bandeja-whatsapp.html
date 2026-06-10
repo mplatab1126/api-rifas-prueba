@@ -2438,6 +2438,13 @@ function pintarAgente(){
       <div id="agCostoBox"><div class="ag-empty">Calculando…</div></div>
     </div>
     <div class="ag-card">
+      <h3>Embudo de ventas <span style="font-weight:400;font-size:13px;color:#888">·
+        <a href="#" onclick="agCargarEmbudo(7);return false" id="agEmb7" style="color:#1f7a5c">7 días</a> /
+        <a href="#" onclick="agCargarEmbudo(30);return false" id="agEmb30" style="color:#888">30 días</a></span></h3>
+      <div class="ag-sub">Hasta qué paso llegan los clientes que atiende el agente (teléfonos únicos). “Abonaron” puede superar a “Apartaron”: incluye cobros de boletas vendidas antes de la ventana. “Vieron premios” y “Dieron datos” son aproximados (solo cuentan cuando queda nota).</div>
+      <div id="agEmbudoBox"><div class="ag-empty">Calculando…</div></div>
+    </div>
+    <div class="ag-card">
       <h3>Registro de actividad</h3>
       <div class="ag-sub">Qué hace el agente y cuándo, en vivo.</div>
       <div class="ag-log">${logRows}</div>
@@ -2445,6 +2452,44 @@ function pintarAgente(){
 
   agPbRender();
   agCargarCosto();
+  agCargarEmbudo(7);
+}
+
+// H35: carga el embudo de ventas del agente (contacto → números → apartó → abonó) en la cabina.
+async function agCargarEmbudo(dias){
+  if(!$('agEmbudoBox')) return;
+  const l7 = $('agEmb7'), l30 = $('agEmb30');
+  if(l7)  l7.style.color  = (dias === 7)  ? '#1f7a5c' : '#888';
+  if(l30) l30.style.color = (dias === 30) ? '#1f7a5c' : '#888';
+  const r = await api('agente-costo', { accion:'embudo', linea_id: lineaActual, dias });
+  const box = $('agEmbudoBox');
+  if(!box) return;
+  if(r.status !== 'ok' || !r.embudo || !r.embudo.embudo){ box.innerHTML = '<div class="ag-empty">Aún no hay datos del embudo.</div>'; return; }
+  const e = r.embudo.embudo, v = r.embudo.ventas || {};
+  const base = Number(e.contactos || 0);
+  const fila = (lbl, n) => {
+    const num = Number(n || 0);
+    const pct = base > 0 ? Math.round(num * 100 / base) : 0;
+    return `<div style="display:flex;align-items:center;gap:8px;margin:4px 0">
+      <div style="width:130px;font-size:12.5px;color:#444">${lbl}</div>
+      <div style="flex:1;background:#f1f1f1;border-radius:6px;height:18px;overflow:hidden">
+        <div style="width:${Math.min(100, pct)}%;height:100%;background:#bfe3d4"></div>
+      </div>
+      <div style="width:90px;font-size:12.5px;text-align:right"><b>${num.toLocaleString('es-CO')}</b> · ${pct}%</div>
+    </div>`;
+  };
+  box.innerHTML =
+    fila('Llegaron (contacto)', e.contactos) +
+    fila('Vieron premios*', e.premios) +
+    fila('Vieron números', e.numeros) +
+    fila('Dieron datos*', e.datos) +
+    fila('Apartaron boleta', v.apartaron) +
+    fila('Abonaron', v.abonaron) +
+    `<div style="margin-top:10px;font-size:12.5px;color:#555">
+      ${Number(v.boletas_vendidas||0).toLocaleString('es-CO')} boletas vendidas
+      (${Number(v.boletas_pagadas||0).toLocaleString('es-CO')} pagadas al 100%) ·
+      $${Number(v.monto_abonado||0).toLocaleString('es-CO')} recibidos en
+      ${Number(v.abonos_n||0).toLocaleString('es-CO')} abonos</div>`;
 }
 
 // Carga el gasto de IA de la línea (hoy / mes / total) en la tarjeta de la cabina.
