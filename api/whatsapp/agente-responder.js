@@ -1789,6 +1789,20 @@ export default async function handler(req, res) {
     }
     if (!messages.length) { await soltarLock(conv); return res.status(200).json({ status: 'ok', skip: 'Sin mensajes para procesar.' }); }
 
+    // La API de Claude (Sonnet 4.6) EXIGE que la conversación termine con un mensaje del
+    // USUARIO; si termina con uno nuestro devuelve 400 ("does not support assistant message
+    // prefill"). Puede pasar cuando el re-disparo (H5/H21) o el barredor (H12) re-corren un
+    // chat cuyo último elemento es un mensaje de Liliana o una nota interna (caso real
+    // 10-jun: 4 chats marcados ASESOR por esto). Se cierra con una nota interna que además
+    // le dice a la IA qué hacer en ese escenario.
+    const ultimoMsg = messages[messages.length - 1];
+    if (ultimoMsg && ultimoMsg.role === 'assistant') {
+      messages.push({
+        role: 'user',
+        content: '[NOTA INTERNA DEL SISTEMA — el cliente NO ve esto] El sistema te re-activó para revisar este chat. Lee el historial: si el cliente escribió algo que AÚN no has respondido, respóndelo ahora. Si ya quedó todo respondido, escribe SOLO una línea corta y cálida que cierre con naturalidad (ej: "Cualquier cosa me escribes 😊"), sin repetir información.',
+      });
+    }
+
     // 2º punto de caché al FINAL del historial (H43/H84). El bucle de abajo re-manda
     // `messages` completo en cada vuelta, y el turno SIGUIENTE del chat repite todo el
     // historial otra vez: sin esto, el historial — y sobre todo las FOTOS (~1.1-1.6k
