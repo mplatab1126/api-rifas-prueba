@@ -19,6 +19,15 @@
   multi-agente completa (90 hallazgos verificados: dinero, silencios, coherencia, seguridad,
   velocidad, costos, estrategia). Ir tachando por prioridad; el crítico (modelo retirable 15-jun)
   YA quedó resuelto. Detalle por ítem en `docs/auditoria-liliana-2026-06-09.md`.
+  **Avance 10-jun:** los 4 huecos de concurrencia de dinero (H6-H9) quedaron CERRADOS y al aire
+  (queda H37 de esa sección). Sigue: sección 2 (clientes colgados en silencio: H5+H21, H12,
+  H4+H11, H10, H13).
+- [ ] (2026-06-10) **Carrera de la boleta en `venta.js` (hallazgo NUEVO, fuera de la auditoría):**
+  el endpoint de venta manual tiene la MISMA carrera que se cerró en `reservar.js` (H8): chequea
+  "ya fue vendida" al inicio pero ocupa la boleta al final SIN condición — un asesor y la web (u
+  otro asesor) en el mismo segundo podrían venderla doble. Cerrarla igual que H8 (update condicional
+  `.is('telefono_cliente', null)` + abortar/revertir), con cuidado: en venta.js el abono y la
+  transferencia se registran ANTES de ocupar la boleta, así que la compensación debe deshacerlos.
 - [ ] (2026-06-09) **Reescribir la descripción de la herramienta `apartar_numero`** (en `agente-responder.js`):
   aún dice cédula/correo "OPCIONALES", la palabra que le prohibimos decir al cliente. Reescribir sin esa palabra
   (cambio de código → desplegar). Pendiente OK de Mateo.
@@ -114,6 +123,14 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-10) **🔒 CERRADOS los 4 huecos de concurrencia en los candados de plata (H6-H9
+  del plan de Liliana).** (H6) la transferencia se consume de forma atómica (condición LIBRE en el
+  update + reversión si falla el insert) en `abono.js` y `venta.js`; (H7) claim 'en_proceso' en
+  `verificaciones_pago` para que el cron y el turno en vivo no procesen el mismo comprobante a la
+  vez (+ rescate de huérfanas); (H8) `reservar.js` ocupa el número solo si SIGUE libre (y revierte
+  el pedido si otro ganó); (H9) la referencia del comprobante exige mínimo 5 caracteres para abonar
+  sola. Publicado (commit `8c72273`, deploy auto) y verificado al aire: endpoints OK, reservar
+  rechaza ocupados, el cron corre OK con el código nuevo. Ver bitácora 10-jun.
 - [x] (2026-06-09) **💰 ARREGLADO el bug del abono automático del agente + $110.000 recuperados.**
   `buscar-pago.js` evaluaba `puede_modificar` con el grupo de gerencia y filtraba las boletas de Liliana
   (independiente) → pagos que SÍ coincidían con el banco terminaban en 'sin_saldo' (cerrados en silencio desde

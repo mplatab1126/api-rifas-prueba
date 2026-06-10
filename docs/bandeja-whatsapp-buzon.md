@@ -253,6 +253,12 @@ y los disparadores siguen SOLO de gerencia/Mateo** (candado `esMateo` + ocultos 
   ya estaba paga. Conservador (puede mandar "verificando" de más con 2 boletas una paga y una no) — lado
   seguro. Nació de un caso real: Liliana dijo "pagada al 100%" sin registrar el abono y dejó $100.000 sin
   asignar (ver bitácora 9-jun).
+- **🔒 CANDADOS DE CONCURRENCIA (2026-06-10, H6-H9 de la auditoría):** cerradas las carreras de "dos procesos a la
+  vez": la transferencia se consume ATÓMICA (update condicional `estado='LIBRE'` antes del insert del abono, con
+  reversión si falla) en `abono.js`/`venta.js`; `reservar.js` ocupa el número solo si SIGUE libre (revierte el pedido
+  si otro ganó); la referencia del comprobante exige mínimo 5 caracteres para abonar sola; y `verificaciones_pago`
+  tiene el estado nuevo **'en_proceso'** como turno entre el cron y `registrar_abono` (el que llega segundo no procesa;
+  huérfanas >10 min las rescata el cron). NO quitar las condiciones de esos updates: SON el candado. Ver bitácora 10-jun.
 - **Supervisor Opus de movimientos ELIMINADO (2026-06-08)**: ya estaba inactivo (`ACCIONES_SENSIBLES` vacío); no veía
   las fotos ni los chequeos reales y solo frenaba acciones legítimas en falso. La seguridad del dinero vive en los
   candados de cada acción (abono verificado contra el banco, liberar valida dueño + saldo $0). Se borró del código.

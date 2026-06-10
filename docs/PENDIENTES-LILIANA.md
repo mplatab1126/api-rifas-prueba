@@ -35,19 +35,23 @@
 
 ## 1) 🔴 PRIMERO — Dinero (huecos en los candados; explicar a Mateo antes de tocar)
 
-- [ ] **H6** · Consumo de la transferencia NO atómico: dos procesos a la vez pueden abonar DOBLE
-  con la misma plata (`api/admin/abono.js:35-44,163-164`). Arreglo: consumirla con UPDATE
-  condicional (`estado='LIBRE'`) verificando fila afectada; mismo patrón en `venta.js` (ver
-  ajustes del verificador). — _esfuerzo medio_
-- [ ] **H7** · El cron de reintentos y el turno en vivo pueden procesar el MISMO comprobante a la
-  vez (la vía más probable del doble abono). El fix de H6 es el cierre principal; este agrega el
-  claim 'en_proceso' en `verificaciones_pago`. Hacerlo JUNTO con H6. — _esfuerzo medio_
-- [ ] **H8** · Dos clientes pueden quedarse con el MISMO número: `reservar.js` verifica y ocupa
-  sin atomicidad (web y Liliana entran por ahí). Arreglo de 1 línea: update condicional
-  `.is('telefono_cliente', null)`. — _esfuerzo bajo_
-- [ ] **H9** · El match "sólido" por referencia acepta referencias de 1-4 caracteres con
-  `.includes()` → puede abonar SOLO contra la transferencia equivocada. Exigir largo ≥5 en los
-  DOS sitios (`buscar-pago.js:164,182`). Solo endurece el candado. — _esfuerzo bajo_
+- [x] (2026-06-10) **H6** · Consumo de la transferencia NO atómico → ARREGLADO: en `abono.js` la
+  transferencia se consume con UPDATE condicional (`estado='LIBRE'`, verificando fila afectada)
+  ANTES de insertar el abono, con reversión a LIBRE si el insert falla; mismo patrón en
+  `venta.js` (ajuste del verificador) y en la auto-asignación por referencia de ambos. Verificado
+  al aire. Ver bitácora 10-jun.
+- [x] (2026-06-10) **H7** · Cron y turno en vivo sobre el MISMO comprobante → ARREGLADO: claim
+  'en_proceso' en `verificaciones_pago` por AMBOS lados (el cron lo marca al reclamar y lo
+  devuelve a 'pendiente' al reprogramar; `registrar_abono` no verifica si hay una 'en_proceso'
+  fresca y reclama la 'pendiente' antes de verificar), más rescate de filas 'en_proceso'
+  huérfanas (>10 min) en el cron. Verificado: el cron corre OK con el código nuevo.
+- [x] (2026-06-10) **H8** · Dos clientes con el MISMO número → ARREGLADO: `reservar.js` ocupa con
+  update condicional `.is('telefono_cliente', null)` verificando fila afectada; si otro ganó,
+  revierte las boletas del MISMO pedido (filtros estrictos: teléfono propio + $0 abonado) y
+  responde "se acaba de ocupar". Confirmado en producción: las libres son NULL (187/0 vacías).
+- [x] (2026-06-10) **H9** · Referencias de 1-4 caracteres → ARREGLADO: largo mínimo 5 para la
+  referencia cruda en los DOS sitios (`esCoincidencia` y `elegirSugerida` de `buscar-pago.js`).
+  Una referencia corta ya no abona sola: cae a revisión humana (fail-safe).
 - [ ] **H37** · `trasladar_abono` mueve dinero en 7 pasos sin transacción ni candado de
   concurrencia. — _esfuerzo medio_
 

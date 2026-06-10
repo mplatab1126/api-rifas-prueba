@@ -26,6 +26,42 @@
 
 ---
 
+## 2026-06-10 — [Pagos] / [Seguridad] — Cerrados los 4 huecos de concurrencia en los candados de plata (H6-H9 de la auditoría)
+
+**Qué hicimos:** cerramos las "carreras" donde dos procesos a la vez podían pasar el mismo check y
+duplicar plata o pisarse. Patrón común: el check ("¿libre?") y la acción ("ocupar/consumir") eran pasos
+separados; ahora la acción lleva la condición DENTRO del update y se verifica la fila afectada.
+- **H6 (`abono.js` + `venta.js`):** la transferencia se consume con `update ... eq('estado','LIBRE')`
+  verificando fila afectada, ANTES de insertar el abono; si el insert falla se devuelve a LIBRE
+  (condicional, para no pisar a otro). Si otro proceso ganó → error claro "se acaba de asignar en otro
+  proceso", sin escribir nada. La auto-asignación por referencia también quedó condicional. OJO: en
+  `venta.js` un insert de abono fallido antes pasaba EN SILENCIO (la venta seguía sin abono); ahora
+  aborta con error — es deliberado.
+- **H7 (`verificar-pagos-cron.js` + `agente-responder.js`):** estado nuevo **'en_proceso'** en
+  `verificaciones_pago` como "turno": el cron lo marca al reclamar (y devuelve a 'pendiente' al
+  reprogramar); `registrar_abono` NO verifica si hay una 'en_proceso' fresca (<10 min) — le dice a la
+  IA "ya se está verificando" — y reclama la 'pendiente' antes de verificar (la suelta en los caminos
+  sin_saldo/error). El cron rescata filas 'en_proceso' huérfanas (>10 min sin movimiento) por si una
+  corrida muere. `cancelarVerificaciones` ahora cubre 'pendiente' Y 'en_proceso'. Verificado: la tabla
+  no tiene restricción de estado y el índice único es parcial sobre 'pendiente' (compatible).
+- **H8 (`reservar.js`):** ocupar la boleta exige `.is('telefono_cliente', null)` (confirmado en
+  producción: las libres son NULL); si otro cliente ganó, se revierten SOLO las boletas del mismo
+  pedido (filtros: teléfono propio + $0 abonado) y se responde "ese número se acaba de ocupar".
+- **H9 (`buscar-pago.js`):** la coincidencia por referencia exige mínimo 5 caracteres también en la
+  referencia cruda (en `esCoincidencia` y `elegirSugerida`); una referencia cortada ya no abona sola,
+  cae a revisión humana.
+
+**Verificado al aire (commit `8c72273`, deploy automático source=git):** los 4 endpoints responden
+sus validaciones limpias; reservar rechaza un número ocupado; el cron corrió a las 01:35 con el código
+nuevo y respondió ok. No había verificaciones activas al publicar.
+
+**Cuidado / qué NO hacer:** NO quitar las condiciones `.eq('estado','LIBRE')` / `.is('telefono_cliente',
+null)` de esos updates "porque parecen redundantes con el check de arriba" — el check de arriba solo da
+el error temprano; el candado REAL es la condición del update. El estado 'en_proceso' es transitorio:
+si algún día se ve uno pegado, el cron lo rescata a los 10 min (no "arreglarlo" a mano salvo emergencia).
+**Hallazgo nuevo aparte (anotado en PENDIENTES):** `venta.js` tiene la MISMA carrera de H8 con la
+boleta (check "ya fue vendida" y ocupación sin condición) — no estaba en la auditoría; cerrarla luego.
+
 ## 2026-06-09 — [WhatsApp] / [General] — Auditoría COMPLETA de Liliana (90 hallazgos) + arreglado el modelo retirable de comprobantes
 
 **Qué se hizo:** auditoría multi-agente exhaustiva del agente Liliana (101 agentes: 8 auditores por
