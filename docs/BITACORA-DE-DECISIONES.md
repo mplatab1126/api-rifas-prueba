@@ -26,6 +26,32 @@
 
 ---
 
+## 2026-06-10 — [WhatsApp] — H3+H15: el manual ya no ordena un acumulado vencido, y AHORA TIENE RESPALDO automático
+
+**Qué hicimos (OK de Mateo):**
+1. **H15 primero (versionado):** tabla `agente_config_historial` + trigger — cada cambio del
+   prompt/variables guarda la versión ANTERIOR antes de pisarse. Restaurar = copiar el prompt de la
+   fila deseada de vuelta (receta en `sql/versionado-manual-liliana.sql`). Antes, un `replace()` mal
+   hecho destruía el manual sin copia.
+2. **H3 (con la red puesta):** el manual ordenaba "ACLARA SIEMPRE… el de HOY está acumulado en
+   *$20.000.000*" de forma incondicional, pero ese acumulado se GANÓ el 6-jun: instrucción imperativa
+   cacheada contra la nota volátil del motor → Liliana podía decir un premio 4× inflado. Se volvieron
+   CONDICIONALES las 6 ocurrencias ("el monto que te dé el sistema"; si el sistema no indica
+   acumulado → solo $5.000.000, sin mencionar montos viejos) y se reconcilió la contradicción
+   interna (línea "ACLARA SIEMPRE las dos cifras" vs "di solo el monto del sistema"). De paso, la
+   aclaración opcional de H2 en la ruta CON IA: "con $20.000 ya entras" vale para los SÁBADOS; el
+   Premio Mayor exige boleta 100% pagada.
+
+**Verificado:** 0 ocurrencias de "$20.000.000" en el manual nuevo; bloques leen coherentes; el
+respaldo automático guardó la versión anterior (27.706 chars). Efecto inmediato sin deploy (el motor
+lee `agente_config` en cada respuesta); el caché de Anthropic se reescribe una vez (~8k tokens,
+costo despreciable).
+
+**Cuidado / qué NO hacer:** cuando haya un acumulado NUEVO vigente, NO volver a escribir el monto a
+mano en el manual: el motor ya lo inyecta solo desde los resultados del calendario. El manual debe
+seguir hablando de "el monto que te dé el sistema". Ediciones futuras del manual: hacerlas tranquilo,
+el historial respalda cada cambio (restaurar con la receta del SQL).
+
 ## 2026-06-10 — [WhatsApp] — H2: el saludo fijo ya no promete entrar al Premio Mayor con $20.000
 
 **Qué:** el atajo SIN IA del contacto inicial pegaba "— con *$20.000* de abono ya entras 🎉" a

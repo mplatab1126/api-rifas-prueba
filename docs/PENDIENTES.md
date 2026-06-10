@@ -21,10 +21,11 @@
   YA quedó resuelto. Detalle por ítem en `docs/auditoria-liliana-2026-06-09.md`.
   **Avance 10-jun:** las DOS secciones 🔴 quedaron COMPLETAS y al aire — (1) DINERO: H6-H9 +
   H37 (función transaccional `trasladar_abono_atomico`); (2) CLIENTES COLGADOS EN SILENCIO:
-  H4+H11, H5+H21, H10, H12 (barredor + re-claim), H13. También H2 (el saludo fijo ya no promete
-  entrar a la casa con $20.000). Sigue: H3 (editar el manual — NECESITA OK de Mateo: volver
-  condicional el "acumulado en $20M" en 6 ocurrencias, + la aclaración opcional de H2 para la
-  ruta con IA) y sección 4 (seguridad: H19, H20, H40).
+  H4+H11, H5+H21, H10, H12 (barredor + re-claim), H13. También TODA la sección 3 (H2 saludo fijo
+  + H3 manual con OK de Mateo) y H15 (versionado del manual con respaldo automático). Sigue:
+  sección 4 (seguridad: H19 firma del webhook, H20 datos enumerables, H40 rate-limit) y el resto
+  de la sección 5 (H14 pruebas doradas, H16 monitoreo con alertas, H17 textos de rifa fuera del
+  código —¡antes del 4-jul!—, H18 cobro suave).
   **Vigilar las primeras conversaciones reales tras el deploy del 10-jun** (el motor cambió por
   dentro; si algo falla ahora deja rastro: etiqueta ASESOR + error en la actividad del agente).
 - [ ] (2026-06-09) **Reescribir la descripción de la herramienta `apartar_numero`** (en `agente-responder.js`):

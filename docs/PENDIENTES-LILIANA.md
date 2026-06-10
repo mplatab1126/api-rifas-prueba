@@ -93,11 +93,13 @@
   de "con $20.000 ya entras". Queda pendiente lo OPCIONAL del verificador: una aclaración de una
   línea en el manual (línea ~102, "con $20.000 ya entra") para la ruta CON IA — hacerla junto con
   H3 cuando Mateo dé el OK de editar el manual.
-- [ ] **H3** · El manual ordena decir "está acumulado en $20.000.000" SIEMPRE, pero el acumulado
-  se ganó el 6-jun (hoy va por $5M): instrucción imperativa cacheada vs nota volátil del motor →
-  puede decirle al cliente un premio 4× inflado. Editar el manual: volver el bloque condicional
-  ("el monto que te dé el sistema") en las 6 ocurrencias. Es escritura en producción → confirmar
-  con Mateo. — _esfuerzo bajo_
+- [x] (2026-06-10) **H3** · ARREGLADO (con OK de Mateo): las 6 ocurrencias de "$20.000.000" del
+  manual quedaron condicionales ("el monto que te dé el sistema"; sin acumulado indicado → solo
+  $5.000.000) y se reconcilió la contradicción "ACLARA SIEMPRE las dos cifras" vs "di solo el
+  monto del sistema". De paso, la aclaración opcional de H2 para la ruta CON IA ("con $20.000 ya
+  entras" vale para los sábados; el Premio Mayor exige boleta 100% pagada). Efecto inmediato (el
+  motor lee el manual en cada respuesta). La versión anterior quedó respaldada por el versionado
+  nuevo (H15). Verificado: 0 ocurrencias de $20.000.000 y bloques coherentes.
 
 ## 4) 🟠 Seguridad técnica
 
@@ -112,9 +114,10 @@
 
 ## 5) 🟠 Capacidades nuevas que NO estabas considerando (estrategia)
 
-- [ ] **H15** · **Versionado del manual con rollback.** Hoy un `replace()` SQL o un guardado
-  accidental destruye el manual sin copia. Tabla historial + trigger (puro SQL, sin desplegar).
-  Prerequisito sano para todo lo demás. — _esfuerzo bajo_
+- [x] (2026-06-10) **H15** · HECHO: tabla `agente_config_historial` + trigger que guarda la
+  versión ANTERIOR del prompt/variables antes de cada cambio (RLS prendido; SQL versionado en
+  `sql/versionado-manual-liliana.sql`, con la receta de restauración). Probado en vivo: la
+  edición de H3 dejó su respaldo automático (27.706 chars, la versión con el $20M).
 - [ ] **H14** · **Suite de conversaciones doradas**: 15-30 chats reales que ya causaron
   incidentes (voseo, acumulado, pago falso, remisión…) que se corren ANTES de publicar cada
   cambio del manual. Convierte el simulador "probar" en un corredor de pruebas. — _esfuerzo medio_
