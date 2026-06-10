@@ -23,10 +23,15 @@
   H37 (función transaccional `trasladar_abono_atomico`); (2) CLIENTES COLGADOS EN SILENCIO:
   H4+H11, H5+H21, H10, H12 (barredor + re-claim), H13. También TODA la sección 3 (H2 + H3), la
   sección 4 de SEGURIDAD completa (H19 firma ACTIVA, H20, H40), H15 (versionado del manual),
-  H17 (textos de rifa fuera del código + `docs/CHECKLIST-RIFA-NUEVA.md`) y H16 (alertas al
-  WhatsApp de Mateo cada 15 min + resumen 8pm, probado en vivo). De las secciones 1-5 solo
-  quedan: **H14** (suite de conversaciones doradas) y **H18** (cobro suave de saldos, ~$10.9M
-  identificados — toca decisiones de Mateo: cadencia, tono, público). Luego los 🟡 (25) y 🟢 (43).
+  H17 (textos de rifa fuera del código + `docs/CHECKLIST-RIFA-NUEVA.md`), H16 (alertas al
+  WhatsApp de Mateo, probadas en vivo) y H14 (suite dorada de 10 casos, 10/10 en verde contra
+  producción). **De las secciones 1-5 solo queda H18** (cobro suave de saldos, ~$10.9M
+  identificados — toca decisiones de Mateo: cadencia, tono, público; la infraestructura de
+  difusiones + "Liliana atiende" ya existe). Luego los 🟡 (25) y 🟢 (43).
+- [ ] (2026-06-10) **REGLA NUEVA para cambios del manual de Liliana:** antes de guardar un cambio
+  del manual, correr la **suite dorada** (`/api/whatsapp/probar-suite`, ver bitácora 10-jun) y
+  publicar solo en verde. Tras cada incidente nuevo del agente, agregar su caso a
+  `agente_casos_dorados`.
 - [ ] (2026-06-10) **Confirmar que Meta apruebe la plantilla `alerta_sistema_los_plata`**
   (utility, en revisión): es el respaldo de las alertas cuando la ventana de 24h esté cerrada.
   Cuando pase a "aprobada" no hay que hacer nada más (el cron la usa solo).

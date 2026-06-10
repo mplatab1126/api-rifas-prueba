@@ -26,6 +26,28 @@
 
 ---
 
+## 2026-06-10 — [WhatsApp] — H14: suite de conversaciones DORADAS (el manual ya se puede probar antes de publicarse)
+
+**Qué hicimos:** el manual se editaba "en caliente" y cada corrección podía revivir un incidente
+viejo sin que nadie lo notara hasta verlo con clientes reales (pasó 3+ veces en una semana). Ahora
+existe la **suite dorada**: 10 mini-conversaciones de incidentes REALES documentados (voseo, contar
+sábados del acumulado, el $20M vencido, pago falso, correo "obligatorio", extranjeros, $300M vs
+amoblado, boleta por WhatsApp, no reventa, mínimos por sorteo) guardadas en
+**`agente_casos_dorados`**, y el corredor **`api/whatsapp/probar-suite.js`** (solo gerencia) que
+las corre contra el manual con las MISMAS herramientas del agente en MODO SECO (nada se ejecuta) y
+evalúa con regex qué NO debe decir (y, poco, qué SÍ). Acepta `prompt` candidato para probar un
+manual NUEVO **antes** de guardarlo. Primera corrida contra producción: **10/10 en verde**.
+
+**Cómo se usa:** antes de publicar un cambio del manual, correr la suite (un chat de Claude lo hace
+con la contraseña de gerencia: POST `/api/whatsapp/probar-suite` `{contrasena, linea_id, prompt?}`).
+Rojo = ese manual repetiría un incidente. Caso nuevo tras cada incidente futuro = un INSERT.
+
+**Cuidado / qué NO hacer:** los asserts son mayormente NEGATIVOS (prohibidos) a propósito — los
+"requeridos" son frágiles, usarlos poco (la 1ª corrida tuvo 2 falsos rojos: un regex roto y una
+herramienta exigida en un caso sin imagen real; ya corregidos). Un regex que no compila cuenta como
+fallo (a propósito: mejor falso rojo que prueba muerta). La suite NO reemplaza el modo sombra: es
+la primera línea, no la única.
+
 ## 2026-06-10 — [WhatsApp] / [General] — H16: el sistema ahora le AVISA a Mateo por WhatsApp (alertas + resumen diario)
 
 **Qué hicimos:** hasta hoy ningún fallo del agente avisaba a nadie (los errores quedaban en la

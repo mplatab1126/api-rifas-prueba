@@ -127,9 +127,16 @@
   versión ANTERIOR del prompt/variables antes de cada cambio (RLS prendido; SQL versionado en
   `sql/versionado-manual-liliana.sql`, con la receta de restauración). Probado en vivo: la
   edición de H3 dejó su respaldo automático (27.706 chars, la versión con el $20M).
-- [ ] **H14** · **Suite de conversaciones doradas**: 15-30 chats reales que ya causaron
-  incidentes (voseo, acumulado, pago falso, remisión…) que se corren ANTES de publicar cada
-  cambio del manual. Convierte el simulador "probar" en un corredor de pruebas. — _esfuerzo medio_
+- [x] (2026-06-10) **H14** · HECHA Y EN VERDE: suite dorada con **10 casos de incidentes reales**
+  (voseo, contar sábados, $20M vencido, pago falso, correo "obligatorio", extranjeros, $300M vs
+  amoblado, boleta por WhatsApp, no reventa, mínimos por sorteo) en `agente_casos_dorados` +
+  corredor **`api/whatsapp/probar-suite.js`** (solo gerencia): corre cada caso contra el manual
+  con las MISMAS herramientas del agente en modo seco y evalúa regex prohibidos/requeridos.
+  Acepta un manual CANDIDATO sin guardarlo (flujo seguro: probar → verde → guardar). Primera
+  corrida real contra producción: **10/10 en verde** (los 2 rojos iniciales eran defectos de los
+  casos, corregidos). Cómo correrla: pedirle a un chat de Claude "corre la suite dorada de
+  Liliana" (POST a `/api/whatsapp/probar-suite` con contraseña de gerencia + linea_id). Casos
+  nuevos = INSERT en la tabla. Pendiente opcional: botón en la cabina.
 - [x] (2026-06-10) **H16** · HECHO Y PROBADO: cron `alertas-agente-cada-15min` (jobid 7) →
   `api/whatsapp/alertas-cron.js`. Avisa al WhatsApp de Mateo (573123354789, por la línea de
   Lili): clientes >15 min esperando (con memoria anti-repetición), errores nuevos del agente,
