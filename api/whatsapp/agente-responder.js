@@ -455,7 +455,11 @@ function afirmaPagoHecho(texto) {
   // (Caso real 9-jun: la versión vieja bloqueaba "es 100% legal" y "cuando esté pagada
   // al 100% te enviamos la factura", y respondía hablando de un comprobante inexistente.)
   const COND = /\b(cuando|si|para|una vez|apenas|despues|hasta|antes|al estar|estar|este|estes|esten|quedar|quede|quedes|queden|falta|faltan|debe|debes|deben|necesita|necesitas)\b[^.,!?\n]{0,38}$/;
-  // Frases que SÍ afirman un pago ya hecho/registrado (pasado o estado actual):
+  // Marcador de NEGACIÓN justo antes (H31): "aún NO recibimos tu pago" es una verdad
+  // de venta normal, no una afirmación de pago — no se bloquea.
+  const NEG = /\b(no|aun no|todavia no|nunca|sin)\b[^.,!?\n]{0,30}$/;
+  // Frases que SÍ afirman un pago ya hecho/registrado (pasado o estado actual).
+  // OJO: "comprobante" se queda FUERA a propósito (el mensaje seguro dice "recibí tu comprobante").
   const PATRONES = [
     /pagad[ao]\s*al\s*100/g,                                                        // "pagada al 100%"
     /qued(o|aste)\s+(totalmente\s+|completamente\s+)?(pagad|abonad|al\s+dia)/g,     // "quedó pagada/abonada"
@@ -464,14 +468,21 @@ function afirmaPagoHecho(texto) {
     /\bregistre\s+(tu|su|el)?\s*(abono|pago)/g,                                     // "registré tu abono" (pasado)
     /(tu|su|el)\s+(pago|abono)\s+(ya\s+)?(quedo|fue|esta)\s+(registrad|aplicad|confirmad|abonad)/g,
     /pago\s+confirmad/g,                                                            // "pago confirmado"
+    // ── v2 (H31): formulaciones naturales que la versión 1 no cubría ──
+    /\brecib(i|imos)\s+(tu|su|el)\s+(pago|abono|transferencia|consignacion)/g,      // "recibí tu pago"
+    /(tu|su|el)\s+(pago|abono|transferencia)\s+(ya\s+)?(entro|llego|ingreso)\b/g,   // "tu pago ya entró"
+    /se\s+(aplico|acredito|abono|registro)\s+(tu|su|el)\s+(pago|abono|transferencia)/g, // "se acreditó tu pago"
+    /(tu|su)\s+(plata|dinero)\s+ya\s+qued(o|aron)\s+(en|aplicad|abonad|registrad)/g, // "tu plata ya quedó en..."
+    /todo\s+en\s+orden\s+con\s+(tu|su|el)\s+(pago|abono)/g,                         // "todo en orden con tu pago"
   ];
-  // Una frase cuenta SOLO si en la misma oración no viene precedida de un marcador condicional.
+  // Una frase cuenta SOLO si en la misma oración no viene precedida de un marcador
+  // condicional NI de una negación.
   return PATRONES.some((re) => {
     re.lastIndex = 0;
     let m;
     while ((m = re.exec(t)) !== null) {
       const antes = t.slice(Math.max(0, m.index - 45), m.index);
-      if (!COND.test(antes)) return true;
+      if (!COND.test(antes) && !NEG.test(antes)) return true;
     }
     return false;
   });

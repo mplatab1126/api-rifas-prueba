@@ -1,3 +1,7 @@
+-- ⚠️⚠️ ARCHIVO VIEJO (no refleja la base real) — ver sql/esquema-agente-produccion.sql ⚠️⚠️
+-- Este esquema declara `telefono unique` GLOBAL, pero la base real exige unicidad
+-- por LÍNEA + teléfono (multi-línea, recibir.js). NO usarlo como referencia.
+
 -- ============================================================================
 --  BUZÓN DE WHATSAPP PROPIO (Meta Cloud API)
 -- ----------------------------------------------------------------------------

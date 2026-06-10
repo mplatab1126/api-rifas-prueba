@@ -34,15 +34,21 @@ export async function numerosDisponibles({ canal = 'web', exclude = '' } = {}) {
   );
 
   // 1) Variedad: hasta 5 de cada serie 0-9, entre las libres y no mostradas en ningún canal.
+  // Las 10 consultas van EN PARALELO (H45): antes eran secuenciales y esta función — que está
+  // en la ruta más caliente de la venta (atajo de números, herramienta, web) — tardaba ~1-1,5s.
   const LIMITE_POR_SERIE = excluidos.size > 0 ? 200 : 50;
-  for (let i = 0; i <= 9; i++) {
-    const { data: libresSerie, error } = await supabase
-      .from('boletas')
-      .select('numero')
-      .is('telefono_cliente', null)
-      .is('mostrado_canal', null)
-      .like('numero', `${i}%`)
-      .limit(LIMITE_POR_SERIE);
+  const porSerie = await Promise.all(
+    Array.from({ length: 10 }, (_, i) =>
+      supabase
+        .from('boletas')
+        .select('numero')
+        .is('telefono_cliente', null)
+        .is('mostrado_canal', null)
+        .like('numero', `${i}%`)
+        .limit(LIMITE_POR_SERIE)
+    )
+  );
+  for (const { data: libresSerie, error } of porSerie) {
     if (error) throw error;
     if (libresSerie && libresSerie.length > 0) {
       const candidatosSerie = libresSerie.filter(b => !excluidos.has(b.numero));
