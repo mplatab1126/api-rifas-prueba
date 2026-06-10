@@ -19,9 +19,12 @@
   multi-agente completa (90 hallazgos verificados: dinero, silencios, coherencia, seguridad,
   velocidad, costos, estrategia). Ir tachando por prioridad; el crítico (modelo retirable 15-jun)
   YA quedó resuelto. Detalle por ítem en `docs/auditoria-liliana-2026-06-09.md`.
-  **Avance 10-jun:** la sección 1 de DINERO quedó COMPLETA y al aire (H6-H9 + H37 con la
-  función transaccional `trasladar_abono_atomico`). Sigue: sección 2 (clientes colgados en
-  silencio: H5+H21, H12, H4+H11, H10, H13).
+  **Avance 10-jun:** las DOS secciones 🔴 quedaron COMPLETAS y al aire — (1) DINERO: H6-H9 +
+  H37 (función transaccional `trasladar_abono_atomico`); (2) CLIENTES COLGADOS EN SILENCIO:
+  H4+H11, H5+H21, H10, H12 (barredor + re-claim), H13. Sigue: sección 3 (coherencia con fecha:
+  H2 antes del 27-jun, H3 con OK de Mateo) y sección 4 (seguridad: H19, H20, H40).
+  **Vigilar las primeras conversaciones reales tras el deploy del 10-jun** (el motor cambió por
+  dentro; si algo falla ahora deja rastro: etiqueta ASESOR + error en la actividad del agente).
 - [ ] (2026-06-09) **Reescribir la descripción de la herramienta `apartar_numero`** (en `agente-responder.js`):
   aún dice cédula/correo "OPCIONALES", la palabra que le prohibimos decir al cliente. Reescribir sin esa palabra
   (cambio de código → desplegar). Pendiente OK de Mateo.
@@ -117,6 +120,14 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-10) **🤫 CERRADA la familia "clientes colgados en silencio" (sección 2 del plan:
+  H4+H11, H5+H21, H10, H12, H13).** Reintento ante errores de la IA + catch global que suelta el
+  candado y marca ASESOR; refresco del candado en el bucle (no más doble respuesta) + auto-redisparo
+  si el cliente escribió mientras Liliana redactaba; envíos rechazados por WhatsApp visibles
+  ('fallido' + ASESOR, y la IA no los "recuerda"); barredor cada minuto + re-claim de turnos muertos
+  (RPC, `sql/agente-claim-reclaim.sql`); errores tragados con rastro (verificación, webhook 500 si
+  no se guardó nada, disparo). Verificado al aire (cron con `barridos:0`, motor punta a punta).
+  Ver bitácora 10-jun.
 - [x] (2026-06-10) **🔒 H37 + carrera de venta.js — la sección de DINERO del plan quedó completa.**
   (H37) el traslado de abonos vive ahora en una función transaccional de la base
   (`trasladar_abono_atomico`: o se hace todo o nada; bloquea ambas boletas; SQL versionado en

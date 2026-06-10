@@ -26,6 +26,47 @@
 
 ---
 
+## 2026-06-10 — [WhatsApp] — Cerrada la familia "clientes colgados en silencio" (sección 2 de la auditoría: H4, H5, H10, H11, H12, H13, H21)
+
+**Qué hicimos:** cerramos TODOS los mecanismos conocidos por los que un cliente escribía y Liliana
+quedaba callada sin que nadie se enterara (la causa probable de las "respuestas en null"):
+1. **Reintento ante errores de la IA + catch global sano (H4/H11):** un blip de Anthropic (429/5xx/
+   no-JSON/red) se reintenta 1 vez (refrescando el candado en la espera); si persiste → nota +
+   etiqueta ASESOR. El catch global ahora suelta el candado, deja el error en `agente_actividad` y
+   marca ASESOR (`conv` izada fuera del try) — antes devolvía un 500 que nadie leía.
+2. **Mensajes durante la redacción (H5/H21):** el candado se refresca en cada vuelta del bucle y en
+   transcripción/descarga (no más doble respuesta por vencerse a los 60s); al cerrar, si llegó un
+   entrante posterior al claim, la corrida se re-dispara a sí misma con el flag `redisparo` (salta
+   la guarda de "último mensaje es nuestro").
+3. **Red de reenganche (H12):** barredor cada minuto en `recordatorios-cron.js` (chats con agente
+   activo + último mensaje del cliente + 2-60 min sin respuesta → re-POST al motor; excluye
+   humano/apagado/sombra, tope 8 por tanda) + el claim guarda `agente_claim_at` y PERMITE re-reclamar
+   un turno muerto a los 5 min si nunca salió respuesta posterior (atómico en la RPC
+   `agente_claim_respuesta`, SQL versionado en `sql/agente-claim-reclaim.sql`; columna nueva
+   `conversaciones_whatsapp.agente_claim_at`).
+4. **La verdad de los envíos (H10):** `decir()` revisa `env.ok`: si WhatsApp rechaza, el mensaje se
+   guarda 'fallido' (el chat NO se marca atendido → sigue en "sin respuesta"), nota + ASESOR;
+   `enviar_contacto_inicial`/`enviar_boleta` ya no le dicen "Listo" a la IA si el envío falló; el
+   historial de la IA EXCLUYE los 'fallido' (no "recuerda" lo que el cliente nunca recibió); y el
+   cron de pagos, si abona pero el aviso falla, deja error + ASESOR.
+5. **Errores tragados (H13):** `agendarVerificacion` revisa `{ error }` del insert (supabase-js NO
+   lanza) → si falla, error en actividad + ASESOR; el webhook devuelve 500 SOLO si llegaron mensajes
+   y NINGUNO se guardó (Meta reintenta; el dedup por wa_message_id absorbe el reintento) — los
+   webhooks de solo-acuses siguen en 200; y el disparo del motor distingue el corte normal de 1.5s
+   de un fallo real (queda en el log de Vercel).
+
+**Verificado al aire (commit `38d5083`):** el cron de cada minuto ya responde con `barridos:0`
+(barredor corriendo limpio; 0 chats trabados en la ventana al desplegar); el motor corre de punta a
+punta sobre un chat real ya respondido y sale con el skip esperado sin enviar nada; la RPC del
+re-claim probada con rollback (4 casos: reclama/bloquea fresco/re-reclama muerto/rechaza viejo).
+
+**Cuidado / qué NO hacer:** el flag `redisparo` y el parámetro `recordatorio` son los DOS únicos
+caminos que saltan la guarda de "último mensaje es del cliente" — no agregar otros sin pensar en el
+claim. El barredor depende de `ultimo_entrante=true`: si algún código nuevo marca el chat como
+atendido sin responder de verdad, el barredor no lo verá. El estado 'fallido' en `mensajes_whatsapp`
+ahora EXCLUYE el mensaje de la memoria de la IA: no usarlo para otra cosa. Si Meta empezara a
+reintentar en bucle, revisar que el 500 del webhook solo salga cuando de verdad NO se guardó nada.
+
 ## 2026-06-10 — [Pagos] / [Base de datos] — Traslado de abonos ATÓMICO (H37) + cerrada la doble venta en venta.js
 
 **Qué hicimos (cierra la sección de DINERO del plan de Liliana):**

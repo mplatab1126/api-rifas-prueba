@@ -61,24 +61,29 @@
 
 ## 2) 🔴 PRIMERO — Clientes que quedan COLGADOS en silencio (familia "respuestas en null")
 
-- [ ] **H5+H21** · Si el cliente escribe mientras Liliana redacta, ese mensaje queda SIN
-  respuesta para siempre (el candado bloquea la corrida B y la A nunca re-revisa); y si la
-  corrida tarda >60s puede haber respuesta DOBLE. Arreglo: refrescar el candado en el bucle +
-  auto-redisparo al cerrar (ojo al guard de la línea 1045 — ver ajustes en anexo H21). Este es
-  el mecanismo más probable detrás de las "respuestas en null". — _esfuerzo medio_
-- [ ] **H12** · El disparo del motor es "dispara y olvida" (corte 1.5s) sin red de reenganche:
-  si se pierde, o si una corrida muere tras el claim, el chat queda trabado hasta que el cliente
-  insista. Arreglo: cron barredor cada 1-2 min que re-dispare chats con entrante sin responder.
-  Complementa a H5+H21. — _esfuerzo medio_
-- [ ] **H4+H11** · Error de la API de Claude = cliente en silencio sin reintento ni etiqueta; y
-  el catch global no suelta el candado ni deja rastro. Reintentar 1 vez (solo 429/5xx/529),
-  etiqueta ASESOR si persiste, y arreglar el catch global (~10 líneas). — _esfuerzo bajo_
-- [ ] **H10** · `decir()` marca "enviado" mensajes que WhatsApp RECHAZÓ: el cliente queda en
-  silencio pero la IA "recuerda" haberlo dicho y no lo repite (boleta, confirmaciones). Revisar
-  `env.ok` y avisar (patrón de `enviar_resolucion` que ya lo hace bien). — _esfuerzo bajo_
-- [ ] **H13** · `agendarVerificacion` traga errores EN LA RUTA DEL DINERO (cliente pagó, se le
-  prometió verificar, y nadie verificará). OJO ajuste del verificador: con supabase-js los
-  errores NO lanzan — hay que revisar `{ error }` del insert, no solo el catch. — _esfuerzo bajo_
+- [x] (2026-06-10) **H5+H21** · ARREGLADO: el candado se refresca en CADA vuelta del bucle de IA
+  y en la fase de transcripción/descarga (ya no se vence a los 60s → no más doble respuesta); y
+  al cerrar, si el cliente escribió MIENTRAS Liliana redactaba, la corrida se re-dispara a sí
+  misma con el flag `redisparo` (que salta la guarda de "último mensaje es nuestro", como pedía
+  el verificador). Ver bitácora 10-jun.
+- [x] (2026-06-10) **H12** · ARREGLADO: (1) barredor cada minuto (en `recordatorios-cron.js`)
+  que re-dispara chats con el agente activo, último mensaje del cliente y 2-60 min sin respuesta
+  (excluye humano/apagado/sombra; idempotente por los candados); (2) el claim anti-duplicado
+  guarda `agente_claim_at` y permite RE-RECLAMAR un turno muerto a los 5 min si nunca salió
+  respuesta (atómico en la RPC, ver `sql/agente-claim-reclaim.sql`). Probado con rollback.
+- [x] (2026-06-10) **H4+H11** · ARREGLADO: la llamada a la IA reintenta 1 vez ante errores
+  transitorios (429/5xx/no-JSON/red) refrescando el candado en la espera; si persiste → nota +
+  etiqueta ASESOR. El catch global ahora suelta el candado, deja el error en `agente_actividad`
+  y marca ASESOR (`conv` izada fuera del try). También la rama de despedida de `pasar_a_humano`.
+- [x] (2026-06-10) **H10** · ARREGLADO: `decir()` revisa `env.ok` — si WhatsApp rechaza, guarda
+  el mensaje como 'fallido' (el chat NO se marca atendido), deja nota y etiqueta ASESOR;
+  `enviar_contacto_inicial` y `enviar_boleta` le dicen la verdad a la IA si el envío falló; el
+  historial de la IA EXCLUYE los 'fallido' (no "recuerda" lo que el cliente nunca recibió); y el
+  cron, si abona pero no puede avisar, deja error + ASESOR.
+- [x] (2026-06-10) **H13** · ARREGLADO: `agendarVerificacion` revisa `{ error }` del insert (con
+  supabase-js los errores NO lanzan) → si falla, error en actividad + ASESOR (el cliente quedó
+  esperando una verificación); el webhook devuelve 500 si NINGÚN mensaje se pudo guardar (Meta
+  reintenta; el dedup absorbe) y distingue el corte normal de 1.5s de un fallo real del disparo.
 
 ## 3) 🟠 Coherencia con fecha límite (antes de la semana final de la rifa)
 

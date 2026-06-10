@@ -266,6 +266,20 @@ y los disparadores siguen SOLO de gerencia/Mateo** (candado `esMateo` + ocultos 
   las fotos ni los chequeos reales y solo frenaba acciones legítimas en falso. La seguridad del dinero vive en los
   candados de cada acción (abono verificado contra el banco, liberar valida dueño + saldo $0). Se borró del código.
 
+### 8.3-bis Robustez del motor (10-jun-2026 — familia "clientes colgados en silencio")
+- **Reintento de IA:** errores transitorios de Anthropic (429/5xx/no-JSON) se reintentan 1 vez; si
+  persiste → nota + etiqueta ASESOR. El catch global suelta el candado y deja el error en la actividad.
+- **Candado fresco:** se refresca en cada vuelta del bucle y al transcribir/descargar (no más doble
+  respuesta por vencerse a los 60s). Si el cliente escribe mientras Liliana redacta, la corrida se
+  re-dispara sola al cerrar (flag `redisparo`).
+- **Barredor (cada minuto, en `recordatorios-cron.js`):** re-dispara chats con agente activo y 2-60 min
+  sin respuesta. El claim anti-duplicado permite re-reclamar turnos MUERTOS a los 5 min
+  (`sql/agente-claim-reclaim.sql`, columna `agente_claim_at`).
+- **Envíos con verdad:** si WhatsApp rechaza un envío, queda 'fallido' (el chat sigue "sin respuesta",
+  nota + ASESOR) y la IA NO lo recuerda como dicho; `enviar_boleta`/contacto inicial reportan el fallo.
+- **Webhook:** devuelve 500 SOLO si llegaron mensajes y ninguno se guardó (Meta reintenta, el dedup
+  absorbe). Ver bitácora 10-jun.
+
 ### 8.4 Cómo conversa (afinado con pruebas reales)
 - **VE las fotos** (le pasa la imagen real a Claude, no "[imagen]"). **Transcribe audios** con Whisper (`OPENAI_API_KEY`).
 - **Estado del cliente SIEMPRE**: antes de responder consulta por teléfono datos+boletas (`resumenCliente`) y se los
