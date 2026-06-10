@@ -649,7 +649,9 @@ const HERRAMIENTAS_CON_EFECTO = new Set([
 ]);
 
 // ── Ejecutores de cada herramienta. Devuelven texto-resultado para la IA. ────
-async function ejecutarHerramienta(nombre, input, conv) {
+// ctx (opcional): contexto del turno — { imagenesVistas } con las fotos que el motor ya
+// descargó para la IA (llave = id del mensaje), para no re-descargarlas de Meta (H44).
+async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
   // MODO SOMBRA: no ejecutar las herramientas con efecto real; solo registrar qué haría.
   if (conv.sombra && HERRAMIENTAS_CON_EFECTO.has(nombre)) {
     const det = (input && Object.keys(input).length) ? ' → ' + JSON.stringify(input) : '';
@@ -778,9 +780,12 @@ async function ejecutarHerramienta(nombre, input, conv) {
     if (!pwd) return 'No puedo registrar pagos ahora (falta configuración). Pásalo a un asesor.';
     // 1) Último comprobante (imagen) que mandó el cliente.
     const { data: imgs } = await supabase.from('mensajes_whatsapp')
-      .select('media_id').eq('conversacion_id', conv.id).eq('direccion', 'entrante').eq('tipo', 'image')
+      .select('id, media_id').eq('conversacion_id', conv.id).eq('direccion', 'entrante').eq('tipo', 'image')
       .order('timestamp_wa', { ascending: false }).limit(1);
     const mediaId = imgs && imgs[0] && imgs[0].media_id;
+    // Si el motor YA descargó esta foto para mostrársela a la IA, se la prestamos a la
+    // verificación y nos ahorramos la segunda descarga de Meta (H44).
+    const mediaBase64 = (imgs && imgs[0] && ctx.imagenesVistas) ? ctx.imagenesVistas.get(imgs[0].id) : null;
     if (!mediaId) return 'El cliente NO ha mandado la foto del comprobante. Pídesela amablemente; sin el comprobante no puedo registrar el pago.';
 
     // 2) Candado contra el cron de reintentos: si la verificación de este chat está
@@ -814,7 +819,7 @@ async function ejecutarHerramienta(nombre, input, conv) {
 
     // 3) Verificar contra los pagos REALES y abonar si hay coincidencia SÓLIDA (lógica probada).
     const numeroPedido = String(input?.numero || '').replace(/\D/g, '');
-    const r = await verificarYAbonar({ telefono: conv.telefono, linea_id: conv.linea_id, conversacion_id: conv.id, mediaId, numeroPedido, pwd });
+    const r = await verificarYAbonar({ telefono: conv.telefono, linea_id: conv.linea_id, conversacion_id: conv.id, mediaId, numeroPedido, pwd, mediaBase64 });
 
     if (r.tipo === 'abonado') {
       await cancelarVerificaciones(conv.id);
@@ -1597,7 +1602,7 @@ export default async function handler(req, res) {
       let cerrarSinTexto = false;
       for (const tu of toolUses) {
         let out;
-        try { out = await ejecutarHerramienta(tu.name, tu.input || {}, conv); }
+        try { out = await ejecutarHerramienta(tu.name, tu.input || {}, conv, { imagenesVistas }); }
         catch (e) { out = 'Error ejecutando la herramienta: ' + e.message; }
         if (typeof out === 'string' && out.startsWith('AGENTE_APAGADO')) apagado = true;
         if (tu.name === 'apartar_numero' && typeof out === 'string' && out.startsWith('Listo: el número')) apartoNumero = true;

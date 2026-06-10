@@ -26,7 +26,7 @@ export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  const { contrasena, media_id, telefono, linea_id, asesorRegistro } = req.body || {};
+  const { contrasena, media_id, telefono, linea_id, asesorRegistro, media_base64, media_mime } = req.body || {};
   const nombre = validarAsesor(contrasena);
   if (!nombre) return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido.' });
   if (!media_id) return res.status(400).json({ status: 'error', mensaje: 'Falta el comprobante.' });
@@ -35,8 +35,12 @@ export default async function handler(req, res) {
   // override — mismo patrón de /api/admin/abono. Sin override, todo sigue igual que antes.
   const actorReal = (asesorRegistro && esGerencia(nombre)) ? String(asesorRegistro).trim() : nombre;
 
-  // 1. Descargar la imagen del cliente (con el token de su línea)
-  const media = await descargarMediaBase64(media_id, linea_id);
+  // 1. La imagen del cliente: si el llamador YA la tiene descargada (el motor del agente
+  //    la baja para mostrársela a la IA), la recibe en media_base64 y se ahorra la segunda
+  //    descarga de Meta (H44). Si no viene, se descarga como siempre (cron, bandeja).
+  const media = (media_base64 && String(media_base64).length > 100)
+    ? { ok: true, base64: media_base64, mimeType: media_mime || 'image/jpeg' }
+    : await descargarMediaBase64(media_id, linea_id);
   if (!media.ok) return res.status(200).json({ status: 'error', mensaje: media.error });
 
   // 2. Leer el comprobante (solo extrae datos)

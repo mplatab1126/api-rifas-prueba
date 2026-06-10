@@ -74,13 +74,20 @@ async function post(ruta, cuerpo) {
   }
 }
 
-export async function verificarYAbonar({ telefono, linea_id, conversacion_id, mediaId, numeroPedido, pwd, asesorRegistro }) {
+export async function verificarYAbonar({ telefono, linea_id, conversacion_id, mediaId, numeroPedido, pwd, asesorRegistro, mediaBase64 }) {
   // El actor REAL del movimiento (el agente = dueño de la línea, ej. "Liliana") se resuelve
   // ANTES de buscar el pago, para que `puede_modificar` se evalúe con SU grupo (independiente)
   // y no con el de gerencia — si no, las boletas del agente salen como "de otro grupo" y un
   // pago que SÍ coincide termina en 'sin_saldo' (bug del 8-jun).
   const asesorReg = asesorRegistro || await asesorDeLinea(linea_id);
-  const v = await post('/api/whatsapp/buscar-pago', { media_id: mediaId, telefono, linea_id, contrasena: pwd, ...(asesorReg ? { asesorRegistro: asesorReg } : {}) });
+  // mediaBase64 ({ mime, base64 }) es OPCIONAL: el motor ya descargó el comprobante para la
+  // IA y lo presta para no bajarlo de Meta otra vez (H44). El cron no lo tiene → buscar-pago
+  // lo descarga como siempre.
+  const v = await post('/api/whatsapp/buscar-pago', {
+    media_id: mediaId, telefono, linea_id, contrasena: pwd,
+    ...(asesorReg ? { asesorRegistro: asesorReg } : {}),
+    ...(mediaBase64 && mediaBase64.base64 ? { media_base64: mediaBase64.base64, media_mime: mediaBase64.mime } : {}),
+  });
   if (v.status !== 'ok') return { tipo: 'error', mensaje: v.mensaje || 'no se pudo verificar el comprobante' };
   if (!v.sugerida_id) return { tipo: 'no_encontrado', diagnostico: v.diagnostico || '' };
   // Seguridad: "Misma hora" sola NO basta (dos clientes pueden pagar igual el mismo minuto).
