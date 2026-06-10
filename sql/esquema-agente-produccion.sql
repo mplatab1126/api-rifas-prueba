@@ -6,7 +6,8 @@
 --    agente, filtros de la bandeja, difusiones). La fuente de la verdad es la
 --    base de Supabase (proyecto ikvzmojzgpxuhnbymtxm).
 -- ⚠️ El secreto interno de los crons está REDACTADO (<SECRETO_INTERNO> =
---    WHATSAPP_VERIFY_TOKEN, vive en Vercel y en cron.job de la base).
+--    AGENTE_INTERNO_SECRET desde el 10-jun (H39), vive en Vercel y en cron.job
+--    de la base; WHATSAPP_VERIFY_TOKEN quedó SOLO para el handshake GET de Meta).
 -- 📌 Regla desde el 10-jun: todo cambio nuevo en la base debe quedar también
 --    en su propio archivo de sql/ (como trasladar-abono-atomico.sql,
 --    agente-claim-reclaim.sql, rate-limit.sql, versionado-manual-liliana.sql).

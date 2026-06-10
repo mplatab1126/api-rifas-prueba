@@ -31,8 +31,12 @@
   tanda 2 = H31 (candado v2, 24/24), H38 (SQL versionado) y H45 (disponibles 2.33s→0.85s);
   tanda 3 = H46+H53 (boleta tras apartar la envía el sistema: una llamada menos a Claude por
   venta), H41 (reservar: tope 10 + rate-limit + asesor solo con secreto) y H28 (alerta de chats
-  en manos de asesor >30 min — cazó un caso real de ~12h en su primera corrida). Quedan ~10
-  amarillos y ~39 verdes — seguir por tandas.
+  en manos de asesor >30 min — cazó un caso real de ~12h en su primera corrida);
+  tanda 4 = H24 (cuenta de Maria Buitrago publicada en Canales Oficiales + aviso del hub),
+  H30 (fotos asignadas/viejas ya no se re-facturan a la IA), H44 (sin segunda descarga del
+  comprobante; el lector sigue en Sonnet por decisión de Mateo) y H39 (secreto interno propio
+  AGENTE_INTERNO_SECRET, transición sin cortes, crons actualizados). Quedan ~7 amarillos
+  (H27, H32, H34, H35, H36, H42, H43) y ~39 verdes — seguir por tandas.
 - [ ] (2026-06-10) **REGLA NUEVA para cambios del manual de Liliana:** antes de guardar un cambio
   del manual, correr la **suite dorada** (`/api/whatsapp/probar-suite`, ver bitácora 10-jun) y
   publicar solo en verde. Tras cada incidente nuevo del agente, agregar su caso a

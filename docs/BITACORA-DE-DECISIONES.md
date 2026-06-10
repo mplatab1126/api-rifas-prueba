@@ -26,6 +26,44 @@
 
 ---
 
+## 2026-06-10 — [WhatsApp] / [Seguridad] — Tanda 4 de los amarillos (H24, H30, H44, H39)
+
+**Qué hicimos (todo verificado al aire):**
+- **H24 — La web ya no contradice a Liliana:** la portada decía "solo aceptamos pagos a cuentas a
+  nombre de LOS PLATA S.A.S." pero Liliana cobra al Nequi/Daviplata/Bre-B 3128732266 de **Maria
+  Buitrago** (y esa cuenta no estaba en Canales Oficiales) — el cliente desconfiado que verificara
+  concluía que Liliana era la estafa. Con OK de Mateo: la cuenta quedó PUBLICADA en
+  `/canales-oficiales` (grupo 4, "Cuenta autorizada", Nequi + Daviplata + llave Bre-B) y el aviso
+  del hub ahora remite a esa lista verificable (sin suavizar el ancla anti-estafa, como pidió el
+  verificador). OJO: las páginas cargan los `.js` COMPILADOS — tras editar un `.jsx` correr
+  `npm run build` (si esbuild falta: `npm install --cache /tmp/npm-cache-losplata`; el caché normal
+  de npm tiene un lío de permisos).
+- **H30 — Las fotos ya asignadas/viejas no se re-facturan:** el motor adjuntaba las 2 imágenes más
+  recientes a CADA llamada de IA aunque el comprobante ya estuviera abonado (~1.1-1.6k tokens por
+  imagen, el resto del chat). Ahora salta las marcadas `pago_asignado` y las de >48h; el historial
+  trae SOLO esa llave (`pago_asignado:raw->pago_asignado`, sintaxis validada contra PostgREST de
+  producción); y la marca la pone `verificarYAbonar` (movida a `api/lib/abono-agente.js`) — así
+  el CRON también marca al abonar (antes nunca marcaba y el filtro no habría mordido). Ahorro
+  estimado ~$0.3-0.5/día + menos latencia.
+- **H44 — Sin segunda descarga del comprobante:** `registrar_abono` le PRESTA a buscar-pago el
+  base64 que el motor ya descargó para la IA (parámetro opcional `media_base64`); el cron y la
+  bandeja siguen descargando como siempre (fallback intacto). Mateo decidió DEJAR Sonnet como
+  lector (no se cambió a Haiku, para no crear asimetría con el extractor del banco).
+- **H39 — Secreto interno propio:** las llamadas internas (webhook→motor, pg_cron→crons, motor→
+  reservar) ya NO usan el verify token de Meta (baja entropía, conocido en el panel de Meta) sino
+  **`AGENTE_INTERNO_SECRET`** (32 bytes aleatorios, comparación a tiempo constante, pieza nueva
+  `api/lib/secreto-interno.js`). Transición SIN cortes: deploy que aceptaba ambos → variable en
+  Vercel → `cron.alter_job` de los 4 crons HTTP (jobids 1, 5, 6, 7) → verificado (4×200 en
+  `net._http_response`) → deploy final que rechaza el viejo. Probado al aire: secreto nuevo 200,
+  token viejo "No autorizado", y el motor corre punta a punta con el secreto nuevo.
+
+**Cuidado / qué NO hacer:** si se rota `AGENTE_INTERNO_SECRET`, hay que actualizar JUNTOS la
+variable en Vercel (redeploy) y los cuerpos de los 4 pg_cron (`cron.alter_job` con replace) — si
+se cambia solo un lado, los crons quedan en 403 (emergencia: `ACEPTAR_VIEJO=true` en
+`api/lib/secreto-interno.js` y desplegar). El `WHATSAPP_VERIFY_TOKEN` sigue siendo necesario para
+el GET de Meta — NO borrarlo. La marca `pago_asignado` ahora también APAGA el adjunto de la foto a
+la IA: no usarla para otra cosa.
+
 ## 2026-06-10 — [WhatsApp] — Un "gracias" ya NO cancela los recordatorios del agente
 
 **Qué decidimos:** cuando el cliente escribe, el sistema cancelaba TODOS los recordatorios
