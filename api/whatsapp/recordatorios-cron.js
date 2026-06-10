@@ -53,8 +53,16 @@ async function enviarSeguimientoPorPlantilla(r) {
       .maybeSingle();
 
     const { data: conv } = await supabaseAdmin
-      .from('conversaciones_whatsapp').select('id, nombre_perfil').eq('id', r.conversacion_id).maybeSingle();
+      .from('conversaciones_whatsapp').select('id, nombre_perfil, agente_activo').eq('id', r.conversacion_id).maybeSingle();
     const nombreCliente = primerNombre(conv && conv.nombre_perfil) || 'qué tal';
+
+    // H77 (cinturón): si un humano apagó el 🤖 de este chat, la plantilla "de Liliana"
+    // pisaría su gestión días después ("me dijiste que ibas a separar..."). Se marca
+    // 'cancelado' (no 'enviado' falso, para que el relojito de la bandeja diga la verdad).
+    if (conv && conv.agente_activo === false) {
+      await supabaseAdmin.from('recordatorios').update({ estado: 'cancelado' }).eq('id', r.id);
+      return;
+    }
 
     if (!pl) {
       await supabaseAdmin.from('agente_actividad').insert({

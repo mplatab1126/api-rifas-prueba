@@ -202,6 +202,15 @@ o un candidato sin guardarlo; solo gerencia; correrla SIEMPRE antes de publicar 
 `agente-costo.js`. Cuenta teléfonos únicos por hito (notas de `agente_actividad`) y plata real
 (boletas/abonos del asesor de la línea).
 
+**Novedades del motor (2026-06-10 tanda 7, verdes; detalle en la bitácora):** H62 — bandera
+`huboTexto`: un turno nunca cierra sin decirle NADA al cliente (cierre forzado solo-texto +
+mensaje fijo de respaldo); H58 — despedida fija si falla la 2ª llamada de `pasar_a_humano`;
+H79 — audio sin transcribir deja nota + instrucción "no adivines" (y error si falta
+OPENAI_API_KEY); H78 — `limpiarDatoCliente` sanea nombre/apellido/ciudad contra inyección de
+instrucciones; H80 — contacto inicial sin fotos deja ERROR en actividad (respuesta rápida
+renombrada/borrada/duplicada); H77 — apagar el 🤖 cancela recordatorios pendientes y el cron
+de plantilla verifica `agente_activo`.
+
 **Novedades del motor (2026-06-10 tanda 6; detalle en la bitácora):** H27 — `registrar_abono` prueba las
 últimas 3 fotos recientes (≤48h, sin pago_asignado) en vez de la última a ciegas, y la verificación guarda
 la foto RECONOCIDA; H32 — candado anti "comprobante prestado" en `lib/abono-agente.js`
