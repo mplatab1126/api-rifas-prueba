@@ -166,7 +166,7 @@
 - [x] (2026-06-10) **H25** · CUBIERTO por el arreglo de H10 (decir() revisa env.ok, guarda 'fallido', nota + ASESOR).
 - [x] (2026-06-10) **H26** · HECHO: las reacciones se ignoran por completo (no suman sin-leer, no cancelan recordatorios, no disparan al agente); los tipos sin contenido ('unsupported'/'ephemeral') SÍ se guardan y suman sin-leer (que los vea un humano) pero no cancelan recordatorios ni disparan al agente de inmediato.
 - [ ] **H27** · registrar_abono y el candado de pago usan ciegamente la ÚLTIMA imagen del chat, aunque no sea el comprobante (`api/whatsapp/agente-responder.js:722-727`) — _esfuerzo medio_
-- [ ] **H28** · Todo traspaso a humano depende de que alguien mire la bandeja: no hay aviso activo ni escalamiento si el chat 🆘 envejece (`api/whatsapp/agente-responder.js:875-887;`) — _esfuerzo medio_
+- [x] (2026-06-10) **H28** · HECHO (extensión de las alertas H16): chequeo nuevo en `alertas-cron.js` — chats estado='humano' con el cliente esperando >30 min (hasta 24h atrás) → WhatsApp a Mateo, una vez por chat (re-avisa a las ~2h). En su PRIMERA corrida real cazó un caso de ~12 horas (Leiky OG).
 - [x] (2026-06-10) **H29** · HECHO (arreglo mínimo del verificador): la tabla PRECIOS cobra la escritura de caché a 2× (Sonnet $6/M, Opus $10, Haiku $2) — el ttl del motor es 1h. El panel deja de subfacturar ~16-22%. Cuenta de ahora en adelante (lo viejo no se recalcula).
 - [ ] **H30** · Las 2 imágenes recientes se re-descargan y re-facturan a precio lleno en cada llamada, incluso después de asignado el pago (`api/whatsapp/agente-responder.js:38`) — _esfuerzo bajo_
 - [x] (2026-06-10) **H31** · HECHO: 5 patrones nuevos en `afirmaPagoHecho` ("recibí tu pago", "tu pago ya entró", "se acreditó", "tu plata ya quedó", "todo en orden con tu pago") + marcador de NEGACIÓN ("aún no recibimos tu pago" pasa libre). 'comprobante' sigue FUERA (lo usa el mensaje seguro). Probado con 24 casos deben-bloquear/deben-pasar (24/24) y suite dorada en verde.
@@ -177,12 +177,12 @@
 - [ ] **H36** · Reestructurar el manual: dos secciones reclaman prioridad máxima a la vez y las reglas clave están duplicadas hasta 4 veces (`/tmp/manual-liliana.txt:9`) — _esfuerzo medio_
 - [x] (2026-06-10) **H38** · HECHO: `sql/esquema-agente-produccion.sql` = instantánea de referencia con las 12 funciones reales de producción (candados, bandeja_filtrar, difusiones, costos, etiquetas), los 5 crons (secreto REDACTADO) y la lista de tablas. `whatsapp-buzon.sql` quedó marcado como VIEJO. Regla nueva: todo cambio en la base nace en su archivo de sql/.
 - [ ] **H39** · El secreto interno que dispara el motor reutiliza WHATSAPP_VERIFY_TOKEN, sin rotación, replay ni comparación segura (`api/whatsapp/agente-responder.js:944-951`) — _esfuerzo bajo_
-- [ ] **H41** · reservar.js no tiene autenticación ni rate-limit y confía en el campo 'asesor' del cuerpo (`api/rifa/reservar.js:26-39`) — _esfuerzo medio_
+- [x] (2026-06-10) **H41** · HECHO (capa mínima del verificador): tope de 10 números por reserva, rate-limit 20/10min por IP, y el campo `asesor` SOLO se honra con el secreto interno (el agente lo manda; un curl anónimo queda como 'Pagina Web'). Verificado al aire.
 - [ ] **H42** · Debounce fijo de 30s: piso de latencia para TODO mensaje, incluso los atajos sin IA (`api/whatsapp/agente-responder.js:34-35`) — _esfuerzo medio_
 - [ ] **H43** · Las imágenes entrantes se RE-descargan de Meta en cada turno y se re-suben en base64 en CADA iteración del bucle (`api/whatsapp/agente-responder.js:1110-1123`) — _esfuerzo medio_
 - [ ] **H44** · Turno de registrar_abono: el mismo comprobante se descarga 2 veces y se lee con una SEGUNDA llamada de visión (Sonnet viejo), vía 2 saltos HTTP internos (`api/lib/abono-agente.js:59-86;`) — _esfuerzo bajo_
 - [x] (2026-06-10) **H45** · HECHO: las 10 consultas por serie van en PARALELO (Promise.all; los 2 updates de marcas siguen secuenciales como pidió el verificador). Medido al aire: /api/disponibles pasó de 2.33s a 0.85s. Beneficia atajo de números, herramienta, web y bandeja.
-- [ ] **H46** · Apartar un número cuesta 3 llamadas completas a Claude: encadenar enviar_boleta determinístico ahorraría una vuelta entera (`api/whatsapp/agente-responder.js:686`) — _esfuerzo bajo_
+- [x] (2026-06-10) **H46** · HECHO (variante segura del verificador): la boleta tras apartar la envía el SISTEMA al cerrar el turno (la red de seguridad pasó a ser el camino normal); el tool_result y el paso 5 del manual ya dicen "NO llames enviar_boleta". Ahorra una llamada entera a Claude (~4-8s) por venta. Suite dorada en verde.
 
 ## 7) 🟢 Menores y oportunidades (43)
 
@@ -192,7 +192,7 @@
 - [ ] **H50** · El atajo de saludo trata como nuevos a clientes CONOCIDOS sin boletas: saludo genérico en vez de por su nombre (`api/whatsapp/agente-responder.js:1258-1261`) — _esfuerzo bajo_
 - [ ] **H51** · El atajo de números promete verificar "terminaciones" que ninguna herramienta puede buscar (`api/whatsapp/agente-responder.js:1313-1315`) — _esfuerzo bajo_
 - [ ] **H52** · "Soy Liliana" está escrito en duro en atajos y herramienta, ignorando el diseño multi-línea con nombre_agente (`api/whatsapp/agente-responder.js:307`) — _esfuerzo bajo_
-- [ ] **H53** · enviar_boleta: la descripción dice "justo después de apartar su número", el manual dice "una sola vez cuando apartaste TODOS" (`api/whatsapp/agente-responder.js:340`) — _esfuerzo bajo_
+- [x] (2026-06-10) **H53** · CUBIERTO por H46: la descripción de `enviar_boleta` quedó coherente con el manual ("SOLO si el cliente pide su boleta de nuevo; tras apartar la envía el sistema").
 - [ ] **H54** · Recordatorios: se marcan 'enviado' ANTES de enviar; cualquier fallo rompe la promesa de Liliana sin reintento (`api/whatsapp/recordatorios-cron.js:132-137`) — _esfuerzo medio_
 - [ ] **H55** · primerContactoLoResuelveSaludo no ve multimedia real (solo busca '[audio...' en el texto) ni filtra mensajes hostiles/equivocados (`api/whatsapp/agente-responder.js:533-546`) — _esfuerzo bajo_
 - [ ] **H56** · intentoSeparar dispara con negaciones y con dos números: pide datos para el número que el cliente RECHAZÓ (`api/whatsapp/agente-responder.js:592-601`) — _esfuerzo bajo_

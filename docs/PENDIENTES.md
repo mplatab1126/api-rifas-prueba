@@ -28,8 +28,11 @@
   producción). **De las secciones 1-5 solo queda H18** (cobro suave de saldos, ~$10.9M
   identificados — Mateo lo dejó PARA DESPUÉS: toca decisiones suyas de cadencia/tono/público).
   **Avance amarillos (10-jun):** tanda 1 = H22, H23+H82, H26, H29, H69 (+H25/H33 cubiertos);
-  tanda 2 = H31 (candado v2, 24/24), H38 (SQL versionado) y H45 (disponibles 2.33s→0.85s).
-  Quedan ~14 amarillos y ~40 verdes — seguir por tandas de esfuerzo bajo.
+  tanda 2 = H31 (candado v2, 24/24), H38 (SQL versionado) y H45 (disponibles 2.33s→0.85s);
+  tanda 3 = H46+H53 (boleta tras apartar la envía el sistema: una llamada menos a Claude por
+  venta), H41 (reservar: tope 10 + rate-limit + asesor solo con secreto) y H28 (alerta de chats
+  en manos de asesor >30 min — cazó un caso real de ~12h en su primera corrida). Quedan ~10
+  amarillos y ~39 verdes — seguir por tandas.
 - [ ] (2026-06-10) **REGLA NUEVA para cambios del manual de Liliana:** antes de guardar un cambio
   del manual, correr la **suite dorada** (`/api/whatsapp/probar-suite`, ver bitácora 10-jun) y
   publicar solo en verde. Tras cada incidente nuevo del agente, agregar su caso a

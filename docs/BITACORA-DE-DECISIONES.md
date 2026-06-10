@@ -26,6 +26,28 @@
 
 ---
 
+## 2026-06-10 — [WhatsApp] — Tanda 3 de los amarillos (H46+H53, H41, H28) — y la alerta nueva cazó un caso real
+
+**Qué hicimos (verificado al aire, suite dorada 10/10):**
+- **H46+H53 — La boleta tras apartar la envía el SISTEMA (ahorra una llamada a Claude por
+  venta):** antes la IA tenía que llamar `enviar_boleta` tras apartar (3 llamadas a Claude por
+  venta, ~4-8s extra); ahora la "red de seguridad" post-turno ES el camino normal — el sistema la
+  envía solo, UNA vez con todas las boletas, al cerrar el turno. Se actualizaron el tool_result de
+  apartar, la descripción de `enviar_boleta` ("SOLO si el cliente la pide de nuevo" — esto cierra
+  la contradicción H53) y el paso 5 del manual (versionado automático). OJO: la boleta ahora llega
+  DESPUÉS del mensaje final de Liliana (cambio de orden menor y esperado).
+- **H41 — `reservar.js` protegido:** tope de 10 números por reserva + rate-limit 20/10min por IP +
+  el campo `asesor` SOLO se honra con el secreto interno (el agente lo manda con
+  `cuerpo.interno`; un curl anónimo queda como "Pagina Web" — adiós al spoofing de vendedor).
+- **H28 — Alerta para chats en manos de asesor:** chequeo nuevo en `alertas-cron.js` (estado
+  'humano' + cliente esperando >30 min) → WhatsApp a Mateo. **En su primera corrida real encontró
+  un chat esperando ~12 HORAS (Leiky OG)** — el patrón exacto del caso de 15h de la auditoría.
+
+**Cuidado / qué NO hacer:** si algún día se quiere que la IA vuelva a enviar la boleta ella misma,
+hay que cambiar TRES sitios juntos (tool_result de apartar, descripción de enviar_boleta y paso 5
+del manual) — si se cambia solo uno, o se duplica el envío o no sale. El secreto interno en
+reservar es el mismo `WHATSAPP_VERIFY_TOKEN` (H39 sigue pendiente: separarlo algún día).
+
 ## 2026-06-10 — [WhatsApp] / [Pagos] — Tanda 2 de los amarillos (H31, H38, H45)
 
 **Qué hicimos (verificado al aire):**
