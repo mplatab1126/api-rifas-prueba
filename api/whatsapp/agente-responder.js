@@ -146,6 +146,24 @@ function aplicarVariables(texto, vars) {
   });
 }
 
+// ── TEXTOS DE LA RIFA ACTUAL (H17) ───────────────────────────────────────────
+// Textos que usan los atajos SIN IA y la herramienta del contacto inicial. Son
+// los RESPALDOS: si en `agente_config.variables` existe la misma clave, MANDA la
+// de la base — así, al rotar de rifa, se cambian desde la cabina SIN desplegar
+// código. Checklist completo de rotación: docs/CHECKLIST-RIFA-NUEVA.md.
+const TEXTOS_RIFA = {
+  saludo_inicial: '¡Hola! 😊 Soy Liliana, te muestro la casa:',
+  cierre_inicial: '• Cada boleta *cuesta 150 mil*\n\n• La puedes *separar con 20 mil* e ir abonando a tu ritmo\n\n• Estamos *autorizados por EDSA* (rifa legal)',
+  texto_premios: 'Con una sola boleta de *4 cifras* (de 0000 a 9999) participas por todo esto:\n\n' +
+    '*Premio Mayor{{fecha_mayor}}:* la casa de dos plantas totalmente amoblada, en Chinchiná (Caldas), con la Lotería de Boyacá.\n' +
+    'Y si la ganas pero prefieres el dinero, te conseguimos un comprador que te paga *$300.000.000 en efectivo* por ella.\n\n' +
+    '*Cada sábado:* *$5.000.000* en bonos, también con la Lotería de Boyacá.\n\n' +
+    '*¿Te muestro los números disponibles?*',
+  texto_pedir_datos: '¡Perfecto! 😊 Para apartarte el *{{numero}}* necesito tus datos para la factura:\n\n' +
+    '*Nombre completo, apellido, ciudad, cédula y correo.*',
+  condiciones_venta: 'el precio ($150 mil, se separa con $20 mil), que es legal (autorizados por EDSA)',
+};
+
 // Resumen del cliente (datos guardados + boletas que ya tiene), buscando por
 // teléfono. Las boletas se guardan por teléfono, así que esto encuentra al cliente
 // aunque haya comprado por OTRA línea. Sirve para que el agente sepa, desde el
@@ -303,7 +321,9 @@ async function llamarApi(ruta, cuerpo) {
 const TOOLS = [
   {
     name: 'enviar_contacto_inicial',
-    description: 'Envía la presentación inicial: un saludo + las fotos de la casa + un mensaje de cierre. Úsala UNA sola vez al comienzo, cuando el cliente acaba de llegar. TÚ redactas los textos (saludo y cierre). El CIERRE (lo que va después de las fotos) DEBE incluir: el precio ($150 mil, se separa con $20 mil), que es legal (autorizados por EDSA), la RESPUESTA a cualquier pregunta que el cliente haya hecho en su saludo (ej. de dónde son), y terminar con "¿Te explico los premios?". Así va todo en un solo mensaje y no se duplica.',
+    // {{condiciones_venta}} se rellena al cargar la config de la línea (H17): al rotar
+    // de rifa, el precio/condiciones se cambian en agente_config.variables sin desplegar.
+    description: 'Envía la presentación inicial: un saludo + las fotos de la casa + un mensaje de cierre. Úsala UNA sola vez al comienzo, cuando el cliente acaba de llegar. TÚ redactas los textos (saludo y cierre). El CIERRE (lo que va después de las fotos) DEBE incluir: {{condiciones_venta}}, la RESPUESTA a cualquier pregunta que el cliente haya hecho en su saludo (ej. de dónde son), y terminar con "¿Te explico los premios?". Así va todo en un solo mensaje y no se duplica.',
     input_schema: { type: 'object', properties: { saludo: { type: 'string', description: 'Saludo corto y cálido, presentándote como Liliana (ej: "¡Hola! 😊 Soy Liliana, te muestro la casa:").' }, cierre: { type: 'string', description: 'Mensaje después de las fotos: precio, cómo separar, que es legal (EDSA), la respuesta a su pregunta, y cierra con "¿Te explico los premios?".' } }, required: ['saludo', 'cierre'] },
   },
   {
@@ -519,8 +539,9 @@ async function decir(conv, texto, { predefinido = false } = {}) {
 // contacto genérico (ahorro de tokens). Todo se guarda en el chat (guardarEnChat marca el chat
 // como respondido: ultimo_entrante=false, no_leidos=0).
 async function enviarContactoInicial(conv, { saludo, cierre, predefinido = false } = {}) {
-  const sal = String(saludo || '').trim() || 'Hola, ¿cómo estás? 😊 Mi nombre es Liliana, te muestro las fotos de la casa:';
-  const cie = String(cierre || '').trim() || '• Cada boleta *cuesta 150 mil*\n\n• La puedes *separar con 20 mil* e ir abonando a tu ritmo\n\n• Estamos *autorizados por EDSA* (rifa legal)\n\n*¿Te explico los premios?* 🤔';
+  // Respaldos por si el llamador no manda textos (los normales vienen del atajo o de la IA).
+  const sal = String(saludo || '').trim() || TEXTOS_RIFA.saludo_inicial;
+  const cie = String(cierre || '').trim() || (TEXTOS_RIFA.cierre_inicial + '\n\n*¿Te explico los premios?* 🤔');
   const e1 = await enviarTexto(conv.telefono, sal, conv.linea_id);
   if (e1 && e1.ok) await guardarEnChat(conv, { direccion: 'saliente', tipo: 'text', texto: sal, wa_message_id: e1.wa_message_id, predefinido });
   const { data: rr } = await supabase.from('respuestas_rapidas').select('pasos').eq('linea_id', conv.linea_id).ilike('titulo', '%contacto inicial%').maybeSingle();
@@ -1221,7 +1242,12 @@ export default async function handler(req, res) {
     const { data: hsAct } = await supabase.from('agente_herramientas')
       .select('clave').eq('linea_id', linea_id).eq('activa', true);
     const activas = new Set((hsAct || []).map(h => h.clave));
-    let toolsActivas = TOOLS.filter(t => activas.has(t.name));
+    // Textos de la rifa para atajos y herramientas (H17): los de agente_config.variables
+    // MANDAN sobre los respaldos del código — rotar de rifa no exige desplegar.
+    const textosRifa = { ...TEXTOS_RIFA, ...(cfg?.variables && typeof cfg.variables === 'object' ? cfg.variables : {}) };
+    let toolsActivas = TOOLS
+      .filter(t => activas.has(t.name))
+      .map(t => ({ ...t, description: aplicarVariables(t.description, textosRifa) }));
 
     // Estado del cliente: SIEMPRE se consulta antes de responder, para que el agente
     // sepa desde el primer mensaje si ya tiene boleta (y no lo trate como nuevo).
@@ -1353,9 +1379,9 @@ export default async function handler(req, res) {
             ? ` — con tu boleta *100% pagada* participas por la casa. 🏡`
             : ` — con *$20.000* de abono ya entras. 🎉`)
         : '';
-      const cierre = '• Cada boleta *cuesta 150 mil*\n\n• La puedes *separar con 20 mil* e ir abonando a tu ritmo\n\n• Estamos *autorizados por EDSA* (rifa legal)' +
+      const cierre = String(textosRifa.cierre_inicial || TEXTOS_RIFA.cierre_inicial) +
         lineaProx + '\n\n*¿Te explico los premios?* 🤔';
-      await enviarContactoInicial(conv, { saludo: '¡Hola! 😊 Soy Liliana, te muestro la casa:', cierre, predefinido: true });
+      await enviarContactoInicial(conv, { saludo: textosRifa.saludo_inicial, cierre, predefinido: true });
       await nota(conv, 'Envié el contacto inicial (saludo predefinido, SIN IA — ahorro de tokens).');
       await soltarLock(conv);
       return res.status(200).json({ status: 'ok', atajo: 'contacto_inicial_predefinido' });
@@ -1382,12 +1408,9 @@ export default async function handler(req, res) {
           && esAsentir(entranteTxt, 'premios')) {
         const sMayor = sorteosOrden.find(s => /mayor|casa/i.test(String(s.titulo || '')));
         const fMayor = sMayor ? etiquetaFecha(sMayor.fecha) : '';
-        const premiosTxt =
-          'Con una sola boleta de *4 cifras* (de 0000 a 9999) participas por todo esto:\n\n' +
-          '*Premio Mayor' + (fMayor ? ' — ' + fMayor : '') + ':* la casa de dos plantas totalmente amoblada, en Chinchiná (Caldas), con la Lotería de Boyacá.\n' +
-          'Y si la ganas pero prefieres el dinero, te conseguimos un comprador que te paga *$300.000.000 en efectivo* por ella.\n\n' +
-          '*Cada sábado:* *$5.000.000* en bonos, también con la Lotería de Boyacá.\n\n' +
-          '*¿Te muestro los números disponibles?*';
+        // El texto vive en agente_config.variables (H17); {{fecha_mayor}} la pone el calendario.
+        const premiosTxt = aplicarVariables(String(textosRifa.texto_premios || TEXTOS_RIFA.texto_premios),
+          { fecha_mayor: fMayor ? ' — ' + fMayor : '' });
         await decir(conv, premiosTxt, { predefinido: true });
         await nota(conv, 'Expliqué los premios (predefinido, SIN IA — ahorro de tokens).');
         await soltarLock(conv);
@@ -1414,8 +1437,8 @@ export default async function handler(req, res) {
       const numSep = entranteTxt ? intentoSeparar(entranteTxt) : null;
       if (numSep && activas.has('apartar_numero')
           && !/necesito tus datos|para apartar|nombre completo/.test(salTxt)) {
-        const pedir = '¡Perfecto! 😊 Para apartarte el *' + numSep + '* necesito tus datos para la factura:\n\n' +
-          '*Nombre completo, apellido, ciudad, cédula y correo.*';
+        const pedir = aplicarVariables(String(textosRifa.texto_pedir_datos || TEXTOS_RIFA.texto_pedir_datos),
+          { numero: numSep });
         await decir(conv, pedir, { predefinido: true });
         await nota(conv, 'Pedí los datos para apartar el ' + numSep + ' (predefinido, SIN IA — ahorro de tokens).');
         await soltarLock(conv);
