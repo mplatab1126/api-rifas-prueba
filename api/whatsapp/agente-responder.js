@@ -736,6 +736,19 @@ function numeroBoleta(v) {
 }
 const MSG_NUMERO_MALO = 'Ese número NO tiene 4 cifras exactas (las boletas van de 0000 a 9999). NO lo recortes ni lo adivines tú: pídele al cliente que confirme su número a 4 cifras.';
 
+// H66: instrucciones de estilo IDÉNTICAS en todas las llamadas. Antes viajaban en el bloque
+// volátil (precio LLENO en cada llamada, ~250 tokens); ahora van en su propio bloque ESTÁTICO
+// con el breakpoint de caché (se cobran a 0.1×). Viven en CÓDIGO a propósito (no en el manual
+// de la base, que se edita desde la cabina y podrían borrarse por accidente).
+const INSTRUCCIONES_FIJAS =
+  `\n\n---\nTienes herramientas para actuar; úsalas cuando corresponda en vez de inventar. ` +
+  `Si el cliente acaba de llegar y aún no se ha enviado la presentación, usa primero enviar_contacto_inicial (salvo que el ESTADO DE ESTE CLIENTE de abajo diga que ya es cliente o que se remite a otro punto de venta). ` +
+  `Si ves "[audio del cliente] ...", es lo que dijo en un audio (ya transcrito): respóndelo como si lo hubiera escrito, sin decir que no puedes oír audios. ` +
+  `Si ves "[el cliente envió un audio]" SIN transcripción, NO adivines qué dijo: pídele con amabilidad que te lo escriba en texto. ` +
+  `Después de usar una herramienta, sigue la conversación con naturalidad y mensajes cortos. No repitas información que ya esté en el chat. ` +
+  `NUNCA narres lo que vas a hacer ("voy a verificar", "un momento", "ahora libero"): haz la acción en silencio y da SOLO el resultado, en pocos mensajes, como una persona. ` +
+  `NUNCA le preguntes al cliente algo que YA sabes (está en el ESTADO DE ESTE CLIENTE de abajo, o lo dijiste tú mismo hace poco en el chat). Ejemplo: si una boleta ya tiene abono, NO preguntes "¿ya abonaste?"; ya sabes que sí, úsalo y actúa.`;
+
 // ── Ejecutores de cada herramienta. Devuelven texto-resultado para la IA. ────
 // ctx (opcional): contexto del turno — { imagenesVistas } con las fotos que el motor ya
 // descargó para la IA (llave = id del mensaje), para no re-descargarlas de Meta (H44).
@@ -778,6 +791,13 @@ async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
   }
 
   if (nombre === 'enviar_contacto_inicial') {
+    // H63: candado determinístico en la EJECUCIÓN (antes se quitaba la tool del array y eso
+    // partía el caché en dos variantes). Un cliente con boleta (propia o de otro punto de
+    // venta → remisión) JAMÁS recibe el contacto inicial de "cliente nuevo".
+    const { boletas: bolsGuard } = await resumenCliente(conv.telefono);
+    if (bolsGuard && bolsGuard.length) {
+      return 'NO se envió NADA: este cliente YA tiene boleta(s) registradas — NO es nuevo. NO te presentes como si fuera nuevo: salúdalo por su nombre (mira el ESTADO DE ESTE CLIENTE) y atiende lo que pidió.';
+    }
     const envio = await enviarContactoInicial(conv, { saludo: input?.saludo, cierre: input?.cierre });
     if (!envio || !envio.ok) {
       await nota(conv, '⚠️ NO se pudo enviar el contacto inicial (WhatsApp rechazó el envío). Marqué el chat para un asesor.');
@@ -1243,12 +1263,23 @@ export default async function handler(req, res) {
       }
       const inicioEspera = Date.now();
       while (Date.now() - inicioEspera < DEBOUNCE_MAX_MS) {
-        const { data: ult } = await supabase
-          .from('mensajes_whatsapp')
-          .select('direccion, timestamp_wa, created_at')
-          .eq('conversacion_id', conv.id)
-          .order('timestamp_wa', { ascending: false }).limit(1);
-        const u = ult && ult[0];
+        // H87: UNA sola ida a la base por ciclo — el RPC agente_lock_y_ultimo refresca el
+        // candado (que no se venza: otra corrida respondería doble) Y trae el último mensaje
+        // (antes eran 2 viajes cada ~3s, ~40 por turno). Si el RPC fallara, respaldo en dos
+        // idas como antes. La lógica de cortes se queda aquí en el código.
+        let u = null;
+        const { data: ult, error: eU } = await supabaseAdmin.rpc('agente_lock_y_ultimo', { p_conv: conv.id });
+        if (!eU) {
+          u = Array.isArray(ult) ? ult[0] : ult;
+        } else {
+          try { await supabaseAdmin.rpc('agente_refrescar_lock', { p_conv: conv.id }); } catch (_) {}
+          const { data: ult2 } = await supabase
+            .from('mensajes_whatsapp')
+            .select('direccion, timestamp_wa, created_at')
+            .eq('conversacion_id', conv.id)
+            .order('timestamp_wa', { ascending: false }).limit(1);
+          u = ult2 && ult2[0];
+        }
         if (!u || u.direccion !== 'entrante') break;        // ya no hay nada pendiente del cliente
         const silencioMs = Date.now() - new Date(u.timestamp_wa || u.created_at).getTime();
         if (silencioMs >= esperaMs) {                       // ya lleva la pausa callado desde su ÚLTIMO mensaje → responder
@@ -1262,9 +1293,6 @@ export default async function handler(req, res) {
           esperaMs = DEBOUNCE_MS;
           continue;
         }
-        // Refrescar el candado para que NO se venza mientras esperamos (si no, otra corrida podría
-        // arrancar y responder doble). Se revisa en trocitos de máx 3s para refrescarlo seguido.
-        try { await supabaseAdmin.rpc('agente_refrescar_lock', { p_conv: conv.id }); } catch (_) {}
         await dormir(Math.min(3000, esperaMs - silencioMs + 250));   // espera un poco; si entra otro mensaje, su hora más nueva reinicia el conteo
       }
     }
@@ -1363,22 +1391,24 @@ export default async function handler(req, res) {
 
     // 3b) Transcribir los audios que el cliente mandó (Claude no oye; Whisper sí).
     //     Guardamos la transcripción para no repetirla en futuras corridas.
-    let transcritos = 0;
+    // H89: los audios pendientes (hasta 4) se transcriben EN PARALELO — en serie, una ráfaga
+    // de 3 notas de voz sumaba 6-18s de pura espera antes de llamar a la IA.
     let audiosFallidos = 0;
-    for (const m of reales) {
-      if (transcritos >= 4) break;
-      if (m.direccion === 'entrante' && m.tipo === 'audio' && m.media_id && !(m.texto || '').trim()) {
-        // Transcribir toma segundos; refrescar el candado para que no se venza (H5).
-        try { await supabaseAdmin.rpc('agente_refrescar_lock', { p_conv: conv.id }); } catch (_) {}
+    const pendientesAudio = reales
+      .filter(m => m.direccion === 'entrante' && m.tipo === 'audio' && m.media_id && !(m.texto || '').trim())
+      .slice(0, 4);
+    if (pendientesAudio.length) {
+      // Transcribir toma segundos; refrescar el candado para que no se venza (H5).
+      try { await supabaseAdmin.rpc('agente_refrescar_lock', { p_conv: conv.id }); } catch (_) {}
+      await Promise.allSettled(pendientesAudio.map(async (m) => {
         const txt = await transcribirAudio(m.media_id, conv.linea_id);
         if (txt) {
           m.texto = '[audio del cliente] ' + txt;
-          transcritos++;
           try { await supabaseAdmin.from('mensajes_whatsapp').update({ texto: m.texto }).eq('id', m.id); } catch (_) {}
         } else {
           audiosFallidos++;   // OJO: NO marcar m.texto — así la próxima corrida lo reintenta sola
         }
-      }
+      }));
     }
     // H79: antes un audio sin transcripción entraba MUDO ("[el cliente envió un audio]") y la
     // IA respondía a ciegas sin que nadie se enterara. Ahora queda rastro: nota en el chat
@@ -1459,21 +1489,39 @@ export default async function handler(req, res) {
     // atiende esta línea: se le da el número del punto donde compró (remisión).
     const remision = await analizarRemision(estadoCliente.boletas, linea_id);
 
-    // DETERMINÍSTICO: si el cliente YA tiene boleta(s) o hay que remitirlo, NUNCA le
-    // mandes el "contacto inicial" como si fuera nuevo. Antes esto dependía de que el
-    // modelo obedeciera la instrucción del prompt y a veces se presentaba igual. Quitando
-    // la herramienta, el modelo NO PUEDE presentarse: saluda por su nombre / remite.
-    if (remision || (estadoCliente.boletas && estadoCliente.boletas.length)) {
-      toolsActivas = toolsActivas.filter(t => t.name !== 'enviar_contacto_inicial');
-    }
+    // H63: el array de tools ya NO se filtra por cliente (quitarle enviar_contacto_inicial a
+    // los que tienen boleta partía el caché de prompt en DOS variantes y cada una pagaba su
+    // propia reescritura completa de ~12k tokens). El candado determinístico "a un conocido
+    // NUNCA se le manda el contacto inicial" sigue vivo, pero ahora EN LA EJECUCIÓN de la
+    // herramienta (re-consulta las boletas y devuelve una corrección SIN enviar nada).
 
     // Memoria: las acciones que el agente YA ejecutó en este chat (de las notas 🤖).
     // ANTES no le llegaban (a construirMensajes se le pasa `reales`, sin notas), por eso
     // repetía acciones y se contradecía. Aquí se las damos como HECHOS firmes.
-    const accionesHechas = (historial || [])
+    // H67: este bloque crecía sin tope (chats con 27 notas re-facturadas a precio lleno en
+    // CADA llamada). Ahora: fuera las notas de SOLO LECTURA (consultar/verificar no son
+    // "hechos aplicados" y una vieja desanima re-verificar), dedupe exacto conservando la
+    // ÚLTIMA ocurrencia (el estado final manda: "Aparté→Liberé→Aparté" no debe colapsar
+    // al primer "Aparté"), y tope de 12 conservando SIEMPRE las acciones con estado/plata.
+    const ES_NOTA_LECTURA = /^(Consulté los números|Verifiqué el número|Consulté las boletas)/;
+    const ES_ACCION_CON_ESTADO = /^(Aparté|Registré|Trasladé|Liberé|Pasé el chat|Programé|Actualicé|Envié el contacto inicial|Envié la boleta)/;
+    let accionesHechas = (historial || [])
       .filter(m => m.direccion === 'nota' && /^🤖/.test(String(m.texto || '')))
       .map(m => String(m.texto).replace(/^🤖\s*/, '').trim())
-      .filter(Boolean);
+      .filter(t => t && !ES_NOTA_LECTURA.test(t));
+    {
+      const vistos = new Set();
+      for (let i = accionesHechas.length - 1; i >= 0; i--) {
+        if (vistos.has(accionesHechas[i])) accionesHechas.splice(i, 1);
+        else vistos.add(accionesHechas[i]);
+      }
+    }
+    if (accionesHechas.length > 12) {
+      const idxKeep = new Set();
+      accionesHechas.forEach((t, i) => { if (ES_ACCION_CON_ESTADO.test(t)) idxKeep.add(i); });
+      for (let i = accionesHechas.length - 1; i >= 0 && idxKeep.size < 12; i--) idxKeep.add(i);
+      accionesHechas = accionesHechas.filter((_, i) => idxKeep.has(i));
+    }
     // ¿Ya hubo respuestas en este chat? (un asesor lo atendió a mano o el agente ya se
     // presentó). Si es así, al activarlo NO debe reenviar el contacto inicial: continúa.
     const yaHuboSalientes = reales.some(m => m.direccion === 'saliente');
@@ -1678,14 +1726,7 @@ export default async function handler(req, res) {
     const systemVolatil =
       `\n\n---\nCONTEXTO (no lo menciones literalmente): hoy es ${contextoFechaHora()} (Colombia). ` +
       (festivoHoy ? `OJO: HOY es DÍA FESTIVO en Colombia (${festivoHoy}), así que la casa NO se puede visitar hoy (domingos y festivos no abre). Si preguntan por visitar HOY, díselo con cariño y ofréceles los horarios de los otros días. ` : '') +
-      `Hablas por WhatsApp con el cliente cuyo número es ${conv.telefono}. ` +
-      `Tienes herramientas para actuar; úsalas cuando corresponda en vez de inventar. ` +
-      (remision ? '' : `Si el cliente acaba de llegar y aún no se ha enviado la presentación, usa primero enviar_contacto_inicial. `) +
-      `Si ves "[audio del cliente] ...", es lo que dijo en un audio (ya transcrito): respóndelo como si lo hubiera escrito, sin decir que no puedes oír audios. ` +
-      `Si ves "[el cliente envió un audio]" SIN transcripción, NO adivines qué dijo: pídele con amabilidad que te lo escriba en texto. ` +
-      `Después de usar una herramienta, sigue la conversación con naturalidad y mensajes cortos. No repitas información que ya esté en el chat. ` +
-      `NUNCA narres lo que vas a hacer ("voy a verificar", "un momento", "ahora libero"): haz la acción en silencio y da SOLO el resultado, en pocos mensajes, como una persona. ` +
-      `NUNCA le preguntes al cliente algo que YA sabes (está en el ESTADO DE ESTE CLIENTE de abajo, o lo dijiste tú mismo hace poco en el chat). Ejemplo: si una boleta ya tiene abono, NO preguntes "¿ya abonaste?"; ya sabes que sí, úsalo y actúa.` +
+      `Hablas por WhatsApp con el cliente cuyo número es ${conv.telefono}.` +
       `\n\n---\n${remision ? bloqueRemision(remision, estadoCliente) : bloqueEstadoCliente(estadoCliente)}` +
       (accionesHechas.length
         ? `\n\n---\nACCIONES QUE TÚ YA EJECUTASTE EN ESTE CHAT (son HECHOS ya aplicados en el sistema; NO las repitas y NO digas nada que las contradiga —ej.: si ya liberaste una boleta, no digas luego que "no está a su nombre"):\n- ${accionesHechas.join('\n- ')}`
@@ -1705,8 +1746,12 @@ export default async function handler(req, res) {
     // que responde Liliana: ve el mismo prompt, solo más barato. El breakpoint en el PRIMER bloque
     // cachea herramientas + manual juntos (orden: tools → system → messages); el contexto volátil
     // (fecha, teléfono, estado del cliente, fechas) va en un 2º bloque SIN caché.
+    // H66: el breakpoint va en el bloque de INSTRUCCIONES_FIJAS (el último estático): el
+    // prefijo cacheado ahora cubre herramientas + manual + instrucciones fijas. Solo el 3er
+    // bloque (fecha, teléfono, estado del cliente, acciones, resultados) se paga lleno.
     const system = [
-      { type: 'text', text: prompt, cache_control: { type: 'ephemeral', ttl: '1h' } },
+      { type: 'text', text: prompt },
+      { type: 'text', text: INSTRUCCIONES_FIJAS, cache_control: { type: 'ephemeral', ttl: '1h' } },
       { type: 'text', text: systemVolatil },
     ];
 

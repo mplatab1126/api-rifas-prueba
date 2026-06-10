@@ -26,6 +26,34 @@
 
 ---
 
+## 2026-06-10 — [WhatsApp] — Tanda 9 (verdes): ahorro de tokens y menos viajes a la base
+
+**Qué hicimos (7 verdes de costos/velocidad + 1 ya cubierto; nada de dinero):**
+- **H63 — un solo caché de prompt:** quitarle `enviar_contacto_inicial` del array de tools a los
+  clientes con boleta partía el caché en DOS variantes (cada una pagaba su reescritura completa
+  de ~12k tokens). Ahora el array es SIEMPRE igual y el candado "a un conocido nunca se le manda
+  el contacto inicial" vive en la EJECUCIÓN de la herramienta (re-consulta boletas, no envía
+  nada y le devuelve la corrección a la IA).
+- **H66 — instrucciones fijas al caché:** las frases de estilo idénticas en toda llamada
+  (~250 tokens) salieron del bloque volátil (precio lleno) a `INSTRUCCIONES_FIJAS`, un bloque
+  estático EN CÓDIGO que ahora lleva el breakpoint (prefijo cacheado = tools+manual+fijas).
+- **H67 — memoria de acciones con tope:** fuera notas de solo-lectura, dedupe conservando la
+  ÚLTIMA ocurrencia (el estado final de la plata manda) y tope de 12 conservando siempre las
+  acciones con estado. Chats viejos con 27 notas re-facturadas → máx 12 útiles.
+- **H85 — token de línea con memoria (60s):** el contacto inicial hacía 6+ lecturas idénticas
+  de `lineas_whatsapp`; solo se cachean lecturas exitosas y el objeto completo (wabaId incluido).
+- **H86 — un disparo del motor por conversación por webhook** (antes uno POR MENSAJE: en ráfaga
+  de 3, dos morían en el candado) + `maxDuration: 30` para `recibir.js`.
+- **H87 — debounce en una sola ida:** RPC `agente_lock_y_ultimo` (refresca candado + trae el
+  último mensaje; `sql/agente-lock-y-ultimo.sql`) con respaldo al camino viejo si falla.
+- **H89 — audios en paralelo:** una ráfaga de notas de voz ya no suma 6-18s en serie.
+- **H88 — ya estaba cubierto por H34** (la espera máxima bajó a 120s; margen de ~180s).
+
+**Cuidado:** si se cambia el TEXTO de las notas del motor, revisar también los regex de H67
+(`ES_NOTA_LECTURA`/`ES_ACCION_CON_ESTADO`) además de los del embudo (H35). El primer deploy
+tras esta tanda paga UNA reescritura de caché (el prefijo cambió) — se amortiza el mismo día.
+Vigilar `agente_uso` 1-2 días: el costo por llamada debería BAJAR (menos volátil, un solo prefijo).
+
 ## 2026-06-10 — [WhatsApp] — Tanda 8 (verdes): los atajos sin IA ya no responden en falso
 
 **Qué hicimos (9 verdes de conversación/atajos; nada de dinero ni manual):**

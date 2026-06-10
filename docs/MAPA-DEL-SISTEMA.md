@@ -202,6 +202,14 @@ o un candidato sin guardarlo; solo gerencia; correrla SIEMPRE antes de publicar 
 `agente-costo.js`. Cuenta teléfonos únicos por hito (notas de `agente_actividad`) y plata real
 (boletas/abonos del asesor de la línea).
 
+**Novedades del motor (2026-06-10 tanda 9, verdes — costos/velocidad; detalle en la bitácora):**
+H63 — el array de tools ya no se filtra (un solo prefijo de caché; el candado del contacto
+inicial vive en la ejecución); H66 — bloque `INSTRUCCIONES_FIJAS` cacheado (breakpoint movido
+ahí); H67 — acciones hechas: sin lecturas, dedupe (última ocurrencia) y tope 12; H85 —
+`resolverLinea` memoizada 60s (`api/lib/whatsapp.js`); H86 — un disparo del motor por
+conversación por webhook + maxDuration de recibir.js; H87 — RPC `agente_lock_y_ultimo`
+(`sql/agente-lock-y-ultimo.sql`) para el debounce en una ida; H89 — audios en paralelo.
+
 **Novedades del motor (2026-06-10 tanda 8, verdes — atajos sin IA más conservadores; detalle en
 la bitácora):** H56 — `intentoSeparar` rechaza negaciones y dos números; H57 — `numeroBoleta()`
 no recorta 5+ cifras en silencio (4 ejecutores); H60 — el atajo de datos verifica que el número

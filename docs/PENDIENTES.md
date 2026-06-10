@@ -49,9 +49,13 @@
   tanda 7 (verdes, 10-jun): H58+H62 (nunca cerrar el turno mudo), H77 (recordatorios vs humano),
   H78 (anti-inyección de datos), H79 (audios sin transcribir), H80 (fotos del saludo vigiladas);
   tanda 8 (verdes, 10-jun): H50+H59, H51, H52, H55, H56, H57, H60, H61 (los atajos sin IA ya no
-  responden en falso: negaciones, números truncados, conocidos, fotos ignoradas).
-  Queda 1 amarillo: **H36 (reestructurar el manual) — SOLO desde un chat con la contraseña de
-  gerencia** (exige correr la suite dorada antes de publicar); y ~23 verdes.
+  responden en falso: negaciones, números truncados, conocidos, fotos ignoradas);
+  tanda 9 (verdes, 10-jun): H63, H66, H67, H85, H86, H87, H89 + H88 cubierto (ahorro de tokens
+  — un solo prefijo de caché — y menos viajes a la base). Vigilar `agente_uso` 1-2 días.
+  Quedan: **H36 + H47/H48/H64 (manual) — SOLO desde un chat con la contraseña de gerencia**
+  (exigen la suite dorada); H18 (cobros, EN PAUSA por decisión de Mateo); y 13 verdes:
+  H49, H54, H65 (pedir OK a Mateo: roza su decisión de "verificación puntual = IA"), H68,
+  H70, H71, H72, H73, H74, H75, H76, H81, H83. Detalle en `docs/PENDIENTES-LILIANA.md`.
   **Vigilar `agente_uso` unos días tras H42** (espera corta puede partir alguna ráfaga en dos).
 - [ ] (2026-06-10) **REGLA NUEVA para cambios del manual de Liliana:** antes de guardar un cambio
   del manual, correr la **suite dorada** (`/api/whatsapp/probar-suite`, ver bitácora 10-jun) y
