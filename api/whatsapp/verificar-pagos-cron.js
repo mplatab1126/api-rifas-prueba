@@ -16,7 +16,8 @@
 
 import { aplicarCors } from '../lib/cors.js';
 import { supabaseAdmin } from '../lib/supabase.js';
-import { configWhatsapp, enviarTexto } from '../lib/whatsapp.js';
+import { enviarTexto } from '../lib/whatsapp.js';
+import { esSecretoInternoValido } from '../lib/secreto-interno.js';
 import { ponerEtiqueta } from '../lib/etiquetas.js';
 import { verificarYAbonar, contrasenaGerencia } from '../lib/abono-agente.js';
 
@@ -50,8 +51,7 @@ export default async function handler(req, res) {
 
   // Solo lo puede llamar quien tenga el secreto interno (el cron).
   const { interno } = req.body || {};
-  const { verifyToken } = configWhatsapp();
-  if (!verifyToken || interno !== verifyToken) {
+  if (!esSecretoInternoValido(interno)) {   // H39: secreto interno propio, comparación segura
     return res.status(403).json({ status: 'error', mensaje: 'No autorizado.' });
   }
 

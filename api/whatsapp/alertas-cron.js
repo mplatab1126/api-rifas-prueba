@@ -21,7 +21,8 @@
 
 import { aplicarCors } from '../lib/cors.js';
 import { supabaseAdmin } from '../lib/supabase.js';
-import { configWhatsapp, enviarTexto, enviarPlantilla } from '../lib/whatsapp.js';
+import { enviarTexto, enviarPlantilla } from '../lib/whatsapp.js';
+import { esSecretoInternoValido } from '../lib/secreto-interno.js';
 
 const TEL_MATEO = '573123354789';                 // el WhatsApp de Mateo (mismo del viejo supervisor QA)
 const LINEA_ALERTAS = '1128258647034751';         // línea de Lili (Mateo la opera a diario → ventana abierta)
@@ -61,8 +62,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
   const { interno } = req.body || {};
-  const { verifyToken } = configWhatsapp();
-  if (!verifyToken || interno !== verifyToken) {
+  if (!esSecretoInternoValido(interno)) {   // H39: secreto interno propio, comparación segura
     return res.status(403).json({ status: 'error', mensaje: 'No autorizado.' });
   }
 

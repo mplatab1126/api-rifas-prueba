@@ -17,6 +17,7 @@
  */
 
 import { aplicarCors } from '../lib/cors.js';
+import { secretoInterno, esSecretoInternoValido } from '../lib/secreto-interno.js';
 import { validarAsesor } from '../lib/auth.js';
 import { supabase, supabaseAdmin } from '../lib/supabase.js';
 import { esMateo, puedeVerLinea } from '../lib/asesores.js';
@@ -727,7 +728,7 @@ async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
     if (doc) { cuerpo.documento_tipo = 'CC'; cuerpo.documento_numero = doc; }
     if (cor) cuerpo.correo = cor;
     cuerpo.asesor = await asesorDeLinea(conv.linea_id);   // la venta queda a nombre del agente (Liliana)
-    cuerpo.interno = process.env.WHATSAPP_VERIFY_TOKEN;   // H41: sin este secreto, reservar.js ignora el campo asesor
+    cuerpo.interno = secretoInterno();   // H41: sin este secreto, reservar.js ignora el campo asesor
     const d = await llamarApi('/api/rifa/reservar', cuerpo);
     if (!d.exito) { await nota(conv, 'Intenté apartar el ' + num + ' pero no se pudo: ' + (d.error || 'error')); return 'No se pudo apartar: ' + (d.error || 'error') + '. Cuéntaselo al cliente y ofrécele otra opción.'; }
     await nota(conv, `Aparté el número ${num} a nombre de ${nom} ${ape} (${ciu}).`);
@@ -1036,8 +1037,7 @@ export default async function handler(req, res) {
   // Autorización: o el secreto interno (lo dispara el webhook al instante) o, desde la bandeja,
   // gerencia o el DUEÑO de la línea (ej. Liliana en la suya), igual que el botón 🤖.
   let autorizado = false;
-  const tokenInterno = process.env.WHATSAPP_VERIFY_TOKEN;
-  if (interno && tokenInterno && interno === tokenInterno) {
+  if (interno && esSecretoInternoValido(interno)) {   // H39: secreto interno propio, comparación segura
     autorizado = true;
   } else {
     const nombre = validarAsesor(contrasena);
@@ -1635,7 +1635,7 @@ export default async function handler(req, res) {
     // visto para siempre: la corrida que disparó chocó con el candado y nada lo reintentaba.
     // Ahora, ya con el candado suelto, esta corrida se re-dispara a sí misma (una vez) si
     // existe un entrante posterior al último mensaje que tomó su claim.
-    if (claimHastaMs > 0 && !redisparo && !apagado && tokenInterno) {
+    if (claimHastaMs > 0 && !redisparo && !apagado && secretoInterno()) {
       try {
         const { data: nuevos } = await supabaseAdmin
           .from('mensajes_whatsapp').select('id')
@@ -1645,7 +1645,7 @@ export default async function handler(req, res) {
         if (nuevos && nuevos.length && (await sigueActivo(conv.id))) {
           await fetch(`${BASE_URL}/api/whatsapp/agente-responder`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ interno: tokenInterno, linea_id, telefono, redisparo: true }),
+            body: JSON.stringify({ interno: secretoInterno(), linea_id, telefono, redisparo: true }),
             signal: AbortSignal.timeout(1500),
           }).catch(() => {});
         }

@@ -23,6 +23,7 @@ import { aplicarCors } from '../lib/cors.js';
 import { PRECIOS } from '../config/precios.js';
 import { limpiarTelefono, esTelefonoValido, telefonoSinDuplicar } from '../lib/telefono.js';
 import { permitido, ipDe } from '../lib/rate-limit.js';
+import { esSecretoInternoValido } from '../lib/secreto-interno.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -169,8 +170,7 @@ export default async function handler(req, res) {
     // Quién queda como vendedor de la boleta. Por defecto "Pagina Web" (compra desde la web).
     // 🔒 H41: el campo `asesor` SOLO se honra si la llamada trae el secreto interno (el agente
     // Liliana lo manda); antes cualquiera podía atribuirle ventas a cualquier asesor.
-    const tokenInterno = process.env.WHATSAPP_VERIFY_TOKEN;
-    const esInterno = !!(tokenInterno && req.body.interno === tokenInterno);
+    const esInterno = esSecretoInternoValido(req.body.interno);   // H39: secreto interno propio
     const asesorVenta = (esInterno && req.body.asesor && String(req.body.asesor).trim()) || 'Pagina Web';
 
     const ocupadasPedido = []; // las de ESTE pedido que ya alcanzamos a ocupar

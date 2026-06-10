@@ -19,7 +19,8 @@
 
 import { aplicarCors } from '../lib/cors.js';
 import { supabaseAdmin } from '../lib/supabase.js';
-import { configWhatsapp, enviarPlantilla } from '../lib/whatsapp.js';
+import { enviarPlantilla } from '../lib/whatsapp.js';
+import { secretoInterno, esSecretoInternoValido } from '../lib/secreto-interno.js';
 
 const LOTE = 40;   // cuántos recordatorios procesa por corrida (escala: el cron corre cada minuto)
 const BASE_URL = 'https://www.losplata.com.co';
@@ -106,8 +107,7 @@ export default async function handler(req, res) {
 
   // Solo lo puede llamar quien tenga el secreto interno (el cron).
   const { interno } = req.body || {};
-  const { verifyToken } = configWhatsapp();
-  if (!verifyToken || interno !== verifyToken) {
+  if (!esSecretoInternoValido(interno)) {   // H39: secreto interno propio, comparación segura
     return res.status(403).json({ status: 'error', mensaje: 'No autorizado.' });
   }
 
@@ -149,7 +149,7 @@ export default async function handler(req, res) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            telefono: r.telefono, linea_id: r.linea_id, interno: verifyToken,
+            telefono: r.telefono, linea_id: r.linea_id, interno: secretoInterno(),
             recordatorio: { motivo: r.motivo || '' },
           }),
           signal: AbortSignal.timeout(1500),
@@ -197,7 +197,7 @@ export default async function handler(req, res) {
         fetch(`${BASE_URL}/api/whatsapp/agente-responder`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ telefono: c.telefono, linea_id: c.linea_id, interno: verifyToken }),
+          body: JSON.stringify({ telefono: c.telefono, linea_id: c.linea_id, interno: secretoInterno() }),
           signal: AbortSignal.timeout(1500),
         }).catch(() => {})
       );

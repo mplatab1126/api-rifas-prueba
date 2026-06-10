@@ -15,6 +15,7 @@
  */
 
 import { aplicarCors } from '../lib/cors.js';
+import { secretoInterno } from '../lib/secreto-interno.js';
 import { validarAsesor } from '../lib/auth.js';
 import { supabase, supabaseAdmin } from '../lib/supabase.js';
 import { esMateo, puedeVerLinea } from '../lib/asesores.js';
@@ -234,7 +235,7 @@ export default async function handler(req, res) {
             await fetch('https://www.losplata.com.co/api/whatsapp/agente-responder', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ telefono: tel, linea_id, interno: process.env.WHATSAPP_VERIFY_TOKEN }),
+              body: JSON.stringify({ telefono: tel, linea_id, interno: secretoInterno() }),
               signal: AbortSignal.timeout(1500),
             });
           } catch (_) { /* el corte a 1.5s es normal: la respuesta se genera aparte */ }

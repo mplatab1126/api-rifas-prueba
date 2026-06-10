@@ -21,6 +21,7 @@ import crypto from 'crypto';
 import { supabaseAdmin } from '../lib/supabase.js';
 import { configWhatsapp } from '../lib/whatsapp.js';
 import { permitido } from '../lib/rate-limit.js';
+import { secretoInterno } from '../lib/secreto-interno.js';
 
 export default async function handler(req, res) {
   // ── 1) Verificación del webhook (GET) ─────────────────────────────────────
@@ -259,11 +260,10 @@ async function dispararAgenteSiActivo(telefono, lineaId) {
     // (inflar el gasto de IA a punta de mensajes). Si se pasa del tope NO se pierde
     // nada: el mensaje ya quedó guardado y el barredor del cron lo retoma en ~2 min.
     if (!(await permitido('disparo:' + lineaId + ':' + telefono, 60, 6))) return;
-    const { verifyToken } = configWhatsapp();
     await fetch('https://www.losplata.com.co/api/whatsapp/agente-responder', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ telefono, linea_id: lineaId, interno: verifyToken }),
+      body: JSON.stringify({ telefono, linea_id: lineaId, interno: secretoInterno() }),
       signal: AbortSignal.timeout(1500),
     });
   } catch (e) {
