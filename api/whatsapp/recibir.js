@@ -76,6 +76,10 @@ export default async function handler(req, res) {
 
   // ── 2) Mensajes entrantes y acuses (POST) ─────────────────────────────────
   let mensajesIntentados = 0, mensajesGuardados = 0;
+  // H86: el motor se dispara UNA vez por CONVERSACIÓN por webhook. Antes era una vez por
+  // MENSAJE: en una ráfaga de 3, dos invocaciones morían en el candado (arranques y 1.5s
+  // de espera desperdiciados) y el webhook le respondía lento a Meta.
+  const paraDisparar = new Map();   // 'telefono|linea' → { telefono, lineaId }
   try {
     const cambios = (body?.entry || []).flatMap((e) => e.changes || []);
     for (const cambio of cambios) {
@@ -86,12 +90,15 @@ export default async function handler(req, res) {
       // a) Mensajes nuevos que escribe el cliente
       for (const m of (value.messages || [])) {
         mensajesIntentados++;
-        if (await guardarEntrante(m, nombrePerfil, lineaId)) mensajesGuardados++;
+        if (await guardarEntrante(m, nombrePerfil, lineaId, paraDisparar)) mensajesGuardados++;
       }
       // b) Acuses de mensajes que NOSOTROS enviamos (enviado/entregado/leído/falló)
       for (const s of (value.statuses || [])) {
         await actualizarEstado(s);
       }
+    }
+    for (const d of paraDisparar.values()) {
+      await dispararAgenteSiActivo(d.telefono, d.lineaId);
     }
   } catch (err) {
     console.error('[whatsapp/recibir] error procesando webhook:', err);
@@ -108,7 +115,7 @@ export default async function handler(req, res) {
 }
 
 // ── Guardar un mensaje entrante ─────────────────────────────────────────────
-async function guardarEntrante(m, nombrePerfil, lineaId) {
+async function guardarEntrante(m, nombrePerfil, lineaId, paraDisparar) {
   const telefono = m.from;
   const { tipo, texto, media_id } = interpretarMensaje(m);
 
@@ -165,7 +172,9 @@ async function guardarEntrante(m, nombrePerfil, lineaId) {
     await activarPorDisparador(telefono, lineaId, texto, !!(conversacion && conversacion.esNuevo));
 
     // Si el agente está activo en este chat, dispararlo de una (sin depender del navegador).
-    await dispararAgenteSiActivo(telefono, lineaId);
+    // H86: aquí solo se ANOTA; el disparo real lo hace el handler UNA vez por conversación
+    // al final del webhook (una ráfaga de 3 mensajes ya no lanza 3 invocaciones del motor).
+    if (paraDisparar) paraDisparar.set(telefono + '|' + lineaId, { telefono, lineaId });
   }
 
   // ¿El mensaje quedó guardado de verdad? (lo usa el handler para decidir si pedirle

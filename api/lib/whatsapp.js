@@ -42,14 +42,21 @@ export async function resolverLinea(lineaId) {
   const phoneNumberId = lineaId || process.env.WHATSAPP_PHONE_NUMBER_ID;
   let wabaId = null;
   if (lineaId) {
+    // H85: memoria de 60s por línea — el contacto inicial (saludo + fotos + cierre) hacía
+    // 6+ lecturas IDÉNTICAS de esta tabla en una sola corrida. Solo se guarda la lectura
+    // EXITOSA (un error transitorio no debe fijar el token de respaldo por 60s).
+    const enCache = _lineaCache.get(lineaId);
+    if (enCache && Date.now() - enCache.ts < 60000) return { ...enCache.valor };
     try {
-      const { data } = await supabaseAdmin.from('lineas_whatsapp').select('token, waba_id').eq('phone_number_id', lineaId).maybeSingle();
+      const { data, error } = await supabaseAdmin.from('lineas_whatsapp').select('token, waba_id').eq('phone_number_id', lineaId).maybeSingle();
       if (data && data.token) token = data.token;
       if (data && data.waba_id) wabaId = data.waba_id;
+      if (!error) _lineaCache.set(lineaId, { ts: Date.now(), valor: { token, phoneNumberId, wabaId } });
     } catch (_) {}
   }
   return { token, phoneNumberId, wabaId };
 }
+const _lineaCache = new Map();   // lineaId → { ts, valor } (vive por instancia caliente de Vercel)
 
 /**
  * Envía un mensaje de TEXTO a un número de WhatsApp.
