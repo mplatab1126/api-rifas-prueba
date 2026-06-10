@@ -20,6 +20,7 @@
 
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
+import { esMismoTelefono } from '../lib/telefono.js';
 import { validarAsesor } from '../lib/auth.js';
 import { esGerencia } from '../lib/asesores.js';
 import { PRECIOS } from '../config/precios.js';
@@ -54,6 +55,17 @@ export default async function handler(req, res) {
     if (monto != null && monto !== '') {
       montoPedido = Math.round(Number(String(monto).replace(/[^\d.-]/g, '')));
       if (!(montoPedido > 0)) return res.status(400).json({ status: 'error', mensaje: 'El monto a trasladar debe ser mayor a cero.' });
+    }
+
+    // H70: pre-chequeo de dueño con la regla de "cola mutua" — la RPC valida por sufijo de
+    // 10 dígitos, que no distingue la cruzada entre países (+1 305xxx vs 57 305xxx) ni a un
+    // extranjero corto. Si detectamos positivamente que alguna boleta NO es de este teléfono,
+    // se frena aquí; los demás casos (no existe, etc.) los resuelve la RPC como siempre.
+    const { data: duenos } = await supabase.from('boletas')
+      .select('numero, telefono_cliente').in('numero', [origen, destino]);
+    const ajenas = (duenos || []).filter(b => b.telefono_cliente && !esMismoTelefono(b.telefono_cliente, telefono));
+    if (ajenas.length) {
+      return res.status(403).json({ status: 'error', mensaje: 'Solo se puede trasladar entre boletas del mismo cliente. La boleta ' + ajenas[0].numero + ' no está a su nombre.' });
     }
 
     // TODO el traslado (validar + mover/partir abonos + recalcular ambos saldos +

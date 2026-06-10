@@ -202,6 +202,12 @@ o un candidato sin guardarlo; solo gerencia; correrla SIEMPRE antes de publicar 
 `agente-costo.js`. Cuenta teléfonos únicos por hito (notas de `agente_actividad`) y plata real
 (boletas/abonos del asesor de la línea).
 
+**Novedades (2026-06-10 tanda 12; detalle en la bitácora):** H76 — `verificarYAbonar` devuelve
+`boleta_no_coincide` (la IA pregunta el destino; el cron pasa a ASESOR) en vez de abonar a la
+boleta de número más bajo; prioriza saldo EXACTO al monto cuando no hay número pedido. H70 —
+`esMismoTelefono` (cola mutua, mínimo 10 dígitos) en `api/lib/telefono.js`, aplicada en motor,
+buscar-pago y trasladar-abono.
+
 **Novedades (2026-06-10 tanda 11; detalle en la bitácora):** H68 — `liberar-boleta.js` con
 liberación ATÓMICA cuando llama el agente (`soloSiSinAbonos`+`telefonoEsperado`) + el motor
 cancela verificaciones antes de liberar; H81 — `contrasenaAgente()` en `api/lib/abono-agente.js`

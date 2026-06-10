@@ -112,3 +112,23 @@ export function esTelefonoValido(telefonoLimpio, indicativo = '57') {
 
   return true;
 }
+
+/**
+ * H70: ¿dos teléfonos son EL MISMO número (salvo el indicativo de país)?
+ * Regla de "cola mutua": uno debe ser el final del otro (3026001113 ⊂ 573026001113).
+ * Cubre los dos huecos del clásico "últimos 10 dígitos":
+ *  - un extranjero CORTO (7-9 dígitos) que casualmente es el final del número de otro cliente;
+ *  - la cruzada de 10 dígitos entre países (+1 305xxxxxxx de Miami y 57 305xxxxxxx de Colombia
+ *    comparten los últimos 10, pero ninguno es la cola del otro → NO son el mismo).
+ * NO es comparación exacta: los colombianos viejos guardados sin el 57 siguen casando.
+ */
+export function esMismoTelefono(a, b) {
+  const da = String(a || '').replace(/\D/g, '');
+  const db = String(b || '').replace(/\D/g, '');
+  if (!da || !db) return false;
+  // El más CORTO debe tener al menos 10 dígitos para usar la regla de cola: un número de
+  // 7-9 dígitos que casualmente sea el final de otro es una COLISIÓN, no el mismo teléfono.
+  // Los números cortos (extranjeros de microestados) solo casan por IGUALDAD exacta.
+  if (Math.min(da.length, db.length) < 10) return da === db;
+  return da.endsWith(db) || db.endsWith(da);
+}

@@ -131,6 +131,27 @@ export default async function handler(req, res) {
       continue;
     }
 
+    if (r.tipo === 'boleta_no_coincide') {
+      // H76: el pago está VERIFICADO pero el cliente había pedido una boleta que no está
+      // entre las suyas con saldo (y tiene varias). El cron no puede preguntarle a cuál
+      // abonar (no hay diálogo) y reintentar no cambia nada: pasa DIRECTO a un asesor,
+      // con el mismo cierre del 'rendido'. La plata NO se mueve a una boleta no pedida.
+      await supabaseAdmin.from('verificaciones_pago')
+        .update({ estado: 'rendido', resultado: 'boleta_no_coincide: pidió la ' + (r.pedido || '?') + ', candidatas ' + (r.candidatas || []).join('/'), actualizado_at: new Date().toISOString() })
+        .eq('id', v.id);
+      await supabaseAdmin.from('conversaciones_whatsapp')
+        .update({ agente_activo: false, estado: 'humano' })
+        .eq('id', v.conversacion_id);
+      try {
+        await supabaseAdmin.from('recordatorios').update({ estado: 'cancelado' })
+          .eq('linea_id', v.linea_id).eq('telefono', v.telefono).eq('estado', 'pendiente');
+      } catch (_) {}
+      await ponerEtiqueta(v.conversacion_id, v.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' });
+      await nota(v, '⚠️ Pago VERIFICADO pero SIN abonar: el cliente pidió la boleta ' + (r.pedido || '?') + ' y no está entre sus boletas con saldo (' + (r.candidatas || []).join(', ') + '). Un asesor debe confirmar a cuál abonar.', 'error');
+      rendidos++;
+      continue;
+    }
+
     if (r.tipo === 'retenido') {
       // H32: la referencia del pago trae el celular de OTRO cliente registrado — posible
       // comprobante prestado. Reintentar no cambia nada: pasa DIRECTO a un humano, con el

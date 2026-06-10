@@ -170,7 +170,23 @@ export async function verificarYAbonar({ telefono, linea_id, conversacion_id, me
   let destino = null;
   const pedido = String(numeroPedido || '').replace(/\D/g, '');
   if (pedido) destino = conSaldo.find(b => String(b.numero) === pedido.padStart(4, '0') || String(b.numero) === pedido);
-  if (!destino) destino = conSaldo[0];
+  if (!destino) {
+    if (conSaldo.length === 1) {
+      // Una sola boleta con saldo: abono directo aunque el número pedido no coincida
+      // (corrige typos del cliente/IA — el caso común, ajuste del verificador de H76).
+      destino = conSaldo[0];
+    } else if (pedido) {
+      // H76: el cliente pidió una boleta PUNTUAL que no está entre las suyas con saldo y hay
+      // VARIAS candidatas. Antes el abono caía EN SILENCIO a la de número más bajo — plata en
+      // una boleta que el cliente no pidió. Ahora NO se abona: que el llamador pregunte.
+      return { tipo: 'boleta_no_coincide', pedido, candidatas: conSaldo.map(b => String(b.numero)) };
+    } else {
+      // Sin número pedido y con varias candidatas: priorizar la boleta cuyo saldo es EXACTO
+      // al monto del pago (señal fuerte de cuál quiso pagar); si no, la de número más bajo
+      // (comportamiento histórico).
+      destino = conSaldo.find(b => Number(b.saldo) === Number(trans.monto)) || conSaldo[0];
+    }
+  }
 
   // El abono se graba a nombre del agente (Liliana), el mismo actor real de arriba.
   const d = await post('/api/admin/abono', {
