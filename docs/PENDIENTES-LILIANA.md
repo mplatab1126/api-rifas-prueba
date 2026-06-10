@@ -232,6 +232,13 @@
 
 ## 8) 🆕 Problemas NUEVOS encontrados después de la auditoría
 
+- [x] (2026-06-10) **N4** · La tarjeta "🆘 YA SE RINDIÓ" quedaba gritando aunque el abono ya se
+  hubiera hecho a mano (pedido de Mateo: "la nota va enlazada al abono pendiente; si ya no está
+  pendiente, no debería estar"): el endpoint `verificaciones.js` ahora revisa si hay un ABONO a
+  las boletas del cliente POSTERIOR a la rendición — si lo hay, la tarjeta sale verde "✅ Caso
+  CERRADO: después se registró un abono de $X a la boleta Y (hora, por asesor)". Cubre abonos a
+  mano (bandeja/admin), del cron o de la web. Validado con el caso real de Tania (573160723523).
+
 - [x] (2026-06-10) **N3** · Error "assistant message prefill" (4 chats, detectado por Mateo): la
   API de Claude (Sonnet 4.6) EXIGE que la conversación termine con mensaje del CLIENTE; el
   re-disparo (H5/H21) y el barredor (H12) — publicados esa misma mañana — podían correr con el

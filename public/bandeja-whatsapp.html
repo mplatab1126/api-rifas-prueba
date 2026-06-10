@@ -1500,6 +1500,13 @@ function fichaVerificacionPago(conv){
     } else if(v.estado === 'abonado'){
       color = '#ecf8ef'; borde = '#bfe3c8';
       html = `<b>✅ Pago verificado y ABONADO</b> (${hora(v.actualizado_at)}).<br><span style="color:#4a7a55">${esc(v.resultado || '')}</span>`;
+    } else if(v.estado === 'rendido' && v.abono_posterior){
+      // N4: el sistema se rindió, pero DESPUÉS alguien registró el abono (a mano, cron, etc.)
+      // → el caso está CERRADO; no asustar con el 🆘 rojo pidiendo una revisión que ya se hizo.
+      const ab = v.abono_posterior;
+      color = '#ecf8ef'; borde = '#bfe3c8';
+      html = `<b>✅ Caso CERRADO.</b> El sistema se había rendido con este pago, pero DESPUÉS se registró un abono de <b>$${Number(ab.monto || 0).toLocaleString('es-CO')}</b> a la boleta <b>${esc(ab.numero_boleta || '')}</b> (${hora(ab.fecha_pago)}${ab.asesor ? ', por ' + esc(ab.asesor) : ''}).<br>
+        <span style="color:#4a7a55">No hay nada pendiente con este comprobante.</span>`;
     } else if(v.estado === 'rendido'){
       color = '#fdecec'; borde = '#f0b8b8';
       html = `<b>🆘 El sistema YA SE RINDIÓ con este pago</b> (${hora(v.actualizado_at)}, tras ${nI} intento${nI === 1 ? '' : 's'}).<br>
