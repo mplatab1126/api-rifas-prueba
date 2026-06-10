@@ -15,6 +15,14 @@
 
 ## Tareas pendientes
 
+- [ ] (2026-06-10) **Recorrido inmersivo de la casa (scrollytelling) — EN PRUEBA, espera el visto
+  bueno de Mateo.** Página `public/prueba-recorrido-casa.html` (NO enlazada, con noindex): al
+  deslizar, la foto hace zoom suave y funde de un lugar a otro (comedor → cocina → escaleras →
+  cine → habitaciones) y cierra con botón a `/comprar-la-plata-house`. Vive en la rama
+  `claude/project-onboarding-1e6jdf` (PR #82, vista previa de Vercel — pide login de Vercel,
+  solo Mateo la ve). Si le gusta: integrar el efecto a la página de compra real; si no, cerrar
+  el PR sin merge. OJO: no hay foto de FACHADA en S3 — la portada usa la habitación principal;
+  pedirle a Mateo una foto de fachada si la tiene.
 - [ ] (2026-06-09) **📋 PLAN DE MEJORAS DE LILIANA — ver `docs/PENDIENTES-LILIANA.md`.** Auditoría
   multi-agente completa (90 hallazgos verificados: dinero, silencios, coherencia, seguridad,
   velocidad, costos, estrategia). Ir tachando por prioridad; el crítico (modelo retirable 15-jun)
