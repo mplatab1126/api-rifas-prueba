@@ -188,6 +188,20 @@ para reabrir la conversación; si sigue abierta, texto normal. Ver bitácora),
 NO manda un 2º aviso al cliente.** Ver bitácora),
 `abono-reparto.js`, `buscar-pago.js` (**2026-06-09**: acepta `asesorRegistro` —solo gerencia— y evalúa
 `puede_modificar` con el grupo del actor REAL, no del que autentica; fix del abono del agente, ver bitácora).
+**Nuevos 2026-06-10 (ver bitácora):**
+`alertas-cron.js` (H16: cada 15 min revisa la salud del agente —clientes esperando >15 min, chats en
+manos de asesor >30 min, errores nuevos, verificaciones rendidas, gasto anómalo— y avisa al WhatsApp
+de Mateo; resumen diario 8 p.m.; pg_cron `alertas-agente-cada-15min` jobid 7; memoria en
+`agente_alertas_estado`; respaldo plantilla `alerta_sistema_los_plata`),
+`probar-suite.js` (H14: corre la SUITE DORADA —`agente_casos_dorados`— contra el manual de producción
+o un candidato sin guardarlo; solo gerencia; correrla SIEMPRE antes de publicar cambios del manual).
+
+**Novedades del motor (`agente-responder.js`, 2026-06-10; detalle en la bitácora):** robustez completa
+(reintento de IA, catch global sano, refresco del candado en el bucle, auto-redisparo, envíos fallidos
+visibles, re-claim de turnos muertos + barredor en `recordatorios-cron.js`), textos de la rifa en
+`agente_config.variables` (H17, rotar sin deploy), candado anti pago falso v2 (5 patrones nuevos +
+negación), boleta tras apartar la envía el SISTEMA (H46), `consultar_cliente` solo del chat (H23),
+precios del caché 1h corregidos (H29), `TOOLS` exportadas para la suite dorada.
 
 **Novedades del motor (`agente-responder.js`, 2026-06-09; ver bitácora):**
 - **Candado anti "pago falso" v2:** detector `afirmaPagoHecho` preciso (excluye frases condicionales tipo

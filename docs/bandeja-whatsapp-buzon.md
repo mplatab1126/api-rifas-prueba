@@ -410,6 +410,25 @@ Mide cuánto cuesta la IA que responde (los tokens que devuelve Claude en cada r
   `vercel.json`, backend y cabina). Tablas `agente_sugerencias`/`agente_qa_estado` borradas. La seguridad
   del dinero NO bajó (vive en los candados de cada acción). Ver bitácora.
 
+### 8.15-bis Novedades del 10-jun-2026 — JORNADA GRANDE (detalle en la bitácora; ~49 hallazgos de la auditoría cerrados)
+- **Dinero (H6-H9, H37 + extra):** candados de concurrencia cerrados (consumo atómico de
+  transferencias, reserva condicional de boletas, referencia mínima 5 chars, claim 'en_proceso' de
+  verificaciones, traslado de abonos transaccional `trasladar_abono_atomico`, anti doble venta en venta.js).
+- **Silencios (H4-H13, H21):** reintento de IA, catch global sano, refresco del candado, auto-redisparo,
+  envíos fallidos visibles ('fallido' + 🆘), barredor cada minuto + re-claim de turnos muertos.
+- **Seguridad (H19, H20, H40, H41):** firma del webhook de Meta ACTIVA (`META_APP_SECRET`), cédula/correo
+  enmascarados + rate-limit en endpoints públicos, tope de disparos del motor, reservar protegido.
+- **Operables por Mateo:** H15 versionado del manual (`agente_config_historial`), H17 textos de la rifa en
+  `agente_config.variables` + `docs/CHECKLIST-RIFA-NUEVA.md`, H16 ALERTAS al WhatsApp de Mateo
+  (`alertas-cron.js`, cada 15 min + resumen 8 p.m.; cazó un caso real de ~12h el primer día), H14 SUITE
+  DORADA (`probar-suite.js` + `agente_casos_dorados`, 10 casos 10/10 — correrla ANTES de cambiar el manual).
+- **Afinaciones (H22-H31, H45, H46…):** premios con acumulado vigente, reacciones 👍 ya no disparan al
+  agente, consultar_cliente solo del chat, gasto de caché bien medido, candado anti pago falso v2,
+  números disponibles 3× más rápidos, y la boleta tras apartar la envía el SISTEMA (una llamada menos
+  a Claude por venta — la boleta llega después del texto final de Liliana).
+- **Manual editado (con OK de Mateo):** H3 (acumulado condicional al sistema, sin "$20.000.000" fijo) y
+  paso 5 (la boleta la envía el sistema). Todo versionado y con la suite en verde.
+
 ### 8.15 Novedades del 9-jun-2026 (ver bitácora para el detalle)
 - **💰 Bug del abono automático ARREGLADO (+$110.000 recuperados):** desde el 8-jun, `buscar-pago.js`
   evaluaba `puede_modificar` con el grupo de gerencia y filtraba las boletas de Liliana → pagos que SÍ
