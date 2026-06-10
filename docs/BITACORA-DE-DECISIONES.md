@@ -26,6 +26,32 @@
 
 ---
 
+## 2026-06-09 — [Pagos] — BUG del abono automático del agente: buscar-pago no seguía al actor real (ARREGLADO + $110.000 recuperados)
+
+**Qué pasó:** desde el cambio del 8-jun ("los movimientos del agente quedan a nombre de Liliana"), el abono
+automático del agente quedó ROTO en silencio. El fix de grupo de ese día se aplicó en `abono.js` y
+`liberar-boleta.js` pero NO en `buscar-pago.js`: ahí `puede_modificar` se calculaba con el grupo de quien
+AUTENTICA (gerencia = 'regular'), y las boletas del agente ahora son de 'Liliana' ('independiente') → todas
+salían `puede_modificar=false` → `verificarYAbonar` (abono-agente.js) las filtraba → devolvía 'sin_saldo'
+AUNQUE el pago hubiera coincidido sólido con el banco. En el turno en vivo la IA recibía "no tiene boletas
+con saldo"; en el cron la verificación se cerraba 'cancelado' EN SILENCIO y el pago quedaba LIBRE sin asignar.
+
+**Arreglo (mínimo, mismo patrón del 8-jun):** `buscar-pago.js` acepta `asesorRegistro` (honrado SOLO si quien
+autentica es gerencia, candado `esGerencia`) y calcula el grupo con ese actor real; `abono-agente.js` resuelve
+el actor ANTES de buscar el pago y lo pasa. Sin override todo sigue igual (la bandeja no cambia). Verificado
+al aire: sin override `puede_modificar=false`, con override `true`; el mismo pago que se botó coincide
+"por referencia".
+
+**Plata recuperada (3 pagos botados el 8-9 jun, rastreados con buscar-pago en modo lectura):** se revivieron
+sus verificaciones (estado 'pendiente') y el cron, ya con el arreglo, abonó los 3 amarrados a su transferencia
+y les avisó a los clientes: $60.000→boleta 5653, $30.000→3554, $20.000→9744 (total **$110.000**). Otros 3
+casos 'sin saldo' ya los había salvado un asesor a mano (9656, 3174, 8671). Verificado en la base (boletas,
+transferencias ASIGNADAS, verificaciones 'abonado').
+
+**Cuidado / qué NO hacer:** si algún día otro endpoint del camino del agente valida grupo, debe seguir al
+ACTOR REAL (patrón `asesorRegistro` + `esGerencia`), no a quien autentica. El estado 'cancelado' con resultado
+"sin saldo (quizá ya estaba pago)" ahora vuelve a ser confiable, pero si reaparece en serie, sospechar.
+
 ## 2026-06-09 — [WhatsApp] / [Pagos] — Candado anti "pago falso" AFINADO (bloqueaba respuestas normales)
 
 **Qué pasó (mismo día del candado):** el candado publicado a las ~4pm disparaba EN FALSO: a 3 clientes

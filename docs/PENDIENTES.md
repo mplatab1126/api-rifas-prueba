@@ -110,6 +110,12 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-09) **💰 ARREGLADO el bug del abono automático del agente + $110.000 recuperados.**
+  `buscar-pago.js` evaluaba `puede_modificar` con el grupo de gerencia y filtraba las boletas de Liliana
+  (independiente) → pagos que SÍ coincidían con el banco terminaban en 'sin_saldo' (cerrados en silencio desde
+  el 8-jun). Fix: `asesorRegistro` honrado solo a gerencia (patrón esGerencia) en buscar-pago +
+  `abono-agente.js` lo pasa. Recuperados 3 pagos botados: $60.000→5653, $30.000→3554, $20.000→9744 (clientes
+  avisados por el cron). Verificado al aire y en la base. Ver bitácora 9-jun.
 - [x] (2026-06-09) **🔧 AFINADO el candado anti "pago falso"** — disparaba en falso (bloqueó respuestas
   normales en 3 chats y respondía "recibí tu comprobante" sin comprobante). Ahora: detector preciso (solo
   afirmaciones de pago YA hecho; excluye condicionales como "cuando esté pagada al 100%") + solo se arma si
