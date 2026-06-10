@@ -134,10 +134,14 @@
   sin respuesta >10 min, errores nuevos, gasto anómalo y verificaciones agotadas. (El bug del
   abono de hoy lo habría cantado el mismo día.) OJO: necesita plantilla utility por la ventana
   de 24h (ver ajustes). — _esfuerzo medio_
-- [ ] **H17** · **Checklist de "rifa nueva" + textos de la rifa fuera del código.** Los atajos
-  SIN IA tienen quemados precio/premios/casa de ESTA rifa: al rotar de rifa (¡el 4-jul!)
-  seguirían vendiendo la vieja aunque actualices el manual. Moverlos a `agente_config.variables`
-  ({{precio_boleta}}, {{texto_premios}}…) + checklist de rotación. — _esfuerzo medio_
+- [x] (2026-06-10) **H17** · HECHO: los textos de la rifa (saludo, cierre, premios, pedir datos,
+  condiciones de la herramienta) ahora viven en `agente_config.variables` (sembradas en la base,
+  editables desde la cabina, versionadas por H15) — los atajos SIN IA y la descripción de
+  `enviar_contacto_inicial` las leen con respaldo en el código. **Rotar de rifa ya NO exige
+  desplegar código** (salvo `precios.js` y `resolucion.pdf`). Checklist completo de rotación en
+  **`docs/CHECKLIST-RIFA-NUEVA.md`** (incluye las convenciones del título "Mayor/casa" y del
+  agrupado del acumulado). El fallback del recordatorio quedó neutro ("lo de tu boleta").
+  Verificado al aire: motor corre normal; los textos actuales son idénticos a los de antes.
 - [ ] **H18** · **Cobro suave automático de saldos.** Hay ~$10.9M en saldos pendientes de
   deudores con chat en la línea (y muchos más sin chat). Campaña recurrente con difusiones +
   "Liliana atiende" (infraestructura YA existe). Paso previo: importar deudores como contactos

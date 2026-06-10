@@ -26,6 +26,30 @@
 
 ---
 
+## 2026-06-10 — [WhatsApp] — H17: los textos de la rifa salieron del código (rotar rifa ya no exige programador)
+
+**Qué hicimos:** los atajos SIN IA (saludo, premios, pedir datos) y la descripción de la
+herramienta del contacto inicial tenían QUEMADOS los textos de ESTA rifa (precio $150 mil, la casa
+de Chinchiná, $300M, sábados $5M): al rotar de rifa el 4-jul habrían seguido vendiendo la rifa
+vieja a todo cliente nuevo aunque se actualizara el manual, y arreglarlo exigía desplegar código.
+Ahora esos textos viven en **`agente_config.variables`** (claves `saludo_inicial`,
+`cierre_inicial`, `texto_premios` con `{{fecha_mayor}}`, `texto_pedir_datos` con `{{numero}}`,
+`condiciones_venta`): sembradas en la base con los textos actuales (idénticos — la conducta no
+cambió), editables desde la cabina y **versionadas por el historial de H15**. El código conserva
+los mismos textos como RESPALDO si una variable falta. También quedó neutro el fallback del
+recordatorio por plantilla ("lo de tu boleta", sin "de la casa").
+
+**Checklist de rotación NUEVO: `docs/CHECKLIST-RIFA-NUEVA.md`** — todo lo que hay que tocar al
+rotar (rifa activa, calendario y sus DOS convenciones: el sorteo principal lleva "Mayor/casa" en el
+título y la cadena del acumulado usa títulos idénticos; resultados, variables, manual, fotos del
+contacto inicial, plantillas de Meta; y los DOS únicos que exigen deploy: `precios.js` y
+`resolucion.pdf`). Regla: línea en modo sombra hasta tachar todo.
+
+**Cuidado / qué NO hacer:** las variables de la base MANDAN sobre el código — si un texto del
+atajo se ve raro, revisar primero `agente_config.variables` (y su historial). NO quitar
+`{{fecha_mayor}}` ni `{{numero}}` de esos textos: el código les inyecta el valor real. NO renombrar
+la respuesta rápida "contacto inicial" (las fotos se buscan por ese título).
+
 ## 2026-06-10 — [Seguridad] — Sección 4 de la auditoría: firma del webhook (H19), datos enumerables (H20) y límite de tasa (H40)
 
 **Qué hicimos:**

@@ -21,11 +21,12 @@
   YA quedó resuelto. Detalle por ítem en `docs/auditoria-liliana-2026-06-09.md`.
   **Avance 10-jun:** las DOS secciones 🔴 quedaron COMPLETAS y al aire — (1) DINERO: H6-H9 +
   H37 (función transaccional `trasladar_abono_atomico`); (2) CLIENTES COLGADOS EN SILENCIO:
-  H4+H11, H5+H21, H10, H12 (barredor + re-claim), H13. También TODA la sección 3 (H2 + H3),
-  H15 (versionado del manual) y la sección 4 de SEGURIDAD (H20 datos enmascarados + rate-limit,
-  H40 tope de disparos; H19 con el código listo). Sigue: el resto de la sección 5 (H14 pruebas
-  doradas, H16 monitoreo con alertas, H17 textos de rifa fuera del código —¡antes del 4-jul!—,
-  H18 cobro suave) y los 🟡/🟢.
+  H4+H11, H5+H21, H10, H12 (barredor + re-claim), H13. También TODA la sección 3 (H2 + H3), la
+  sección 4 de SEGURIDAD completa (H19 firma ACTIVA, H20, H40), H15 (versionado del manual) y
+  H17 (textos de rifa fuera del código + `docs/CHECKLIST-RIFA-NUEVA.md`). De las secciones
+  1-5 solo quedan: **H14** (suite de conversaciones doradas), **H16** (monitoreo con alertas al
+  WhatsApp de Mateo) y **H18** (cobro suave de saldos, ~$10.9M identificados). Luego los 🟡 (25)
+  y 🟢 (43).
 - [x] (2026-06-10) **Firma del webhook ACTIVADA (H19 cerrado):** Mateo configuró
   `META_APP_SECRET` en Vercel + redeploy. Verificado por los dos lados: mensaje real pasa
   (Liliana respondió), POST falso sin firma rechazado ("FIRMA INVÁLIDA" en el log de Vercel).

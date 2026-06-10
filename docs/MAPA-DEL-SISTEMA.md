@@ -115,6 +115,7 @@ Compartidos por varias páginas:
 | `auth-app.js` | Valida la sesión de la app móvil (token). | **Media**. |
 | `configuracion.js` | Interruptores globales del sistema (encender/apagar funciones). | **Baja**. |
 | `numeros-disponibles.js` | Escoge ~50 boletas disponibles al azar para mostrar. | **Baja**. |
+| `rate-limit.js` | Límite de tasa genérico (cuenta en la base con `rate_limit_check`; FAIL-OPEN: si el contador falla, permite). **2026-06-10** (H20/H40): lo usan `cliente.js`, `abonar/cliente.js` y el disparo del motor en `recibir.js`. | **Media**. |
 
 ### Admin — `api/admin/` (lo que mueve el panel de asesores)
 
