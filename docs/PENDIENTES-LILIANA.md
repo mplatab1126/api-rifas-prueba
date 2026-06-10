@@ -52,8 +52,12 @@
 - [x] (2026-06-10) **H9** · Referencias de 1-4 caracteres → ARREGLADO: largo mínimo 5 para la
   referencia cruda en los DOS sitios (`esCoincidencia` y `elegirSugerida` de `buscar-pago.js`).
   Una referencia corta ya no abona sola: cae a revisión humana (fail-safe).
-- [ ] **H37** · `trasladar_abono` mueve dinero en 7 pasos sin transacción ni candado de
-  concurrencia. — _esfuerzo medio_
+- [x] (2026-06-10) **H37** · `trasladar_abono` sin transacción → ARREGLADO: TODO el traslado
+  (validar mismo cliente + mover/partir abonos + recalcular ambos saldos + reapuntar
+  transferencias) vive ahora en la función transaccional `trasladar_abono_atomico` de la base
+  (bloquea ambas boletas en orden fijo; o se hace todo o nada). SQL versionado en
+  `sql/trasladar-abono-atomico.sql`. Probada con rollback en producción (camino feliz + 5
+  validaciones) y verificada al aire. Ver bitácora 10-jun.
 
 ## 2) 🔴 PRIMERO — Clientes que quedan COLGADOS en silencio (familia "respuestas en null")
 

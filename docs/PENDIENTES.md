@@ -19,15 +19,9 @@
   multi-agente completa (90 hallazgos verificados: dinero, silencios, coherencia, seguridad,
   velocidad, costos, estrategia). Ir tachando por prioridad; el crítico (modelo retirable 15-jun)
   YA quedó resuelto. Detalle por ítem en `docs/auditoria-liliana-2026-06-09.md`.
-  **Avance 10-jun:** los 4 huecos de concurrencia de dinero (H6-H9) quedaron CERRADOS y al aire
-  (queda H37 de esa sección). Sigue: sección 2 (clientes colgados en silencio: H5+H21, H12,
-  H4+H11, H10, H13).
-- [ ] (2026-06-10) **Carrera de la boleta en `venta.js` (hallazgo NUEVO, fuera de la auditoría):**
-  el endpoint de venta manual tiene la MISMA carrera que se cerró en `reservar.js` (H8): chequea
-  "ya fue vendida" al inicio pero ocupa la boleta al final SIN condición — un asesor y la web (u
-  otro asesor) en el mismo segundo podrían venderla doble. Cerrarla igual que H8 (update condicional
-  `.is('telefono_cliente', null)` + abortar/revertir), con cuidado: en venta.js el abono y la
-  transferencia se registran ANTES de ocupar la boleta, así que la compensación debe deshacerlos.
+  **Avance 10-jun:** la sección 1 de DINERO quedó COMPLETA y al aire (H6-H9 + H37 con la
+  función transaccional `trasladar_abono_atomico`). Sigue: sección 2 (clientes colgados en
+  silencio: H5+H21, H12, H4+H11, H10, H13).
 - [ ] (2026-06-09) **Reescribir la descripción de la herramienta `apartar_numero`** (en `agente-responder.js`):
   aún dice cédula/correo "OPCIONALES", la palabra que le prohibimos decir al cliente. Reescribir sin esa palabra
   (cambio de código → desplegar). Pendiente OK de Mateo.
@@ -123,6 +117,12 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-10) **🔒 H37 + carrera de venta.js — la sección de DINERO del plan quedó completa.**
+  (H37) el traslado de abonos vive ahora en una función transaccional de la base
+  (`trasladar_abono_atomico`: o se hace todo o nada; bloquea ambas boletas; SQL versionado en
+  `sql/`), probada con rollback en producción y verificada al aire. (Extra) cerrada la carrera de
+  la boleta en `venta.js` (hallazgo nuevo del 10-jun): ocupa solo si SIGUE libre y, si otro ganó,
+  deshace abono/transferencia/estadísticas. Ver bitácora 10-jun.
 - [x] (2026-06-10) **🔒 CERRADOS los 4 huecos de concurrencia en los candados de plata (H6-H9
   del plan de Liliana).** (H6) la transferencia se consume de forma atómica (condición LIBRE en el
   update + reversión si falla el insert) en `abono.js` y `venta.js`; (H7) claim 'en_proceso' en

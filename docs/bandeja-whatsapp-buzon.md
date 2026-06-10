@@ -258,7 +258,10 @@ y los disparadores siguen SOLO de gerencia/Mateo** (candado `esMateo` + ocultos 
   reversión si falla) en `abono.js`/`venta.js`; `reservar.js` ocupa el número solo si SIGUE libre (revierte el pedido
   si otro ganó); la referencia del comprobante exige mínimo 5 caracteres para abonar sola; y `verificaciones_pago`
   tiene el estado nuevo **'en_proceso'** como turno entre el cron y `registrar_abono` (el que llega segundo no procesa;
-  huérfanas >10 min las rescata el cron). NO quitar las condiciones de esos updates: SON el candado. Ver bitácora 10-jun.
+  huérfanas >10 min las rescata el cron). NO quitar las condiciones de esos updates: SON el candado. Además (H37) el
+  **traslado de abonos es ATÓMICO**: vive en la función transaccional `trasladar_abono_atomico` de la base (o se hace
+  todo o nada; SQL en `sql/trasladar-abono-atomico.sql`) — cambios de lógica del traslado van AHÍ, no en el endpoint.
+  Ver bitácora 10-jun.
 - **Supervisor Opus de movimientos ELIMINADO (2026-06-08)**: ya estaba inactivo (`ACCIONES_SENSIBLES` vacío); no veía
   las fotos ni los chequeos reales y solo frenaba acciones legítimas en falso. La seguridad del dinero vive en los
   candados de cada acción (abono verificado contra el banco, liberar valida dueño + saldo $0). Se borró del código.

@@ -26,6 +26,37 @@
 
 ---
 
+## 2026-06-10 — [Pagos] / [Base de datos] — Traslado de abonos ATÓMICO (H37) + cerrada la doble venta en venta.js
+
+**Qué hicimos (cierra la sección de DINERO del plan de Liliana):**
+1. **H37 — `trasladar-abono.js`:** antes movía plata en 7 pasos sueltos (mover abonos → recalcular
+   saldos → reapuntar transferencias); un crash a mitad dejaba saldos falsos que alimentan otros
+   candados ("liberar solo con $0", anti pago falso). Ahora TODO vive en la función transaccional
+   **`trasladar_abono_atomico`** en Postgres: o se hace todo o no se hace nada. Bloquea AMBAS boletas
+   en orden fijo (dos traslados simultáneos se hacen en fila, sin deadlock), valida DENTRO de la
+   transacción (mismo cliente, total disponible, tope del destino — sin TOCTOU) y devuelve códigos
+   que el endpoint traduce a los mismos mensajes de siempre. Solo el backend puede ejecutarla
+   (revoke a anon/authenticated, grant a service_role). **SQL versionado en
+   `sql/trasladar-abono-atomico.sql`** (empieza a pagar H38). La bitácora del movimiento sigue en el
+   endpoint (fuera de la transacción, como antes).
+2. **Carrera de la boleta en `venta.js`** (hallazgo nuevo del 10-jun, hermano de H8): ocupar la
+   boleta ahora exige `.is('telefono_cliente', null)`; si otro asesor/la web ganó en ese segundo, se
+   deshace lo ya escrito (borra el abono recién insertado por su id, devuelve la transferencia a
+   LIBRE condicional, resta las estadísticas del cliente) y responde "se acaba de vender".
+
+**Cómo se probó (sin tocar datos reales):** la función se probó EN PRODUCCIÓN con un bloque que
+termina en excepción a propósito (rollback garantizado): el camino feliz movió/partió $20.000 entre
+2 boletas reales del mismo cliente (saldos y abonos quedaron exactos en la previa) y la base deshizo
+todo (verificado después: datos intactos). Las 5 validaciones (no existe / otro cliente / excede
+total / excede destino / monto inválido) devuelven su código sin escribir. Al aire: el endpoint
+responde el 403 de "mismo cliente" desde el mapeo nuevo (commit `07b7533`).
+
+**Cuidado / qué NO hacer:** si se cambia la lógica del traslado, editar la FUNCIÓN
+(`sql/trasladar-abono-atomico.sql` + aplicar migración), no resucitar los pasos sueltos en el
+endpoint. El endpoint valida solo formato; las reglas de negocio viven en la función. Si una rifa
+nueva cambia el precio por defecto, el endpoint ya manda `PRECIOS.RIFA_4_CIFRAS` como
+`p_precio_default`.
+
 ## 2026-06-10 — [Pagos] / [Seguridad] — Cerrados los 4 huecos de concurrencia en los candados de plata (H6-H9 de la auditoría)
 
 **Qué hicimos:** cerramos las "carreras" donde dos procesos a la vez podían pasar el mismo check y
