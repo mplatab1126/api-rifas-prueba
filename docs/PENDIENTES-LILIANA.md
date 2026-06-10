@@ -232,6 +232,15 @@
 
 ## 8) 🆕 Problemas NUEVOS encontrados después de la auditoría
 
+- [x] (2026-06-10) **N3** · Error "assistant message prefill" (4 chats, detectado por Mateo): la
+  API de Claude (Sonnet 4.6) EXIGE que la conversación termine con mensaje del CLIENTE; el
+  re-disparo (H5/H21) y el barredor (H12) — publicados esa misma mañana — podían correr con el
+  historial terminando en mensaje de Liliana o nota interna → 400, nota "No pude responder" y
+  etiqueta ASESOR. ARREGLADO: si el historial termina con mensaje nuestro, el motor agrega una
+  nota interna de usuario ("el sistema te re-activó: responde lo pendiente; si ya está todo
+  respondido, una línea corta que cierre"). Los 4 chats se recuperaron solos (ningún cliente
+  quedó esperando); solo quedó la etiqueta 🆘 para quitar a mano.
+
 - [x] (2026-06-10) **N2** · Visor del relojito de verificación de pagos (pedido de Mateo: "no sé
   si el sistema sigue reintentando o ya lo delegó al asesor"): endpoint de lectura
   `api/whatsapp/verificaciones.js` (cualquier asesor con acceso a la línea) + tarjeta

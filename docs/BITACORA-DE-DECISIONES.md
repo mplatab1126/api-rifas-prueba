@@ -26,6 +26,23 @@
 
 ---
 
+## 2026-06-10 — [WhatsApp] — Bug N3: la API rechazaba corridas que terminaban "hablando Liliana"
+
+**Qué pasó (detectado por Mateo, 4 chats):** notas "No pude responder... assistant message
+prefill" + etiqueta ASESOR. La API de Claude (Sonnet 4.6) exige que la conversación termine con
+un mensaje del CLIENTE. El re-disparo (H5/H21) y el barredor (H12), publicados hoy mismo, pueden
+correr un chat cuyo último elemento es un mensaje de Liliana o una nota interna → la API devuelve
+400 y el turno muere. Regresión de las mejoras de la mañana, no del modelo.
+
+**Arreglo:** si el historial armado termina con mensaje nuestro, el motor agrega una nota interna
+de rol usuario: "el sistema te re-activó: responde lo que quede pendiente; si ya está todo
+respondido, una sola línea corta que cierre con naturalidad". Cumple el contrato de la API y le
+da a la IA la instrucción correcta para ese escenario. Los 4 chats afectados se recuperaron solos
+(en todos la última palabra la tiene Liliana); solo quedó la etiqueta 🆘 por quitar a mano.
+
+**Cuidado:** si algún día se cambia el armado del historial (construirMensajes), conservar este
+cierre — vive justo antes de marcarCacheFinal en agente-responder.js.
+
 ## 2026-06-10 — [WhatsApp] — Tanda 10 (verdes) + visor del relojito de pagos (N2)
 
 **N2 — Visor "💳 Verificación del pago" (pedido de Mateo):** en la ficha del chat de la bandeja
