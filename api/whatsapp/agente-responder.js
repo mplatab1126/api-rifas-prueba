@@ -418,32 +418,60 @@ async function nota(conv, texto) {
 function afirmaPagoHecho(texto) {
   // Quitamos tildes para que las reglas no dependan de acentos (qued ó/quedo, registr é/registre).
   const t = String(texto || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-  // (a) Afirma que la boleta está PAGADA al 100% / completamente.
-  const paga = /(pagada|paga|pago)\s*(al\s*)?100/.test(t)
-    || (/100\s*%/.test(t) && /(pag|bolet|abon|particip)/.test(t))
-    || /qued[oa]\s+(totalmente\s+|completamente\s+)?pagad/.test(t)
-    || /est[a]s?\s+pag(a|ada)\b/.test(t)
-    || /(boleta|numero)[^.]{0,40}\bpagad[ao]\b/.test(t);
-  // (b) Afirma que ACABA de registrar / aplicar / confirmar el pago o abono.
-  // OJO: solo el PASADO "registré" (hecho), no "te registro / registro" (promesa a futuro).
-  const registro = /\bregistre\s+(tu|su|el)?\s*(abono|pago)/.test(t)
-    || /(abono|pago)\s+(qued[oa]|registrad|aplicad|confirmad|recibid)/.test(t)
-    || /qued[oa]\s+abonad/.test(t)
-    || /tu\s+pago\s+(ya\s+)?(qued|fue|esta|quedo|se\s+registr|se\s+aplic|se\s+confirm)/.test(t)
-    || /pago\s+confirmad/.test(t);
-  return paga || registro;
+  // Marcadores de frase CONDICIONAL/FUTURA justo antes de la frase de pago: "cuando esté
+  // pagada", "para quedar pagada al 100%", "una vez pagada", "te faltan $X para quedar
+  // pagada"... NO son afirmaciones de un pago hecho — son frases normales de venta.
+  // (Caso real 9-jun: la versión vieja bloqueaba "es 100% legal" y "cuando esté pagada
+  // al 100% te enviamos la factura", y respondía hablando de un comprobante inexistente.)
+  const COND = /\b(cuando|si|para|una vez|apenas|despues|hasta|antes|al estar|estar|este|estes|esten|quedar|quede|quedes|queden|falta|faltan|debe|debes|deben|necesita|necesitas)\b[^.,!?\n]{0,38}$/;
+  // Frases que SÍ afirman un pago ya hecho/registrado (pasado o estado actual):
+  const PATRONES = [
+    /pagad[ao]\s*al\s*100/g,                                                        // "pagada al 100%"
+    /qued(o|aste)\s+(totalmente\s+|completamente\s+)?(pagad|abonad|al\s+dia)/g,     // "quedó pagada/abonada"
+    /ya\s+(esta|estas|quedo|quedaste)\s+(totalmente\s+|completamente\s+)?(paga\b|pagad|abonad|al\s+dia)/g, // "ya está pagada"
+    /(boleta|numero)\s+(ya\s+)?esta\s+(totalmente\s+|completamente\s+)?pagad/g,     // "tu boleta está pagada"
+    /\bregistre\s+(tu|su|el)?\s*(abono|pago)/g,                                     // "registré tu abono" (pasado)
+    /(tu|su|el)\s+(pago|abono)\s+(ya\s+)?(quedo|fue|esta)\s+(registrad|aplicad|confirmad|abonad)/g,
+    /pago\s+confirmad/g,                                                            // "pago confirmado"
+  ];
+  // Una frase cuenta SOLO si en la misma oración no viene precedida de un marcador condicional.
+  return PATRONES.some((re) => {
+    re.lastIndex = 0;
+    let m;
+    while ((m = re.exec(t)) !== null) {
+      const antes = t.slice(Math.max(0, m.index - 45), m.index);
+      if (!COND.test(antes)) return true;
+    }
+    return false;
+  });
+}
+
+// ¿El turno gira alrededor de un PAGO? (en los últimos mensajes el cliente mandó una
+// FOTO —comprobante— o dijo que ya pagó/transfirió). El candado anti "pago falso" SOLO
+// se arma en este contexto: fuera de él, una afirmación de pago es improbable y el
+// mensaje seguro ("recibí tu comprobante...") no tendría ningún sentido para el cliente.
+function esContextoPago(reales) {
+  return (reales || []).slice(-12).some((m) => {
+    if (m.direccion !== 'entrante') return false;
+    if (m.tipo === 'image' && m.media_id) return true;
+    const t = String(m.texto || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    return /(comprobante|soporte|captura|recibo|ya\s+(te\s+|le\s+)?(pague|pago\b|transferi|consigne|envie)|acabo\s+de\s+(pagar|transferir|consignar)|hice\s+(el|la|una)\s+(pago|transferencia|consignacion)|(te|le)\s+(pague|transferi|consigne))/.test(t);
+  });
 }
 
 // Cuando el candado bloquea una confirmación de pago no verificada: en vez del texto
 // de la IA, manda el mensaje SEGURO (nunca afirma el pago), avisa con una nota, marca
 // el chat para revisión y deja el último comprobante en verificación automática.
 async function manejarPagoNoVerificado(conv, reales) {
-  await decir(conv, '¡Gracias! 😊 Ya recibí tu comprobante y estoy *verificando tu pago*. Apenas me lo confirmen te aviso por aquí mismo. 🙏');
+  // ¿Hay una FOTO (comprobante) reciente del cliente? Define el texto seguro y la verificación.
+  const ult = [...(reales || [])].reverse().find(m => m.direccion === 'entrante' && m.tipo === 'image' && m.media_id);
+  await decir(conv, ult
+    ? '¡Gracias! 😊 Ya recibí tu comprobante y estoy *verificando tu pago*. Apenas me lo confirmen te aviso por aquí mismo. 🙏'
+    : '😊 Estoy *verificando tu pago* en el sistema. Apenas me lo confirmen te aviso por aquí mismo. 🙏');
   await nota(conv, '⚠️ BLOQUEÉ una confirmación de pago NO verificada: la IA iba a decir que la boleta estaba pagada/abonada SIN haberse registrado el abono. Le respondí que estoy verificando y marqué el chat para revisión.');
   try { await ponerEtiqueta(conv.id, conv.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' }); } catch (_) {}
   // Si el cliente mandó un comprobante (imagen) reciente, dejarlo en verificación
   // automática (el relojito reintenta y abona solo si el pago aparece de verdad).
-  const ult = [...(reales || [])].reverse().find(m => m.direccion === 'entrante' && m.tipo === 'image' && m.media_id);
   if (ult) { try { await agendarVerificacion(conv, ult.media_id, ''); } catch (_) {} }
 }
 
@@ -1365,9 +1393,11 @@ export default async function handler(req, res) {
     const bolsCliente = (estadoCliente.boletas || []);
     const tieneBoletas = bolsCliente.length > 0;
     const todasPagadas = tieneBoletas && bolsCliente.every(b => Number(b.saldo_restante || 0) <= 0);
-    // ¿Debo BLOQUEAR este texto? Solo si afirma un pago hecho, no hubo abono real este turno,
-    // y la verdad del sistema NO respalda la afirmación (sigue debiendo, o no tiene boletas).
-    const debeBloquear = (txt) => !huboAbono && afirmaPagoHecho(txt) && ((tieneBoletas && !todasPagadas) || !tieneBoletas);
+    // ¿Debo BLOQUEAR este texto? Solo si el turno es de PAGO (hay comprobante o el cliente
+    // dijo que pagó), el texto afirma un pago hecho, no hubo abono real este turno, y la
+    // verdad del sistema NO respalda la afirmación (sigue debiendo, o no tiene boletas).
+    const contextoPago = esContextoPago(reales);
+    const debeBloquear = (txt) => contextoPago && !huboAbono && afirmaPagoHecho(txt) && ((tieneBoletas && !todasPagadas) || !tieneBoletas);
     for (let iter = 0; iter < MAX_ITER; iter++) {
       // Botón de pánico a mitad de la respuesta: si apagaron el agente en este chat, parar ya
       // (no mandar más mensajes ni ejecutar más acciones).
