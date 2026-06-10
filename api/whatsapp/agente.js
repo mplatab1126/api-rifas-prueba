@@ -30,7 +30,7 @@ const HERRAMIENTAS_DEFAULT = [
   { clave: 'enviar_contacto_inicial', nombre: 'Enviar el contacto inicial',           descripcion: 'Manda la presentación: fotos de la casa, precio y la pregunta de los premios.', riesgo: 'bajo',  orden: 1 },
   { clave: 'consultar_disponibles',    nombre: 'Consultar números disponibles',      descripcion: 'Mira en el sistema qué boletas están libres para ofrecerlas.',          riesgo: 'bajo',  orden: 2 },
   { clave: 'verificar_disponibilidad', nombre: 'Verificar si un número está libre',   descripcion: 'Revisa si un número puntual (ej: 1234) está disponible u ocupado.',      riesgo: 'bajo',  orden: 3 },
-  { clave: 'consultar_cliente',        nombre: 'Ver boletas y saldo de un cliente',   descripcion: 'Consulta las boletas, abonos y deuda de un cliente por su teléfono.',    riesgo: 'bajo',  orden: 4 },
+  { clave: 'consultar_cliente',        nombre: 'Ver boletas y saldo de un cliente',   descripcion: 'Consulta las boletas, abonos y deuda del cliente del chat (siempre su propio teléfono).',    riesgo: 'bajo',  orden: 4 },
   { clave: 'enviar_resolucion',        nombre: 'Enviar la resolución (PDF de EDSA)',  descripcion: 'Le manda al cliente el PDF de la resolución oficial que autoriza la rifa.', riesgo: 'bajo',  orden: 5 },
   { clave: 'apartar_numero',           nombre: 'Apartar un número',                  descripcion: 'Reserva una boleta a nombre del cliente (reversible: se puede liberar).', riesgo: 'medio', orden: 6 },
   { clave: 'enviar_boleta',            nombre: 'Enviar la boleta',                   descripcion: 'Manda al cliente su boleta digital.',                                   riesgo: 'medio', orden: 7 },

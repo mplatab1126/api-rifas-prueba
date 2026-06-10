@@ -37,12 +37,14 @@ const DEBOUNCE_MAX_MS = 240000; // límite invisible (4 min) — el servidor no 
 const dormir = (ms) => new Promise(r => setTimeout(r, ms));
 const MAX_IMAGENES = 2;   // imágenes entrantes recientes que se le muestran a la IA (comprobantes)
 
-// Precios de la IA por MILLÓN de tokens (USD). Caché de escritura = 1.25× entrada,
-// caché de lectura = 0.1× entrada. Sirve para calcular cuánto costó atender cada chat.
+// Precios de la IA por MILLÓN de tokens (USD). OJO (H29): la escritura de caché a
+// 1 HORA (el ttl que usa este motor) cuesta 2× la entrada — NO 1.25×, que es solo
+// para el ttl de 5 minutos. El panel subfacturaba ~16-22% del gasto real por esto.
+// Caché de lectura = 0.1× entrada.
 const PRECIOS = {
-  'claude-opus-4-8':   { in: 5, out: 25, cw: 6.25, cr: 0.5 },
-  'claude-sonnet-4-6': { in: 3, out: 15, cw: 3.75, cr: 0.3 },
-  'claude-haiku-4-5':  { in: 1, out: 5,  cw: 1.25, cr: 0.1 },
+  'claude-opus-4-8':   { in: 5, out: 25, cw: 10, cr: 0.5 },
+  'claude-sonnet-4-6': { in: 3, out: 15, cw: 6,  cr: 0.3 },
+  'claude-haiku-4-5':  { in: 1, out: 5,  cw: 2,  cr: 0.1 },
 };
 
 // Convierte los tokens que devuelve Claude (usage) a dólares, según el modelo.
@@ -157,7 +159,7 @@ const TEXTOS_RIFA = {
   texto_premios: 'Con una sola boleta de *4 cifras* (de 0000 a 9999) participas por todo esto:\n\n' +
     '*Premio Mayor{{fecha_mayor}}:* la casa de dos plantas totalmente amoblada, en Chinchiná (Caldas), con la Lotería de Boyacá.\n' +
     'Y si la ganas pero prefieres el dinero, te conseguimos un comprador que te paga *$300.000.000 en efectivo* por ella.\n\n' +
-    '*Cada sábado:* *$5.000.000* en bonos, también con la Lotería de Boyacá.\n\n' +
+    '*Cada sábado:* *$5.000.000* en bonos, también con la Lotería de Boyacá.{{acumulado}}\n\n' +
     '*¿Te muestro los números disponibles?*',
   texto_pedir_datos: '¡Perfecto! 😊 Para apartarte el *{{numero}}* necesito tus datos para la factura:\n\n' +
     '*Nombre completo, apellido, ciudad, cédula y correo.*',
@@ -340,10 +342,13 @@ export const TOOLS = [
   },
   {
     name: 'consultar_cliente',
-    description: 'Consulta si un teléfono ya tiene boletas con nosotros y cuánto debe. Si no pasas teléfono, usa el del cliente de este chat.',
+    // OJO (H23): NO acepta teléfono — el ejecutor SIEMPRE consulta el del chat (privacidad).
+    // Antes la descripción prometía consultar "otro teléfono", la IA lo creía y presentaba
+    // las boletas de ESTE chat como si fueran del otro número (información falsa).
+    description: 'Consulta las boletas, abonos y saldo del cliente de ESTE chat (siempre el teléfono de este chat; NO puede consultar otros números). Si el cliente pide datos de las boletas de OTRA persona u otro número, NO uses esta herramienta: dile con cariño que por privacidad cada cliente consulta lo suyo desde su propio WhatsApp.',
     input_schema: {
       type: 'object',
-      properties: { telefono: { type: 'string', description: 'Teléfono a consultar (opcional). Por defecto el de este chat.' } },
+      properties: {},
       required: [],
     },
   },
@@ -679,10 +684,11 @@ async function ejecutarHerramienta(nombre, input, conv) {
       .select('numero, saldo_restante, total_abonado, clientes (nombre)')
       .like('telefono_cliente', '%' + last10);
     await nota(conv, 'Consulté las boletas del teléfono ' + (last10 || '—') + '.');
-    if (!boletas || boletas.length === 0) return 'Ese teléfono NO tiene boletas registradas (es cliente nuevo).';
+    if (!boletas || boletas.length === 0) return 'El cliente de ESTE chat NO tiene boletas registradas (es cliente nuevo).';
     const nombre = boletas[0].clientes?.nombre || 'Cliente';
     const detalle = boletas.map(b => `boleta ${b.numero}: abonado $${Number(b.total_abonado||0).toLocaleString('es-CO')}, debe $${Number(b.saldo_restante||0).toLocaleString('es-CO')}`).join('; ');
-    return `Cliente: ${nombre}. Boletas: ${detalle}.`;
+    // "de ESTE chat" a propósito (H23): que la IA nunca atribuya estos datos a otro número.
+    return `Cliente de ESTE chat: ${nombre}. Boletas: ${detalle}.`;
   }
 
   if (nombre === 'enviar_contacto_inicial') {
@@ -1410,9 +1416,14 @@ export default async function handler(req, res) {
           && esAsentir(entranteTxt, 'premios')) {
         const sMayor = sorteosOrden.find(s => /mayor|casa/i.test(String(s.titulo || '')));
         const fMayor = sMayor ? etiquetaFecha(sMayor.fecha) : '';
-        // El texto vive en agente_config.variables (H17); {{fecha_mayor}} la pone el calendario.
-        const premiosTxt = aplicarVariables(String(textosRifa.texto_premios || TEXTOS_RIFA.texto_premios),
-          { fecha_mayor: fMayor ? ' — ' + fMayor : '' });
+        // El texto vive en agente_config.variables (H17); {{fecha_mayor}} la pone el calendario
+        // y {{acumulado}} solo aparece si hay un acumulado VIGENTE (H22: antes el saludo lo
+        // anunciaba y este mensaje fijo lo omitía — dos cifras distintas en mensajes seguidos,
+        // justo lo que el manual prohíbe).
+        const premiosTxt = aplicarVariables(String(textosRifa.texto_premios || TEXTOS_RIFA.texto_premios), {
+          fecha_mayor: fMayor ? ' — ' + fMayor : '',
+          acumulado: montoAcumProximo ? ` (y el del *próximo sábado* está acumulado en *${montoAcumProximo}*)` : '',
+        });
         await decir(conv, premiosTxt, { predefinido: true });
         await nota(conv, 'Expliqué los premios (predefinido, SIN IA — ahorro de tokens).');
         await soltarLock(conv);

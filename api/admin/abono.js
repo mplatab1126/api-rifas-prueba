@@ -21,7 +21,9 @@ export default async function handler(req, res) {
 
   const numeroLimpio = String(numeroBoleta).trim();
   const monto = Number(valorAbono);
-  if (monto <= 0) return res.status(400).json({ status: 'error', mensaje: 'El abono debe ser mayor a cero' });
+  // Number.isFinite: un valor no numérico (NaN/Infinity) pasaba los candados de monto
+  // (NaN <= 0 es false) — hoy lo atajaba el NOT NULL de abonos.monto, pero mejor 400 limpio (H69).
+  if (!Number.isFinite(monto) || monto <= 0) return res.status(400).json({ status: 'error', mensaje: 'El abono debe ser un número mayor a cero' });
 
   // 🔒 CANDADO PENDIENTE: el modo "Pendiente" solo se permite si el interruptor
   // (que controla Mateo) está encendido. Mateo siempre puede usarlo. Esto evita

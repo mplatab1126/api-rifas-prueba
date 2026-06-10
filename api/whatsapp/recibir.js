@@ -110,6 +110,14 @@ export default async function handler(req, res) {
 async function guardarEntrante(m, nombrePerfil, lineaId) {
   const telefono = m.from;
   const { tipo, texto, media_id } = interpretarMensaje(m);
+
+  // Una REACCIÓN (👍/❤️ a un mensaje) NO es un mensaje (H26): antes se guardaba como
+  // entrante normal → sumaba "sin leer", CANCELABA los recordatorios pendientes y
+  // disparaba al agente (la IA le respondía "¿te explico los premios?" a un corazón).
+  // Se ignora por completo (no es contenido; el cliente no espera respuesta).
+  if (m.type === 'reaction') return true;
+
+  const esSinContenido = (m.type === 'unsupported' || m.type === 'ephemeral');
   const respondeA = m.context?.id || null;   // si el cliente citó/respondió a un mensaje, su wa_message_id
   const ts = m.timestamp
     ? new Date(Number(m.timestamp) * 1000).toISOString()
@@ -139,16 +147,21 @@ async function guardarEntrante(m, nombrePerfil, lineaId) {
       { onConflict: 'wa_message_id', ignoreDuplicates: true }
     );
 
-  // El cliente volvió a escribir → cancela los recordatorios que el agente tenía pendientes
-  // para este chat (ya retomaron la conversación, no hace falta el seguimiento automático).
-  await cancelarRecordatorios(telefono, lineaId);
+  // Un tipo SIN contenido legible ('unsupported'/'ephemeral') SÍ se guarda y suma
+  // "sin leer" (que lo vea un humano), pero NO cancela recordatorios ni dispara al
+  // agente de inmediato (H26) — si el agente está activo, el barredor lo retoma luego.
+  if (!esSinContenido) {
+    // El cliente volvió a escribir → cancela los recordatorios que el agente tenía pendientes
+    // para este chat (ya retomaron la conversación, no hace falta el seguimiento automático).
+    await cancelarRecordatorios(telefono, lineaId);
 
-  // Disparadores: si el mensaje contiene una palabra clave configurada, o si es un cliente NUEVO
-  // (primer mensaje) y hay un disparador de ese tipo, prende el agente en este chat.
-  await activarPorDisparador(telefono, lineaId, texto, !!(conversacion && conversacion.esNuevo));
+    // Disparadores: si el mensaje contiene una palabra clave configurada, o si es un cliente NUEVO
+    // (primer mensaje) y hay un disparador de ese tipo, prende el agente en este chat.
+    await activarPorDisparador(telefono, lineaId, texto, !!(conversacion && conversacion.esNuevo));
 
-  // Si el agente está activo en este chat, dispararlo de una (sin depender del navegador).
-  await dispararAgenteSiActivo(telefono, lineaId);
+    // Si el agente está activo en este chat, dispararlo de una (sin depender del navegador).
+    await dispararAgenteSiActivo(telefono, lineaId);
+  }
 
   // ¿El mensaje quedó guardado de verdad? (lo usa el handler para decidir si pedirle
   // reintento a Meta cuando NINGÚN mensaje se pudo guardar)
