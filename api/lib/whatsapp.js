@@ -78,6 +78,9 @@ export async function enviarTexto(telefono, texto, lineaId) {
         type: 'text',
         text: { preview_url: true, body: texto },
       }),
+      // H34: si Meta se cuelga, cortar a los 30s y devolver { ok:false } manejable,
+      // en vez de dejar el turno entero colgado hasta que Vercel lo mate.
+      signal: AbortSignal.timeout(30000),
     });
 
     const data = await resp.json();
@@ -121,6 +124,7 @@ export async function enviarImagen(telefono, url, caption, lineaId) {
         type: 'image',
         image,
       }),
+      signal: AbortSignal.timeout(30000),   // H34
     });
 
     const data = await resp.json();
@@ -151,7 +155,7 @@ export async function subirMediaDesdeUrl(url, lineaId) {
   }
 
   try {
-    const desc = await fetch(url);
+    const desc = await fetch(url, { signal: AbortSignal.timeout(60000) });   // H34
     if (!desc.ok) return { ok: false, error: `No se pudo descargar la imagen (HTTP ${desc.status}).` };
     const mime = (desc.headers.get('content-type') || 'image/jpeg').split(';')[0].trim();
     const buffer = Buffer.from(await desc.arrayBuffer());
@@ -165,6 +169,7 @@ export async function subirMediaDesdeUrl(url, lineaId) {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
       body: form,
+      signal: AbortSignal.timeout(60000),   // H34
     });
     const data = await up.json();
     if (!up.ok || data.error || !data.id) {
@@ -200,6 +205,7 @@ export async function subirMediaDesdeBuffer(buffer, mime, filename, lineaId) {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
       body: form,
+      signal: AbortSignal.timeout(60000),   // H34
     });
     const data = await up.json();
     if (!up.ok || data.error || !data.id) {
@@ -238,6 +244,7 @@ export async function enviarImagenPorId(telefono, mediaId, caption, lineaId) {
         type: 'image',
         image,
       }),
+      signal: AbortSignal.timeout(30000),   // H34
     });
 
     const data = await resp.json();
@@ -276,6 +283,7 @@ export async function enviarDocumento(telefono, url, filename, caption, lineaId)
         messaging_product: 'whatsapp', recipient_type: 'individual',
         to: telefono, type: 'document', document,
       }),
+      signal: AbortSignal.timeout(30000),   // H34
     });
     const data = await resp.json();
     if (!resp.ok || data.error) {
@@ -308,6 +316,7 @@ export async function enviarDocumentoPorId(telefono, mediaId, filename, caption,
         messaging_product: 'whatsapp', recipient_type: 'individual',
         to: telefono, type: 'document', document,
       }),
+      signal: AbortSignal.timeout(30000),   // H34
     });
     const data = await resp.json();
     if (!resp.ok || data.error) {
@@ -331,11 +340,11 @@ export async function descargarMediaBase64(mediaId, lineaId) {
   if (!token) return { ok: false, error: 'No hay token configurado para esta línea.' };
 
   try {
-    const metaResp = await fetch(`${GRAPH}/${mediaId}`, { headers: { Authorization: `Bearer ${token}` } });
+    const metaResp = await fetch(`${GRAPH}/${mediaId}`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(30000) });   // H34
     const info = await metaResp.json();
     if (!info.url) return { ok: false, error: info.error?.message || 'No se encontró el archivo.' };
 
-    const bin = await fetch(info.url, { headers: { Authorization: `Bearer ${token}` } });
+    const bin = await fetch(info.url, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(60000) });   // H34
     if (!bin.ok) return { ok: false, error: 'No se pudo descargar el archivo.' };
 
     const buffer = Buffer.from(await bin.arrayBuffer());
@@ -471,6 +480,7 @@ export async function enviarPlantilla(telefono, { nombre, idioma, parametros, bo
           ...(componentes.length ? { components: componentes } : {}),
         },
       }),
+      signal: AbortSignal.timeout(30000),   // H34
     });
     const data = await resp.json();
     if (!resp.ok || data.error) return { ok: false, error: data.error?.message || `HTTP ${resp.status}`, raw: data };

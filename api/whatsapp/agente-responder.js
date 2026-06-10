@@ -33,7 +33,14 @@ const MAX_ITER = 6;          // tope de idas/vueltas con la IA por cada mensaje 
 const MAX_HISTORIAL = 300;   // TOPE de seguridad de mensajes; el corte normal es por RIFA (ver abajo)
 const PAUSA_MS = 800;        // entre los pasos del contacto inicial (para que lleguen en orden)
 const DEBOUNCE_MS = 30000;     // silencio que esperamos desde el ÚLTIMO mensaje del cliente antes de responder (se reinicia con cada mensaje)
-const DEBOUNCE_MAX_MS = 240000; // límite invisible (4 min) — el servidor no puede esperar infinito; en la práctica ningún cliente lo alcanza
+// H42: espera CORTA para el primer contacto que resuelve el saludo predefinido (sin IA).
+// Ese caso no junta ráfaga para la IA: el cliente del anuncio espera ~10s, no ~30s. Si
+// durante la espera corta agrega algo que el saludo NO cubre, se vuelve a la espera normal.
+const DEBOUNCE_CORTO_MS = 10000;
+// H34: tope del debounce. Era 4 min, pero el debounce vive DENTRO del mismo turno que tiene
+// maxDuration 300s (vercel.json): con 4 min quedaban <60s para transcripciones + IA + envíos
+// y Vercel podía MATAR el turno a medias. Con 2 min siempre quedan ~170s para el resto.
+const DEBOUNCE_MAX_MS = 120000;
 
 const dormir = (ms) => new Promise(r => setTimeout(r, ms));
 const MAX_IMAGENES = 2;   // imágenes entrantes recientes que se le muestran a la IA (comprobantes)
@@ -289,6 +296,8 @@ async function transcribirAudio(mediaId, lineaId) {
     form.append('language', 'es');
     const r = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST', headers: { Authorization: 'Bearer ' + key }, body: form,
+      // H34: si Whisper se cuelga, mejor responder sin la transcripción que morir por timeout.
+      signal: AbortSignal.timeout(30000),
     });
     const data = await r.json();
     if (data.error || !data.text) return null;
@@ -310,11 +319,15 @@ function contrasenaGerencia() {
 }
 
 // POST a un endpoint del propio sistema (reusar lógica probada de abono/liberar/etc.).
+// H34: tope de 120s — GENEROSO a propósito (buscar-pago lee la imagen con IA y puede tardar
+// 30-60s legítimos; un tope corto abortaría verificaciones buenas). Si aún así se cuelga,
+// se convierte en un error manejable en vez de matar el turno entero por maxDuration.
 async function llamarApi(ruta, cuerpo) {
   try {
     const r = await fetch(BASE_URL + ruta, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(cuerpo),
+      signal: AbortSignal.timeout(120000),
     });
     return await r.json();
   } catch (e) { return { status: 'error', error: e.message, mensaje: e.message }; }
@@ -585,6 +598,26 @@ function primerContactoLoResuelveSaludo(reales) {
   return true;   // saludo genérico o pregunta básica (precio/abono/legal/cuándo) → saludo predefinido
 }
 
+// H42: ¿lo que hay AHORA en este chat lo resolvería el saludo predefinido? Pre-lectura
+// ligera (una consulta) para decidir la espera corta ANTES del debounce, y para
+// RE-VALIDAR al cumplirse. Conservador: ante cualquier duda (ya hubo respuesta nuestra,
+// multimedia, error de consulta) → false, que es la espera normal de 30s. No reemplaza
+// los candados del atajo (sombra/remisión/boletas): si alguno de esos frena el saludo,
+// lo único que pasa es que la IA responde unos segundos antes.
+async function saludoResolveriaAhora(conv) {
+  const { data: msgs } = await supabase
+    .from('mensajes_whatsapp')
+    .select('direccion, tipo, texto')
+    .eq('conversacion_id', conv.id)
+    .in('direccion', ['entrante', 'saliente'])
+    .order('timestamp_wa', { ascending: false })
+    .limit(8);
+  if (!msgs || !msgs.length) return false;
+  if (msgs.some(m => m.direccion === 'saliente')) return false;   // ya hubo respuesta → no es primer contacto
+  if (msgs.some(m => m.tipo !== 'text')) return false;            // multimedia → IA (espera normal)
+  return primerContactoLoResuelveSaludo(msgs.slice().reverse());
+}
+
 // ── ATAJOS SIN IA para los pasos del embudo (premios, números, datos) ─────────
 // La misma idea del saludo predefinido, extendida a los siguientes pasos. Si el
 // cliente SOLO asiente a lo que se le preguntó (sí / dale / muéstrame…) SIN meter
@@ -838,6 +871,15 @@ async function ejecutarHerramienta(nombre, input, conv, ctx = {}) {
       await ponerEtiqueta(conv.id, conv.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' });
       return 'No pude verificar el comprobante (' + (r.mensaje || 'error') + '). Avísale con tacto que un asesor lo revisa enseguida, y pásalo a un asesor.';
     }
+    if (r.tipo === 'demorado') {
+      // H34: la verificación superó el tope de tiempo. Es AMBIGUO (el abono pudo quedar
+      // registrado y la respuesta no llegó): NUNCA decirle al cliente que falló. Se agenda
+      // la verificación automática (el relojito revisa y, si el abono ya quedó, lo detecta
+      // sin duplicar: la transferencia se consume UNA sola vez).
+      await agendarVerificacion(conv, mediaId, numeroPedido);
+      await nota(conv, 'La verificación del comprobante tardó más de lo normal (timeout). La dejé en verificación automática; si el abono alcanzó a registrarse, NO se duplica.');
+      return 'La verificación está tardando más de lo normal y quedó en proceso AUTOMÁTICO (el sistema sigue revisando y reintenta solo). NO le digas al cliente que falló y NO intentes registrarlo otra vez: dile con calma que ya recibiste su comprobante y estás *verificando su pago*, que apenas quede confirmado le avisas por aquí.';
+    }
 
     // 'no_encontrado' o 'misma_hora': el pago todavía NO aparece (el asesor lo sube con retraso).
     // En vez de rendirse, se agenda VERIFICACIÓN automática con reintentos (cada ~15 min, hasta ~1h);
@@ -1026,6 +1068,19 @@ function construirMensajes(historial, imagenes) {
   return msgs;
 }
 
+// Marca el ÚLTIMO bloque del historial con cache_control (H43/H84): todo lo anterior a esa
+// marca (herramientas + manual + historial con sus fotos) se guarda en caché y las llamadas
+// siguientes lo leen a 0.1× en vez de pagarlo lleno. Mismo ttl de 1h que el manual.
+function marcarCacheFinal(messages) {
+  const last = messages[messages.length - 1];
+  if (!last) return;
+  if (typeof last.content === 'string') {
+    last.content = [{ type: 'text', text: last.content, cache_control: { type: 'ephemeral', ttl: '1h' } }];
+  } else if (Array.isArray(last.content) && last.content.length) {
+    last.content[last.content.length - 1].cache_control = { type: 'ephemeral', ttl: '1h' };
+  }
+}
+
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
@@ -1094,6 +1149,14 @@ export default async function handler(req, res) {
     //     Así juntamos toda la ráfaga en UNA sola respuesta. Solo en el disparo automático
     //     (webhook); cuando Mateo prueba manual desde la bandeja, responde de una.
     if (interno && !recordatorio) {
+      // H42: si es el PRIMER contacto y el saludo predefinido lo resuelve (sin IA), la espera
+      // es CORTA (~10s): no hay ráfaga que juntar para la IA y el cliente del anuncio recibía
+      // su primera respuesta a los ~30-35s. Pre-lectura LIGERA aquí; la decisión FINAL de
+      // mandar el saludo la sigue tomando el atajo de abajo, con el historial completo.
+      let esperaMs = DEBOUNCE_MS;
+      if (!redisparo) {
+        try { if (await saludoResolveriaAhora(conv)) esperaMs = DEBOUNCE_CORTO_MS; } catch (_) {}
+      }
       const inicioEspera = Date.now();
       while (Date.now() - inicioEspera < DEBOUNCE_MAX_MS) {
         const { data: ult } = await supabase
@@ -1104,11 +1167,21 @@ export default async function handler(req, res) {
         const u = ult && ult[0];
         if (!u || u.direccion !== 'entrante') break;        // ya no hay nada pendiente del cliente
         const silencioMs = Date.now() - new Date(u.timestamp_wa || u.created_at).getTime();
-        if (silencioMs >= DEBOUNCE_MS) break;               // ya lleva la pausa callado desde su ÚLTIMO mensaje → responder
+        if (silencioMs >= esperaMs) {                       // ya lleva la pausa callado desde su ÚLTIMO mensaje → responder
+          if (esperaMs >= DEBOUNCE_MS) break;
+          // Espera corta cumplida: RE-VALIDAR (el cliente pudo agregar algo que el saludo
+          // NO cubre durante estos segundos). Si ya no aplica, NO vamos a la IA antes de
+          // tiempo: volvemos a la espera normal de 30s (ajuste del verificador de H42).
+          let sigue = false;
+          try { sigue = await saludoResolveriaAhora(conv); } catch (_) {}
+          if (sigue) break;
+          esperaMs = DEBOUNCE_MS;
+          continue;
+        }
         // Refrescar el candado para que NO se venza mientras esperamos (si no, otra corrida podría
         // arrancar y responder doble). Se revisa en trocitos de máx 3s para refrescarlo seguido.
         try { await supabaseAdmin.rpc('agente_refrescar_lock', { p_conv: conv.id }); } catch (_) {}
-        await dormir(Math.min(3000, DEBOUNCE_MS - silencioMs + 250));   // espera un poco; si entra otro mensaje, su hora más nueva reinicia el conteo
+        await dormir(Math.min(3000, esperaMs - silencioMs + 250));   // espera un poco; si entra otro mensaje, su hora más nueva reinicia el conteo
       }
     }
 
@@ -1230,22 +1303,25 @@ export default async function handler(req, res) {
     //     registrar_abono usa el media_id directo de la base, no la visión del modelo).
     const HACE_48H_MS = Date.now() - 48 * 3600 * 1000;
     const imagenesVistas = new Map();
-    let imgsCargadas = 0;
-    for (let i = reales.length - 1; i >= 0 && imgsCargadas < MAX_IMAGENES; i--) {
+    const imgsCandidatas = [];
+    for (let i = reales.length - 1; i >= 0 && imgsCandidatas.length < MAX_IMAGENES; i--) {
       const m = reales[i];
       if (m.pago_asignado) continue;
       if (new Date(m.timestamp_wa || m.created_at).getTime() < HACE_48H_MS) continue;
-      if (m.direccion === 'entrante' && m.tipo === 'image' && m.media_id) {
-        try {
-          // Descargar imágenes toma segundos; refrescar el candado para que no se venza (H5).
-          try { await supabaseAdmin.rpc('agente_refrescar_lock', { p_conv: conv.id }); } catch (_) {}
-          const media = await descargarMediaBase64(m.media_id, conv.linea_id);
-          if (media && media.ok && media.base64) {
-            imagenesVistas.set(m.id, { mime: mediaTypeImagen(media.mimeType), base64: media.base64 });
-            imgsCargadas++;
-          }
-        } catch (_) {}
-      }
+      if (m.direccion === 'entrante' && m.tipo === 'image' && m.media_id) imgsCandidatas.push(m);
+    }
+    if (imgsCandidatas.length) {
+      // Descargar imágenes toma segundos; refrescar el candado para que no se venza (H5).
+      try { await supabaseAdmin.rpc('agente_refrescar_lock', { p_conv: conv.id }); } catch (_) {}
+      // En PARALELO (H43): antes iban en serie y cada foto sumaba sus 2 fetches a la espera.
+      const descargas = await Promise.all(imgsCandidatas.map(m =>
+        descargarMediaBase64(m.media_id, conv.linea_id).catch(() => null)));
+      imgsCandidatas.forEach((m, i) => {
+        const media = descargas[i];
+        if (media && media.ok && media.base64) {
+          imagenesVistas.set(m.id, { mime: mediaTypeImagen(media.mimeType), base64: media.base64 });
+        }
+      });
     }
 
     // 4) Configuración del agente (prompt + modelo).
@@ -1523,6 +1599,14 @@ export default async function handler(req, res) {
     }
     if (!messages.length) { await soltarLock(conv); return res.status(200).json({ status: 'ok', skip: 'Sin mensajes para procesar.' }); }
 
+    // 2º punto de caché al FINAL del historial (H43/H84). El bucle de abajo re-manda
+    // `messages` completo en cada vuelta, y el turno SIGUIENTE del chat repite todo el
+    // historial otra vez: sin esto, el historial — y sobre todo las FOTOS (~1.1-1.6k
+    // tokens cada una) — se cobraba a precio LLENO cada vez. Con el punto de caché, las
+    // vueltas 2+ y el próximo turno (dentro de 1h) lo LEEN a 0.1×. La IA ve exactamente
+    // lo mismo; solo cambia el precio.
+    marcarCacheFinal(messages);
+
     // 5) Bucle de razonamiento + herramientas.
     let apagado = false;
     let apartoNumero = false;   // ¿se apartó algún número en este turno?
@@ -1550,6 +1634,9 @@ export default async function handler(req, res) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-beta': 'extended-cache-ttl-2025-04-11' },
             body: JSON.stringify(body),
+            // H34: una llamada colgada a la IA ya no agota el turno: a los 90s se corta,
+            // cae al catch como error transitorio y se REINTENTA una vez (lógica de abajo).
+            signal: AbortSignal.timeout(90000),
           });
           const data = await resp.json();   // puede lanzar si la respuesta no es JSON
           transitorio = !!data.error && (resp.status === 429 || resp.status >= 500);

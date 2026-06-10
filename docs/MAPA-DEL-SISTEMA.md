@@ -197,6 +197,12 @@ de Mateo; resumen diario 8 p.m.; pg_cron `alertas-agente-cada-15min` jobid 7; me
 `probar-suite.js` (H14: corre la SUITE DORADA —`agente_casos_dorados`— contra el manual de producción
 o un candidato sin guardarlo; solo gerencia; correrla SIEMPRE antes de publicar cambios del manual).
 
+**Novedades del motor (`agente-responder.js`, 2026-06-10 tanda 5; detalle en la bitácora):** debounce
+adaptativo (H42: ~10s para el primer contacto que resuelve el saludo fijo, re-validado; tope total 4→2 min),
+timeouts en TODAS las llamadas externas (H34: IA 90s con reintento, Whisper 30s, Meta 30-60s en `lib/whatsapp.js`,
+internas 120s; el abono con timeout devuelve 'demorado' → verificación automática, nunca "falló"), fotos en
+paralelo + 2º punto de caché al final del historial (H43+H84: vueltas 2+ y el turno siguiente leen a 0.1×).
+
 **Novedades del motor (`agente-responder.js`, 2026-06-10; detalle en la bitácora):** robustez completa
 (reintento de IA, catch global sano, refresco del candado en el bucle, auto-redisparo, envíos fallidos
 visibles, re-claim de turnos muertos + barredor en `recordatorios-cron.js`), textos de la rifa en

@@ -306,8 +306,11 @@ y los disparadores siguen SOLO de gerencia/Mateo** (candado `esMateo` + ocultos 
 
 ### 8.5 Sin mensajes dobles (candados anti-duplicado)
 La gente escribe en ráfaga → se disparan 2-4 corridas del motor. Tres capas evitan el duplicado:
-- **Debounce 30s**: espera 30s de silencio desde el ÚLTIMO mensaje del cliente (cada mensaje reinicia; tope invisible 4 min;
-  `maxDuration`=300s). Junta la ráfaga en UNA respuesta. Refresca el candado cada ≤3s para que no se venza.
+- **Debounce 30s**: espera 30s de silencio desde el ÚLTIMO mensaje del cliente (cada mensaje reinicia; tope invisible 2 min
+  desde el 10-jun (H34) — con 4 min quedaba sin tiempo para el resto del turno; `maxDuration`=300s). Junta la ráfaga en UNA
+  respuesta. Refresca el candado cada ≤3s para que no se venza. **Excepción (H42, 10-jun):** si es el PRIMER contacto y el
+  saludo predefinido lo resuelve (sin IA), la espera es CORTA (~10s, `DEBOUNCE_CORTO_MS`), con re-validación: si el cliente
+  agregó algo que el saludo no cubre, vuelve a la espera normal de 30s.
 - **Candado de proceso** (`agente_procesando_at`): UPDATE condicional; si otra corrida lo tiene, esta se sale. Se recupera a los 60s.
 - **Candado por tanda** (`agente_respondido_ms`, bigint): UPDATE atómico "ya tomé hasta el último mensaje" comparando por
   **milisegundos** (no texto de fecha, que rompía la consulta). Solo una corrida gana; las demás se salen. Falla-abierto.
