@@ -128,7 +128,27 @@ export default async function handler(req, res) {
       continue;
     }
 
-    // no_encontrado / misma_hora / error: ¿ya agotó los intentos?
+    if (r.tipo === 'retenido') {
+      // H32: la referencia del pago trae el celular de OTRO cliente registrado — posible
+      // comprobante prestado. Reintentar no cambia nada: pasa DIRECTO a un humano, con el
+      // mismo cierre del 'rendido' (agente apagado, ASESOR, sin escribirle más al cliente).
+      await supabaseAdmin.from('verificaciones_pago')
+        .update({ estado: 'rendido', resultado: 'retenido: la referencia es de otro cliente (' + (r.celular || '?') + ')', actualizado_at: new Date().toISOString() })
+        .eq('id', v.id);
+      await supabaseAdmin.from('conversaciones_whatsapp')
+        .update({ agente_activo: false, estado: 'humano' })
+        .eq('id', v.conversacion_id);
+      try {
+        await supabaseAdmin.from('recordatorios').update({ estado: 'cancelado' })
+          .eq('linea_id', v.linea_id).eq('telefono', v.telefono).eq('estado', 'pendiente');
+      } catch (_) {}
+      await ponerEtiqueta(v.conversacion_id, v.linea_id, 'ASESOR', { icono: '🆘', color: '#fdecec' });
+      await nota(v, '🚫 RETUVE el abono automático: la referencia del pago trae el celular de OTRO cliente (' + (r.celular || '?') + '). Posible comprobante de otra persona — lo revisa un asesor.', 'error');
+      rendidos++;
+      continue;
+    }
+
+    // no_encontrado / misma_hora / error / demorado: ¿ya agotó los intentos?
     if (v.intentos + 1 >= v.max_intentos) {
       await supabaseAdmin.from('verificaciones_pago')
         .update({ estado: 'rendido', resultado: r.tipo + ' tras ' + (v.intentos + 1) + ' intentos', actualizado_at: new Date().toISOString() })

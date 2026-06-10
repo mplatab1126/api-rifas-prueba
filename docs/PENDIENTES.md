@@ -40,7 +40,11 @@
   H43+H84 (fotos en paralelo + 2º punto de caché al final del historial: vueltas 2+ y el turno
   siguiente a 0.1×) y H34 (tope del debounce 4→2 min + timeout en todas las llamadas externas;
   un timeout del abono = 'demorado' → "estoy verificando" + verificación automática, nunca
-  "falló"). Quedan 4 amarillos (H27, H32, H35, H36) y ~38 verdes — seguir por tandas.
+  "falló");
+  tanda 6 (con OK de Mateo) = H27 (registrar_abono prueba las últimas 3 fotos recientes, no la
+  última a ciegas; la verificación guarda la foto reconocida) y H32 (candado anti "comprobante
+  prestado": referencia con celular de OTRO cliente registrado → 'retenido' para asesor, ~1,3%
+  de ruido medido). Quedan 2 amarillos (H35 embudo, H36 reestructurar el manual) y ~38 verdes.
   **Vigilar `agente_uso` unos días tras H42** (espera corta puede partir alguna ráfaga en dos).
 - [ ] (2026-06-10) **REGLA NUEVA para cambios del manual de Liliana:** antes de guardar un cambio
   del manual, correr la **suite dorada** (`/api/whatsapp/probar-suite`, ver bitácora 10-jun) y
