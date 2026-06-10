@@ -26,6 +26,24 @@
 
 ---
 
+## 2026-06-10 — [WhatsApp] — H35: el embudo de ventas de Liliana ya se ve en la cabina
+
+**Qué hicimos:** Mateo solo medía el COSTO de la IA, no su RESULTADO. Nueva tarjeta **"Embudo de
+ventas"** en la cabina (junto al Gasto de IA, 7/30 días): cuántos clientes llegaron → vieron
+premios → vieron números → dieron datos → apartaron → abonaron, más boletas vendidas/pagadas y la
+plata recibida. Variante del verificador: NO se tocó el motor — la función `agente_embudo_resumen`
+(versionada en `sql/embudo-liliana.sql`, solo service_role) agrega sobre las notas que ya caen en
+`agente_actividad`, así que mide también hacia atrás. Los hitos de plata (apartó/abonó/pagó) salen
+de `boletas`/`abonos` (exactos); contacto y números, de las notas (firmes); premios y datos son
+aproximados (solo los atajos dejan nota — van con * en la tarjeta). Primera lectura real (7 días):
+633 llegaron → 157 vieron números → 78 apartaron → $6.365.000 recibidos en 149 abonos.
+
+**Cuidado / qué NO hacer:** si se cambian los TEXTOS de las notas del motor ("Envié el contacto
+inicial", "Aparté el número"…), el embudo deja de contar ese hito — revisar los `like` de la
+función. "Abonaron" puede superar a "Apartaron" (incluye cobros de boletas vendidas antes de la
+ventana): es a propósito. Sirve para TENDENCIAS semanales, no para A/B de cada edición del manual
+(muestras chicas, advertencia del verificador).
+
 ## 2026-06-10 — [WhatsApp] / [Pagos] — Tanda 6 de los amarillos (H27, H32): el flujo de comprobantes ya no es ingenuo
 
 **Qué hicimos (con OK de Mateo — tocan el flujo de comprobantes, sin aflojar ningún candado):**

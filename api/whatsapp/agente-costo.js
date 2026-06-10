@@ -8,6 +8,8 @@
  * Acciones (POST, JSON: { contrasena, accion, linea_id, ... }):
  *   - resumen → gasto de IA de la línea: hoy, este mes y total (hora de Colombia).
  *   - chat    → gasto de IA acumulado en UN chat (para la ficha). Requiere conversacion_id.
+ *   - embudo  → H35: embudo de ventas del agente (contacto → números → apartó → abonó)
+ *               sobre una ventana de días (param `dias`, 1-90; por defecto 7).
  */
 
 import { aplicarCors } from '../lib/cors.js';
@@ -19,7 +21,7 @@ export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
 
-  const { contrasena, accion, linea_id, conversacion_id } = req.body || {};
+  const { contrasena, accion, linea_id, conversacion_id, dias } = req.body || {};
   const nombre = validarAsesor(contrasena);
   if (!nombre) return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido.' });
   // El costo de IA es información de gerencia: solo Mateo, igual que la cabina del agente.
@@ -39,6 +41,14 @@ export default async function handler(req, res) {
       const { data, error } = await supabaseAdmin.rpc('agente_costo_chat', { p_conv: String(conversacion_id) });
       if (error) return res.status(200).json({ status: 'error', mensaje: error.message });
       return res.status(200).json({ status: 'ok', chat: data || {} });
+    }
+
+    if (accion === 'embudo') {
+      const { data, error } = await supabaseAdmin.rpc('agente_embudo_resumen', {
+        p_linea: String(linea_id), p_dias: Math.max(1, Math.min(90, Number(dias) || 7)),
+      });
+      if (error) return res.status(200).json({ status: 'error', mensaje: error.message });
+      return res.status(200).json({ status: 'ok', embudo: data || {} });
     }
 
     return res.status(200).json({ status: 'error', mensaje: 'Acción no reconocida.' });
