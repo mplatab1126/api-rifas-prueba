@@ -92,6 +92,26 @@ export default async function handler(req, res) {
       partes.push(`⏳ *${nuevosEsperando.length} cliente(s) llevan >15 min esperando* respuesta del agente: ${lista}.`);
       for (const c of nuevosEsperando) avisados[c.id] = ahoraIso;
     }
+    // 1b) Chats EN MANOS DE UN HUMANO con el cliente esperando >30 min (H28): cuando un
+    // chat pasa a asesor (estado='humano') el agente se apaga y el barredor no lo toca —
+    // si nadie abre la bandeja, el cliente queda esperando sin que NADIE se entere
+    // (hubo un caso real de 15 horas). Avisa una vez por chat (se re-avisa a las ~2h).
+    const hace30 = new Date(Date.now() - 30 * 60000).toISOString();
+    const hace24h = new Date(Date.now() - 24 * 3600000).toISOString();
+    const { data: humanos } = await supabaseAdmin
+      .from('conversaciones_whatsapp')
+      .select('id, telefono, nombre_perfil')
+      .eq('estado', 'humano').eq('ultimo_entrante', true)
+      .gte('ultimo_at', hace24h).lte('ultimo_at', hace30)
+      .limit(10);
+    const nuevosHumanos = (humanos || []).filter(c => !avisados['h:' + c.id]);
+    if (nuevosHumanos.length) {
+      const lista = nuevosHumanos.slice(0, 4)
+        .map(c => `${c.nombre_perfil || 'Cliente'} (...${String(c.telefono).slice(-4)})`).join(', ');
+      partes.push(`🆘 *${nuevosHumanos.length} chat(s) EN MANOS DE ASESOR llevan >30 min sin respuesta humana:* ${lista}.`);
+      for (const c of nuevosHumanos) avisados['h:' + c.id] = ahoraIso;
+    }
+
     // Limpieza de la memoria de avisados (>2h se olvidan: si reaparecen, se re-avisa).
     for (const k of Object.keys(avisados)) {
       if (new Date(avisados[k]).getTime() < Date.now() - 120 * 60000) delete avisados[k];

@@ -364,7 +364,8 @@ export const TOOLS = [
   },
   {
     name: 'enviar_boleta',
-    description: 'Envía al cliente su boleta digital con el enlace para consultarla. Úsala justo después de apartar su número.',
+    // H46/H53: tras apartar, la boleta la envía el SISTEMA solo (no gastar una vuelta de IA).
+    description: 'Reenvía al cliente su boleta digital con el enlace para consultarla (muestra TODAS sus boletas en un mensaje). Úsala SOLO si el cliente pide ver o recibir su boleta de nuevo. NO la llames después de apartar: el sistema la envía solo al cerrar el turno.',
     input_schema: { type: 'object', properties: {}, required: [] },
   },
   {
@@ -740,10 +741,14 @@ async function ejecutarHerramienta(nombre, input, conv) {
     if (doc) { cuerpo.documento_tipo = 'CC'; cuerpo.documento_numero = doc; }
     if (cor) cuerpo.correo = cor;
     cuerpo.asesor = await asesorDeLinea(conv.linea_id);   // la venta queda a nombre del agente (Liliana)
+    cuerpo.interno = process.env.WHATSAPP_VERIFY_TOKEN;   // H41: sin este secreto, reservar.js ignora el campo asesor
     const d = await llamarApi('/api/rifa/reservar', cuerpo);
     if (!d.exito) { await nota(conv, 'Intenté apartar el ' + num + ' pero no se pudo: ' + (d.error || 'error')); return 'No se pudo apartar: ' + (d.error || 'error') + '. Cuéntaselo al cliente y ofrécele otra opción.'; }
     await nota(conv, `Aparté el número ${num} a nombre de ${nom} ${ape} (${ciu}).`);
-    return `Listo: el número ${num} quedó apartado a nombre de ${nom} ${ape}. Total por pagar: $${Number(d.total || 0).toLocaleString('es-CO')}. AHORA, en este MISMO turno, envíale la boleta con enviar_boleta — es OBLIGATORIO: el cliente SIEMPRE debe recibir su boleta con el enlace (esa herramienta muestra TODAS sus boletas en un solo mensaje). Si el cliente quería MÁS números, apártalos PRIMERO y recién entonces envía la boleta UNA sola vez; NO la envíes después de cada número.`;
+    // H46: ya NO se le pide a la IA llamar enviar_boleta (costaba una llamada entera a
+    // Claude más, ~4-8s en el momento más caliente de la venta). El envío lo hace el
+    // SISTEMA solo al cerrar el turno (la red de seguridad post-bucle, ahora camino normal).
+    return `Listo: el número ${num} quedó apartado a nombre de ${nom} ${ape}. Total por pagar: $${Number(d.total || 0).toLocaleString('es-CO')}. NO llames enviar_boleta: el SISTEMA le envía su boleta digital él solo al cerrar este turno (una sola vez, con TODAS sus boletas y el enlace). Si el cliente quería MÁS números, apártalos también en este mismo turno. Tu mensaje final: confírmale con alegría el apartado y dile cómo abonar.`;
   }
 
   if (nombre === 'enviar_boleta') {
@@ -1618,8 +1623,10 @@ export default async function handler(req, res) {
       }
     }
 
-    // Red de seguridad: si en este turno se apartó boleta(s) pero NO se envió la boleta, se envía
-    // sola (el cliente SIEMPRE debe recibir su boleta con el enlace). enviar_boleta muestra TODAS.
+    // ENVÍO de la boleta tras apartar — CAMINO NORMAL desde el 10-jun (H46): la IA ya no
+    // llama enviar_boleta tras apartar (se ahorraba una llamada entera a Claude); el sistema
+    // la envía aquí, UNA sola vez con todas las boletas, al cerrar el turno. También sigue
+    // siendo la red de seguridad por si la IA la llamó y falló.
     if (apartoNumero && !envioBoleta && !apagado && (await sigueActivo(conv.id))) {
       try { await ejecutarHerramienta('enviar_boleta', {}, conv); } catch (_) {}
     }

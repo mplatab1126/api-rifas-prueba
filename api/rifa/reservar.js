@@ -22,6 +22,7 @@ import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
 import { PRECIOS } from '../config/precios.js';
 import { limpiarTelefono, esTelefonoValido, telefonoSinDuplicar } from '../lib/telefono.js';
+import { permitido, ipDe } from '../lib/rate-limit.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
@@ -84,6 +85,18 @@ export default async function handler(req, res) {
 
   // Evitar duplicados dentro del mismo pedido
   const numerosUnicos = [...new Set(numerosLimpios)];
+
+  // 🔒 H41: tope de números por pedido (nadie compra 50 boletas de un golpe por la web;
+  // sin tope, un script podía "ocupar" el inventario entero en una sola petición).
+  if (numerosUnicos.length > 10) {
+    return res.status(400).json({ exito: false, error: 'Máximo 10 números por reserva. Si necesitas más, escríbenos por WhatsApp.' });
+  }
+
+  // 🔒 H41: límite de tasa por IP (20 reservas / 10 min sobra para un cliente legítimo
+  // y frena el agotamiento masivo del inventario por script). Fail-open por diseño.
+  if (!(await permitido('reservar:' + ipDe(req), 600, 20))) {
+    return res.status(429).json({ exito: false, error: 'Demasiadas reservas seguidas. Espera unos minutos e intenta de nuevo.' });
+  }
 
   try {
     // 1. Verificamos que todos los números sigan libres
@@ -153,9 +166,12 @@ export default async function handler(req, res) {
       String(fechaCol.getMinutes()).padStart(2, '0') + ':' +
       String(fechaCol.getSeconds()).padStart(2, '0');
 
-    // Quién queda como vendedor de la boleta. Por defecto "Pagina Web" (compra desde la web);
-    // el agente Liliana manda su nombre para que la venta quede a su nombre.
-    const asesorVenta = (req.body.asesor && String(req.body.asesor).trim()) || 'Pagina Web';
+    // Quién queda como vendedor de la boleta. Por defecto "Pagina Web" (compra desde la web).
+    // 🔒 H41: el campo `asesor` SOLO se honra si la llamada trae el secreto interno (el agente
+    // Liliana lo manda); antes cualquiera podía atribuirle ventas a cualquier asesor.
+    const tokenInterno = process.env.WHATSAPP_VERIFY_TOKEN;
+    const esInterno = !!(tokenInterno && req.body.interno === tokenInterno);
+    const asesorVenta = (esInterno && req.body.asesor && String(req.body.asesor).trim()) || 'Pagina Web';
 
     const ocupadasPedido = []; // las de ESTE pedido que ya alcanzamos a ocupar
 
