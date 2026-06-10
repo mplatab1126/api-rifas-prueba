@@ -26,6 +26,34 @@
 
 ---
 
+## 2026-06-10 — [WhatsApp] — Tanda 5 de los amarillos (H42, H43+H84, H34): más rápido y sin morir a medias
+
+**Qué hicimos (motor `agente-responder.js`, `lib/whatsapp.js`, `lib/abono-agente.js`):**
+- **H42 — Primera respuesta en ~10s en vez de ~30s:** el debounce de 30s (juntar la ráfaga) se
+  mantiene, PERO si es el PRIMER contacto y lo resuelve el saludo predefinido sin IA (el ~88% que
+  llega del anuncio), la espera es de ~10s. Con la doble validación del verificador: pre-lectura
+  ligera ANTES de esperar y RE-VALIDACIÓN al cumplirse — si el cliente agregó algo que el saludo no
+  cubre, vuelve a esperar los 30s normales (nunca va a la IA antes de tiempo).
+- **H43 (+H84) — Fotos e historial ya no se re-cobran a precio lleno:** las fotos se descargan en
+  PARALELO, y hay un 2º punto de caché al FINAL del historial (`marcarCacheFinal`, mismo ttl 1h del
+  manual): las vueltas 2+ del bucle y el turno siguiente leen historial+fotos a 0.1×. La IA ve
+  exactamente lo mismo; solo cambia el precio.
+- **H34 — Presupuesto de tiempo:** tope del debounce 4→2 min (con 4 min un turno con ráfaga larga
+  podía quedarse sin tiempo y Vercel lo mataba a medias) y timeout en TODAS las llamadas externas
+  (IA 90s → cae al reintento que ya existía; Whisper 30s; Meta 30s envíos / 60s archivos; llamadas
+  internas 120s — generoso porque buscar-pago lee la imagen con IA y tarda 30-60s legítimos).
+  **La regla de oro del verificador:** si la verificación/abono se DEMORA (timeout), es AMBIGUO (el
+  abono pudo quedar registrado): el resultado nuevo `'demorado'` hace que Liliana diga "estoy
+  verificando tu pago" y se agende la verificación automática — NUNCA le dice al cliente que falló,
+  y el candado del `idTransferencia` (una transferencia se consume UNA vez) impide duplicar.
+
+**Cuidado / qué NO hacer:** NO bajar el timeout de `llamarApi`/`post` (120s) a "algo más normal"
+tipo 30s: abortaría verificaciones de pago legítimas. NO tratar `'demorado'` como error (el cron lo
+reintenta; el ejecutor agenda verificación). El punto de caché del historial debe seguir siendo el
+ÚLTIMO bloque (si se agregan bloques después sin moverlo, no pasa nada, solo se cachea menos).
+Vigilar `agente_uso` unos días tras H42 (una espera corta puede partir alguna ráfaga en dos
+respuestas — costo levemente mayor a cambio de la velocidad; si se dispara, subir DEBOUNCE_CORTO_MS).
+
 ## 2026-06-10 — [WhatsApp] / [Seguridad] — Tanda 4 de los amarillos (H24, H30, H44, H39)
 
 **Qué hicimos (todo verificado al aire):**

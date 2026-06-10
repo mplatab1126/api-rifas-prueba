@@ -17,6 +17,9 @@
  *   'no_encontrado' → { diagnostico }
  *   'misma_hora'    → {}          (dudoso: NO se abona; conviene reintentar)
  *   'sin_saldo'     → {}          (no hay boletas con saldo; quizá ya está pago)
+ *   'demorado'      → {}          (H34: la verificación/abono superó el tope de tiempo.
+ *                                  OJO: el servidor pudo haber terminado igual — NUNCA
+ *                                  decirle al cliente que falló; reintentar/verificar)
  *   'error'         → { mensaje }
  */
 
@@ -67,9 +70,13 @@ async function post(ruta, cuerpo) {
   try {
     const r = await fetch(BASE_URL + ruta, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo),
+      // H34: tope GENEROSO (buscar-pago lee la imagen con IA y puede tardar 30-60s legítimos).
+      // Si aún así se cuelga, mejor un resultado 'demorado' manejable que morir por maxDuration.
+      signal: AbortSignal.timeout(120000),
     });
     return await r.json();
   } catch (e) {
+    if (e && (e.name === 'TimeoutError' || e.name === 'AbortError')) return { status: 'error', timeout: true, mensaje: 'la verificación tardó más de lo normal' };
     return { status: 'error', mensaje: e.message };
   }
 }
@@ -88,6 +95,7 @@ export async function verificarYAbonar({ telefono, linea_id, conversacion_id, me
     ...(asesorReg ? { asesorRegistro: asesorReg } : {}),
     ...(mediaBase64 && mediaBase64.base64 ? { media_base64: mediaBase64.base64, media_mime: mediaBase64.mime } : {}),
   });
+  if (v.timeout) return { tipo: 'demorado' };
   if (v.status !== 'ok') return { tipo: 'error', mensaje: v.mensaje || 'no se pudo verificar el comprobante' };
   if (!v.sugerida_id) return { tipo: 'no_encontrado', diagnostico: v.diagnostico || '' };
   // Seguridad: "Misma hora" sola NO basta (dos clientes pueden pagar igual el mismo minuto).
@@ -111,6 +119,10 @@ export async function verificarYAbonar({ telefono, linea_id, conversacion_id, me
     idTransferencia: v.sugerida_id, contrasena: pwd,
     ...(asesorReg ? { asesorRegistro: asesorReg } : {}),
   });
+  // Timeout del ABONO: es el caso ambiguo (el servidor pudo registrarlo y la respuesta no
+  // llegó). NUNCA tratarlo como fallo: el llamador agenda verificación y el candado del
+  // idTransferencia (una transferencia se consume UNA vez) impide el doble abono al reintentar.
+  if (d.timeout) return { tipo: 'demorado' };
   if (d.status !== 'ok') return { tipo: 'error', mensaje: d.mensaje || 'no se pudo registrar el abono' };
   // Marca la foto del comprobante "✅ pago asignado" (chip en la bandeja + el motor deja de
   // re-adjuntarla a la IA). Aquí cubre a los DOS llamadores: el turno en vivo y el cron.

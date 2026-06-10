@@ -35,8 +35,13 @@
   tanda 4 = H24 (cuenta de Maria Buitrago publicada en Canales Oficiales + aviso del hub),
   H30 (fotos asignadas/viejas ya no se re-facturan a la IA), H44 (sin segunda descarga del
   comprobante; el lector sigue en Sonnet por decisión de Mateo) y H39 (secreto interno propio
-  AGENTE_INTERNO_SECRET, transición sin cortes, crons actualizados). Quedan ~7 amarillos
-  (H27, H32, H34, H35, H36, H42, H43) y ~39 verdes — seguir por tandas.
+  AGENTE_INTERNO_SECRET, transición sin cortes, crons actualizados);
+  tanda 5 = H42 (debounce corto ~10s para el primer contacto del saludo fijo, con re-validación),
+  H43+H84 (fotos en paralelo + 2º punto de caché al final del historial: vueltas 2+ y el turno
+  siguiente a 0.1×) y H34 (tope del debounce 4→2 min + timeout en todas las llamadas externas;
+  un timeout del abono = 'demorado' → "estoy verificando" + verificación automática, nunca
+  "falló"). Quedan 4 amarillos (H27, H32, H35, H36) y ~38 verdes — seguir por tandas.
+  **Vigilar `agente_uso` unos días tras H42** (espera corta puede partir alguna ráfaga en dos).
 - [ ] (2026-06-10) **REGLA NUEVA para cambios del manual de Liliana:** antes de guardar un cambio
   del manual, correr la **suite dorada** (`/api/whatsapp/probar-suite`, ver bitácora 10-jun) y
   publicar solo en verde. Tras cada incidente nuevo del agente, agregar su caso a
