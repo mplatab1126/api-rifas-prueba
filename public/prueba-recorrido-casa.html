@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!-- PÁGINA DE PRUEBA (no enlazada desde el sitio): recorrido inmersivo de la casa
+     guiado por el scroll ("scrollytelling"). Si gusta, el efecto se integrará a
+     /comprar-la-plata-house. -->
+<meta name="robots" content="noindex, nofollow" />
+<title>Recorrido — Casa Santa Teresita (prueba)</title>
+<link rel="icon" type="image/png" href="https://losplata.s3.us-east-2.amazonaws.com/Logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://losplata.s3.us-east-2.amazonaws.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #0A0A0A;
+    --cream: #FAFAF7;
+    --mint: #9BFAB0;
+    --mint-dark: #6FE08C;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+    --serif: 'Cormorant Garamond', 'Garamond', 'Times New Roman', serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: auto; }
+  body { background: var(--ink); color: var(--cream); font-family: var(--sans); }
+
+  /* El "riel": su altura total define cuánto scroll dura el recorrido.
+     La altura real la pone el JS según el número de escenas. */
+  #riel { position: relative; }
+
+  /* El "escenario": se queda pegado ocupando toda la pantalla mientras
+     el scroll avanza por el riel. Aquí viven todas las fotos apiladas. */
+  #escenario {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100svh;
+    overflow: hidden;
+  }
+
+  .foto {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    will-change: transform, opacity;
+    pointer-events: none;
+  }
+  .foto img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  /* Velo suave para que el texto siempre se lea sobre la foto */
+  .foto::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(10,10,10,.38) 0%, rgba(10,10,10,0) 32%, rgba(10,10,10,0) 55%, rgba(10,10,10,.62) 100%);
+  }
+
+  /* Rótulo de cada escena */
+  .rotulo {
+    position: absolute;
+    left: 0; right: 0;
+    bottom: max(7vh, env(safe-area-inset-bottom, 0px));
+    text-align: center;
+    padding: 0 24px;
+    opacity: 0;
+    will-change: transform, opacity;
+    pointer-events: none;
+  }
+  .rotulo .planta {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: var(--mint);
+    border-radius: 999px;
+    padding: 6px 14px;
+    margin-bottom: 12px;
+  }
+  .rotulo h2 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(34px, 7vw, 64px);
+    line-height: 1.05;
+    text-shadow: 0 2px 24px rgba(0,0,0,.45);
+  }
+  .rotulo p {
+    margin-top: 10px;
+    font-size: clamp(15px, 2.4vw, 19px);
+    color: rgba(250,250,247,.92);
+    text-shadow: 0 1px 12px rgba(0,0,0,.5);
+  }
+
+  /* Portada (escena 0) */
+  .rotulo.portada { top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+  .rotulo.portada .kicker {
+    font-size: 13px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--mint); margin-bottom: 14px; text-shadow: 0 1px 10px rgba(0,0,0,.6);
+  }
+  .rotulo.portada h1 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(44px, 10vw, 96px);
+    line-height: 1.02;
+    text-shadow: 0 2px 28px rgba(0,0,0,.5);
+  }
+  .rotulo.portada .sub { margin-top: 14px; font-size: clamp(15px, 2.6vw, 20px); color: rgba(250,250,247,.92); }
+
+  /* Pista "desliza" */
+  .pista {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: max(26px, env(safe-area-inset-bottom, 0px));
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;
+    color: rgba(250,250,247,.85);
+    animation: flotar 2.2s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .pista svg { width: 18px; height: 18px; }
+  @keyframes flotar { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(7px); } }
+
+  /* Cierre con botón (escena final) */
+  .rotulo.cierre { top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: none; }
+  .rotulo.cierre h2 { font-size: clamp(34px, 7.5vw, 70px); max-width: 18ch; }
+  .rotulo.cierre p { max-width: 34ch; }
+  .rotulo.cierre .boton {
+    pointer-events: auto;
+    margin-top: 26px;
+    display: inline-block;
+    background: var(--mint);
+    color: var(--ink);
+    font-weight: 800;
+    font-size: clamp(16px, 2.6vw, 19px);
+    text-decoration: none;
+    border-radius: 999px;
+    padding: 16px 34px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.35);
+    transition: transform .15s ease, background .15s ease;
+  }
+  .rotulo.cierre .boton:hover { transform: scale(1.04); background: var(--mint-dark); }
+  .rotulo.cierre .nota { margin-top: 14px; font-size: 13px; color: rgba(250,250,247,.78); }
+
+  /* Barra de progreso del recorrido */
+  #progreso {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    width: 0%;
+    background: var(--mint);
+    z-index: 10;
+  }
+
+  /* Aviso pequeño de que es una prueba */
+  #aviso-prueba {
+    position: fixed;
+    top: 10px; right: 10px;
+    z-index: 10;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: rgba(250,250,247,.65);
+    background: rgba(10,10,10,.45);
+    border: 1px solid rgba(250,250,247,.18);
+    border-radius: 999px;
+    padding: 5px 10px;
+    pointer-events: none;
+  }
+
+  /* Si la persona pide menos movimiento, el navegador lo respeta:
+     sin zoom, solo fundidos (lo maneja el JS leyendo esta preferencia). */
+  @media (prefers-reduced-motion: reduce) {
+    .pista { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="progreso"></div>
+<div id="aviso-prueba">Vista de prueba</div>
+
+<div id="riel">
+  <div id="escenario"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var S3 = "https://losplata.s3.us-east-2.amazonaws.com/casa+santa+teresita+1/";
+
+  // El recorrido: como si entraras y caminaras por la casa.
+  var ESCENAS = [
+    { url: S3 + "Habitacio%CC%81n+principal+foto+1.jpg", portada: true,
+      kicker: "Sorteo 4 de julio · Lotería de Boyacá",
+      titulo: "Casa Santa Teresita",
+      sub: "Entra y recórrela. Desliza hacia abajo." },
+    { url: S3 + "Comedor+foto+1.jpg", planta: "Planta 1", titulo: "El comedor",
+      sub: "Cuatro puestos y una sala muy amplia para recibir a los tuyos." },
+    { url: S3 + "Cocina.jpg", planta: "Planta 1", titulo: "La cocina",
+      sub: "Grande, moderna y con patio de ropas." },
+    { url: S3 + "Escaleras.jpg", planta: "Planta 1 → 2", titulo: "Subamos",
+      sub: "La segunda planta te espera." },
+    { url: S3 + "Cine+foto+1.jpg", planta: "Planta 2", titulo: "Tu sala de cine",
+      sub: "Una habitación completa adecuada para ver películas en casa." },
+    { url: S3 + "Habitacio%CC%81n+principal+foto+2.jpg", planta: "Planta 2", titulo: "Habitación principal",
+      sub: "Con baño privado y closet." },
+    { url: S3 + "Ban%CC%83o+habitacio%CC%81n+principal.jpg", planta: "Planta 2", titulo: "Baño privado",
+      sub: "Acabados modernos, solo para la habitación principal." },
+    { url: S3 + "Habitacio%CC%81n+secundaria+foto+1.jpg", planta: "Planta 2", titulo: "Habitación secundaria",
+      sub: "Espacio de sobra para la familia." },
+    { url: S3 + "Habitacio%CC%81n+principal+foto+1.jpg", cierre: true,
+      titulo: "Esta casa puede ser tuya el 4 de julio",
+      sub: "O $300.000.000 en efectivo si la prefieres en plata. Boleta de 4 cifras, la separas con $20.000.",
+      boton: "Quiero mi boleta — $150.000",
+      enlace: "/comprar-la-plata-house" }
+  ];
+
+  // Cuánto scroll dura cada escena (en pantallas). Más alto = recorrido más pausado.
+  var PANTALLAS_POR_ESCENA = 1.35;
+  // Tramo final de cada escena dedicado al fundido hacia la siguiente (0 a 1).
+  var TRAMO_FUNDIDO = 0.3;
+  // Zoom suave dentro de cada escena (sensación de "ir entrando").
+  var ZOOM = 0.16;
+
+  var menosMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (menosMovimiento) ZOOM = 0;
+
+  var riel = document.getElementById("riel");
+  var escenario = document.getElementById("escenario");
+  var barra = document.getElementById("progreso");
+
+  // Construye las fotos y los rótulos
+  var fotos = [], rotulos = [];
+  ESCENAS.forEach(function (esc, i) {
+    var f = document.createElement("div");
+    f.className = "foto";
+    var img = document.createElement("img");
+    img.alt = esc.titulo;
+    img.decoding = "async";
+    // Las 3 primeras cargan ya; el resto cuando el navegador pueda.
+    if (i > 2) img.loading = "lazy";
+    img.src = esc.url;
+    f.appendChild(img);
+    escenario.appendChild(f);
+    fotos.push(f);
+
+    var r = document.createElement("div");
+    r.className = "rotulo" + (esc.portada ? " portada" : "") + (esc.cierre ? " cierre" : "");
+    if (esc.portada) {
+      r.innerHTML =
+        '<div class="kicker"></div>' +
+        "<h1></h1>" +
+        '<div class="sub"></div>';
+      r.querySelector(".kicker").textContent = esc.kicker;
+      r.querySelector("h1").textContent = esc.titulo;
+      r.querySelector(".sub").textContent = esc.sub;
+    } else if (esc.cierre) {
+      r.innerHTML = "<h2></h2><p></p>" +
+        '<a class="boton" href=""></a>' +
+        '<div class="nota">Pagos por Nequi, Daviplata o Bancolombia · Los Plata S.A.S.</div>';
+      r.querySelector("h2").textContent = esc.titulo;
+      r.querySelector("p").textContent = esc.sub;
+      var b = r.querySelector(".boton");
+      b.textContent = esc.boton;
+      b.href = esc.enlace;
+    } else {
+      r.innerHTML = '<span class="planta"></span><h2></h2><p></p>';
+      r.querySelector(".planta").textContent = esc.planta;
+      r.querySelector("h2").textContent = esc.titulo;
+      r.querySelector("p").textContent = esc.sub;
+    }
+    escenario.appendChild(r);
+    rotulos.push(r);
+  });
+
+  // Pista "desliza" sobre la portada
+  var pista = document.createElement("div");
+  pista.className = "pista";
+  pista.innerHTML = "<span>Desliza</span>" +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16"/><path d="m6 14 6 6 6-6"/></svg>';
+  escenario.appendChild(pista);
+
+  // Altura del riel = escenas × pantallas por escena (+1 pantalla del escenario pegado)
+  function medir() {
+    var alto = window.innerHeight;
+    riel.style.height = (ESCENAS.length * PANTALLAS_POR_ESCENA * alto + alto) + "px";
+  }
+  medir();
+  window.addEventListener("resize", medir);
+
+  function limitar(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+  function pintar() {
+    var alto = window.innerHeight;
+    var total = ESCENAS.length * PANTALLAS_POR_ESCENA * alto; // scroll útil
+    var y = limitar(window.scrollY, 0, total);
+    var t = (y / total) * ESCENAS.length;           // posición en "escenas" (0 a N)
+    t = limitar(t, 0, ESCENAS.length - 0.0001);
+    var i = Math.floor(t);                          // escena actual
+    var f = t - i;                                  // avance dentro de la escena (0 a 1)
+
+    barra.style.width = ((y / total) * 100) + "%";
+    pista.style.opacity = limitar(1 - t * 2.2, 0, 1);
+
+    for (var k = 0; k < ESCENAS.length; k++) {
+      var foto = fotos[k], rot = rotulos[k];
+      var op = 0, esc = 1, opR = 0, despl = 0;
+
+      if (k === i) {
+        // Escena en pantalla: visible, con zoom progresivo.
+        // Solo se desvanece al final si HAY una escena siguiente.
+        var saliendo = (k < ESCENAS.length - 1) ? limitar((f - (1 - TRAMO_FUNDIDO)) / TRAMO_FUNDIDO, 0, 1) : 0;
+        op = 1 - saliendo;
+        esc = 1 + ZOOM * f;
+        // El rótulo aparece rápido al inicio y se va con la foto.
+        opR = limitar(f / 0.18, 0, 1) * (1 - saliendo);
+        if (k === 0) opR = (1 - saliendo); // la portada se ve desde el primer instante
+        despl = (1 - opR) * 14;
+      } else if (k === i + 1) {
+        // Escena siguiente: va apareciendo debajo del fundido.
+        var entrando = limitar((f - (1 - TRAMO_FUNDIDO)) / TRAMO_FUNDIDO, 0, 1);
+        op = entrando;
+        esc = 1; // entra "quieta"; su zoom arranca cuando sea la actual
+      }
+
+      foto.style.opacity = op;
+      foto.style.transform = "scale(" + esc + ")";
+      rot.style.opacity = opR;
+      rot.style.transform = "translateY(" + despl + "px)";
+    }
+  }
+
+  var pedido = false;
+  function alScroll() {
+    if (pedido) return;
+    pedido = true;
+    requestAnimationFrame(function () { pedido = false; pintar(); });
+  }
+  window.addEventListener("scroll", alScroll, { passive: true });
+  window.addEventListener("resize", alScroll);
+  pintar();
+})();
+</script>
+</body>
+</html>
