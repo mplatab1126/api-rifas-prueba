@@ -26,6 +26,32 @@
 
 ---
 
+## 2026-06-10 — [WhatsApp] / [Pagos] — Tanda 1 de los amarillos (H22, H23+H82, H26, H29, H69; H25/H33 ya cubiertos)
+
+**Qué hicimos (5 arreglos chicos, verificados al aire):**
+- **H69:** `abono.js` rechaza con 400 limpio un monto no numérico (`Number.isFinite`) — antes NaN
+  pasaba los candados de monto y reventaba en el insert (el NOT NULL atajaba; ahora ni llega).
+- **H26:** las **reacciones** (👍/❤️) ya NO cuentan como mensajes: no suman "sin leer", no cancelan
+  recordatorios y no disparan al agente (la IA les respondía "¿te explico los premios?" a un
+  corazón — pasaba a diario). Los tipos sin contenido ('unsupported') sí se guardan y suman sin
+  leer, pero tampoco cancelan recordatorios ni disparan al agente de inmediato.
+- **H22:** el mensaje fijo de premios ahora incluye el **acumulado vigente** (placeholder
+  `{{acumulado}}` en `texto_premios`, misma cifra del saludo) — antes el saludo anunciaba el
+  acumulado y el siguiente mensaje fijo decía solo "$5.000.000": dos cifras seguidas, lo que el
+  manual prohíbe.
+- **H23 (+H82):** `consultar_cliente` ya no anuncia un parámetro `telefono` que el ejecutor
+  ignoraba — la IA "consultaba" el número de un tercero y presentaba como suyas las boletas de
+  ESTE chat (información falsa). Ahora la herramienta dice claro que SOLO consulta este chat y que
+  rechace consultas de terceros; el resultado dice "Cliente de ESTE chat".
+- **H29:** el panel de **Gasto de IA** cobraba la escritura de caché a 1.25× cuando el ttl de 1h
+  cuesta 2× → subfacturaba ~16-22% del día. Corregida la tabla PRECIOS (cw: Sonnet $6/M, Opus $10,
+  Haiku $2). Cuenta de ahora en adelante. (Dato del verificador: el caché de 1h SÍ es negocio
+  igual — ~8 lecturas por escritura; solo la medición estaba mal.)
+- **H25 y H33** quedaron cubiertos por los arreglos de H10 y H5 del mismo día.
+
+**Verificación:** abono con monto 'abc' → 400 limpio al aire; y la **suite dorada corrió como
+regresión tras los cambios: 10/10 en verde** (primer uso real del gate de H14).
+
 ## 2026-06-10 — [WhatsApp] — H14: suite de conversaciones DORADAS (el manual ya se puede probar antes de publicarse)
 
 **Qué hicimos:** el manual se editaba "en caliente" y cada corrección podía revivir un incidente

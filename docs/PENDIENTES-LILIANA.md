@@ -160,18 +160,18 @@
 
 ## 6) 🟡 Importancia media (25)
 
-- [ ] **H22** · El atajo fijo de premios omite el acumulado vigente: mezclará cifras que el propio manual prohíbe mezclar (`api/whatsapp/agente-responder.js:1296-1301`) — _esfuerzo bajo_
-- [ ] **H23** · consultar_cliente anuncia un parámetro 'telefono' que el ejecutor ignora a propósito: la IA puede atribuir boletas a otro número (`api/whatsapp/agente-responder.js:319-327`) — _esfuerzo bajo_
+- [x] (2026-06-10) **H22** · HECHO: el texto de premios tiene `{{acumulado}}` — si hay acumulado vigente agrega "(y el del *próximo sábado* está acumulado en *$X*)" con la MISMA cifra del saludo (una sola cifra por conversación). Variable y respaldo actualizados.
+- [x] (2026-06-10) **H23** · HECHO (cubre también H82): se quitó el parámetro `telefono` de la herramienta; la descripción dice claro que SOLO consulta este chat y que rechace consultas de terceros; el resultado dice "Cliente de ESTE chat" (cinturón anti-atribución); etiqueta de la cabina actualizada. Suite dorada en verde tras el cambio.
 - [ ] **H24** · La web oficial dice "solo aceptamos pagos a cuentas a nombre de LOS PLATA S.A.S." pero Liliana cobra a Nequi/Daviplata de "Maria Buitrago" (`public/hub-app.jsx:103`) — _esfuerzo bajo_
-- [ ] **H25** · Fallos de envío a WhatsApp invisibles: decir() registra como 'enviado' mensajes que nunca salieron (`api/whatsapp/agente-responder.js:501-502`) — _esfuerzo bajo_
-- [ ] **H26** · Las reacciones (👍/❤️) y tipos desconocidos de Meta disparan al agente y cancelan recordatorios (`api/whatsapp/recibir.js:254-255`) — _esfuerzo bajo_
+- [x] (2026-06-10) **H25** · CUBIERTO por el arreglo de H10 (decir() revisa env.ok, guarda 'fallido', nota + ASESOR).
+- [x] (2026-06-10) **H26** · HECHO: las reacciones se ignoran por completo (no suman sin-leer, no cancelan recordatorios, no disparan al agente); los tipos sin contenido ('unsupported'/'ephemeral') SÍ se guardan y suman sin-leer (que los vea un humano) pero no cancelan recordatorios ni disparan al agente de inmediato.
 - [ ] **H27** · registrar_abono y el candado de pago usan ciegamente la ÚLTIMA imagen del chat, aunque no sea el comprobante (`api/whatsapp/agente-responder.js:722-727`) — _esfuerzo medio_
 - [ ] **H28** · Todo traspaso a humano depende de que alguien mire la bandeja: no hay aviso activo ni escalamiento si el chat 🆘 envejece (`api/whatsapp/agente-responder.js:875-887;`) — _esfuerzo medio_
-- [ ] **H29** · El panel de gasto subfactura la escritura de caché 1h: cobra 1.25x cuando el precio real es 2x (~$0.5-0.8/día sin contar) (`api/whatsapp/agente-responder.js:42-46`) — _esfuerzo bajo_
+- [x] (2026-06-10) **H29** · HECHO (arreglo mínimo del verificador): la tabla PRECIOS cobra la escritura de caché a 2× (Sonnet $6/M, Opus $10, Haiku $2) — el ttl del motor es 1h. El panel deja de subfacturar ~16-22%. Cuenta de ahora en adelante (lo viejo no se recalcula).
 - [ ] **H30** · Las 2 imágenes recientes se re-descargan y re-facturan a precio lleno en cada llamada, incluso después de asignado el pago (`api/whatsapp/agente-responder.js:38`) — _esfuerzo bajo_
 - [ ] **H31** · Candado anti pago falso v2: formulaciones plausibles de confirmación que los patrones no cubren (`api/whatsapp/agente-responder.js:418-447`) — _esfuerzo bajo_
 - [ ] **H32** · Comprobante ajeno reciclado: la coincidencia por referencia confía 100% en una imagen aportada por el cliente (`api/lib/abono-agente.js:59-86`) — _esfuerzo medio_
-- [ ] **H33** · El candado expira a los 60s pero el bucle de IA nunca lo refresca: corridas solapadas en turnos largos (`api/whatsapp/agente-responder.js:1401-1457`) — _esfuerzo bajo_
+- [x] (2026-06-10) **H33** · CUBIERTO por el arreglo de H5/H21 (refresco del candado en cada vuelta del bucle y en transcripción/descarga).
 - [ ] **H34** · Presupuesto de tiempo: debounce de hasta 4 min + transcripciones + 6 vueltas de IA dentro de los 300s de maxDuration, y ninguna llamada externa tiene timeout (`api/whatsapp/agente-responder.js:35`) — _esfuerzo medio_
 - [ ] **H35** · Métricas de embudo: contacto → premios → números → apartado → abono → pagada (`api/whatsapp/agente-responder.js:60-71`) — _esfuerzo medio_
 - [ ] **H36** · Reestructurar el manual: dos secciones reclaman prioridad máxima a la vez y las reglas clave están duplicadas hasta 4 veces (`/tmp/manual-liliana.txt:9`) — _esfuerzo medio_
@@ -208,7 +208,7 @@
 - [ ] **H66** · ~1.400 caracteres de instrucciones FIJAS viajan en el bloque volátil (precio lleno en cada llamada) en vez del manual cacheado (`api/whatsapp/agente-responder.js:1338-1347`) — _esfuerzo bajo_
 - [ ] **H67** · El bloque 'ACCIONES QUE YA EJECUTASTE' crece sin tope ni dedupe: hasta 27 notas re-facturadas a precio lleno en cada llamada del chat (`api/whatsapp/agente-responder.js:1162-1165`) — _esfuerzo bajo_
 - [ ] **H68** · liberar_boleta: el candado dueño + saldo $0 vive solo en el llamador y no resiste carreras (`api/whatsapp/agente-responder.js:756-773`) — _esfuerzo medio_
-- [ ] **H69** · abono.js acepta valorAbono no numérico: NaN salta TODOS los candados de monto (`api/admin/abono.js:23-24`) — _esfuerzo bajo_
+- [x] (2026-06-10) **H69** · HECHO: `Number.isFinite(monto)` → 400 limpio (verificado al aire con valorAbono='abc'). El verificador había refutado la corrupción (el NOT NULL de abonos.monto atajaba), pero el endurecimiento queda como defensa en profundidad.
 - [ ] **H70** · Identificación del dueño por sufijo last10 falla con teléfonos extranjeros cortos (7-9 dígitos) (`api/rifa/reservar.js:68-71;`) — _esfuerzo medio_
 - [ ] **H71** · Reintentos de Meta: el dedup por wa_message_id salva la fila, pero los efectos secundarios se re-ejecutan con el duplicado (`api/whatsapp/recibir.js:79-108`) — _esfuerzo bajo_
 - [ ] **H72** · Los atajos sin IA hardcodean 'Liliana', precios y premios: rompen multi-línea y se desincronizan del manual (`api/whatsapp/agente-responder.js:1269`) — _esfuerzo medio_
@@ -221,7 +221,7 @@
 - [ ] **H79** · Cuando la transcripción de un audio falla, la IA responde a ciegas y nadie se entera (`/Users/mateoplatabuitrago/los-platas-rifas/api/whatsapp/agente-responder.js:255-276`) — _esfuerzo bajo_
 - [ ] **H80** · Las fotos del contacto inicial dependen del TÍTULO de una respuesta rápida: si la renombran, el saludo sale sin casa y sin aviso (`/Users/mateoplatabuitrago/los-platas-rifas/api/whatsapp/agente-responder.js:514-520`) — _esfuerzo bajo_
 - [ ] **H81** · El agente incrusta la contraseña MAESTRA de gerencia (Mateo) y la envía en cada operación privilegiada (`api/whatsapp/agente-responder.js:280-289`) — _esfuerzo medio_
-- [ ] **H82** · La herramienta consultar_cliente expone un parámetro 'telefono' que invita a fuga entre clientes (`api/whatsapp/agente-responder.js:321-326`) — _esfuerzo bajo_
+- [x] (2026-06-10) **H82** · CUBIERTO por el arreglo de H23 (parámetro eliminado + descripción que rechaza consultas de terceros).
 - [ ] **H83** · Un turno típico hace ~40 idas a la base; la cadena de contexto pre-IA es secuencial y paralelizable (agente_config se lee 2 veces) (`api/whatsapp/agente-responder.js:961-1149`) — _esfuerzo medio_
 - [ ] **H84** · Sin breakpoint de caché en messages: las vueltas 2+ del bucle reprocesan todo el historial a precio y velocidad llenos (`api/whatsapp/agente-responder.js:1367-1370`) — _esfuerzo bajo_
 - [ ] **H85** · resolverLinea consulta el token en la base por CADA envío: el contacto inicial hace 6+ lecturas idénticas (`api/lib/whatsapp.js:40-52`) — _esfuerzo bajo_
