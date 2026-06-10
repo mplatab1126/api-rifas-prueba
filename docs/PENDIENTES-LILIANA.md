@@ -230,6 +230,17 @@
 - [x] (2026-06-10) **H88** · CUBIERTO por H34 (tanda 5): DEBOUNCE_MAX_MS bajó de 240s a 120s, dejando ~180s de margen frente al maxDuration de 300s (la alternativa simple que el propio verificador validó).
 - [x] (2026-06-10) **H89** · HECHO (con los ajustes del verificador): los audios pendientes se seleccionan ANTES (filter+slice(0,4)) y se transcriben EN PARALELO con Promise.allSettled — una ráfaga de 3 notas de voz ya no suma 6-18s en serie. La lógica de H79 (fallos con rastro) quedó intacta.
 
+## 8) 🆕 Problemas NUEVOS encontrados después de la auditoría
+
+- [x] (2026-06-10) **N1** · Confirmación del abono con saldo EQUIVOCADO (caso real: boleta 4950,
+  cliente Jorge 573154260513) — tras registrar $120.000, Liliana dijo "te faltan $30.000" a una
+  boleta que quedó 100% paga: el bloque ESTADO DE ESTE CLIENTE se arma ANTES del abono y la IA
+  hacía la cuenta del saldo ella misma con números viejos (olvidó el abono previo de $30.000).
+  ARREGLADO: el resultado de `registrar_abono` ahora relee las boletas DESPUÉS del abono y le
+  entrega a la IA los números oficiales ("USA EXACTAMENTE ESTOS NÚMEROS... NO hagas cuentas tú"),
+  con la orden de no pedir más pagos si quedó pagada. El cron no tenía el problema (solo
+  confirma el monto). La plata nunca estuvo mal: era solo el mensaje.
+
 ---
 
 > Generado el 9-jun-2026. Detalle de cada ítem: `docs/auditoria-liliana-2026-06-09.md` (abrir solo la sección Hnn que aplique).

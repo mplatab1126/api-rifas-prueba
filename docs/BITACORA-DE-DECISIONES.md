@@ -26,6 +26,23 @@
 
 ---
 
+## 2026-06-10 — [WhatsApp] — Bug N1: la confirmación del abono decía un saldo viejo
+
+**Qué pasó (caso real, reportado por Mateo):** Jorge (573154260513) pagó los $120.000 finales de
+la boleta 4950 (ya tenía $30.000 del 4-jun). Liliana registró el abono BIEN, pero al confirmarle
+dijo "ya tienes abonados $120.000, te faltan $30.000" — la boleta quedó 100% paga. El cliente
+reclamó y Liliana se corrigió sola al re-consultar. La plata nunca estuvo mal; solo el mensaje.
+
+**Causa:** el bloque ESTADO DE ESTE CLIENTE (abonado/saldo) se arma AL INICIO del turno, antes
+del abono. El resultado de `registrar_abono` solo decía "registré $X, recuérdale el saldo que le
+queda" sin dar el saldo → la IA hacía la resta ella misma con los números viejos y se equivocó.
+
+**Arreglo:** tras un abono exitoso, `registrar_abono` RELEE las boletas de la base y le entrega
+a la IA el estado oficial post-abono ("abonado $150.000 de $150.000 — PAGADA AL 100%") con la
+orden de usar EXACTAMENTE esos números, no hacer cuentas, y NO pedir más pagos si quedó pagada.
+No se tocó ningún candado de dinero (el cambio es de pura lectura). El cron de verificación no
+tenía el problema (su mensaje solo confirma el monto). Anotado como N1 en PENDIENTES-LILIANA §8.
+
 ## 2026-06-10 — [WhatsApp] — Tanda 9 (verdes): ahorro de tokens y menos viajes a la base
 
 **Qué hicimos (7 verdes de costos/velocidad + 1 ya cubierto; nada de dinero):**
