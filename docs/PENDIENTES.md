@@ -110,6 +110,12 @@
 
 ## Hecho recientemente
 
+- [x] (2026-06-09) **🔧 AFINADO el candado anti "pago falso"** — disparaba en falso (bloqueó respuestas
+  normales en 3 chats y respondía "recibí tu comprobante" sin comprobante). Ahora: detector preciso (solo
+  afirmaciones de pago YA hecho; excluye condicionales como "cuando esté pagada al 100%") + solo se arma si
+  hay foto o el cliente dice que pagó. Probado con 26 casos (las frases peligrosas se siguen bloqueando).
+  Los 3 chats afectados (patty 573164946700, Bernardo 573113312407, Nl 573123385196) quedaron con etiqueta
+  ASESOR — revisarlos/quitarla a mano. Ver bitácora 9-jun.
 - [x] (2026-06-09) **✅ ARREGLADO el deploy automático GitHub→Vercel** — se reparó desde la CLI sin tocar el
   panel: `vercel git disconnect` + `vercel git connect` (recreó el aviso de GitHub a Vercel). Probado con push
   real: dispara solo, compila y el sitio queda al aire. Ya NO hace falta publicar con `vercel --prod`; volvió el

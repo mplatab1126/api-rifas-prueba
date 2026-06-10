@@ -26,6 +26,29 @@
 
 ---
 
+## 2026-06-09 — [WhatsApp] / [Pagos] — Candado anti "pago falso" AFINADO (bloqueaba respuestas normales)
+
+**Qué pasó (mismo día del candado):** el candado publicado a las ~4pm disparaba EN FALSO: a 3 clientes
+(patty —pregunta de estafa—, Bernardo La-Rotta —eligió el 5181—, Nl —"¿quedó debiendo 130?"—) les botó la
+respuesta normal de Liliana y les mandó "ya recibí tu comprobante y estoy verificando tu pago" SIN que hubiera
+comprobante alguno. Causa (probada con la función real): el detector cazaba "100%" cerca de palabras como
+boleta/pago ("es 100% legal" → bloqueada) y la frase "pagada al 100" sin importar el tiempo verbal ("CUANDO
+esté pagada al 100% te enviamos la factura" → bloqueada).
+
+**El arreglo (2 capas, publicado y probado con 26 casos):**
+1. **Detector preciso** (`afirmaPagoHecho`): solo afirmaciones de pago YA hecho ("quedó pagada", "registré tu
+   abono", "pago confirmado", "ya está pagada"). Las frases condicionales/futuras se excluyen mirando si justo
+   antes (misma oración) hay un marcador tipo "cuando / para / una vez / apenas / falta / debe estar". Se quitó
+   la regla floja del "100%".
+2. **Solo en contexto de pago** (`esContextoPago`): el candado SOLO se arma si en los últimos ~12 mensajes el
+   cliente mandó una FOTO o dijo que ya pagó/transfirió. Fuera de ese contexto ni se evalúa (la respuesta
+   "recibí tu comprobante" no tiene sentido ahí). Y si se bloquea SIN foto, el mensaje seguro ya no menciona
+   un comprobante ("estoy verificando tu pago en el sistema").
+
+**Cuidado / qué NO hacer:** el candado SIGUE protegiendo el caso Madenys (todas las frases peligrosas se
+siguen bloqueando — probado). Si se agregan frases al detector, probarlas SIEMPRE contra frases condicionales
+normales de venta. Los 3 chats afectados quedaron con etiqueta ASESOR de ese rato (revisar/quitar a mano).
+
 ## 2026-06-09 — [General] — Deploy automático GitHub→Vercel REPARADO (reconexión por CLI)
 
 **Qué pasó:** el deploy automático seguía sin dispararse (un push de prueba no generó deploy en 4 min), aunque
