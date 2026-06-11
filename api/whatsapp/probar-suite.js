@@ -58,10 +58,13 @@ async function correrCaso(caso, { prompt, modelo, apiKey, hoyTxt }) {
   const texto = bloques.filter(b => b.type === 'text' && b.text).map(b => b.text).join('\n');
   const herramientas = bloques.filter(b => b.type === 'tool_use').map(b => b.name);
 
+  // Los regex se evalúan sin los asteriscos de negrita: "una cosa *o* la otra"
+  // debe contar igual que "una cosa o la otra" (tanto requeridos como prohibidos).
+  const textoPlano = texto.replace(/\*/g, '');
   const violaciones = (Array.isArray(caso.prohibidos) ? caso.prohibidos : [])
-    .filter(rx => { try { return new RegExp(rx, 'i').test(texto); } catch (_) { return false; } });
+    .filter(rx => { try { return new RegExp(rx, 'i').test(textoPlano); } catch (_) { return false; } });
   const faltantes = (Array.isArray(caso.requeridos) ? caso.requeridos : [])
-    .filter(rx => { try { return !new RegExp(rx, 'i').test(texto); } catch (_) { return true; } });
+    .filter(rx => { try { return !new RegExp(rx, 'i').test(textoPlano); } catch (_) { return true; } });
   const herramientaOk = !caso.herramienta_esperada || herramientas.includes(caso.herramienta_esperada);
 
   return {
