@@ -392,6 +392,14 @@ Responde "¿el sistema sigue verificando este pago solo, o ya se rindió y le to
 - **N4 (10-jun)**: si hay un abono POSTERIOR a una verificación 'rendido', la tarjeta sale
   "✅ Caso CERRADO" en vez del 🆘 rojo (la rendición queda enlazada al abono pendiente).
 
+### 8.12c Tandas 7-12 del motor + H65 (10/11-jun-2026) — detalle en BITACORA-DE-DECISIONES
+Resumen: turnos que nunca cierran mudos (H58/H62), anti-inyección de datos (H78), audios sin
+transcribir con rastro (H79), recordatorios durables (H54/H73/H77), reintentos de Meta sin
+efectos (H71), un solo prefijo de caché (H63/H66), liberar atómico (H68), credencial propia del
+agente (H81, ACTIVA), abono ya no cae a boleta equivocada (H76), teléfonos con cola mutua (H70),
+atajo del número tras la lista (H65), y los bugs N1 (saldo viejo), N3 (prefill) y N4 (caso
+cerrado del visor). El simulador 'probar' se ELIMINÓ (H75).
+
 ### 8.13 Novedades del 7-jun-2026 (Liliana y boleta). Detalle en la bitácora.
 - **Verificación de pagos con reintentos** (TOCA DINERO, aprobado): si el pago no aparece, NO pasa a
   asesor de una; dice "estoy verificando" y `verificar-pagos-cron.js` reintenta cada ~15 min hasta ~1h.

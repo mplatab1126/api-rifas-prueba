@@ -26,6 +26,16 @@
 
 ---
 
+## 2026-06-11 — [WhatsApp] — H65 (con OK de Mateo): atajo del número exacto tras la lista
+
+**Qué hicimos:** si el cliente acaba de ver la LISTA de números y responde SOLO un número de 4
+cifras que ESTABA en esa lista, el paso de pedir datos sale predefinido SIN gastar IA (~4-10
+casos/día ≈ $5-11 USD/mes). Roza la decisión "la verificación de un número puntual la hace la
+IA", por eso se hizo con OK explícito de Mateo y con el re-alcance del verificador: solo dispara
+si el número estaba en la muestra recién enviada; el pre-chequeo H60 (¿sigue libre?) y la
+re-verificación del apartado corren como siempre. H81 quedó ACTIVO el mismo día (Mateo confirmó
+que la clave "Liliana" ya existe en ASESORES_SECRETO: la llave maestra ya no viaja).
+
 ## 2026-06-10 — [Pagos] / [WhatsApp] — Tanda 12: el abono ya no cae a la boleta equivocada (H76) + teléfonos a prueba de colisiones (H70)
 
 **H76 (toca la ELECCIÓN del destino del abono; los candados de verificación quedan intactos):**

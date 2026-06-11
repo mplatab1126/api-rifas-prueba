@@ -202,6 +202,10 @@ o un candidato sin guardarlo; solo gerencia; correrla SIEMPRE antes de publicar 
 `agente-costo.js`. Cuenta teléfonos únicos por hito (notas de `agente_actividad`) y plata real
 (boletas/abonos del asesor de la línea).
 
+**Novedad (2026-06-11):** H65 — atajo del paso datos cuando el cliente responde SOLO un número
+de 4 cifras que estaba en la lista recién mostrada (sin IA; pre-chequeo H60 intacto). H81 ACTIVO
+(la clave "Liliana" existe en ASESORES_SECRETO: el agente ya no viaja con la llave de gerencia).
+
 **Novedades (2026-06-10 tanda 12; detalle en la bitácora):** H76 — `verificarYAbonar` devuelve
 `boleta_no_coincide` (la IA pregunta el destino; el cron pasa a ASESOR) en vez de abonar a la
 boleta de número más bajo; prioriza saldo EXACTO al monto cuando no hay número pedido. H70 —
