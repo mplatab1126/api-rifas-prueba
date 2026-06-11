@@ -3554,6 +3554,80 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
     });
 
     // ==========================================
+    // NÚMEROS DISPONIBLES (vista para asesores)
+    // ==========================================
+    let _disponiblesNumeros = [];
+
+    async function cargarDisponibles() {
+        const render = document.getElementById('disp-render');
+        const contador = document.getElementById('disp-contador');
+        render.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem; padding:30px 0;">Cargando...</p>';
+        contador.textContent = '';
+        try {
+            const res = await fetch('/api/disponibles?lista=todas');
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'No se pudo consultar los disponibles');
+            _disponiblesNumeros = data.numeros || [];
+            filtrarDisponibles();
+        } catch (e) {
+            render.innerHTML = `<p style="text-align:center; color:var(--danger); font-size:0.85rem; padding:20px 0;">❌ ${e.message}</p>`;
+        }
+    }
+
+    function pintarPillsDisponibles(numeros) {
+        return `<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(64px, 1fr)); gap:6px;">` +
+            numeros.map(n => `<span style="text-align:center; padding:7px 0; border-radius:8px; background:var(--bg); border:1px solid var(--ring); font-variant-numeric:tabular-nums; font-weight:600; font-size:0.9rem;">${n}</span>`).join('') +
+            `</div>`;
+    }
+
+    // Pinta el contenido de una serie la primera vez que se abre (para no
+    // crear miles de elementos de golpe al cargar la vista en el celular).
+    function abrirSerieDisponibles(det, serie) {
+        if (!det.open || det.dataset.listo) return;
+        det.dataset.listo = '1';
+        document.getElementById('disp-serie-' + serie).innerHTML =
+            pintarPillsDisponibles(_disponiblesNumeros.filter(n => n[0] === String(serie)));
+    }
+
+    function filtrarDisponibles() {
+        const render = document.getElementById('disp-render');
+        const contador = document.getElementById('disp-contador');
+        if (!render) return;
+        const filtro = ((document.getElementById('disp-filtro') || {}).value || '').replace(/\D/g, '');
+
+        if (_disponiblesNumeros.length === 0) {
+            contador.textContent = '';
+            render.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem; padding:30px 0;">No hay boletas disponibles en este momento.</p>';
+            return;
+        }
+
+        if (filtro) {
+            const coincidencias = _disponiblesNumeros.filter(n => n.includes(filtro));
+            contador.textContent = `${coincidencias.length} disponibles contienen "${filtro}"`;
+            if (coincidencias.length === 0) {
+                render.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem; padding:30px 0;">Ningún número disponible contiene esos dígitos.</p>';
+                return;
+            }
+            const TOPE = 400;
+            render.innerHTML = pintarPillsDisponibles(coincidencias.slice(0, TOPE)) +
+                (coincidencias.length > TOPE ? `<p style="text-align:center; color:var(--muted); font-size:0.8rem; margin-top:10px;">Mostrando los primeros ${TOPE}. Escribe más dígitos para afinar la búsqueda.</p>` : '');
+            return;
+        }
+
+        contador.textContent = `${_disponiblesNumeros.length} números disponibles en total`;
+        let html = '';
+        for (let s = 0; s < 10; s++) {
+            const cuantos = _disponiblesNumeros.reduce((acc, n) => acc + (n[0] === String(s) ? 1 : 0), 0);
+            if (cuantos === 0) continue;
+            html += `<details ontoggle="abrirSerieDisponibles(this, ${s})" style="margin-bottom:8px; border:1px solid var(--ring); border-radius:10px; background:#fff;">
+                <summary style="cursor:pointer; padding:12px 14px; font-weight:600; color:var(--ink); font-size:0.9rem;">Serie ${s} (${s}000 – ${s}999) — ${cuantos} disponibles</summary>
+                <div id="disp-serie-${s}" style="padding:0 12px 12px;"></div>
+            </details>`;
+        }
+        render.innerHTML = html;
+    }
+
+    // ==========================================
     // LISTA DE BOLETAS VENDIDAS
     // ==========================================
     let _listaBoletasCompleta = [];

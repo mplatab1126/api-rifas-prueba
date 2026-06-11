@@ -12,7 +12,7 @@
 > modifique de forma importante una página o función, **actualiza este archivo**
 > antes de cerrar (la línea correspondiente y, si aplica, la fecha de abajo).
 >
-> Última actualización: 2026-06-08
+> Última actualización: 2026-06-11
 
 ---
 
@@ -61,7 +61,7 @@ mano; el `.js` se genera **solo** con el comando de construcción
 
 | Página | Quién la usa | Para qué sirve |
 |---|---|---|
-| `admin.html` | Asesores | Centro principal: buscar boletas, vender, abonar, leer comprobantes con IA, conciliación bancaria, devoluciones, bitácora. |
+| `admin.html` | Asesores | Centro principal: buscar boletas, vender, abonar, leer comprobantes con IA, conciliación bancaria, devoluciones, bitácora, vista "Disponibles" (todos los números libres, agrupados por serie y con buscador; usa `/api/disponibles?lista=todas`, solo lectura). |
 | `caja.html` | Asesores / gerencia | Cuadre de caja del día, gastos, ingresos, búsqueda de transferencias. |
 | `rifas.html` | Solo Mateo | Centro financiero: rifas, premios, recapitalización entre socios, capital. **Sensible.** |
 | `rendimiento.html` | Gerencia | Métricas de asesores, Facebook Ads, WhatsApp, embudo de ventas, análisis con IA. |
