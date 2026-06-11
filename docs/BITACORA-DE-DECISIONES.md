@@ -26,6 +26,37 @@
 
 ---
 
+## 2026-06-11 — [WhatsApp] — Manual de Liliana consolidado (H36+H47+H48+H64): una sola jerarquía, sin duplicados
+
+**Qué decidimos:** reestructurar el manual (`agente_config.prompt`) en una sola pasada: la ÚNICA
+sección suprema es "LO QUE MÁS SE ROMPE" (se eliminó "CORRECCIONES IMPORTANTES" FUSIONANDO su
+contenido: la regla del número del chat subió al bloque supremo; horarios se fusionó en
+CONDICIONES; "una sola cifra" quedó junto al acumulado). Acumulado 5→1 copia canónica +
+recordatorios cortos; tuteo y Sueldazo 2→1; las cuentas en duro de la sección web se
+reemplazaron por {{pagos}} (H48); "más breves que antes" quedó con meta absoluta. Se
+CONSERVARON los refuerzos deliberados (remisión, cédula/correo x2, "NO REPITAS LOS PREMIOS").
+De 28.386 a 26.729 chars. La descripción de `apartar_numero` ya no dice "OPCIONALES".
+
+**Por qué:** el manual tenía DOS secciones reclamando supremacía y reglas repetidas hasta 5
+veces con redacciones que divergían — cada parche nuevo aumentaba el riesgo de contradicciones
+(auditoría 9-jun, con las notas del verificador aplicadas).
+
+**Cómo se publicó (regla de oro confirmada):** suite dorada 10/10 ANTES de guardar; guardado
+por SQL directo verificando md5 contra el archivo probado; el versionado (H15) respaldó la
+versión anterior automáticamente. Dos arreglos de la propia suite salieron de paso: (1) el caso
+`300M_o_amoblado` aceptaba solo UNA redacción de la respuesta correcta (se amplió el regex, con
+OK de Mateo); (2) `probar-suite.js` ahora evalúa los regex SIN asteriscos de negrita ("una cosa
+*o* la otra" cuenta igual que "una cosa o la otra").
+
+**Cuidado / qué NO hacer:** NO guardar el manual por la acción `guardar` de `api/whatsapp/agente.js`
+desde un script: en un intento el prompt llegó corrupto (quedó de 15 chars, "[object Object]") y
+hubo que restaurar del historial (funcionó en ~3 min). Esa acción reemplaza TODOS los campos a la
+vez (estado, variables, ganadores): es para la cabina, no para scripts. Para ediciones por fuera
+de la cabina: SQL directo con md5 verificado, como aquí. Y la disciplina nueva del manual:
+EDITAR la regla existente, NUNCA appendear una corrección al final.
+
+---
+
 ## 2026-06-11 — [WhatsApp] — H65 (con OK de Mateo): atajo del número exacto tras la lista
 
 **Qué hicimos:** si el cliente acaba de ver la LISTA de números y responde SOLO un número de 4

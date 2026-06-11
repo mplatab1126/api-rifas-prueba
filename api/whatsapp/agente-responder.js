@@ -384,7 +384,7 @@ export const TOOLS = [
   },
   {
     name: 'apartar_numero',
-    description: 'Aparta (reserva) una boleta a nombre del cliente. Lo OBLIGATORIO es: número de 4 cifras, nombre, apellido y ciudad. La CÉDULA y el CORREO son OPCIONALES (para la factura electrónica): pídelos UNA vez y pásalos si el cliente los da, pero si NO los tiene o NO los quiere dar, aparta IGUAL sin ellos (no insistas ni condiciones la reserva a eso). Si el cliente ya está registrado con esos datos, se reutilizan solos. El teléfono es el de este chat.',
+    description: 'Aparta (reserva) una boleta a nombre del cliente. Lo OBLIGATORIO es: número de 4 cifras, nombre, apellido y ciudad. La CÉDULA y el CORREO sirven para la factura electrónica: pídelos UNA vez y pásalos si el cliente los da, pero si NO los tiene o NO los quiere dar, aparta IGUAL sin ellos (no insistas ni condiciones la reserva a eso). Al cliente NUNCA le digas que son "opcionales" ni "obligatorios". Si el cliente ya está registrado con esos datos, se reutilizan solos. El teléfono es el de este chat.',
     input_schema: { type: 'object', properties: { numero: { type: 'string', description: 'Número de 4 cifras a apartar.' }, nombre: { type: 'string' }, apellido: { type: 'string' }, ciudad: { type: 'string' }, documento: { type: 'string', description: 'Número de cédula del cliente (para la factura electrónica).' }, correo: { type: 'string', description: 'Correo del cliente (para enviarle la factura electrónica).' } }, required: ['numero', 'nombre', 'apellido', 'ciudad'] },
   },
   {
