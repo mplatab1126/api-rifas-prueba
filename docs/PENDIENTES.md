@@ -164,10 +164,11 @@
 - [ ] (2026-06-08) **Seguridad — opcional/menor:** mover la extensión `pg_net` fuera del esquema
   `public` (único WARN que queda; no se hizo por riesgo con los crons que usan `net.http_post`).
   Evaluar con calma si vale la pena. Todo lo grave ya quedó cerrado (ver "Hecho recientemente").
-- [ ] (2026-06-07) **Preparar la copia de trabajo en WINDOWS** (Mateo trabaja la mayoría
-  de veces en Windows). La primera vez que abra Claude Code allá, clonar fresco de GitHub a
-  una carpeta FUERA de Google Drive (ej. `C:\los-platas-rifas`) y trabajar siempre desde ahí.
-  La instrucción ya quedó en `CLAUDE.md`, así que el chat de Windows lo hace solo al leerlo.
+- [x] (2026-06-11) **Copia de trabajo en WINDOWS lista** (`C:\los-platas-rifas`, clon fresco
+  de GitHub). Además se rescató de Google Drive lo que solo vivía allá: las llaves
+  (`.env.local`/`.env.production`, copiadas al clon), la app móvil (subida a GitHub:
+  `mplatab1126/los-platas-app`, privado) y los diseños (`mplatab1126/los-plata-disenos`,
+  privado). La carpeta `Programación` del Drive ya se puede borrar (decisión de Mateo).
 - [ ] (2026-06-07) Revisar si **"perla roja"** (rifa vieja) en el CÓDIGO es residuo:
   aparece en `public/rendimiento.html`, `api/app/mis-boletas.js`, `api/contenido/copy-gen.js`,
   `public/ver-house-app.jsx`. NO borrar sin confirmar con Mateo.
