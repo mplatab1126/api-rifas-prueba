@@ -1741,7 +1741,18 @@ export default async function handler(req, res) {
       // PASO DATOS: el cliente dice claramente que quiere SEPARAR un número (ej. "quiero el 7185").
       // Le pedimos los datos con un mensaje fijo; el APARTAR lo hará la IA cuando lleguen los datos
       // (y ahí se verifica que el número siga libre, como hoy).
-      const numSep = entranteTxt ? intentoSeparar(entranteTxt) : null;
+      let numSep = entranteTxt ? intentoSeparar(entranteTxt) : null;
+      // H65 (con OK de Mateo, alcance del verificador): el cliente acaba de ver la LISTA de
+      // números y responde SOLO un número de 4 cifras ("7185") — la señal de compra más común
+      // tras la muestra. Dispara ÚNICAMENTE si ese número estaba EN la lista que le acabamos
+      // de mandar (sin verificación extra aquí: el pre-chequeo H60 de abajo y el apartado
+      // final re-verifican que siga libre, igual que el paso datos de siempre).
+      if (!numSep && entranteTxt) {
+        const t = normTxt(entranteTxt);
+        if (/^\d{4}$/.test(t) && /cual te gusta|muestra de numeros/.test(salTxt) && salTxt.includes(t)) {
+          numSep = t;
+        }
+      }
       if (numSep && activas.has('apartar_numero')
           && !/necesito tus datos|para apartar|nombre completo/.test(salTxt)) {
         // H60: antes de pedirle los 5 datos, verificar EN SILENCIO que el número siga libre
