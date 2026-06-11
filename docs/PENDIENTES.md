@@ -69,11 +69,14 @@
   tanda 12 (10-jun, con OK de Mateo): H76 (el abono ya no cae a la boleta equivocada:
   'boleta_no_coincide' → la IA pregunta / el cron pasa a ASESOR) y H70 (esMismoTelefono,
   cola mutua en los 8 puntos de amarre por teléfono; auditado: 0 clientes afectados).
-  Quedan SOLO: **H36 + H47/H48/H64 (manual) — desde un chat con la contraseña de gerencia**
-  (exigen la suite dorada); H18 (cobros, EN PAUSA); H65 (atajo de número exacto tras la
-  lista — roza la decisión "verificación puntual = IA", falta OK explícito de Mateo); y el
-  clic de Mateo para H81 (clave "Liliana" en ASESORES_SECRETO). Con eso, la auditoría de
-  90 hallazgos queda CERRADA. Detalle en `docs/PENDIENTES-LILIANA.md`.
+  H65 hecho (10-jun, con OK de Mateo): número exacto tras la lista → paso datos sin IA.
+  H81 ACTIVO: Mateo confirmó que la clave "Liliana" ya existe en ASESORES_SECRETO.
+  Quedan SOLO: **H36 + H47/H48/H64 (reordenar/adelgazar el manual) — desde un chat en la
+  máquina de Mateo** (exigen correr la suite dorada con su contraseña de gerencia antes de
+  guardar; leer las 4 secciones del anexo y sus notas del verificador — OJO: varias
+  "repeticiones" del manual fueron arreglos DELIBERADOS, consolidar SIN borrar esos: el
+  detalle exacto está en la nota del verificador de H64); y H18 (cobros, EN PAUSA).
+  Con el manual hecho, la auditoría de 90 hallazgos queda CERRADA.
   **Vigilar `agente_uso` unos días tras H42** (espera corta puede partir alguna ráfaga en dos).
 - [ ] (2026-06-10) **REGLA NUEVA para cambios del manual de Liliana:** antes de guardar un cambio
   del manual, correr la **suite dorada** (`/api/whatsapp/probar-suite`, ver bitácora 10-jun) y
