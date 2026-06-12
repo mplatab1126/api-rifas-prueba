@@ -109,6 +109,14 @@ el hilo de un chat a otro sin perder nada.
 > No agregues detalles largos a este `CLAUDE.md`; los detalles van en el mapa y
 > los porqués en la bitácora.
 
+### ⚠️ El proyecto SaaS de rifas es OTRO proyecto (no mezclar memorias)
+
+La plataforma SaaS para otros riferos vive en su PROPIO repo
+(`github.com/mplatab1126/rifas-saas`, copia local `C:\rifas-saas`) con su PROPIA
+bitácora, pendientes y CLAUDE.md. **Las decisiones del SaaS van SOLO en la bitácora
+del SaaS; las de Los Plata (esta rifa) van SOLO aquí.** Si un chat va a trabajar el
+SaaS, debe abrirse/trabajar desde `C:\rifas-saas` y leer los documentos de allá.
+
 ---
 
 # Proyecto: Sistema de Rifas "Los Plata S.A.S."
