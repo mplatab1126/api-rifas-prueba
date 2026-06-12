@@ -53,6 +53,7 @@
       <span class="nav-item" onclick="activateAppMode(); switchView('view-carga-masiva'); cargarPendientes();">Carga IA</span>
       <span class="nav-item" onclick="activateAppMode(); switchView('view-movimientos'); cargarUltimosMovimientos();">Movimientos</span>
       <span class="nav-item" onclick="activateAppMode(); switchView('view-lista-boletas'); cargarListaBoletas();">Lista de Morosos</span>
+      <span class="nav-item" onclick="activateAppMode(); switchView('view-disponibles'); cargarDisponibles();">Disponibles</span>
       <span id="btnLlamadas" class="nav-item" style="display:none;"></span>
       <span id="btnFinanzas" class="nav-item" style="display:none;"></span>
       <span class="nav-item" onclick="activateAppMode(); switchView('view-bitacora'); cargarBitacora();" style="position:relative;">🔔 <span id="notifBadge" style="display:none; position:absolute; top:-2px; right:-4px; background:#d95a53; color:#fff; font-size:0.65rem; font-weight:700; min-width:16px; height:16px; border-radius:50%; display:none; align-items:center; justify-content:center; line-height:1;">0</span></span>
@@ -573,6 +574,25 @@
         <div id="lb-contador" style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;"></div>
         <div id="lb-tabla-render" style="margin-top:5px;">
           <p style="text-align:center; color:var(--muted); font-size:0.85rem; padding:30px 0;">Presiona "Lista de Morosos" para cargar.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-disponibles" class="view-section">
+      <div class="section-card">
+        <div class="section-title">🔢 Números Disponibles</div>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0;">Boletas libres en este momento, agrupadas por serie. Escribe dígitos para buscar un número específico.</p>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px;">
+          <div class="field" style="flex:1; min-width:150px;">
+            <input type="text" id="disp-filtro" class="pill" placeholder="Buscar número... (Ej: 57)" inputmode="numeric" maxlength="4" oninput="filtrarDisponibles()">
+          </div>
+          <button onclick="cargarDisponibles()" style="height:44px; padding:0 16px; border-radius:10px; border:1px solid var(--ring-strong); background:#fff; cursor:pointer; font-family:inherit; font-size:0.85rem;">↻ Actualizar</button>
+        </div>
+
+        <div id="disp-contador" style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;"></div>
+        <div id="disp-render" style="margin-top:5px;">
+          <p style="text-align:center; color:var(--muted); font-size:0.85rem; padding:30px 0;">Presiona "Disponibles" para cargar.</p>
         </div>
       </div>
     </div>
