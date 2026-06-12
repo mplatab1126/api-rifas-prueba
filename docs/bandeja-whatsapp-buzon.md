@@ -392,6 +392,17 @@ Responde "¿el sistema sigue verificando este pago solo, o ya se rindió y le to
 - **N4 (10-jun)**: si hay un abono POSTERIOR a una verificación 'rendido', la tarjeta sale
   "✅ Caso CERRADO" en vez del 🆘 rojo (la rendición queda enlazada al abono pendiente).
 
+### 8.12d Manual de Liliana consolidado (11-jun-2026, H36+H47+H48+H64) — detalle en BITACORA-DE-DECISIONES
+El manual (`agente_config.prompt`) se reestructuró en una pasada: UNA sola jerarquía ("LO QUE MÁS
+SE ROMPE" es la única sección suprema; "CORRECCIONES IMPORTANTES" se eliminó fusionando su
+contenido), cada regla en un solo lugar (acumulado 5→1+recordatorios, tuteo y Sueldazo 2→1),
+cuentas de pago por {{pagos}} (ya no en duro), meta de largo absoluta. 28.386→26.729 chars.
+Publicado con la regla de oro: suite dorada 10/10 ANTES de guardar; versionado H15 respaldó.
+OJO: guardar el manual desde scripts → SQL directo con md5 verificado, NUNCA por la acción
+`guardar` de `agente.js` (un intento corrompió el prompt a 15 chars y tocó restaurar del
+historial). La suite ahora evalúa regex sin asteriscos de negrita y el caso `300M_o_amoblado`
+acepta las redacciones equivalentes correctas.
+
 ### 8.12c Tandas 7-12 del motor + H65 (10/11-jun-2026) — detalle en BITACORA-DE-DECISIONES
 Resumen: turnos que nunca cierran mudos (H58/H62), anti-inyección de datos (H78), audios sin
 transcribir con rastro (H79), recordatorios durables (H54/H73/H77), reintentos de Meta sin

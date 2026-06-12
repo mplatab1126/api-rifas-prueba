@@ -195,7 +195,9 @@ manos de asesor >30 min, errores nuevos, verificaciones rendidas, gasto anómalo
 de Mateo; resumen diario 8 p.m.; pg_cron `alertas-agente-cada-15min` jobid 7; memoria en
 `agente_alertas_estado`; respaldo plantilla `alerta_sistema_los_plata`),
 `probar-suite.js` (H14: corre la SUITE DORADA —`agente_casos_dorados`— contra el manual de producción
-o un candidato sin guardarlo; solo gerencia; correrla SIEMPRE antes de publicar cambios del manual).
+o un candidato sin guardarlo; solo gerencia; correrla SIEMPRE antes de publicar cambios del manual;
+desde 2026-06-11 evalúa los regex SIN asteriscos de negrita — "una cosa *o* la otra" cuenta igual
+que "una cosa o la otra").
 
 **Novedades (2026-06-10, H35):** tarjeta **"Embudo de ventas"** en la cabina (7/30 días) — función
 `agente_embudo_resumen` (`sql/embudo-liliana.sql`, solo service_role) + acción `embudo` en

@@ -169,6 +169,11 @@
   (`.env.local`/`.env.production`, copiadas al clon), la app móvil (subida a GitHub:
   `mplatab1126/los-platas-app`, privado) y los diseños (`mplatab1126/los-plata-disenos`,
   privado). La carpeta `Programación` del Drive ya se puede borrar (decisión de Mateo).
+- [ ] (2026-06-11) **Dos decisiones de Mateo pendientes:** (1) ¿borrar la carpeta `Programación`
+  de Google Drive? (todo ya está rescatado: llaves en el clon, app móvil y diseños en GitHub);
+  (2) ¿renombrar el repositorio `api-rifas-prueba` a algo decente (ej. `los-platas-rifas`)?
+  GitHub redirige solo y Vercel se adapta; único cuidado: no crear luego otro repo con el
+  nombre viejo.
 - [ ] (2026-06-07) Revisar si **"perla roja"** (rifa vieja) en el CÓDIGO es residuo:
   aparece en `public/rendimiento.html`, `api/app/mis-boletas.js`, `api/contenido/copy-gen.js`,
   `public/ver-house-app.jsx`. NO borrar sin confirmar con Mateo.

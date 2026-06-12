@@ -232,6 +232,12 @@
 
 ## 8) 🆕 Problemas NUEVOS encontrados después de la auditoría
 
+- [ ] **N5** (descubierto 2026-06-11) · La acción `guardar` de `api/whatsapp/agente.js` acepta un
+  prompt CORRUPTO sin validar: un guardado por script llegó como "[object Object]" (15 chars) y
+  Liliana quedó ~3 min sin manual (0 clientes afectados; se restauró del historial H15).
+  Mejora: si el prompt nuevo mide menos del ~50% del actual (o <5.000 chars), rechazar con error
+  claro y pedir confirmación explícita. — _esfuerzo bajo_
+
 - [x] (2026-06-10) **N4** · La tarjeta "🆘 YA SE RINDIÓ" quedaba gritando aunque el abono ya se
   hubiera hecho a mano (pedido de Mateo: "la nota va enlazada al abono pendiente; si ya no está
   pendiente, no debería estar"): el endpoint `verificaciones.js` ahora revisa si hay un ABONO a
