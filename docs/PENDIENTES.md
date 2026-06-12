@@ -15,7 +15,11 @@
 
 ## Tareas pendientes
 
-- [ ] (2026-06-12) **🚀 PLAN DEL SAAS DE RIFAS — esperando decisiones de Mateo para arrancar.**
+- [ ] (2026-06-12) **🚀 SAAS DE RIFAS — YA ARRANCÓ (mismo día):** repo propio
+  `github.com/mplatab1126/rifas-saas` con su PROPIA bitácora y pendientes (trabajar el SaaS
+  desde `C:\rifas-saas`, NO desde aquí). Supabase propio creado (`ikbfmttduiagtwfpkkfd`,
+  $10/mes con OK de Mateo) con el núcleo multi-tenant aplicado. Lo de abajo sigue vigente
+  como contexto del plan:
   Investigación exhaustiva hecha (competencia, Meta Tech Provider, pagos, legal) y plan
   completo por etapas en **`docs/PLAN-PLATAFORMA-SAAS.md`**. Decisiones pendientes (§9 del
   plan): ¿arrancamos? · nombre/dominio · precios · pilotos · abogado. OJO hallazgo legal
