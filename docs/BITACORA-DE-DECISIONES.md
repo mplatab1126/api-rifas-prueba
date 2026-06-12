@@ -26,6 +26,27 @@
 
 ---
 
+## 2026-06-12 — [General] — Nace el proyecto "SaaS de rifas": investigación hecha y plan en docs/PLAN-PLATAFORMA-SAAS.md
+
+**Qué decidimos:** explorar convertir la bandeja + Liliana en una plataforma por suscripción para
+otros riferos (idea de Mateo, 12-jun). Se hizo la investigación exhaustiva (verificada contra
+fuentes oficiales) y el plan completo por etapas quedó en **`docs/PLAN-PLATAFORMA-SAAS.md`**.
+Conclusiones clave: (1) el cruce "rifas + WhatsApp API + IA" está VACÍO en el mercado; (2) la ruta
+con Meta es el programa **Tech Provider** + Embedded Signup (cada cliente conecta SU número y le
+paga sus mensajes directo a Meta; nosotros cobramos solo el software); (3) cobro por **contactos
+activos** estilo ManyChat; (4) pasarela recomendada **Wompi** (única con débito automático por
+Nequi); (5) arquitectura: Supabase + Vercel + repo NUEVOS y separados de Los Plata, multi-tenant
+con `tenant_id` + RLS.
+
+**Cuidado / qué NO hacer:** hallazgo legal serio — la política de WhatsApp lista "raffles" como
+GAMBLING (exige permiso escrito de Meta; Colombia sí está entre los 5 países permitidos) y
+Coljuegos está sancionando rifas informales en redes (35 procesos, 289 perfiles bloqueados;
+el Decreto 1486/2024 creó la vía legal para rifas digitales). NO lanzar el SaaS ni conectar
+clientes sin pasar por la Etapa 0 del plan (abogado + trámites de Meta). Nada se construye aún:
+esperando las 5 decisiones de Mateo (§9 del plan).
+
+---
+
 ## 2026-06-11 — [WhatsApp] — Manual de Liliana consolidado (H36+H47+H48+H64): una sola jerarquía, sin duplicados
 
 **Qué decidimos:** reestructurar el manual (`agente_config.prompt`) en una sola pasada: la ÚNICA

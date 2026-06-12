@@ -15,6 +15,14 @@
 
 ## Tareas pendientes
 
+- [ ] (2026-06-12) **🚀 PLAN DEL SAAS DE RIFAS — esperando decisiones de Mateo para arrancar.**
+  Investigación exhaustiva hecha (competencia, Meta Tech Provider, pagos, legal) y plan
+  completo por etapas en **`docs/PLAN-PLATAFORMA-SAAS.md`**. Decisiones pendientes (§9 del
+  plan): ¿arrancamos? · nombre/dominio · precios · pilotos · abogado. OJO hallazgo legal
+  importante (§2 del plan): para Meta una rifa ES "gambling" (exige permiso escrito; Colombia
+  está en los 5 países permitidos) y Coljuegos está sancionando rifas informales en redes —
+  el plan lo convierte en función del producto ("modo cumplimiento"). Lo más lento son los
+  trámites de Meta: si Mateo da el OK, arrancar la verificación del negocio YA (Etapa 0).
 - [ ] (2026-06-10) **Recorrido inmersivo de la casa (scrollytelling) — EN PRUEBA, espera el visto
   bueno de Mateo.** Página `public/prueba-recorrido-casa.html` (NO enlazada, con noindex): al
   deslizar, la foto hace zoom suave y funde de un lugar a otro (comedor → cocina → escaleras →
