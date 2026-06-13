@@ -51,6 +51,15 @@ guardar/duplicar/eliminar); pantalla `public/flujos-bandeja.js` + sección `#mod
 (no tabla de campos), sin secuencias, "pasar a asesor" = cualquiera del equipo. El dibujante
 GUARDA y el SIMULADOR corre; **todavía NO ejecuta con clientes reales** (eso es la Fase 2).
 
+**Decisión de Mateo (13-jun, tarde) — modelo de 5 nodos base:** la paleta tiene SOLO 5 nodos:
+**Mensaje, Pregunta, Acción, Condición, Ir a otro flujo**. Todo lo demás "se desprende" de esos 5
+(los botones y listas ya viven DENTRO de Mensaje, como modo de respuesta). Se quitaron de la paleta:
+Clasificar con IA, Solicitud externa, Aleatorio, Esperar, Pasar a asesor, Comentario (su código
+sigue en `flujos-bandeja.js` para compatibilidad, pero no se ofrecen). Las 3 plantillas se
+reescribieron para usar solo los 5. **NO re-agregar nodos sueltos a la paleta sin pedírselo a Mateo.**
+El `<script>` de `flujos-bandeja.js` va versionado (`?v=...`): al cambiarlo, subir el número para que
+el navegador baje la versión nueva sin limpiar caché.
+
 **Cuidado / qué NO hacer:** NO encender un flujo en producción hasta que exista el motor (Fase 2);
 hoy un flujo "activo" no hace nada. Cuando se construya el motor, respetar la regla de oro y
 probar primero con el número de Mateo (flujo apagado por defecto). NO confundir las dos bases:
