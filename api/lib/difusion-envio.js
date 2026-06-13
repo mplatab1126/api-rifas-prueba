@@ -13,23 +13,7 @@
 
 import { supabaseAdmin } from './supabase.js';
 import { enviarPlantilla } from './whatsapp.js';
-
-// {nombre}/{telefono} → datos reales del destinatario. Otro texto se deja igual.
-function resolverParametros(variables, dest) {
-  if (!Array.isArray(variables)) return [];
-  return variables.map(v => {
-    const s = String(v == null ? '' : v);
-    if (s === '{nombre}') return dest.nombre || '';
-    if (s === '{telefono}') return dest.telefono || '';
-    return s;
-  });
-}
-// Cuerpo con las variables ya puestas, para guardarlo en el historial del chat.
-function textoFinal(cuerpo, params) {
-  let t = String(cuerpo || '');
-  (params || []).forEach((val, i) => { t = t.replaceAll(`{{${i + 1}}}`, String(val ?? '')); });
-  return t;
-}
+import { resolverParametros, textoFinal, enriquecerDestinatarios } from './plantilla-vars.js';
 // Busca (o crea) la conversación de un teléfono en una línea y devuelve su id.
 async function asegurarConv(telefono, lineaId, asesor) {
   let b = supabaseAdmin.from('conversaciones_whatsapp').select('id').eq('telefono', telefono);
@@ -88,8 +72,12 @@ export async function procesarLoteDifusion(difusionId, { limite = 30, asesor = '
     return { ok: true, restantes: 0, completada: false, enviados: dif.enviados, fallidos: dif.fallidos };
   }
 
+  // Traer los datos de cada cliente (apellido, ciudad, saldos, boletas) AHORA,
+  // al momento de enviar, para que el saldo siempre esté al día.
+  const loteDatos = await enriquecerDestinatarios(lote);
+
   let nuevosEnviados = 0, nuevosFallidos = 0;
-  for (const dest of lote) {
+  for (const dest of loteDatos) {
     const params = resolverParametros(dif.variables, dest);
     const env = await enviarPlantilla(dest.telefono, { nombre: pl.nombre, idioma: pl.idioma, parametros: params }, dif.linea_id);
     const ts = new Date().toISOString();

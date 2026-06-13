@@ -24,6 +24,7 @@ import {
   eliminarPlantillaMeta,
   enviarPlantilla,
 } from '../lib/whatsapp.js';
+import { resolverParametros, textoFinal, enriquecerDestinatarios } from '../lib/plantilla-vars.js';
 
 const MAX_NOMBRE = 60;
 const MAX_TEXTO = 1024;   // límite del cuerpo de una plantilla
@@ -51,24 +52,6 @@ function normalizarNombre(s) {
     .replace(/[^a-z0-9_]+/g, '_')
     .replace(/^_+|_+$/g, '')
     .slice(0, MAX_NOMBRE);
-}
-
-// Reemplaza los tokens {nombre}/{telefono} por los datos reales del cliente
-// (mismo criterio que las campañas). Cualquier otro texto se deja igual.
-function resolverParametros(variables, dest) {
-  if (!Array.isArray(variables)) return [];
-  return variables.map(v => {
-    const s = String(v == null ? '' : v);
-    if (s === '{nombre}') return dest.nombre || '';
-    if (s === '{telefono}') return dest.telefono || '';
-    return s;
-  });
-}
-// Cuerpo con las variables ya puestas, para guardarlo en el historial del chat.
-function textoFinal(cuerpo, params) {
-  let t = String(cuerpo || '');
-  (params || []).forEach((val, i) => { t = t.replaceAll(`{{${i + 1}}}`, String(val ?? '')); });
-  return t;
 }
 
 export default async function handler(req, res) {
@@ -195,7 +178,8 @@ export default async function handler(req, res) {
       const { data: conv } = await bq.maybeSingle();
       const nombreCliente = (conv && conv.nombre_perfil) || '';
 
-      const params = resolverParametros(variables, { nombre: nombreCliente, telefono });
+      const [dest] = await enriquecerDestinatarios([{ telefono, nombre: nombreCliente }]);
+      const params = resolverParametros(variables, dest);
       const env = await enviarPlantilla(telefono, { nombre: pl.nombre, idioma: pl.idioma, parametros: params }, linea_id);
       if (!env.ok) return res.status(200).json({ status: 'error', mensaje: env.error });
 

@@ -28,22 +28,11 @@ import { supabase, supabaseAdmin } from '../lib/supabase.js';
 import { puedeVerLinea } from '../lib/asesores.js';
 import { enviarPlantilla } from '../lib/whatsapp.js';
 import { procesarLoteDifusion } from '../lib/difusion-envio.js';
+import { resolverParametros, enriquecerDestinatarios } from '../lib/plantilla-vars.js';
 
 const LOTE_DEFECTO = 25;     // cuántos mensajes por llamada de "enviar-lote"
 const LOTE_MAX = 80;
 const INSERT_CHUNK = 500;    // de a cuántos destinatarios se insertan en la cola
-
-// Reemplaza los tokens de personalización ({nombre}, {telefono}) por los datos
-// reales del destinatario. Cualquier otro texto se deja igual.
-function resolverParametros(variables, dest) {
-  if (!Array.isArray(variables)) return [];
-  return variables.map(v => {
-    const s = String(v == null ? '' : v);
-    if (s === '{nombre}') return dest.nombre || '';
-    if (s === '{telefono}') return dest.telefono || '';
-    return s;
-  });
-}
 
 // Calcula la lista de teléfonos según los filtros de audiencia (server-side, en la base).
 // filtros = { tipo:'todos'|'etiqueta'|'clientes'|'potenciales', estado_pago?, ciudad?, etiqueta_id? }
@@ -219,7 +208,8 @@ export default async function handler(req, res) {
         .from('plantillas_whatsapp').select('nombre, idioma, cuerpo, estado').eq('id', plantilla_id).eq('linea_id', linea_id).maybeSingle();
       if (!pl) return res.status(200).json({ status: 'error', mensaje: 'No se encontró la plantilla.' });
       if (pl.estado !== 'aprobada') return res.status(200).json({ status: 'error', mensaje: 'La plantilla aún no está aprobada por Meta.' });
-      const params = resolverParametros(variables, { nombre: 'Prueba', telefono });
+      const [destPrueba] = await enriquecerDestinatarios([{ telefono, nombre: 'Prueba' }]);
+      const params = resolverParametros(variables, destPrueba);
       const env = await enviarPlantilla(telefono, { nombre: pl.nombre, idioma: pl.idioma, parametros: params }, linea_id);
       if (!env.ok) return res.status(200).json({ status: 'error', mensaje: env.error });
       return res.status(200).json({ status: 'ok' });

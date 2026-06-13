@@ -309,6 +309,49 @@ AS $function$
   order by 1;
 $function$;
 
+-- Datos de cliente + boletas por teléfono, para rellenar las variables de las
+-- plantillas de difusión ({apellido}, {ciudad}, {abonado}, {restante}, {boleta}).
+-- SOLO LECTURA: lee y suma; no modifica nada. La usa api/lib/plantilla-vars.js.
+CREATE OR REPLACE FUNCTION public.difusion_datos_cliente(p_telefonos text[])
+RETURNS TABLE(tel10 text, apellido text, ciudad text, abonado numeric, restante numeric, boletas text)
+LANGUAGE sql
+STABLE SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+  with tel as (
+    select distinct right(regexp_replace(t,'\D','','g'),10) as tel10
+    from unnest(p_telefonos) as t
+    where t is not null
+  ),
+  cli as (
+    select distinct on (tel10) tel10, apellido, ciudad
+    from (
+      select right(regexp_replace(cl.telefono,'\D','','g'),10) as tel10, cl.apellido, cl.ciudad
+      from clientes cl where cl.telefono is not null
+    ) z
+    order by tel10
+  ),
+  bol as (
+    select right(regexp_replace(b.telefono_cliente,'\D','','g'),10) as tel10,
+           sum(coalesce(b.total_abonado,0))  as abonado,
+           sum(coalesce(b.saldo_restante,0)) as restante,
+           string_agg(b.numero, ', ' order by b.numero) as boletas
+    from boletas b
+    where b.telefono_cliente is not null
+    group by 1
+  )
+  select tel.tel10,
+    coalesce(cli.apellido,'') as apellido,
+    coalesce(cli.ciudad,'')   as ciudad,
+    coalesce(bol.abonado,0)   as abonado,
+    coalesce(bol.restante,0)  as restante,
+    coalesce(bol.boletas,'')  as boletas
+  from tel
+  left join cli on cli.tel10 = tel.tel10
+  left join bol on bol.tel10 = tel.tel10;
+$function$;
+GRANT EXECUTE ON FUNCTION public.difusion_datos_cliente(text[]) TO anon, authenticated, service_role;
+
 CREATE OR REPLACE FUNCTION public.difusion_reclamar_lote(p_difusion uuid, p_limite integer)
  RETURNS TABLE(id bigint, telefono text, nombre text)
  LANGUAGE plpgsql

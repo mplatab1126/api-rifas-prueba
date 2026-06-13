@@ -1823,7 +1823,7 @@ window.elegirPlantillaChat = function(id){
   const nVars = ((p.cuerpo||'').match(/\{\{\s*\d+\s*\}\}/g) || []).length;
   let campos = '';
   for(let i=1; i<=nVars; i++) campos += `<input class="cc-input pl-chat-var" data-i="${i}" placeholder="Variable {{${i}}}">`;
-  const tip = nVars ? `<div class="pl-chat-tip">Tip: escribe <b>{nombre}</b> y se reemplaza por el nombre del cliente; <b>{telefono}</b> por su número.</div>` : '';
+  const tip = nVars ? `<div class="pl-chat-tip">Tip: escribe un dato del cliente y se reemplaza solo: <b>{nombre}</b>, <b>{apellido}</b>, <b>{telefono}</b>, <b>{ciudad}</b>, <b>{abonado}</b> (total abonado), <b>{restante}</b> (total que debe), <b>{boleta}</b> (su número de boleta).</div>` : '';
   abrirModal(`<h3>${esc(p.nombre)}</h3>
     <div class="mblock"><div class="mhdr">Mensaje</div><div style="font-size:0.86rem; white-space:pre-wrap; line-height:1.45">${esc(p.cuerpo||'')}</div></div>
     ${campos}${tip}
@@ -3388,8 +3388,13 @@ function pintarFormDifusion(){
     <div class="df-field"><label>Variable {{${i+1}}}</label>
       <input class="df-var" data-i="${i}" value="${esc(dfForm.variables[i] || '')}" placeholder="Texto fijo o un dato del cliente">
       <div style="margin-top:5px">
-        <span class="df-chip" onclick="setVar(${i},'{nombre}')">Nombre del cliente</span>
+        <span class="df-chip" onclick="setVar(${i},'{nombre}')">Nombre</span>
+        <span class="df-chip" onclick="setVar(${i},'{apellido}')">Apellido</span>
         <span class="df-chip" onclick="setVar(${i},'{telefono}')">Teléfono</span>
+        <span class="df-chip" onclick="setVar(${i},'{ciudad}')">Ciudad</span>
+        <span class="df-chip" onclick="setVar(${i},'{abonado}')">Total abonado</span>
+        <span class="df-chip" onclick="setVar(${i},'{restante}')">Total restante</span>
+        <span class="df-chip" onclick="setVar(${i},'{boleta}')">Número(s) de boleta</span>
       </div>
     </div>`).join('') : '';
   const tipoAud = dfForm.filtros.tipo || 'todos';
