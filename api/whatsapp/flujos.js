@@ -16,7 +16,8 @@
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 import { supabase, supabaseAdmin } from '../lib/supabase.js';
-import { puedeVerLinea } from '../lib/asesores.js';
+import { puedeVerLinea, esMateo } from '../lib/asesores.js';
+import { obtenerConfig, guardarConfig } from '../lib/configuracion.js';
 
 const MAX_NOMBRE = 120;
 
@@ -114,6 +115,21 @@ export default async function handler(req, res) {
       if (!id) return res.status(200).json({ status: 'error', mensaje: 'Falta el flujo a eliminar.' });
       await supabaseAdmin.from('flujos').delete().eq('id', id).eq('linea_id', linea_id);
       return res.status(200).json({ status: 'ok' });
+    }
+
+    // Interruptor de seguridad del MOTOR (global, solo Mateo): off | prueba | vivo.
+    if (accion === 'config-get') {
+      const modo = (await obtenerConfig('flujos_modo')) || 'off';
+      const numeros = (await obtenerConfig('flujos_numeros_prueba')) || '';
+      return res.status(200).json({ status: 'ok', modo, numeros });
+    }
+    if (accion === 'config-set') {
+      if (!esMateo(nombreAsesor)) return res.status(200).json({ status: 'error', mensaje: 'Solo Mateo puede cambiar el modo del motor.' });
+      const modo = ['off', 'prueba', 'vivo'].includes(req.body.modo) ? req.body.modo : 'off';
+      const numeros = String(req.body.numeros || '').slice(0, 500);
+      await guardarConfig('flujos_modo', modo);
+      if (req.body.numeros != null) await guardarConfig('flujos_numeros_prueba', numeros);
+      return res.status(200).json({ status: 'ok', modo, numeros });
     }
 
     return res.status(200).json({ status: 'error', mensaje: 'Acción no válida.' });

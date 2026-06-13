@@ -30,7 +30,45 @@ async function cargarFlujosModulo(){
   // si veníamos en el editor de otra línea, volver a la lista
   document.getElementById('flVistaEditor').style.display = 'none';
   document.getElementById('flVistaLista').style.display = 'block';
+  renderModoMotor();
   cargarFlujos();
+}
+
+// ── Interruptor de seguridad del motor (off | prueba | vivo) ──────────────────
+async function renderModoMotor() {
+  const cont = document.getElementById('flModoMotor');
+  if (!cont) return;
+  const r = await api('flujos', { accion: 'config-get', linea_id: lineaActual });
+  const modo = (r && r.modo) || 'off';
+  const numeros = (r && r.numeros) || '';
+  const btn = (val, txt) => `<button class="fl-modo-btn ${modo === val ? 'on' : ''} ${val === 'vivo' ? 'vivo' : ''}" onclick="setModoMotor('${val}')">${txt}</button>`;
+  const desc = modo === 'off' ? 'Apagado: ningún flujo le responde a nadie, aunque esté marcado "Activo". Recomendado mientras armas y pruebas.'
+    : modo === 'prueba' ? 'Modo prueba: los flujos activos SOLO le responden a los números de abajo (tú). Ideal para probar en vivo sin tocar clientes.'
+    : '⚠️ EN VIVO: los flujos marcados "Activo" le responden a TODOS los clientes reales.';
+  cont.innerHTML = `
+    <div class="fl-modo-row">
+      <span class="fl-modo-tit">⚙️ Motor de flujos:</span>
+      ${btn('off', 'Apagado')}${btn('prueba', 'Modo prueba')}${btn('vivo', 'En vivo')}
+    </div>
+    <div class="fl-modo-desc">${desc}</div>
+    ${modo === 'prueba' ? `<div class="fl-modo-num">
+      <input id="flNumerosPrueba" type="text" value="${escapar(numeros)}" placeholder="Tu número con indicativo, ej: 573001234567 (varios con coma)">
+      <button class="boton chico menta" onclick="guardarNumerosPrueba(this)">Guardar números</button>
+    </div>` : ''}`;
+}
+async function setModoMotor(modo) {
+  if (modo === 'vivo' && !confirm('¿Poner el motor EN VIVO? Los flujos marcados "Activo" le responderán a TODOS los clientes reales.')) return;
+  const numerosEl = document.getElementById('flNumerosPrueba');
+  const body = { accion: 'config-set', linea_id: lineaActual, modo };
+  if (numerosEl) body.numeros = numerosEl.value;
+  const r = await api('flujos', body);
+  if (r && r.status === 'ok') renderModoMotor();
+  else alert((r && r.mensaje) || 'No se pudo cambiar el modo.');
+}
+async function guardarNumerosPrueba(btn) {
+  const numeros = document.getElementById('flNumerosPrueba').value;
+  const r = await api('flujos', { accion: 'config-set', linea_id: lineaActual, modo: 'prueba', numeros });
+  if (btn) { btn.textContent = r && r.status === 'ok' ? 'Guardado ✓' : 'Error'; setTimeout(() => { btn.textContent = 'Guardar números'; }, 1500); }
 }
 
 // ---------- lista ----------
