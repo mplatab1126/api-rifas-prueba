@@ -129,6 +129,34 @@
       #modFlujos .zona-trabajo { flex-direction: column; }
       #modFlujos .panel-nodo, #modFlujos .simulador { position: fixed; inset: 0; width: 100%; z-index: 70; }
     }
+    /* === INTEGRACIONES === */
+    #modIntegraciones { display:none; flex:1; min-width:0; height:100%; flex-direction:column; overflow-y:auto; padding:26px 32px; box-sizing:border-box; }
+    #modIntegraciones h2 { font-size:1.3rem; }
+    #modIntegraciones .int-sub { color:var(--ink-mute); font-size:13px; margin:4px 0 18px; max-width:680px; line-height:1.5; }
+    #modIntegraciones .int-add { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+    #modIntegraciones .int-btn { display:inline-flex; align-items:center; gap:7px; border:1px solid var(--gray-300); background:#fff; border-radius:10px; padding:9px 14px; font:inherit; font-size:13px; font-weight:600; cursor:pointer; color:var(--ink); }
+    #modIntegraciones .int-btn:hover { border-color:var(--mint); }
+    #modIntegraciones .int-btn.menta { background:var(--mint); border-color:var(--mint); }
+    #modIntegraciones .int-btn.menta:hover { background:var(--mint-light); }
+    #modIntegraciones .int-btn.suave { background:var(--cream-100); }
+    #modIntegraciones .int-card { background:#fff; border:1px solid var(--gray-300); border-radius:14px; padding:14px 16px; margin-bottom:12px; max-width:680px; }
+    #modIntegraciones .int-card-top { display:flex; align-items:center; gap:12px; }
+    #modIntegraciones .int-ico { width:40px; height:40px; border-radius:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:20px; background:var(--cream-100); }
+    #modIntegraciones .int-nom { font-weight:600; }
+    #modIntegraciones .int-meta { font-size:12.5px; color:var(--ink-mute); word-break:break-word; }
+    #modIntegraciones .int-acc { margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; }
+    #modIntegraciones .int-chip { border:none; background:var(--cream-100); border-radius:8px; padding:6px 11px; font:inherit; font-size:12px; font-weight:600; cursor:pointer; color:var(--ink); }
+    #modIntegraciones .int-chip:hover { background:var(--gray-200); }
+    #modIntegraciones .int-chip.rojo { color:var(--danger); }
+    #modIntegraciones .int-form { background:#fff; border:1px solid var(--mint); border-radius:14px; padding:16px; margin-bottom:16px; max-width:680px; }
+    #modIntegraciones .int-form label { display:block; font-size:11px; font-weight:700; color:var(--ink-mute); margin:12px 0 4px; }
+    #modIntegraciones .int-form input { width:100%; border:1px solid var(--gray-300); border-radius:9px; padding:9px 11px; font:inherit; font-size:13px; box-sizing:border-box; }
+    #modIntegraciones .int-form input:focus { outline:none; border-color:var(--mint); }
+    #modIntegraciones .int-row { display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; }
+    #modIntegraciones .int-aviso { font-size:12.5px; margin-top:10px; padding:8px 11px; border-radius:9px; line-height:1.45; }
+    #modIntegraciones .int-aviso.ok { background:var(--mint-light); color:#1f5c34; }
+    #modIntegraciones .int-aviso.err { background:#FBE3E3; color:var(--danger); }
+    #modIntegraciones .int-hint { font-size:11.5px; color:var(--ink-mute); margin-top:4px; line-height:1.45; }
   </style>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -815,6 +843,10 @@
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/><path d="M6.5 9v3.5a2 2 0 0 0 2 2H15M17.5 9V6h-4"/></svg>
           <span>Flujos</span>
         </button>
+        <button class="nav-item" id="navIntegraciones" data-mod="integraciones" style="display:none">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7V4a1 1 0 0 1 2 0v3m4 0V4a1 1 0 0 1 2 0v3M8 7h10v4a5 5 0 0 1-5 5 5 5 0 0 1-5-5V7Zm5 9v4"/></svg>
+          <span>Integraciones</span>
+        </button>
       </div>
       <div class="nav-foot">
         <div class="nav-user" id="quien"></div>
@@ -1146,6 +1178,18 @@
         </section>
       </div>
     </div><!-- /modFlujos -->
+
+    <!-- MÓDULO: INTEGRACIONES (solo Mateo) -->
+    <div id="modIntegraciones">
+      <h2>Integraciones</h2>
+      <div class="int-sub">Conecta tu base de datos para que los flujos consulten o registren datos de tu rifa. Las llaves de acceso se guardan solo en el servidor (nunca se muestran de vuelta).</div>
+      <div class="int-add">
+        <button class="int-btn" onclick="nuevaIntegracion('google_sheets')">📄 Conectar Google Sheets</button>
+        <button class="int-btn" onclick="nuevaIntegracion('supabase')">🗄️ Conectar Supabase</button>
+      </div>
+      <div id="integForm"></div>
+      <div id="integLista" style="color:var(--ink-mute);font-size:13px">Cargando…</div>
+    </div><!-- /modIntegraciones -->
   </div><!-- /app -->
 
   <div id="ctxMenu"></div>
@@ -1259,7 +1303,7 @@ async function cargarLineas(){
   gerencia = !!(r && r.esGerencia);
   soyMateo = !!(r && r.soyMateo);
   // La cabina del Agente es solo para gerencia: mostrar su entrada del menú.
-  if(soyMateo){ $('navSecAgente').style.display = ''; $('navAgente').style.display = ''; $('navDisparadores').style.display = ''; $('navFlujos').style.display = ''; }
+  if(soyMateo){ $('navSecAgente').style.display = ''; $('navAgente').style.display = ''; $('navDisparadores').style.display = ''; $('navFlujos').style.display = ''; $('navIntegraciones').style.display = ''; }
   const sel = $('selLinea');
   if(lineas.length){
     const guardada = localStorage.getItem('wa_linea');
@@ -2455,6 +2499,7 @@ function irA(mod){
   $('modAgente').style.display = (mod === 'agente') ? 'flex' : 'none';
   $('modDisparadores').style.display = (mod === 'disparadores') ? 'flex' : 'none';
   $('modFlujos').style.display = (mod === 'flujos') ? 'flex' : 'none';
+  $('modIntegraciones').style.display = (mod === 'integraciones') ? 'flex' : 'none';
   if(mod === 'contactos'){ contactosPage = 0; cargarContactos(true); }
   else if(mod === 'respuestas'){ cargarRespuestas(); }
   else if(mod === 'etiquetas'){ cargarEtiquetasAdmin(); }
@@ -2463,6 +2508,7 @@ function irA(mod){
   else if(mod === 'agente'){ cargarAgente(); }
   else if(mod === 'disparadores'){ cargarDisparadores(); }
   else if(mod === 'flujos'){ cargarFlujosModulo(); }
+  else if(mod === 'integraciones'){ cargarIntegraciones(); }
   else { pintarLista(); }
 }
 
@@ -3797,5 +3843,6 @@ if(localStorage.getItem(PWD_KEY) && localStorage.getItem(NAME_KEY)){
 <!-- Flujos (constructor visual · Fase 1) -->
 <script src="https://cdn.jsdelivr.net/npm/drawflow@0.0.59/dist/drawflow.min.js"></script>
 <script src="/flujos-bandeja.js?v=20260613-3"></script>
+<script src="/integraciones-bandeja.js?v=20260613-1"></script>
 </body>
 </html>
