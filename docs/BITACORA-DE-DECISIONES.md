@@ -52,6 +52,25 @@ hace una petición saliente a la URL que se le dé: como es solo-Mateo el riesgo
 la versión SaaS (multi-rifero) habrá que limitar a dónde puede apuntar. NO exponer la `config`
 completa al navegador en ninguna acción nueva.
 
+**Fase B (HECHA, publicada, verificada con datos reales):** **estandarización por MAPEO de columnas.**
+El sistema tiene una lista FIJA de campos (`CAMPOS_ESTANDAR` en `api/lib/integracion-datos.js`:
+telefono⭐, nombre, apellido, documento, ciudad, correo, boleta, total_abonado, saldo, estado_pago).
+El rifero NO cambia su formato: solo mapea sus columnas a esos campos (`config.mapeo`). Pieza central:
+`api/lib/integracion-datos.js` (busca el teléfono en la fuente, mapea y AGREGA). Si hay varias filas
+por contacto, el rifero elige (`config.filas`): 'por_boleta' (suma abonos/saldos, lista boletas) o
+'por_cliente' (una fila tal cual) — decisión de Mateo: "darle la opción al cliente". Usos: (1) **ficha
+del chat** — `fichaIntegracion()` en `bandeja-whatsapp.html` muestra los campos en el panel derecho
+(acción 'consultar', que SÍ pueden ver los asesores, no solo Mateo); (2) **flujos** — el motor carga
+esos campos en las variables de la sesión al arrancar, así una Condición "total_abonado menor que
+80000" funciona (el número va crudo, sin formato, para que compare bien). Verificado: 2 boletas de un
+mismo número → total_abonado=70000 (sumado), boleta="1234, 5678", y aparece en la ficha como $70.000.
+
+**Cuidado / qué NO hacer (Fase B):** los numéricos (total_abonado, saldo) viajan como NÚMERO crudo a
+las variables del flujo (no formateados) — NO formatearlos antes de las condiciones o `parseFloat` los
+rompería (los puntos de mil se leen como decimales). Falta **Fase C (escribir)**: registrar ventas/abonos
+en la fuente. El emparejamiento de teléfono en Supabase prueba 3 variantes (con/sin 57); si un rifero
+guarda el teléfono con espacios/guiones, no cruzará — habría que normalizar.
+
 ---
 
 ## 2026-06-13 — [WhatsApp] — Flujos: traer funciones del SaaS a la bandeja (Fase 1 hecha)

@@ -15,11 +15,10 @@
 
 ## Tareas pendientes
 
-- [ ] (2026-06-13) **INTEGRACIONES — Fase B: que los flujos LEAN** de la conexión (Google Sheets /
-  Supabase). Ej: un nodo/condición que consulta "¿el número {{numero}} está libre?" mirando la fuente
-  conectada. El backend hace la consulta con la llave guardada (`api/whatsapp/integraciones.js` ya
-  tiene los conectores de lectura: `probarSupabase`/`probarGoogleSheets` sirven de base). Pensar cómo
-  se "desprende" de los 5 nodos (probablemente Condición/Pregunta para leer).
+- [x] (2026-06-13) **INTEGRACIONES — Fase B (HECHA):** mapeo de columnas a campos estándar + ficha del
+  chat (panel derecho muestra los datos de la fuente conectada) + los flujos cargan esos campos
+  (`{{total_abonado}}`, `{{saldo}}`, `{{boleta}}`…) para usarlos en condiciones. Verificado con datos
+  reales (suma de 2 boletas = 70.000). Ver bitácora 13-jun. FALTA probar la condición en un flujo en vivo.
 - [ ] (2026-06-13) **INTEGRACIONES — Fase C: que los flujos ESCRIBAN** (registrar una venta/abono).
   Supabase-primero (insert/update por REST). Google Sheets escribir necesita login de Google o un
   puente Apps Script (más adelante). **TOCA DATOS DE LA RIFA** — con cuidado. Ver bitácora 13-jun.

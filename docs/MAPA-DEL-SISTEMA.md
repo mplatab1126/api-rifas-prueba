@@ -186,8 +186,10 @@ defecto OFF** = nada corre. Falta Fase 2b (timeout "no respondió") y la prueba 
 **Google Sheets** (enlace público, lectura) y **Supabase** (URL+llave+tabla, lectura/escritura) y que
 los flujos usen esos datos. Piezas: `api/whatsapp/integraciones.js` (listar/guardar/probar/eliminar;
 enmascara las llaves), `public/integraciones-bandeja.js` + `#modIntegraciones`, tabla `integraciones`
-(ver `sql/integraciones.sql`). **FASE A (hecha):** conectar + probar (solo lectura). Las llaves viven
-solo en el backend. Falta Fase B (flujos leen) y Fase C (flujos escriben). Ver bitácora 13-jun.
+(ver `sql/integraciones.sql`). **FASE A+B (hechas):** conectar + **mapear columnas a campos estándar**
+(`api/lib/integracion-datos.js`, lista `CAMPOS_ESTANDAR`; agrega por_boleta/por_cliente) + **ficha del
+chat** (`fichaIntegracion()` muestra los datos en el panel derecho) + los **flujos** cargan esos campos
+para usarlos en condiciones. Las llaves viven solo en el backend. Falta Fase C (flujos escriben). Ver bitácora 13-jun.
 
 **Agente de IA (Claude):** `agente.js` (cabina de control; **2026-06-08**: el botón **🤖 por chat** lo
 puede usar el **dueño de la línea** (Liliana), no solo Mateo —la cabina/costos/disparadores siguen solo
