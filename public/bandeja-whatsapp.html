@@ -1095,22 +1095,15 @@
           </div>
           <div class="zona-trabajo">
             <div class="paleta">
-              <div class="titulo-p">Pasos básicos</div>
+              <div class="titulo-p">Pasos</div>
               <div class="pieza" onclick="agregarNodo('mensaje')" title="Texto, foto o audio; y si quieres, con botones o lista para que el cliente elija"><span class="cubo c-mensaje"></span>Mensaje</div>
               <div class="pieza" onclick="agregarNodo('pregunta')" title="Pregunta algo y guarda la respuesta en un campo"><span class="cubo c-pregunta"></span>Pregunta</div>
               <div class="pieza" onclick="agregarNodo('accion')" title="Etiquetas y campos"><span class="cubo c-accion"></span>Acción</div>
               <div class="pieza" onclick="agregarNodo('condicion')" title="Divide el camino según la respuesta o un campo"><span class="cubo c-condicion"></span>Condición</div>
-              <div class="pieza" onclick="agregarNodo('clasificar')" title="La IA entiende la intención del cliente y la guarda en un campo"><span class="cubo c-clasificar"></span>Clasificar con IA</div>
-              <div class="titulo-p" style="margin-top:14px;">Avanzados</div>
-              <div class="pieza" onclick="agregarNodo('solicitud')"><span class="cubo c-solicitud"></span>Solicitud externa</div>
-              <div class="pieza" onclick="agregarNodo('aleatorio')"><span class="cubo c-aleatorio"></span>Aleatorio (A/B)</div>
-              <div class="pieza" onclick="agregarNodo('esperar')"><span class="cubo c-esperar"></span>Esperar</div>
-              <div class="pieza" onclick="agregarNodo('irflujo')"><span class="cubo c-irflujo"></span>Ir a otro flujo</div>
-              <div class="pieza" onclick="agregarNodo('asignar')"><span class="cubo c-asignar"></span>Pasar a asesor</div>
-              <div class="titulo-p" style="margin-top:14px;">Extras</div>
-              <div class="pieza" onclick="agregarNodo('comentario')"><span class="cubo c-comentario"></span>Comentario</div>
-              <div class="fl-sub" style="font-size:11.5px; margin-top:12px; line-height:1.5;">
+              <div class="pieza" onclick="agregarNodo('irflujo')" title="Continúa en otro flujo"><span class="cubo c-irflujo"></span>Ir a otro flujo</div>
+              <div class="fl-sub" style="font-size:11.5px; margin-top:14px; line-height:1.5;">
                 Conecta las cajitas arrastrando entre los puntos. En los textos puedes usar <b>{{campo}}</b>.
+                Los botones y listas viven dentro de <b>Mensaje</b>.
               </div>
             </div>
             <div id="lienzo"></div>

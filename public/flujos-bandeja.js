@@ -92,34 +92,40 @@ async function crearDesdePlantilla(clave) {
   await abrirFlujo(r.flujo.id);
   document.getElementById('edPalabras').value = meta.palabras;
   const inicio = Object.keys(nodos()).find(k => nodos()[k].name === 'inicio');
-  const N = (tipo, x, y, datos) =>
-    editor.addNode(tipo, tipo === 'comentario' ? 0 : 1, salidasDe(tipo), x, y, 'nodo-' + tipo, datos, nodoHtml(tipo, datos), false);
+  // Solo se usan los 5 nodos base. Los menús de botones son "Mensaje con botones"
+  // (respuesta:'botones' → 4 salidas), que es una variante de Mensaje.
+  const N = (tipo, x, y, datos) => {
+    const outs = (tipo === 'mensaje' && datos.respuesta === 'botones') ? 4
+               : (tipo === 'mensaje' && datos.respuesta === 'lista') ? 2
+               : salidasDe(tipo);
+    return editor.addNode(tipo, tipo === 'comentario' ? 0 : 1, outs, x, y, 'nodo-' + tipo, datos, nodoHtml(tipo, datos), false);
+  };
   const C = (a, b, sal) => editor.addConnection(a, b, sal || 'output_1', 'input_1');
 
   if (clave === 'bienvenida') {
-    const menu = N('botones', 280, 80, { texto: '¡Hola! Bienvenido a nuestra rifa 🎉 ¿Qué quieres hacer?', btn1: 'Comprar boleta', btn2: 'Ver premios', btn3: 'Hablar con asesor' });
+    const menu = N('mensaje', 280, 80, { texto: '¡Hola! Bienvenido a nuestra rifa 🎉 ¿Qué quieres hacer?', respuesta: 'botones', btn1: 'Comprar boleta', btn2: 'Ver premios', btn3: 'Hablar con asesor' });
     const preg = N('pregunta', 620, 20, { texto: '¿Qué número quieres? Escríbelo y lo revisamos 🍀', tipo: 'numero', campo: '', reintentos: 3, saltar: '' });
-    const pago = N('mensaje', 940, 20, { texto: 'Para apartarlo: [ESCRIBE AQUÍ TUS CUENTAS DE PAGO]. Cuando pagues, envíame el comprobante por aquí 🙏', adjunto: '', adjunto_url: '' });
-    const premios = N('mensaje', 620, 240, { texto: '🏆 [DESCRIBE AQUÍ TUS PREMIOS Y LA FECHA DEL SORTEO]', adjunto: '', adjunto_url: '' });
-    const asesor = N('asignar', 620, 420, { miembro: '' });
+    const pago = N('mensaje', 940, 20, { texto: 'Para apartarlo: [ESCRIBE AQUÍ TUS CUENTAS DE PAGO]. Cuando pagues, envíame el comprobante por aquí 🙏' });
+    const premios = N('mensaje', 620, 240, { texto: '🏆 [DESCRIBE AQUÍ TUS PREMIOS Y LA FECHA DEL SORTEO]' });
+    const asesor = N('mensaje', 620, 420, { texto: 'Con gusto te ayudamos 🙌 En un momento te atiende un asesor.' });
     C(inicio, menu); C(menu, preg, 'output_1'); C(preg, pago); C(menu, premios, 'output_2');
     C(premios, menu); C(menu, asesor, 'output_3'); C(menu, asesor, 'output_4');
   }
   if (clave === 'cobro') {
-    const saludo = N('mensaje', 260, 80, { texto: 'Hola {{nombre}} 👋 Te escribimos de Los Plata: tu boleta tiene saldo pendiente para el sorteo.', adjunto: '', adjunto_url: '' });
-    const menu = N('botones', 560, 80, { texto: '¿Cómo vamos con el pago?', btn1: 'Ya pagué', btn2: 'Pago hoy', btn3: 'Necesito ayuda' });
-    const verificar = N('asignar', 900, 20, { miembro: '' });
-    const animo = N('mensaje', 900, 200, { texto: '¡Perfecto! Te esperamos 🙌 Cuentas: [TUS CUENTAS]. Me avisas con el comprobante.', adjunto: '', adjunto_url: '' });
-    const ayuda = N('asignar', 900, 380, { miembro: '' });
+    const saludo = N('mensaje', 260, 80, { texto: 'Hola {{nombre}} 👋 Te escribimos de Los Plata: tu boleta tiene saldo pendiente para el sorteo.' });
+    const menu = N('mensaje', 560, 80, { texto: '¿Cómo vamos con el pago?', respuesta: 'botones', btn1: 'Ya pagué', btn2: 'Pago hoy', btn3: 'Necesito ayuda' });
+    const verificar = N('mensaje', 900, 20, { texto: '¡Genial! Mándame el comprobante por aquí y lo verificamos 🙏' });
+    const animo = N('mensaje', 900, 200, { texto: '¡Perfecto! Te esperamos 🙌 Cuentas: [TUS CUENTAS]. Me avisas con el comprobante.' });
+    const ayuda = N('mensaje', 900, 380, { texto: 'Con gusto te ayudamos 🙌 En un momento te atiende un asesor.' });
     C(inicio, saludo); C(saludo, menu); C(menu, verificar, 'output_1');
     C(menu, animo, 'output_2'); C(menu, ayuda, 'output_3'); C(menu, ayuda, 'output_4');
   }
   if (clave === 'postsorteo') {
-    const anuncio = N('mensaje', 260, 80, { texto: '🎉 ¡Tenemos ganador! [NÚMERO Y NOMBRE DEL GANADOR]. Gracias por participar con nosotros.', adjunto: '', adjunto_url: '' });
-    const menu = N('botones', 560, 80, { texto: '¿Quieres que te avisemos de la próxima rifa?', btn1: 'Sí, avísame', btn2: 'Por ahora no', btn3: '' });
+    const anuncio = N('mensaje', 260, 80, { texto: '🎉 ¡Tenemos ganador! [NÚMERO Y NOMBRE DEL GANADOR]. Gracias por participar con nosotros.' });
+    const menu = N('mensaje', 560, 80, { texto: '¿Quieres que te avisemos de la próxima rifa?', respuesta: 'botones', btn1: 'Sí, avísame', btn2: 'Por ahora no', btn3: '' });
     const marcar = N('accion', 880, 20, { accion: 'poner_etiqueta', etiqueta: etiquetas[0]?.nombre || 'Interesado', campo: '', valor: '' });
-    const avisar = N('mensaje', 1160, 20, { texto: '¡Anotado! Te escribimos apenas abramos la próxima 🎟️', adjunto: '', adjunto_url: '' });
-    const gracias = N('mensaje', 880, 240, { texto: 'Gracias por participar 🙏 ¡Hasta la próxima!', adjunto: '', adjunto_url: '' });
+    const avisar = N('mensaje', 1160, 20, { texto: '¡Anotado! Te escribimos apenas abramos la próxima 🎟️' });
+    const gracias = N('mensaje', 880, 240, { texto: 'Gracias por participar 🙏 ¡Hasta la próxima!' });
     C(inicio, anuncio); C(anuncio, menu); C(menu, marcar, 'output_1'); C(marcar, avisar);
     C(menu, gracias, 'output_2'); C(menu, gracias, 'output_4');
   }
