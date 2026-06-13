@@ -171,6 +171,13 @@ ciudad, acción **programar** a una hora, y casilla **"Liliana atiende"**), `dif
 envía las difusiones programadas por tandas), `lib/difusion-envio.js` (núcleo de envío compartido),
 `plantillas.js`, `respuestas-rapidas.js`.
 
+**Flujos (constructor visual · solo Mateo · 2026-06-13):** sección "Flujos" en la bandeja para dibujar
+conversaciones con cajitas (estilo ManyChat), portada del prototipo del SaaS. Piezas: `flujos.js`
+(endpoint: listar/obtener/crear/guardar/duplicar/eliminar), pantalla `public/flujos-bandeja.js` +
+`#modFlujos` en `bandeja-whatsapp.html` (usa la librería Drawflow por CDN), tablas `flujos` y
+`flujo_sesiones` (ver `sql/flujos.sql`). **FASE 1**: dibuja, guarda y prueba en simulador; **NO ejecuta
+con clientes reales todavía** (el motor es la Fase 2 — ver PENDIENTES y bitácora 13-jun).
+
 **Agente de IA (Claude):** `agente.js` (cabina de control; **2026-06-08**: el botón **🤖 por chat** lo
 puede usar el **dueño de la línea** (Liliana), no solo Mateo —la cabina/costos/disparadores siguen solo
 gerencia—; y al prender el agente **dispara la respuesta desde el SERVIDOR**, ya no depende del navegador),

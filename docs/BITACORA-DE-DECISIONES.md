@@ -26,6 +26,38 @@
 
 ---
 
+## 2026-06-13 — [WhatsApp] — Flujos: traer funciones del SaaS a la bandeja (Fase 1 hecha)
+
+**Qué decidimos:** empezar a llevar funciones de la plataforma SaaS (`C:\rifas-saas`,
+`rifas-saas-mu.vercel.app`) HACIA la bandeja de Los Plata, **una a la vez y bien hecha**,
+conservando el aspecto visual de la bandeja. La primera: **Flujos** (constructor visual de
+conversaciones, estilo ManyChat). Mateo lo pidió para mandar difusiones con flujos.
+
+**Hallazgo clave (importante):** la función "Flujos" del SaaS está **incompleta**: es solo el
+**dibujante + un simulador** que corre en el navegador. El SaaS NO tiene motor de ejecución, ni
+webhook, ni conexión a WhatsApp (su backend son 2 archivos). O sea, "merge" en la práctica =
+**reconstruir bien las funciones en la bandeja** (que sí es el sistema real), usando el SaaS como
+guía de diseño. Para la difusión urgente de Mateo se usó lo que YA existe: difusión con
+"que Liliana atienda" (agente activado).
+
+**Regla de oro (Flujos ↔ Liliana):** un chat lo lleva UN solo cerebro: o un flujo, o Liliana,
+nunca los dos. En la Fase 2 el motor se engancha en `recibir.js` ANTES de disparar a Liliana.
+
+**Fase 1 (HECHA, publicada commit fdf2a75, verificada en producción):** constructor dentro de la
+bandeja, solo Mateo. Piezas: tablas nuevas `flujos` y `flujo_sesiones` (single-tenant, `linea_id`;
+RLS prendido, backend con service_role); endpoint `api/whatsapp/flujos.js` (listar/obtener/crear/
+guardar/duplicar/eliminar); pantalla `public/flujos-bandeja.js` + sección `#modFlujos` en
+`bandeja-whatsapp.html` (librería Drawflow por CDN). Adaptaciones vs SaaS: campos = texto libre
+(no tabla de campos), sin secuencias, "pasar a asesor" = cualquiera del equipo. El dibujante
+GUARDA y el SIMULADOR corre; **todavía NO ejecuta con clientes reales** (eso es la Fase 2).
+
+**Cuidado / qué NO hacer:** NO encender un flujo en producción hasta que exista el motor (Fase 2);
+hoy un flujo "activo" no hace nada. Cuando se construya el motor, respetar la regla de oro y
+probar primero con el número de Mateo (flujo apagado por defecto). NO confundir las dos bases:
+la bandeja es `ikvzmojzgpxuhnbymtxm`; el SaaS es `ikbfmttduiagtwfpkkfd`.
+
+---
+
 ## 2026-06-13 — [WhatsApp] — Difusiones: variables de plantilla con datos del cliente
 
 **Qué decidimos:** las variables `{{1}} {{2}}…` de las plantillas de difusión ahora se

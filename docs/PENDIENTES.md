@@ -15,6 +15,18 @@
 
 ## Tareas pendientes
 
+- [ ] (2026-06-13) **FLUJOS — Fase 2: el MOTOR** (que un flujo CORRA con clientes reales).
+  Crear `api/lib/flujo-motor.js` (traducir a backend el simulador de `public/flujos-bandeja.js`)
+  y engancharlo en `api/whatsapp/recibir.js` ANTES de `dispararAgenteSiActivo`: si la conversación
+  tiene una `flujo_sesiones` activa → la maneja el flujo; si no → Liliana como hoy (regla de oro:
+  flujo O Liliana, nunca los dos). Empezar con cajitas esenciales (mensaje, pregunta, botones,
+  condición, pasar a asesor, ir a flujo). **TOCA CLIENTES REALES** — probar primero con el número
+  de Mateo y arrancar con el flujo apagado. Tablas ya creadas (`flujos`, `flujo_sesiones`). Ver bitácora 13-jun.
+- [ ] (2026-06-13) **FLUJOS — Fase 3:** en el formulario de difusión, opción "iniciar este flujo
+  cuando respondan" (alternativa a "que Liliana atienda"). Cambio chico una vez exista el motor.
+- [ ] (2026-06-13) **FLUJOS — diferido de Fase 1** (cuando se necesiten): campos personalizados
+  formales (hoy son texto libre), secuencias, y elegir asesor específico en "Pasar a asesor"
+  (hoy solo "cualquiera del equipo"). La cabina del SaaS los tiene como diseño.
 - [ ] (2026-06-12) **🚀 SAAS DE RIFAS — YA ARRANCÓ (mismo día):** repo propio
   `github.com/mplatab1126/rifas-saas` con su PROPIA bitácora y pendientes (trabajar el SaaS
   desde `C:\rifas-saas`, NO desde aquí). Supabase propio creado (`ikbfmttduiagtwfpkkfd`,
