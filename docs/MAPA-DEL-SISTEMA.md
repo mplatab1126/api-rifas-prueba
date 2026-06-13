@@ -175,8 +175,12 @@ envía las difusiones programadas por tandas), `lib/difusion-envio.js` (núcleo 
 conversaciones con cajitas (estilo ManyChat), portada del prototipo del SaaS. Piezas: `flujos.js`
 (endpoint: listar/obtener/crear/guardar/duplicar/eliminar), pantalla `public/flujos-bandeja.js` +
 `#modFlujos` en `bandeja-whatsapp.html` (usa la librería Drawflow por CDN), tablas `flujos` y
-`flujo_sesiones` (ver `sql/flujos.sql`). **FASE 1**: dibuja, guarda y prueba en simulador; **NO ejecuta
-con clientes reales todavía** (el motor es la Fase 2 — ver PENDIENTES y bitácora 13-jun).
+`flujo_sesiones` (ver `sql/flujos.sql`). **FASE 1**: dibuja, guarda y prueba en simulador.
+**FASE 2 (motor, hecha):** `api/lib/flujo-motor.js` ejecuta el flujo con clientes reales por WhatsApp,
+enganchado en `recibir.js` antes de Liliana (flujo O Liliana, nunca los dos). Botones interactivos vía
+`enviarBotones`/`enviarLista` (`api/lib/whatsapp.js`). **Interruptor de seguridad** `flujos_modo`
+(off|prueba|vivo, tabla `configuracion`) con control en la pantalla de Flujos (solo Mateo); **por
+defecto OFF** = nada corre. Falta Fase 2b (timeout "no respondió") y la prueba en vivo. Ver bitácora 13-jun.
 
 **Agente de IA (Claude):** `agente.js` (cabina de control; **2026-06-08**: el botón **🤖 por chat** lo
 puede usar el **dueño de la línea** (Liliana), no solo Mateo —la cabina/costos/disparadores siguen solo

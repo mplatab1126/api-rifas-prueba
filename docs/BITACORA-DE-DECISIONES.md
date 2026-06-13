@@ -60,6 +60,22 @@ reescribieron para usar solo los 5. **NO re-agregar nodos sueltos a la paleta si
 El `<script>` de `flujos-bandeja.js` va versionado (`?v=...`): al cambiarlo, subir el número para que
 el navegador baje la versión nueva sin limpiar caché.
 
+**Fase 2 (HECHA, publicada, motor APAGADO por defecto):** `api/lib/flujo-motor.js` ejecuta un flujo
+con clientes reales por WhatsApp. Enganchado en `recibir.js` ANTES de Liliana (regla de oro: si un
+flujo tomó el chat, Liliana NO actúa). Ejecuta los 5 nodos (Mensaje texto/botones/lista, Pregunta con
+validación y reintentos, Acción etiqueta/campo, Condición, Ir a otro flujo). Se agregó `enviarBotones`
+y `enviarLista` a `api/lib/whatsapp.js` (botones interactivos; la respuesta del cliente llega como el
+título del botón). **Interruptor de seguridad** (tabla `configuracion`, claves `flujos_modo` =
+off|prueba|vivo y `flujos_numeros_prueba`), con control visual en la pantalla de Flujos (solo Mateo).
+Por defecto **off** = ningún flujo corre aunque esté "Activo"; en off, `procesarFlujo` devuelve false
+de inmediato → cero efecto en clientes reales (verificado: el webhook sigue sano). Cuando un flujo
+arranca, pone `agente_activo=false` para que el cron de Liliana no interfiera.
+
+**Cuidado / qué NO hacer (Fase 2):** NO poner el motor "En vivo" sin probar antes en "Modo prueba" con
+el número de Mateo. El "no respondió en X horas" de Pregunta (salida 3) NO está implementado aún
+(Fase 2b, necesita cron); hoy el flujo espera la respuesta sin límite. El motor manda los mensajes
+DENTRO del webhook de Meta; si un flujo se hace largo conviene moverlo a una invocación aparte.
+
 **Cuidado / qué NO hacer:** NO encender un flujo en producción hasta que exista el motor (Fase 2);
 hoy un flujo "activo" no hace nada. Cuando se construya el motor, respetar la regla de oro y
 probar primero con el número de Mateo (flujo apagado por defecto). NO confundir las dos bases:

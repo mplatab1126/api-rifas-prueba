@@ -15,13 +15,16 @@
 
 ## Tareas pendientes
 
-- [ ] (2026-06-13) **FLUJOS — Fase 2: el MOTOR** (que un flujo CORRA con clientes reales).
-  Crear `api/lib/flujo-motor.js` (traducir a backend el simulador de `public/flujos-bandeja.js`)
-  y engancharlo en `api/whatsapp/recibir.js` ANTES de `dispararAgenteSiActivo`: si la conversación
-  tiene una `flujo_sesiones` activa → la maneja el flujo; si no → Liliana como hoy (regla de oro:
-  flujo O Liliana, nunca los dos). Empezar con cajitas esenciales (mensaje, pregunta, botones,
-  condición, pasar a asesor, ir a flujo). **TOCA CLIENTES REALES** — probar primero con el número
-  de Mateo y arrancar con el flujo apagado. Tablas ya creadas (`flujos`, `flujo_sesiones`). Ver bitácora 13-jun.
+- [ ] (2026-06-13) **FLUJOS — PROBAR EL MOTOR EN VIVO con el número de Mateo.** El motor ya está
+  hecho y publicado (`api/lib/flujo-motor.js`, enganchado en `recibir.js`), pero el interruptor
+  está en **Apagado**. Para probar: en Flujos → "Modo prueba" + escribir el número de Mateo →
+  activar un flujo con una palabra clave → Mateo le escribe esa palabra a la línea → debe responder
+  el flujo (no Liliana). Cuando esté fino, Mateo pasa a "En vivo". Ver bitácora 13-jun.
+- [ ] (2026-06-13) **FLUJOS — Fase 2b:** el "no respondió en X horas" de la cajita Pregunta (salida
+  3) necesita un cron que barra las `flujo_sesiones` en estado 'esperando' vencidas. Hoy el flujo
+  espera la respuesta indefinidamente (si el cliente no contesta, el chat queda quieto hasta que un
+  asesor lo tome). También: latencia — hoy el motor manda los mensajes dentro del webhook; si un
+  flujo se hace largo, conviene moverlo a una invocación aparte (como el agente).
 - [ ] (2026-06-13) **FLUJOS — Fase 3:** en el formulario de difusión, opción "iniciar este flujo
   cuando respondan" (alternativa a "que Liliana atienda"). Cambio chico una vez exista el motor.
 - [ ] (2026-06-13) **FLUJOS — diferido de Fase 1** (cuando se necesiten): campos personalizados
