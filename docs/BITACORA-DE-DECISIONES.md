@@ -26,6 +26,30 @@
 
 ---
 
+## 2026-06-13 — [WhatsApp] — Difusiones: variables de plantilla con datos del cliente
+
+**Qué decidimos:** las variables `{{1}} {{2}}…` de las plantillas de difusión ahora se
+pueden rellenar con 7 datos del cliente (antes solo nombre y teléfono): `{nombre}`,
+`{apellido}`, `{telefono}`, `{ciudad}`, `{abonado}` (total abonado), `{restante}` (total
+que debe) y `{boleta}`. En la pantalla aparecen como botones junto a cada variable. El
+dinero sale formateado (`$80.000`). Si un cliente tiene VARIAS boletas: abonado/restante se
+SUMAN, y `{boleta}` LISTA todas ("0186, 0243, …") — decisión de Mateo.
+
+**Por qué:** Mateo necesitaba mandar cobros personalizados ("Tu número: X, tu saldo: Y") y
+el sistema solo sabía poner nombre/teléfono.
+
+**Piezas:** se centralizó todo en `api/lib/plantilla-vars.js` (antes `resolverParametros`
+estaba copiado en 3 archivos: difusiones.js, difusion-envio.js, plantillas.js). Los datos los
+trae la función de base `difusion_datos_cliente(text[])` (SOLO LECTURA) **al momento del
+envío**, para que el saldo esté al día aunque la difusión esté programada. Publicado a `main`
+(commit 62ad4bc) y verificado al aire.
+
+**Cuidado / qué NO hacer:** `{boleta}` puede quedar larguísimo (hay clientes con 25+ boletas;
+el mensaje crece). Si algún día se vuelve problema, cambiar la regla en `difusion_datos_cliente`
+(string_agg). La función NO modifica nada; si se recrea, conservar el GRANT EXECUTE a anon.
+
+---
+
 ## 2026-06-12 — [General] — Nace el proyecto "SaaS de rifas": investigación hecha y plan en docs/PLAN-PLATAFORMA-SAAS.md
 
 **Qué decidimos:** explorar convertir la bandeja + Liliana en una plataforma por suscripción para
