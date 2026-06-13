@@ -22,6 +22,7 @@ import { supabaseAdmin } from '../lib/supabase.js';
 import { configWhatsapp } from '../lib/whatsapp.js';
 import { permitido } from '../lib/rate-limit.js';
 import { secretoInterno } from '../lib/secreto-interno.js';
+import { procesarFlujo } from '../lib/flujo-motor.js';
 
 export default async function handler(req, res) {
   // ── 1) Verificación del webhook (GET) ─────────────────────────────────────
@@ -98,7 +99,13 @@ export default async function handler(req, res) {
       }
     }
     for (const d of paraDisparar.values()) {
-      await dispararAgenteSiActivo(d.telefono, d.lineaId);
+      // Regla de oro: primero el motor de flujos. Si un flujo tomó el chat (lo arrancó
+      // o avanzó), Liliana NO actúa. Si no, sigue como hoy. El motor está protegido por
+      // su interruptor de seguridad (flujos_modo): si está 'off', siempre devuelve false.
+      let flujoManejo = false;
+      try { flujoManejo = await procesarFlujo(d.telefono, d.lineaId, d.texto, d.esNueva); }
+      catch (e) { console.error('[whatsapp/recibir] motor de flujos falló:', e.message || e); }
+      if (!flujoManejo) await dispararAgenteSiActivo(d.telefono, d.lineaId);
     }
   } catch (err) {
     console.error('[whatsapp/recibir] error procesando webhook:', err);
@@ -197,7 +204,7 @@ async function guardarEntrante(m, nombrePerfil, lineaId, paraDisparar) {
       // Si el agente está activo en este chat, dispararlo de una (sin depender del navegador).
       // H86: aquí solo se ANOTA; el disparo real lo hace el handler UNA vez por conversación
       // al final del webhook (una ráfaga de 3 mensajes ya no lanza 3 invocaciones del motor).
-      if (paraDisparar) paraDisparar.set(telefono + '|' + lineaId, { telefono, lineaId });
+      if (paraDisparar) paraDisparar.set(telefono + '|' + lineaId, { telefono, lineaId, texto, esNueva: !!(conversacion && conversacion.esNuevo) });
     }
   }
 

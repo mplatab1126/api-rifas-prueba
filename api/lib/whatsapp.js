@@ -101,6 +101,72 @@ export async function enviarTexto(telefono, texto, lineaId) {
 }
 
 /**
+ * Envía un mensaje con BOTONES de respuesta (interactivo de WhatsApp). Máx 3 botones,
+ * cada título máx 20 caracteres (límite de Meta). Cuando el cliente toca un botón,
+ * el mensaje entrante llega con texto = el título del botón (así se empareja en el flujo).
+ * @param {string[]} botones - hasta 3 títulos
+ */
+export async function enviarBotones(telefono, texto, botones, lineaId) {
+  const { token, phoneNumberId } = await resolverLinea(lineaId);
+  if (!token || !phoneNumberId) return { ok: false, error: 'No hay token/número configurado para esta línea.' };
+  const buttons = (botones || []).filter(b => String(b || '').trim()).slice(0, 3).map((b, i) => ({
+    type: 'reply', reply: { id: 'b' + (i + 1), title: String(b).trim().slice(0, 20) },
+  }));
+  if (!buttons.length) return enviarTexto(telefono, texto, lineaId);   // sin botones válidos → texto normal
+  try {
+    const resp = await fetch(`${GRAPH}/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp', recipient_type: 'individual', to: telefono,
+        type: 'interactive',
+        interactive: { type: 'button', body: { text: String(texto || '').slice(0, 1024) }, action: { buttons } },
+      }),
+      signal: AbortSignal.timeout(30000),
+    });
+    const data = await resp.json();
+    if (!resp.ok || data.error) return { ok: false, error: data.error?.message || `HTTP ${resp.status}`, raw: data };
+    return { ok: true, wa_message_id: data.messages?.[0]?.id, raw: data };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+/**
+ * Envía un mensaje con LISTA de opciones (interactivo de WhatsApp). Máx 10 opciones,
+ * cada título máx 24 caracteres. El cliente abre la lista y elige; llega texto = el título.
+ * @param {string[]} opciones - hasta 10 títulos
+ */
+export async function enviarLista(telefono, texto, opciones, lineaId, etiquetaBoton = 'Ver opciones') {
+  const { token, phoneNumberId } = await resolverLinea(lineaId);
+  if (!token || !phoneNumberId) return { ok: false, error: 'No hay token/número configurado para esta línea.' };
+  const rows = (opciones || []).filter(o => String(o || '').trim()).slice(0, 10).map((o, i) => ({
+    id: 'o' + (i + 1), title: String(o).trim().slice(0, 24),
+  }));
+  if (!rows.length) return enviarTexto(telefono, texto, lineaId);
+  try {
+    const resp = await fetch(`${GRAPH}/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp', recipient_type: 'individual', to: telefono,
+        type: 'interactive',
+        interactive: {
+          type: 'list', body: { text: String(texto || '').slice(0, 1024) },
+          action: { button: String(etiquetaBoton).slice(0, 20), sections: [{ rows }] },
+        },
+      }),
+      signal: AbortSignal.timeout(30000),
+    });
+    const data = await resp.json();
+    if (!resp.ok || data.error) return { ok: false, error: data.error?.message || `HTTP ${resp.status}`, raw: data };
+    return { ok: true, wa_message_id: data.messages?.[0]?.id, raw: data };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+/**
  * Envía una IMAGEN por URL (link público) a un número de WhatsApp.
  * Meta descarga la imagen del link y se la entrega al cliente.
  *
