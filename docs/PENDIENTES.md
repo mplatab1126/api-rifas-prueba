@@ -15,6 +15,17 @@
 
 ## Tareas pendientes
 
+- [ ] (2026-06-13) **INTEGRACIONES — Fase B: que los flujos LEAN** de la conexión (Google Sheets /
+  Supabase). Ej: un nodo/condición que consulta "¿el número {{numero}} está libre?" mirando la fuente
+  conectada. El backend hace la consulta con la llave guardada (`api/whatsapp/integraciones.js` ya
+  tiene los conectores de lectura: `probarSupabase`/`probarGoogleSheets` sirven de base). Pensar cómo
+  se "desprende" de los 5 nodos (probablemente Condición/Pregunta para leer).
+- [ ] (2026-06-13) **INTEGRACIONES — Fase C: que los flujos ESCRIBAN** (registrar una venta/abono).
+  Supabase-primero (insert/update por REST). Google Sheets escribir necesita login de Google o un
+  puente Apps Script (más adelante). **TOCA DATOS DE LA RIFA** — con cuidado. Ver bitácora 13-jun.
+- [ ] (2026-06-13) **INTEGRACIONES — refuerzo:** cifrar las llaves en reposo (hoy van en claro en
+  `integraciones.config`) y, para el SaaS multi-rifero, limitar el SSRF del "probar".
+
 - [ ] (2026-06-13) **FLUJOS — PROBAR EL MOTOR EN VIVO con el número de Mateo.** El motor ya está
   hecho y publicado (`api/lib/flujo-motor.js`, enganchado en `recibir.js`), pero el interruptor
   está en **Apagado**. Para probar: en Flujos → "Modo prueba" + escribir el número de Mateo →

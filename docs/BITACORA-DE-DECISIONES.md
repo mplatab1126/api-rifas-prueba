@@ -26,6 +26,34 @@
 
 ---
 
+## 2026-06-13 — [Seguridad] / [WhatsApp] — Integraciones: conectar fuentes de datos externas (Fase A)
+
+**Qué decidimos:** agregar a la bandeja un panel **Integraciones** (solo Mateo) para conectar
+**Google Sheets** y **Supabase** — las bases que usan los riferos — y que los flujos puedan
+LEER/REGISTRAR datos de la rifa. Se hace en fases: **Fase A (HECHA)** = el panel + guardar la
+conexión + probarla (solo lectura). **Fase B** = los flujos LEEN de la conexión. **Fase C** = los
+flujos ESCRIBEN.
+
+**Realidad técnica:** con **Supabase** se puede leer Y escribir fácil (API REST limpia). Con
+**Google Sheets**, leer es fácil (enlace público → CSV vía `gviz/tq?tqx=out:csv`, sin OAuth), pero
+**escribir es difícil** (necesita login de Google / Apps Script). Por eso el camino de escritura
+será Supabase-primero; Sheets quedará más para lectura.
+
+**Seguridad (lo importante):** los secretos (llaves) viven en `integraciones.config` (jsonb), RLS
+prendido, y **NUNCA se devuelven completos a la pantalla** (el endpoint los enmascara `••••1234`).
+Todas las consultas a la fuente externa las hace el BACKEND con la llave guardada. Solo Mateo
+(`esMateo`) gestiona integraciones. Piezas: tabla `integraciones` (ver `sql/integraciones.sql`),
+endpoint `api/whatsapp/integraciones.js` (listar/guardar/probar/eliminar), pantalla
+`public/integraciones-bandeja.js` + sección `#modIntegraciones`. Publicado y verificado (conexión de
+prueba real a Supabase respondió OK).
+
+**Cuidado / qué NO hacer:** las llaves NO se cifran en reposo todavía (mejora futura). El "probar"
+hace una petición saliente a la URL que se le dé: como es solo-Mateo el riesgo SSRF es bajo, pero en
+la versión SaaS (multi-rifero) habrá que limitar a dónde puede apuntar. NO exponer la `config`
+completa al navegador en ninguna acción nueva.
+
+---
+
 ## 2026-06-13 — [WhatsApp] — Flujos: traer funciones del SaaS a la bandeja (Fase 1 hecha)
 
 **Qué decidimos:** empezar a llevar funciones de la plataforma SaaS (`C:\rifas-saas`,

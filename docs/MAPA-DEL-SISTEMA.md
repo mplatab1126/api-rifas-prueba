@@ -182,6 +182,13 @@ enganchado en `recibir.js` antes de Liliana (flujo O Liliana, nunca los dos). Bo
 (off|prueba|vivo, tabla `configuracion`) con control en la pantalla de Flujos (solo Mateo); **por
 defecto OFF** = nada corre. Falta Fase 2b (timeout "no respondió") y la prueba en vivo. Ver bitácora 13-jun.
 
+**Integraciones (solo Mateo · 2026-06-13):** sección "Integraciones" en la bandeja para conectar
+**Google Sheets** (enlace público, lectura) y **Supabase** (URL+llave+tabla, lectura/escritura) y que
+los flujos usen esos datos. Piezas: `api/whatsapp/integraciones.js` (listar/guardar/probar/eliminar;
+enmascara las llaves), `public/integraciones-bandeja.js` + `#modIntegraciones`, tabla `integraciones`
+(ver `sql/integraciones.sql`). **FASE A (hecha):** conectar + probar (solo lectura). Las llaves viven
+solo en el backend. Falta Fase B (flujos leen) y Fase C (flujos escriben). Ver bitácora 13-jun.
+
 **Agente de IA (Claude):** `agente.js` (cabina de control; **2026-06-08**: el botón **🤖 por chat** lo
 puede usar el **dueño de la línea** (Liliana), no solo Mateo —la cabina/costos/disparadores siguen solo
 gerencia—; y al prender el agente **dispara la respuesta desde el SERVIDOR**, ya no depende del navegador),
