@@ -157,6 +157,15 @@
     #modIntegraciones .int-aviso.ok { background:var(--mint-light); color:#1f5c34; }
     #modIntegraciones .int-aviso.err { background:#FBE3E3; color:var(--danger); }
     #modIntegraciones .int-hint { font-size:11.5px; color:var(--ink-mute); margin-top:4px; line-height:1.45; }
+    #modIntegraciones .int-map-row { display:flex; align-items:center; gap:10px; margin:8px 0; }
+    #modIntegraciones .int-map-row label { flex:0 0 150px; margin:0; font-size:12px; font-weight:600; color:var(--ink); text-transform:none; }
+    #modIntegraciones .int-map-row select, #modIntegraciones .int-map-row input { flex:1; margin:0; }
+    /* Ficha del chat: datos de la fuente conectada (panel derecho) */
+    .int-ficha { margin:10px 14px; padding:12px 14px; background:var(--cream-50); border:1px solid var(--gray-200); border-radius:12px; }
+    .int-ficha .iff-tit { font-size:0.66rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-mute); margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+    .int-ficha .iff-row { display:flex; justify-content:space-between; gap:10px; font-size:0.84rem; padding:3px 0; }
+    .int-ficha .iff-row .k { color:var(--ink-mute); }
+    .int-ficha .iff-row .v { font-weight:600; text-align:right; word-break:break-word; }
   </style>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1724,6 +1733,7 @@ async function cargarFicha(telefono){
     p.innerHTML = `<div class="pcard"><div class="pnuevo"><b>Cliente nuevo</b><br><span>No está registrado en la base de datos ni tiene boletas.</span></div></div>`;
     fichaVerificacionPago(c);
   fichaCostoIA(c);
+    fichaIntegracion(c);
     return;
   }
 
@@ -1749,6 +1759,32 @@ async function cargarFicha(telefono){
   p.innerHTML = cardCliente + resto;
   fichaVerificacionPago(c);
   fichaCostoIA(c);
+  fichaIntegracion(c);
+}
+
+// Datos del cliente traídos de la fuente CONECTADA (Google Sheets / Supabase), si hay.
+// Aparece como una tarjeta extra en el panel derecho.
+function fichaIntegracion(conv){
+  if(!conv || !conv.telefono) return;
+  const tel = conv.telefono;
+  api('integraciones', { accion:'consultar', linea_id: lineaActual, telefono: tel }).then(r => {
+    if(tel !== actual) return;
+    const d = r && r.datos;
+    if(!d || !d.campos) return;
+    const campos = d.campos;
+    const etiqueta = { nombre:'Nombre', apellido:'Apellido', documento:'Documento', ciudad:'Ciudad', correo:'Correo', boleta:'Boleta(s)', total_abonado:'Total abonado', saldo:'Saldo', estado_pago:'Estado' };
+    const dinero = new Set(['total_abonado','saldo']);
+    const orden = ['nombre','apellido','documento','ciudad','correo','boleta','total_abonado','saldo','estado_pago'];
+    let filas='';
+    for(const k of orden){
+      if(campos[k]==null || campos[k]==='') continue;
+      const val = dinero.has(k) ? pesos(campos[k]) : esc(String(campos[k]));
+      filas += `<div class="iff-row"><span class="k">${etiqueta[k]||k}</span><span class="v">${val}</span></div>`;
+    }
+    if(!filas) return;
+    $('panelBody').insertAdjacentHTML('beforeend',
+      `<div class="int-ficha"><div class="iff-tit">🔌 ${esc((d.integracion&&d.integracion.nombre)||'Base conectada')}</div>${filas}</div>`);
+  }).catch(()=>{});
 }
 
 // Visor del RELOJITO de verificación de pago (todos los perfiles). Responde "¿el sistema
@@ -3843,6 +3879,6 @@ if(localStorage.getItem(PWD_KEY) && localStorage.getItem(NAME_KEY)){
 <!-- Flujos (constructor visual · Fase 1) -->
 <script src="https://cdn.jsdelivr.net/npm/drawflow@0.0.59/dist/drawflow.min.js"></script>
 <script src="/flujos-bandeja.js?v=20260613-3"></script>
-<script src="/integraciones-bandeja.js?v=20260613-1"></script>
+<script src="/integraciones-bandeja.js?v=20260613-2"></script>
 </body>
 </html>

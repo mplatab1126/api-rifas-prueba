@@ -18,6 +18,7 @@ import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 import { supabaseAdmin } from '../lib/supabase.js';
 import { puedeVerLinea, esMateo } from '../lib/asesores.js';
+import { columnasDe, consultarPorLinea, CAMPOS_ESTANDAR } from '../lib/integracion-datos.js';
 
 const CLAVES_SECRETAS = ['key', 'service_key', 'anon_key', 'token', 'password'];
 
@@ -88,8 +89,9 @@ export default async function handler(req, res) {
   if (!nombreAsesor) return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido.' });
   if (!linea_id) return res.status(200).json({ status: 'error', mensaje: 'Falta la línea.' });
   if (!(await puedeVerLinea(nombreAsesor, linea_id))) return res.status(403).json({ status: 'error', mensaje: 'No tienes acceso a esta línea.' });
-  // Las integraciones manejan credenciales: solo Mateo.
-  if (!esMateo(nombreAsesor)) return res.status(200).json({ status: 'error', mensaje: 'Solo Mateo puede gestionar las integraciones.' });
+  // GESTIÓN (manejan credenciales): solo Mateo. 'consultar' (lo que muestra la ficha del
+  // chat) lo puede ver cualquier asesor con acceso a la línea.
+  if (accion !== 'consultar' && !esMateo(nombreAsesor)) return res.status(200).json({ status: 'error', mensaje: 'Solo Mateo puede gestionar las integraciones.' });
 
   try {
     if (accion === 'listar') {
@@ -146,6 +148,26 @@ export default async function handler(req, res) {
       if (!id) return res.status(200).json({ status: 'error', mensaje: 'Falta la integración a eliminar.' });
       await supabaseAdmin.from('integraciones').delete().eq('id', id).eq('linea_id', linea_id);
       return res.status(200).json({ status: 'ok' });
+    }
+
+    // Detectar las columnas de la fuente (para la pantalla de mapeo) + la lista de campos estándar.
+    if (accion === 'columnas') {
+      let tipo = req.body.tipo, config = req.body.config || {};
+      if (req.body.id) {
+        const { data } = await supabaseAdmin.from('integraciones').select('tipo, config').eq('id', req.body.id).eq('linea_id', linea_id).maybeSingle();
+        if (!data) return res.status(200).json({ status: 'error', mensaje: 'No se encontró la integración.' });
+        tipo = data.tipo; config = data.config || {};
+      }
+      const columnas = await columnasDe(tipo, config);
+      return res.status(200).json({ status: 'ok', columnas, campos_estandar: CAMPOS_ESTANDAR });
+    }
+
+    // Consultar un contacto en las integraciones activas (lo usa la ficha del chat).
+    if (accion === 'consultar') {
+      const telefono = String(req.body.telefono || '').replace(/\D/g, '');
+      if (!telefono) return res.status(200).json({ status: 'error', mensaje: 'Falta el teléfono.' });
+      const datos = await consultarPorLinea(linea_id, telefono);
+      return res.status(200).json({ status: 'ok', datos });
     }
 
     return res.status(200).json({ status: 'error', mensaje: 'Acción no válida.' });

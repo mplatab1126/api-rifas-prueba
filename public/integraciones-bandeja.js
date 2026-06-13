@@ -30,14 +30,20 @@ function intRenderCard(i) {
   const detalle = i.tipo === 'supabase'
     ? `tabla: ${esc(cfg.tabla || '—')} · llave: ${esc(cfg.key || '—')}`
     : `hoja pública${cfg.hoja ? ' · ' + esc(cfg.hoja) : ''}`;
+  const mapeado = cfg.mapeo && cfg.mapeo.telefono;
+  const estadoMapeo = mapeado
+    ? '<span style="color:#1f5c34;font-weight:600">✓ datos mapeados</span>'
+    : '<span style="color:#8A6116;font-weight:600">⚠ falta mapear los datos</span>';
   return `<div class="int-card">
     <div class="int-card-top">
       <div class="int-ico">${intTipoIco(i.tipo)}</div>
       <div style="min-width:0">
         <div class="int-nom">${esc(i.nombre)}</div>
         <div class="int-meta">${intTipoNom(i.tipo)} · ${detalle}</div>
+        <div class="int-meta" style="margin-top:2px">${estadoMapeo}</div>
       </div>
       <div class="int-acc">
+        <button class="int-chip" onclick="mapearIntegracion('${i.id}')">Mapear datos</button>
         <button class="int-chip" onclick="probarIntegracion('${i.id}')">Probar</button>
         <button class="int-chip" onclick="editarIntegracion('${i.id}')">Editar</button>
         <button class="int-chip rojo" onclick="eliminarIntegracion('${i.id}')">Eliminar</button>
@@ -45,6 +51,63 @@ function intRenderCard(i) {
     </div>
     <div id="int-prueba-${i.id}"></div>
   </div>`;
+}
+
+// ── Mapeo de columnas (qué columna del rifero es cada campo estándar) ────────
+async function mapearIntegracion(id) {
+  const i = integItems.find(x => x.id === id);
+  if (!i) return;
+  const cont = document.getElementById('integForm');
+  cont.innerHTML = '<div class="int-form">Detectando las columnas de tu fuente…</div>';
+  cont.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  const r = await api('integraciones', { accion: 'columnas', linea_id: lineaActual, id });
+  integForm = {
+    id, tipo: i.tipo, nombre: i.nombre, config: { ...(i.config || {}) },
+    columnas: (r && r.columnas) || [], campos: (r && r.campos_estandar) || [],
+  };
+  intRenderMapeo();
+}
+function intRenderMapeo() {
+  const f = integForm, cont = document.getElementById('integForm');
+  const mapeo = f.config.mapeo || {};
+  const filas = f.config.filas || 'por_boleta';
+  const cols = f.columnas || [];
+  const filaCampo = c => {
+    const sel = mapeo[c.clave] || '';
+    const control = cols.length
+      ? `<select data-campo="${c.clave}"><option value="">— ninguna —</option>${cols.map(x => `<option value="${esc(x)}" ${x === sel ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>`
+      : `<input data-campo="${c.clave}" type="text" value="${esc(sel)}" placeholder="nombre de tu columna">`;
+    return `<div class="int-map-row"><label>${esc(c.nombre)}${c.obligatorio ? ' ⭐' : ''}</label>${control}</div>`;
+  };
+  cont.innerHTML = `<div class="int-form">
+    <div style="font-weight:700;margin-bottom:2px">Mapear datos de "${esc(f.nombre)}"</div>
+    <div class="int-hint">${cols.length
+      ? 'Elige qué columna TUYA corresponde a cada dato del sistema. El Teléfono ⭐ es obligatorio (es la llave para encontrar al cliente).'
+      : 'No detecté las columnas solas (la llave puede no tener permiso de lectura, o la tabla está vacía). Escribe el nombre EXACTO de tu columna en cada campo.'}</div>
+    <label style="margin-top:14px">¿Cómo está tu tabla / hoja?</label>
+    <select id="mp_filas">
+      <option value="por_boleta" ${filas === 'por_boleta' ? 'selected' : ''}>Una fila por cada BOLETA (se suman abonos y saldos por cliente)</option>
+      <option value="por_cliente" ${filas === 'por_cliente' ? 'selected' : ''}>Una fila por cada CLIENTE</option>
+    </select>
+    <div style="margin-top:10px">${f.campos.map(filaCampo).join('')}</div>
+    <div id="if_aviso"></div>
+    <div class="int-row">
+      <button class="int-btn menta" onclick="guardarMapeo()">Guardar mapeo</button>
+      <button class="int-btn" onclick="intCerrarForm()">Cancelar</button>
+    </div>
+  </div>`;
+}
+async function guardarMapeo() {
+  const f = integForm;
+  const mapeo = {};
+  document.querySelectorAll('#integForm [data-campo]').forEach(el => { const v = el.value.trim(); if (v) mapeo[el.getAttribute('data-campo')] = v; });
+  if (!mapeo.telefono) { alert('El Teléfono es obligatorio: es la llave para encontrar al cliente en tu base.'); return; }
+  const config = { ...f.config, mapeo, filas: document.getElementById('mp_filas').value };
+  delete config.key;   // no reenviar la llave enmascarada (el backend conserva la real)
+  for (const k of Object.keys(config)) if (k.startsWith('_') && k.endsWith('_set')) delete config[k];
+  const r = await api('integraciones', { accion: 'guardar', linea_id: lineaActual, id: f.id, tipo: f.tipo, nombre: f.nombre, config });
+  if (r && r.status === 'ok') { intCerrarForm(); cargarIntegraciones(); }
+  else alert((r && r.mensaje) || 'No se pudo guardar el mapeo.');
 }
 
 function nuevaIntegracion(tipo) { integForm = { tipo, nombre: '', config: {} }; intRenderForm(); }

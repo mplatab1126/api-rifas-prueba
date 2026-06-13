@@ -20,6 +20,7 @@ import { supabaseAdmin } from './supabase.js';
 import { obtenerConfig } from './configuracion.js';
 import { enviarTexto, enviarImagen, enviarBotones, enviarLista } from './whatsapp.js';
 import { ponerEtiqueta } from './etiquetas.js';
+import { consultarPorLinea } from './integracion-datos.js';
 
 const MAX_PASOS = 40;   // tope anti-bucle por turno
 const sol10 = t => String(t || '').replace(/\D/g, '').slice(-10);
@@ -266,6 +267,9 @@ export async function procesarFlujo(telefono, lineaId, texto, esNueva) {
     // El flujo toma el chat: Liliana fuera (agente_activo=false), marca 'bot'.
     await supabaseAdmin.from('conversaciones_whatsapp').update({ agente_activo: false, estado: 'bot' }).eq('id', conv.id);
     const vars = { nombre: (conv.nombre_perfil || '').split(' ')[0] || '' };
+    // Cargar los datos del contacto desde la fuente conectada (Sheets/Supabase), si hay,
+    // para que las condiciones puedan usar {{total_abonado}}, {{saldo}}, {{boleta}}, etc.
+    try { const d = await consultarPorLinea(lineaId, telefono); if (d && d.campos) Object.assign(vars, d.campos); } catch (_) {}
     const { data: nueva } = await supabaseAdmin.from('flujo_sesiones')
       .upsert({ linea_id: lineaId, flujo_id: flujo.id, conversacion_id: conv.id, nodo_actual: null, variables: vars, estado: 'corriendo', actualizado_at: new Date().toISOString() },
         { onConflict: 'flujo_id,conversacion_id' })
