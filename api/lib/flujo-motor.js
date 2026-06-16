@@ -211,64 +211,63 @@ async function correr(grafo, startNodo, ctx) {
   await guardarSesion(ctx.sesionId, { estado: 'terminado', variables: vars });
 }
 
-// ¿Algún flujo ACTIVO de la línea se dispara con este mensaje? Devuelve el flujo (con grafo) o null.
-async function flujoQueDispara(lineaId, texto, esNueva) {
-  const { data: flujos } = await supabaseAdmin
-    .from('flujos').select('id, disparador, palabras, grafo').eq('linea_id', lineaId).eq('estado', 'activo');
-  if (!flujos || !flujos.length) return null;
-  const t = String(texto || '').toLowerCase();
-  for (const f of flujos) {
-    if (f.disparador === 'nuevo_contacto') { if (esNueva) return f; continue; }
-    const palabras = String(f.palabras || '').toLowerCase().split(',').map(p => p.trim()).filter(Boolean);
-    if (palabras.some(p => t.includes(p))) return f;
-  }
-  return null;
-}
-
 /**
- * Procesa un mensaje entrante con el motor de flujos.
- * Devuelve true si un flujo lo manejó (entonces NO se dispara a Liliana), false si no.
+ * AVANZA un flujo que ya está en curso en este chat (sesión activa). NO arranca flujos
+ * nuevos (eso lo deciden los disparadores centrales → iniciarFlujoPorId).
+ * Devuelve true si había una sesión activa y la avanzó.
  */
-export async function procesarFlujo(telefono, lineaId, texto, esNueva) {
+export async function procesarFlujo(telefono, lineaId, texto) {
   try {
     if (!(await permitidoCorrer(telefono))) return false;
-
     const { data: conv } = await supabaseAdmin.from('conversaciones_whatsapp')
-      .select('id, estado, nombre_perfil').eq('telefono', telefono).eq('linea_id', lineaId).maybeSingle();
-    if (!conv || conv.estado === 'humano') return false;   // un humano tomó el chat → ni flujo ni agente
+      .select('id, estado').eq('telefono', telefono).eq('linea_id', lineaId).maybeSingle();
+    if (!conv || conv.estado === 'humano') return false;
 
-    // ¿Sesión de flujo activa para este chat?
     const { data: ses } = await supabaseAdmin.from('flujo_sesiones')
       .select('*').eq('conversacion_id', conv.id).in('estado', ['corriendo', 'esperando'])
       .order('actualizado_at', { ascending: false }).limit(1).maybeSingle();
+    if (!ses) return false;
 
-    if (ses) {
-      const flujo = await cargarFlujo(ses.flujo_id, lineaId);
-      if (!flujo) { await guardarSesion(ses.id, { estado: 'cancelado' }); return false; }
-      const grafo = grafoDe(flujo);
-      const vars = ses.variables || {};
-      const nodo = grafo[ses.nodo_actual];
-      if (!nodo) { await guardarSesion(ses.id, { estado: 'terminado' }); return false; }
-      const ctx = { conv, telefono, lineaId, vars, sesionId: ses.id, flujoId: flujo.id };
-      const r = resolverEspera(nodo, texto, vars);
-      if (r.reintentar) {
-        if (r.mensaje) { const env = await enviarTexto(telefono, r.mensaje, lineaId); await registrarSaliente(conv, telefono, lineaId, r.mensaje, env?.wa_message_id); }
-        await guardarSesion(ses.id, { variables: vars });
-        return true;
-      }
-      await correr(grafo, siguiente(grafo, nodo, r.salida), ctx);
+    const flujo = await cargarFlujo(ses.flujo_id, lineaId);
+    if (!flujo) { await guardarSesion(ses.id, { estado: 'cancelado' }); return false; }
+    const grafo = grafoDe(flujo);
+    const vars = ses.variables || {};
+    const nodo = grafo[ses.nodo_actual];
+    if (!nodo) { await guardarSesion(ses.id, { estado: 'terminado' }); return false; }
+    const ctx = { conv, telefono, lineaId, vars, sesionId: ses.id, flujoId: flujo.id };
+    const r = resolverEspera(nodo, texto, vars);
+    if (r.reintentar) {
+      if (r.mensaje) { const env = await enviarTexto(telefono, r.mensaje, lineaId); await registrarSaliente(conv, telefono, lineaId, r.mensaje, env?.wa_message_id); }
+      await guardarSesion(ses.id, { variables: vars });
       return true;
     }
+    await correr(grafo, siguiente(grafo, nodo, r.salida), ctx);
+    return true;
+  } catch (e) {
+    console.error('[flujo-motor] avanzar error:', e.message || e);
+    return false;
+  }
+}
 
-    // ¿Arranca un flujo?
-    const flujo = await flujoQueDispara(lineaId, texto, esNueva);
+/**
+ * ARRANCA un flujo (por id) en un chat — desde su nodo Inicio. Lo llaman los disparadores
+ * centrales (palabra clave / evento), el envío manual desde el chat y las difusiones.
+ * Respeta el interruptor de seguridad (flujos_modo). Devuelve true si arrancó.
+ */
+export async function iniciarFlujoPorId(flujoId, telefono, lineaId) {
+  try {
+    if (!flujoId) return false;
+    if (!(await permitidoCorrer(telefono))) return false;
+    const { data: conv } = await supabaseAdmin.from('conversaciones_whatsapp')
+      .select('id, estado, nombre_perfil').eq('telefono', telefono).eq('linea_id', lineaId).maybeSingle();
+    if (!conv || conv.estado === 'humano') return false;
+    const flujo = await cargarFlujo(flujoId, lineaId);
     if (!flujo) return false;
 
     // El flujo toma el chat: Liliana fuera (agente_activo=false), marca 'bot'.
     await supabaseAdmin.from('conversaciones_whatsapp').update({ agente_activo: false, estado: 'bot' }).eq('id', conv.id);
     const vars = { nombre: (conv.nombre_perfil || '').split(' ')[0] || '' };
-    // Cargar los datos del contacto desde la fuente conectada (Sheets/Supabase), si hay,
-    // para que las condiciones puedan usar {{total_abonado}}, {{saldo}}, {{boleta}}, etc.
+    // Datos del contacto desde la fuente conectada (Sheets/Supabase), para las condiciones.
     try { const d = await consultarPorLinea(lineaId, telefono); if (d && d.campos) Object.assign(vars, d.campos); } catch (_) {}
     const { data: nueva } = await supabaseAdmin.from('flujo_sesiones')
       .upsert({ linea_id: lineaId, flujo_id: flujo.id, conversacion_id: conv.id, nodo_actual: null, variables: vars, estado: 'corriendo', actualizado_at: new Date().toISOString() },
@@ -280,7 +279,25 @@ export async function procesarFlujo(telefono, lineaId, texto, esNueva) {
     await correr(grafo, nodoInicio(grafo), ctx);
     return true;
   } catch (e) {
-    console.error('[flujo-motor] error:', e.message || e);
-    return false;   // ante cualquier error, dejar que siga el flujo normal (Liliana); no romper el webhook
+    console.error('[flujo-motor] iniciar error:', e.message || e);
+    return false;
   }
+}
+
+/**
+ * Evento 'etiqueta_aplicada': cuando se le pone una etiqueta a un chat, busca un disparador
+ * que coincida (esa etiqueta, o "cualquiera") y lo ejecuta (flujo o agente).
+ */
+export async function dispararEventoEtiqueta(lineaId, telefono, etiquetaNombre) {
+  try {
+    const { data: disps } = await supabaseAdmin.from('disparadores')
+      .select('destino, flujo_id, evento_valor').eq('linea_id', lineaId).eq('tipo', 'etiqueta_aplicada').eq('activo', true);
+    const match = (disps || []).find(d => !d.evento_valor || d.evento_valor.toLowerCase() === String(etiquetaNombre || '').toLowerCase());
+    if (!match) return false;
+    if (match.destino === 'flujo' && match.flujo_id) return await iniciarFlujoPorId(match.flujo_id, telefono, lineaId);
+    // destino agente: activarlo (se engancha en el próximo mensaje del cliente)
+    await supabaseAdmin.from('conversaciones_whatsapp').update({ agente_activo: true, estado: 'bot' })
+      .eq('telefono', telefono).eq('linea_id', lineaId).neq('estado', 'humano');
+    return true;
+  } catch (_) { return false; }
 }

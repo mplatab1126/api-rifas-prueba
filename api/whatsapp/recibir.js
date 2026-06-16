@@ -22,7 +22,7 @@ import { supabaseAdmin } from '../lib/supabase.js';
 import { configWhatsapp } from '../lib/whatsapp.js';
 import { permitido } from '../lib/rate-limit.js';
 import { secretoInterno } from '../lib/secreto-interno.js';
-import { procesarFlujo } from '../lib/flujo-motor.js';
+import { procesarFlujo, iniciarFlujoPorId } from '../lib/flujo-motor.js';
 
 export default async function handler(req, res) {
   // ── 1) Verificación del webhook (GET) ─────────────────────────────────────
@@ -99,13 +99,7 @@ export default async function handler(req, res) {
       }
     }
     for (const d of paraDisparar.values()) {
-      // Regla de oro: primero el motor de flujos. Si un flujo tomó el chat (lo arrancó
-      // o avanzó), Liliana NO actúa. Si no, sigue como hoy. El motor está protegido por
-      // su interruptor de seguridad (flujos_modo): si está 'off', siempre devuelve false.
-      let flujoManejo = false;
-      try { flujoManejo = await procesarFlujo(d.telefono, d.lineaId, d.texto, d.esNueva); }
-      catch (e) { console.error('[whatsapp/recibir] motor de flujos falló:', e.message || e); }
-      if (!flujoManejo) await dispararAgenteSiActivo(d.telefono, d.lineaId);
+      await despachar(d.telefono, d.lineaId, d.texto, d.esNueva);
     }
   } catch (err) {
     console.error('[whatsapp/recibir] error procesando webhook:', err);
@@ -197,13 +191,8 @@ async function guardarEntrante(m, nombrePerfil, lineaId, paraDisparar) {
       // cancelado por un "Gracias"). En la duda se cancela como siempre (conservador).
       if (!esCortesiaPura(tipo, texto)) await cancelarRecordatorios(telefono, lineaId);
 
-      // Disparadores: si el mensaje contiene una palabra clave configurada, o si es un cliente NUEVO
-      // (primer mensaje) y hay un disparador de ese tipo, prende el agente en este chat.
-      await activarPorDisparador(telefono, lineaId, texto, !!(conversacion && conversacion.esNuevo));
-
-      // Si el agente está activo en este chat, dispararlo de una (sin depender del navegador).
-      // H86: aquí solo se ANOTA; el disparo real lo hace el handler UNA vez por conversación
-      // al final del webhook (una ráfaga de 3 mensajes ya no lanza 3 invocaciones del motor).
+      // El despacho (flujo o agente, según los disparadores) se hace UNA vez por conversación
+      // al final del webhook (H86: una ráfaga de 3 mensajes ya no lanza 3 invocaciones).
       if (paraDisparar) paraDisparar.set(telefono + '|' + lineaId, { telefono, lineaId, texto, esNueva: !!(conversacion && conversacion.esNuevo) });
     }
   }
@@ -214,38 +203,46 @@ async function guardarEntrante(m, nombrePerfil, lineaId, paraDisparar) {
   return !errGuardar;
 }
 
-// ── Disparadores: prender el agente automáticamente por palabra clave ────────
-// Si el mensaje del cliente contiene una palabra clave (tabla `disparadores`), prende el agente
-// en ese chat. No lo hace si: el agente ya está activo, un humano tomó el chat (estado='humano'),
-// o la línea tiene el agente en 'apagado'. El estado de línea (sombra/encendido) lo respeta el motor.
-async function activarPorDisparador(telefono, lineaId, texto, esConvNueva) {
+// ── Despachador: qué hace cada mensaje entrante ──────────────────────────────
+// Orden: (1) si hay un FLUJO en curso en el chat, lo avanza; (2) si el AGENTE ya está
+// activo (conversación en curso con Liliana), lo dispara; (3) evalúa los disparadores
+// CENTRALES (tabla `disparadores`): la primera regla activa que coincida (palabra clave o
+// cliente nuevo) manda a su DESTINO — arrancar un flujo o prender al agente.
+// No actúa si un humano tomó el chat (estado='humano').
+async function despachar(telefono, lineaId, texto, esNueva) {
   try {
-    const t = String(texto || '').toLowerCase().trim();
+    if (await procesarFlujo(telefono, lineaId, texto)) return;   // (1) flujo en curso
+
     const { data: c } = await supabaseAdmin
       .from('conversaciones_whatsapp').select('id, agente_activo, estado')
       .eq('telefono', telefono).eq('linea_id', lineaId).maybeSingle();
-    if (!c || c.agente_activo || c.estado === 'humano') return;
+    if (!c || c.estado === 'humano') return;
 
-    const { data: cfg } = await supabaseAdmin
-      .from('agente_config').select('estado').eq('linea_id', lineaId).maybeSingle();
-    if (cfg && cfg.estado === 'apagado') return;   // línea apagada: los disparadores no actúan
+    if (c.agente_activo) { await dispararAgenteSiActivo(telefono, lineaId); return; }   // (2) agente en curso
 
+    // (3) disparadores centrales
+    const t = String(texto || '').toLowerCase().trim();
     const { data: disp } = await supabaseAdmin
-      .from('disparadores').select('palabra, tipo').eq('linea_id', lineaId).eq('activo', true);
-    const hay = (disp || []).some(d => {
-      if (d.tipo === 'nuevo_contacto') return !!esConvNueva;          // cliente nuevo: cualquier 1er mensaje
-      const p = String(d.palabra || '').toLowerCase().trim();         // palabra clave: el texto la contiene
-      return p && t.includes(p);
+      .from('disparadores').select('tipo, palabra, destino, flujo_id')
+      .eq('linea_id', lineaId).eq('activo', true).order('created_at', { ascending: true });
+    const regla = (disp || []).find(d => {
+      if (d.tipo === 'nuevo_contacto') return !!esNueva;
+      if (d.tipo === 'palabra') { const p = String(d.palabra || '').toLowerCase().trim(); return p && t.includes(p); }
+      return false;   // 'etiqueta_aplicada' no se evalúa con mensajes entrantes (se dispara al etiquetar)
     });
-    if (!hay) return;
+    if (!regla) return;
 
-    await supabaseAdmin.from('conversaciones_whatsapp')
-      .update({ agente_activo: true, estado: 'bot' })
-      .eq('telefono', telefono).eq('linea_id', lineaId);
+    if (regla.destino === 'flujo') {
+      await iniciarFlujoPorId(regla.flujo_id, telefono, lineaId);   // respeta el interruptor flujos_modo
+      return;
+    }
+    // destino = agente (Liliana)
+    const { data: cfg } = await supabaseAdmin.from('agente_config').select('estado').eq('linea_id', lineaId).maybeSingle();
+    if (cfg && cfg.estado === 'apagado') return;   // línea apagada: el agente no actúa
+    await supabaseAdmin.from('conversaciones_whatsapp').update({ agente_activo: true, estado: 'bot' }).eq('id', c.id);
+    await dispararAgenteSiActivo(telefono, lineaId);
   } catch (e) {
-    // Si esto falla, el cliente que escribió la palabra clave se queda SIN agente y antes
-    // nadie se enteraba (H13). El log al menos deja diagnóstico en Vercel.
-    console.error('[whatsapp/recibir] activarPorDisparador falló:', e.message || e);
+    console.error('[whatsapp/recibir] despachar falló:', e.message || e);
   }
 }
 

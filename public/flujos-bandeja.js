@@ -101,10 +101,8 @@ async function cargarFlujos() {
       <div style="flex:1; min-width:0;">
         <div style="font-weight:600;">${escapar(f.nombre)}</div>
         <div class="fl-sub">
-          ${f.disparador === 'nuevo_contacto' ? 'Con cada contacto nuevo' : 'Con las palabras: ' + escapar(f.palabras || '—')}
-          ${f.carpeta && !carpetaActiva ? ' · en ' + escapar(f.carpeta) : ''}</div>
+          ${f.carpeta && !carpetaActiva ? 'En ' + escapar(f.carpeta) : 'Se activa desde Disparadores'}</div>
       </div>
-      <span class="fl-pildora ${f.estado}">${f.estado}</span>
     </div>`).join('');
 }
 function filtrarCarpeta(c) { carpetaActiva = c; cargarFlujos(); }
@@ -128,7 +126,6 @@ async function crearDesdePlantilla(clave) {
   if (!r || r.status !== 'ok') { alert((r && r.mensaje) || 'No se pudo crear'); return; }
   flFlujos.unshift(r.flujo);
   await abrirFlujo(r.flujo.id);
-  document.getElementById('edPalabras').value = meta.palabras;
   const inicio = Object.keys(nodos()).find(k => nodos()[k].name === 'inicio');
   // Solo se usan los 5 nodos base. Los menús de botones son "Mensaje con botones"
   // (respuesta:'botones' → 4 salidas), que es una variante de Mensaje.
@@ -178,10 +175,6 @@ async function abrirFlujo(id) {
   document.getElementById('flVistaLista').style.display = 'none';
   document.getElementById('flVistaEditor').style.display = 'flex';
   document.getElementById('edNombre').value = flujoAbierto.nombre;
-  document.getElementById('edDisparador').value = flujoAbierto.disparador;
-  document.getElementById('edPalabras').value = flujoAbierto.palabras || '';
-  document.getElementById('edPalabras').style.display = flujoAbierto.disparador === 'palabra' ? 'inline-block' : 'none';
-  document.getElementById('edActivo').checked = flujoAbierto.estado === 'activo';
   document.getElementById('botonGuardar').style.display = esAdmin() ? 'inline-flex' : 'none';
   pintarSelectCarpeta();
 
@@ -618,21 +611,19 @@ async function eliminarFlujo() {
 
 async function guardarFlujo() {
   const nombre = document.getElementById('edNombre').value.trim() || 'Flujo sin nombre';
-  const disparador = document.getElementById('edDisparador').value;
-  const palabras = document.getElementById('edPalabras').value.trim();
-  const estado = document.getElementById('edActivo').checked ? 'activo' : 'borrador';
   const grafo = editor.export();
   const boton = document.getElementById('botonGuardar');
   boton.disabled = true; boton.textContent = 'Guardando…';
+  // El disparador ya no vive en el flujo (se maneja en Disparadores); el flujo solo guarda
+  // su nombre, su dibujo y su carpeta. estado='activo' = disponible para que un disparador lo use.
   const r = await api('flujos', {
     accion:'guardar', linea_id: lineaActual, id: flujoAbierto.id,
-    nombre, disparador, palabras: palabras || null, estado, grafo,
-    carpeta: flujoAbierto.carpeta || null
+    nombre, estado: 'activo', grafo, carpeta: flujoAbierto.carpeta || null
   });
   boton.disabled = false;
   const error = !r || r.status !== 'ok';
   boton.textContent = error ? 'Error al guardar' : 'Guardado ✓';
-  if (!error) Object.assign(flujoAbierto, { nombre, disparador, palabras, estado, grafo });
+  if (!error) Object.assign(flujoAbierto, { nombre, estado: 'activo', grafo });
   setTimeout(() => { boton.textContent = 'Guardar'; }, 1800);
 }
 
@@ -649,9 +640,7 @@ function reiniciarSim(correr) {
   pintarVars();
   document.getElementById('simChat').innerHTML = '';
   if (correr || document.getElementById('simulador').classList.contains('abierto')) {
-    simSistema(flujoAbierto.disparador === 'nuevo_contacto'
-      ? 'El flujo se dispararía cuando un contacto nuevo escriba.'
-      : 'El flujo se dispararía con las palabras: ' + (document.getElementById('edPalabras').value || '—'));
+    simSistema('Así correría el flujo cuando un disparador lo active (palabra clave, acción, manual o difusión).');
     correrDesde(nodoInicio());
   }
 }

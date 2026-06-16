@@ -637,8 +637,23 @@
     .disp-row { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid var(--gray-200); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; }
     .disp-palabra { flex: 1; font-size: 0.92rem; color: var(--ink); word-break: break-word; }
     .disp-palabra.off { color: var(--gray-400); text-decoration: line-through; }
-    .disp-del { background: none; border: none; padding: 6px; border-radius: 8px; color: var(--ink-mute); cursor: pointer; display: flex; flex-shrink: 0; }
+    .disp-del { background: none; border: none; padding: 4px 9px; border-radius: 8px; color: var(--ink-mute); cursor: pointer; display: flex; flex-shrink: 0; font-size: 0.95rem; line-height: 1; }
     .disp-del:hover { color: var(--danger); background: #fdecec; }
+    .disp-tabs { display: flex; gap: 8px; margin-top: 4px; }
+    .disp-tab { border: 1px solid var(--gray-200); background: #fff; border-radius: 100px; padding: 7px 16px; font-family: inherit; font-size: 0.84rem; font-weight: 600; color: var(--ink-mute); cursor: pointer; }
+    .disp-tab.on { background: var(--cream-100); color: var(--ink); border-color: var(--gray-300); }
+    #dispBody { padding: 0 0 20px; }
+    .disp-form { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 16px 0; }
+    .disp-form input, .disp-form select { padding: 9px 11px; border: 1px solid var(--gray-200); border-radius: 10px; background: #fff; font-family: inherit; font-size: 0.86rem; color: var(--ink); outline: none; }
+    .disp-form input { min-width: 220px; flex: 0 1 300px; }
+    .disp-form input:focus, .disp-form select:focus { border-color: var(--ink); }
+    .disp-arrow { color: var(--ink-mute); font-weight: 700; }
+    .disp-lista { display: flex; flex-direction: column; gap: 8px; max-width: 760px; }
+    .disp-cond { font-weight: 600; font-size: 0.9rem; color: var(--ink); }
+    .disp-cond.off { opacity: 0.45; text-decoration: line-through; }
+    .disp-cond { flex: 0 1 auto; }
+    .disp-dest { font-size: 0.85rem; color: var(--ink-soft); }
+    .disp-row .disp-del { margin-left: auto; }
     #modAgente .ag-sub { color: var(--ink-mute); font-size: 0.82rem; line-height: 1.5; }
     .ag-wrap { flex: 1; overflow-y: auto; padding: 16px; }
     .ag-card { background: #fff; border: 1px solid var(--gray-200); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
@@ -1056,17 +1071,13 @@
     <div id="modDisparadores">
       <div class="cont-head">
         <h2>Disparadores</h2>
-        <div class="ag-sub" style="margin-bottom:12px">Palabras clave que <b>prenden el agente solo</b> en un chat. Cuando un cliente escriba un mensaje que <b>contenga</b> alguna de estas palabras, el agente se activa en ese chat y le responde (respeta el Modo sombra/Apagado de la cabina).</div>
-        <div class="cont-actions">
-          <select id="tipoDisparador">
-            <option value="palabra">Por palabra clave</option>
-            <option value="nuevo_contacto">Cliente nuevo (primer mensaje)</option>
-          </select>
-          <input id="nuevoDisparador" placeholder="Palabra o frase clave (ej: quiero más información)">
-          <button id="btnCrearDisparador">Agregar</button>
+        <div class="ag-sub" style="margin-bottom:12px">Reglas que, cuando pasa algo, arrancan un <b>flujo</b> o prenden el <b>agente</b> (Liliana) en ese chat. Cada regla la enciendes/apagas con su switch y eliges su destino.</div>
+        <div class="disp-tabs">
+          <button class="disp-tab on" data-dtab="palabra" onclick="dispTab('palabra')">💬 Palabras clave</button>
+          <button class="disp-tab" data-dtab="evento" onclick="dispTab('evento')">⚡ Acciones</button>
         </div>
       </div>
-      <div id="listaDisparadores"></div>
+      <div id="dispBody"></div>
     </div><!-- /modDisparadores -->
 
     <!-- MÓDULO: FLUJOS (constructor visual · solo Mateo) -->
@@ -1124,16 +1135,9 @@
           <div class="barra-editor">
             <button class="boton-icono" onclick="volverALista()" title="Volver"><svg width="16" height="16"><use href="#fli-atras"/></svg></button>
             <input id="edNombre" class="nombre" type="text" placeholder="Nombre del flujo">
-            <select id="edDisparador" style="font:inherit; font-size:13px; font-weight:600; border:1px solid var(--gray-300); border-radius:9px; padding:7px 9px; background:#fff;" onchange="document.getElementById('edPalabras').style.display = this.value==='palabra' ? 'inline-block' : 'none'">
-              <option value="palabra">Se dispara con palabras</option>
-              <option value="nuevo_contacto">Se dispara con cada contacto nuevo</option>
-            </select>
-            <input id="edPalabras" type="text" placeholder="hola, info, precio" style="font:inherit; font-size:13px; border:1px solid var(--gray-300); border-radius:9px; padding:7px 9px; width:160px;">
             <select id="edCarpeta" title="Carpeta del flujo" style="font:inherit; font-size:13px; border:1px solid var(--gray-300); border-radius:9px; padding:7px 9px; max-width:150px;" onchange="carpetaCambia(this)"></select>
+            <span style="font-size:12px;color:var(--gray-400);white-space:nowrap">⚡ Se activa desde <b>Disparadores</b></span>
             <span style="flex:1"></span>
-            <label style="display:inline-flex; align-items:center; gap:7px; font-size:13px; font-weight:600; cursor:pointer;">
-              <input id="edActivo" type="checkbox" style="accent-color:#9BFAB0; width:17px; height:17px;"> Activo
-            </label>
             <button class="boton-icono" id="botonDeshacer" title="Deshacer (Ctrl+Z)" onclick="deshacer()"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M8 5 3 10l5 5M3 10h12a6 6 0 0 1 0 12h-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
             <button class="boton-icono" id="botonRehacer" title="Rehacer (Ctrl+Y)" onclick="rehacer()"><svg width="14" height="14" viewBox="0 0 24 24"><path d="m16 5 5 5-5 5M21 10H9a6 6 0 0 0 0 12h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
             <button class="boton-icono" title="Alejar" onclick="flZoomOut()">−</button>
@@ -2609,39 +2613,86 @@ window.irAComprobante = function(telefono){
 };
 
 /* ── Disparadores (palabras clave que prenden el agente) ── */
-let disparadoresCache = [];
+let disparadoresCache = [], dispFlujos = [], dispEtiquetas = [], dispTabActual = 'palabra';
 async function cargarDisparadores(){
-  if(!soyMateo){ $('listaDisparadores').innerHTML = '<div class="vacio-lista">Solo Mateo puede ver esta sección.</div>'; return; }
-  if(!lineaActual){ $('listaDisparadores').innerHTML = '<div class="vacio-lista">No hay una línea seleccionada.</div>'; return; }
-  $('listaDisparadores').innerHTML = '<div class="vacio-lista">Cargando…</div>';
-  const r = await api('disparadores', { accion:'listar', linea_id: lineaActual });
+  if(!soyMateo){ $('dispBody').innerHTML = '<div class="vacio-lista">Solo Mateo puede ver esta sección.</div>'; return; }
+  if(!lineaActual){ $('dispBody').innerHTML = '<div class="vacio-lista">No hay una línea seleccionada.</div>'; return; }
+  $('dispBody').innerHTML = '<div class="vacio-lista">Cargando…</div>';
+  const [r, rf, re] = await Promise.all([
+    api('disparadores', { accion:'listar', linea_id: lineaActual }),
+    api('flujos', { accion:'listar', linea_id: lineaActual }),
+    api('etiquetas', { accion:'listar', linea_id: lineaActual }),
+  ]);
   if(vista !== 'disparadores') return;
-  if(r.status !== 'ok'){ $('listaDisparadores').innerHTML = `<div class="vacio-lista">${esc(r.mensaje||'No se pudo cargar.')}</div>`; return; }
+  if(!r || r.status !== 'ok'){ $('dispBody').innerHTML = `<div class="vacio-lista">${esc((r&&r.mensaje)||'No se pudo cargar.')}</div>`; return; }
   disparadoresCache = r.disparadores || [];
-  pintarDisparadores();
+  dispFlujos = (rf && rf.flujos) || [];
+  dispEtiquetas = (re && re.etiquetas) || [];
+  renderDisparadores();
 }
-function pintarDisparadores(){
-  $('listaDisparadores').innerHTML = disparadoresCache.map(d => `
-    <div class="disp-row">
-      <label class="ag-switch"><input type="checkbox" ${d.activo?'checked':''} onchange="toggleDisparador('${d.id}', this.checked)"><span class="sl"></span></label>
-      <span class="disp-palabra ${d.activo?'':'off'}">${d.tipo === 'nuevo_contacto' ? '🆕 Cliente nuevo <span class="disp-sub">(cualquier primer mensaje)</span>' : '💬 ' + esc(d.palabra||'')}</span>
-      <button class="disp-del" onclick="eliminarDisparador('${d.id}')" title="Eliminar">
-        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-      </button>
-    </div>`).join('') || '<div class="vacio-lista">Aún no hay disparadores. Agrega una palabra clave arriba — por ejemplo "quiero más información" (el mensaje con que llegan tus clientes del anuncio de Meta).</div>';
-}
-async function crearDisparador(){
-  const tipo = $('tipoDisparador') ? $('tipoDisparador').value : 'palabra';
-  const palabra = $('nuevoDisparador').value.trim();
-  if(tipo === 'palabra' && !palabra) return;
-  const r = await api('disparadores', { accion:'crear', linea_id: lineaActual, tipo, palabra });
-  if(r.status === 'ok'){ $('nuevoDisparador').value = ''; cargarDisparadores(); }
-  else alert(r.mensaje || 'No se pudo agregar.');
-}
-// Si el tipo es "cliente nuevo", la palabra clave no aplica → oculta el cuadro de texto.
-if($('tipoDisparador')) $('tipoDisparador').onchange = function(){
-  if($('nuevoDisparador')) $('nuevoDisparador').style.display = (this.value === 'nuevo_contacto') ? 'none' : '';
+window.dispTab = function(t){
+  dispTabActual = t;
+  document.querySelectorAll('.disp-tab').forEach(b => b.classList.toggle('on', b.getAttribute('data-dtab')===t));
+  renderDisparadores();
 };
+function dispDestinoSelect(){
+  return `<select id="dispDestino">
+    <option value="agente">🤖 Agente (Liliana)</option>
+    ${dispFlujos.map(f=>`<option value="flujo:${f.id}">🔀 Flujo: ${esc(f.nombre)}</option>`).join('')}
+  </select>`;
+}
+function dispRowHtml(d){
+  const cond = d.tipo==='palabra' ? '💬 "'+esc(d.palabra||'')+'"'
+    : d.tipo==='nuevo_contacto' ? '🆕 Cliente nuevo'
+    : '🏷️ Etiqueta ' + (d.evento_valor ? '"'+esc(d.evento_valor)+'"' : '(cualquiera)');
+  const dest = d.destino==='flujo' ? '🔀 ' + esc(d.flujo_nombre||'(flujo borrado)') : '🤖 Agente (Liliana)';
+  return `<div class="disp-row">
+    <label class="ag-switch"><input type="checkbox" ${d.activo?'checked':''} onchange="toggleDisparador('${d.id}', this.checked)"><span class="sl"></span></label>
+    <span class="disp-cond ${d.activo?'':'off'}">${cond}</span>
+    <span class="disp-arrow">→</span>
+    <span class="disp-dest">${dest}</span>
+    <button class="disp-del" onclick="eliminarDisparador('${d.id}')" title="Eliminar">✕</button>
+  </div>`;
+}
+function renderDisparadores(){
+  const cont = $('dispBody'), t = dispTabActual;
+  let form;
+  if(t==='palabra'){
+    form = `<div class="disp-form">
+      <input id="dispPalabra" placeholder="Palabra o frase (ej: quiero más información)">
+      <span class="disp-arrow">→</span>${dispDestinoSelect()}
+      <button class="df-primary" onclick="crearDisparador('palabra')">Agregar</button></div>`;
+  } else {
+    form = `<div class="disp-form">
+      <select id="dispEvento" onchange="$('dispEtiqWrap').style.display = this.value==='etiqueta_aplicada' ? 'inline-block' : 'none'">
+        <option value="nuevo_contacto">Cliente nuevo (primer mensaje)</option>
+        <option value="etiqueta_aplicada">Se aplicó una etiqueta</option>
+      </select>
+      <span id="dispEtiqWrap" style="display:none"><select id="dispEtiqueta"><option value="">— cualquier etiqueta —</option>${dispEtiquetas.map(e=>`<option value="${esc(e.nombre)}">${e.icono?esc(e.icono)+' ':''}${esc(e.nombre)}</option>`).join('')}</select></span>
+      <span class="disp-arrow">→</span>${dispDestinoSelect()}
+      <button class="df-primary" onclick="crearDisparador('evento')">Agregar</button></div>`;
+  }
+  const items = disparadoresCache.filter(d => t==='palabra' ? d.tipo==='palabra' : (d.tipo==='nuevo_contacto'||d.tipo==='etiqueta_aplicada'));
+  const lista = items.map(dispRowHtml).join('') || '<div class="vacio-lista">Aún no hay reglas en esta pestaña.</div>';
+  cont.innerHTML = form + '<div class="disp-lista">' + lista + '</div>';
+}
+async function crearDisparador(cat){
+  const dv = $('dispDestino').value;
+  const destino = dv==='agente' ? 'agente' : 'flujo';
+  const flujo_id = dv.indexOf('flujo:')===0 ? dv.slice(6) : null;
+  const body = { accion:'crear', linea_id: lineaActual, destino, flujo_id };
+  if(cat==='palabra'){
+    const palabra = $('dispPalabra').value.trim();
+    if(!palabra){ alert('Escribe la palabra clave.'); return; }
+    body.tipo='palabra'; body.palabra=palabra;
+  } else {
+    body.tipo = $('dispEvento').value;
+    if(body.tipo==='etiqueta_aplicada') body.evento_valor = $('dispEtiqueta') ? $('dispEtiqueta').value : '';
+  }
+  const r = await api('disparadores', body);
+  if(r && r.status==='ok') cargarDisparadores();
+  else alert((r && r.mensaje)||'No se pudo agregar.');
+}
 window.toggleDisparador = async function(id, activo){
   const r = await api('disparadores', { accion:'toggle', linea_id: lineaActual, id, activo });
   if(r.status !== 'ok'){ alert(r.mensaje || 'No se pudo cambiar.'); cargarDisparadores(); }
@@ -2651,8 +2702,6 @@ window.eliminarDisparador = async function(id){
   const r = await api('disparadores', { accion:'eliminar', linea_id: lineaActual, id });
   if(r.status === 'ok') cargarDisparadores(); else alert(r.mensaje || 'No se pudo eliminar.');
 };
-if($('btnCrearDisparador')) $('btnCrearDisparador').onclick = crearDisparador;
-if($('nuevoDisparador')) $('nuevoDisparador').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); crearDisparador(); } });
 
 /* ── Agente de IA · cabina de control (solo gerencia) ──────────────────────
    Por ahora SOLO configura (todavía no hay "cerebro" conectado): el estado
@@ -3878,7 +3927,7 @@ if(localStorage.getItem(PWD_KEY) && localStorage.getItem(NAME_KEY)){
 </script>
 <!-- Flujos (constructor visual · Fase 1) -->
 <script src="https://cdn.jsdelivr.net/npm/drawflow@0.0.59/dist/drawflow.min.js"></script>
-<script src="/flujos-bandeja.js?v=20260613-3"></script>
+<script src="/flujos-bandeja.js?v=20260613-4"></script>
 <script src="/integraciones-bandeja.js?v=20260613-2"></script>
 </body>
 </html>

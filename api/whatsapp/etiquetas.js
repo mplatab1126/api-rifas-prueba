@@ -12,6 +12,7 @@
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
 import { supabase, supabaseAdmin } from '../lib/supabase.js';
+import { dispararEventoEtiqueta } from '../lib/flujo-motor.js';
 import { puedeVerLinea } from '../lib/asesores.js';
 
 const DEFAULTS = [
@@ -96,6 +97,11 @@ export default async function handler(req, res) {
       if (!cid) return res.status(200).json({ status: 'error', mensaje: 'No se encontró la conversación.' });
       if (asignar) {
         await supabaseAdmin.from('conversacion_etiquetas').upsert({ conversacion_id: cid, etiqueta_id }, { onConflict: 'conversacion_id,etiqueta_id', ignoreDuplicates: true });
+        // Evento "etiqueta aplicada": si hay un disparador para esta etiqueta, lo ejecuta (flujo o agente).
+        try {
+          const { data: et } = await supabaseAdmin.from('etiquetas').select('nombre').eq('id', etiqueta_id).maybeSingle();
+          if (et) await dispararEventoEtiqueta(linea_id, String(telefono || '').replace(/\D/g, ''), et.nombre);
+        } catch (_) { /* el disparo por etiqueta nunca debe romper el etiquetado */ }
       } else {
         await supabaseAdmin.from('conversacion_etiquetas').delete().eq('conversacion_id', cid).eq('etiqueta_id', etiqueta_id);
       }

@@ -27,25 +27,37 @@ export default async function handler(req, res) {
   try {
     if (accion === 'listar') {
       const { data } = await supabase
-        .from('disparadores').select('id, palabra, tipo, activo, created_at')
+        .from('disparadores').select('id, palabra, tipo, activo, destino, flujo_id, evento_valor, created_at, flujos(nombre)')
         .eq('linea_id', linea_id).order('created_at', { ascending: true });
-      return res.status(200).json({ status: 'ok', disparadores: data || [] });
+      const disparadores = (data || []).map(d => ({ ...d, flujo_nombre: d.flujos ? d.flujos.nombre : null, flujos: undefined }));
+      return res.status(200).json({ status: 'ok', disparadores });
     }
 
     if (accion === 'crear') {
-      const tipo = req.body.tipo === 'nuevo_contacto' ? 'nuevo_contacto' : 'palabra';
-      if (tipo === 'nuevo_contacto') {
+      const TIPOS = ['palabra', 'nuevo_contacto', 'etiqueta_aplicada'];
+      const tipo = TIPOS.includes(req.body.tipo) ? req.body.tipo : 'palabra';
+      const destino = req.body.destino === 'flujo' ? 'flujo' : 'agente';
+      let flujo_id = null;
+      if (destino === 'flujo') {
+        flujo_id = req.body.flujo_id || null;
+        if (!flujo_id) return res.status(200).json({ status: 'error', mensaje: 'Elige el flujo que se va a disparar.' });
+        const { data: fl } = await supabaseAdmin.from('flujos').select('id').eq('id', flujo_id).eq('linea_id', linea_id).maybeSingle();
+        if (!fl) return res.status(200).json({ status: 'error', mensaje: 'No se encontró ese flujo en esta línea.' });
+      }
+
+      const fila = { linea_id, tipo, destino, flujo_id, activo: true, palabra: null, evento_valor: null };
+      if (tipo === 'palabra') {
+        fila.palabra = String(req.body.palabra || '').trim().slice(0, 200);
+        if (!fila.palabra) return res.status(200).json({ status: 'error', mensaje: 'Escribe la palabra o frase clave.' });
+      } else if (tipo === 'nuevo_contacto') {
         // Solo uno por línea (es un on/off: "atender a todo cliente nuevo").
         const { data: yaHay } = await supabase
           .from('disparadores').select('id').eq('linea_id', linea_id).eq('tipo', 'nuevo_contacto').maybeSingle();
-        if (yaHay) return res.status(200).json({ status: 'error', mensaje: 'Ya existe un disparador de "cliente nuevo".' });
-        const { error } = await supabaseAdmin.from('disparadores').insert({ linea_id, palabra: null, tipo, activo: true });
-        if (error) return res.status(200).json({ status: 'error', mensaje: error.message });
-        return res.status(200).json({ status: 'ok' });
+        if (yaHay) return res.status(200).json({ status: 'error', mensaje: 'Ya existe un disparador de "cliente nuevo". Elimínalo si quieres cambiar su destino.' });
+      } else if (tipo === 'etiqueta_aplicada') {
+        fila.evento_valor = String(req.body.evento_valor || '').trim().slice(0, 120) || null;   // null = cualquier etiqueta
       }
-      const palabra = String(req.body.palabra || '').trim().slice(0, 200);
-      if (!palabra) return res.status(200).json({ status: 'error', mensaje: 'Escribe la palabra o frase clave.' });
-      const { error } = await supabaseAdmin.from('disparadores').insert({ linea_id, palabra, tipo: 'palabra', activo: true });
+      const { error } = await supabaseAdmin.from('disparadores').insert(fila);
       if (error) return res.status(200).json({ status: 'error', mensaje: error.message });
       return res.status(200).json({ status: 'ok' });
     }
