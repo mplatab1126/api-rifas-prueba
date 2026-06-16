@@ -181,6 +181,15 @@ enganchado en `recibir.js` antes de Liliana (flujo O Liliana, nunca los dos). Bo
 `enviarBotones`/`enviarLista` (`api/lib/whatsapp.js`). **Interruptor de seguridad** `flujos_modo`
 (off|prueba|vivo, tabla `configuracion`) con control en la pantalla de Flujos (solo Mateo); **por
 defecto OFF** = nada corre. Falta Fase 2b (timeout "no respondió") y la prueba en vivo. Ver bitácora 13-jun.
+El **disparador NO vive en el flujo**: se administra en **Disparadores** (ver abajo). El motor expone
+`procesarFlujo` (avanza sesión en curso) e `iniciarFlujoPorId` (arranca un flujo); el despacho central
+está en `recibir.js` (`despachar`). Faltan 2 formas de iniciar: manual desde el chat y por difusión.
+
+**Disparadores (reescrito 2026-06-13):** panel con DOS pestañas — **Palabras clave** y **Acciones**
+(cliente nuevo, etiqueta aplicada). Cada regla tiene switch y **destino**: arranca un **flujo** (cuál) o
+prende el **agente** (Liliana). Piezas: `api/whatsapp/disparadores.js`, sección `#modDisparadores` en
+`bandeja-whatsapp.html`, tabla `disparadores` (+`destino`,`flujo_id`,`evento_valor`, ver
+`sql/disparadores-destino.sql`). El evento "etiqueta aplicada" lo dispara `api/whatsapp/etiquetas.js`.
 
 **Integraciones (solo Mateo · 2026-06-13):** sección "Integraciones" en la bandeja para conectar
 **Google Sheets** (enlace público, lectura) y **Supabase** (URL+llave+tabla, lectura/escritura) y que

@@ -26,6 +26,32 @@
 
 ---
 
+## 2026-06-13 — [WhatsApp] — Disparadores centralizados: a flujo o a agente (saca el disparador del flujo)
+
+**Qué decidimos (modelo de Mateo, copiando ChateaPro):** el panel **Disparadores** ahora separa dos
+categorías —**Palabras clave** ("si el mensaje contiene X") y **Acciones/eventos** (cliente nuevo,
+**etiqueta aplicada**)— y CADA regla, en cualquier categoría, tiene un switch y elige su **destino**:
+arrancar un **flujo** (cuál) o prender el **agente** (Liliana). El disparador **SALIÓ del flujo**: el
+flujo es solo las cajitas; lo que lo activa se administra todo en Disparadores (más ordenado).
+
+**Piezas:** tabla `disparadores` + columnas `destino` ('agente'|'flujo'), `flujo_id`, `evento_valor`
+(ver `sql/disparadores-destino.sql`); `tipo` ahora admite 'palabra'|'nuevo_contacto'|'etiqueta_aplicada'.
+Endpoint `api/whatsapp/disparadores.js` reescrito. Motor `api/lib/flujo-motor.js`: se separó en
+`procesarFlujo` (AVANZA una sesión en curso) e `iniciarFlujoPorId` (ARRANCA un flujo). El despacho vive
+ahora en `recibir.js` función `despachar`: (1) flujo en curso → avanzar; (2) agente ya activo → Liliana;
+(3) primera regla de `disparadores` que coincida → flujo o agente. El evento "etiqueta aplicada" se
+engancha en `api/whatsapp/etiquetas.js` (al asignar una etiqueta → `dispararEventoEtiqueta`). En el
+dibujante se quitaron el selector de disparador, el campo de palabras y el "Activo" (el flujo ya no se
+auto-dispara). Verificado: webhook sano, panel con las 2 pestañas y reglas a flujo/agente funcionando.
+
+**Cuidado / qué NO hacer:** el camino de Liliana se conserva — los disparadores viejos quedaron con
+`destino='agente'` (comportamiento intacto). NO volver a meter el disparador dentro del flujo. `recibir.js`
+es el camino que recibe TODOS los mensajes: cualquier cambio ahí se verifica que el webhook no dé 500 y que
+Liliana siga respondiendo. Faltan las otras 2 formas de iniciar un flujo (manual desde el chat, y por
+difusión) — ver PENDIENTES.
+
+---
+
 ## 2026-06-13 — [Seguridad] / [WhatsApp] — Integraciones: conectar fuentes de datos externas (Fase A)
 
 **Qué decidimos:** agregar a la bandeja un panel **Integraciones** (solo Mateo) para conectar

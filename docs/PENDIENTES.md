@@ -15,6 +15,13 @@
 
 ## Tareas pendientes
 
+- [ ] (2026-06-13) **FLUJOS — formas de iniciar que FALTAN** (las otras 2 que pidió Mateo, estilo
+  ChateaPro): (a) **manual desde el chat** — un botón en la conversación para empujarle un flujo a ESE
+  cliente; (b) **por difusión** — al crear una difusión, elegir un flujo y mandarlo a la lista. Ya están
+  las automáticas: palabra clave y evento (cliente nuevo / etiqueta aplicada), centralizadas en
+  **Disparadores** (cada regla → flujo o agente). El motor ya tiene `iniciarFlujoPorId` listo para
+  reusar. Ver bitácora 13-jun.
+
 - [x] (2026-06-13) **INTEGRACIONES — Fase B (HECHA):** mapeo de columnas a campos estándar + ficha del
   chat (panel derecho muestra los datos de la fuente conectada) + los flujos cargan esos campos
   (`{{total_abonado}}`, `{{saldo}}`, `{{boleta}}`…) para usarlos en condiciones. Verificado con datos
