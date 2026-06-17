@@ -1098,36 +1098,13 @@
           <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:20px; flex-wrap:wrap;">
             <div>
               <h2 style="margin:0 0 4px;">Flujos</h2>
-              <div class="fl-sub">Automatizaciones con cajitas: mensajes, preguntas, condiciones, acciones. <b>Fase 1</b>: se dibujan y se prueban aquí; aún no corren con clientes reales.</div>
+              <div class="fl-sub">Automatizaciones con cajitas: mensajes, preguntas, condiciones, acciones. Arma el flujo aquí y actívalo desde <b>Disparadores</b>.</div>
             </div>
             <button id="botonNuevoFlujo" class="boton chico menta" onclick="nuevoFlujo()" style="display:none">
               <svg width="15" height="15"><use href="#fli-mas"/></svg> Nuevo flujo
             </button>
           </div>
-          <div id="flModoMotor" class="fl-modo"></div>
           <div id="listaFlujos" class="fl-cargando">Cargando…</div>
-
-          <div id="zonaPlantillas" style="display:none; margin-top:26px;">
-            <h3 style="margin-bottom:4px;">Plantillas listas para rifas</h3>
-            <div class="fl-sub" style="margin-bottom:12px;">Un clic y queda armado — luego solo cambias los textos por los tuyos.</div>
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap:12px;">
-              <div class="fl-tarjeta fl-tarjeta-flujo" style="margin:0;" onclick="crearDesdePlantilla('bienvenida')">
-                <div class="icono-flujo" style="background:#DCEBFF;"><svg width="20" height="20"><use href="#fli-flujo"/></svg></div>
-                <div><div style="font-weight:600;">Bienvenida de la rifa</div>
-                <div class="fl-sub" style="font-size:12.5px;">Saluda con botones, recoge el número y pasa a la venta</div></div>
-              </div>
-              <div class="fl-tarjeta fl-tarjeta-flujo" style="margin:0;" onclick="crearDesdePlantilla('cobro')">
-                <div class="icono-flujo" style="background:#FDF3D8;"><svg width="20" height="20"><use href="#fli-flujo"/></svg></div>
-                <div><div style="font-weight:600;">Cobro amable</div>
-                <div class="fl-sub" style="font-size:12.5px;">Recuerda el saldo y clasifica la respuesta con botones</div></div>
-              </div>
-              <div class="fl-tarjeta fl-tarjeta-flujo" style="margin:0;" onclick="crearDesdePlantilla('postsorteo')">
-                <div class="icono-flujo" style="background:#FFC4E0;"><svg width="20" height="20"><use href="#fli-flujo"/></svg></div>
-                <div><div style="font-weight:600;">Después del sorteo</div>
-                <div class="fl-sub" style="font-size:12.5px;">Anuncia el ganador y engancha para la próxima rifa</div></div>
-              </div>
-            </div>
-          </div>
         </section>
 
         <!-- EDITOR -->
@@ -3927,7 +3904,7 @@ if(localStorage.getItem(PWD_KEY) && localStorage.getItem(NAME_KEY)){
 </script>
 <!-- Flujos (constructor visual · Fase 1) -->
 <script src="https://cdn.jsdelivr.net/npm/drawflow@0.0.59/dist/drawflow.min.js"></script>
-<script src="/flujos-bandeja.js?v=20260613-4"></script>
+<script src="/flujos-bandeja.js?v=20260613-5"></script>
 <script src="/integraciones-bandeja.js?v=20260613-2"></script>
 </body>
 </html>

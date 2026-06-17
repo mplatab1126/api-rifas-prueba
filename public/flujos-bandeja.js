@@ -30,51 +30,12 @@ async function cargarFlujosModulo(){
   // si veníamos en el editor de otra línea, volver a la lista
   document.getElementById('flVistaEditor').style.display = 'none';
   document.getElementById('flVistaLista').style.display = 'block';
-  renderModoMotor();
   cargarFlujos();
-}
-
-// ── Interruptor de seguridad del motor (off | prueba | vivo) ──────────────────
-async function renderModoMotor() {
-  const cont = document.getElementById('flModoMotor');
-  if (!cont) return;
-  const r = await api('flujos', { accion: 'config-get', linea_id: lineaActual });
-  const modo = (r && r.modo) || 'off';
-  const numeros = (r && r.numeros) || '';
-  const btn = (val, txt) => `<button class="fl-modo-btn ${modo === val ? 'on' : ''} ${val === 'vivo' ? 'vivo' : ''}" onclick="setModoMotor('${val}')">${txt}</button>`;
-  const desc = modo === 'off' ? 'Apagado: ningún flujo le responde a nadie, aunque esté marcado "Activo". Recomendado mientras armas y pruebas.'
-    : modo === 'prueba' ? 'Modo prueba: los flujos activos SOLO le responden a los números de abajo (tú). Ideal para probar en vivo sin tocar clientes.'
-    : '⚠️ EN VIVO: los flujos marcados "Activo" le responden a TODOS los clientes reales.';
-  cont.innerHTML = `
-    <div class="fl-modo-row">
-      <span class="fl-modo-tit">⚙️ Motor de flujos:</span>
-      ${btn('off', 'Apagado')}${btn('prueba', 'Modo prueba')}${btn('vivo', 'En vivo')}
-    </div>
-    <div class="fl-modo-desc">${desc}</div>
-    ${modo === 'prueba' ? `<div class="fl-modo-num">
-      <input id="flNumerosPrueba" type="text" value="${escapar(numeros)}" placeholder="Tu número con indicativo, ej: 573001234567 (varios con coma)">
-      <button class="boton chico menta" onclick="guardarNumerosPrueba(this)">Guardar números</button>
-    </div>` : ''}`;
-}
-async function setModoMotor(modo) {
-  if (modo === 'vivo' && !confirm('¿Poner el motor EN VIVO? Los flujos marcados "Activo" le responderán a TODOS los clientes reales.')) return;
-  const numerosEl = document.getElementById('flNumerosPrueba');
-  const body = { accion: 'config-set', linea_id: lineaActual, modo };
-  if (numerosEl) body.numeros = numerosEl.value;
-  const r = await api('flujos', body);
-  if (r && r.status === 'ok') renderModoMotor();
-  else alert((r && r.mensaje) || 'No se pudo cambiar el modo.');
-}
-async function guardarNumerosPrueba(btn) {
-  const numeros = document.getElementById('flNumerosPrueba').value;
-  const r = await api('flujos', { accion: 'config-set', linea_id: lineaActual, modo: 'prueba', numeros });
-  if (btn) { btn.textContent = r && r.status === 'ok' ? 'Guardado ✓' : 'Error'; setTimeout(() => { btn.textContent = 'Guardar números'; }, 1500); }
 }
 
 // ---------- lista ----------
 async function cargarFlujos() {
   document.getElementById('botonNuevoFlujo').style.display = esAdmin() ? 'inline-flex' : 'none';
-  document.getElementById('zonaPlantillas').style.display = esAdmin() ? 'block' : 'none';
   const caja = document.getElementById('listaFlujos');
   caja.className = 'fl-cargando'; caja.textContent = 'Cargando…';
   const r = await api('flujos', { accion:'listar', linea_id: lineaActual });
@@ -115,58 +76,6 @@ async function nuevoFlujo() {
 }
 
 // ---------- plantillas listas para rifas ----------
-async function crearDesdePlantilla(clave) {
-  if (!esAdmin()) return;
-  const meta = {
-    bienvenida: { nombre: 'Bienvenida de la rifa', palabras: 'hola, info, buenas' },
-    cobro: { nombre: 'Cobro amable', palabras: '' },
-    postsorteo: { nombre: 'Después del sorteo', palabras: 'resultados, ganador' }
-  }[clave];
-  const r = await api('flujos', { accion:'crear', linea_id: lineaActual, nombre: meta.nombre });
-  if (!r || r.status !== 'ok') { alert((r && r.mensaje) || 'No se pudo crear'); return; }
-  flFlujos.unshift(r.flujo);
-  await abrirFlujo(r.flujo.id);
-  const inicio = Object.keys(nodos()).find(k => nodos()[k].name === 'inicio');
-  // Solo se usan los 5 nodos base. Los menús de botones son "Mensaje con botones"
-  // (respuesta:'botones' → 4 salidas), que es una variante de Mensaje.
-  const N = (tipo, x, y, datos) => {
-    const outs = (tipo === 'mensaje' && datos.respuesta === 'botones') ? 4
-               : (tipo === 'mensaje' && datos.respuesta === 'lista') ? 2
-               : salidasDe(tipo);
-    return editor.addNode(tipo, tipo === 'comentario' ? 0 : 1, outs, x, y, 'nodo-' + tipo, datos, nodoHtml(tipo, datos), false);
-  };
-  const C = (a, b, sal) => editor.addConnection(a, b, sal || 'output_1', 'input_1');
-
-  if (clave === 'bienvenida') {
-    const menu = N('mensaje', 280, 80, { texto: '¡Hola! Bienvenido a nuestra rifa 🎉 ¿Qué quieres hacer?', respuesta: 'botones', btn1: 'Comprar boleta', btn2: 'Ver premios', btn3: 'Hablar con asesor' });
-    const preg = N('pregunta', 620, 20, { texto: '¿Qué número quieres? Escríbelo y lo revisamos 🍀', tipo: 'numero', campo: '', reintentos: 3, saltar: '' });
-    const pago = N('mensaje', 940, 20, { texto: 'Para apartarlo: [ESCRIBE AQUÍ TUS CUENTAS DE PAGO]. Cuando pagues, envíame el comprobante por aquí 🙏' });
-    const premios = N('mensaje', 620, 240, { texto: '🏆 [DESCRIBE AQUÍ TUS PREMIOS Y LA FECHA DEL SORTEO]' });
-    const asesor = N('mensaje', 620, 420, { texto: 'Con gusto te ayudamos 🙌 En un momento te atiende un asesor.' });
-    C(inicio, menu); C(menu, preg, 'output_1'); C(preg, pago); C(menu, premios, 'output_2');
-    C(premios, menu); C(menu, asesor, 'output_3'); C(menu, asesor, 'output_4');
-  }
-  if (clave === 'cobro') {
-    const saludo = N('mensaje', 260, 80, { texto: 'Hola {{nombre}} 👋 Te escribimos de Los Plata: tu boleta tiene saldo pendiente para el sorteo.' });
-    const menu = N('mensaje', 560, 80, { texto: '¿Cómo vamos con el pago?', respuesta: 'botones', btn1: 'Ya pagué', btn2: 'Pago hoy', btn3: 'Necesito ayuda' });
-    const verificar = N('mensaje', 900, 20, { texto: '¡Genial! Mándame el comprobante por aquí y lo verificamos 🙏' });
-    const animo = N('mensaje', 900, 200, { texto: '¡Perfecto! Te esperamos 🙌 Cuentas: [TUS CUENTAS]. Me avisas con el comprobante.' });
-    const ayuda = N('mensaje', 900, 380, { texto: 'Con gusto te ayudamos 🙌 En un momento te atiende un asesor.' });
-    C(inicio, saludo); C(saludo, menu); C(menu, verificar, 'output_1');
-    C(menu, animo, 'output_2'); C(menu, ayuda, 'output_3'); C(menu, ayuda, 'output_4');
-  }
-  if (clave === 'postsorteo') {
-    const anuncio = N('mensaje', 260, 80, { texto: '🎉 ¡Tenemos ganador! [NÚMERO Y NOMBRE DEL GANADOR]. Gracias por participar con nosotros.' });
-    const menu = N('mensaje', 560, 80, { texto: '¿Quieres que te avisemos de la próxima rifa?', respuesta: 'botones', btn1: 'Sí, avísame', btn2: 'Por ahora no', btn3: '' });
-    const marcar = N('accion', 880, 20, { accion: 'poner_etiqueta', etiqueta: etiquetas[0]?.nombre || 'Interesado', campo: '', valor: '' });
-    const avisar = N('mensaje', 1160, 20, { texto: '¡Anotado! Te escribimos apenas abramos la próxima 🎟️' });
-    const gracias = N('mensaje', 880, 240, { texto: 'Gracias por participar 🙏 ¡Hasta la próxima!' });
-    C(inicio, anuncio); C(anuncio, menu); C(menu, marcar, 'output_1'); C(marcar, avisar);
-    C(menu, gracias, 'output_2'); C(menu, gracias, 'output_4');
-  }
-  await guardarFlujo();
-}
-
 // ---------- editor ----------
 async function abrirFlujo(id) {
   const r = await api('flujos', { accion:'obtener', linea_id: lineaActual, id });

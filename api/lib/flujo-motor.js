@@ -44,16 +44,11 @@ function siguiente(grafo, nodo, salida) {
 }
 function grafoDe(flujo) { return (flujo && flujo.grafo && flujo.grafo.drawflow && flujo.grafo.drawflow.Home && flujo.grafo.drawflow.Home.data) || {}; }
 
-// ── Interruptor de seguridad ────────────────────────────────────────────────
-async function permitidoCorrer(telefono) {
-  const modo = (await obtenerConfig('flujos_modo')) || 'off';
-  if (modo === 'vivo') return true;
-  if (modo === 'prueba') {
-    const lista = (await obtenerConfig('flujos_numeros_prueba')) || '';
-    const nums = lista.split(',').map(sol10).filter(Boolean);
-    return nums.includes(sol10(telefono));
-  }
-  return false;
+// Los flujos corren cuando un DISPARADOR los activa (palabra clave, acción, manual o
+// difusión). El control de qué corre y qué no está en el panel Disparadores (cada regla
+// tiene su switch). Ya no hay interruptor global de motor.
+async function permitidoCorrer(_telefono) {
+  return true;
 }
 
 async function cargarFlujo(id, lineaId) {
