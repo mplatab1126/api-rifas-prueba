@@ -26,6 +26,23 @@
 
 ---
 
+## 2026-06-13 — [WhatsApp] — Editor de flujos: simplificación de la interfaz (pedido de Mateo)
+
+**Qué cambió (UI del dibujante):** (1) la **paleta** ya no muestra todos los pasos: hay un botón
+**"+ Agregar paso"** que despliega la lista (y se colapsa al agregar). (2) Las acciones de cada cajita
+(probar desde aquí, duplicar, eliminar) ya NO están en la barra de arriba: aparecen en un **toolbar
+flotante encima de la cajita** cuando se selecciona (al Inicio solo "probar desde aquí"). (3) La
+**carpeta** del flujo salió del editor y se elige **en la lista** (un selector por flujo; acción nueva
+`carpeta` en `flujos.js` que mueve sin tocar el dibujo). (4) **Guardar** se movió a la izquierda y se
+**quitó "Eliminar flujo"** (para no borrar por error). (5) El **verde** ya no rodea la cajita
+seleccionada: ahora el seleccionado tiene **borde negro** (el verde queda solo para botones).
+
+**Pendiente (lo único que falta de este pedido):** **arrastrar desde la bolita** de una cajita a un
+lugar vacío y que ahí salga el menú para crear+conectar un nodo (estilo n8n/ManyChat). Es lo más
+delicado de Drawflow; se hará aparte para probarlo bien. Ver PENDIENTES.
+
+---
+
 ## 2026-06-13 — [WhatsApp] — Flujos: se quitó el interruptor global de motor y las plantillas listas
 
 **Qué decidimos (Mateo):** simplificar la pantalla de Flujos. Se quitó (1) el control **"Motor de flujos:

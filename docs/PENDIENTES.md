@@ -15,6 +15,12 @@
 
 ## Tareas pendientes
 
+- [ ] (2026-06-13) **EDITOR DE FLUJOS — arrastrar para crear nodo:** que al arrastrar desde la bolita
+  (puerto de salida) de una cajita hacia un espacio vacío, aparezca un menú para crear+conectar un nodo
+  ahí (estilo n8n/ManyChat). Es lo más delicado de Drawflow (no tiene hook nativo para "soltado en vacío");
+  hay que enganchar `connectionStart`/`connectionCancel` + posición del mouse y crear el nodo en coords del
+  canvas. Probar iterativo en el navegador. Es el único punto que faltó del pedido de UX del editor (13-jun).
+
 - [ ] (2026-06-13) **FLUJOS — formas de iniciar que FALTAN** (las otras 2 que pidió Mateo, estilo
   ChateaPro): (a) **manual desde el chat** — un botón en la conversación para empujarle un flujo a ESE
   cliente; (b) **por difusión** — al crear una difusión, elegir un flujo y mandarlo a la lista. Ya están
