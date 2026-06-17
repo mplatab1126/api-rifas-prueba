@@ -163,10 +163,23 @@ function mostrarToolbarNodo(id) {
   tb.innerHTML =
     `<button title="Probar desde aquí" onclick="probarDesdeNodo('${id}')"><svg width="14" height="14"><use href="#fli-jugar"/></svg></button>` +
     (esInicio ? '' :
-      `<button title="Duplicar" onclick="duplicarNodo()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>` +
-      `<button class="borrar" title="Eliminar cajita" onclick="eliminarNodoSeleccionado()"><svg width="14" height="14"><use href="#fli-basura"/></svg></button>`);
+      `<button title="Duplicar" onclick="duplicarNodoId('${id}')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>` +
+      `<button class="borrar" title="Eliminar cajita" onclick="eliminarNodo('${id}')"><svg width="14" height="14"><use href="#fli-basura"/></svg></button>`);
   el.appendChild(tb);
 }
+// Acciones del toolbar por id (no dependen de la selección interna de Drawflow).
+window.eliminarNodo = function (id) {
+  const n = editor.getNodeFromId(id);
+  if (!n || n.name === 'inicio') return;
+  cerrarPanelNodo(); quitarToolbarsNodo();
+  editor.removeNodeId('node-' + id);
+};
+window.duplicarNodoId = function (id) {
+  const n = editor.getNodeFromId(id);
+  if (!n || n.name === 'inicio') return;
+  editor.addNode(n.name, Object.keys(n.inputs).length, Object.keys(n.outputs).length,
+    n.pos_x + 50, n.pos_y + 50, 'nodo-' + n.name, JSON.parse(JSON.stringify(n.data)), nodoHtml(n.name, n.data), false);
+};
 window.probarDesdeNodo = function (id) {
   const n = editor.getNodeFromId(id);
   if (!n) return;
@@ -521,7 +534,8 @@ function agregarNodo(tipo) {
   };
   const x = 90 + Math.random() * 360, y = 70 + Math.random() * 260;
   const id = editor.addNode(tipo, entradas, salidasDe(tipo), x, y, 'nodo-' + tipo, datos, nodoHtml(tipo, datos), false);
-  if (tipo !== 'comentario') abrirPanelNodo(id);
+  if (tipo !== 'comentario') { abrirPanelNodo(id); mostrarToolbarNodo(id); }
+  const pp = document.getElementById('paletaPiezas'); if (pp) pp.style.display = 'none';   // colapsar la paleta tras agregar
 }
 
 function eliminarNodoSeleccionado() {
