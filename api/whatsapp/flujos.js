@@ -117,6 +117,19 @@ export default async function handler(req, res) {
       return res.status(200).json({ status: 'ok' });
     }
 
+    // Mover un flujo de carpeta SIN tocar el dibujo (se usa desde la lista).
+    if (accion === 'carpeta') {
+      const { id } = req.body;
+      if (!id) return res.status(200).json({ status: 'error', mensaje: 'Falta el flujo.' });
+      const carpeta = req.body.carpeta != null ? String(req.body.carpeta).slice(0, 80) : null;
+      const { data, error } = await supabaseAdmin.from('flujos')
+        .update({ carpeta, actualizado_at: new Date().toISOString() })
+        .eq('id', id).eq('linea_id', linea_id).select('id').single();
+      if (error) return res.status(200).json({ status: 'error', mensaje: error.message });
+      if (!data) return res.status(200).json({ status: 'error', mensaje: 'No se encontró el flujo.' });
+      return res.status(200).json({ status: 'ok' });
+    }
+
     // Interruptor de seguridad del MOTOR (global, solo Mateo): off | prueba | vivo.
     if (accion === 'config-get') {
       const modo = (await obtenerConfig('flujos_modo')) || 'off';

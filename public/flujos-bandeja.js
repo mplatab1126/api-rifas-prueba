@@ -44,7 +44,7 @@ async function cargarFlujos() {
   caja.className = '';
   if (!flFlujos.length) {
     caja.innerHTML = `<div class="fl-tarjeta" style="text-align:center; padding:40px; color:var(--ink-mute);">
-      Aún no hay flujos.${esAdmin() ? ' Crea el primero: un saludo automático con las palabras "hola, info".' : ''}</div>`;
+      Aún no hay flujos.${esAdmin() ? ' Crea el primero con "Nuevo flujo" y actívalo desde Disparadores.' : ''}</div>`;
     return;
   }
   const carpetas = [...new Set(flFlujos.map(f => f.carpeta).filter(Boolean))].sort();
@@ -56,17 +56,30 @@ async function cargarFlujos() {
         <svg width="12" height="12" style="vertical-align:-1px"><use href="#fli-carpeta"/></svg> ${escapar(c)}</button>`).join('')}
     </div>` : '';
   const visibles = carpetaActiva ? flFlujos.filter(f => f.carpeta === carpetaActiva) : flFlujos;
+  const opcCarpeta = sel => '<option value="">📁 Sin carpeta</option>' +
+    carpetas.map(c => `<option value="${escapar(c)}" ${c === sel ? 'selected' : ''}>📁 ${escapar(c)}</option>`).join('') +
+    '<option value="__nueva">+ Carpeta nueva…</option>';
   caja.innerHTML = chips + visibles.map(f => `
-    <div class="fl-tarjeta fl-tarjeta-flujo" onclick='abrirFlujo(${JSON.stringify(f.id)})'>
-      <div class="icono-flujo"><svg width="20" height="20"><use href="#fli-flujo"/></svg></div>
-      <div style="flex:1; min-width:0;">
+    <div class="fl-tarjeta fl-tarjeta-flujo">
+      <div class="icono-flujo" style="cursor:pointer" onclick='abrirFlujo(${JSON.stringify(f.id)})'><svg width="20" height="20"><use href="#fli-flujo"/></svg></div>
+      <div style="flex:1; min-width:0; cursor:pointer" onclick='abrirFlujo(${JSON.stringify(f.id)})'>
         <div style="font-weight:600;">${escapar(f.nombre)}</div>
-        <div class="fl-sub">
-          ${f.carpeta && !carpetaActiva ? 'En ' + escapar(f.carpeta) : 'Se activa desde Disparadores'}</div>
+        <div class="fl-sub">Se activa desde Disparadores</div>
       </div>
+      <select class="fl-carpeta-sel" title="Carpeta del flujo" onchange="cambiarCarpetaFlujo(${JSON.stringify(f.id)}, this.value)">${opcCarpeta(f.carpeta || '')}</select>
     </div>`).join('');
 }
 function filtrarCarpeta(c) { carpetaActiva = c; cargarFlujos(); }
+window.cambiarCarpetaFlujo = async function (id, value) {
+  let carpeta = value;
+  if (value === '__nueva') {
+    carpeta = (prompt('Nombre de la carpeta (ej: Rifa Casa Santa Teresita):') || '').trim();
+    if (!carpeta) { cargarFlujos(); return; }
+  }
+  const r = await api('flujos', { accion: 'carpeta', linea_id: lineaActual, id, carpeta: carpeta || null });
+  if (!r || r.status !== 'ok') alert((r && r.mensaje) || 'No se pudo mover de carpeta.');
+  cargarFlujos();
+};
 
 async function nuevoFlujo() {
   const r = await api('flujos', { accion:'crear', linea_id: lineaActual, nombre: 'Flujo sin nombre' });
@@ -85,7 +98,7 @@ async function abrirFlujo(id) {
   document.getElementById('flVistaEditor').style.display = 'flex';
   document.getElementById('edNombre').value = flujoAbierto.nombre;
   document.getElementById('botonGuardar').style.display = esAdmin() ? 'inline-flex' : 'none';
-  pintarSelectCarpeta();
+  const pp = document.getElementById('paletaPiezas'); if (pp) pp.style.display = 'none';   // paleta colapsada al abrir
 
   const lienzo = document.getElementById('lienzo');
   lienzo.innerHTML = '';
@@ -102,9 +115,9 @@ async function abrirFlujo(id) {
   }
   importando = false;
 
-  editor.on('nodeSelected', nid => abrirPanelNodo(nid));
-  editor.on('nodeUnselected', () => cerrarPanelNodo());
-  editor.on('nodeRemoved', () => { cerrarPanelNodo(); fotografiar(); });
+  editor.on('nodeSelected', nid => { abrirPanelNodo(nid); mostrarToolbarNodo(nid); });
+  editor.on('nodeUnselected', () => { cerrarPanelNodo(); quitarToolbarsNodo(); });
+  editor.on('nodeRemoved', () => { cerrarPanelNodo(); quitarToolbarsNodo(); fotografiar(); });
   editor.on('nodeCreated', fotografiar);
   editor.on('connectionCreated', fotografiar);
   editor.on('connectionRemoved', fotografiar);
@@ -128,26 +141,43 @@ function flZoomIn(){ if(editor) editor.zoom_in(); }
 function flZoomOut(){ if(editor) editor.zoom_out(); }
 function flZoomReset(){ if(editor) editor.zoom_reset(); }
 
-// ---------- carpetas (en el editor) ----------
-function pintarSelectCarpeta() {
-  const sel = document.getElementById('edCarpeta');
-  const carpetas = [...new Set(flFlujos.map(f => f.carpeta).filter(Boolean))].sort();
-  const actual = flujoAbierto.carpeta || '';
-  sel.innerHTML = '<option value="">Sin carpeta</option>' +
-    carpetas.map(c => `<option value="${escapar(c)}" ${c === actual ? 'selected' : ''}>${escapar(c)}</option>`).join('') +
-    '<option value="__nueva">+ Carpeta nueva…</option>';
-  sel.disabled = !esAdmin();
+// ---------- paleta desplegable (botón "+") ----------
+function togglePaleta() {
+  const p = document.getElementById('paletaPiezas');
+  if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
 }
-function carpetaCambia(sel) {
-  if (sel.value === '__nueva') {
-    const nombre = (prompt('Nombre de la carpeta (ej: Rifa Casa Santa Teresita):') || '').trim();
-    if (!nombre) { sel.value = flujoAbierto.carpeta || ''; return; }
-    flujoAbierto.carpeta = nombre;
-    pintarSelectCarpeta();
-  } else {
-    flujoAbierto.carpeta = sel.value || null;
-  }
+
+// ---------- toolbar flotante del nodo seleccionado (encima de la cajita) ----------
+function quitarToolbarsNodo() {
+  document.querySelectorAll('#lienzo .nodo-toolbar').forEach(t => t.remove());
 }
+function mostrarToolbarNodo(id) {
+  quitarToolbarsNodo();
+  const n = editor.getNodeFromId(id);
+  const el = document.getElementById('node-' + id);
+  if (!n || !el) return;
+  const esInicio = n.name === 'inicio';
+  const tb = document.createElement('div');
+  tb.className = 'nodo-toolbar';
+  tb.onmousedown = e => e.stopPropagation();   // usar la barra no arrastra/deselecciona el nodo
+  tb.innerHTML =
+    `<button title="Probar desde aquí" onclick="probarDesdeNodo('${id}')"><svg width="14" height="14"><use href="#fli-jugar"/></svg></button>` +
+    (esInicio ? '' :
+      `<button title="Duplicar" onclick="duplicarNodo()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>` +
+      `<button class="borrar" title="Eliminar cajita" onclick="eliminarNodoSeleccionado()"><svg width="14" height="14"><use href="#fli-basura"/></svg></button>`);
+  el.appendChild(tb);
+}
+window.probarDesdeNodo = function (id) {
+  const n = editor.getNodeFromId(id);
+  if (!n) return;
+  cerrarPanelNodo();
+  document.getElementById('simulador').classList.add('abierto');
+  sim = { esperando: null, ultimaRespuesta: '', pasos: 0, variables: {} };
+  pintarVars();
+  document.getElementById('simChat').innerHTML = '';
+  simSistema('Probando desde la cajita "' + (TITULOS[n.name] || n.name) + '".');
+  correrDesde(nodos()[id]);
+};
 
 // =============================================================================
 // CAJITAS RESUMIDAS + PANEL LATERAL (patrón ManyChat/ChateaPro)
@@ -311,8 +341,8 @@ function formularioNodo(tipo, d) {
     campoP('Título de la cajita (opcional)', `<input type="text" value="${v('titulo')}" placeholder="${TITULOS[tipo]}" onchange="setDato('titulo', this.value)">`);
 
   switch (tipo) {
-    case 'inicio': return `<div class="ayuda-p">Aquí arranca el flujo. El disparador (las palabras
-      o "contacto nuevo") se elige arriba en la barra. Conecta la salida de esta cajita
+    case 'inicio': return `<div class="ayuda-p">Aquí arranca el flujo. Lo que lo activa (palabra clave,
+      acción, manual o difusión) se configura en <b>Disparadores</b>. Conecta la salida de esta cajita
       con el primer paso.</div>`;
     case 'mensaje': return titulo +
       campoP('Texto para el cliente (admite {{campos}})', `<textarea rows="5" oninput="setDato('texto', this.value)" placeholder="Escribe el mensaje…">${v('texto')}</textarea>`) +

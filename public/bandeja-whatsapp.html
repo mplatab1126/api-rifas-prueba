@@ -45,6 +45,8 @@
     #modFlujos .fl-tarjeta { background:var(--blanco); border:1px solid var(--borde); border-radius:14px; padding:14px 16px; }
     #modFlujos .fl-tarjeta-flujo { display: flex; align-items: center; gap: 14px; cursor: pointer; transition: border-color .12s ease; margin-bottom: 10px; }
     #modFlujos .fl-tarjeta-flujo:hover { border-color: var(--menta); }
+    #modFlujos .fl-carpeta-sel { flex-shrink: 0; border: 1px solid var(--borde); border-radius: 8px; padding: 6px 8px; font: inherit; font-size: 12px; background: var(--blanco); color: var(--tinta-suave); cursor: pointer; max-width: 160px; }
+    #modFlujos .fl-carpeta-sel:hover { border-color: var(--menta); }
     #modFlujos .icono-flujo { width: 42px; height: 42px; border-radius: 12px; background: var(--menta-clara); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--menta-oscura); }
     #modFlujos .fl-pildora { font-size:11px; font-weight:700; border-radius:999px; padding:3px 10px; text-transform:capitalize; }
     #modFlujos .fl-pildora.activo { background: var(--menta-clara); color: var(--menta-oscura); }
@@ -66,8 +68,17 @@
     #modFlujos .pieza .cubo { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
     #modFlujos #lienzo { flex: 1; position: relative; background: var(--crema); background-image: radial-gradient(circle, #E3E3DC 1px, transparent 1px); background-size: 22px 22px; }
     /* cajitas */
-    #modFlujos .drawflow .drawflow-node { background: var(--blanco); border: 1.5px solid var(--borde); border-radius: 13px; box-shadow: var(--sombra); padding: 0; min-width: 235px; width: auto; font-family: var(--sans); cursor: pointer; }
-    #modFlujos .drawflow .drawflow-node.selected { border-color: var(--menta); box-shadow: 0 0 0 3px var(--menta-clara); }
+    #modFlujos .drawflow .drawflow-node { background: var(--blanco); border: 1.5px solid var(--borde); border-radius: 13px; box-shadow: var(--sombra); padding: 0; min-width: 235px; width: auto; font-family: var(--sans); cursor: pointer; overflow: visible; }
+    #modFlujos .drawflow .drawflow-node.selected { border-color: var(--ink); box-shadow: 0 0 0 1.5px var(--ink); }
+    /* Toolbar flotante de cada nodo (aparece encima al seleccionarlo) */
+    #modFlujos .nodo-toolbar { position: absolute; top: -40px; right: 0; display: flex; gap: 5px; background: var(--blanco); border: 1px solid var(--borde); border-radius: 10px; padding: 4px; box-shadow: 0 4px 12px rgba(0,0,0,.12); z-index: 8; }
+    #modFlujos .nodo-toolbar button { border: none; background: none; width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--tinta-suave); }
+    #modFlujos .nodo-toolbar button:hover { background: var(--crema); color: var(--tinta); }
+    #modFlujos .nodo-toolbar button.borrar:hover { background: #fdecec; color: var(--rojo); }
+    /* Paleta: botón "+" que despliega los pasos */
+    #modFlujos .pieza-add { display: flex; align-items: center; gap: 7px; width: 100%; justify-content: center; border: 1px dashed var(--gray-300); background: var(--blanco); border-radius: 10px; padding: 9px 10px; font: inherit; font-size: 13px; font-weight: 600; color: var(--tinta); cursor: pointer; }
+    #modFlujos .pieza-add:hover { border-color: var(--menta); background: var(--crema); }
+    #modFlujos .paleta-piezas { margin-top: 8px; }
     #modFlujos .drawflow .drawflow-node .input, #modFlujos .drawflow .drawflow-node .output { background: var(--blanco); border: 2px solid var(--gris); width: 13px; height: 13px; }
     #modFlujos .drawflow .drawflow-node .output:hover, #modFlujos .drawflow .drawflow-node .input:hover { background: var(--menta); }
     #modFlujos .drawflow .connection .main-path { stroke: #B9B9B2; stroke-width: 2.5px; }
@@ -1111,8 +1122,8 @@
         <section id="flVistaEditor" class="vista-editor">
           <div class="barra-editor">
             <button class="boton-icono" onclick="volverALista()" title="Volver"><svg width="16" height="16"><use href="#fli-atras"/></svg></button>
+            <button id="botonGuardar" class="boton chico menta" onclick="guardarFlujo()">Guardar</button>
             <input id="edNombre" class="nombre" type="text" placeholder="Nombre del flujo">
-            <select id="edCarpeta" title="Carpeta del flujo" style="font:inherit; font-size:13px; border:1px solid var(--gray-300); border-radius:9px; padding:7px 9px; max-width:150px;" onchange="carpetaCambia(this)"></select>
             <span style="font-size:12px;color:var(--gray-400);white-space:nowrap">⚡ Se activa desde <b>Disparadores</b></span>
             <span style="flex:1"></span>
             <button class="boton-icono" id="botonDeshacer" title="Deshacer (Ctrl+Z)" onclick="deshacer()"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M8 5 3 10l5 5M3 10h12a6 6 0 0 1 0 12h-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -1120,23 +1131,20 @@
             <button class="boton-icono" title="Alejar" onclick="flZoomOut()">−</button>
             <button class="boton-icono" title="Tamaño normal" onclick="flZoomReset()" style="width:auto; padding:0 8px; font-size:11px; font-weight:700;">100%</button>
             <button class="boton-icono" title="Acercar" onclick="flZoomIn()">+</button>
-            <button class="boton chico suave" onclick="duplicarNodo()" title="Duplicar la cajita seleccionada">Duplicar</button>
             <button class="boton chico suave" onclick="alternarSimulador()"><svg width="14" height="14"><use href="#fli-jugar"/></svg> Probar</button>
-            <button class="boton chico suave" onclick="eliminarNodoSeleccionado()" title="Eliminar la cajita seleccionada"><svg width="14" height="14"><use href="#fli-basura"/></svg> Cajita</button>
-            <button class="boton chico suave" onclick="eliminarFlujo()" title="Eliminar este flujo" style="color:var(--danger);"><svg width="14" height="14"><use href="#fli-basura"/></svg> Flujo</button>
-            <button id="botonGuardar" class="boton chico menta" onclick="guardarFlujo()">Guardar</button>
           </div>
           <div class="zona-trabajo">
             <div class="paleta">
-              <div class="titulo-p">Pasos</div>
-              <div class="pieza" onclick="agregarNodo('mensaje')" title="Texto, foto o audio; y si quieres, con botones o lista para que el cliente elija"><span class="cubo c-mensaje"></span>Mensaje</div>
-              <div class="pieza" onclick="agregarNodo('pregunta')" title="Pregunta algo y guarda la respuesta en un campo"><span class="cubo c-pregunta"></span>Pregunta</div>
-              <div class="pieza" onclick="agregarNodo('accion')" title="Etiquetas y campos"><span class="cubo c-accion"></span>Acción</div>
-              <div class="pieza" onclick="agregarNodo('condicion')" title="Divide el camino según la respuesta o un campo"><span class="cubo c-condicion"></span>Condición</div>
-              <div class="pieza" onclick="agregarNodo('irflujo')" title="Continúa en otro flujo"><span class="cubo c-irflujo"></span>Ir a otro flujo</div>
+              <button class="pieza-add" onclick="togglePaleta()"><svg width="14" height="14"><use href="#fli-mas"/></svg> Agregar paso</button>
+              <div id="paletaPiezas" class="paleta-piezas" style="display:none">
+                <div class="pieza" onclick="agregarNodo('mensaje')" title="Texto, foto o audio; y si quieres, con botones o lista para que el cliente elija"><span class="cubo c-mensaje"></span>Mensaje</div>
+                <div class="pieza" onclick="agregarNodo('pregunta')" title="Pregunta algo y guarda la respuesta en un campo"><span class="cubo c-pregunta"></span>Pregunta</div>
+                <div class="pieza" onclick="agregarNodo('accion')" title="Etiquetas y campos"><span class="cubo c-accion"></span>Acción</div>
+                <div class="pieza" onclick="agregarNodo('condicion')" title="Divide el camino según la respuesta o un campo"><span class="cubo c-condicion"></span>Condición</div>
+                <div class="pieza" onclick="agregarNodo('irflujo')" title="Continúa en otro flujo"><span class="cubo c-irflujo"></span>Ir a otro flujo</div>
+              </div>
               <div class="fl-sub" style="font-size:11.5px; margin-top:14px; line-height:1.5;">
-                Conecta las cajitas arrastrando entre los puntos. En los textos puedes usar <b>{{campo}}</b>.
-                Los botones y listas viven dentro de <b>Mensaje</b>.
+                Arrastra entre los puntos para conectar. En los textos usa <b>{{campo}}</b>. Los botones y listas viven dentro de <b>Mensaje</b>.
               </div>
             </div>
             <div id="lienzo"></div>
@@ -3904,7 +3912,7 @@ if(localStorage.getItem(PWD_KEY) && localStorage.getItem(NAME_KEY)){
 </script>
 <!-- Flujos (constructor visual · Fase 1) -->
 <script src="https://cdn.jsdelivr.net/npm/drawflow@0.0.59/dist/drawflow.min.js"></script>
-<script src="/flujos-bandeja.js?v=20260613-5"></script>
+<script src="/flujos-bandeja.js?v=20260613-6"></script>
 <script src="/integraciones-bandeja.js?v=20260613-2"></script>
 </body>
 </html>
