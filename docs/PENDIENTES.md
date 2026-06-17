@@ -32,11 +32,11 @@
 - [ ] (2026-06-13) **INTEGRACIONES — refuerzo:** cifrar las llaves en reposo (hoy van en claro en
   `integraciones.config`) y, para el SaaS multi-rifero, limitar el SSRF del "probar".
 
-- [ ] (2026-06-13) **FLUJOS — PROBAR EL MOTOR EN VIVO con el número de Mateo.** El motor ya está
-  hecho y publicado (`api/lib/flujo-motor.js`, enganchado en `recibir.js`), pero el interruptor
-  está en **Apagado**. Para probar: en Flujos → "Modo prueba" + escribir el número de Mateo →
-  activar un flujo con una palabra clave → Mateo le escribe esa palabra a la línea → debe responder
-  el flujo (no Liliana). Cuando esté fino, Mateo pasa a "En vivo". Ver bitácora 13-jun.
+- [ ] (2026-06-13) **FLUJOS — PROBAR EL MOTOR EN VIVO.** El motor está hecho (`flujo-motor.js`,
+  enganchado en `recibir.js`). Ya NO hay "modo prueba" (se quitó el interruptor). Para probar: armar un
+  flujo → en **Disparadores** crear una regla (palabra clave o acción) que apunte a ese flujo → escribirle
+  a la línea para dispararlo (cuidado: ya es en vivo para cualquiera que cumpla la regla; probar primero en
+  el **simulador** del dibujante, o con una palabra clave muy específica). Ver bitácora 13-jun.
 - [ ] (2026-06-13) **FLUJOS — Fase 2b:** el "no respondió en X horas" de la cajita Pregunta (salida
   3) necesita un cron que barra las `flujo_sesiones` en estado 'esperando' vencidas. Hoy el flujo
   espera la respuesta indefinidamente (si el cliente no contesta, el chat queda quieto hasta que un

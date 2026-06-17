@@ -26,6 +26,21 @@
 
 ---
 
+## 2026-06-13 — [WhatsApp] — Flujos: se quitó el interruptor global de motor y las plantillas listas
+
+**Qué decidimos (Mateo):** simplificar la pantalla de Flujos. Se quitó (1) el control **"Motor de flujos:
+Apagado / Modo prueba / En vivo"** y (2) la sección **"Plantillas listas para rifas"** (los 3 ejemplos).
+Razón: con los **Disparadores** controlando todo (cada regla con su switch), el interruptor global sobraba;
+y las plantillas "no servían". `permitidoCorrer` en `api/lib/flujo-motor.js` ahora siempre devuelve true:
+**un flujo corre cuando un Disparador lo activa.** Quedó dead-code inofensivo: las acciones `config-get`/
+`config-set` de `flujos.js`, la config `flujos_modo`, los estilos `.fl-modo*` y `crearDesdePlantilla`.
+
+**Cuidado / qué NO hacer:** ya NO hay "modo prueba (solo mi número)". Un flujo queda **en vivo apenas se
+le apunta un Disparador**. Para probar antes sin tocar clientes, usar el **simulador** del dibujante. Si se
+quiere volver a un modo prueba, está la base (config + endpoint) para reactivarlo.
+
+---
+
 ## 2026-06-13 — [WhatsApp] — Disparadores centralizados: a flujo o a agente (saca el disparador del flujo)
 
 **Qué decidimos (modelo de Mateo, copiando ChateaPro):** el panel **Disparadores** ahora separa dos

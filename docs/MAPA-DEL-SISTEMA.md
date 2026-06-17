@@ -179,8 +179,8 @@ conversaciones con cajitas (estilo ManyChat), portada del prototipo del SaaS. Pi
 **FASE 2 (motor, hecha):** `api/lib/flujo-motor.js` ejecuta el flujo con clientes reales por WhatsApp,
 enganchado en `recibir.js` antes de Liliana (flujo O Liliana, nunca los dos). Botones interactivos vía
 `enviarBotones`/`enviarLista` (`api/lib/whatsapp.js`). **Interruptor de seguridad** `flujos_modo`
-(off|prueba|vivo, tabla `configuracion`) con control en la pantalla de Flujos (solo Mateo); **por
-defecto OFF** = nada corre. Falta Fase 2b (timeout "no respondió") y la prueba en vivo. Ver bitácora 13-jun.
+los flujos corren cuando un **Disparador** los activa (el interruptor global de motor se quitó el 13-jun
+por simplicidad; `permitidoCorrer` siempre da true). Falta Fase 2b (timeout "no respondió"). Ver bitácora 13-jun.
 El **disparador NO vive en el flujo**: se administra en **Disparadores** (ver abajo). El motor expone
 `procesarFlujo` (avanza sesión en curso) e `iniciarFlujoPorId` (arranca un flujo); el despacho central
 está en `recibir.js` (`despachar`). Faltan 2 formas de iniciar: manual desde el chat y por difusión.
