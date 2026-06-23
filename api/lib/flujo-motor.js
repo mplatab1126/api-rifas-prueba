@@ -60,6 +60,22 @@ async function guardarSesion(id, campos) {
   await supabaseAdmin.from('flujo_sesiones').update({ ...campos, actualizado_at: new Date().toISOString() }).eq('id', id);
 }
 
+// Candado #3: evita que dos copias del motor avancen la MISMA sesión a la vez (mensaje doble
+// al cliente, como el bug de saludos de Liliana). Es atómico en la base (funciones
+// flujo_tomar_lock/soltar; la lógica va ahí para no chocar con la caché de PostgREST). Se toma
+// por turno y se suelta al terminar; se libera solo a los 30s si una copia se cae con él puesto.
+// Ante un ERROR del lock seguimos igual (un duplicado raro es menos malo que un flujo congelado).
+async function tomarLock(sesionId) {
+  try {
+    const { data, error } = await supabaseAdmin.rpc('flujo_tomar_lock', { p_sesion: sesionId });
+    if (error) return true;
+    return data === true;
+  } catch (_) { return true; }
+}
+async function soltarLock(sesionId) {
+  try { await supabaseAdmin.rpc('flujo_soltar_lock', { p_sesion: sesionId }); } catch (_) {}
+}
+
 // Deja rastro del mensaje saliente en el chat (para que aparezca en la bandeja).
 async function registrarSaliente(conv, telefono, lineaId, texto, waId) {
   const ts = new Date().toISOString();
@@ -228,22 +244,26 @@ export async function procesarFlujo(telefono, lineaId, texto) {
       .select('*').eq('conversacion_id', conv.id).in('estado', ['corriendo', 'esperando'])
       .order('actualizado_at', { ascending: false }).limit(1).maybeSingle();
     if (!ses) return false;
-
-    const flujo = await cargarFlujo(ses.flujo_id, lineaId);
-    if (!flujo) { await guardarSesion(ses.id, { estado: 'cancelado' }); return false; }
-    const grafo = grafoDe(flujo);
-    const vars = ses.variables || {};
-    const nodo = grafo[ses.nodo_actual];
-    if (!nodo) { await guardarSesion(ses.id, { estado: 'terminado' }); return false; }
-    const ctx = { conv, telefono, lineaId, vars, sesionId: ses.id, flujoId: flujo.id };
-    const r = resolverEspera(nodo, texto, vars);
-    if (r.reintentar) {
-      if (r.mensaje) { const env = await enviarTexto(telefono, r.mensaje, lineaId); await registrarSaliente(conv, telefono, lineaId, r.mensaje, env?.wa_message_id); }
-      await guardarSesion(ses.id, { variables: vars });
+    if (!(await tomarLock(ses.id))) return true;   // otra copia ya está avanzando esta sesión
+    try {
+      const flujo = await cargarFlujo(ses.flujo_id, lineaId);
+      if (!flujo) { await guardarSesion(ses.id, { estado: 'cancelado' }); return false; }
+      const grafo = grafoDe(flujo);
+      const vars = ses.variables || {};
+      const nodo = grafo[ses.nodo_actual];
+      if (!nodo) { await guardarSesion(ses.id, { estado: 'terminado' }); return false; }
+      const ctx = { conv, telefono, lineaId, vars, sesionId: ses.id, flujoId: flujo.id };
+      const r = resolverEspera(nodo, texto, vars);
+      if (r.reintentar) {
+        if (r.mensaje) { const env = await enviarTexto(telefono, r.mensaje, lineaId); await registrarSaliente(conv, telefono, lineaId, r.mensaje, env?.wa_message_id); }
+        await guardarSesion(ses.id, { variables: vars });
+        return true;
+      }
+      await correr(grafo, siguiente(grafo, nodo, r.salida), ctx);
       return true;
+    } finally {
+      await soltarLock(ses.id);
     }
-    await correr(grafo, siguiente(grafo, nodo, r.salida), ctx);
-    return true;
   } catch (e) {
     console.error('[flujo-motor] avanzar error:', e.message || e);
     return false;
@@ -278,10 +298,15 @@ export async function iniciarFlujoPorId(flujoId, telefono, lineaId) {
         { onConflict: 'flujo_id,conversacion_id' })
       .select('id').single();
     if (!nueva) return false;
-    const grafo = grafoDe(flujo);
-    const ctx = { conv, telefono, lineaId, vars, sesionId: nueva.id, flujoId: flujo.id };
-    await correr(grafo, nodoInicio(grafo), ctx);
-    return true;
+    if (!(await tomarLock(nueva.id))) return false;   // otra copia ya lo arrancó
+    try {
+      const grafo = grafoDe(flujo);
+      const ctx = { conv, telefono, lineaId, vars, sesionId: nueva.id, flujoId: flujo.id };
+      await correr(grafo, nodoInicio(grafo), ctx);
+      return true;
+    } finally {
+      await soltarLock(nueva.id);
+    }
   } catch (e) {
     console.error('[flujo-motor] iniciar error:', e.message || e);
     return false;
