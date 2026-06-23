@@ -15,6 +15,19 @@
 
 ## Tareas pendientes
 
+- [ ] (2026-06-22) **MOTOR DE FLUJOS — probar EN VIVO:** confirmar con un WhatsApp real que (a) un flujo
+  arranca, pregunta, valida y responde bien; (b) el candado anti-duplicado funciona (escribir 2 mensajes
+  rápido NO debe duplicar la respuesta). El simulador del editor prueba la lógica sin tocar clientes.
+- [ ] (2026-06-22) **MOTOR DE FLUJOS — #2 envío fallido:** hoy si Meta rechaza un mensaje, el flujo avanza
+  igual (el cliente queda en silencio pero el flujo cree que siguió). Decidir con Mateo qué hacer (¿parar y
+  pasar a humano?). Toca el envío — explicar antes.
+- [ ] (2026-06-22) **MOTOR DE FLUJOS — #4 timeout "no respondió en X horas"** (Fase 2b): rescatar al cliente
+  que abandona el flujo a media Pregunta. Necesita un cron (como los recordatorios de Liliana).
+- [ ] (2026-06-22) **CONVERSA — definir dónde vive el motor de flujos:** decisión pendiente de Mateo. Hoy el
+  motor vive en Los Plata (`losplata.com.co` + base "Rifa prueba"); el SaaS Conversa (`conversa.com.co` +
+  base "rifas-saas") es solo fachada. Mover el motor al SaaS = trabajo grande (multi-tenant + login +
+  conectar el WhatsApp del SaaS), no un cambio de dominio. Ver opciones discutidas el 22-jun.
+
 - [ ] (2026-06-13) **EDITOR DE FLUJOS — arrastrar para crear nodo:** que al arrastrar desde la bolita
   (puerto de salida) de una cajita hacia un espacio vacío, aparezca un menú para crear+conectar un nodo
   ahí (estilo n8n/ManyChat). Es lo más delicado de Drawflow (no tiene hook nativo para "soltado en vacío");

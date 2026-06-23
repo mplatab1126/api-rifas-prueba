@@ -26,6 +26,34 @@
 
 ---
 
+## 2026-06-22 — [WhatsApp] / [Base de datos] — Motor de flujos: candados de seguridad y anti-duplicado
+
+**Qué decidimos:** tras revisar a fondo el motor de flujos (`api/lib/flujo-motor.js`, Fase 2,
+que ya estaba construido y enganchado en `recibir.js`), se cerraron tres huecos:
+- **#5** — `iniciarFlujoPorId` ahora solo arranca un flujo en estado `'activo'`. Un flujo en
+  borrador (recién creado, sin guardar) o pausado NO sale en vivo aunque un disparador lo apunte.
+  Bajo riesgo: la pantalla guarda los flujos como `'activo'` al dar Guardar.
+- **#6** — tope de 10 saltos en la cajita "Ir a otro flujo" (`ctx.saltos`). Sin él, dos flujos
+  que se llamen en círculo (A→B→A…) colgaban el sistema porque el tope de pasos se reinicia en
+  cada salto.
+- **#3** — **candado anti-duplicado** (el mismo bug que tuvo Liliana con los saludos): si el
+  cliente escribe rápido, dos copias del motor podían avanzar la misma sesión y mandar mensaje
+  doble. Se agregó columna `procesando_at` a `flujo_sesiones` + funciones
+  `flujo_tomar_lock`/`flujo_soltar_lock` (`sql/flujos-candado.sql`, aplicado en "Rifa prueba").
+  El motor toma el candado por turno y lo suelta al terminar (se libera solo a los 30s si una
+  copia se cae con él puesto).
+
+**Por qué:** el motor maneja conversaciones con clientes reales y movía mensajes sin estos
+candados. La lógica del candado va en FUNCIONES (no escribiendo directo a la columna por la API)
+para no chocar con la caché de PostgREST (lección 2026-06-06).
+
+**Cuidado / qué NO hacer:** NO revivir el interruptor global `flujos_modo`: se quitó a propósito
+el 13-jun. Las funciones del candado deben conservar `EXECUTE` para `anon`, `authenticated` y
+`service_role`. FALTA: probar en vivo (mensajes dobles), el timeout "no respondió en X horas" (#4,
+necesita cron) y revisar qué pasa cuando el envío a Meta falla (#2: hoy el flujo avanza igual).
+
+---
+
 ## 2026-06-13 — [WhatsApp] — Editor de flujos: simplificación de la interfaz (pedido de Mateo)
 
 **Qué cambió (UI del dibujante):** (1) la **paleta** ya no muestra todos los pasos: hay un botón

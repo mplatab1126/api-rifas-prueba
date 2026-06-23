@@ -178,9 +178,12 @@ conversaciones con cajitas (estilo ManyChat), portada del prototipo del SaaS. Pi
 `flujo_sesiones` (ver `sql/flujos.sql`). **FASE 1**: dibuja, guarda y prueba en simulador.
 **FASE 2 (motor, hecha):** `api/lib/flujo-motor.js` ejecuta el flujo con clientes reales por WhatsApp,
 enganchado en `recibir.js` antes de Liliana (flujo O Liliana, nunca los dos). Botones interactivos vía
-`enviarBotones`/`enviarLista` (`api/lib/whatsapp.js`). **Interruptor de seguridad** `flujos_modo`
-los flujos corren cuando un **Disparador** los activa (el interruptor global de motor se quitó el 13-jun
-por simplicidad; `permitidoCorrer` siempre da true). Falta Fase 2b (timeout "no respondió"). Ver bitácora 13-jun.
+`enviarBotones`/`enviarLista` (`api/lib/whatsapp.js`). NO hay interruptor global de motor (se quitó el
+13-jun por simplicidad): los flujos corren cuando un **Disparador** los activa. **Candados de seguridad
+(22-jun):** solo arranca un flujo en estado `activo` (un borrador sin guardar no sale en vivo); tope de
+10 saltos entre flujos (anti-bucle); y **candado anti-duplicado** (`procesando_at` + funciones
+`flujo_tomar_lock`/`flujo_soltar_lock`, `sql/flujos-candado.sql`) para que dos copias no manden mensaje
+doble. Falta Fase 2b (timeout "no respondió") y revisar el envío fallido (#2). Ver bitácora 22-jun.
 El **disparador NO vive en el flujo**: se administra en **Disparadores** (ver abajo). El motor expone
 `procesarFlujo` (avanza sesión en curso) e `iniciarFlujoPorId` (arranca un flujo); el despacho central
 está en `recibir.js` (`despachar`). Faltan 2 formas de iniciar: manual desde el chat y por difusión.
