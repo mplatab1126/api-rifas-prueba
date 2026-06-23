@@ -233,7 +233,7 @@ async function despachar(telefono, lineaId, texto, esNueva) {
     if (!regla) return;
 
     if (regla.destino === 'flujo') {
-      await iniciarFlujoPorId(regla.flujo_id, telefono, lineaId);   // respeta el interruptor flujos_modo
+      await iniciarFlujoPorId(regla.flujo_id, telefono, lineaId);   // solo arranca si el flujo está 'activo'
       return;
     }
     // destino = agente (Liliana)

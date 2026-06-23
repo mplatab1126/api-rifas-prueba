@@ -7,9 +7,10 @@
  *   - Si no, y el mensaje DISPARA un flujo activo (palabra clave o contacto nuevo) → lo arranca.
  *   - Si nada de eso → devuelve false y el webhook sigue como hoy (Liliana).
  *
- * SEGURIDAD: nada corre salvo que el interruptor `flujos_modo` (tabla configuracion)
- * esté en 'prueba' (solo números de `flujos_numeros_prueba`) o 'vivo' (todos).
- * Por defecto 'off' = ningún flujo corre, aunque esté marcado "Activo".
+ * SEGURIDAD: NO hay interruptor global de motor (se quitó a propósito el 13-jun, ver
+ * bitácora). Un flujo solo ARRANCA si (a) está en estado 'activo' (un flujo en borrador
+ * sin guardar NO corre) y (b) un Disparador activo lo apunta. El control de qué corre y
+ * qué no vive en el panel Disparadores (cada regla con su switch).
  *
  * Solo ejecuta los 5 nodos base: Mensaje (texto/botones/lista), Pregunta, Acción,
  * Condición, Ir a otro flujo. (Reconoce los tipos viejos botones/lista por compatibilidad.)
@@ -52,7 +53,7 @@ async function permitidoCorrer(_telefono) {
 }
 
 async function cargarFlujo(id, lineaId) {
-  const { data } = await supabaseAdmin.from('flujos').select('id, grafo').eq('id', id).eq('linea_id', lineaId).maybeSingle();
+  const { data } = await supabaseAdmin.from('flujos').select('id, grafo, estado').eq('id', id).eq('linea_id', lineaId).maybeSingle();
   return data;
 }
 async function guardarSesion(id, campos) {
@@ -193,6 +194,11 @@ async function correr(grafo, startNodo, ctx) {
       case 'condicion':
         nodo = siguiente(grafo, nodo, evaluarCondicion(d, vars) ? 'output_1' : 'output_2'); break;
       case 'irflujo': {
+        // Candado #6: tope de saltos entre flujos. El contador de pasos se reinicia en cada
+        // "Ir a otro flujo", así que dos flujos que se llamen en círculo (A→B→A…) colgarían
+        // el sistema sin este tope. 10 saltos es de sobra para encadenar flujos legítimos.
+        ctx.saltos = (ctx.saltos || 0) + 1;
+        if (ctx.saltos > 10) { await guardarSesion(ctx.sesionId, { estado: 'terminado', variables: vars }); return; }
         const otro = d.flujo ? await cargarFlujo(d.flujo, lineaId) : null;
         if (!otro) { nodo = null; break; }
         ctx.flujoId = otro.id;
@@ -247,7 +253,7 @@ export async function procesarFlujo(telefono, lineaId, texto) {
 /**
  * ARRANCA un flujo (por id) en un chat — desde su nodo Inicio. Lo llaman los disparadores
  * centrales (palabra clave / evento), el envío manual desde el chat y las difusiones.
- * Respeta el interruptor de seguridad (flujos_modo). Devuelve true si arrancó.
+ * Solo arranca flujos en estado 'activo' (candado #5). Devuelve true si arrancó.
  */
 export async function iniciarFlujoPorId(flujoId, telefono, lineaId) {
   try {
@@ -258,6 +264,9 @@ export async function iniciarFlujoPorId(flujoId, telefono, lineaId) {
     if (!conv || conv.estado === 'humano') return false;
     const flujo = await cargarFlujo(flujoId, lineaId);
     if (!flujo) return false;
+    // Candado #5: solo arranca un flujo PUBLICADO ('activo'). Uno en borrador (recién
+    // creado, sin guardar) o pausado NO sale en vivo, aunque un disparador lo apunte.
+    if (flujo.estado !== 'activo') return false;
 
     // El flujo toma el chat: Liliana fuera (agente_activo=false), marca 'bot'.
     await supabaseAdmin.from('conversaciones_whatsapp').update({ agente_activo: false, estado: 'bot' }).eq('id', conv.id);
