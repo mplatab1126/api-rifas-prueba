@@ -316,14 +316,27 @@ async function dispararAgenteSiActivo(telefono, lineaId) {
 // ── Actualizar el estado de un mensaje que enviamos ─────────────────────────
 async function actualizarEstado(s) {
   const mapa = { sent: 'enviado', delivered: 'entregado', read: 'leido', failed: 'fallido' };
-  const patch = { estado_envio: mapa[s.status] || s.status };
+  const nuevo = mapa[s.status] || s.status;
+
+  // 'fallido' siempre se puede fijar (es el caso especial).
   if (s.status === 'failed') {
-    patch.error = s.errors?.[0]?.title || s.errors?.[0]?.message || 'fallido';
+    await supabaseAdmin
+      .from('mensajes_whatsapp')
+      .update({ estado_envio: 'fallido', error: s.errors?.[0]?.title || s.errors?.[0]?.message || 'fallido' })
+      .eq('wa_message_id', s.id);
+    return;
   }
-  await supabaseAdmin
-    .from('mensajes_whatsapp')
-    .update(patch)
-    .eq('wa_message_id', s.id);
+
+  // Meta NO garantiza el orden de los acuses: un 'delivered' puede llegar DESPUÉS de un 'read'.
+  // Solo SUBIMOS el estado (enviado < entregado < leido); nunca degradamos ni pisamos 'fallido'.
+  const rank = { enviado: 1, entregado: 2, leido: 3 };
+  const r = rank[nuevo];
+  let q = supabaseAdmin.from('mensajes_whatsapp').update({ estado_envio: nuevo }).eq('wa_message_id', s.id);
+  if (r) {
+    const menores = Object.keys(rank).filter(k => rank[k] < r);   // estados de rango menor (los únicos que se pueden subir)
+    q = q.or(`estado_envio.is.null,estado_envio.in.(${menores.join(',')})`);
+  }
+  await q;
 }
 
 // ── Buscar o crear la conversación (el chat del cliente) ────────────────────
