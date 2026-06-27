@@ -41,10 +41,12 @@ export default async function handler(req, res) {
 
     // 3. Formatear ganadores con privacidad (ocultar apellido parcialmente)
     const ganadoresFormateados = (ganadoresRecientes || []).map(g => {
-      const partes = (g.nombre_completo || '').split(' ');
-      const nombreVisible = partes.length > 1
+      // Normalizar: trim + separar por cualquier espacio y descartar vacíos,
+      // para que un nombre con espacios dobles no produzca "Nombre undefined.".
+      const partes = (g.nombre_completo || '').trim().split(/\s+/).filter(Boolean);
+      const nombreVisible = partes.length > 1 && partes[1]
         ? `${partes[0]} ${partes[1][0]}.`
-        : partes[0];
+        : (partes[0] || '');
 
       return {
         nombre: nombreVisible,

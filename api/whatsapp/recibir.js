@@ -258,7 +258,7 @@ const PALABRAS_CORTESIA = new Set([
   'bendiciones', 'amen', 'muy', 'amable', 'feliz', 'dia', 'tarde', 'noche',
 ]);
 function esCortesiaPura(tipo, texto) {
-  if (tipo !== 'texto') return false;                 // fotos/audios/etc. cancelan como siempre
+  if (tipo !== 'text') return false;                  // fotos/audios/etc. cancelan como siempre
   const crudo = String(texto || '');
   if (/\d/.test(crudo)) return false;                 // trae un número (boleta, monto) → sustancia
   const t = crudo.toLowerCase()

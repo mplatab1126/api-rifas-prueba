@@ -1119,14 +1119,15 @@
         });
         const res = await req.json();
 
-        document.getElementById('modalCierre').style.display = 'none';
-
         if (res.status === 'ok') {
+          document.getElementById('modalCierre').style.display = 'none';
           alert('✅ ¡Caja cerrada y arqueo guardado!');
           sessionStorage.removeItem('caja_modo');
           window.location.href = '/admin';
         } else {
+          // En error NO cerramos el modal y reactivamos el botón para poder reintentar.
           alert('Error al cerrar caja: ' + res.mensaje);
+          btnConfirmar.textContent = 'Confirmar Cierre'; btnConfirmar.disabled = false;
         }
       } catch (e) {
         alert('Error de conexión');

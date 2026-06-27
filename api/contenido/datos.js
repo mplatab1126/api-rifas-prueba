@@ -143,7 +143,9 @@ function agruparAds(insights) {
         actions: [...(row.actions || [])],
         action_values: [...(row.action_values || [])],
         video_avg_time_watched_actions: [...(row.video_avg_time_watched_actions || [])],
-        _avgCount: 1,
+        // Contar el primer día SOLO si trae un video_view real; si no, arrancar en 0
+        // para no meter un cero fantasma en el denominador del promedio.
+        _avgCount: (row.video_avg_time_watched_actions || []).some((a) => a.action_type === 'video_view') ? 1 : 0,
         _durationWatchedTotal: parseFloat(
           (row.video_avg_time_watched_actions || []).find((a) => a.action_type === 'video_view')?.value || 0
         ),

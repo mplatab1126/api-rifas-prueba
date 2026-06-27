@@ -1096,7 +1096,9 @@ function renderCapitalPorInversor() {
   });
 
   todosLosPremios.forEach(p => {
-    if (!p.aportante || !detalleMap[p.aportante]) return;
+    // Guard: la tabla de capital solo arma columnas para rifas con numero_rifa<=4.
+    // Un premio de una rifa fuera de ese filtro no tiene su array → sin este guard, .push rompía el render.
+    if (!p.aportante || !detalleMap[p.aportante] || !detalleMap[p.aportante][p.rifa_id]) return;
     if (p.es_para_recapitalizar) return;
     detalleMap[p.aportante][p.rifa_id].push({
       uid: `cap_${uidCounter++}`, nombre: p.nombre, valor: Number(p.valor), esExceso: false
@@ -1107,7 +1109,7 @@ function renderCapitalPorInversor() {
     ['Mateo', 'Alejandro'].forEach(hermano => {
       const key  = hermano.toLowerCase();
       const gain = rifa[`recap_capital_gain_${key}`];
-      if (gain > 0 && detalleMap[hermano]) {
+      if (gain > 0 && detalleMap[hermano] && detalleMap[hermano][rifa.id]) {
         detalleMap[hermano][rifa.id].push({
           uid: `cap_${uidCounter++}`, nombre: 'Saldo a favor recap.', valor: gain, esExceso: true
         });
