@@ -247,8 +247,10 @@ export default async function handler(req, res) {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (desde) query = query.gte('created_at', desde + 'T00:00:00');
-      if (hasta) query = query.lte('created_at', hasta + 'T23:59:59');
+      // 'desde'/'hasta' llegan como fecha calendario de Colombia; anexar el offset -05:00 para que
+      // la ventana sea el día en hora Colombia (created_at es timestamptz; sin offset se tomaba en UTC).
+      if (desde) query = query.gte('created_at', desde + 'T00:00:00-05:00');
+      if (hasta) query = query.lte('created_at', hasta + 'T23:59:59-05:00');
       if (!desde && !hasta) query = query.limit(200);
 
       const { data, error } = await query;
