@@ -558,7 +558,8 @@ function duplicarNodo() {
 async function eliminarFlujo() {
   if (!esAdmin()) return;
   if (!confirm('¿Eliminar este flujo por completo? No se puede deshacer.')) return;
-  await api('flujos', { accion:'eliminar', linea_id: lineaActual, id: flujoAbierto.id });
+  const r = await api('flujos', { accion:'eliminar', linea_id: lineaActual, id: flujoAbierto.id });
+  if (!r || r.status !== 'ok') { alert((r && r.mensaje) || 'No se pudo eliminar el flujo.'); return; }
   volverALista();
 }
 

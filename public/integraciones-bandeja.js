@@ -204,6 +204,7 @@ async function probarIntegracion(id) {
 
 async function eliminarIntegracion(id) {
   if (!confirm('¿Eliminar esta conexión? Los flujos que la usen dejarán de funcionar.')) return;
-  await api('integraciones', { accion: 'eliminar', linea_id: lineaActual, id });
+  const r = await api('integraciones', { accion: 'eliminar', linea_id: lineaActual, id });
+  if (!r || r.status !== 'ok') { alert((r && r.mensaje) || 'No se pudo eliminar la conexión.'); return; }
   cargarIntegraciones();
 }
