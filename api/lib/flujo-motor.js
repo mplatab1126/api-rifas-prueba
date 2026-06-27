@@ -216,7 +216,8 @@ async function correr(grafo, startNodo, ctx) {
         ctx.saltos = (ctx.saltos || 0) + 1;
         if (ctx.saltos > 10) { await guardarSesion(ctx.sesionId, { estado: 'terminado', variables: vars }); return; }
         const otro = d.flujo ? await cargarFlujo(d.flujo, lineaId) : null;
-        if (!otro) { nodo = null; break; }
+        // Candado #5 también aquí: "Ir a otro flujo" solo salta a un flujo ACTIVO (no borrador/pausado).
+        if (!otro || otro.estado !== 'activo') { nodo = null; break; }
         ctx.flujoId = otro.id;
         await guardarSesion(ctx.sesionId, { flujo_id: otro.id, variables: vars });
         const g2 = grafoDe(otro);

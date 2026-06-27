@@ -773,10 +773,10 @@
         if (costosRes.elevenlabs) {
           const el = costosRes.elevenlabs;
           elevenlabsInfo = { usados: el.caracteres_usados || 0, limite: el.caracteres_limite || 0 };
-          const pct = Math.round((el.caracteres_usados / el.caracteres_limite) * 100);
+          const pct = el.caracteres_limite > 0 ? Math.round((el.caracteres_usados / el.caracteres_limite) * 100) : null;
           document.getElementById('kpiElevenlabs').textContent = `${el.caracteres_usados.toLocaleString()} / ${el.caracteres_limite.toLocaleString()}`;
           const renovacion = el.renovacion ? new Date(el.renovacion * 1000).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' }) : '';
-          document.getElementById('kpiElevenlabsSub').textContent = `${pct}% usado — Plan ${el.plan} — Renueva ${renovacion}`;
+          document.getElementById('kpiElevenlabsSub').textContent = `${pct === null ? 'Sin límite' : pct + '% usado'} — Plan ${el.plan} — Renueva ${renovacion}`;
         }
       }
 
@@ -1008,7 +1008,7 @@
         document.getElementById('cobroResultSection').style.display = 'none';
 
         document.getElementById('kpiCobroClientes').textContent = res.total_clientes;
-        document.getElementById('kpiCobroBoletas').textContent = res.total_boletas;
+        document.getElementById('kpiCobroBoletas').textContent = res.total_boletas ?? 0;
         document.getElementById('kpiCobroSaldo').textContent = formatMoney(res.total_saldo);
         document.getElementById('kpiCobroLotes').textContent = Math.ceil(res.total_clientes / COBRO_BATCH_SIZE);
 

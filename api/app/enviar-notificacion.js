@@ -76,13 +76,17 @@ export default async function handler(req, res) {
         body: JSON.stringify(lote),
       });
 
-      const result = await resp.json();
+      const result = await resp.json().catch(() => null);
 
-      if (result.data) {
+      if (resp.ok && result && result.data) {
         for (const ticket of result.data) {
           if (ticket.status === 'ok') enviados++;
           else fallidos++;
         }
+      } else {
+        // La petición a Expo falló (HTTP no-2xx o sin data): contar todo el lote como fallido y loguear.
+        fallidos += lote.length;
+        console.error('[enviar-notificacion] Lote falló:', resp.status, result && (result.errors || result));
       }
     }
 

@@ -34,7 +34,7 @@ export default async function handler(req, res) {
     .from('mensajes_whatsapp')
     .select('id, direccion, tipo, texto, media_id, media_url, estado_envio, error, timestamp_wa, created_at, wa_message_id, responde_a, raw')
     .eq('telefono', telefono)
-    .order('created_at', { ascending: true })
+    .order('created_at', { ascending: false })   // traer los 500 MÁS RECIENTES (no los más viejos)
     .limit(500);
   if (linea_id) query = query.eq('linea_id', linea_id);
 
@@ -45,7 +45,7 @@ export default async function handler(req, res) {
 
   // Marcar cuáles mensajes los envió el AGENTE (raw.agente=true) vs un humano, para mostrarlo
   // en el chat. No mandamos el `raw` completo al navegador (puede ser grande): solo el flag.
-  const mensajes = (data || []).map(m => {
+  const mensajes = (data || []).reverse().map(m => {   // revertir: de recientes→viejos a orden cronológico
     const por_agente = !!(m.raw && m.raw.agente === true);
     // predefinido = el agente lo mandó por un atajo SIN IA (saludo/premios/números/datos);
     // la bandeja lo rotula "Mensaje predefinido" en vez de "🤖 Liliana".

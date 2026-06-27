@@ -631,6 +631,7 @@
     try {
       const r = await fetch(`/api/admin/horarios?semana=${toISO(lunes)}`);
       const json = await r.json();
+      if (!r.ok || json.status === 'error') throw new Error(json.mensaje || 'Error del servidor');
       horariosTodos = json.horarios || [];
       renderCalendario();
     } catch(e) {
@@ -644,7 +645,7 @@
     }
   }
 
-  function irAHoy() { offsetSemana = 0; renderCalendario(); }
+  function irAHoy() { offsetSemana = 0; cargarHorarios(); }
 
   document.getElementById('btnPrev').onclick = () => { offsetSemana--; cargarHorarios(); };
   document.getElementById('btnNext').onclick = () => { offsetSemana++; cargarHorarios(); };

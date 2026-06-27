@@ -44,7 +44,7 @@ export async function validarSesionApp(req) {
     .select('nombre')
     .like('telefono', '%' + sesion.telefono.slice(-10))
     .limit(1)
-    .single();
+    .maybeSingle();   // maybeSingle: no truena si hay 0 o varios clientes con ese final de teléfono
 
   return {
     telefono: sesion.telefono,
