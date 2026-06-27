@@ -15,6 +15,12 @@
 
 ## Tareas pendientes
 
+- [ ] (2026-06-27) **REVISAR a mano los duplicados de transferencias YA ASIGNADOS a boletas**
+  (posible doble-cobro: un mismo pago real abonado a dos boletas). Son ~158 exactos + los de
+  "hora distinta". NO se borraron (borrar quitaría un abono real). Hace falta una lista para
+  que Mateo decida cuáles revertir. El doble hacia adelante ya quedó frenado (huella de imagen).
+  Ver bitácora 2026-06-27 [Pagos].
+
 - [ ] (2026-06-22) **MOTOR DE FLUJOS — probar EN VIVO:** confirmar con un WhatsApp real que (a) un flujo
   arranca, pregunta, valida y responde bien; (b) el candado anti-duplicado funciona (escribir 2 mensajes
   rápido NO debe duplicar la respuesta). El simulador del editor prueba la lógica sin tocar clientes.

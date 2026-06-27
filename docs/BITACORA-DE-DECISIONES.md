@@ -26,6 +26,40 @@
 
 ---
 
+## 2026-06-27 — [Pagos] / [Base de datos] — Anti-doble de transferencias (ingresos de Carga IA)
+
+**Qué decidimos:** atacar de raíz que el mismo pantallazo de un movimiento bancario se
+cargara dos veces. Se agregó una **huella única de la imagen** (`hash_imagen` = SHA-256 de
+los bytes del pantallazo) en la tabla `transferencias`, con un **índice único PARCIAL**
+(`WHERE hash_imagen IS NOT NULL`). Si llega el MISMO comprobante otra vez, la base lo
+rechaza, sin importar cómo lea la IA la hora o la referencia. `procesar-ia.js` calcula la
+huella, hace un pre-chequeo (ahorra la llamada de IA) y trata el choque del índice (error
+23505) como "duplicado", no como error. En el front (`admin.js`) se agregó un candado
+anti doble-procesamiento (`procesandoIA`).
+
+**Por qué:** el "escudo" anterior vivía solo en el código (consulta-y-luego-inserta, sin
+candado en la base) y se le colaban duplicados con dos causas comprobadas en producción:
+(1) cargas en paralelo (dos pestañas / doble disparo) que pasaban el chequeo antes de que
+ninguna insertara; (2) la IA leía la **hora** del mismo movimiento distinta entre dos
+cargas, así que el escudo por campos no los reconocía. Un índice único por los 5 campos NO
+sirve: con hora se le escapan los de hora distinta (~1.105 filas/180d), y SIN hora es
+inseguro (142 grupos de mismo código iban a boletas distintas → bloquearía pagos reales).
+La huella de imagen es segura (misma imagen = mismo pago, nunca dos pagos distintos).
+
+**Limpieza:** se borraron **340** duplicados EXACTOS (mismo monto+fecha+plataforma+ref+hora)
+que estaban **LIBRES y sin abono**, dejando una copia por grupo. Respaldo en la tabla
+`transferencias_backup_dups_20260627`. Total transferencias: 45.151 → 44.811.
+
+**Cuidado / qué NO hacer:** las copias duplicadas **ya asignadas a boletas** (≈158 exactas +
+las de hora distinta) NO se tocaron: pueden esconder un **doble-cobro** y hay que revisarlas
+a mano (ver PENDIENTES). El índice es PARCIAL a propósito: las filas viejas (huella nula) y
+otros caminos sin imagen (`subir-comprobante.js`) NO se ven afectados. Tras crear la columna
+hubo que recargar el caché de PostgREST (`NOTIFY pgrst, 'reload schema'`). SQL en
+`sql/transferencias-hash-imagen.sql`. Publicado (commit b364a48) y verificado al aire
+(índice bloquea, API ve la columna, candado del front activo).
+
+---
+
 ## 2026-06-27 — [Admin] — Nueva categoría de egresos: "Rifa Casa Santa Teresita 3" (solo Carga IA)
 
 **Qué decidimos:** agregar la categoría de egresos `rifa_santa_teresita_3` →
