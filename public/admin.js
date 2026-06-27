@@ -366,7 +366,7 @@ const $ = id => document.getElementById(id);
         try {
             const req = await fetch('/api/admin/transferencias', {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ referencia: refVal })
+                body: JSON.stringify({ referencia: refVal, contrasena: localStorage.getItem(STORAGE_KEY) })
             });
             const res = await req.json();
             
@@ -633,7 +633,7 @@ const $ = id => document.getElementById(id);
         try {
             const req = await fetch('/api/admin/transferencias', {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ ...payload, contrasena: localStorage.getItem(STORAGE_KEY) })
             });
             const res = await req.json();
 
@@ -852,7 +852,10 @@ const $ = id => document.getElementById(id);
       desbloquearCampos('a_ref', 'a_monto', 'a_metodo', 'feedbackTransferAbono');
 
       try {
-        const response = await fetch('/api/admin/buscar?q=' + encodeURIComponent(q));
+        const response = await fetch('/api/admin/buscar', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ q, contrasena: localStorage.getItem(STORAGE_KEY) })
+        });
         const res = await response.json();
         feedback.textContent = "";
         if(res.tipo === 'ERROR_SERVIDOR') return showModal('Error', res.mensaje);
@@ -1243,7 +1246,10 @@ $('btnRegistrarVenta').onclick = async ()=>{
         resultado.innerHTML = '<p style="color:var(--muted); font-size:0.85rem; margin:0;">Buscando...</p>';
 
         try {
-            const response = await fetch('/api/admin/buscar?q=' + encodeURIComponent(numero));
+            const response = await fetch('/api/admin/buscar', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ q: numero, contrasena: localStorage.getItem(STORAGE_KEY) })
+            });
             const res = await response.json();
 
             if (res.tipo === 'BOLETA_DISPONIBLE') {
@@ -1699,7 +1705,10 @@ $('btnRegistrarVenta').onclick = async ()=>{
         const div = $('historial-abonos-render');
         div.innerHTML = '<p style="text-align:center; color:var(--muted); font-size:0.85rem;">Cargando historial...</p>';
         try {
-            const req = await fetch('/api/admin/historial?numero=' + numero);
+            const req = await fetch('/api/admin/historial', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ numero, contrasena: localStorage.getItem(STORAGE_KEY) })
+            });
             const res = await req.json();
             if(res.status === 'ok') renderTablaAbonos(res.lista);
             else div.innerHTML = `<p style="text-align:center; color:var(--danger); font-size:0.85rem;">${res.mensaje}</p>`;
@@ -3399,7 +3408,7 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
             const req = await fetch('/api/admin/transferencias', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fecha, hora, monto, referencia, plataforma })
+                body: JSON.stringify({ fecha, hora, monto, referencia, plataforma, contrasena: localStorage.getItem(STORAGE_KEY) })
             });
             const res = await req.json();
             btn.disabled = false; btn.textContent = '🔍 Buscar transferencia';

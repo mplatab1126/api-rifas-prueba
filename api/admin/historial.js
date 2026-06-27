@@ -1,10 +1,16 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
+import { validarAsesor } from '../lib/auth.js';
 
 export default async function handler(req, res) {
-  if (aplicarCors(req, res, 'OPTIONS,GET')) return;
+  if (aplicarCors(req, res, 'OPTIONS,GET,POST')) return;
 
-  const { numero } = req.query;
+  // Candado: expone abonos y comprobantes por boleta. Exige contraseña.
+  if (!validarAsesor(req.body?.contrasena || req.query?.contrasena)) {
+    return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido.' });
+  }
+
+  const numero = req.query.numero || (req.body && req.body.numero);
   if (!numero) return res.status(400).json({ status: 'error', mensaje: 'Falta la boleta' });
 
   try {

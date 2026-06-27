@@ -1,9 +1,15 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
 import { limpiarTelefono } from '../lib/telefono.js';
+import { validarAsesor } from '../lib/auth.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'GET,OPTIONS,POST')) return;
+
+  // Candado: este endpoint expone datos de clientes (cédula, correo, saldos). Exige contraseña.
+  if (!validarAsesor(req.body?.contrasena || req.query?.contrasena)) {
+    return res.status(401).json({ tipo: 'ERROR_SERVIDOR', mensaje: 'Acceso restringido.' });
+  }
 
   const q = req.query.q || (req.body && req.body.q);
   if (!q) return res.status(400).json({ tipo: 'ERROR_SERVIDOR', mensaje: 'Escribe algo para buscar.' });

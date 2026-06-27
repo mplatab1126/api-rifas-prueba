@@ -1,9 +1,15 @@
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
+import { validarAsesor } from '../lib/auth.js';
 
 export default async function handler(req, res) {
   if (aplicarCors(req, res, 'OPTIONS,POST')) return;
   if (req.method !== 'POST') return res.status(405).json({ status: 'error', mensaje: 'Método no permitido' });
+
+  // Candado: expone la tabla de transferencias (montos, referencias, comprobantes). Exige contraseña.
+  if (!validarAsesor(req.body?.contrasena)) {
+    return res.status(401).json({ status: 'error', mensaje: 'Acceso restringido.' });
+  }
 
   // RECIBIMOS TODOS LOS DATOS DESDE EL PANEL HTML (Incluyendo Plataforma)
   const { fecha, hora, monto, referencia, plataforma } = req.body;
