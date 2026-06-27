@@ -1995,14 +1995,20 @@ async function cargarMensajes(scroll){
   if(!actual) return;
   const r = await api('mensajes', { telefono: actual, linea_id: actualLinea });
   if(r.status !== 'ok') return;
-  // Quitar los pendientes que el servidor ya confirmó (de este mismo chat)
+  // Quitar los pendientes que el servidor ya confirmó (de este mismo chat).
+  // Si el pendiente ya tiene su wa_message_id (su envío respondió), emparejamos por ESE id único
+  // —no por el texto— para no borrar la burbuja "enviando…" al chocar con un mensaje viejo igual.
   if(pendientes.length){
     pendientes = pendientes.filter(p => p.tel !== actual || !r.mensajes.some(m => m.direccion === 'saliente'
-      && (p.tipo === 'imagen' ? m.media_url === p.url : (m.texto || '').trim() === (p.texto || '').trim())));
+      && (p.waId ? m.wa_message_id === p.waId
+                 : (p.tipo === 'imagen' ? m.media_url === p.url : (m.texto || '').trim() === (p.texto || '').trim()))));
   }
   const propios = pendientes.filter(p => p.tel === actual);
   const ult = r.mensajes[r.mensajes.length-1];
-  const firma = r.mensajes.length + ':' + (ult?.id || '') + ':' + (ult?.estado_envio || '') + ':p' + propios.length;
+  // Firma: incluir el estado de TODOS los mensajes salientes (no solo el último), para que
+  // un cambio de estado (entregado/leído/fallido) en un mensaje previo también repinte la vista.
+  const estadosSalientes = r.mensajes.filter(m => m.direccion === 'saliente').map(m => m.estado_envio || '').join(',');
+  const firma = r.mensajes.length + ':' + (ult?.id || '') + ':' + estadosSalientes + ':p' + propios.length;
   if(!scroll && firma === firmaMsgs) return;
   firmaMsgs = firma;
   const cont = $('msgs');
@@ -2063,6 +2069,7 @@ async function enviarMsg(){
   const p = agregarPendiente({ tipo: 'texto', texto: txt, tel });   // se ve al instante
   const r = await api('enviar', { telefono: tel, texto: txt, linea_id: linea });
   if(r.status === 'ok'){
+    p.waId = r.wa_message_id;   // id único: deduplicación exacta en cargarMensajes (no por texto)
     if(actual === tel) cargarMensajes(true);
     cargarLista();
   } else {
@@ -3011,10 +3018,11 @@ window.marcarRespondido = async function(){
   const tel = actual, linea = actualLinea;
   // Optimista: quitar el "sin respuesta" en la lista al instante.
   const c = conversaciones.find(x => x.telefono === tel);
+  const prevNoLeidos = c ? c.no_leidos : 0;
   if(c){ c.ultimo_entrante = false; c.no_leidos = 0; }
   const r = await api('marcar-respondido', { telefono: tel, linea_id: linea });
   if(r && r.status === 'ok'){ cargarLista(); }
-  else { if(c){ c.ultimo_entrante = true; } alert((r && r.mensaje) || 'No se pudo marcar como respondido.'); }
+  else { if(c){ c.ultimo_entrante = true; c.no_leidos = prevNoLeidos; } alert((r && r.mensaje) || 'No se pudo marcar como respondido.'); }
 };
 window.eliminarContacto = function(telefono, nombre, linea){
   abrirModal(`

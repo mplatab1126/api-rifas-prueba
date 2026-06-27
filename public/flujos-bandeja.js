@@ -262,7 +262,7 @@ function resumenNodo(tipo, d) {
     case 'solicitud':
       return `<b>${d.metodo || 'GET'}</b> ${d.url ? e(d.url, 60) : resVacio('(falta la URL)')}` +
         (d.ruta && d.campo ? `<div class="res-extra">${escapar(d.ruta)} → {{${escapar(d.campo)}}}</div>` : '');
-    case 'aleatorio': return `Rama A: ${Number(d.pct) || 50}% · Rama B: ${100 - (Number(d.pct) || 50)}%`;
+    case 'aleatorio': { const p = Math.min(99, Math.max(1, Number(d.pct) || 50)); return `Rama A: ${p}% · Rama B: ${100 - p}%`; }   // mismo clamp que la ejecución
     case 'irflujo': {
       const f = flFlujos.find(x => x.id === d.flujo);
       return 'Continúa en: ' + (f ? '<b>' + escapar(f.nombre) + '</b>' : resVacio('(elige el flujo)'));
@@ -632,7 +632,7 @@ async function correrDesde(nodo) {
       case 'inicio': actual = siguienteDe(actual); continue;
       case 'mensaje': {
         if (d.respuesta === 'botones') {
-          const botones = [d.btn1, d.btn2, d.btn3].map(b => vars(b).trim()).filter(Boolean);
+          const botones = [{i:1,txt:d.btn1},{i:2,txt:d.btn2},{i:3,txt:d.btn3}].map(b => ({ i: b.i, txt: vars(b.txt).trim() })).filter(b => b.txt);
           simBotConBotones(vars(d.texto) || '(mensaje vacío)', botones); sim.esperando = actual; return;
         }
         if (d.respuesta === 'lista') {
@@ -655,7 +655,7 @@ async function correrDesde(nodo) {
         simBotConBotones(vars(d.texto) || '(mensaje vacío)', opciones); sim.esperando = actual; return;
       }
       case 'botones': {
-        const botones = [d.btn1, d.btn2, d.btn3].map(b => vars(b).trim()).filter(Boolean);
+        const botones = [{i:1,txt:d.btn1},{i:2,txt:d.btn2},{i:3,txt:d.btn3}].map(b => ({ i: b.i, txt: vars(b.txt).trim() })).filter(b => b.txt);
         simBotConBotones(vars(d.texto) || '(mensaje vacío)', botones); sim.esperando = actual; return;
       }
       case 'condicion': {
@@ -779,7 +779,9 @@ function simResponder() {
     if (sim.intentos > max) {
       simSistema('Se agotaron los ' + max + ' reintentos — sigue por la rama "agotó reintentos".');
       const desde = sim.esperando; sim.esperando = null; apagarBotones();
-      correrDesde(siguienteDe(desde, 'output_2') || siguienteDe(desde, 'output_1')); return;
+      // Solo la rama "agotó reintentos" (output_2). Si no está conectada, el flujo termina —
+      // NO caer a output_1 ("respondió"), que trataría al cliente como si hubiera respondido bien.
+      correrDesde(siguienteDe(desde, 'output_2')); return;
     }
     simSistema('Eso no parece ' + (NOMBRE_TIPO[tipo] || tipo) + ' — volvería a preguntar (intento ' + sim.intentos + ' de ' + max + ').');
     return;
@@ -790,7 +792,13 @@ function simResponder() {
 }
 
 function simBotConBotones(t, botones) {
-  const html = botones.map((b, i) => `<button class="sim-btn" onclick="simBotonClick(${i + 1}, this.textContent)">${escapar(b)}</button>`).join('');
+  // Cada botón puede ser un string (lista/pregunta, ruta por output_1) o {i, txt} con el SLOT real
+  // del botón (modo "botones", ruta por output_i). Si btn2 va vacío, btn3 debe seguir siendo output_3.
+  const html = botones.map((b, i) => {
+    const txt  = typeof b === 'string' ? b : b.txt;
+    const slot = (b && typeof b === 'object' && b.i) ? b.i : (i + 1);
+    return `<button class="sim-btn" onclick="simBotonClick(${slot}, this.textContent)">${escapar(txt)}</button>`;
+  }).join('');
   simBurbuja(t, 'bot', `<div class="sim-botonera">${html}</div>`);
 }
 function simBotonClick(i, texto) {

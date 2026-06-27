@@ -24,7 +24,7 @@ import { TOOLS } from './agente-responder.js';
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const LOTE = 5;          // casos en paralelo (la suite completa tarda ~20-40s)
-const MODELOS_OK = ['claude-sonnet-4-6', 'claude-haiku-4-5-20251001'];
+const MODELOS_OK = ['claude-opus-4-8', 'claude-sonnet-4-6', 'claude-haiku-4-5'];  // igual que agente-responder.js: probar el MISMO modelo que producción
 
 // Igual que en el motor: rellena {{clave}} con las variables de la línea.
 function aplicarVars(texto, vars) {
