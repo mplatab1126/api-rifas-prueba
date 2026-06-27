@@ -1235,11 +1235,19 @@ function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c => ({'&':'&
 const pesos = v => '$' + Number(v || 0).toLocaleString('es-CO');
 
 async function api(path, body){
-  const r = await fetch('/api/whatsapp/' + path, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ contrasena: localStorage.getItem(PWD_KEY), ...body })
-  });
-  return r.json();
+  // Devolver SIEMPRE un objeto (nunca lanzar): si la red falla o el servidor responde
+  // no-JSON / 500, devolvemos {status:'error'} para que la rama de error del que llama
+  // revierta la burbuja optimista "enviando…" y avise, en vez de dejarla pegada.
+  try {
+    const r = await fetch('/api/whatsapp/' + path, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ contrasena: localStorage.getItem(PWD_KEY), ...body })
+    });
+    if(!r.ok) return { status:'error', mensaje:'Error del servidor (' + r.status + ')' };
+    return await r.json();
+  } catch(e){
+    return { status:'error', mensaje:'Sin conexión' };
+  }
 }
 
 /* ── Costo de IA (formato) ──

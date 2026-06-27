@@ -11,9 +11,13 @@ function formatearFechaEs(fechaStr) {
   if (!fechaStr) return '';
   const f = new Date(fechaStr);
   if (Number.isNaN(f.getTime())) return '';
-  const d = f.getDate();
-  const m = MESES[f.getMonth()];
-  const y = f.getFullYear();
+  // Componentes en hora Colombia (el servidor corre en UTC; los getters locales daban
+  // el día siguiente para abonos de la noche, mostrándole al cliente la fecha equivocada).
+  const partes = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(f);
+  const get = (t) => partes.find((p) => p.type === t).value;
+  const d = Number(get('day'));
+  const m = MESES[Number(get('month')) - 1];
+  const y = get('year');
   return `${d} de ${m}, ${y}`;
 }
 

@@ -18,12 +18,25 @@ export default async function handler(req, res) {
 
   try {
     // Rifa actual: nombre desde la tabla rifas (la última que esté activa o planificada)
-    const { data: rifaActual } = await supabase
+    // Preferir la rifa ACTIVA (como hace agente-responder.js); si no hay ninguna activa,
+    // caer a la más reciente como respaldo. Antes tomaba la de fecha_inicio más alta sin
+    // mirar el estado, así que una rifa planificada/futura podía pisar a la activa.
+    const COLS_RIFA = 'id, nombre, fecha_inicio, fecha_fin, estado, numero_rifa';
+    let { data: rifaActual } = await supabase
       .from('rifas')
-      .select('id, nombre, fecha_inicio, fecha_fin, estado, numero_rifa')
+      .select(COLS_RIFA)
+      .eq('estado', 'activa')
       .order('fecha_inicio', { ascending: false })
       .limit(1)
       .maybeSingle();
+    if (!rifaActual) {
+      ({ data: rifaActual } = await supabase
+        .from('rifas')
+        .select(COLS_RIFA)
+        .order('fecha_inicio', { ascending: false })
+        .limit(1)
+        .maybeSingle());
+    }
 
     // Fecha real de inicio de la rifa actual = primera boleta vendida en `boletas`
     // (la tabla `boletas` solo contiene los registros de la rifa en curso).

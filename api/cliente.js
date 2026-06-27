@@ -83,11 +83,9 @@ export default async function handler(req, res) {
 
     let fechaUltimoAbono = "";
     if (abonos && abonos.length > 0 && abonos[0].fecha_pago) {
-      const fecha = new Date(abonos[0].fecha_pago);
-      const y = fecha.getFullYear();
-      const m = String(fecha.getMonth() + 1).padStart(2, '0');
-      const d = String(fecha.getDate()).padStart(2, '0');
-      fechaUltimoAbono = `${y}-${m}-${d}`;
+      // Día en hora Colombia: el servidor de Vercel corre en UTC, así que los getters locales
+      // daban el día siguiente para abonos hechos de noche. en-CA da formato YYYY-MM-DD.
+      fechaUltimoAbono = new Date(abonos[0].fecha_pago).toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
     }
 
     // 9. Le respondemos a Chatea Pro con el paquete listo y valores COMPLETOS

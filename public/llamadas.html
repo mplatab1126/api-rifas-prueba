@@ -760,7 +760,7 @@
 
     // ── DASHBOARD: carga KPIs + historial + costos ──
     async function cargarDashboard() {
-      const hoy = new Date().toISOString().slice(0, 10);
+      const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
       const [previewRes, histRes, costosRes] = await Promise.all([
         apiCall('preview'),
         apiCall('historial', { desde: hoy, hasta: hoy }),
@@ -800,8 +800,8 @@
           document.getElementById('kpiUltimoFecha').textContent = primeraFecha.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
           if (!document.getElementById('histFechaDesde').value) {
-            document.getElementById('histFechaDesde').value = new Date().toISOString().slice(0, 10);
-            document.getElementById('histFechaHasta').value = new Date().toISOString().slice(0, 10);
+            document.getElementById('histFechaDesde').value = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
+            document.getElementById('histFechaHasta').value = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
           }
         }
 

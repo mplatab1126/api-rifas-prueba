@@ -193,7 +193,16 @@ async function guardarEntrante(m, nombrePerfil, lineaId, paraDisparar) {
 
       // El despacho (flujo o agente, según los disparadores) se hace UNA vez por conversación
       // al final del webhook (H86: una ráfaga de 3 mensajes ya no lanza 3 invocaciones).
-      if (paraDisparar) paraDisparar.set(telefono + '|' + lineaId, { telefono, lineaId, texto, esNueva: !!(conversacion && conversacion.esNuevo) });
+      if (paraDisparar) {
+        // En una ráfaga (varios mensajes en un webhook) NO pisar la entrada: conservar la señal
+        // de "contacto nuevo" (OR) y acumular el texto, para no perder el disparador del primer mensaje.
+        const prev = paraDisparar.get(telefono + '|' + lineaId);
+        paraDisparar.set(telefono + '|' + lineaId, {
+          telefono, lineaId,
+          texto: prev && prev.texto ? (prev.texto + '\n' + (texto || '')) : texto,
+          esNueva: !!(prev && prev.esNueva) || !!(conversacion && conversacion.esNuevo)
+        });
+      }
     }
   }
 
