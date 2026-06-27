@@ -62,7 +62,7 @@ mano; el `.js` se genera **solo** con el comando de construcción
 | Página | Quién la usa | Para qué sirve |
 |---|---|---|
 | `admin.html` | Asesores | Centro principal: buscar boletas, vender, abonar, leer comprobantes con IA, conciliación bancaria, devoluciones, bitácora, vista "Disponibles" (todos los números libres, agrupados por serie y con buscador; usa `/api/disponibles?lista=todas`, solo lectura). |
-| `caja.html` | Asesores / gerencia | Cuadre de caja del día, gastos, ingresos, búsqueda de transferencias. |
+| `caja.html` | Asesores / gerencia | Cuadre de caja del día, gastos, ingresos, búsqueda de transferencias. Una Salida puede ser "Pasar dinero a la Caja de Papá" (traslado interno: baja Caja Oficina, sube Caja Papá; solo meter, no gastar). Ver bitácora 2026-06-27. |
 | `rifas.html` | Solo Mateo | Centro financiero: rifas, premios, recapitalización entre socios, capital. **Sensible.** |
 | `rendimiento.html` | Gerencia | Métricas de asesores, Facebook Ads, WhatsApp, embudo de ventas, análisis con IA. |
 | `estado-resultados.html` | Gerencia | Estado de resultados financiero (ingresos, gastos, ganancia/pérdida). |

@@ -26,6 +26,31 @@
 
 ---
 
+## 2026-06-27 — [Pagos] / [Admin] — La Caja Oficina puede METER dinero a la Caja de Papá
+
+**Qué decidimos:** desde la página de caja física (`caja.html`), al registrar una
+**Salida** ahora se puede elegir la categoría **"💵 Pasar dinero a la Caja de Papá"**.
+Eso hace un **traslado interno**: el efectivo sale de la Caja Oficina (queda como
+`salida` en `movimientos_caja`, baja el cuadre del día) y entra a la Caja de Papá
+(se guarda un gasto categoría `Movimiento a Caja`, subcategoría `Papá`, que es lo que
+cuenta como entrada en el saldo de Caja Papá). El destino se **fuerza a "Papá"** tanto
+en el front como en el back (la oficina solo le mete plata; nunca elige otra caja).
+
+**Por qué:** antes el dinero solo entraba a la Caja de Papá desde Carga IA (el asesor
+que justifica el pantallazo del banco). Faltaba que la gente que está físicamente en la
+oficina pudiera pasarle efectivo de la caja a la caja de Papá.
+
+**Cuidado / qué NO hacer:** la oficina **solo puede METER** plata a la caja de Papá, NO
+gastar desde ella (decisión explícita de Mateo: gastar de la Caja de Papá sigue siendo
+solo del apartado de Carga IA / egresos-ingresos). NO es un gasto real: **no afecta el
+Estado de Resultados** (el P&L en `estadisticas.js` solo cuenta `Gastos Operacionales` y
+`Gastos Rifa Apartamento`). Sin doble conteo: el saldo de la Caja Oficina se calcula solo
+de `movimientos_caja`, y el de Caja Papá solo de `gastos`. Archivos: `public/caja.html`
+(opción + subcategoría fija) y `api/admin/caja.js` (mapa `CATS` + forzar subcat 'Papá').
+Publicado a `main` (commit c953c27) y verificado al aire en `/caja`.
+
+---
+
 ## 2026-06-22 — [WhatsApp] / [Base de datos] — Motor de flujos: candados de seguridad y anti-duplicado
 
 **Qué decidimos:** tras revisar a fondo el motor de flujos (`api/lib/flujo-motor.js`, Fase 2,
