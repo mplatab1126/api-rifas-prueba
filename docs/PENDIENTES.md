@@ -15,6 +15,16 @@
 
 ## Tareas pendientes
 
+- [ ] (2026-06-27) **AUDITORÍA DE BUGS — 69 delicados pendientes de decisión de Mateo.**
+  Un loop auditó TODO el repo (5 pasadas). Se arreglaron y publicaron **35 bugs seguros**
+  (incluidos 3 huecos de seguridad: `buscar.js`/`transferencias.js`/`historial.js` ahora exigen
+  contraseña). Quedan **69 bugs DELICADOS** (10 ALTA, 46 MEDIA, 13 BAJA) que tocan
+  dinero/abonos/permisos/DB y NO se tocaron. Lista completa con causa raíz y arreglo propuesto en
+  **`docs/auditoria-bugs-2026-06-27.md`**. Prioridad ALTA: IDOR entre líneas (un asesor lee
+  chats/contactos/media de otras líneas), `abono.js` no revierte si falla, OTP sin límite de
+  intentos, `finanzas.js` justificar_pendiente puede perder el egreso. Decidir cuáles arreglar (de
+  a uno, con visto bueno).
+
 - [ ] (2026-06-27) **REVISAR a mano los duplicados de transferencias YA ASIGNADOS a boletas**
   (posible doble-cobro: un mismo pago real abonado a dos boletas). Son ~158 exactos + los de
   "hora distinta". NO se borraron (borrar quitaría un abono real). Hace falta una lista para

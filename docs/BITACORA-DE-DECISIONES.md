@@ -26,6 +26,32 @@
 
 ---
 
+## 2026-06-27 — [Seguridad] / [General] — Auditoría de bugs de todo el repo (loop de 5 pasadas)
+
+**Qué hicimos:** un loop auditó TODO el repositorio en 5 pasadas (por área + por tipo de bug),
+verificando cada hallazgo de forma adversarial. Se arreglaron, publicaron y verificaron al aire
+**35 bugs SEGUROS** (UI, contenido, lógica que NO toca dinero/permisos): crashes (tabla de capital
+en rifas), zonas horarias de fechas de abono, recordatorios de Liliana, orden de mensajes del chat,
+KPIs de llamadas, validaciones, manejo de errores, etc. Y con aprobación de Mateo se cerraron **3
+huecos de SEGURIDAD ALTA**: `buscar.js`, `transferencias.js` e `historial.js` estaban SIN
+autenticación y exponían datos de clientes (cédula, correo, saldos, comprobantes) a cualquiera en
+internet; ahora exigen contraseña (el panel los llama por POST con la clave). Verificado: sin clave
+401, con clave 200.
+
+**Por qué se paró:** tras 5 pasadas la cuenta de bugs nuevos se estancó (~12-13 por pasada) y los
+arreglos seguros se agotaron (16→6→1→2); lo que seguía apareciendo era casi todo DELICADO (decisión
+de Mateo). Las "dos pasadas limpias" no eran alcanzables a costo razonable, así que Mateo decidió
+cerrar y recibir el informe.
+
+**Cuidado / qué NO hacer:** quedan **69 bugs DELICADOS** documentados en
+`docs/auditoria-bugs-2026-06-27.md` (10 ALTA, 46 MEDIA, 13 BAJA) que tocan dinero/abonos/permisos/DB
+y NO se tocaron. Atacarlos requiere el visto bueno de Mateo, de a uno. Destacan: IDOR entre líneas
+(un asesor podría leer chats/contactos/media de otra línea), `abono.js` sin rollback, OTP sin límite
+de intentos, y nodos del editor de flujos (Aleatorio/Solicitud/Clasificar) que el motor real no
+ejecuta. Commits de los arreglos: 12e3a39, c8663a3, b8b61c0, 84fa659, 6ac9ecd, 0124a9f, 7b6f907, 27e2dca.
+
+---
+
 ## 2026-06-27 — [Pagos] / [Base de datos] — Anti-doble de transferencias (ingresos de Carga IA)
 
 **Qué decidimos:** atacar de raíz que el mismo pantallazo de un movimiento bancario se
