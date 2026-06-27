@@ -26,6 +26,26 @@
 
 ---
 
+## 2026-06-27 — [Admin] — Nueva categoría de egresos: "Rifa Casa Santa Teresita 3" (solo Carga IA)
+
+**Qué decidimos:** agregar la categoría de egresos `rifa_santa_teresita_3` →
+nombre en la base **"Rifa Casa Santa Teresita 3"** (sigue el patrón de la 1 y la 2),
+con las mismas subcategorías. Se habilita **SOLO en el apartado de Carga IA** (donde
+se justifican/distribuyen los egresos del pantallazo del banco).
+
+**Por qué:** lo pidió Mateo, para seguir el orden de las rifas Santa Teresita.
+
+**Cuidado / qué NO hacer:** queda `afecta_er:false` igual que sus hermanas → NO entra al
+Estado de Resultados (el P&L en `estadisticas.js` solo cuenta `Gastos Operacionales` y
+`Gastos Rifa Apartamento`). NO se habilitó en la caja de la oficina (`caja.html`), ni en
+"Gastar desde Caja", ni en el Estado de Resultados (decisión: solo Carga IA). Si algún día
+gerencia necesita reclasificar a esta categoría desde el Estado de Resultados, hay que
+agregarla también en `public/estado-resultados.html`. Archivos tocados: `api/admin/finanzas.js`
+(fuente de verdad, alimenta el menú dinámico) y `public/admin.js` (`SUBCATEGORIAS`, `catOpts`,
+`nombresCat`). Publicado a `main` (commit b175fe3) y verificado al aire.
+
+---
+
 ## 2026-06-27 — [Pagos] / [Admin] — La Caja Oficina puede METER dinero a la Caja de Papá
 
 **Qué decidimos:** desde la página de caja física (`caja.html`), al registrar una
