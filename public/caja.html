@@ -276,6 +276,7 @@
             <option value="rifa_santa_teresita">🏡 Rifa Casa Santa Teresita</option>
             <option value="rifa_santa_teresita_2">🏡 Rifa Casa Santa Teresita 2</option>
             <option value="retiro_ganancia">💸 Retiro de Ganancia</option>
+            <option value="movimiento_caja">💵 Pasar dinero a la Caja de Papá</option>
           </select>
         </div>
         <div class="field" style="margin-bottom:15px;">
@@ -469,7 +470,10 @@
       rifa_camioneta:   ['Publicidad', 'Premios', 'Preparación', 'Otros'],
       rifa_santa_teresita: ['Publicidad', 'Adecuación', 'Muebles', 'Electrodomésticos', 'Acabados', 'Premios', 'Devoluciones a Clientes', 'Otros'],
       rifa_santa_teresita_2: ['Publicidad', 'Adecuación', 'Muebles', 'Electrodomésticos', 'Acabados', 'Premios', 'Devoluciones a Clientes', 'Otros'],
-      retiro_ganancia:  ['Papá', 'Mateo', 'Alejandro', 'Alejandro y Mateo']
+      retiro_ganancia:  ['Papá', 'Mateo', 'Alejandro', 'Alejandro y Mateo'],
+      // La oficina solo puede METERLE plata a la caja de Papá (traslado interno).
+      // Destino fijo "Papá": el efectivo sale de la oficina y entra a la caja de Papá.
+      movimiento_caja:  ['Papá']
     };
 
     function toggleCamposSalida() {

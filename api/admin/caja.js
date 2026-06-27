@@ -265,17 +265,26 @@ export default async function handler(req, res) {
           rifa_camioneta:   'Rifa Camioneta',
           rifa_santa_teresita: 'Rifa Casa Santa Teresita',
           rifa_santa_teresita_2: 'Rifa Casa Santa Teresita 2',
-          retiro_ganancia:  'Retiro de Ganancia'
+          retiro_ganancia:  'Retiro de Ganancia',
+          // "Movimiento a Caja" es un TRASLADO INTERNO, no un gasto real: el efectivo
+          // sale de la Caja Oficina (la 'salida' de arriba) y entra a la Caja de Papá.
+          // El saldo de Caja Papá cuenta como entrada los gastos categoria='Movimiento a
+          // Caja' con subcategoria='Papá', así que aquí forzamos ese destino.
+          // No afecta el Estado de Resultados (solo cuenta Operacionales y Rifa Apartamento).
+          movimiento_caja:  'Movimiento a Caja'
         };
         const catNombre = CATS[categoria];
         if (catNombre) {
+          // Desde la oficina, un Movimiento a Caja SIEMPRE va a la caja de Papá
+          // (la oficina solo le mete plata; nunca gasta desde ahí).
+          const subcatFinal = (categoria === 'movimiento_caja') ? 'Papá' : (subcategoria || null);
           await supabase.from('gastos').insert({
             fecha: hoy,
             monto: Math.round(monto),
             plataforma: 'Efectivo Caja',
             descripcion: descripcion.trim(),
             categoria: catNombre,
-            subcategoria: subcategoria || null,
+            subcategoria: subcatFinal,
             reportado_por: nombreAsesor,
             categorizado_por: nombreAsesor
           });
