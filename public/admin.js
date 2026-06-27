@@ -2445,8 +2445,12 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
     }
 
     // 5. Procesamiento según el modo elegido (ingreso o egreso)
+    let procesandoIA = false;
     async function iniciarProcesamientoMasivoIA() {
+        if (procesandoIA) return;            // candado: evita dos procesamientos a la vez (doble clic / dos disparos)
+        procesandoIA = true;
         document.getElementById('btnIniciarIA').style.display = 'none';
+        try {
         if (!categoriasEgreso.length) await cargarCategoriasEgreso();
         const pwd = localStorage.getItem(STORAGE_KEY) || '';
 
@@ -2537,6 +2541,9 @@ const fechaStr = fechaObj.toLocaleDateString('es-CO', opcionesFecha) + ' ' + fec
             }
 
             actualizarUIIA();
+        }
+        } finally {
+            procesandoIA = false;
         }
     }
 

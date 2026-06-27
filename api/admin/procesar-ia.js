@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { supabase } from '../lib/supabase.js';
 import { aplicarCors } from '../lib/cors.js';
 import { validarAsesor } from '../lib/auth.js';
@@ -15,6 +16,27 @@ export default async function handler(req, res) {
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
 
   try {
+    // 🔒 HUELLA DE LA IMAGEN (anti-doble): un código único de los bytes del pantallazo.
+    // Si el MISMO comprobante ya se cargó como transferencia, lo cortamos aquí mismo —
+    // sin importar cómo lea la IA la hora o la referencia, y sin gastar la llamada de IA.
+    let hashImagen = null;
+    try {
+      const rawB64Hash = imagenBase64.replace(/^data:image\/\w+;base64,/, '');
+      hashImagen = crypto.createHash('sha256').update(Buffer.from(rawB64Hash, 'base64')).digest('hex');
+    } catch (_) { hashImagen = null; }
+
+    if (!soloConsulta && hashImagen) {
+      const { data: yaPorHash } = await supabase
+        .from('transferencias').select('*').eq('hash_imagen', hashImagen).limit(1).maybeSingle();
+      if (yaPorHash) {
+        return res.status(200).json({
+          status: 'duplicado',
+          mensaje: `Este mismo comprobante ya fue cargado (${yaPorHash.fecha_pago}).`,
+          clon: yaPorHash
+        });
+      }
+    }
+
     let datos;
 
     // RUTA DIRECTA: si el frontend extrajo texto del PDF, usamos esos datos sin llamar a Claude
@@ -306,10 +328,18 @@ export default async function handler(req, res) {
         fecha_pago: datos.fecha_pago,
         hora_pago: datos.hora_pago || '12:00:00',
         estado: 'LIBRE',
-        url_comprobante: urlFoto // <-- ¡Aquí guardamos el link en la tabla!
+        url_comprobante: urlFoto, // <-- ¡Aquí guardamos el link en la tabla!
+        hash_imagen: hashImagen   // <-- huella única del pantallazo (anti-doble)
     });
 
-    if (errInsert) throw errInsert;
+    if (errInsert) {
+        // 23505 = el índice único de la huella rechazó un duplicado (dos cargas del MISMO
+        // comprobante al mismo tiempo). No es un error: es un duplicado, lo reportamos como tal.
+        if (errInsert.code === '23505') {
+            return res.status(200).json({ status: 'duplicado', mensaje: 'Este mismo comprobante se cargó al mismo tiempo en otra parte.' });
+        }
+        throw errInsert;
+    }
 
     return res.status(200).json({ 
         status: 'ok', 
